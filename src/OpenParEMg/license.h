@@ -18,43 +18,28 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef SIMULATEOPTIONS_H
-#define SIMULATEOPTIONS_H
+#ifndef LICENSE_H
+#define LICENSE_H
 
 #include <QDialog>
-#include <iostream>
-#include "project.h"
-#include "string.h"
-
-using namespace std;
 
 namespace Ui {
-class SimOptions;
+class License;
 }
 
-class SimOptions : public QDialog
+class License : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit SimOptions(QWidget *parent = nullptr);
-    void set_projData (struct projectData *);
-    ~SimOptions();
+    explicit License(QWidget *parent = nullptr);
+    ~License();
 
 private slots:
-    void on_referenceImpedance_textChanged(const QString &arg1);
-
-    void on_simulateOptionCancel_clicked();
-
-    void on_simulateOptionOk_clicked();
-
-    void on_frequencyUnit_currentIndexChanged(int index);
+    void on_showLicense_clicked();
 
 private:
-    Ui::SimOptions *ui;
-    struct projectData *projData;
-    double referenceImpedance;
-    QString frequencyUnit;
+    Ui::License *ui;
 };
 
-#endif // SIMULATEOPTIONS_H
+#endif // LICENSE_H
