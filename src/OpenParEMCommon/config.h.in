@@ -1,5 +1,8 @@
 /* OpenParEMCommon/config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Set to 1 for MPI */
+#undef HAS_MPI
+
 /* define if the compiler supports basic C++17 syntax */
 #undef HAVE_CXX17
 

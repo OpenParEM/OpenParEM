@@ -48,6 +48,9 @@
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
+/* Define to 1 if you have the `metis' library (-lmetis). */
+#undef HAVE_LIBMETIS
+
 /* Set to 1 when libmfem is found */
 #undef HAVE_LIBMFEM
 

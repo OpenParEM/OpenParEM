@@ -24,12 +24,13 @@
 #ifndef PROJECT_H
 #define PROJECT_H
 
-#include "petscsys.h"
-#include <stddef.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "inputFrequency.h"
+#include "petscsystypes.h"
 
 char* removeNewLineChar (char *);
 char *removeComment (char *);

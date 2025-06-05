@@ -6,6 +6,9 @@ AC_CONFIG_HEADERS([OpenParEMCommon/config.h])
 AC_PROG_RANLIB()
 AM_PROG_AR()
 
+# Compile with MPI
+AC_DEFINE_UNQUOTED([HAS_MPI], [1], [Set to 1 for MPI])
+
 # Checks for programs.
 AC_PROG_CXX(mpicxx)
 AC_PROG_CC(mpicc)

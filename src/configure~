@@ -5016,6 +5016,10 @@ unknown)
 esac
 
 
+# Compile with MPI
+printf "%s\n" "#define HAS_MPI 1" >>confdefs.h
+
+
 # Checks for programs.
 
 
@@ -6412,7 +6416,8 @@ fi
 
 
 # Paths
-LDFLAGS="$LDFLAGS -L${prefix}/lib -L${prefix}/lib64 -L/usr/lib/x86_64-linux-gnu"
+#LDFLAGS="$LDFLAGS -L${prefix}/lib -L/usr/lib/x86_64-linux-gnu"
+LDFLAGS="$LDFLAGS -L${prefix}/lib -L${prefix}/lib64"
 CXXFLAGS="$CXXFLAGS -I${prefix}/include"
 CFLAGS="$CFLAGS -I${prefix}/include"
 

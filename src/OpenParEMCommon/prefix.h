@@ -22,6 +22,6 @@
 #define PREFIX_H
 
 #include <stdio.h>
-#include "petscsys.h"
+//#include "petscsys.h"
 
 #endif

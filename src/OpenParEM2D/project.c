@@ -484,7 +484,7 @@ void init_project (struct projectData *data) {
 
    data->mode_definition_file=strdup("");
 
-   data->refinement_frequency=strdup("highlow");
+   data->refinement_frequency=strdup("high");
    data->refinement_variable=strdup("|gamma|");
    data->refinement_iteration_min=1;
    data->refinement_iteration_max=10;
