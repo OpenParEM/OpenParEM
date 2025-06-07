@@ -52,11 +52,14 @@ void MeshDialog::set_projData (struct projectData *a)
     else ui->meshSaveRefined->setCheckState(Qt::Unchecked);
     ui->meshRefinementFraction->setValue(meshRefinementFraction);
     ui->meshQualityLimit->setValue(meshQualityLimit);
+
+    ui->meshOptionOk->setEnabled(false);
 }
 
 void MeshDialog::on_meshOrderSpinBox_valueChanged(int arg1)
 {
     meshOrder=arg1;
+    ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshFileLineEdit_returnPressed()
@@ -74,6 +77,7 @@ void MeshDialog::on_meshFileLineEdit_returnPressed()
 
         ui->meshFileLineEdit->setText(meshFile);
     }
+    ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshFilePushButton_clicked()
@@ -93,22 +97,26 @@ void MeshDialog::on_meshFilePushButton_clicked()
 
         ui->meshFileLineEdit->setText(meshFile);
     }
+    ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshSaveRefined_checkStateChanged(const Qt::CheckState &arg1)
 {
     if (arg1 == 0) meshSaveRefined=0;
     else meshSaveRefined=1;
+    ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshRefinementFraction_textChanged(const QString &arg1)
 {
     meshRefinementFraction=arg1.toDouble();
+    ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshQualityLimit_textChanged(const QString &arg1)
 {
     meshQualityLimit=arg1.toDouble();
+    ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshOptionOk_clicked()

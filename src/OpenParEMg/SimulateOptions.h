@@ -22,7 +22,9 @@
 #define SIMULATEOPTIONS_H
 
 #include <QDialog>
+#include <QMessageBox>
 #include <iostream>
+#include <qspinbox.h>
 #include "project.h"
 #include "string.h"
 
@@ -50,11 +52,50 @@ private slots:
 
     void on_frequencyUnit_currentIndexChanged(int index);
 
+    void on_normalizeSparam_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_touchstoneFormat_activated(int index);
+
+    void on_tolerance2D_returnPressed();
+    void on_tolerance3D_returnPressed();
+
+    void on_temperature_valueChanged(double arg1);
+
+    void on_iterationLimit_valueChanged(int arg1);
+
+    void on_useInitialGuess_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_checkHomogeneous_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_modesBuffer_valueChanged(int arg1);
+
+    void on_checkClosedLoop_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_accurateResidual_stateChanged(int arg1);
+
+    void on_shiftInvert_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_shiftFactor_valueChanged(double arg1);
+
 private:
     Ui::SimOptions *ui;
+    bool cancelClose;
     struct projectData *projData;
     double referenceImpedance;
     QString frequencyUnit;
+    QString touchstoneFormat;
+    double temperature;
+    double tolerance2D;
+    double tolerance3D;
+    QDoubleValidator toleranceValidator;
+    int iterationLimit;
+    int useInitialGuess;
+    int checkHomogeneous;
+    int modesBuffer;
+    int checkClosedLoop;
+    int accurateResidual;
+    int shiftInvert;
+    double shiftFactor;
 };
 
 #endif // SIMULATEOPTIONS_H

@@ -80,7 +80,7 @@
     <item>
      <widget class="QLabel" name="label_2">
       <property name="toolTip">
-       <string>File name of the mesh.</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Name of the mesh file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="text">
        <string>Mesh File</string>
@@ -119,7 +119,7 @@
     </rect>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout_5">
-    <item>
+    <item alignment="Qt::AlignmentFlag::AlignVCenter">
      <widget class="QLabel" name="label_3">
       <property name="toolTip">
        <string>Maximum fraction of the mesh to refine at each iteration.</string>
@@ -129,7 +129,7 @@
       </property>
      </widget>
     </item>
-    <item>
+    <item alignment="Qt::AlignmentFlag::AlignVCenter">
      <widget class="QDoubleSpinBox" name="meshRefinementFraction">
       <property name="decimals">
        <number>3</number>
@@ -161,14 +161,17 @@
       </property>
      </spacer>
     </item>
-    <item>
+    <item alignment="Qt::AlignmentFlag::AlignVCenter">
      <widget class="QLabel" name="label_4">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Maximum allowed aspect ratio of mesh elements.  This limit usually needs to be set higher.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
       <property name="text">
        <string>Quality Limit</string>
       </property>
      </widget>
     </item>
-    <item>
+    <item alignment="Qt::AlignmentFlag::AlignVCenter">
      <widget class="QDoubleSpinBox" name="meshQualityLimit">
       <property name="decimals">
        <number>0</number>
@@ -259,26 +262,36 @@
   <widget class="QWidget" name="horizontalLayoutWidget">
    <property name="geometry">
     <rect>
-     <x>3</x>
+     <x>10</x>
      <y>90</y>
      <width>591</width>
      <height>31</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
-    <item alignment="Qt::AlignmentFlag::AlignLeft">
+    <item alignment="Qt::AlignmentFlag::AlignVCenter">
+     <widget class="QLabel" name="label_5">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Saves the refined mesh for later reuse.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="text">
+       <string>Save Refined Mesh</string>
+      </property>
+     </widget>
+    </item>
+    <item alignment="Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter">
      <widget class="QCheckBox" name="meshSaveRefined">
       <property name="focusPolicy">
        <enum>Qt::FocusPolicy::ClickFocus</enum>
       </property>
       <property name="toolTip">
-       <string>Saves the refined mesh for reuse.</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="layoutDirection">
        <enum>Qt::LayoutDirection::RightToLeft</enum>
       </property>
       <property name="text">
-       <string>Save Refined Mesh  </string>
+       <string/>
       </property>
      </widget>
     </item>
