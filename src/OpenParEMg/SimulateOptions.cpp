@@ -54,6 +54,21 @@ void SimOptions::set_projData (struct projectData *a)
     accurateResidual=projData->solution_accurate_residual;
     shiftInvert=projData->solution_shift_invert;
     shiftFactor=projData->solution_shift_factor;
+    saveFields=projData->project_save_fields;
+    calculatePoynting=projData->project_calculate_poynting;
+    showProjectFile=projData->debug_show_project;
+    showFrequencyPlan=projData->debug_show_frequency_plan;
+    showImpedanceDetails=projData->debug_show_impedance_details;
+    showPortDefinitions=projData->debug_show_port_definitions;
+    showMaterials=projData->debug_show_materials;
+    showMemoryUsage=projData->debug_show_memory;
+    savePortFields=projData->debug_save_port_fields;
+    keepTempFiles=projData->debug_tempfiles_keep;
+    skipMixedModeConversion=projData->debug_skip_mixed_conversion;
+    skipForcedReciprocity=projData->debug_skip_forced_reciprocity;
+    preconditioner=projData->debug_refine_preconditioner;
+    createTestCases=projData->test_create_cases;
+    showDetailedCases=projData->test_show_detailed_cases;
 
     // fill the panel with data
 
@@ -133,6 +148,62 @@ void SimOptions::set_projData (struct projectData *a)
 
     ui->modesBuffer->setValue(modesBuffer);
 
+    if (saveFields) ui->saveFields->setCheckState(Qt::Checked);
+    else ui->saveFields->setCheckState(Qt::Unchecked);
+
+    if (calculatePoynting) ui->calculatePoynting->setCheckState(Qt::Checked);
+    else ui->calculatePoynting->setCheckState(Qt::Unchecked);
+
+    if (saveFields) {
+        ui->calculatePoynting->setEnabled(true);
+    } else {
+        ui->calculatePoynting->setCheckState(Qt::Unchecked);
+        ui->calculatePoynting->setEnabled(false);
+    }
+
+    if (showProjectFile) ui->showProjectFile->setCheckState(Qt::Checked);
+    else ui->showProjectFile->setCheckState(Qt::Unchecked);
+
+    if (showFrequencyPlan) ui->showFrequencyPlan->setCheckState(Qt::Checked);
+    else ui->showFrequencyPlan->setCheckState(Qt::Unchecked);
+
+    if (showImpedanceDetails) ui->showImpedanceDetails->setCheckState(Qt::Checked);
+    else ui->showImpedanceDetails->setCheckState(Qt::Unchecked);
+
+    if (showPortDefinitions) ui->showPortDefinitions->setCheckState(Qt::Checked);
+    else ui->showPortDefinitions->setCheckState(Qt::Unchecked);
+
+    if (showMaterials) ui->showMaterials->setCheckState(Qt::Checked);
+    else ui->showMaterials->setCheckState(Qt::Unchecked);
+
+    if (showMemoryUsage) ui->showMemoryUsage->setCheckState(Qt::Checked);
+    else ui->showMemoryUsage->setCheckState(Qt::Unchecked);
+
+    if (savePortFields) ui->savePortFields->setCheckState(Qt::Checked);
+    else ui->savePortFields->setCheckState(Qt::Unchecked);
+
+    if (keepTempFiles) ui->keepTempFiles->setCheckState(Qt::Checked);
+    else ui->keepTempFiles->setCheckState(Qt::Unchecked);
+
+    if (skipMixedModeConversion) ui->skipMixedModeConversion->setCheckState(Qt::Checked);
+    else ui->skipMixedModeConversion->setCheckState(Qt::Unchecked);
+
+    if (skipForcedReciprocity) ui->skipForcedReciprocity->setCheckState(Qt::Checked);
+    else ui->skipForcedReciprocity->setCheckState(Qt::Unchecked);
+
+    ui->preconditioner->addItem("Diagonal");
+    ui->preconditioner->addItem("BoomerAMG");
+    index=0;
+    if (preconditioner == 0) index=0;
+    if (preconditioner == 1) index=1;
+    ui->preconditioner->setCurrentIndex(index);
+
+    if (createTestCases) ui->createTestCases->setCheckState(Qt::Checked);
+    else ui->createTestCases->setCheckState(Qt::Unchecked);
+
+    if (showDetailedCases) ui->showDetailedCases->setCheckState(Qt::Checked);
+    else ui->showDetailedCases->setCheckState(Qt::Unchecked);
+
     // Disable the Ok button until changes are made
     ui->simulateOptionOk->setEnabled(false);
 }
@@ -190,6 +261,22 @@ void SimOptions::on_simulateOptionOk_clicked()
         ui->shiftFactorLabel->setEnabled(false);
         ui->shiftFactor->setEnabled(false);
     }
+
+    projData->project_save_fields=saveFields;
+    projData->project_calculate_poynting=calculatePoynting;
+    projData->debug_show_project=showProjectFile;
+    projData->debug_show_frequency_plan=showFrequencyPlan;
+    projData->debug_show_impedance_details=showImpedanceDetails;
+    projData->debug_show_port_definitions=showPortDefinitions;
+    projData->debug_show_materials=showMaterials;
+    projData->debug_show_memory=showMemoryUsage;
+    projData->debug_save_port_fields=savePortFields;
+    projData->debug_tempfiles_keep=keepTempFiles;
+    projData->debug_skip_mixed_conversion=skipMixedModeConversion;
+    projData->debug_skip_forced_reciprocity=skipForcedReciprocity;
+    projData->debug_refine_preconditioner=preconditioner;
+    projData->test_create_cases=createTestCases;
+    projData->test_show_detailed_cases=showDetailedCases;
 
     close();
 }
@@ -342,3 +429,128 @@ void SimOptions::on_shiftFactor_valueChanged(double arg1)
     ui->simulateOptionOk->setEnabled(true);
 }
 
+
+void SimOptions::on_saveFields_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) {
+        saveFields=1;
+        ui->calculatePoynting->setEnabled(true);
+    } else {
+        saveFields=0;
+        ui->calculatePoynting->setEnabled(false);
+        ui->calculatePoynting->setCheckState(Qt::Unchecked);
+    }
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_calculatePoynting_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) calculatePoynting=1;
+    else calculatePoynting=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_showProjectFile_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) showProjectFile=1;
+    else showProjectFile=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_showFrequencyPlan_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) showFrequencyPlan=1;
+    else showFrequencyPlan=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_showImpedanceDetails_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) showImpedanceDetails=1;
+    else showImpedanceDetails=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_showPortDefinitions_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) showPortDefinitions=1;
+    else showPortDefinitions=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_showMaterials_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) showMaterials=1;
+    else showMaterials=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_showMemoryUsage_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) showMemoryUsage=1;
+    else showMemoryUsage=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_savePortFields_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) savePortFields=1;
+    else savePortFields=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_keepTempFiles_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) keepTempFiles=1;
+    else keepTempFiles=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_skipMixedModeConversion_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) skipMixedModeConversion=1;
+    else skipMixedModeConversion=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_skipForcedReciprocity_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) skipForcedReciprocity=1;
+    else skipForcedReciprocity=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_preconditioner_activated(int index)
+{
+    if (index == 0) preconditioner=0;
+    if (index == 1) preconditioner=1;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_createTestCases_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) createTestCases=1;
+    else createTestCases=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_showDetailedCases_checkStateChanged(const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) showDetailedCases=1;
+    else showDetailedCases=0;
+    ui->simulateOptionOk->setEnabled(true);
+}

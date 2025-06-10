@@ -77,6 +77,36 @@ private slots:
 
     void on_shiftFactor_valueChanged(double arg1);
 
+    void on_saveFields_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_calculatePoynting_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_showProjectFile_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_showFrequencyPlan_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_showImpedanceDetails_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_showPortDefinitions_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_showMaterials_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_showMemoryUsage_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_savePortFields_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_keepTempFiles_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_skipMixedModeConversion_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_skipForcedReciprocity_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_preconditioner_activated(int index);
+
+    void on_createTestCases_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_showDetailedCases_checkStateChanged(const Qt::CheckState &arg1);
+
 private:
     Ui::SimOptions *ui;
     bool cancelClose;
@@ -96,6 +126,21 @@ private:
     int accurateResidual;
     int shiftInvert;
     double shiftFactor;
+    int saveFields;
+    int calculatePoynting;
+    int showProjectFile;
+    int showFrequencyPlan;
+    int showImpedanceDetails;
+    int showPortDefinitions;
+    int showMaterials;
+    int showMemoryUsage;
+    int savePortFields;
+    int keepTempFiles;
+    int skipMixedModeConversion;
+    int skipForcedReciprocity;
+    int preconditioner;
+    int createTestCases;
+    int showDetailedCases;
 };
 
 #endif // SIMULATEOPTIONS_H
