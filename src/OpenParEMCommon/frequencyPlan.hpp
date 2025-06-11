@@ -29,6 +29,7 @@
 #include <vector>
 #include "inputFrequency.h"
 #include "prefix.h"
+#include <quadmath.h>
 
 using namespace std;
 
@@ -72,6 +73,8 @@ class FrequencyPlan {
       ~FrequencyPlan ();
       bool assemble (char *, unsigned long int, struct inputFrequencyPlan *);
       FrequencyPlanPoint* get_frequency (char *, double *, bool *, bool *, int *);
+      long unsigned int get_plan_size () {return planList.size();}
+      FrequencyPlanPoint* get_frequency (long unsigned int i) {return planList[i];}
       bool is_refining ();
       void sort ();
       void eliminateDuplicates ();

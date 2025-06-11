@@ -18,27 +18,45 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef CUSTOMLINEEDIT_H
-#define CUSTOMLINEEDIT_H
+#ifndef FREQUENCYVIEW_H
+#define FREQUENCYVIEW_H
 
+#include <QDialog>
+#include <QTableWidget>
 #include <QLineEdit>
-#include <QFocusEvent>
-#include <QDebug>
-#include <iostream>
+#include <QPushButton>
+#include <QTableWidgetItem>
+#include <quadmath.h>
+#include "frequencyPlan.hpp"
+#include "project.h"
+#include "prefix.h"
 
-using namespace std;
+namespace Ui {
+class FrequencyView;
+}
 
-class CustomLineEdit : public QLineEdit {
+class FrequencyView : public QDialog
+{
     Q_OBJECT
 
 public:
-    CustomLineEdit(QWidget *parent = nullptr) : QLineEdit(parent) {}
+    explicit FrequencyView(QWidget *parent = nullptr);
+    ~FrequencyView();
+    void populate (struct projectData *);
 
-protected:
-    void focusOutEvent(QFocusEvent *event) override {
-        QLineEdit::returnPressed();
-        QLineEdit::focusOutEvent(event);
-    }
+private slots:
+    void on_frequencyViewClose_clicked();
+
+private:
+    Ui::FrequencyView *ui;
+    FrequencyPlan frequencyPlan;
+    int scrollBarWidth;
+    int verticalHeaderWidth;
+    int scrollBarOffset;
+    int viewBoxWidth;
+    int frequencyColWidth;
+    int priorityColWidth;
+    int restartColWidth;
 };
 
-#endif // CUSTOMLINEEDIT_H
+#endif // FREQUENCYVIEW_H

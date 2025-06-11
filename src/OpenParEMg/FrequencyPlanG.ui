@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>FrequencyPlan</class>
- <widget class="QDialog" name="FrequencyPlan">
+ <class>FrequencyPlanG</class>
+ <widget class="QDialog" name="FrequencyPlanG">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -37,32 +37,6 @@
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <spacer name="verticalSpacer_4">
-        <property name="orientation">
-         <enum>Qt::Orientation::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <spacer name="verticalSpacer_6">
-        <property name="orientation">
-         <enum>Qt::Orientation::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <spacer name="verticalSpacer_3">
         <property name="orientation">
          <enum>Qt::Orientation::Vertical</enum>
         </property>
@@ -121,17 +95,17 @@
        </spacer>
       </item>
       <item>
-       <spacer name="verticalSpacer_7">
-        <property name="orientation">
-         <enum>Qt::Orientation::Vertical</enum>
+       <widget class="QPushButton" name="planView">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;View the complete list of frequencies.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
+        <property name="text">
+         <string>View</string>
         </property>
-       </spacer>
+        <property name="autoDefault">
+         <bool>false</bool>
+        </property>
+       </widget>
       </item>
       <item>
        <spacer name="verticalSpacer_2">
@@ -200,7 +174,7 @@
      </spacer>
     </item>
     <item>
-     <widget class="QPushButton" name="frequencyPlanOk">
+     <widget class="QPushButton" name="frequencyPlanGOk">
       <property name="text">
        <string>Ok</string>
       </property>
@@ -223,7 +197,7 @@
      </spacer>
     </item>
     <item>
-     <widget class="QPushButton" name="frequencyPlanCancel">
+     <widget class="QPushButton" name="frequencyPlanGCancel">
       <property name="text">
        <string>Cancel</string>
       </property>

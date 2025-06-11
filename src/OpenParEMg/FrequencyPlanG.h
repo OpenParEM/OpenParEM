@@ -1,5 +1,25 @@
-#ifndef FREQUENCYPLAN_H
-#define FREQUENCYPLAN_H
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//    OpenParEM3g - A GUI for OpenParEM3D                                     //
+//    Copyright (C) 2025 Brian Young                                          //
+//                                                                            //
+//    This program is free software: you can redistribute it and/or modify    //
+//    it under the terms of the GNU General Public License as published by    //
+//    the Free Software Foundation, either version 3 of the License, or       //
+//    (at your option) any later version.                                     //
+//                                                                            //
+//    This program is distributed in the hope that it will be useful,         //
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of          //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           //
+//    GNU General Public License for more details.                            //
+//                                                                            //
+//    You should have received a copy of the GNU General Public License       //
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.   //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef FREQUENCYPLANG_H
+#define FREQUENCYPLANG_H
 
 #include <QDialog>
 #include <QComboBox>
@@ -7,32 +27,38 @@
 #include <QScrollBar>
 #include <QMessageBox>
 #include "project.h"
+
 #include <iostream>
 #include "CustomLineEdit.h"
+#include "FrequencyView.h"
 
 using namespace std;
 
+extern "C" void init_project (struct projectData *);
+extern "C" void free_project (struct projectData *);
+
 namespace Ui {
-class FrequencyPlan;
+class FrequencyPlanG;
 }
 
-class FrequencyPlan : public QDialog
+class FrequencyPlanG : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit FrequencyPlan(QWidget *parent = nullptr);
-    void set_projData (struct projectData *);
-    ~FrequencyPlan();
+    explicit FrequencyPlanG(QWidget *parent = nullptr);
+    void set_projData(struct projectData *);
+    void get_projData();
+    ~FrequencyPlanG();
 
 private slots:
     void on_frequencyAdd_clicked();
 
     void on_frequencyDelete_clicked();
 
-    void on_frequencyPlanOk_clicked();
+    void on_frequencyPlanGOk_clicked();
 
-    void on_frequencyPlanCancel_clicked();
+    void on_frequencyPlanGCancel_clicked();
 
     void typeComboBox_changed(int);
 
@@ -46,8 +72,10 @@ private slots:
 
     bool check_inputs();
 
+    void on_planView_clicked();
+
 private:
-    Ui::FrequencyPlan *ui;
+    Ui::FrequencyPlanG *ui;
     struct projectData *projData;
     QString disabledBackground;
     QString enabledBackground;
@@ -66,4 +94,4 @@ private:
     int elasticColAdj;
 };
 
-#endif // FREQUENCYPLAN_H
+#endif // FREQUENCYPLANG_H

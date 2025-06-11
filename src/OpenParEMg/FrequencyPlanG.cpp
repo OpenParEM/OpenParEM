@@ -1,9 +1,29 @@
-#include "FrequencyPlan.h"
-#include "ui_FrequencyPlan.h"
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//    OpenParEM3g - A GUI for OpenParEM3D                                     //
+//    Copyright (C) 2025 Brian Young                                          //
+//                                                                            //
+//    This program is free software: you can redistribute it and/or modify    //
+//    it under the terms of the GNU General Public License as published by    //
+//    the Free Software Foundation, either version 3 of the License, or       //
+//    (at your option) any later version.                                     //
+//                                                                            //
+//    This program is distributed in the hope that it will be useful,         //
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of          //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           //
+//    GNU General Public License for more details.                            //
+//                                                                            //
+//    You should have received a copy of the GNU General Public License       //
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.   //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
-FrequencyPlan::FrequencyPlan(QWidget *parent)
+#include "FrequencyPlanG.h"
+#include "ui_FrequencyPlanG.h"
+
+FrequencyPlanG::FrequencyPlanG(QWidget *parent)
     : QDialog(parent)
-    , ui(new Ui::FrequencyPlan)
+    , ui(new Ui::FrequencyPlanG)
 {
     ui->setupUi(this);
     this->setFixedSize(695,252);
@@ -22,7 +42,7 @@ FrequencyPlan::FrequencyPlan(QWidget *parent)
     ui->frequencyTable->setColumnHidden(6,true);
     ui->frequencyTable->setColumnHidden(7,true);
 
-    frequencyBoxWidth=581; // from FrequencyPlan.ui
+    frequencyBoxWidth=581; // from FrequencyPlanG.ui
     //frequencyBoxWidth=ui->frequencyTable->geometry().width(); // gives the wrong width
     verticalHeaderWidth=ui->frequencyTable->verticalHeader()->width();
 
@@ -51,19 +71,19 @@ FrequencyPlan::FrequencyPlan(QWidget *parent)
     disabledBackground="background: rgb(240,240,240);";
 
     ui->frequencyTable->setEnabled(true);
-    ui->frequencyPlanOk->setEnabled(false);
+    ui->frequencyPlanGOk->setEnabled(false);
     ui->frequencyDelete->setEnabled(false);
     ui->AMR->setEnabled(false);
     ui->adaptiveFrequenciesLabel->setEnabled(false);
     ui->adaptiveFrequencies->setEnabled(false);
 }
 
-FrequencyPlan::~FrequencyPlan()
+FrequencyPlanG::~FrequencyPlanG()
 {
     delete ui;
 }
 
-void FrequencyPlan::set_projData (struct projectData *a)
+void FrequencyPlanG::set_projData (struct projectData *a)
 {
     projData=a;
 
@@ -137,7 +157,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
         type->setCurrentIndex(index);
 
         ui->frequencyTable->setCellWidget(i,0,type);
-        connect(type,&QComboBox::currentIndexChanged,this,&FrequencyPlan::typeComboBox_changed);
+        connect(type,&QComboBox::currentIndexChanged,this,&FrequencyPlanG::typeComboBox_changed);
 
         QLineEdit *currentType=new QLineEdit();
         currentType->setText(QString::number(index));
@@ -154,7 +174,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
         else checkBox->setChecked(Qt::Unchecked);
         checkBoxWidget->setStyleSheet(enabledBackground);
         ui->frequencyTable->setCellWidget(i,5,checkBoxWidget);
-        connect(checkBox,&QCheckBox::checkStateChanged,this,&FrequencyPlan::refine_checkStateChanged);
+        connect(checkBox,&QCheckBox::checkStateChanged,this,&FrequencyPlanG::refine_checkStateChanged);
 
         QLineEdit *currentAdaptiveFrequencies=new QLineEdit();
         currentAdaptiveFrequencies->setText(QString::number(adaptiveIndex));
@@ -169,7 +189,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             start->setStyleSheet(enabledBackground);
             start->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,1,start);
-            connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *stop=new CustomLineEdit();
             stop->setText(QString::number(projData->inputFrequencyPlans[i].stop,'g'));
@@ -177,7 +197,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             stop->setStyleSheet(enabledBackground);
             stop->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,2,stop);
-            connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *step=new CustomLineEdit();
             step->setText(QString::number(projData->inputFrequencyPlans[i].step,'g'));
@@ -185,7 +205,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             step->setStyleSheet(enabledBackground);
             step->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,3,step);
-            connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             QLineEdit *pointsPerDecade=new QLineEdit();
             pointsPerDecade->setText("");
@@ -194,7 +214,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setValidator(&intValidator);
             ui->frequencyTable->setCellWidget(i,4,pointsPerDecade);
-            connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
         }
 
         // frequencies - log
@@ -205,7 +225,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             start->setStyleSheet(enabledBackground);
             start->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,1,start);
-            connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *stop=new CustomLineEdit();
             stop->setText(QString::number(projData->inputFrequencyPlans[i].stop,'g'));
@@ -213,7 +233,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             stop->setStyleSheet(enabledBackground);
             stop->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,2,stop);
-            connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *step=new CustomLineEdit();
             step->setText("");
@@ -222,7 +242,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             step->setStyleSheet(disabledBackground);
             step->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,3,step);
-            connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             QLineEdit *pointsPerDecade=new QLineEdit();
             pointsPerDecade->setText(QString::number(projData->inputFrequencyPlans[i].pointsPerDecade));
@@ -230,7 +250,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             pointsPerDecade->setStyleSheet(enabledBackground);
             pointsPerDecade->setValidator(&intValidator);
             ui->frequencyTable->setCellWidget(i,4,pointsPerDecade);
-            connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
         }
 
         // frequencies - frequency
@@ -241,7 +261,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             start->setStyleSheet(enabledBackground);
             start->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,1,start);
-            connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *stop=new CustomLineEdit();
             stop->setText("");
@@ -250,7 +270,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             stop->setStyleSheet(disabledBackground);
             stop->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,2,stop);
-            connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *step=new CustomLineEdit();
             step->setText("");
@@ -259,7 +279,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             step->setStyleSheet(disabledBackground);
             step->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,3,step);
-            connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             QLineEdit *pointsPerDecade=new QLineEdit();
             pointsPerDecade->setText("");
@@ -268,7 +288,7 @@ void FrequencyPlan::set_projData (struct projectData *a)
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setValidator(&intValidator);
             ui->frequencyTable->setCellWidget(i,4,pointsPerDecade);
-            connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+            connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
         }
 
         ui->frequencyDelete->setEnabled(true);
@@ -306,10 +326,10 @@ void FrequencyPlan::set_projData (struct projectData *a)
         ui->frequencyTable->setColumnHidden(5,true);
     }
 
-    ui->frequencyPlanOk->setEnabled(false);
+    ui->frequencyPlanGOk->setEnabled(false);
 }
 
-void FrequencyPlan::on_frequencyAdd_clicked()
+void FrequencyPlanG::on_frequencyAdd_clicked()
 {
     int currentRow=ui->frequencyTable->currentRow()+1;
     ui->frequencyTable->insertRow(currentRow);
@@ -320,7 +340,7 @@ void FrequencyPlan::on_frequencyAdd_clicked()
     type->addItem("frequency");
     type->setCurrentIndex(2);
     ui->frequencyTable->setCellWidget(currentRow,0,type);
-    connect(type,&QComboBox::currentIndexChanged,this,&FrequencyPlan::typeComboBox_changed);
+    connect(type,&QComboBox::currentIndexChanged,this,&FrequencyPlanG::typeComboBox_changed);
 
     CustomLineEdit *start=new CustomLineEdit();
     start->setText(QString::number(1e9,'g'));
@@ -328,7 +348,7 @@ void FrequencyPlan::on_frequencyAdd_clicked()
     start->setStyleSheet(enabledBackground);
     start->setValidator(&doubleValidator);
     ui->frequencyTable->setCellWidget(currentRow,1,start);
-    connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+    connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
     CustomLineEdit *stop=new CustomLineEdit();
     stop->setText("");
@@ -337,7 +357,7 @@ void FrequencyPlan::on_frequencyAdd_clicked()
     stop->setStyleSheet(disabledBackground);
     stop->setValidator(&doubleValidator);
     ui->frequencyTable->setCellWidget(currentRow,2,stop);
-    connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+    connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
     CustomLineEdit *step=new CustomLineEdit();
     step->setText("");
@@ -346,7 +366,7 @@ void FrequencyPlan::on_frequencyAdd_clicked()
     step->setStyleSheet(disabledBackground);
     step->setValidator(&doubleValidator);
     ui->frequencyTable->setCellWidget(currentRow,3,step);
-    connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+    connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
     QLineEdit *pointsPerDecade=new QLineEdit();
     pointsPerDecade->setText("");
@@ -355,7 +375,7 @@ void FrequencyPlan::on_frequencyAdd_clicked()
     pointsPerDecade->setStyleSheet(disabledBackground);
     pointsPerDecade->setValidator(&intValidator);
     ui->frequencyTable->setCellWidget(currentRow,4,pointsPerDecade);
-    connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
+    connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
     QWidget *checkBoxWidget = new QWidget();
     QCheckBox *checkBox = new QCheckBox();
@@ -366,7 +386,7 @@ void FrequencyPlan::on_frequencyAdd_clicked()
     checkBox->setChecked(Qt::Unchecked);
     checkBoxWidget->setStyleSheet(enabledBackground);
     ui->frequencyTable->setCellWidget(currentRow,5,checkBoxWidget);
-    connect(checkBox,&QCheckBox::checkStateChanged,this,&FrequencyPlan::refine_checkStateChanged);
+    connect(checkBox,&QCheckBox::checkStateChanged,this,&FrequencyPlanG::refine_checkStateChanged);
 
     QLineEdit *currentRowWidget=new QLineEdit();
     currentRowWidget->setText(QString::number(2));
@@ -407,14 +427,14 @@ void FrequencyPlan::on_frequencyAdd_clicked()
 
     ui->frequencyTable->selectRow(currentRow);
     ui->frequencyDelete->setEnabled(true);
-    ui->frequencyPlanOk->setEnabled(true);
+    ui->frequencyPlanGOk->setEnabled(true);
     ui->AMR->setEnabled(true);
     ui->adaptiveFrequenciesLabel->setEnabled(true);
     ui->adaptiveFrequencies->setEnabled(true);
 }
 
 
-void FrequencyPlan::on_frequencyDelete_clicked()
+void FrequencyPlanG::on_frequencyDelete_clicked()
 {
     int currentRow=ui->frequencyTable->currentRow();
     ui->frequencyTable->removeRow(currentRow);
@@ -452,15 +472,21 @@ void FrequencyPlan::on_frequencyDelete_clicked()
         ui->adaptiveFrequenciesLabel->setEnabled(false);
         ui->adaptiveFrequencies->setEnabled(false);
     }
-    ui->frequencyPlanOk->setEnabled(true);
+    ui->frequencyPlanGOk->setEnabled(true);
 }
 
-
-void FrequencyPlan::on_frequencyPlanOk_clicked()
+void FrequencyPlanG::on_frequencyPlanGOk_clicked()
 {
     // checks
     if (check_inputs()) return;
 
+    get_projData();
+
+    close();
+}
+
+void FrequencyPlanG::get_projData()
+{
     // AMR
     if (projData->refinement_frequency) free(projData->refinement_frequency);
     if (ui->AMR->isChecked()) {
@@ -575,17 +601,15 @@ void FrequencyPlan::on_frequencyPlanOk_clicked()
 
         i++;
     }
-
-    close();
 }
 
 
-void FrequencyPlan::on_frequencyPlanCancel_clicked()
+void FrequencyPlanG::on_frequencyPlanGCancel_clicked()
 {
     close();
 }
 
-void FrequencyPlan::typeComboBox_changed(int newIndex)
+void FrequencyPlanG::typeComboBox_changed(int newIndex)
 {
     int currentRow=ui->frequencyTable->currentRow();
     QLineEdit *currentRowWidget=(QLineEdit *) ui->frequencyTable->cellWidget(currentRow,6);
@@ -619,7 +643,7 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
 
-            ui->frequencyPlanOk->setEnabled(true);
+            ui->frequencyPlanGOk->setEnabled(true);
         }
 
         // frequency to linear
@@ -645,7 +669,7 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
 
-            ui->frequencyPlanOk->setEnabled(true);
+            ui->frequencyPlanGOk->setEnabled(true);
         }
     }
 
@@ -666,7 +690,7 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setStyleSheet(enabledBackground);
             pointsPerDecade->setEnabled(true);
 
-            ui->frequencyPlanOk->setEnabled(true);
+            ui->frequencyPlanGOk->setEnabled(true);
         }
 
         // log to log
@@ -697,7 +721,7 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setStyleSheet(enabledBackground);
             pointsPerDecade->setEnabled(true);
 
-            ui->frequencyPlanOk->setEnabled(true);
+            ui->frequencyPlanGOk->setEnabled(true);
         }
     }
 
@@ -723,7 +747,7 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
 
-            ui->frequencyPlanOk->setEnabled(true);
+            ui->frequencyPlanGOk->setEnabled(true);
         }
 
         // log to frequency
@@ -745,7 +769,7 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
 
-            ui->frequencyPlanOk->setEnabled(true);
+            ui->frequencyPlanGOk->setEnabled(true);
         }
 
         // frequency to frequency
@@ -756,7 +780,7 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
 }
 
 
-void FrequencyPlan::on_AMR_checkStateChanged(const Qt::CheckState &arg1)
+void FrequencyPlanG::on_AMR_checkStateChanged(const Qt::CheckState &arg1)
 {
     // nothing to do if there is no data
     if (ui->frequencyTable->rowCount() == 0) return;
@@ -796,11 +820,11 @@ void FrequencyPlan::on_AMR_checkStateChanged(const Qt::CheckState &arg1)
         i++;
     }
 
-    ui->frequencyPlanOk->setEnabled(true);
+    ui->frequencyPlanGOk->setEnabled(true);
 }
 
 
-void FrequencyPlan::on_adaptiveFrequencies_activated(int newIndex)
+void FrequencyPlanG::on_adaptiveFrequencies_activated(int newIndex)
 {
     // nothing to do if there is no data
     if (ui->frequencyTable->rowCount() == 0) return;
@@ -848,22 +872,22 @@ void FrequencyPlan::on_adaptiveFrequencies_activated(int newIndex)
     }
 
     currentRowWidget->setText(QString::number(newIndex));
-    ui->frequencyPlanOk->setEnabled(true);
+    ui->frequencyPlanGOk->setEnabled(true);
 }
 
-void FrequencyPlan::refine_checkStateChanged()
+void FrequencyPlanG::refine_checkStateChanged()
 {
     ui->frequencyDelete->setEnabled(true);
-    ui->frequencyPlanOk->setEnabled(true);
+    ui->frequencyPlanGOk->setEnabled(true);
 }
 
-void FrequencyPlan::frequency_textChanged()
+void FrequencyPlanG::frequency_textChanged()
 {
     ui->frequencyDelete->setEnabled(true);
-    ui->frequencyPlanOk->setEnabled(true);
+    ui->frequencyPlanGOk->setEnabled(true);
 }
 
-bool FrequencyPlan::check_inputs()
+bool FrequencyPlanG::check_inputs()
 {
     // must have a refine box checked for plan refinement_frequency
     if (ui->AMR->isChecked() && ui->adaptiveFrequencies->currentIndex() == 0) {
@@ -1005,3 +1029,30 @@ bool FrequencyPlan::check_inputs()
 
     return false;
 }
+
+void FrequencyPlanG::on_planView_clicked()
+{
+    if (check_inputs()) return;
+
+    // save the existing data so that a cancel can be used
+    struct projectData *saveProjData=projData;
+
+    // temp data holder
+    struct projectData tempProjData;
+    init_project (&tempProjData);
+    projData=&tempProjData;
+
+    // get the data
+    get_projData();
+
+    // view it
+    FrequencyView *view=new FrequencyView();
+    view->populate(projData);
+    view->exec();
+    delete view;
+
+    // clean up and restore the original data
+    free_project(&tempProjData);
+    projData=saveProjData;
+}
+

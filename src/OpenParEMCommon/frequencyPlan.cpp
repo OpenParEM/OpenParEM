@@ -23,12 +23,30 @@
 void FrequencyPlanPoint::print ()
 {
    if (active) {
+#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"   %15g",frequency);
+#else
+      printf("   %15g",frequency);
+#endif
       if (refinementPriority > 0) {
+#if HAS_MPI
          PetscPrintf(PETSC_COMM_WORLD,"   refine    %5d",refinementPriority);
-         if (restart) PetscPrintf(PETSC_COMM_WORLD,"     restart");
+#else
+         printf("   refine    %5d",refinementPriority);
+#endif
+         if (restart) {
+#if HAS_MPI
+             PetscPrintf(PETSC_COMM_WORLD,"     restart");
+#else
+             printf("     restart");
+#endif
+         }
       }
+#if HAS_MPI
       PetscPrintf(PETSC_COMM_WORLD,"\n");
+#else
+      printf("\n");
+#endif
    }
 }
 
@@ -143,7 +161,11 @@ bool FrequencyPlan::assemble(char *refinement_frequency, unsigned long int input
             planList.push_back(planPoint);
 
             if (planList.size() > LIMIT) {
+#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1014: Excessive frequency count > %ld.\n",LIMIT);
+#else
+               printf("ERROR1014: Excessive frequency count > %ld.\n",LIMIT);
+#endif
                return true;
             }
 
@@ -174,7 +196,11 @@ bool FrequencyPlan::assemble(char *refinement_frequency, unsigned long int input
             planList.push_back(planPoint);
 
             if (planList.size() > LIMIT) {
+#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1109: Excessive frequency count > %ld.\n",LIMIT);
+#else
+               printf("ERROR1109: Excessive frequency count > %ld.\n",LIMIT);
+#endif
                return true;
             }
 
@@ -202,7 +228,11 @@ bool FrequencyPlan::assemble(char *refinement_frequency, unsigned long int input
             planList.push_back(planPoint);
 
             if (planList.size() > LIMIT) {
+#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1110: Excessive frequency count > %ld.\n",LIMIT);
+#else
+               printf("ERROR1110: Excessive frequency count > %ld.\n",LIMIT);
+#endif
                return true;
             }
 
@@ -333,16 +363,27 @@ FrequencyPlanPoint* FrequencyPlan::get_frequency (char *refinement_frequency, do
 }
 
 void FrequencyPlan::print () {
+#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Frequency Plan:\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   ---------------------------------------------\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"         frequency   refinement priority restart\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   ---------------------------------------------\n");
+#else
+   printf("Frequency Plan:\n");
+   printf("   ---------------------------------------------\n");
+   printf("         frequency   refinement priority restart\n");
+   printf("   ---------------------------------------------\n");
+#endif
    long unsigned int i=0;
    while (i < planList.size()) {
       planList[i]->print();
       i++;
    }
+#if has_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   ---------------------------------------------\n");
+#else
+   printf("   ---------------------------------------------\n");
+#endif
 }
 
 FrequencyPlan::~FrequencyPlan()
