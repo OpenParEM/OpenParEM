@@ -5,6 +5,7 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QScrollBar>
+#include <QMessageBox>
 #include "project.h"
 #include <iostream>
 #include "CustomLineEdit.h"
@@ -35,11 +36,34 @@ private slots:
 
     void typeComboBox_changed(int);
 
+    void refine_checkStateChanged();
+
+    void frequency_textChanged();
+
+    void on_AMR_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_adaptiveFrequencies_activated(int index);
+
+    bool check_inputs();
+
 private:
     Ui::FrequencyPlan *ui;
     struct projectData *projData;
     QString disabledBackground;
     QString enabledBackground;
+    QDoubleValidator doubleValidator;
+    QIntValidator intValidator;
+    bool enableRefineColumn;
+    int scrollBarWidth;
+    int verticalHeaderWidth;
+    int frequencyBoxWidth;
+    int typeColWidth;
+    int frequencyColWidth;
+    int ppdColWidth;
+    int refineColWidth;
+    int scrollBarOffset;
+    int elasticColWidth;
+    int elasticColAdj;
 };
 
 #endif // FREQUENCYPLAN_H

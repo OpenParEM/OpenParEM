@@ -6,7 +6,7 @@ FrequencyPlan::FrequencyPlan(QWidget *parent)
     , ui(new Ui::FrequencyPlan)
 {
     ui->setupUi(this);
-    this->setFixedSize(695,212);
+    this->setFixedSize(695,252);
 
     // column setup
 
@@ -17,15 +17,30 @@ FrequencyPlan::FrequencyPlan(QWidget *parent)
     ui->frequencyTable->insertColumn(4);  // points per decade
     ui->frequencyTable->insertColumn(5);  // refine
     ui->frequencyTable->insertColumn(6);  // type before change (hidden)
+    ui->frequencyTable->insertColumn(7);  // adaptive frequencies before change (hidden)
 
     ui->frequencyTable->setColumnHidden(6,true);
+    ui->frequencyTable->setColumnHidden(7,true);
 
-    ui->frequencyTable->setColumnWidth(0,106);
-    ui->frequencyTable->setColumnWidth(1,90);
-    ui->frequencyTable->setColumnWidth(2,90);
-    ui->frequencyTable->setColumnWidth(3,90);
-    ui->frequencyTable->setColumnWidth(4,150);
-    ui->frequencyTable->setColumnWidth(5,50);
+    frequencyBoxWidth=581; // from FrequencyPlan.ui
+    //frequencyBoxWidth=ui->frequencyTable->geometry().width(); // gives the wrong width
+    verticalHeaderWidth=ui->frequencyTable->verticalHeader()->width();
+
+    typeColWidth=96; // 106
+    frequencyColWidth=87; // 90
+    ppdColWidth=169; // 150
+    refineColWidth=frequencyBoxWidth-typeColWidth-3*frequencyColWidth-ppdColWidth;
+    scrollBarWidth=qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent);
+    scrollBarOffset=0;
+    elasticColWidth=11;
+    elasticColAdj=2;
+
+    ui->frequencyTable->setColumnWidth(0,typeColWidth);
+    ui->frequencyTable->setColumnWidth(1,frequencyColWidth);
+    ui->frequencyTable->setColumnWidth(2,frequencyColWidth);
+    ui->frequencyTable->setColumnWidth(3,frequencyColWidth);
+    ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset);
+    ui->frequencyTable->setColumnWidth(5,refineColWidth);
 
     QStringList headers;
     headers << "Type" << "Start" << "Stop" << "Step" << "Points Per Decade" << "Refine" << "current type";
@@ -36,6 +51,11 @@ FrequencyPlan::FrequencyPlan(QWidget *parent)
     disabledBackground="background: rgb(240,240,240);";
 
     ui->frequencyTable->setEnabled(true);
+    ui->frequencyPlanOk->setEnabled(false);
+    ui->frequencyDelete->setEnabled(false);
+    ui->AMR->setEnabled(false);
+    ui->adaptiveFrequenciesLabel->setEnabled(false);
+    ui->adaptiveFrequencies->setEnabled(false);
 }
 
 FrequencyPlan::~FrequencyPlan()
@@ -47,6 +67,58 @@ void FrequencyPlan::set_projData (struct projectData *a)
 {
     projData=a;
 
+    // AMR
+
+    ui->adaptiveFrequencies->addItem("marked refinement frequencies");
+    ui->adaptiveFrequencies->addItem("highest frequency");
+    ui->adaptiveFrequencies->addItem("lowest frequency");
+    ui->adaptiveFrequencies->addItem("highest then lowest frequency");
+    ui->adaptiveFrequencies->addItem("lowest then highest frequency");
+    ui->adaptiveFrequencies->addItem("all frequencies");
+
+    int adaptiveIndex=-1;
+    if (strcmp(projData->refinement_frequency,"none") == 0) {
+        ui->AMR->setCheckState(Qt::Unchecked);
+        if (projData->inputFrequencyPlansCount > 0) {
+            ui->adaptiveFrequenciesLabel->setEnabled(true);
+            ui->adaptiveFrequencies->setEnabled(true);
+        }
+        enableRefineColumn=false;
+    } else {
+        ui->AMR->setCheckState(Qt::Checked);
+        if (projData->inputFrequencyPlansCount > 0) {
+            ui->adaptiveFrequenciesLabel->setEnabled(true);
+            ui->adaptiveFrequencies->setEnabled(true);
+        }
+
+        if (strcmp(projData->refinement_frequency,"plan") == 0) {
+            ui->adaptiveFrequencies->setCurrentIndex(0);
+            adaptiveIndex=0;
+            enableRefineColumn=true;
+        } else if (strcmp(projData->refinement_frequency,"high") == 0) {
+            ui->adaptiveFrequencies->setCurrentIndex(1);
+            adaptiveIndex=1;
+            enableRefineColumn=false;
+        } else if (strcmp(projData->refinement_frequency,"low") == 0) {
+            ui->adaptiveFrequencies->setCurrentIndex(2);
+            adaptiveIndex=2;
+            enableRefineColumn=false;
+        } else if (strcmp(projData->refinement_frequency,"highlow") == 0) {
+            ui->adaptiveFrequencies->setCurrentIndex(3);
+            adaptiveIndex=3;
+            enableRefineColumn=false;
+        } else if (strcmp(projData->refinement_frequency,"lowhigh") == 0) {
+            ui->adaptiveFrequencies->setCurrentIndex(4);
+            adaptiveIndex=4;
+            enableRefineColumn=false;
+        } else if (strcmp(projData->refinement_frequency,"all") == 0) {
+            ui->adaptiveFrequencies->setCurrentIndex(5);
+            adaptiveIndex=5;
+            enableRefineColumn=false;
+        }
+    }
+
+    // frequencies
     int i=0;
     while (i < projData->inputFrequencyPlansCount) {
 
@@ -82,6 +154,12 @@ void FrequencyPlan::set_projData (struct projectData *a)
         else checkBox->setChecked(Qt::Unchecked);
         checkBoxWidget->setStyleSheet(enabledBackground);
         ui->frequencyTable->setCellWidget(i,5,checkBoxWidget);
+        connect(checkBox,&QCheckBox::checkStateChanged,this,&FrequencyPlan::refine_checkStateChanged);
+
+        QLineEdit *currentAdaptiveFrequencies=new QLineEdit();
+        currentAdaptiveFrequencies->setText(QString::number(adaptiveIndex));
+        currentAdaptiveFrequencies->setAlignment(Qt::AlignHCenter);
+        ui->frequencyTable->setCellWidget(i,7,currentAdaptiveFrequencies);
 
         // frequencies - linear
         if (projData->inputFrequencyPlans[i].type == 0) {
@@ -89,26 +167,34 @@ void FrequencyPlan::set_projData (struct projectData *a)
             start->setText(QString::number(projData->inputFrequencyPlans[i].start,'g'));
             start->setAlignment(Qt::AlignHCenter);
             start->setStyleSheet(enabledBackground);
+            start->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,1,start);
+            connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
             CustomLineEdit *stop=new CustomLineEdit();
             stop->setText(QString::number(projData->inputFrequencyPlans[i].stop,'g'));
             stop->setAlignment(Qt::AlignHCenter);
             stop->setStyleSheet(enabledBackground);
+            stop->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,2,stop);
+            connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
             CustomLineEdit *step=new CustomLineEdit();
             step->setText(QString::number(projData->inputFrequencyPlans[i].step,'g'));
             step->setAlignment(Qt::AlignHCenter);
             step->setStyleSheet(enabledBackground);
+            step->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,3,step);
+            connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
             QLineEdit *pointsPerDecade=new QLineEdit();
             pointsPerDecade->setText("");
             pointsPerDecade->setEnabled(false);
             pointsPerDecade->setAlignment(Qt::AlignHCenter);
             pointsPerDecade->setStyleSheet(disabledBackground);
+            pointsPerDecade->setValidator(&intValidator);
             ui->frequencyTable->setCellWidget(i,4,pointsPerDecade);
+            connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
         }
 
         // frequencies - log
@@ -117,26 +203,34 @@ void FrequencyPlan::set_projData (struct projectData *a)
             start->setText(QString::number(projData->inputFrequencyPlans[i].start,'g'));
             start->setAlignment(Qt::AlignHCenter);
             start->setStyleSheet(enabledBackground);
+            start->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,1,start);
+            connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
             CustomLineEdit *stop=new CustomLineEdit();
             stop->setText(QString::number(projData->inputFrequencyPlans[i].stop,'g'));
             stop->setAlignment(Qt::AlignHCenter);
             stop->setStyleSheet(enabledBackground);
+            stop->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,2,stop);
+            connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
             CustomLineEdit *step=new CustomLineEdit();
             step->setText("");
             step->setEnabled(false);
             step->setAlignment(Qt::AlignHCenter);
             step->setStyleSheet(disabledBackground);
+            step->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,3,step);
+            connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
             QLineEdit *pointsPerDecade=new QLineEdit();
             pointsPerDecade->setText(QString::number(projData->inputFrequencyPlans[i].pointsPerDecade));
             pointsPerDecade->setAlignment(Qt::AlignHCenter);
             pointsPerDecade->setStyleSheet(enabledBackground);
+            pointsPerDecade->setValidator(&intValidator);
             ui->frequencyTable->setCellWidget(i,4,pointsPerDecade);
+            connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
         }
 
         // frequencies - frequency
@@ -145,37 +239,74 @@ void FrequencyPlan::set_projData (struct projectData *a)
             start->setText(QString::number(projData->inputFrequencyPlans[i].frequency,'g'));
             start->setAlignment(Qt::AlignHCenter);
             start->setStyleSheet(enabledBackground);
+            start->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,1,start);
+            connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
             CustomLineEdit *stop=new CustomLineEdit();
             stop->setText("");
             stop->setEnabled(false);
             stop->setAlignment(Qt::AlignHCenter);
             stop->setStyleSheet(disabledBackground);
+            stop->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,2,stop);
+            connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
             CustomLineEdit *step=new CustomLineEdit();
             step->setText("");
             step->setEnabled(false);
             step->setAlignment(Qt::AlignHCenter);
             step->setStyleSheet(disabledBackground);
+            step->setValidator(&doubleValidator);
             ui->frequencyTable->setCellWidget(i,3,step);
+            connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
             QLineEdit *pointsPerDecade=new QLineEdit();
             pointsPerDecade->setText("");
             pointsPerDecade->setEnabled(false);
             pointsPerDecade->setAlignment(Qt::AlignHCenter);
             pointsPerDecade->setStyleSheet(disabledBackground);
+            pointsPerDecade->setValidator(&intValidator);
             ui->frequencyTable->setCellWidget(i,4,pointsPerDecade);
+            connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
         }
+
+        ui->frequencyDelete->setEnabled(true);
+        ui->AMR->setEnabled(true);
+        ui->adaptiveFrequenciesLabel->setEnabled(true);
+        ui->adaptiveFrequencies->setEnabled(true);
 
         i++;
     }
 
-    int scrollBarWidth = qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent);
+    ui->frequencyTable->scrollToBottom();  // trick to refresh the vertical header so that
+    ui->frequencyTable->scrollToTop();     // verticalHeader()->width() does not return 0
+    verticalHeaderWidth=ui->frequencyTable->verticalHeader()->width();
+
     if (ui->frequencyTable->rowCount() > 4) {
-        ui->frequencyTable->setColumnWidth(4,150-scrollBarWidth);
+        scrollBarOffset=scrollBarWidth;
     }
+
+    if (enableRefineColumn) {
+        ui->frequencyTable->setColumnWidth(0,typeColWidth);
+        ui->frequencyTable->setColumnWidth(1,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(2,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(3,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset);
+        ui->frequencyTable->setColumnWidth(5,refineColWidth);
+
+        ui->frequencyTable->setColumnHidden(5,false);
+    } else {
+        ui->frequencyTable->setColumnWidth(0,typeColWidth+elasticColWidth+elasticColAdj);
+        ui->frequencyTable->setColumnWidth(1,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(2,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(3,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset+elasticColWidth);
+
+        ui->frequencyTable->setColumnHidden(5,true);
+    }
+
+    ui->frequencyPlanOk->setEnabled(false);
 }
 
 void FrequencyPlan::on_frequencyAdd_clicked()
@@ -195,28 +326,36 @@ void FrequencyPlan::on_frequencyAdd_clicked()
     start->setText(QString::number(1e9,'g'));
     start->setAlignment(Qt::AlignHCenter);
     start->setStyleSheet(enabledBackground);
+    start->setValidator(&doubleValidator);
     ui->frequencyTable->setCellWidget(currentRow,1,start);
+    connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
     CustomLineEdit *stop=new CustomLineEdit();
     stop->setText("");
     stop->setEnabled(false);
     stop->setAlignment(Qt::AlignHCenter);
     stop->setStyleSheet(disabledBackground);
+    stop->setValidator(&doubleValidator);
     ui->frequencyTable->setCellWidget(currentRow,2,stop);
+    connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
     CustomLineEdit *step=new CustomLineEdit();
     step->setText("");
     step->setEnabled(false);
     step->setAlignment(Qt::AlignHCenter);
     step->setStyleSheet(disabledBackground);
+    step->setValidator(&doubleValidator);
     ui->frequencyTable->setCellWidget(currentRow,3,step);
+    connect(step,&CustomLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
     QLineEdit *pointsPerDecade=new QLineEdit();
     pointsPerDecade->setText("");
     pointsPerDecade->setEnabled(false);
     pointsPerDecade->setAlignment(Qt::AlignHCenter);
     pointsPerDecade->setStyleSheet(disabledBackground);
+    pointsPerDecade->setValidator(&intValidator);
     ui->frequencyTable->setCellWidget(currentRow,4,pointsPerDecade);
+    connect(pointsPerDecade,&QLineEdit::textChanged,this,&FrequencyPlan::frequency_textChanged);
 
     QWidget *checkBoxWidget = new QWidget();
     QCheckBox *checkBox = new QCheckBox();
@@ -227,17 +366,51 @@ void FrequencyPlan::on_frequencyAdd_clicked()
     checkBox->setChecked(Qt::Unchecked);
     checkBoxWidget->setStyleSheet(enabledBackground);
     ui->frequencyTable->setCellWidget(currentRow,5,checkBoxWidget);
+    connect(checkBox,&QCheckBox::checkStateChanged,this,&FrequencyPlan::refine_checkStateChanged);
 
     QLineEdit *currentRowWidget=new QLineEdit();
     currentRowWidget->setText(QString::number(2));
     currentRowWidget->setAlignment(Qt::AlignHCenter);
-    currentRowWidget->setAlignment(Qt::AlignHCenter);
     ui->frequencyTable->setCellWidget(currentRow,6,currentRowWidget);
 
-    int scrollBarWidth = qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent);
+    QLineEdit *currentAdaptiveFrequencies=new QLineEdit();
+    currentAdaptiveFrequencies->setText(QString::number(1));
+    currentAdaptiveFrequencies->setAlignment(Qt::AlignHCenter);
+    ui->frequencyTable->setCellWidget(currentRow,7,currentAdaptiveFrequencies);
+
+    ui->frequencyTable->scrollToBottom();  // trick to refresh the vertical header so that
+    ui->frequencyTable->scrollToTop();     // verticalHeader()->width() does not return 0
+    verticalHeaderWidth=ui->frequencyTable->verticalHeader()->width();
+
     if (ui->frequencyTable->rowCount() > 4) {
-        ui->frequencyTable->setColumnWidth(4,150-scrollBarWidth);
+        scrollBarOffset=scrollBarWidth;
     }
+
+    if (enableRefineColumn) {
+        ui->frequencyTable->setColumnWidth(0,typeColWidth);
+        ui->frequencyTable->setColumnWidth(1,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(2,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(3,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset);
+        ui->frequencyTable->setColumnWidth(5,refineColWidth);
+
+        ui->frequencyTable->setColumnHidden(5,false);
+    } else {
+        ui->frequencyTable->setColumnWidth(0,typeColWidth+elasticColWidth+elasticColAdj);
+        ui->frequencyTable->setColumnWidth(1,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(2,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(3,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset+elasticColWidth);
+
+        ui->frequencyTable->setColumnHidden(5,true);
+    }
+
+    ui->frequencyTable->selectRow(currentRow);
+    ui->frequencyDelete->setEnabled(true);
+    ui->frequencyPlanOk->setEnabled(true);
+    ui->AMR->setEnabled(true);
+    ui->adaptiveFrequenciesLabel->setEnabled(true);
+    ui->adaptiveFrequencies->setEnabled(true);
 }
 
 
@@ -246,14 +419,77 @@ void FrequencyPlan::on_frequencyDelete_clicked()
     int currentRow=ui->frequencyTable->currentRow();
     ui->frequencyTable->removeRow(currentRow);
 
+    ui->frequencyTable->scrollToBottom();  // trick to refresh the vertical header so that
+    ui->frequencyTable->scrollToTop();     // verticalHeader()->width() does not return 0
+    verticalHeaderWidth=ui->frequencyTable->verticalHeader()->width();
+
     if (ui->frequencyTable->rowCount() < 5) {
-        ui->frequencyTable->setColumnWidth(4,150);
+        scrollBarOffset=0;
     }
+
+    if (enableRefineColumn) {
+        ui->frequencyTable->setColumnWidth(0,typeColWidth);
+        ui->frequencyTable->setColumnWidth(1,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(2,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(3,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset);
+        ui->frequencyTable->setColumnWidth(5,refineColWidth);
+
+        ui->frequencyTable->setColumnHidden(5,false);
+    } else {
+        ui->frequencyTable->setColumnWidth(0,typeColWidth+elasticColWidth+elasticColAdj);
+        ui->frequencyTable->setColumnWidth(1,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(2,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(3,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset+elasticColWidth);
+
+        ui->frequencyTable->setColumnHidden(5,true);
+    }
+
+    if (ui->frequencyTable->rowCount() == 0) {
+        ui->frequencyDelete->setEnabled(false);
+        ui->AMR->setEnabled(false);
+        ui->adaptiveFrequenciesLabel->setEnabled(false);
+        ui->adaptiveFrequencies->setEnabled(false);
+    }
+    ui->frequencyPlanOk->setEnabled(true);
 }
 
 
 void FrequencyPlan::on_frequencyPlanOk_clicked()
 {
+    // checks
+    if (check_inputs()) return;
+
+    // AMR
+    if (projData->refinement_frequency) free(projData->refinement_frequency);
+    if (ui->AMR->isChecked()) {
+        if (ui->adaptiveFrequencies->currentIndex() == 0) {
+            projData->refinement_frequency=(char *) malloc (5*sizeof(char));
+            sprintf(projData->refinement_frequency,"plan");
+        } else if (ui->adaptiveFrequencies->currentIndex() == 1) {
+            projData->refinement_frequency=(char *) malloc (5*sizeof(char));
+            sprintf(projData->refinement_frequency,"high");
+        } else if (ui->adaptiveFrequencies->currentIndex() == 2) {
+            projData->refinement_frequency=(char *) malloc (4*sizeof(char));
+            sprintf(projData->refinement_frequency,"low");
+        } else if (ui->adaptiveFrequencies->currentIndex() == 3) {
+            projData->refinement_frequency=(char *) malloc (8*sizeof(char));
+            sprintf(projData->refinement_frequency,"highlow");
+        } else if (ui->adaptiveFrequencies->currentIndex() == 4) {
+            projData->refinement_frequency=(char *) malloc (8*sizeof(char));
+            sprintf(projData->refinement_frequency,"lowhigh");
+        } else if (ui->adaptiveFrequencies->currentIndex() == 5) {
+            projData->refinement_frequency=(char *) malloc (4*sizeof(char));
+            sprintf(projData->refinement_frequency,"all");
+        }
+    } else {
+        projData->refinement_frequency=(char *) malloc (5*sizeof(char));
+        sprintf(projData->refinement_frequency,"none");
+    }
+
+    // frequencies
+
     if (projData->inputFrequencyPlans) free(projData->inputFrequencyPlans);
 
     projData->inputFrequencyPlansAllocated=ui->frequencyTable->rowCount();
@@ -382,6 +618,8 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setText("");
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
+
+            ui->frequencyPlanOk->setEnabled(true);
         }
 
         // frequency to linear
@@ -406,6 +644,8 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setText("");
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
+
+            ui->frequencyPlanOk->setEnabled(true);
         }
     }
 
@@ -425,6 +665,8 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setText(QString::number(10));
             pointsPerDecade->setStyleSheet(enabledBackground);
             pointsPerDecade->setEnabled(true);
+
+            ui->frequencyPlanOk->setEnabled(true);
         }
 
         // log to log
@@ -454,6 +696,8 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setText(QString::number(10));
             pointsPerDecade->setStyleSheet(enabledBackground);
             pointsPerDecade->setEnabled(true);
+
+            ui->frequencyPlanOk->setEnabled(true);
         }
     }
 
@@ -478,6 +722,8 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setText("");
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
+
+            ui->frequencyPlanOk->setEnabled(true);
         }
 
         // log to frequency
@@ -498,6 +744,8 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
             pointsPerDecade->setText("");
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
+
+            ui->frequencyPlanOk->setEnabled(true);
         }
 
         // frequency to frequency
@@ -507,3 +755,253 @@ void FrequencyPlan::typeComboBox_changed(int newIndex)
     }
 }
 
+
+void FrequencyPlan::on_AMR_checkStateChanged(const Qt::CheckState &arg1)
+{
+    // nothing to do if there is no data
+    if (ui->frequencyTable->rowCount() == 0) return;
+
+    int currentRow=ui->frequencyTable->currentRow();
+    QLineEdit *currentRowWidget=(QLineEdit *) ui->frequencyTable->cellWidget(currentRow,7);
+
+    ui->frequencyTable->scrollToBottom();  // trick to refresh the vertical header so that
+    ui->frequencyTable->scrollToTop();     // verticalHeader()->width() does not return 0
+    verticalHeaderWidth=ui->frequencyTable->verticalHeader()->width();
+
+    if (arg1 == Qt::Checked) {
+        ui->adaptiveFrequenciesLabel->setEnabled(true);
+        ui->adaptiveFrequencies->setEnabled(true);
+    } else {
+        ui->adaptiveFrequenciesLabel->setEnabled(false);
+        ui->adaptiveFrequencies->setEnabled(false);
+    }
+
+    ui->adaptiveFrequencies->setCurrentIndex(1); // high
+    currentRowWidget->setText(QString::number(1));
+
+    ui->frequencyTable->setColumnWidth(0,typeColWidth+elasticColWidth+elasticColAdj);
+    ui->frequencyTable->setColumnWidth(1,frequencyColWidth+elasticColWidth);
+    ui->frequencyTable->setColumnWidth(2,frequencyColWidth+elasticColWidth);
+    ui->frequencyTable->setColumnWidth(3,frequencyColWidth+elasticColWidth);
+    ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset+elasticColWidth);
+
+    ui->frequencyTable->setColumnHidden(5,true);
+    enableRefineColumn=false;
+
+    int i=0;
+    while (i < ui->frequencyTable->rowCount()) {
+        QWidget *widget=ui->frequencyTable->cellWidget(i,5);
+        QCheckBox *refine=widget->findChild<QCheckBox *>();
+        refine->setChecked(false);
+        i++;
+    }
+
+    ui->frequencyPlanOk->setEnabled(true);
+}
+
+
+void FrequencyPlan::on_adaptiveFrequencies_activated(int newIndex)
+{
+    // nothing to do if there is no data
+    if (ui->frequencyTable->rowCount() == 0) return;
+
+    int currentRow=ui->frequencyTable->currentRow();
+    QLineEdit *currentRowWidget=(QLineEdit *) ui->frequencyTable->cellWidget(currentRow,7);
+    int currentIndex=currentRowWidget->text().toInt();
+
+    // nothing to do
+    if (newIndex == currentIndex) return;
+
+    // update
+
+    ui->frequencyTable->scrollToBottom();  // trick to refresh the vertical header so that
+    ui->frequencyTable->scrollToTop();     // verticalHeader()->width() does not return 0
+    verticalHeaderWidth=ui->frequencyTable->verticalHeader()->width();
+
+    if (newIndex == 0) { // plan
+        ui->frequencyTable->setColumnWidth(0,typeColWidth);
+        ui->frequencyTable->setColumnWidth(1,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(2,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(3,frequencyColWidth);
+        ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset);
+        ui->frequencyTable->setColumnWidth(5,refineColWidth);
+
+        ui->frequencyTable->setColumnHidden(5,false);
+        enableRefineColumn=true;
+    } else {
+        int i=0;
+        while (i < ui->frequencyTable->rowCount()) {
+            QWidget *widget=ui->frequencyTable->cellWidget(i,5);
+            QCheckBox *refine=widget->findChild<QCheckBox *>();
+            refine->setChecked(false);
+            i++;
+        }
+
+        ui->frequencyTable->setColumnWidth(0,typeColWidth+elasticColWidth+elasticColAdj);
+        ui->frequencyTable->setColumnWidth(1,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(2,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(3,frequencyColWidth+elasticColWidth);
+        ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset+elasticColWidth);
+
+        ui->frequencyTable->setColumnHidden(5,true);
+        enableRefineColumn=false;
+    }
+
+    currentRowWidget->setText(QString::number(newIndex));
+    ui->frequencyPlanOk->setEnabled(true);
+}
+
+void FrequencyPlan::refine_checkStateChanged()
+{
+    ui->frequencyDelete->setEnabled(true);
+    ui->frequencyPlanOk->setEnabled(true);
+}
+
+void FrequencyPlan::frequency_textChanged()
+{
+    ui->frequencyDelete->setEnabled(true);
+    ui->frequencyPlanOk->setEnabled(true);
+}
+
+bool FrequencyPlan::check_inputs()
+{
+    // must have a refine box checked for plan refinement_frequency
+    if (ui->AMR->isChecked() && ui->adaptiveFrequencies->currentIndex() == 0) {
+        bool found=false;
+        int i=0;
+        while (i < ui->frequencyTable->rowCount()) {
+            QWidget *widget=ui->frequencyTable->cellWidget(i,5);
+            QCheckBox *refine=widget->findChild<QCheckBox *>();
+            if (refine->isChecked()) {found=true; break;}
+            i++;
+        }
+
+        if (!found) {
+            QMessageBox mb;
+            mb.critical(nullptr, "Error", "At least one \"Refine\" box must be checked.");
+            mb.setFixedSize(500, 200);
+            return true;
+        }
+    }
+
+    // must have start frequency != 0
+    int i=0;
+    while (i < ui->frequencyTable->rowCount()) {
+        QWidget *widget=ui->frequencyTable->cellWidget(i,0);
+        QComboBox *type=qobject_cast<QComboBox *>(widget);
+        int currentType=type->currentIndex();
+
+        if (currentType == 0 || currentType == 1 || currentType == 2) { // linear, log, frequency
+            QWidget *widget=ui->frequencyTable->cellWidget(i,1);
+            CustomLineEdit *start=qobject_cast<CustomLineEdit *>(widget);
+            double startFrequency=start->text().toDouble();
+
+            if (startFrequency == 0) {
+                QMessageBox mb;
+                QString message;
+                message="The start frequency cannot be 0 at row "+QString::number(i+1)+".";
+                mb.critical(nullptr, "Error",message);
+                return true;
+            }
+        }
+        i++;
+    }
+
+    // must have stop frequency != 0
+    i=0;
+    while (i < ui->frequencyTable->rowCount()) {
+        QWidget *widget=ui->frequencyTable->cellWidget(i,0);
+        QComboBox *type=qobject_cast<QComboBox *>(widget);
+        int currentType=type->currentIndex();
+
+        if (currentType == 0 || currentType == 1) { // linear and log
+            QWidget *widget=ui->frequencyTable->cellWidget(i,2);
+            CustomLineEdit *stop=qobject_cast<CustomLineEdit *>(widget);
+            double stopFrequency=stop->text().toDouble();
+
+            if (stopFrequency == 0) {
+                QMessageBox mb;
+                QString message;
+                message="The stop frequency cannot be 0 at row "+QString::number(i+1)+".";
+                mb.critical(nullptr, "Error",message);
+                return true;
+            }
+        }
+        i++;
+    }
+
+    // must have step frequency != 0
+    i=0;
+    while (i < ui->frequencyTable->rowCount()) {
+        QWidget *widget=ui->frequencyTable->cellWidget(i,0);
+        QComboBox *type=qobject_cast<QComboBox *>(widget);
+        int currentType=type->currentIndex();
+
+        if (currentType == 0) { // linear
+            QWidget *widget=ui->frequencyTable->cellWidget(i,3);
+            CustomLineEdit *step=qobject_cast<CustomLineEdit *>(widget);
+            double stepFrequency=step->text().toDouble();
+
+            if (stepFrequency == 0) {
+                QMessageBox mb;
+                QString message;
+                message="The step frequency cannot be 0 at row "+QString::number(i+1)+".";
+                mb.critical(nullptr, "Error",message);
+                return true;
+            }
+        }
+        i++;
+    }
+
+    // must have stop frequency greater than start frequency
+    i=0;
+    while (i < ui->frequencyTable->rowCount()) {
+        QWidget *widget=ui->frequencyTable->cellWidget(i,0);
+        QComboBox *type=qobject_cast<QComboBox *>(widget);
+        int currentType=type->currentIndex();
+
+        if (currentType == 0) { // linear
+            QWidget *widget=ui->frequencyTable->cellWidget(i,1);
+            CustomLineEdit *start=qobject_cast<CustomLineEdit *>(widget);
+            double startFrequency=start->text().toDouble();
+
+            widget=ui->frequencyTable->cellWidget(i,2);
+            CustomLineEdit *stop=qobject_cast<CustomLineEdit *>(widget);
+            double stopFrequency=stop->text().toDouble();
+
+            if (startFrequency >= stopFrequency) {
+                QMessageBox mb;
+                QString message;
+                message="The stop frequency must be greater than the start frequency at row "+QString::number(i+1)+".";
+                mb.critical(nullptr, "Error",message);
+                return true;
+            }
+        }
+        i++;
+    }
+
+    // must have points-per-decade != 0
+    i=0;
+    while (i < ui->frequencyTable->rowCount()) {
+        QWidget *widget=ui->frequencyTable->cellWidget(i,0);
+        QComboBox *type=qobject_cast<QComboBox *>(widget);
+        int currentType=type->currentIndex();
+
+        if (currentType == 1) { // log
+            QWidget *widget=ui->frequencyTable->cellWidget(i,4);
+            QLineEdit *pointsPerDecade=qobject_cast<QLineEdit *>(widget);
+            int ppd=pointsPerDecade->text().toInt();
+
+            if (ppd == 0) {
+                QMessageBox mb;
+                QString message;
+                message="The points-per-decade cannot be 0 at row "+QString::number(i+1)+".";
+                mb.critical(nullptr, "Error",message);
+                return true;
+            }
+        }
+        i++;
+    }
+
+    return false;
+}
