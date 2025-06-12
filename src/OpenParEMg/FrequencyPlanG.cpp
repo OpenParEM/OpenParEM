@@ -28,6 +28,9 @@ FrequencyPlanG::FrequencyPlanG(QWidget *parent)
     ui->setupUi(this);
     this->setFixedSize(695,252);
 
+    doubleValidator.setBottom(0);
+    intValidator.setBottom(0);
+
     // column setup
 
     ui->frequencyTable->insertColumn(0);  // type

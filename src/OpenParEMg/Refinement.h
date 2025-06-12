@@ -18,27 +18,49 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef CUSTOMLINEEDIT_H
-#define CUSTOMLINEEDIT_H
+#ifndef REFINEMENT_H
+#define REFINEMENT_H
 
-#include <QLineEdit>
-#include <QFocusEvent>
-#include <QDebug>
-#include <iostream>
+#include <QDialog>
+#include <QMessageBox>
+#include <QDoubleValidator>
+#include "project.h"
 
-using namespace std;
+namespace Ui {
+class Refinement;
+}
 
-class CustomLineEdit : public QLineEdit {
+class Refinement : public QDialog
+{
     Q_OBJECT
 
 public:
-    CustomLineEdit(QWidget *parent = nullptr) : QLineEdit(parent) {}
+    explicit Refinement(QWidget *parent = nullptr);
+    void set_projData (struct projectData *);
+    ~Refinement();
 
-protected:
-    void focusOutEvent(QFocusEvent *event) override {
-        if (QLineEdit::isModified()) QLineEdit::returnPressed();
-        QLineEdit::focusOutEvent(event);
-    }
+private slots:
+
+    void on_requiredPasses_textChanged(const QString &arg1);
+
+    void on_refinementVariable_activated(int index);
+
+    void on_refineOk_clicked();
+
+    void on_refineCancel_clicked();
+
+    void on_relativeTol_returnPressed();
+
+    void on_absoluteTol_returnPressed();
+
+    void on_refineMin_valueChanged(int arg1);
+
+    void on_refineMax_valueChanged(int arg1);
+
+private:
+    Ui::Refinement *ui;
+    struct projectData *projData;
+    QDoubleValidator toleranceValidator;
 };
 
-#endif // CUSTOMLINEEDIT_H
+#endif // REFINEMENT_H

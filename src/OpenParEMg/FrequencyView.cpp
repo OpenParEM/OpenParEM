@@ -45,7 +45,7 @@ FrequencyView::FrequencyView(QWidget *parent)
     scrollBarOffset=0;
 
     QStringList headers;
-    headers << "Frequency" << "Refinement Priority" << "Restart";
+    headers << "Frequency" << "Refinement Order" << "Restart";
     ui->frequencyView->setHorizontalHeaderLabels(headers);
 
     QTableWidgetItem *headerItem=ui->frequencyView->horizontalHeaderItem(0);
