@@ -29,6 +29,7 @@
 #include <cfloat>
 #include "petscsys.h"
 #include "prefix.h"
+#include <quadmath.h>
 
 using namespace std;
 

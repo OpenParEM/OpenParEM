@@ -31,6 +31,7 @@
 #include "keywordPair.hpp"
 #include "misc.hpp"
 #include "prefix.h"
+#include <quadmath.h>
 
 using namespace std;
 
@@ -89,6 +90,14 @@ class Temperature
       bool load (string *, inputFile *, bool);
       void print (string);
       bool check (string);
+      long unsigned int get_frequencyList_size () {return frequencyList.size();}
+      Frequency* get_frequency (long unsigned int i) {return frequencyList[i];}
+      keywordPair get_er_infinity() {return er_infinity;}
+      keywordPair get_delta_er() {return delta_er;}
+      keywordPair get_m1() {return m1;}
+      keywordPair get_m2() {return m2;}
+      keywordPair get_relative_permeability() {return relative_permeability;}
+      keywordPair get_loss() {return loss;}
 };
 
 class Source
@@ -103,6 +112,7 @@ class Source
       bool inSourceBlock (int);
       bool load (inputFile *);
       void print (string);
+      vector<string> get_lineList () {return lineList;}
 };
 
 
@@ -134,6 +144,10 @@ class Material
       double get_Rs (double, double, double, string);
       void print (string);
       bool check (string);
+      long unsigned int get_sourceList_size () {return sourceList.size();}
+      vector<string> get_source_lineList (long unsigned int i) {return sourceList[i]->get_lineList();}
+      long unsigned int get_temperatureList_size() {return temperatureList.size();}
+      Temperature* get_temperature (long unsigned int i) {return temperatureList[i];}
 };
 
 class MaterialDatabase
@@ -158,6 +172,8 @@ class MaterialDatabase
       Material* get (string);
       double get_tol () {return tol;}
       string get_indent () {return indent;}
+      long unsigned int get_size () {return materialList.size();}
+      Material* get_material (long unsigned int i) {return materialList[i];}
 };
 
 

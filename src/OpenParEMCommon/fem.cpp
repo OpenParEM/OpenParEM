@@ -37,7 +37,11 @@ bool loadData (ifstream *eVecFile, double **eVecRe, double **eVecIm, size_t *vec
    if (*eVecRe == nullptr || *eVecIm == nullptr) {
       if (eVecRe != nullptr) free(eVecRe);
       if (eVecIm != nullptr) free(eVecIm);
+#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1010: Failed to allocate memory.\n");
+#else
+      printf("ERROR1010: Failed to allocate memory.\n");
+#endif
       return true;
    }
 
@@ -63,7 +67,11 @@ bool loadData (ifstream *eVecFile, double **eVecRe, double **eVecIm, size_t *vec
                savedValue=true;
                (*vectorSize)++;
             } else if (tokens.size() == 2) {  // ?
+#if HAS_MPI
               prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1011: Unsupported formatting in file \"%s\" at line %d\n",filename,lineNumber);
+#else
+              printf("ERROR1011: Unsupported formatting in file \"%s\" at line %d\n",filename,lineNumber);
+#endif
               return true;
             } else if (tokens.size() == 3) {  // complex
 
@@ -86,7 +94,11 @@ bool loadData (ifstream *eVecFile, double **eVecRe, double **eVecIm, size_t *vec
                savedValue=true;
                (*vectorSize)++;
             } else {
+#if HAS_MPI
               prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1012: Unsupported formatting in file \"%s\" at line %d\n",filename,lineNumber);
+#else
+              printf("ERROR1012: Unsupported formatting in file \"%s\" at line %d\n",filename,lineNumber);
+#endif
             }
 
             if (savedValue) {
@@ -98,7 +110,11 @@ bool loadData (ifstream *eVecFile, double **eVecRe, double **eVecIm, size_t *vec
                   if (*eVecRe == nullptr || *eVecIm == nullptr) {
                      if (eVecRe != nullptr) free(eVecRe);
                      if (eVecIm != nullptr) free(eVecIm);
+#if HAS_MPI
                      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1013: Failed to allocate memory.\n");
+#else
+                     printf("ERROR1013: Failed to allocate memory.\n");
+#endif
                      return true;
                   }
                }

@@ -26,6 +26,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <quadmath.h>
 #include "petscsys.h"
 #include "misc.hpp"
 #include "prefix.h"
