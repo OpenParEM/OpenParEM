@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>422</width>
-    <height>314</height>
+    <width>491</width>
+    <height>722</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -163,6 +163,16 @@
      </item>
     </layout>
    </widget>
+  </widget>
+  <widget class="QTreeView" name="materialsTreeView">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>360</y>
+     <width>391</width>
+     <height>321</height>
+    </rect>
+   </property>
   </widget>
  </widget>
  <resources/>

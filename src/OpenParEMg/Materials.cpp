@@ -42,6 +42,13 @@ Materials::Materials(QWidget *parent)
 
     ui->materialsFrame->hide();
 
+
+
+
+
+    ui->materialsTreeView->setModel(&materialsModel);
+
+
 }
 
 Materials::~Materials()
