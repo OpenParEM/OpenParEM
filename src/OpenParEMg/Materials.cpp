@@ -1,10 +1,44 @@
 #include "Materials.h"
 #include "ui_Materials.h"
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// LineEditDelegate
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+QWidget* LineEditDelegate::createEditor (QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    CustomLineEdit *editor=new CustomLineEdit(parent);
+
+    // add a validator for numbers in column 1
+    if (index.column() == 1) editor->setValidator(new QDoubleValidator(editor));
+
+    return editor;
+}
+
+void LineEditDelegate::setEditorData (QWidget *editor, const QModelIndex &index) const
+{
+    QString value=index.model()->data(index,Qt::EditRole).toString();
+    CustomLineEdit *lineEdit=qobject_cast<CustomLineEdit *>(editor);
+    if (lineEdit) lineEdit->setText(value);
+}
+
+void LineEditDelegate::setModelData (QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+{
+    CustomLineEdit *lineEdit=qobject_cast<CustomLineEdit *>(editor);
+    if (lineEdit) model->setData(index,lineEdit->text());
+}
+
+void LineEditDelegate::commitModelData ()
+{
+    CustomLineEdit *editor=qobject_cast<CustomLineEdit*>(sender());
+    if (editor) emit commitData(editor);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // KeywordValueItem
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-KeywordValueItem::KeywordValueItem(const QVector<QVariant> &data, KeywordValueItem *parent)
+KeywordValueItem::KeywordValueItem (const QVector<QVariant> &data, KeywordValueItem *parent)
     : m_itemData(data), m_parentItem(parent)
 {}
 
@@ -13,24 +47,24 @@ KeywordValueItem::~KeywordValueItem()
     qDeleteAll(m_childItems);
 }
 
-void KeywordValueItem::appendChild(KeywordValueItem *item)
+void KeywordValueItem::appendChild (KeywordValueItem *item)
 {
     m_childItems.append(item);
 }
 
-KeywordValueItem *KeywordValueItem::child(int row)
+KeywordValueItem *KeywordValueItem::child (int row)
 {
     if (row < 0 || row >= m_childItems.size())
         return nullptr;
     return m_childItems.at(row);
 }
 
-int KeywordValueItem::childCount() const
+int KeywordValueItem::childCount () const
 {
     return m_childItems.count();
 }
 
-int KeywordValueItem::row() const
+int KeywordValueItem::row () const
 {
     if (m_parentItem)
         return m_parentItem->get_m_childItems()->indexOf(const_cast<KeywordValueItem*>(this));
@@ -38,21 +72,28 @@ int KeywordValueItem::row() const
     return 0;
 }
 
-int KeywordValueItem::columnCount() const
+int KeywordValueItem::columnCount () const
 {
     return m_itemData.count();
 }
 
-QVariant KeywordValueItem::data(int column) const
+QVariant KeywordValueItem::data (int column) const
 {
     if (column < 0 || column >= m_itemData.size())
         return QVariant();
     return m_itemData.at(column);
 }
 
-KeywordValueItem *KeywordValueItem::parentItem()
+KeywordValueItem* KeywordValueItem::parentItem ()
 {
     return m_parentItem;
+}
+
+bool KeywordValueItem::setData (int column, const QVariant &value)
+{
+    if (column < 0 || column >= m_itemData.size()) return false;
+    m_itemData[column]=value;
+    return true;
 }
 
 void KeywordValueItem::print ()
@@ -71,13 +112,14 @@ void KeywordValueItem::print ()
     }
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // MaterialsModel
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 MaterialsModel::MaterialsModel(const QString &data, QObject *parent)
     : QAbstractItemModel(parent)
 {
     rootItem = new KeywordValueItem({tr("Title"), tr("Summary")});
-   // setupModelData(data.split('\n'), rootItem);
 }
 
 MaterialsModel::MaterialsModel(QObject *parent)
@@ -146,31 +188,63 @@ int MaterialsModel::columnCount(const QModelIndex &parent) const
 
 QVariant MaterialsModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid())
-        return QVariant();
+    if (!index.isValid()) return QVariant();
 
-    if (role != Qt::DisplayRole)
-        return QVariant();
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
+        KeywordValueItem *item = static_cast<KeywordValueItem*>(index.internalPointer());
+        return item->data(index.column());
+    }
 
-    KeywordValueItem *item = static_cast<KeywordValueItem*>(index.internalPointer());
-
-    return item->data(index.column());
+    return QVariant();
 }
 
 Qt::ItemFlags MaterialsModel::flags(const QModelIndex &index) const
 {
-    if (!index.isValid())
-        return Qt::NoItemFlags;
+    QModelIndex parentIndex=parent(index);
+    Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(index);
 
-    return QAbstractItemModel::flags(index);
+    if (parentIndex.isValid()) {
+        if (index.isValid() && index.column() == 1) {
+           return defaultFlags | Qt::ItemIsEditable;
+        }
+    } else {
+        if (index.isValid() && index.column() == 0) {
+            return defaultFlags | Qt::ItemIsEditable;
+        }
+    }
+
+    return defaultFlags;
 }
 
-QVariant MaterialsModel::headerData(int section, Qt::Orientation orientation, int role) const
+KeywordValueItem* MaterialsModel::getItem (const QModelIndex &index) const
+{
+    if (index.isValid()) {
+        if (auto *item = static_cast<KeywordValueItem*>(index.internalPointer()))
+            return item;
+    }
+    return rootItem;
+}
+
+QVariant MaterialsModel::headerData (int section, Qt::Orientation orientation, int role) const
 {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
         return rootItem->data(section);
 
     return QVariant();
+}
+
+bool MaterialsModel::setData (const QModelIndex &index, const QVariant &value, int role)
+{
+    if (role != Qt::EditRole)
+        return false;
+
+    KeywordValueItem *item=getItem(index);
+    bool result=item->setData(index.column(),value);
+
+    if (result)
+        emit dataChanged(index,index,{Qt::DisplayRole, Qt::EditRole});
+
+    return result;
 }
 
 void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueItem *parent)
@@ -432,7 +506,14 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
     }
 }
 
+void MaterialsModel::materialsModel_dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles)
+{
+    cout << "data changed" << endl;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Materials
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Materials::Materials(QWidget *parent)
     : QDialog(parent)
@@ -440,15 +521,18 @@ Materials::Materials(QWidget *parent)
 {
     ui->setupUi(this);
 
-    //ui->materialsTree->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    //ui->materialsTree->setTextElideMode(Qt::ElideNone);
+    //ui->materialsTreeView->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    //ui->materialsTreeView->setTextElideMode(Qt::ElideNone);
 
-    ui->materialsTree->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-    ui->materialsTree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    ui->materialsTree->header()->setStretchLastSection(false);
+    LineEditDelegate *delegate = new LineEditDelegate(ui->materialsTreeView);
+    ui->materialsTreeView->setItemDelegate(delegate);
+
+    ui->materialsTreeView->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    ui->materialsTreeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    ui->materialsTreeView->header()->setStretchLastSection(false);
 
     // signals
-    connect(ui->materialsTree, &QTreeWidget::itemClicked, this, &Materials::materialItemClicked);
+    //connect(ui->materialsTree, &QTreeWidget::itemClicked, this, &Materials::materialItemClicked);
 
     // menu bar
 
@@ -534,7 +618,6 @@ void Materials::openAction_triggered()
 {
 
     materialsFile=QFileDialog::getOpenFileName(this,tr("Open Materials File"), "/home/briany/OpenParEM", tr("Data Files (*.txt);;All Files (*)"));
-    cout << "materialsFile=" << materialsFile.toStdString() << endl;
 
     // return if user cancels
     if (materialsFile.isNull()) return;
@@ -554,8 +637,6 @@ void Materials::openAction_triggered()
         }
         filename[i]='\0';
 
-        cout << "filename=[" << filename << "]" << endl;
-
         if (materialDatabase.load_materials(nullstring,filename,nullstring,nullstring,checkLimits)) {
             QMessageBox mb;
             mb.critical(nullptr, "Error", "Failed to load materials file.");
@@ -567,9 +648,11 @@ void Materials::openAction_triggered()
         QModelIndex parentIndex=QModelIndex();
         materialsModel=new MaterialsModel();
         materialsModel->populate(&materialDatabase,materialsModel->get_rootItem());
-        materialsModel->print();
+        connect(materialsModel, &QAbstractItemModel::dataChanged, materialsModel, &MaterialsModel::materialsModel_dataChanged);
+        //materialsModel->print();
 
         ui->materialsTreeView->setModel(materialsModel);
+        ui->materialsTreeView->resizeColumnToContents(0);
         ui->materialsTreeView->show();
 
     } else {
