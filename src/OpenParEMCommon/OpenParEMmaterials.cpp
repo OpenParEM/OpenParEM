@@ -291,6 +291,34 @@ bool Frequency::check (string indent)
    return fail;
 }
 
+void Frequency::set_freespace ()
+{
+    frequency.set_keyword("frequency");
+    frequency.set_value("any");
+    frequency.set_loaded(true);
+    frequency.set_lineNumber(0);
+
+    relative_permittivity.set_keyword("relative_permittivity");
+    relative_permittivity.set_dbl_value(1);
+    relative_permittivity.set_loaded(true);
+    relative_permittivity.set_lineNumber(0);
+
+    relative_permeability.set_keyword("relative_permeability");
+    relative_permeability.set_dbl_value(1);
+    relative_permeability.set_loaded(true);
+    relative_permeability.set_lineNumber(0);
+
+    loss.set_keyword("tand");
+    loss.set_dbl_value(0);
+    loss.set_loaded(true);
+    loss.set_lineNumber(0);
+
+    Rz.set_keyword("Rz");
+    Rz.set_dbl_value(0);
+    Rz.set_loaded(true);
+    Rz.set_lineNumber(0);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Temperature
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1075,6 +1103,18 @@ double Temperature::get_Rs(double frequency_, double tolerance, string indent)
    return Rs;
 }
 
+void Temperature::set_freespace ()
+{
+    Frequency *newFrequency=new Frequency(0,0,false);
+    newFrequency->set_freespace();
+    frequencyList.push_back(newFrequency);
+
+    temperature.set_keyword("temperature");
+    temperature.set_value("any");
+    temperature.set_loaded(true);
+    temperature.set_lineNumber(0);
+}
+
 Temperature::~Temperature()
 {
    long unsigned int i=0;
@@ -1138,6 +1178,12 @@ bool Source::inSourceBlock (int lineNumber)
    return false;
 }
 
+void Source::set_freespace ()
+{
+    lineNumberList.push_back(0);
+    lineList.push_back("basic physics");
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Material
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1173,7 +1219,7 @@ void Material::print(string indent)
 #if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s\n",name.get_lineNumber(),indent.c_str(),name.get_value().c_str());
 #else
-      printf("%d: %s%s\n",name.get_lineNumber(),indent.c_str(),name.get_value().c_str());
+      printf("%d: %sname=%s\n",name.get_lineNumber(),indent.c_str(),name.get_value().c_str());
 #endif
    }
 
@@ -1511,6 +1557,22 @@ Material::~Material ()
    }
 }
 
+void Material::set_freespace ()
+{
+    name.set_keyword("name");
+    name.set_value("freespace");
+    name.set_loaded(true);
+    name.set_lineNumber(0);
+
+    Temperature* newTemperature=new Temperature(0,0,false);
+    newTemperature->set_freespace();
+    temperatureList.push_back(newTemperature);
+
+    Source* newSource=new Source(0,0);
+    newSource->set_freespace();
+    sourceList.push_back(newSource);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // MaterialDatabase
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1543,8 +1605,6 @@ bool MaterialDatabase::findMaterialBlocks()
 // return true on fail
 bool MaterialDatabase::load(const char *path, const char *filename, bool checkInputs)
 {
-    cout << "MaterialsDatabase::load  path=[" << path << "]  filename=[" << filename << "]" << endl;
-
    // assemble the full path name
    char *fullPathName=(char *)malloc((strlen(path)+strlen(filename)+1)*sizeof(char));
    if (!fullPathName) return 1;
@@ -1739,15 +1799,22 @@ bool MaterialDatabase::merge(MaterialDatabase *db, string indent)
    return 0;
 }
 
+void MaterialDatabase::clear ()
+{
+    long unsigned int i=0;
+    while (i < materialList.size()) {
+        delete materialList[i];
+        i++;
+    }
+    materialList.clear();
+    isTransferred=false;
+    inputs.clear();
+}
+
 MaterialDatabase::~MaterialDatabase()
 {
    if (isTransferred) return;
-
-   long unsigned int i=0;
-   while (i < materialList.size()) {
-      delete materialList[i];
-      i++;
-   }
+   clear();
 }
 
 

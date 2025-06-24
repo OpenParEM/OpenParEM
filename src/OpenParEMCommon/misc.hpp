@@ -71,6 +71,7 @@ class inputFile
       int get_previous_lineNumber (int);
       int get_next_lineNumber (int);
       string get_line (int);
+      void clear ();
 };
 
 #endif

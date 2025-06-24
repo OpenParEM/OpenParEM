@@ -52,7 +52,7 @@ void KeywordValueItem::appendChild (KeywordValueItem *item)
     m_childItems.append(item);
 }
 
-KeywordValueItem *KeywordValueItem::child (int row)
+KeywordValueItem* KeywordValueItem::child (int row)
 {
     if (row < 0 || row >= m_childItems.size())
         return nullptr;
@@ -62,6 +62,59 @@ KeywordValueItem *KeywordValueItem::child (int row)
 int KeywordValueItem::childCount () const
 {
     return m_childItems.count();
+}
+
+void KeywordValueItem::insertChild(QModelIndex index, int row, MaterialsModel *materialsModel)
+{
+    // add a row
+
+    if (materialsModel->columnCount(index) == 0) {
+        if (!materialsModel->insertColumn(0,index)) return;
+    }
+
+    if (!materialsModel->insertRow(row,index)) return;
+
+    // insert the keywordValue pair
+    QModelIndex child;
+    int column=0;
+    while (column < materialsModel->columnCount(index)) {
+        child=materialsModel->index(row,column,index);
+        materialsModel->setData(child,data(column),Qt::EditRole);
+        column++;
+    }
+
+    // recursively insert children
+    child=materialsModel->index(row,0,index);
+    int i=0;
+    while (i < childCount()) {
+        m_childItems[i]->insertChild(child,i,materialsModel);
+        i++;
+    }
+}
+
+bool KeywordValueItem::insertChildren(int position, int count, int columns)
+{
+    if (position < 0 || position > qsizetype(m_childItems.size()))
+        return false;
+
+    for (int row = 0; row < count; ++row) {
+        QVector<QVariant> data(columns);
+        KeywordValueItem *item = new KeywordValueItem(data, this);
+        m_childItems.insert(position, item);
+    }
+
+    return true;
+}
+
+bool KeywordValueItem::removeChildren(int position, int count)
+{
+    if (position < 0 || position + count > qsizetype(m_childItems.size()))
+        return false;
+
+    for (int row = 0; row < count; ++row)
+        m_childItems.erase(m_childItems.cbegin() + position);
+
+    return true;
 }
 
 int KeywordValueItem::row () const
@@ -96,11 +149,37 @@ bool KeywordValueItem::setData (int column, const QVariant &value)
     return true;
 }
 
+KeywordValueItem* KeywordValueItem::copy()
+{
+    QList<QVariant> copy_m_itemData;
+
+    // data
+    int i=0;
+    while (i < m_itemData.size()) {
+        copy_m_itemData.append(m_itemData[i]);
+        i++;
+    }
+
+    // create
+    KeywordValueItem *item=new KeywordValueItem(copy_m_itemData,parentItem());
+
+    // children
+    i=0;
+    while (i < m_childItems.size()) {
+        KeywordValueItem *child=m_childItems[i]->copy();
+        item->appendChild(child);
+
+        i++;
+    }
+
+    return item;
+}
+
 void KeywordValueItem::print ()
 {
     int i=0;
     while (i < columnCount()) {
-        cout << data(i).toString().toStdString() << " -> ";
+        cout << data(i).toString().toStdString() << " ";
         i++;
     }
     cout << endl;
@@ -112,6 +191,57 @@ void KeywordValueItem::print ()
     }
 }
 
+//xxx
+void KeywordValueItem::print (QTextStream *fileOut, KeywordValueItem *rootItem)
+{
+    if (data(0) == "Temperature") {
+        *fileOut << "   Temperature" << "\n";
+        *fileOut << "      temperature=" << data(1).toString() << "\n";
+    } else if (data(0) == "Frequency") {
+        *fileOut << "      Frequency" << "\n";
+        *fileOut << "         frequency=" << data(1).toString() << "\n";
+    } else if (data(0) == "Source") {
+        *fileOut << "   Source" << "\n";
+    } else if (data(0) == "RootItem") {
+        // root item
+    } else {
+        if (m_parentItem != rootItem) {
+            if (data(0) != "Debye Model") {
+                *fileOut << "         " << data(0).toString();
+                if (data(1) != "") *fileOut << "=" << data(1).toString();
+                *fileOut << "\n";
+            }
+        }
+    }
+
+    int i=0;
+    while (i < m_childItems.size()) {
+        KeywordValueItem *child=m_childItems[i];
+
+        if (child->m_parentItem == rootItem) {
+            *fileOut << "Material" << "\n";
+            *fileOut << "   name=" << child->data(0).toString() << "\n";
+        }
+
+        child->print(fileOut,rootItem);
+
+        if (child->m_parentItem == rootItem) {
+            *fileOut << "EndMaterial" << "\n";
+            *fileOut << "\n";
+        }
+
+        i++;
+    }
+
+    if (data(0) == "Temperature") {
+        *fileOut << "   EndTemperature" << "\n";
+    } else if (data(0) == "Frequency") {
+        *fileOut << "      EndFrequency" << "\n";
+    } else if (data(0) == "Source") {
+        *fileOut << "   EndSource" << "\n";
+    }
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // MaterialsModel
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -119,13 +249,14 @@ void KeywordValueItem::print ()
 MaterialsModel::MaterialsModel(const QString &data, QObject *parent)
     : QAbstractItemModel(parent)
 {
-    rootItem = new KeywordValueItem({tr("Title"), tr("Summary")});
+    rootItem = new KeywordValueItem({tr("RootItem"), tr(""), tr("")});
+    dataHasChanged=false;
 }
 
 MaterialsModel::MaterialsModel(QObject *parent)
     : QAbstractItemModel(parent)
 {
-    rootItem = new KeywordValueItem({tr("Keyword"), tr("Value"), tr("Unit")});
+    rootItem = new KeywordValueItem({tr("RootItem"), tr(""), tr("")});
 }
 
 MaterialsModel::~MaterialsModel()
@@ -177,6 +308,32 @@ int MaterialsModel::rowCount(const QModelIndex &parent) const
         parentItem = static_cast<KeywordValueItem*>(parent.internalPointer());
 
     return parentItem->childCount();
+}
+
+bool MaterialsModel::insertRows(int position, int rows, const QModelIndex &parent)
+{
+    KeywordValueItem *parentItem = getItem(parent);
+    if (!parentItem)
+        return false;
+
+    beginInsertRows(parent, position, position + rows - 1);
+        const bool success = parentItem->insertChildren(position,rows,rootItem->columnCount());
+    endInsertRows();
+
+    return success;
+}
+
+bool MaterialsModel::removeRows(int position, int rows, const QModelIndex &parent)
+{
+    KeywordValueItem *parentItem = getItem(parent);
+    if (!parentItem)
+        return false;
+
+    beginRemoveRows(parent, position, position + rows - 1);
+    const bool success = parentItem->removeChildren(position, rows);
+    endRemoveRows();
+
+    return success;
 }
 
 int MaterialsModel::columnCount(const QModelIndex &parent) const
@@ -270,7 +427,6 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
 
             QList<QVariant> data;
             QVariant name="Temperature";
-            data.append(name);
 
             QVariant value;
             QVariant unit="";
@@ -280,6 +436,7 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                 value=temperature->get_temperature()->get_dbl_value();
                 unit="C";
             }
+            data.append(name);
             data.append(value);
             data.append(unit);
 
@@ -307,10 +464,11 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                 data.clear();
 
                 QVariant keyword=QString::fromStdString(temperature->get_er_infinity().get_keyword());
+                value=temperature->get_er_infinity().get_dbl_value();
+                unit="";
                 data.append(keyword);
-
-                QVariant value=temperature->get_er_infinity().get_dbl_value();
                 data.append(value);
+                data.append(unit);
 
                 KeywordValueItem *pairItem=new KeywordValueItem(data,debyeItem);
                 debyeItem->appendChild(pairItem);
@@ -320,10 +478,11 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                 data.clear();
 
                 keyword=QString::fromStdString(temperature->get_delta_er().get_keyword());
-                data.append(keyword);
-
                 value=temperature->get_delta_er().get_dbl_value();
+                unit="";
+                data.append(keyword);
                 data.append(value);
+                data.append(unit);
 
                 pairItem=new KeywordValueItem(data,debyeItem);
                 debyeItem->appendChild(pairItem);
@@ -333,10 +492,11 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                 data.clear();
 
                 keyword=QString::fromStdString(temperature->get_m1().get_keyword());
-                data.append(keyword);
-
                 value=temperature->get_m1().get_dbl_value();
+                unit="";
+                data.append(keyword);
                 data.append(value);
+                data.append(unit);
 
                 pairItem=new KeywordValueItem(data,debyeItem);
                 debyeItem->appendChild(pairItem);
@@ -346,10 +506,11 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                 data.clear();
 
                 keyword=QString::fromStdString(temperature->get_m2().get_keyword());
-                data.append(keyword);
-
                 value=temperature->get_m2().get_dbl_value();
+                unit="";
+                data.append(keyword);
                 data.append(value);
+                data.append(unit);
 
                 pairItem=new KeywordValueItem(data,debyeItem);
                 debyeItem->appendChild(pairItem);
@@ -359,10 +520,11 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                 data.clear();
 
                 keyword=QString::fromStdString(temperature->get_relative_permeability().get_keyword());
-                data.append(keyword);
-
                 value=temperature->get_relative_permeability().get_dbl_value();
+                unit="";
+                data.append(keyword);
                 data.append(value);
+                data.append(unit);
 
                 pairItem=new KeywordValueItem(data,debyeItem);
                 debyeItem->appendChild(pairItem);
@@ -372,12 +534,10 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                 data.clear();
 
                 keyword=QString::fromStdString(temperature->get_loss().get_keyword());
-                data.append(keyword);
-
                 value=temperature->get_loss().get_dbl_value();
-                data.append(value);
-
                 unit="S/m";
+                data.append(keyword);
+                data.append(value);
                 data.append(unit);
 
                 pairItem=new KeywordValueItem(data,debyeItem);
@@ -390,7 +550,6 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
 
                     QList<QVariant> data;
                     QVariant name="Frequency";
-                    data.append(name);
 
                     QVariant value;
                     QVariant unit="";
@@ -400,6 +559,7 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                         value=frequency->get_frequency()->get_dbl_value();
                         unit="Hz";
                     }
+                    data.append(name);
                     data.append(value);
                     data.append(unit);
 
@@ -411,10 +571,11 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                     data.clear();
 
                     QVariant keyword=QString::fromStdString(frequency->get_relative_permittivity()->get_keyword());
-                    data.append(keyword);
-
                     value=frequency->get_relative_permittivity()->get_dbl_value();
+                    unit="";
+                    data.append(keyword);
                     data.append(value);
+                    data.append(unit);
 
                     KeywordValueItem *pairItem=new KeywordValueItem(data,frequencyItem);
                     frequencyItem->appendChild(pairItem);
@@ -424,10 +585,11 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                     data.clear();
 
                     keyword=QString::fromStdString(frequency->get_relative_permeability()->get_keyword());
-                    data.append(keyword);
-
                     value=frequency->get_relative_permeability()->get_dbl_value();
+                    unit="";
+                    data.append(keyword);
                     data.append(value);
+                    data.append(unit);
 
                     pairItem=new KeywordValueItem(data,frequencyItem);
                     frequencyItem->appendChild(pairItem);
@@ -437,12 +599,10 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                     data.clear();
 
                     keyword=QString::fromStdString(frequency->get_loss()->get_keyword());
-                    data.append(keyword);
-
                     value=frequency->get_loss()->get_dbl_value();
-                    data.append(value);
-
                     unit="S/m";
+                    data.append(keyword);
+                    data.append(value);
                     data.append(unit);
 
                     pairItem=new KeywordValueItem(data,frequencyItem);
@@ -453,12 +613,10 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                     data.clear();
 
                     keyword=QString::fromStdString(frequency->get_Rz()->get_keyword());
-                    data.append(keyword);
-
                     value=frequency->get_Rz()->get_dbl_value();
-                    data.append(value);
-
                     unit="m";
+                    data.append(keyword);
+                    data.append(value);
                     data.append(unit);
 
                     pairItem=new KeywordValueItem(data,frequencyItem);
@@ -492,6 +650,9 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
                 QList<QVariant> data;
                 QVariant text=QString::fromStdString(lineList[k]);
                 data.append(text);
+                text="";
+                data.append(text);
+                data.append(text);
 
                 KeywordValueItem *pairItem=new KeywordValueItem(data,sourceItem);
                 sourceItem->appendChild(pairItem);
@@ -508,6 +669,7 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
 
 void MaterialsModel::materialsModel_dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles)
 {
+    dataHasChanged=true;
     cout << "data changed" << endl;
 }
 
@@ -520,19 +682,23 @@ Materials::Materials(QWidget *parent)
     , ui(new Ui::Materials)
 {
     ui->setupUi(this);
+    itemCopy=nullptr;
+    materialsModel=nullptr;
 
-    //ui->materialsTreeView->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    //ui->materialsTreeView->setTextElideMode(Qt::ElideNone);
-
+    // cell editing delegate
     LineEditDelegate *delegate = new LineEditDelegate(ui->materialsTreeView);
     ui->materialsTreeView->setItemDelegate(delegate);
 
+    // force single selection
+    ui->materialsTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    // window options
     ui->materialsTreeView->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     ui->materialsTreeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     ui->materialsTreeView->header()->setStretchLastSection(false);
 
-    // signals
-    //connect(ui->materialsTree, &QTreeWidget::itemClicked, this, &Materials::materialItemClicked);
+    ui->materialsTreeView->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->materialsTreeView, &QTreeView::customContextMenuRequested, this, &Materials::contextMenu_triggered);
 
     // menu bar
 
@@ -547,6 +713,10 @@ Materials::Materials(QWidget *parent)
     fileMenu->addAction(openAction);
     connect(openAction, &QAction::triggered, this, &Materials::openAction_triggered);
 
+    QAction *saveAction=new QAction("Save",fileMenu);
+    fileMenu->addAction(saveAction);
+    connect(saveAction, &QAction::triggered, this, &Materials::saveAction_triggered);
+
     QAction *closeAction=new QAction("Close",fileMenu);
     fileMenu->addAction(closeAction);
     connect(closeAction, &QAction::triggered, this, &Materials::closeAction_triggered);
@@ -555,68 +725,80 @@ Materials::Materials(QWidget *parent)
     ui->materialsMenuBar->addWidget(menuBar);
 
     ui->materialsFrame->hide();
-
 }
 
 Materials::~Materials()
 {
-    delete materialsModel;
+    cout << "Materials::~Materials  materialsModel=" << materialsModel << endl;
+    if (materialsModel) delete materialsModel;
     delete ui;
 }
 
-void Materials::on_addMaterial_clicked()
+void Materials::copyData()
 {
-    QTreeWidgetItem *materialItem=new QTreeWidgetItem();
-    materialItem->setText(0,QString::fromStdString("newMaterial"));
-    materialItem->setFlags(materialItem->flags() | Qt::ItemIsEditable);
-    ui->materialsTree->insertTopLevelItem(ui->materialsTree->topLevelItemCount(),materialItem);
+    QModelIndexList selectedIndices=ui->materialsTreeView->selectionModel()->selectedIndexes();
+    if (selectedIndices.size() == 0) return;
 
-    // Source
-    QTreeWidgetItem *sourceItem=new QTreeWidgetItem();
-    sourceItem->setText(0,QString::fromStdString("Source"));
-    materialItem->addChild(sourceItem);
+    if (itemCopy) delete itemCopy;
 
-    QTreeWidgetItem *lineItem=new QTreeWidgetItem();
-    lineItem->setText(0,QString::fromStdString("TBD"));
-    lineItem->setFlags(lineItem->flags() | Qt::ItemIsEditable);
-    sourceItem->addChild(lineItem);
-
+    // just do for the first column
+    QModelIndex index=selectedIndices[0];
+    cout << "copy: index.row()=" << index.row() << endl;
+    itemCopy=materialsModel->getItem(index)->copy();
 }
 
-void Materials::materialItemClicked(QTreeWidgetItem *item, int column)
+void Materials::pasteData()
 {
-    cout << "materialItemClicked" << endl;
-    cout << "   text=" << item->text(column).toLatin1().toStdString() << endl;
+    if (!itemCopy) return;
+
+    const QModelIndex index = ui->materialsTreeView->selectionModel()->currentIndex();
+    QModelIndex parent=index.parent();
+    itemCopy->insertChild(parent,index.row()+1,materialsModel);
 }
 
-void Materials::on_deleteMaterial_clicked()
+void Materials::deleteData()
 {
-    QTreeWidgetItem *currentItem=ui->materialsTree->currentItem();
-    if (! currentItem->parent()) {
-        int index=ui->materialsTree->indexOfTopLevelItem(currentItem);
-        QTreeWidgetItem *removedItem=ui->materialsTree->takeTopLevelItem(index);
-        delete removedItem;
-    }
+    QModelIndexList selectedIndices=ui->materialsTreeView->selectionModel()->selectedIndexes();
+
+    if (selectedIndices.size() == 0) return;
+
+    // just do for the first column
+    QModelIndex index=selectedIndices[0];
+    materialsModel->removeRows(index.row(),1,index.parent());
 }
 
-void Materials::on_duplicateMaterial_clicked()
-{
-    QTreeWidgetItem *currentItem=ui->materialsTree->currentItem();
-    if (! currentItem->parent()) {
-        QTreeWidgetItem* clonedItem = currentItem->clone();
-        int index=ui->materialsTree->indexOfTopLevelItem(currentItem);
-        ui->materialsTree->insertTopLevelItem(index+1,clonedItem);
-    }
-}
-
+//xxx
 void Materials::newAction_triggered()
 {
+    materialsFile="";
+    materialDatabase.clear();
+    if (materialsModel) delete materialsModel;
+    materialsModel=nullptr;
+    if (itemCopy) delete itemCopy;
+    itemCopy=nullptr;
+
+    Material *material=new Material(0,0);
+    material->set_freespace();
+    materialDatabase.push(material);
+    //materialDatabase.print("    ");
+    cout.flush();
+
+    QModelIndex parentIndex=QModelIndex();
+    materialsModel=new MaterialsModel();
+    materialsModel->populate(&materialDatabase,materialsModel->get_rootItem());
+    //materialsModel->print();
+    connect(materialsModel, &QAbstractItemModel::dataChanged, materialsModel, &MaterialsModel::materialsModel_dataChanged);
+
+    ui->materialsTreeView->setModel(materialsModel);
+    ui->materialsTreeView->resizeColumnToContents(0);
+    ui->materialsTreeView->show();
+
     ui->materialsFrame->show();
+    materialsModel->setUnchanged();
 }
 
 void Materials::openAction_triggered()
 {
-
     materialsFile=QFileDialog::getOpenFileName(this,tr("Open Materials File"), "/home/briany/OpenParEM", tr("Data Files (*.txt);;All Files (*)"));
 
     // return if user cancels
@@ -663,10 +845,80 @@ void Materials::openAction_triggered()
     }
 
     ui->materialsFrame->show();
+    materialsModel->setUnchanged();
+}
+
+//xxx
+void Materials::saveAction_triggered()
+{
+    materialsFile=QFileDialog::getSaveFileName(this,tr("Open Materials File"), "/home/briany/OpenParEM", tr("Data Files (*.txt);;All Files (*)"));
+
+    // return if user cancels
+    if (materialsFile.isNull()) return;
+
+    QFile file(materialsFile);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream *fileOut=new QTextStream(&file);
+
+        QString version=QString::fromStdString(materialDatabase.get_version_name()+" "+materialDatabase.get_version_value());
+
+        *fileOut << version << "\n";
+        *fileOut << "\n";
+
+        materialsModel->get_rootItem()->print(fileOut,materialsModel->get_rootItem());
+        file.close();
+    }
 }
 
 void Materials::closeAction_triggered()
 {
+    if (materialsModel) {
+        int retVal=QMessageBox::Discard;
+        if (materialsModel->hasChanged()) {
+
+            QMessageBox msgBox;
+            msgBox.setText("The materials have been modified.");
+            msgBox.setInformativeText("Do you want to save your changes?");
+            msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+            msgBox.setDefaultButton(QMessageBox::Save);
+            retVal = msgBox.exec();
+        }
+
+        if (retVal == QMessageBox::Save) {
+            saveAction_triggered();
+        } else if (retVal == QMessageBox::Discard) {
+            // do nothing
+        } else if (retVal == QMessageBox::Cancel) {
+            return;
+        }
+    }
     close();
+}
+
+void Materials::contextMenu_triggered(const QPoint& pnt)
+{
+    QMenu menu(this);
+    QModelIndex index = ui->materialsTreeView->indexAt(pnt);
+
+    if (index.isValid()) {
+
+        // copy
+        QAction *editAction = menu.addAction("Copy");
+        connect(editAction, &QAction::triggered, this, &Materials::copyData);
+
+        // paste
+        editAction = menu.addAction("Paste");
+        connect(editAction, &QAction::triggered, this, &Materials::pasteData);
+
+        // delete
+        editAction = menu.addAction("Delete");
+        connect(editAction, &QAction::triggered, this, &Materials::deleteData);
+    }
+
+    // Add general actions
+    //QAction *addAction = menu.addAction("Add New");
+    //connect(addAction, &QAction::triggered, this, &YourClass::addNewItem);
+
+    menu.exec(ui->materialsTreeView->mapToGlobal(pnt));
 }
 

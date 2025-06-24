@@ -660,4 +660,11 @@ void inputFile::print()
    }
 }
 
+void inputFile::clear()
+{
+    lineTextList.clear();
+    lineNumberList.clear();
+    crossReferenceList.clear();
+}
+
 

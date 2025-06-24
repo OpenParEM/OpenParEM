@@ -55,6 +55,7 @@ class Frequency
       keywordPair* get_relative_permeability () {return &relative_permeability;}
       keywordPair* get_loss () {return &loss;}
       keywordPair* get_Rz () {return &Rz;}
+      void set_freespace ();
       int get_startLine () {return startLine;}
       void print (string);
       bool check (string);
@@ -98,6 +99,7 @@ class Temperature
       keywordPair get_m2() {return m2;}
       keywordPair get_relative_permeability() {return relative_permeability;}
       keywordPair get_loss() {return loss;}
+      void set_freespace ();
 };
 
 class Source
@@ -113,6 +115,7 @@ class Source
       bool load (inputFile *);
       void print (string);
       vector<string> get_lineList () {return lineList;}
+      void set_freespace ();
 };
 
 
@@ -137,6 +140,7 @@ class Material
       bool inTemperatureBlocks (int);
       bool inSourceBlocks (int);
       keywordPair* get_name () {return &name;}
+      void set_name (string name_) {name.set_keyword(name_); name.set_value(name_);}
       int get_startLine () {return startLine;}
       Temperature* get_temperature (double, double, string);
       complex<double> get_eps (double, double, double, string);
@@ -148,6 +152,7 @@ class Material
       vector<string> get_source_lineList (long unsigned int i) {return sourceList[i]->get_lineList();}
       long unsigned int get_temperatureList_size() {return temperatureList.size();}
       Temperature* get_temperature (long unsigned int i) {return temperatureList[i];}
+      void set_freespace ();
 };
 
 class MaterialDatabase
@@ -165,6 +170,7 @@ class MaterialDatabase
       bool load_materials (char *, char *, char *, char *, bool);
       bool load (const char *, const char *, bool);
       bool merge (MaterialDatabase *, string);
+      void clear ();
       void push (Material *a) {materialList.push_back(a);}
       void print (string);
       bool findMaterialBlocks ();
@@ -172,6 +178,8 @@ class MaterialDatabase
       Material* get (string);
       double get_tol () {return tol;}
       string get_indent () {return indent;}
+      string get_version_name () {return version_name;}
+      string get_version_value () {return version_value;}
       long unsigned int get_size () {return materialList.size();}
       Material* get_material (long unsigned int i) {return materialList[i];}
 };
