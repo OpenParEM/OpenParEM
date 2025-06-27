@@ -56,6 +56,7 @@ class Frequency
       keywordPair* get_loss () {return &loss;}
       keywordPair* get_Rz () {return &Rz;}
       void set_freespace ();
+      void set_copper ();
       int get_startLine () {return startLine;}
       void print (string);
       bool check (string);
@@ -100,6 +101,8 @@ class Temperature
       keywordPair get_relative_permeability() {return relative_permeability;}
       keywordPair get_loss() {return loss;}
       void set_freespace ();
+      void set_FR4 ();
+      void set_copper ();
 };
 
 class Source
@@ -116,6 +119,8 @@ class Source
       void print (string);
       vector<string> get_lineList () {return lineList;}
       void set_freespace ();
+      void set_FR4 ();
+      void set_copper ();
 };
 
 
@@ -153,6 +158,8 @@ class Material
       long unsigned int get_temperatureList_size() {return temperatureList.size();}
       Temperature* get_temperature (long unsigned int i) {return temperatureList[i];}
       void set_freespace ();
+      void set_FR4 ();
+      void set_copper ();
 };
 
 class MaterialDatabase
@@ -172,6 +179,7 @@ class MaterialDatabase
       bool merge (MaterialDatabase *, string);
       void clear ();
       void push (Material *a) {materialList.push_back(a);}
+      void insert (long unsigned int location, Material *a) {materialList.insert(materialList.begin()+location,a);}
       void print (string);
       bool findMaterialBlocks ();
       bool check ();

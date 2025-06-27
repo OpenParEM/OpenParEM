@@ -17,6 +17,7 @@
 
 using namespace std;
 
+class Materials;
 class MaterialsModel;
 
 class LineEditDelegate : public QStyledItemDelegate
@@ -38,12 +39,12 @@ public:
     explicit KeywordValueItem (const QList<QVariant>& data, KeywordValueItem* parent = nullptr);
     ~KeywordValueItem ();
 
-    void appendChild (KeywordValueItem* child);
+    void appendChild (KeywordValueItem *child);
     KeywordValueItem* child (int row);
     int childCount () const;
-    void insertChild(QModelIndex index, int row, MaterialsModel *materialsModel);
-    bool insertChildren(int position, int count, int columns);
-    bool removeChildren(int position, int count);
+    void insertChild (QModelIndex index, int row, MaterialsModel *materialsModel);
+    bool insertChildren (int position, int count, int columns);
+    bool removeChildren (int position, int count);
     int columnCount () const;
     QVariant data (int column) const;
     int row () const;
@@ -51,14 +52,39 @@ public:
 
     QVector<KeywordValueItem*>* get_m_childItems () {return &m_childItems;}
     bool setData (int column, const QVariant &value);
-    KeywordValueItem* copy();
+    KeywordValueItem* copy ();
     void print ();
     void print (QTextStream *textOut, KeywordValueItem *rootItem);
+
+    void set_level (int level_) {level=level_;}
+    void set_copyAllowed (bool copyAllowed_) {copyAllowed=copyAllowed_;}
+    int get_level () {return level;}
+    bool isAny () {
+        if (data(1) == "any") return true;
+        else return false;
+    }
+    void set_noCopy () {level=6; copyAllowed=false;}
+
+    bool canCopy () {return copyAllowed;}
+    bool is_sameLevel (KeywordValueItem *item) {
+        if (level == item->level) return true;
+        return false;
+    }
+    bool hasAny (KeywordValueItem *item);
+    bool hasLevel (int level);
+    bool hasItem (KeywordValueItem *item);
+    int lastRow (KeywordValueItem *item);
+    bool hasOne (KeywordValueItem *item);
+    QVariant hasDuplicateKeyword ();
+    void set_parent (KeywordValueItem *m_parentItem_) {m_parentItem=m_parentItem_;}
 
 private:
     QList<QVariant> m_itemData;
     QVector<KeywordValueItem*> m_childItems;
     KeywordValueItem *m_parentItem;
+
+    int level;        // 0=>root item, 1=>Material, 2=>Temperature, 3=>Source, 4=>Frequency, 5=>Debye, 6=>data keyword pairs, 7=>source text
+    bool copyAllowed;
 };
 
 class MaterialsModel : public QAbstractItemModel
@@ -66,49 +92,55 @@ class MaterialsModel : public QAbstractItemModel
     Q_OBJECT
 
 public:
-    explicit MaterialsModel(const QString &data, QObject *parent = nullptr);
-    explicit MaterialsModel(QObject *parent = nullptr);
+    explicit MaterialsModel (const QString &data, QObject *parent = nullptr);
+    explicit MaterialsModel (QObject *parent = nullptr);
     ~MaterialsModel();
 
-    void beginInsertRows(const QModelIndex &parent, int first, int last)
+
+    void beginInsertRows (const QModelIndex &parent, int first, int last)
     {
         return QAbstractItemModel::beginInsertRows(parent,first,last);
     }
 
-    void endInsertRows()
+    void endInsertRows ()
     {
         return QAbstractItemModel::endInsertRows();
     }
 
-    QVariant data(const QModelIndex &index, int role) const override;
-    Qt::ItemFlags flags(const QModelIndex &index) const override;
-    KeywordValueItem* getItem(const QModelIndex &index) const;
-    QVariant headerData(int section, Qt::Orientation orientation,
+
+    QVariant data (const QModelIndex &index, int role) const override;
+    Qt::ItemFlags flags (const QModelIndex &index) const override;
+    KeywordValueItem* getItem (const QModelIndex &index) const;
+    QVariant headerData (int section, Qt::Orientation orientation,
                         int role = Qt::DisplayRole) const override;
-    QModelIndex index(int row, int column,
+    QModelIndex index (int row, int column,
                       const QModelIndex &parent = QModelIndex()) const override;
-    QModelIndex parent(const QModelIndex &index) const override;
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    bool insertRows(int position, int rows, const QModelIndex &parent = {}) override;
-    bool removeRows(int position, int rows, const QModelIndex &parent) override;
-    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+    QModelIndex parent (const QModelIndex &index) const override;
+    int rowCount (const QModelIndex &parent = QModelIndex()) const override;
+    bool insertRows (int position, int rows, const QModelIndex &parent = {}) override;
+    bool removeRows (int position, int rows, const QModelIndex &parent) override;
+    int columnCount (const QModelIndex &parent = QModelIndex()) const override;
 
     KeywordValueItem* get_rootItem () {return rootItem;}
-    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
-    void populate(MaterialDatabase *, KeywordValueItem *);
+    bool setData (const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
+    void populate (MaterialDatabase *, KeywordValueItem *);
     bool hasChanged () {return dataHasChanged;}
+    void setChanged () {dataHasChanged=true;}
     void setUnchanged () {dataHasChanged=false;}
+    void setMaterials (Materials *materials_) {materials=materials_;}
     void print () {rootItem->print();}
+    void signalSelection ();
 
 public slots:
 
-    void materialsModel_dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles = QList<int>());
+    void materialsModel_dataChanged (const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles = QList<int>());
 
 
 private:
-    void setupModelData(const QStringList &lines, KeywordValueItem *parent);
+    //void setupModelData(const QStringList &lines, KeywordValueItem *parent);
     KeywordValueItem *rootItem;
     bool dataHasChanged;
+    Materials *materials;
 };
 
 namespace Ui {
@@ -120,20 +152,35 @@ class Materials : public QDialog
     Q_OBJECT
 
 public:
-    explicit Materials(QWidget *parent = nullptr);
-    ~Materials();
+    explicit Materials (QWidget *parent = nullptr);
+    ~Materials ();
+    void reset (bool);
+    int check_changed ();
+    void materials_edited ();
+    void signalSelection ();
+
+    void closeEvent (QCloseEvent *event) override {
+        close_event=event;
+        closeWindow_triggered();
+    }
 
 private slots:
 
-    void copyData();
-    void pasteData();
-    void deleteData();
+    void copyData ();
+    void pasteData ();
+    void appendData ();
+    void insertNewData ();
+    void convertData ();
+    void deleteData ();
 
-    void newAction_triggered();
-    void openAction_triggered();
-    void saveAction_triggered();
-    void closeAction_triggered();
-    void contextMenu_triggered(const QPoint& pnt);
+    void newAction_triggered ();
+    void openAction_triggered ();
+    void saveAction_triggered ();
+    void saveAsAction_triggered ();
+    void closeAction_triggered ();
+    void closeWindow_triggered ();
+    void contextMenu_triggered (const QPoint& pnt);
+    void selection_changed (const QItemSelection &selected, const QItemSelection &deselected);
 
 private:
     Ui::Materials *ui;
@@ -142,6 +189,21 @@ private:
     MaterialDatabase materialDatabase;
     MaterialsModel *materialsModel;
     KeywordValueItem *itemCopy;
+
+    QAction *fileNew;
+    QAction *fileOpen;
+    QAction *fileSave;
+    QAction *fileSaveAs;
+    QAction *fileClose;
+
+    QAction *editCopy;
+    QAction *editPaste;
+    QAction *editAppend;
+    QAction *editNew;
+    QAction *editConvert;
+    QAction *editDelete;
+
+    QCloseEvent *close_event;
 };
 
 #endif // MATERIALSg_H

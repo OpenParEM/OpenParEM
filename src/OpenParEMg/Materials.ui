@@ -6,50 +6,31 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>421</width>
-    <height>311</height>
+    <width>431</width>
+    <height>329</height>
    </rect>
   </property>
-  <property name="windowTitle">
-   <string>Dialog</string>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
-  <widget class="QWidget" name="horizontalLayoutWidget_3">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>421</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <layout class="QHBoxLayout" name="materialsMenuBar"/>
-  </widget>
-  <widget class="QFrame" name="materialsFrame">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>40</y>
-     <width>441</width>
-     <height>261</height>
-    </rect>
-   </property>
-   <property name="frameShape">
-    <enum>QFrame::Shape::NoFrame</enum>
-   </property>
-   <property name="frameShadow">
-    <enum>QFrame::Shadow::Plain</enum>
-   </property>
-   <widget class="QTreeView" name="materialsTreeView">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>0</y>
-      <width>401</width>
-      <height>259</height>
-     </rect>
-    </property>
-   </widget>
-  </widget>
+  <property name="windowTitle">
+   <string>Materials Editor</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="materialsMenuBar">
+     <property name="sizeConstraint">
+      <enum>QLayout::SizeConstraint::SetNoConstraint</enum>
+     </property>
+    </layout>
+   </item>
+   <item>
+    <widget class="QTreeView" name="materialsTreeView"/>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>

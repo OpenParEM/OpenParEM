@@ -319,6 +319,34 @@ void Frequency::set_freespace ()
     Rz.set_lineNumber(0);
 }
 
+void Frequency::set_copper ()
+{
+    frequency.set_keyword("frequency");
+    frequency.set_value("any");
+    frequency.set_loaded(true);
+    frequency.set_lineNumber(0);
+
+    relative_permittivity.set_keyword("relative_permittivity");
+    relative_permittivity.set_dbl_value(1);
+    relative_permittivity.set_loaded(true);
+    relative_permittivity.set_lineNumber(0);
+
+    relative_permeability.set_keyword("relative_permeability");
+    relative_permeability.set_dbl_value(1);
+    relative_permeability.set_loaded(true);
+    relative_permeability.set_lineNumber(0);
+
+    loss.set_keyword("conductivity");
+    loss.set_dbl_value(5.813e7);
+    loss.set_loaded(true);
+    loss.set_lineNumber(0);
+
+    Rz.set_keyword("Rz");
+    Rz.set_dbl_value(0);
+    Rz.set_loaded(true);
+    Rz.set_lineNumber(0);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Temperature
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1115,6 +1143,57 @@ void Temperature::set_freespace ()
     temperature.set_lineNumber(0);
 }
 
+void Temperature::set_FR4 ()
+{
+    temperature.set_keyword("temperature");
+    temperature.set_value("any");
+    temperature.set_loaded(true);
+    temperature.set_lineNumber(0);
+
+    er_infinity.set_keyword("er_infinity");
+    er_infinity.set_dbl_value(4.27);
+    er_infinity.set_loaded(true);
+    er_infinity.set_lineNumber(0);
+
+    delta_er.set_keyword("delta_er");
+    delta_er.set_dbl_value(1.12);
+    delta_er.set_loaded(true);
+    delta_er.set_lineNumber(0);
+
+    m1.set_keyword("m1");
+    m1.set_dbl_value(4);
+    m1.set_loaded(true);
+    m1.set_lineNumber(0);
+
+    m2.set_keyword("m2");
+    m2.set_dbl_value(12);
+    m2.set_loaded(true);
+    m2.set_lineNumber(0);
+
+    relative_permeability.set_keyword("mur");
+    relative_permeability.set_dbl_value(1);
+    relative_permeability.set_loaded(true);
+    relative_permeability.set_lineNumber(0);
+
+    loss.set_keyword("conductivity");
+    loss.set_dbl_value(8e-11);
+    loss.set_loaded(true);
+    loss.set_lineNumber(0);
+}
+
+void Temperature::set_copper ()
+{
+    Frequency *newFrequency=new Frequency(0,0,false);
+    newFrequency->set_copper();
+    frequencyList.push_back(newFrequency);
+
+    temperature.set_keyword("temperature");
+    temperature.set_value("");
+    temperature.set_dbl_value(20);
+    temperature.set_loaded(true);
+    temperature.set_lineNumber(0);
+}
+
 Temperature::~Temperature()
 {
    long unsigned int i=0;
@@ -1181,7 +1260,24 @@ bool Source::inSourceBlock (int lineNumber)
 void Source::set_freespace ()
 {
     lineNumberList.push_back(0);
-    lineList.push_back("basic physics");
+    lineList.push_back("physics definition");
+}
+
+void Source::set_FR4 ()
+{
+    lineNumberList.push_back(0);
+    lineNumberList.push_back(0);
+    lineNumberList.push_back(0);
+
+    lineList.push_back("A.R. Djordjevi, R.M Biljie, V.D. Likar-Dmiljanic, T.K. Sarkar,");
+    lineList.push_back("\"Wideband Frequency-Domain Characterization of FR-4 and Time-Domain Causality,\"");
+    lineList.push_back("IEEE Trans. Electromagnetic Compatibility, Nov. 2001, pp. 662-667.");
+}
+
+void Source::set_copper ()
+{
+    lineNumberList.push_back(0);
+    lineList.push_back("David M. Pozar, \"Microwave Engineering,\" Addison-Wesley Publishing Company, 1990, p.714.");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1570,6 +1666,38 @@ void Material::set_freespace ()
 
     Source* newSource=new Source(0,0);
     newSource->set_freespace();
+    sourceList.push_back(newSource);
+}
+
+void Material::set_FR4 ()
+{
+    name.set_keyword("name");
+    name.set_value("FR4");
+    name.set_loaded(true);
+    name.set_lineNumber(0);
+
+    Temperature* newTemperature=new Temperature(0,0,false);
+    newTemperature->set_FR4();
+    temperatureList.push_back(newTemperature);
+
+    Source* newSource=new Source(0,0);
+    newSource->set_FR4();
+    sourceList.push_back(newSource);
+}
+
+void Material::set_copper ()
+{
+    name.set_keyword("name");
+    name.set_value("copper");
+    name.set_loaded(true);
+    name.set_lineNumber(0);
+
+    Temperature* newTemperature=new Temperature(0,0,false);
+    newTemperature->set_copper();
+    temperatureList.push_back(newTemperature);
+
+    Source* newSource=new Source(0,0);
+    newSource->set_copper();
     sourceList.push_back(newSource);
 }
 
