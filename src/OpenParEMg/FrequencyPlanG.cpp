@@ -26,7 +26,8 @@ FrequencyPlanG::FrequencyPlanG(QWidget *parent)
     , ui(new Ui::FrequencyPlanG)
 {
     ui->setupUi(this);
-    this->setFixedSize(695,252);
+    this->setFixedWidth(695);
+    //this->setFixedSize(695,252);
 
     doubleValidator.setBottom(0);
     intValidator.setBottom(0);

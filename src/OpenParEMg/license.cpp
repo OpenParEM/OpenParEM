@@ -26,7 +26,7 @@ License::License(QWidget *parent)
     , ui(new Ui::License)
 {
     ui->setupUi(this);
-    this->setFixedSize(872,487);
+    //this->setFixedSize(872,487);
 }
 
 License::~License()

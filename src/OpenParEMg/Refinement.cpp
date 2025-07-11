@@ -26,6 +26,7 @@ Refinement::Refinement(QWidget *parent)
     , ui(new Ui::Refinement)
 {
     ui->setupUi(this);
+    this->setFixedSize(450,317);
 
     toleranceValidator.setBottom(0);
 

@@ -36,6 +36,18 @@ petsc="petsc-3.23.0.tar.gz"
 # www.mfem.org
 mfem="mfem-4.8.tgz"
 
+# packages for OpenParEMg
+
+# https://freetype.org
+freetype="freetype-2.13.3.tar.gz"
+
+# https://www.tcl-lang.org
+tcl="tcl8.6.16-src.tar.gz"
+tk="tk8.6.16-src.tar.gz"
+
+#https://dev.opencascade.org/release
+occt="OCCT-7_9_1.tar.gz"
+
 #----------------------------------------------------
 # packages downloaded by petsc
 #----------------------------------------------------
@@ -51,6 +63,9 @@ cmake="https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6.t
 # packages to install
 #----------------------------------------------------
 
+with_freetype=1
+with_tcl=1
+with_tk=1
 with_m4=1
 with_bison=1
 with_zlib=1
@@ -162,6 +177,18 @@ unpack_and_enter() {
    if [ "$is_identified" = "0" ]; then
       echo "ERROR: unrecognized distribution for \"""$FILE""\""
       exit 1
+   fi
+
+   # tcl and tk add "-src" to the tarball name that must be removed to get the correct base name
+
+   prefix=`echo $FILE_base | cut -c1-3`
+   if [ "$prefix" = "tcl" ]; then
+      FILE_base=${FILE_base%-src}
+   fi
+
+   prefix=`echo $FILE_base | cut -c1-2`
+   if [ "$prefix" = "tk" ]; then
+      FILE_base=${FILE_base%-src}
    fi
 
    # remove any previously unpacked instance
@@ -307,6 +334,10 @@ for arg in "$@"; do
 #         enable_static=yes
 #         enable_shared=no
       elif [ "$arg" = "--without-all" ]; then
+         with_freetype=0
+         with_tcl=0
+         with_tk=0
+         with_occt=0
          with_m4=0
          with_bison=0
          with_zlib=0
@@ -322,6 +353,10 @@ for arg in "$@"; do
          with_mfem=0
          with_OpenParEM=0
       elif [ "$arg" = "--with-all" ]; then
+         with_freetype=1
+         with_tcl=1
+         with_tk=1
+         with_occt=1
          with_m4=1
          with_bison=1
          with_zlib=1
@@ -343,6 +378,34 @@ for arg in "$@"; do
       elif [ "$arg" = "--precompiled-bin" ]; then
          precompiled_bin=1
          clean_in_place=1
+      elif [ "$arg" = "--with-freetype" ]; then
+         with_freetype=1
+      elif [ "$keyword" = "--with-freetype" ]; then
+         with_freetype=1
+         freetype=$value
+      elif [ "$arg" = "--without-freetype" ]; then
+         with_freetype=0
+      elif [ "$arg" = "--with-tcl" ]; then
+         with_tcl=1
+      elif [ "$keyword" = "--with-tcl" ]; then
+         with_tcl=1
+         tcl=$value
+      elif [ "$arg" = "--without-tcl" ]; then
+         with_tcl=0
+      elif [ "$arg" = "--with-tk" ]; then
+         with_tk=1
+      elif [ "$keyword" = "--with-tk" ]; then
+         with_tk=1
+         tk=$value
+      elif [ "$arg" = "--without-tk" ]; then
+         with_tk=0
+      elif [ "$arg" = "--with-occt" ]; then
+         with_occt=1
+      elif [ "$keyword" = "--with-occt" ]; then
+         with_occt=1
+         occt=$value
+      elif [ "$arg" = "--without-occt" ]; then
+         with_occt=0
       elif [ "$arg" = "--with-m4" ]; then
          with_m4=1
       elif [ "$keyword" = "--with-m4" ]; then
@@ -486,6 +549,9 @@ if [ $print_help -eq 1 ]; then
    echo ""
    echo "advanced OPTIONS:"
    echo "  --without-all            skip compiling all; generally followed by --with-* options to add back in something to compile"
+   echo "  --with-tcl=file]         compile tcl using the default distribution or the provided file"
+   echo "  --with-tk[=file]         compile tk using the default distribution or the provided file"
+   echo "  --with-occt[=file]       compile occt using the default distribution or the provided file"
    echo "  --with-m4[=file]         compile m4 using the default distribution or the provided file"
    echo "  --without-m4             skip compiling m4"
    echo "  --with-bison[=file]      compile bison using the default distribution or the provided file"
@@ -533,6 +599,30 @@ echo "PATH=$PATH"
 echo "jobs=$jobs"
 
 # show the setup
+
+   if [ "$with_freetype" = "1" ]; then
+      echo "with-freetype=$with_freetype using $freetype"
+   else
+      echo "with-freetype=$with_freetype"
+   fi
+
+   if [ "$with_tcl" = "1" ]; then
+      echo "with-tcl=$with_tcl using $tcl"
+   else
+      echo "with-tcl=$with_tcl"
+   fi
+
+   if [ "$with_tk" = "1" ]; then
+      echo "with-tk=$with_tk using $tk"
+   else
+      echo "with-tk=$with_tk"
+   fi
+
+   if [ "$with_occt" = "1" ]; then
+      echo "with-occt=$with_occt using $occt"
+   else
+      echo "with-occt=$with_occt"
+   fi
 
    if [ "$with_m4" = "1" ]; then
       echo "with-m4=$with_m4 using $m4"
@@ -723,6 +813,26 @@ fi
 
 missing_sources=0
 
+if [ "$with_freetype" = "1" -a ! -f "../external_packages/$freetype" ]; then
+   missing_sources=1
+   echo "OpenParEM_ERROR: freetype compile requested but the file ../external_packages/$freetype is missing."
+fi
+
+if [ "$with_tcl" = "1" -a ! -f "../external_packages/$tcl" ]; then
+   missing_sources=1
+   echo "OpenParEM_ERROR: tcl compile requested but the file ../external_packages/$tcl is missing."
+fi
+
+if [ "$with_tk" = "1" -a ! -f "../external_packages/$tk" ]; then
+   missing_sources=1
+   echo "OpenParEM_ERROR: tk compile requested but the file ../external_packages/$tk is missing."
+fi
+
+if [ "$with_occt" = "1" -a ! -f "../external_packages/$occt" ]; then
+   missing_sources=1
+   echo "OpenParEM_ERROR: occt compile requested but the file ../external_packages/$occt is missing."
+fi
+
 if [ "$with_m4" = "1" -a ! -f "../external_packages/$m4" ]; then
    missing_sources=1
    echo "OpenParEM_ERROR: m4 compile requested but the file ../external_packages/$m4 is missing."
@@ -797,6 +907,22 @@ fi
 #----------------------------------------------------
 
 has_build=0
+
+if [ "$with_freetype" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_tcl" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_tk" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_occt" = "1" ]; then
+   has_build=1
+fi
 
 if [ "$with_m4" = "1" ]; then
    has_build=1
@@ -916,6 +1042,206 @@ if [ "$precompiled_bin" = "1" ]; then
    cd ../OpenParEM
 fi
 
+# freetype
+if [ "$with_freetype" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: freetype"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$freetype"
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: freetype failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: freetype failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: freetype failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# tcl
+if [ "$with_tcl" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: tcl"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$tcl"
+ 
+   cd unix
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to install"
+      exit 1
+   fi
+
+   cd ../..
+#   remove_base_directory
+   cd ..
+
+   # put a soft link to the versioned tclsh
+
+   current_dir=$PWD
+
+   if [ ! -d $install_path/bin ]; then
+      echo "OpenParEM_ERROR: tcl failed to find install directory"
+      exit 1
+   fi
+
+   cd $install_path/bin
+
+   if [ -f tclsh ]; then
+      rm tclsh
+   fi
+
+   tclsh=`ls tcl*`
+   if [ ! -f "$tclsh" ]; then
+      echo "OpenParEM_ERROR: tcl failed to find tclsh"
+      exit 1
+   fi
+
+   ln -s $tclsh tclsh
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to softlink tclsh"
+      exit 1
+   fi
+
+   cd $current_dir
+fi
+
+# tk
+if [ "$with_tk" = "1" ]; then 
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: tk"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$tk"
+
+   cd unix
+
+   ./configure CPPFLAGS="-I$install_path/include" --prefix="$install_path" --with-tcl=$install_path/lib
+   if [ $? -ne 0 ]; then 
+      echo "OpenParEM_ERROR: tk failed to configure"
+      exit 1  
+   fi
+
+   make -j "$jobs" 
+   if [ $? -ne 0 ]; then 
+      echo "OpenParEM_ERROR: tk failed to make"
+      exit 1  
+   fi
+
+   make install 
+   if [ $? -ne 0 ]; then 
+      echo "OpenParEM_ERROR: tk failed to install"
+      exit 1  
+   fi
+
+   cd ../.. 
+#   remove_base_directory
+   cd .. 
+
+   # put a soft link to the versioned wish
+
+   current_dir=$PWD
+
+   if [ ! -d $install_path/bin ]; then
+      echo "OpenParEM_ERROR: tk failed to find install directory"
+      exit 1
+   fi
+
+   cd $install_path/bin
+
+   if [ -f wish ]; then
+      rm wish
+   fi
+
+   wish=`ls wish*`
+   if [ ! -f "$wish" ]; then
+      echo "OpenParEM_ERROR: tk failed to find wish"
+      exit 1
+   fi
+
+   ln -s $wish wish
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tk failed to softlink wish"
+      exit 1
+   fi
+
+   cd $current_dir
+  
+fi
+
+# occt
+if [ "$with_occt" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: occt"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$occt"
+
+   cmake -D INSTALL_SAMPLES=ON -D 3RDPARTY_DIR:PATH="$install_path" -D 3RDPARTY_FREETYPE_DIR:PATH="$install_path" -D 3RDPARTY_TCL_DIR:PATH="$install_path" -D 3RDPARTY_TK_DIR:PATH="$install_path" -D 3RDPARTY_TK_LIBRARY_DIR:FILEPATH="$install_path/lib" -D INSTALL_DIR:PATH="$install_path" . 
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to install"
+      exit 1
+   fi
+
+   cd ..
+#   remove_base_directory
+   cd ..
+fi
+
 # m4
 if [ "$with_m4" = "1" ]; then
 
@@ -941,7 +1267,7 @@ if [ "$with_m4" = "1" ]; then
 
    make install
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: ERROR: m4 failed to install"
+      echo "OpenParEM_ERROR: m4 failed to install"
       exit 1
    fi
 
@@ -975,7 +1301,7 @@ if [ "$with_bison" = "1" ]; then
 
    make install
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: ERROR: bison failed to install"
+      echo "OpenParEM_ERROR: bison failed to install"
       exit 1
    fi
 
@@ -1017,7 +1343,7 @@ if [ "$with_zlib" = "1" ]; then
 
    make install
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: ERROR: zlib failed to install"
+      echo "OpenParEM_ERROR: zlib failed to install"
       exit 1
    fi
 
@@ -1051,7 +1377,7 @@ if [ "$with_flex" = "1" ]; then
 
    make install
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: ERROR: flex failed to install"
+      echo "OpenParEM_ERROR: flex failed to install"
       exit 1
    fi
 
@@ -1085,7 +1411,7 @@ if [ "$with_hwloc" = "1" ]; then
 
    make install
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: ERROR: hwloc failed to install"
+      echo "OpenParEM_ERROR: hwloc failed to install"
       exit 1
    fi
 

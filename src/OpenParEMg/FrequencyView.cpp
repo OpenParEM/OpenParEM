@@ -27,6 +27,7 @@ FrequencyView::FrequencyView(QWidget *parent)
     , ui(new Ui::FrequencyView)
 {
     ui->setupUi(this);
+    this->setFixedWidth(439);
 
     ui->frequencyView->insertColumn(0);  // frequency
     ui->frequencyView->insertColumn(1);  // refinement priority

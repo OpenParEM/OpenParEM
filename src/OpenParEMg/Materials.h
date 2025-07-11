@@ -39,22 +39,22 @@ public:
     explicit KeywordValueItem (const QList<QVariant>& data, KeywordValueItem* parent = nullptr);
     ~KeywordValueItem ();
 
-    void appendChild (KeywordValueItem *child);
-    KeywordValueItem* child (int row);
+    void appendChild (KeywordValueItem *);
+    KeywordValueItem* child (int);
     int childCount () const;
-    void insertChild (QModelIndex index, int row, MaterialsModel *materialsModel);
-    bool insertChildren (int position, int count, int columns);
-    bool removeChildren (int position, int count);
+    void insertChild (QModelIndex, int, MaterialsModel *);
+    bool insertChildren (int , int , int);
+    bool removeChildren (int , int);
     int columnCount () const;
-    QVariant data (int column) const;
+    QVariant data (int) const;
     int row () const;
     KeywordValueItem* parentItem ();
 
     QVector<KeywordValueItem*>* get_m_childItems () {return &m_childItems;}
-    bool setData (int column, const QVariant &value);
+    bool setData (int, const QVariant &value);
     KeywordValueItem* copy ();
     void print ();
-    void print (QTextStream *textOut, KeywordValueItem *rootItem);
+    void print (QTextStream *, KeywordValueItem *);
 
     void set_level (int level_) {level=level_;}
     void set_copyAllowed (bool copyAllowed_) {copyAllowed=copyAllowed_;}
@@ -70,12 +70,13 @@ public:
         if (level == item->level) return true;
         return false;
     }
-    bool hasAny (KeywordValueItem *item);
-    bool hasLevel (int level);
-    bool hasItem (KeywordValueItem *item);
-    int lastRow (KeywordValueItem *item);
-    bool hasOne (KeywordValueItem *item);
+    bool hasAny (KeywordValueItem *);
+    bool hasLevel (int);
+    bool hasItem (KeywordValueItem *);
+    int lastRow (KeywordValueItem *);
+    bool hasOne (KeywordValueItem *);
     QVariant hasDuplicateKeyword ();
+    QVariant hasDuplicateValue (int);
     void set_parent (KeywordValueItem *m_parentItem_) {m_parentItem=m_parentItem_;}
 
 private:
@@ -108,17 +109,17 @@ public:
     }
 
 
-    QVariant data (const QModelIndex &index, int role) const override;
+    QVariant data (const QModelIndex &index, int) const override;
     Qt::ItemFlags flags (const QModelIndex &index) const override;
     KeywordValueItem* getItem (const QModelIndex &index) const;
-    QVariant headerData (int section, Qt::Orientation orientation,
+    QVariant headerData (int, Qt::Orientation,
                         int role = Qt::DisplayRole) const override;
-    QModelIndex index (int row, int column,
+    QModelIndex index (int, int,
                       const QModelIndex &parent = QModelIndex()) const override;
     QModelIndex parent (const QModelIndex &index) const override;
     int rowCount (const QModelIndex &parent = QModelIndex()) const override;
-    bool insertRows (int position, int rows, const QModelIndex &parent = {}) override;
-    bool removeRows (int position, int rows, const QModelIndex &parent) override;
+    bool insertRows (int, int, const QModelIndex &parent = {}) override;
+    bool removeRows (int, int, const QModelIndex &parent) override;
     int columnCount (const QModelIndex &parent = QModelIndex()) const override;
 
     KeywordValueItem* get_rootItem () {return rootItem;}
@@ -155,6 +156,7 @@ public:
     explicit Materials (QWidget *parent = nullptr);
     ~Materials ();
     void reset (bool);
+    void keyPressEvent (QKeyEvent *) override;
     int check_changed ();
     void materials_edited ();
     void signalSelection ();
@@ -173,6 +175,7 @@ private slots:
     void convertData ();
     void deleteData ();
 
+    bool check_duplicates ();
     void newAction_triggered ();
     void openAction_triggered ();
     void saveAction_triggered ();

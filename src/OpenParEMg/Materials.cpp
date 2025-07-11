@@ -323,6 +323,31 @@ QVariant KeywordValueItem::hasDuplicateKeyword ()
     return QVariant();
 }
 
+QVariant KeywordValueItem::hasDuplicateValue (int testLevel)
+{
+    int i=0;
+    while (i < childCount()-1) {
+        int j=i+1;
+        while (j < childCount()) {
+            if (child(i)->get_level() == testLevel && child(j)->get_level() == testLevel) {
+                if (child(i)->data(1) == "any") {
+                    if (child(j)->data(1) == "any" ) return child(i)->data(1);
+                } else {
+                    if (child(j)->data(1) == "any" ) {
+                        return child(j)->data(1);
+                    } else {
+                        if (double_compare(child(i)->data(1).toDouble(),
+                                           child(j)->data(1).toDouble(),1e-12)) return child(i)->data(1);
+                    }
+                }
+            }
+            j++;
+        }
+        i++;
+    }
+    return QVariant();
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // MaterialsModel
@@ -908,6 +933,15 @@ Materials::~Materials ()
     delete ui;
 }
 
+void Materials::keyPressEvent (QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Escape) {
+        event->ignore();
+    } else {
+        QDialog::keyPressEvent(event);
+    }
+}
+
 void Materials::reset (bool clearMaterials)
 {
     materialsFile="";
@@ -1120,7 +1154,7 @@ void Materials::newAction_triggered ()
     fileSave->setEnabled(false);
     fileSaveAs->setEnabled(true);
 
-    materialsModel->setUnchanged();
+    materialsModel->setChanged();
 }
 
 void Materials::openAction_triggered ()
@@ -1196,7 +1230,7 @@ void Materials::openAction_triggered ()
     materialsModel->setUnchanged();
 }
 
-void Materials::saveAction_triggered ()
+bool Materials::check_duplicates ()
 {
     // check for duplicate material names
     QVariant duplicate=materialsModel->get_rootItem()->hasDuplicateKeyword();
@@ -1205,8 +1239,51 @@ void Materials::saveAction_triggered ()
         QString message="The material \""+duplicate.toString()+"\" is duplicated.";
         msgBox.critical(nullptr,"Error",message);
         msgBox.setFixedSize(500,200);
-        return;
+        return true;
     }
+
+    // check for duplicate temperatures and frequencies
+    int i=0;
+    while (i < materialsModel->get_rootItem()->childCount()) {
+
+        // temperature
+        KeywordValueItem *child_i=materialsModel->get_rootItem()->child(i);
+        QVariant duplicate=child_i->hasDuplicateValue(2);
+        if (duplicate.isValid()) {
+            QMessageBox msgBox;
+            QString message="The material \""+child_i->data(0).toString()+"\" has duplicated temperature \""+duplicate.toString()+"\".";
+            msgBox.critical(nullptr,"Error",message);
+            msgBox.setFixedSize(500,200);
+            return true;
+        }
+
+        int j=0;
+        while (j < child_i->childCount()-1) {
+
+            // frequencies
+            KeywordValueItem *child_j=child_i->child(j);
+            QVariant duplicate=child_j->hasDuplicateValue(4);
+            if (duplicate.isValid()) {
+                QMessageBox msgBox;
+                QString message="The material \""+child_i->data(0).toString()+
+                                "\" has duplicated frequency \""+duplicate.toString()+
+                                "\" for temperature \""+child_j->data(1).toString()+
+                                "\".";
+                msgBox.critical(nullptr,"Error",message);
+                msgBox.setFixedSize(500,200);
+                return true;
+            }
+
+            j++;
+        }
+        i++;
+    }
+    return false;
+}
+
+void Materials::saveAction_triggered ()
+{
+    if (check_duplicates()) return;
 
     if (materialsFile == "") {saveAsAction_triggered(); return;}
 
@@ -1232,15 +1309,7 @@ void Materials::saveAction_triggered ()
 
 void Materials::saveAsAction_triggered ()
 {
-    // check for duplicate material names
-    QVariant duplicate=materialsModel->get_rootItem()->hasDuplicateKeyword();
-    if (duplicate.isValid()) {
-        QMessageBox msgBox;
-        QString message="The material \""+duplicate.toString()+"\" is duplicated.";
-        msgBox.critical(nullptr,"Error",message);
-        msgBox.setFixedSize(500,200);
-        return;
-    }
+    if (check_duplicates()) return;
 
     QString testMaterialsFile=QFileDialog::getSaveFileName(this,tr("Open Materials File"), "/home/briany/OpenParEM", tr("Data Files (*.txt);;All Files (*)"));
 
