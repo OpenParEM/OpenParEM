@@ -44,15 +44,14 @@ OpenParEMg::OpenParEMg(QWidget *parent)
 
     ui->drawingWindow->show();
 
-
-
-
+    PetscInitializeNoArguments();
 
     cout << "exit OpenParEMg::OpenParEMg" << endl;
 }
 
 OpenParEMg::~OpenParEMg()
 {
+    PetscFinalize();
     delete ui;
 }
 
@@ -176,7 +175,7 @@ void OpenParEMg::on_actionSave_triggered()
 
 void OpenParEMg::on_actionRefinement_triggered()
 {
-    Refinement *refinement=new Refinement();
+    OPEMg_Refinement *refinement=new OPEMg_Refinement();
     refinement->set_projData(&projData);
     refinement->exec();
     delete refinement;

@@ -317,32 +317,20 @@ bool point_get (string *a, double *x_value, double *y_value, double *z_value, in
    // get the values
    try {*x_value=stod(x_str);}
    catch (const std::invalid_argument& ia) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1000: %s value at line %d is invalid.\n",indent.c_str(),indent.c_str(),a->c_str(),lineNumber_);
-#else
-      printf("%s%sERROR1000: %s value at line %d is invalid.\n",indent.c_str(),indent.c_str(),a->c_str(),lineNumber_);
-#endif
       return true;
    }
 
    try {*y_value=stod(y_str);}
    catch (const std::invalid_argument& ia) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1001: %s value at line %d is invalid.\n",indent.c_str(),indent.c_str(),a->c_str(),lineNumber_);
-#else
-      printf("%s%sERROR1001: %s value at line %d is invalid.\n",indent.c_str(),indent.c_str(),a->c_str(),lineNumber_);
-#endif
       return true;
    }
 
    if (dim == 3) {
       try {*z_value=stod(z_str);}
       catch (const std::invalid_argument& ia) {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1002: %s value at line %d is invalid.\n",indent.c_str(),indent.c_str(),a->c_str(),lineNumber_);
-#else
-         printf("%s%sERROR1002: %s value at line %d is invalid.\n",indent.c_str(),indent.c_str(),a->c_str(),lineNumber_);
-#endif
          return true;
       }
    }
@@ -359,22 +347,12 @@ void get_token_pair (string *line, string *token, string *value, int *lineNumber
       if (count == 0) *token=test;
       else if (count == 1) *value=test;
       else {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1003: Incorrectly formatted entry at line %d.\n",indent.c_str(),indent.c_str(),*lineNumber);
-#else
-         printf("%s%sERROR1003: Incorrectly formatted entry at line %d.\n",indent.c_str(),indent.c_str(),*lineNumber);
-#endif
       }
       count++;
    }
 
-   if (count < 2) {
-#if HAS_MPI
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1004: Missing value at line %d.\n",indent.c_str(),indent.c_str(),*lineNumber);
-#else
-      printf("%s%sERROR1004: Missing value at line %d.\n",indent.c_str(),indent.c_str(),*lineNumber);
-#endif
-   }
+   if (count < 2) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1004: Missing value at line %d.\n",indent.c_str(),indent.c_str(),*lineNumber);}
 
    // chop off white space from front and back
 
@@ -455,11 +433,7 @@ bool inputFile::load(const char *filename)
          }
       }
    } else {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1005: File \"%s\" could not be opened for reading.\n",filename);
-#else
-      printf("ERROR1005: File \"%s\" could not be opened for reading.\n",filename);
-#endif
       return true;
    }
    return false;
@@ -576,22 +550,13 @@ bool inputFile::findBlock(int search_startLine, int search_stopLine,
             *block_startLine=lineNumberList[i];
             break;
          } else if (lineTextList[i].compare(terminator) == 0) {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1006: \"%s\" found at line %d is missing an opening \"%s\" keyword.\n",
                                                    indent.c_str(),indent.c_str(),terminator.c_str(),lineNumberList[i],initiator.c_str());
-#else
-            printf("%s%sERROR1006: \"%s\" found at line %d is missing an opening \"%s\" keyword.\n",
-                   indent.c_str(),indent.c_str(),terminator.c_str(),lineNumberList[i],initiator.c_str());
-#endif
             *block_stopLine=lineNumberList[i];
             return true;
          } else {
             if (reportUnmatchedText) {
-#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1007: Invalid entry at line %d.\n",indent.c_str(),indent.c_str(),lineNumberList[i] );
-#else
-               printf("%s%sERROR1007: Invalid entry at line %d.\n",indent.c_str(),indent.c_str(),lineNumberList[i] );
-#endif
                fail=true;
             }
          }
@@ -617,13 +582,8 @@ bool inputFile::findBlock(int search_startLine, int search_stopLine,
 
          // check for missing terminator
          if (lineTextList[i].compare(initiator) == 0) {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1008: \"%s\" block at line %d is incorrectly terminated at line %d.\n",
                                                    indent.c_str(),indent.c_str(),initiator.c_str(),*block_startLine,lineNumberList[i]);
-#else
-            printf("%s%sERROR1008: \"%s\" block at line %d is incorrectly terminated at line %d.\n",
-                   indent.c_str(),indent.c_str(),initiator.c_str(),*block_startLine,lineNumberList[i]);
-#endif
             *block_stopLine=get_previous_lineNumber(lineNumberList[i]);
             return true;
          }
@@ -633,13 +593,8 @@ bool inputFile::findBlock(int search_startLine, int search_stopLine,
 
    // missing block terminator
    if (*block_stopLine < 0) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1009: \"%s\" block at line %d is missing its terminator \"%s\".\n",
                                              indent.c_str(),indent.c_str(),initiator.c_str(),*block_startLine,terminator.c_str());
-#else
-      printf("%s%sERROR1009: \"%s\" block at line %d is missing its terminator \"%s\".\n",
-             indent.c_str(),indent.c_str(),initiator.c_str(),*block_startLine,terminator.c_str());
-#endif
       *block_stopLine=search_stopLine;
       return true;
    }
@@ -651,20 +606,14 @@ void inputFile::print()
 {
    long unsigned int i=0;
    while (i < lineTextList.size()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s\n",lineNumberList[i],lineTextList[i].c_str());
-#else
-      printf("%d: %s\n",lineNumberList[i],lineTextList[i].c_str());
-#endif
       i++;
    }
 }
 
 void inputFile::clear()
 {
-    lineTextList.clear();
-    lineNumberList.clear();
-    crossReferenceList.clear();
+   lineTextList.clear();
+   lineNumberList.clear();
+   crossReferenceList.clear();
 }
-
-

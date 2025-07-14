@@ -18,6 +18,7 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <quadmath.h>
 #include "port.hpp"
 #include "fem3D.hpp"
 #include "results.hpp"

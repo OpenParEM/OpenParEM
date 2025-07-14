@@ -165,19 +165,11 @@ bool point_comparison (struct point a, struct point b, double tolerance)
 
 void point_print (struct point a)
 {
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"struct point:\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   dim=%d\n",a.dim);
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   x=%g\n",a.x);
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   y=%g\n",a.y);
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   z=%g\n",a.z);
-#else
-   printf("struct point:\n");
-   printf("   dim=%d\n",a.dim);
-   printf("   x=%g\n",a.x);
-   printf("   y=%g\n",a.y);
-   printf("   z=%g\n",a.z);
-#endif
 }
 
 
@@ -188,46 +180,26 @@ void point_print (struct point a)
 bool keywordPair::int_limit_checks (string *keyword, int lineNumber)
 {
    if (positive_required && int_value <= 0) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1017: %s at line %d is required to be positive.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#else
-      printf("%s%sERROR1017: %s at line %d is required to be positive.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#endif
       return false;
    }
 
    if (non_negative_required && int_value < 0) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1018: %s at line %d is required to be non-negative.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#else
-      printf("%s%sERROR1018: %s at line %d is required to be non-negative.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#endif
       return false;
    }
 
    if (int_value < lowerLimit) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1019: %s at line %d is required to be >= %g.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,lowerLimit);
-#else
-      printf("%s%sERROR1019: %s at line %d is required to be >= %g.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,lowerLimit);
-#endif
       return false;
    }
 
    if (int_value > upperLimit) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1020: %s at line %d is required to be <= %g.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,upperLimit);
-#else
-      printf("%s%sERROR1020: %s at line %d is required to be <= %g.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,upperLimit);
-#endif
       return false;
    }
 
@@ -237,46 +209,26 @@ bool keywordPair::int_limit_checks (string *keyword, int lineNumber)
 bool keywordPair::dbl_limit_checks (string *keyword, int lineNumber)
 {
    if (positive_required && dbl_value <= 0) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1021: %s at line %d is required to be positive.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#else
-      printf("%s%sERROR1021: %s at line %d is required to be positive.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#endif
       return false; 
    }
 
    if (non_negative_required && dbl_value < 0) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1022: %s at line %d is required to be non-negative.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#else
-      printf("%s%sERROR1022: %s at line %d is required to be non-negative.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#endif
       return false;
    }
 
    if (dbl_value < lowerLimit*(1-dbl_tolerance)) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1023: %s at line %d is required to be >= %g.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,lowerLimit);
-#else
-      printf("%s%sERROR1023: %s at line %d is required to be >= %g.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,lowerLimit);
-#endif
       return false;
    }
 
    if (dbl_value > upperLimit*(1+dbl_tolerance)) { 
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1024: %s at line %d is required to be <= %g.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,upperLimit);
-#else
-      printf("%s%sERROR1024: %s at line %d is required to be <= %g.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,upperLimit);
-#endif
       return false;
    }
 
@@ -286,47 +238,27 @@ bool keywordPair::dbl_limit_checks (string *keyword, int lineNumber)
 bool keywordPair::point_limit_checks (string *keyword, int lineNumber)
 {
    if (positive_required && (point_value.x <= 0 || point_value.y <= 0 || (point_value.dim == 3 && point_value.z <= 0))) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1025: %s at line %d is required to be positive.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#else
-      printf("%s%sERROR1025: %s at line %d is required to be positive.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#endif
       return false;
    }
 
    if (non_negative_required && (point_value.x < 0 || point_value.y < 0 || (point_value.dim == 3 && point_value.z < 0))) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1026: %s at line %d is required to be non-negative.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#else
-      printf("%s%sERROR1026: %s at line %d is required to be non-negative.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber);
-#endif
       return false;
    }
 
    if (point_value.x < lowerLimit*(1-dbl_tolerance) || point_value.y < lowerLimit*(1-dbl_tolerance) || (point_value.dim == 3 && point_value.z < lowerLimit*(1-dbl_tolerance))) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1027: %s at line %d is required to be >= %g.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,lowerLimit);
-#else
-      printf("%s%sERROR1027: %s at line %d is required to be >= %g.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,lowerLimit);
-#endif
 
       return false;
    }
 
    if (point_value.x > upperLimit*(1+dbl_tolerance) || point_value.y > upperLimit*(1+dbl_tolerance) || (point_value.dim == 3 && point_value.z > upperLimit*(1+dbl_tolerance))) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1028: %s at line %d is required to be <= %g.\n",
                                              indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,upperLimit);
-#else
-      printf("%s%sERROR1028: %s at line %d is required to be <= %g.\n",
-             indent.c_str(),indent.c_str(),keyword->c_str(),lineNumber,upperLimit);
-#endif
       return false;
    }
 
@@ -344,11 +276,7 @@ bool keywordPair::limit_check (string type)
    } else if (type.compare("point") == 0) {
       if (! point_limit_checks (&keyword, lineNumber)) fail=true;
    } else {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: bad selection in keywordPair::limit_check\n");
-#else
-      printf("ASSERT: bad selection in keywordPair::limit_check\n");
-#endif
    }
 
    return fail;
@@ -368,25 +296,15 @@ bool keywordPair::loadBool (string *token, string *value_, int lineNumber_)
 {
    // check for duplicate
    if (loaded) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1029: Duplicate entry at line %d for previous entry at line %d.\n",
                                              indent.c_str(),indent.c_str(),lineNumber_,lineNumber);
-#else
-      printf("%s%sERROR1029: Duplicate entry at line %d for previous entry at line %d.\n",
-             indent.c_str(),indent.c_str(),lineNumber_,lineNumber);
-#endif
       return true;
    }
 
    // check for a boolean
    if (value_->compare("true") != 0 && value_->compare("false") != 0) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1030: %s value at line %d is invalid.\n",
                                              indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#else
-      printf("%s%sERROR1030: %s value at line %d is invalid.\n",
-             indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#endif
       return true;
    }
 
@@ -407,38 +325,23 @@ bool keywordPair::loadInt (string *token, string *value_, int lineNumber_)
 {
    // check for duplicate
    if (loaded) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1031: Duplicate entry at line %d for previous entry at line %d.\n",
                                              indent.c_str(),indent.c_str(),lineNumber_,lineNumber);
-#else
-      printf("%s%sERROR1031: Duplicate entry at line %d for previous entry at line %d.\n",
-             indent.c_str(),indent.c_str(),lineNumber_,lineNumber);
-#endif
       return true;
    }
 
    // check for a pure number
    if (!is_int(value_)) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1032: %s value at line %d is invalid.\n",
                                              indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#else
-      printf("%s%sERROR1032: %s value at line %d is invalid.\n",
-             indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#endif
       return true;
    }
 
    // get the value
    try {int_value=stoi(*value_);}
    catch (const std::invalid_argument& ia) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1033: %s value at line %d is invalid.\n",
                                              indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#else
-      printf("%s%sERROR1033: %s value at line %d is invalid.\n",
-             indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#endif
       return true;
    }
 
@@ -458,38 +361,23 @@ bool keywordPair::loadDouble (string *token, string *value_, int lineNumber_)
 {
    // check for duplicate
    if (loaded) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1112: Duplicate entry at line %d for previous entry at line %d.\n",
                                              indent.c_str(),indent.c_str(),lineNumber_,lineNumber);
-#else
-      printf("%s%sERROR1112: Duplicate entry at line %d for previous entry at line %d.\n",
-             indent.c_str(),indent.c_str(),lineNumber_,lineNumber);
-#endif
       return true;
    }
 
    // check for a pure number
    if (!is_double(value_)) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1111: %s value at line %d is invalid.\n",
                                              indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#else
-      printf("%s%sERROR1111: %s value at line %d is invalid.\n",
-             indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#endif
       return true;
    }
 
    // get the value
    try {dbl_value=stod(*value_);}
    catch (const std::invalid_argument& ia) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1113: %s value at line %d is invalid.\n",
                                               indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#else
-      printf("%s%sERROR1113: %s value at line %d is invalid.\n",
-             indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#endif
       return true;
    }
 
@@ -509,25 +397,15 @@ bool keywordPair::loadPoint (int dim, string *token, string *value_, int lineNum
 {
    // check for duplicate
    if (loaded) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1114: Duplicate entry at line %d for previous entry at line %d.\n",
                                              indent.c_str(),indent.c_str(),lineNumber_,lineNumber);
-#else
-      printf("%s%sERROR1114: Duplicate entry at line %d for previous entry at line %d.\n",
-             indent.c_str(),indent.c_str(),lineNumber_,lineNumber);
-#endif
       return true;
    }
 
    // check
    if (!is_point(value_,dim)) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1115: %s value at line %d is invalid.\n",
                                              indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#else
-      printf("%s%sERROR1115: %s value at line %d is invalid.\n",
-             indent.c_str(),indent.c_str(),token->c_str(),lineNumber_);
-#endif
       return true;
    }
 
@@ -637,14 +515,9 @@ void keywordPair::print()
 {
   long unsigned int i=0;
   while (i < aliases.size()) {
-#if HAS_MPI
      prefix(); PetscPrintf(PETSC_COMM_WORLD,"alias: %s\n",aliases[i].c_str());
-#else
-     printf("alias: %s\n",aliases[i].c_str());
-#endif
      i++;
   }
-#if HAS_MPI
   prefix(); PetscPrintf(PETSC_COMM_WORLD,"keyword: %s\n",keyword.c_str());
   prefix(); PetscPrintf(PETSC_COMM_WORLD,"value: %s\n",value.c_str());
   prefix(); PetscPrintf(PETSC_COMM_WORLD,"lineNumber: %d\n",lineNumber);
@@ -658,20 +531,5 @@ void keywordPair::print()
   prefix(); PetscPrintf(PETSC_COMM_WORLD,"indent: [%s]\n",indent.c_str());
   prefix(); PetscPrintf(PETSC_COMM_WORLD,"dbl_tolerance: %g\n",dbl_tolerance);
   prefix(); PetscPrintf(PETSC_COMM_WORLD,"checkLimits: %d\n",checkLimits);
-#else
-  printf("keyword: %s\n",keyword.c_str());
-  printf("value: %s\n",value.c_str());
-  printf("lineNumber: %d\n",lineNumber);
-  printf("int_value: %d\n",int_value);
-  printf("dbl_value: %g\n",dbl_value);
-  printf("loaded: %d\n",loaded);
-  printf("lowerLimit: %g\n",lowerLimit);
-  printf("upperLimit: %g\n",upperLimit);
-  printf("postive_required: %d\n",positive_required);
-  printf("non_negative_required: %d\n",non_negative_required);
-  printf("indent: [%s]\n",indent.c_str());
-  printf("dbl_tolerance: %g\n",dbl_tolerance);
-  printf("checkLimits: %d\n",checkLimits);
-#endif
 }
 

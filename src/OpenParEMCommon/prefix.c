@@ -33,10 +33,6 @@ char* get_prefix_text ()
 }
 
 void prefix () {
-#if HAS_MPI
     PetscPrintf(PETSC_COMM_WORLD,"%s",prefix_text);
-#else
-    printf("%s",prefix_text);
-#endif
 }
 

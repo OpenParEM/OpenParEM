@@ -31,8 +31,8 @@ AC_CHECK_LIB([dl], [dlvsym], ,AC_MSG_ERROR([cannot link to libdl; check config.l
 # Paths
 #LDFLAGS="$LDFLAGS -L${prefix}/lib -L/usr/lib/x86_64-linux-gnu"
 LDFLAGS="$LDFLAGS -L${prefix}/lib -L${prefix}/lib64"
-CXXFLAGS="$CXXFLAGS -I${prefix}/include" 
-CFLAGS="$CFLAGS -I${prefix}/include"
+CXXFLAGS="$CXXFLAGS -DHAS_MPI -I${prefix}/include" 
+CFLAGS="$CFLAGS -DHAS_MPI -I${prefix}/include"
 
 AC_CHECK_LIB([util], [openpty], ,AC_MSG_ERROR([cannot link to libutil; check config.log]))
 

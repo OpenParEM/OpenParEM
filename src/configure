@@ -6419,8 +6419,8 @@ fi
 # Paths
 #LDFLAGS="$LDFLAGS -L${prefix}/lib -L/usr/lib/x86_64-linux-gnu"
 LDFLAGS="$LDFLAGS -L${prefix}/lib -L${prefix}/lib64"
-CXXFLAGS="$CXXFLAGS -I${prefix}/include"
-CFLAGS="$CFLAGS -I${prefix}/include"
+CXXFLAGS="$CXXFLAGS -DHAS_MPI -I${prefix}/include"
+CFLAGS="$CFLAGS -DHAS_MPI -I${prefix}/include"
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for openpty in -lutil" >&5
 printf %s "checking for openpty in -lutil... " >&6; }

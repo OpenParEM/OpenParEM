@@ -29,7 +29,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <quadmath.h>
 #include "inputFrequency.h"
+#include "petscsys.h"
 #include "petscsystypes.h"
 
 char* removeNewLineChar (char *);

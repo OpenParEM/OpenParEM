@@ -27,13 +27,19 @@
 #include <sstream>
 #include <string>
 #include <limits>
+#include <quadmath.h>
 #include "petscsys.h"
 #include "keywordPair.hpp"
 #include "misc.hpp"
 #include "prefix.h"
 
+#ifdef HAS_GUI
+//#include <BRepBuilderAPI_MakePolygon.hxx>
+//#include <gp_Pnt.hxx>
+//#include <TopoDS_Wire.hxx>
+#endif
+
 using namespace std;
-using namespace mfem;
 
 struct point point_copy (struct point);
 struct point point_subtraction (struct point, struct point);
@@ -74,7 +80,8 @@ class Path {
       bool load (int, string *, inputFile *);
       bool inBlock (int);
       bool check (string *);
-      bool checkBoundingBox (Vector *, Vector *, string *, double);
+      //bool checkBoundingBox (Vector *, Vector *, string *, double);
+      bool checkBoundingBox (mfem::Vector *, mfem::Vector *, string *, double);
       string get_name () {return name.get_value();}
       bool name_is_loaded () {return name.is_loaded();}
       int get_name_lineNumber () {return name.get_lineNumber();}
@@ -123,11 +130,15 @@ class Path {
       void calculateBoundingBox ();
       void print (string);
       bool output (ofstream *, int);
-      bool snapToMeshBoundary (Mesh *);
+      bool snapToPoint (struct point);
+      bool snapToMeshBoundary (mfem::Mesh *);
       double area ();
       void reverseOrder ();
       bool lineIntersects (struct point, struct point);
       struct point getInsidePoint ();
+#ifdef HAS_GUI
+      //TopoDS_Wire create_TopoDS_Wire ();
+#endif
 };
 
 bool mergePaths (vector<Path *> *, vector<long unsigned int> *, vector<bool> *, string, string, Path **, double);

@@ -27,17 +27,17 @@
 #include "project.h"
 
 namespace Ui {
-class Refinement;
+class OPEMg_Refinement;
 }
 
-class Refinement : public QDialog
+class OPEMg_Refinement : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit Refinement(QWidget *parent = nullptr);
+    explicit OPEMg_Refinement(QWidget *parent = nullptr);
     void set_projData (struct projectData *);
-    ~Refinement();
+    ~OPEMg_Refinement();
 
 private slots:
 
@@ -58,7 +58,7 @@ private slots:
     void on_refineMax_valueChanged(int arg1);
 
 private:
-    Ui::Refinement *ui;
+    Ui::OPEMg_Refinement *ui;
     struct projectData *projData;
     QDoubleValidator toleranceValidator;
 };

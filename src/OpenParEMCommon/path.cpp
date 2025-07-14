@@ -426,6 +426,7 @@ void test_is_point_on_line ()
   if (!test_is_point_on_line (3, 2, 3, x1, y1, z1, x2, y2, z2, tolerance))                      PetscPrintf(PETSC_COMM_WORLD,"%d pass\n",i); else PetscPrintf(PETSC_COMM_WORLD,"%d FAIL\n",i); i++;
   if (!test_is_point_on_line (1e-7, 2, 1e-7, x1, y1, z1, x2, y2, z2, tolerance))                PetscPrintf(PETSC_COMM_WORLD,"%d pass\n",i); else PetscPrintf(PETSC_COMM_WORLD,"%d FAIL\n",i); i++;
   if (!test_is_point_on_line (-1e7, 2, -1e-7, x1, y1, z1, x2, y2, z2, tolerance))               PetscPrintf(PETSC_COMM_WORLD,"%d pass\n",i); else PetscPrintf(PETSC_COMM_WORLD,"%d FAIL\n",i); i++;
+
 }
 
 bool mergePaths (vector<Path *> *pathList, vector<long unsigned int> *pathIndexList, vector<bool> *reverseList, string boundaryType, string boundaryName, Path **mergedPath, double tol)
@@ -737,7 +738,7 @@ bool Path::load(int dim, string *indent, inputFile *inputs)
    return fail;
 }
 
-bool Path::checkBoundingBox(Vector *lowerLeft, Vector *upperRight, string *indent, double tol)
+bool Path::checkBoundingBox(mfem::Vector *lowerLeft, mfem::Vector *upperRight, string *indent, double tol)
 {
    bool fail=false;
 
@@ -1754,10 +1755,34 @@ void Path::test_is_point_inside_sqr2 ()
    else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
 }
 
-bool Path::snapToMeshBoundary (Mesh *mesh)
+// return true if there is a snap
+bool Path::snapToPoint (struct point p)
+{
+    // nothing to do
+    if (points.size() == 0) return false;
+
+    // check for dimensional alignment
+    if (p.dim != points[0]->get_point_value_dim()) {
+        prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Path::snapToPoint passed mismatched dimensions.\n");
+        return false;
+    }
+
+    long unsigned int i=0;
+    while (i < points.size()) {
+        if (points[i]->is_close_point(p)) {
+            points[i]->set_point_value(p);
+            return true;
+        }
+        i++;
+    }
+
+    return false;
+}
+
+bool Path::snapToMeshBoundary (mfem::Mesh *mesh)
 {
    bool fail=false;
-   DenseMatrix pointMat(3,3);
+   mfem::DenseMatrix pointMat(3,3);
 
    // nothing to do
    if (points.size() == 0) return false;
@@ -1773,7 +1798,7 @@ bool Path::snapToMeshBoundary (Mesh *mesh)
       bool found_point=false;
       int j=0;
       while (j < mesh->GetNBE()) {
-         if (mesh->GetBdrElementType(j) == Element::TRIANGLE) {
+         if (mesh->GetBdrElementType(j) == mfem::Element::TRIANGLE) {
             mesh->GetBdrPointMatrix(j,pointMat);
             struct point p1; p1.dim=3; p1.x=pointMat.Elem(0,0); p1.y=pointMat.Elem(1,0); p1.z=pointMat.Elem(2,0);
             struct point p2; p2.dim=3; p2.x=pointMat.Elem(0,1); p2.y=pointMat.Elem(1,1); p2.z=pointMat.Elem(2,1);
@@ -1952,6 +1977,26 @@ struct point Path::getInsidePoint ()
    // should not get to here
    return error_point;
 }
+
+#ifdef HAS_GUI
+/*
+TopoDS_Wire Path::create_TopoDS_Wire ()
+{
+    BRepBuilderAPI_MakePolygon polygon;
+
+    long unsigned int i=0;
+    while (i < points.size()) {
+        gp_Pnt vertex(points[i]->get_point_value().x,points[i]->get_point_value().y,points[i]->get_point_value().z);
+        polygon.Add(vertex);
+        i++;
+    }
+
+    if (get_closed()) polygon.Close();
+
+    return polygon.Wire();
+}
+*/
+#endif
 
 Path::~Path ()
 {

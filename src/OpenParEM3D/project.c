@@ -492,11 +492,7 @@ int check_antennaPatterns (struct projectData *projData, const char* indent)
       i++;
    }
    if (!found) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3187: A 3D \"G\" or \"D\" antenna pattern must be specified with \"antenna.plot.3D.pattern G|D\".\n",indent,indent);
-#else
-      prefix(); printf("%s%sERROR3187: A 3D \"G\" or \"D\" antenna pattern must be specified with \"antenna.plot.3D.pattern G|D\".\n",indent,indent);
-#endif
       fail=1;
    }
 
@@ -531,13 +527,8 @@ int check_antennaPatterns (struct projectData *projData, const char* indent)
             if (double_compare(projData->inputAntennaPatterns[i].rotation,projData->inputAntennaPatterns[j].rotation,1e-12)) t9=1;
          }
          if (t1 && t2 && t3 && t4 && t5 && t6 && t7 && t8 & t9) {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3001: Antenna plot pattern at line %d duplicates that at line %d.\n",
                indent,indent,projData->inputAntennaPatterns[j].lineNumber,projData->inputAntennaPatterns[i].lineNumber);
-#else
-            prefix(); printf("%s%sERROR3001: Antenna plot pattern at line %d duplicates that at line %d.\n",
-               indent,indent,projData->inputAntennaPatterns[j].lineNumber,projData->inputAntennaPatterns[i].lineNumber);
-#endif
             fail=1;
          }
              
@@ -711,315 +702,142 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    comment[0]=allocCopyString("");
    comment[1]=allocCopyString("//");
 
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%s %s\n",indent,data->version_name,data->version_value);
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s//Commented lines show either unspecified inputs that utilize the default values or specified inputs that match the default values.\n",indent);
-#else
-   prefix(); printf("%s%s %s\n",indent,data->version_name,data->version_value);
-   prefix(); printf("%s//Commented lines show either unspecified inputs that utilize the default values or specified inputs that match the default values.\n",indent);
-#endif
 
    matched=0;  if (defaultData && data->project_calculate_poynting == defaultData->project_calculate_poynting) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sproject.calculate.poynting %s\n",indent,comment[matched],logic[data->project_calculate_poynting]);
-#else
-   prefix(); printf("%s%sproject.calculate.poynting %s\n",indent,comment[matched],logic[data->project_calculate_poynting]);
-#endif
 
    matched=0;  if (defaultData && data->project_save_fields == defaultData->project_save_fields) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sproject.save.fields %s\n",indent,comment[matched],logic[data->project_save_fields]);
-#else
-   prefix(); printf("%s%sproject.save.fields %s\n",indent,comment[matched],logic[data->project_save_fields]);
-#endif
 
    matched=0; if (defaultData && strcmp(data->mesh_file,defaultData->mesh_file) == 0) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.file %s\n",indent,comment[matched],data->mesh_file);
-#else
-   prefix(); printf("%s%smesh.file %s\n",indent,comment[matched],data->mesh_file);
-#endif
 
    matched=0; if (defaultData && data->mesh_order == defaultData->mesh_order) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.order %d\n",indent,comment[matched],data->mesh_order);
-#else
-   prefix(); printf("%s%smesh.order %d\n",indent,comment[matched],data->mesh_order);
-#endif
 
    matched=0;  if (defaultData && data->mesh_save_refined == defaultData->mesh_save_refined) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.save.refined %s\n",indent,comment[matched],logic[data->mesh_save_refined]);
-#else
-   prefix(); printf("%s%smesh.save.refined %s\n",indent,comment[matched],logic[data->mesh_save_refined]);
-#endif
 
    matched=0; if (defaultData && double_compare(data->mesh_3D_refinement_fraction,defaultData->mesh_3D_refinement_fraction,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.refinement.fraction %.15g\n",indent,comment[matched],data->mesh_3D_refinement_fraction);
-#else
-   prefix(); printf("%s%smesh.refinement.fraction %.15g\n",indent,comment[matched],data->mesh_3D_refinement_fraction);
-#endif
 
    matched=0; if (defaultData && double_compare(data->mesh_quality_limit,defaultData->mesh_quality_limit,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.quality.limit %.15g\n",indent,comment[matched],data->mesh_quality_limit);
-#else
-   prefix(); printf("%s%smesh.quality.limit %.15g\n",indent,comment[matched],data->mesh_quality_limit);
-#endif
 
    matched=0; if (defaultData && strcmp(data->port_definition_file,defaultData->port_definition_file) == 0) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sport.definition.file %s\n",indent,comment[matched],data->port_definition_file);
-#else
-   prefix(); printf("%s%sport.definition.file %s\n",indent,comment[matched],data->port_definition_file);
-#endif
 
    matched=0; if (defaultData && strcmp(data->refinement_frequency,defaultData->refinement_frequency) == 0) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%srefinement.frequency %s\n",indent,comment[matched],data->refinement_frequency);
-#else
-   prefix(); printf("%s%srefinement.frequency %s\n",indent,comment[matched],data->refinement_frequency);
-#endif
 
    matched=0; if (defaultData && data->refinement_iteration_min == defaultData->refinement_iteration_min) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%srefinement.iteration.min %d\n",indent,comment[matched],data->refinement_iteration_min);
-#else
-   prefix(); printf("%s%srefinement.iteration.min %d\n",indent,comment[matched],data->refinement_iteration_min);
-#endif
 
    matched=0; if (defaultData && data->refinement_iteration_max == defaultData->refinement_iteration_max) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%srefinement.iteration.max %d\n",indent,comment[matched],data->refinement_iteration_max);
-#else
-   prefix(); printf("%s%srefinement.iteration.max %d\n",indent,comment[matched],data->refinement_iteration_max);
-#endif
 
    matched=0; if (defaultData && data->refinement_required_passes == defaultData->refinement_required_passes) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%srefinement.required.passes %d\n",indent,comment[matched],data->refinement_required_passes);
-#else
-   prefix(); printf("%s%srefinement.required.passes %d\n",indent,comment[matched],data->refinement_required_passes);
-#endif
 
    matched=0; if (defaultData && double_compare(data->refinement_relative_tolerance,defaultData->refinement_relative_tolerance,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%srefinement.relative.tolerance %.15g\n",indent,comment[matched],data->refinement_relative_tolerance);
-#else
-   prefix(); printf("%s%srefinement.relative.tolerance %.15g\n",indent,comment[matched],data->refinement_relative_tolerance);
-#endif
 
    matched=0; if (defaultData && double_compare(data->refinement_absolute_tolerance,defaultData->refinement_absolute_tolerance,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%srefinement.absolute.tolerance %.15g\n",indent,comment[matched],data->refinement_absolute_tolerance);
-#else
-   prefix(); printf("%s%srefinement.absolute.tolerance %.15g\n",indent,comment[matched],data->refinement_absolute_tolerance);
-#endif
 
    matched=0; if (defaultData && strcmp(data->refinement_variable,defaultData->refinement_variable) == 0) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%srefinement.variable %s\n",indent,comment[matched],data->refinement_variable);
-#else
-   prefix(); printf("%s%srefinement.variable %s\n",indent,comment[matched],data->refinement_variable);
-#endif
 
    matched=0; if (defaultData && strcmp(data->materials_global_path,defaultData->materials_global_path) == 0) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%smaterials.global.path %s\n",indent,data->materials_global_path);
-#else
-   prefix(); printf("%smaterials.global.path %s\n",indent,data->materials_global_path);
-#endif
 
    matched=0; if (defaultData && strcmp(data->materials_global_name,defaultData->materials_global_name) == 0) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%smaterials.global.name %s\n",indent,data->materials_global_name);
-#else
-   prefix(); printf("%smaterials.global.name %s\n",indent,data->materials_global_name);
-#endif
 
    matched=0; if (defaultData && strcmp(data->materials_local_path,defaultData->materials_local_path) == 0) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%smaterials.local.path %s\n",indent,data->materials_local_path);
-#else
-   prefix(); printf("%smaterials.local.path %s\n",indent,data->materials_local_path);
-#endif
 
    matched=0; if (defaultData && strcmp(data->materials_local_name,defaultData->materials_local_name) == 0) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%smaterials.local.name %s\n",indent,data->materials_local_name);
-#else
-   prefix(); printf("%smaterials.local.name %s\n",indent,data->materials_local_name);
-#endif
 
    matched=0; if (defaultData && strcmp(data->materials_default_boundary,defaultData->materials_default_boundary) == 0) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%smaterials.default.boundary %s\n",indent,data->materials_default_boundary);
-#else
-   prefix(); printf("%smaterials.default.boundary %s\n",indent,data->materials_default_boundary);
-#endif
 
    matched=0;  if (defaultData && data->materials_check_limits == defaultData->materials_check_limits) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smaterials.check.limits %s\n",indent,comment[matched],logic[data->materials_check_limits]);
-#else
-   prefix(); printf("%s%smaterials.check.limits %s\n",indent,comment[matched],logic[data->materials_check_limits]);
-#endif
 
    // no default frequency plans, so print all
    i=0;
    while (i < data->inputFrequencyPlansCount) {
       if (data->inputFrequencyPlans[i].type == 0) {
          if (data->inputFrequencyPlans[i].refine == 0) {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sfrequency.plan.linear %.15g,%.15g,%.15g\n",indent,
                         data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].step);
-#else
-            prefix(); printf("%sfrequency.plan.linear %.15g,%.15g,%.15g\n",indent,
-                        data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].step);
-#endif
          } else {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sfrequency.plan.linear.refine %.15g,%.15g,%.15g\n",indent,
                         data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].step);
-#else
-            prefix(); printf("%sfrequency.plan.linear.refine %.15g,%.15g,%.15g\n",indent,
-                        data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].step);
-#endif
          }
       } else if (data->inputFrequencyPlans[i].type == 1) {
          if (data->inputFrequencyPlans[i].refine == 0) {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sfrequency.plan.log %.15g,%.15g,%d\n",indent,
                         data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].pointsPerDecade);
-#else
-            prefix(); printf("%sfrequency.plan.log %.15g,%.15g,%d\n",indent,
-                        data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].pointsPerDecade);
-#endif
          } else {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sfrequency.plan.log.refine %.15g,%.15g,%d\n",indent,
                         data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].pointsPerDecade);
-#else
-            prefix(); printf("%sfrequency.plan.log.refine %.15g,%.15g,%d\n",indent,
-                        data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].pointsPerDecade);
-#endif
          }
       } else if (data->inputFrequencyPlans[i].type == 2) {
          if (data->inputFrequencyPlans[i].refine == 0) {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sfrequency.plan.point %.15g\n",indent,data->inputFrequencyPlans[i].frequency);
-#else
-            prefix(); printf("%sfrequency.plan.point %.15g\n",indent,data->inputFrequencyPlans[i].frequency);
-#endif
          } else {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sfrequency.plan.point.refine %.15g\n",indent,data->inputFrequencyPlans[i].frequency);
-#else
-            prefix(); printf("%sfrequency.plan.point.refine %.15g\n",indent,data->inputFrequencyPlans[i].frequency);
-#endif
          }
       }
       i++;
    }
 
    matched=0; if (defaultData && double_compare(data->reference_impedance,defaultData->reference_impedance,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sreference.impedance %.15g\n",indent,comment[matched],data->reference_impedance);
-#else
-   prefix(); printf("%s%sreference.impedance %.15g\n",indent,comment[matched],data->reference_impedance);
-#endif
 
    matched=0; if (defaultData && strcmp(data->touchstone_frequency_unit,defaultData->touchstone_frequency_unit) == 0) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%stouchstone.frequency.unit %s\n",indent,comment[matched],data->touchstone_frequency_unit);
-#else
-   prefix(); printf("%s%stouchstone.frequency.unit %s\n",indent,comment[matched],data->touchstone_frequency_unit);
-#endif
 
    matched=0; if (defaultData && strcmp(data->touchstone_format,defaultData->touchstone_format) == 0) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%stouchstone.format %s\n",indent,comment[matched],data->touchstone_format);
-#else
-   prefix(); printf("%s%stouchstone.format %s\n",indent,comment[matched],data->touchstone_format);
-#endif
 
    matched=0; if (defaultData && double_compare(data->solution_temperature,defaultData->solution_temperature,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.temperature %.15g\n",indent,comment[matched],data->solution_temperature);
-#else
-   prefix(); printf("%s%ssolution.temperature %.15g\n",indent,comment[matched],data->solution_temperature);
-#endif
 
    matched=0; if (defaultData && double_compare(data->solution_2D_tolerance,defaultData->solution_2D_tolerance,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.2D.tolerance %.15g\n",indent,comment[matched],data->solution_2D_tolerance);
-#else
-   prefix(); printf("%s%ssolution.2D.tolerance %.15g\n",indent,comment[matched],data->solution_2D_tolerance);
-#endif
 
    matched=0; if (defaultData && double_compare(data->solution_3D_tolerance,defaultData->solution_3D_tolerance,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.3D.tolerance %.15g\n",indent,comment[matched],data->solution_3D_tolerance);
-#else
-   prefix(); printf("%s%ssolution.3D.tolerance %.15g\n",indent,comment[matched],data->solution_3D_tolerance);
-#endif
 
    matched=0; if (defaultData && data->solution_iteration_limit == defaultData->solution_iteration_limit) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.iteration.limit %d\n",indent,comment[matched],data->solution_iteration_limit);
-#else
-   prefix(); printf("%s%ssolution.iteration.limit %d\n",indent,comment[matched],data->solution_iteration_limit);
-#endif
 
    matched=0; if (defaultData && data->solution_modes_buffer == defaultData->solution_modes_buffer) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.modes.buffer %d\n",indent,comment[matched],data->solution_modes_buffer);
-#else
-   prefix(); printf("%s%ssolution.modes.buffer %d\n",indent,comment[matched],data->solution_modes_buffer);
-#endif
 
    matched=0;  if (defaultData && data->solution_check_closed_loop == defaultData->solution_check_closed_loop) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.check.closed.loop %s\n",indent,comment[matched],logic[data->solution_check_closed_loop]);
-#else
-   prefix(); printf("%s%ssolution.check.closed.loop %s\n",indent,comment[matched],logic[data->solution_check_closed_loop]);
-#endif
 
    matched=0;  if (defaultData && data->solution_check_homogeneous == defaultData->solution_check_homogeneous) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.check.homogeneous %s\n",indent,comment[matched],logic[data->solution_check_homogeneous]);
-#else
-   prefix(); printf("%s%ssolution.check.homogeneous %s\n",indent,comment[matched],logic[data->solution_check_homogeneous]);
-#endif
 
    matched=0;  if (defaultData && data->solution_accurate_residual == defaultData->solution_accurate_residual) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.accurate.residual %s\n",indent,comment[matched],logic[data->solution_accurate_residual]);
-#else
-   prefix(); printf("%s%ssolution.accurate.residual %s\n",indent,comment[matched],logic[data->solution_accurate_residual]);
-#endif
 
    matched=0;  if (defaultData && data->solution_shift_invert == defaultData->solution_shift_invert) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.shift.invert %s\n",indent,comment[matched],logic[data->solution_shift_invert]);
-#else
-   prefix(); printf("%s%ssolution.shift.invert %s\n",indent,comment[matched],logic[data->solution_shift_invert]);
-#endif
 
    matched=0;  if (defaultData && data->solution_use_initial_guess == defaultData->solution_use_initial_guess) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.use.initial.guess %s\n",indent,comment[matched],logic[data->solution_use_initial_guess]);
-#else
-   prefix(); printf("%s%ssolution.use.initial.guess %s\n",indent,comment[matched],logic[data->solution_use_initial_guess]);
-#endif
 
    matched=0; if (defaultData && double_compare(data->solution_shift_factor,defaultData->solution_shift_factor,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.shift.factor %.15g\n",indent,comment[matched],data->solution_shift_factor);
-#else
-   prefix(); printf("%s%ssolution.shift.factor %.15g\n",indent,comment[matched],data->solution_shift_factor);
-#endif
 
    // no default antenna patterns, so print all
    i=0;
@@ -1027,268 +845,118 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
       if (data->inputAntennaPatterns[i].dim == 2) {
          prefix();
          if (data->inputAntennaPatterns[i].quantity1 == NULL) {
-#if HAS_MPI
             PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.2D.pattern NULL",indent);
-#else
-            printf("%santenna.plot.2D.pattern NULL",indent);
-#endif
          } else {
-#if HAS_MPI
             PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.2D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
-#else
-            printf("%santenna.plot.2D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
-#endif
          }
          if (data->inputAntennaPatterns[i].quantity2 != NULL) {
-#if HAS_MPI
             PetscPrintf(PETSC_COMM_WORLD,",%s",data->inputAntennaPatterns[i].quantity2);
-#else
-            printf(",%s",data->inputAntennaPatterns[i].quantity2);
-#endif
          }
          if (data->inputAntennaPatterns[i].plane != NULL) {
-#if HAS_MPI
             PetscPrintf(PETSC_COMM_WORLD,",%s",data->inputAntennaPatterns[i].plane);
-#else
-            printf(",%s",data->inputAntennaPatterns[i].plane);
-#endif
          } else {
-#if HAS_MPI
             PetscPrintf(PETSC_COMM_WORLD,",%.15g,%.15g",data->inputAntennaPatterns[i].theta,data->inputAntennaPatterns[i].phi);
-#else
-            printf(",%.15g,%.15g",data->inputAntennaPatterns[i].theta,data->inputAntennaPatterns[i].phi);
-#endif
          }
-#if HAS_MPI
          PetscPrintf(PETSC_COMM_WORLD,",%.15g",data->inputAntennaPatterns[i].latitude);
          PetscPrintf(PETSC_COMM_WORLD,",%.15g",data->inputAntennaPatterns[i].rotation);
          PetscPrintf(PETSC_COMM_WORLD,"\n");
-#else
-         printf(",%.15g",data->inputAntennaPatterns[i].latitude);
-         printf(",%.15g",data->inputAntennaPatterns[i].rotation);
-         printf("\n");
-#endif
       } else {
          prefix();
          if (data->inputAntennaPatterns[i].quantity1 == NULL) {
-#if HAS_MPI
             PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.3D.pattern NULL",indent);
-#else
-            printf("%santenna.plot.3D.pattern NULL",indent);
-#endif
          } else {
-#if HAS_MPI
             PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.3D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
-#else
-            printf("%santenna.plot.3D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
-#endif
          }
-#if HAS_MPI
          PetscPrintf(PETSC_COMM_WORLD,"\n");
-#else
-         printf("\n");
-#endif
       }
       i++;
    }
 
    matched=0; if (defaultData && double_compare(data->antenna_plot_current_resolution,defaultData->antenna_plot_current_resolution,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%santenna.plot.current.resolution %.15g\n",indent,comment[matched],data->antenna_plot_current_resolution);
-#else
-   prefix(); printf("%s%santenna.plot.current.resolution %.15g\n",indent,comment[matched],data->antenna_plot_current_resolution);
-#endif
 
    matched=0; if (defaultData && double_compare(data->antenna_plot_2D_range,defaultData->antenna_plot_2D_range,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%santenna.plot.2D.range %.15g\n",indent,comment[matched],data->antenna_plot_2D_range);
-#else
-   prefix(); printf("%s%santenna.plot.2D.range %.15g\n",indent,comment[matched],data->antenna_plot_2D_range);
-#endif
 
    matched=0; if (defaultData && double_compare(data->antenna_plot_2D_resolution,defaultData->antenna_plot_2D_resolution,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%santenna.plot.2D.resolution %.15g\n",indent,comment[matched],data->antenna_plot_2D_resolution);
-#else
-   prefix(); printf("%s%santenna.plot.2D.resolution %.15g\n",indent,comment[matched],data->antenna_plot_2D_resolution);
-#endif
 
    matched=0;  if (defaultData && data->antenna_plot_2D_annotations == defaultData->antenna_plot_2D_annotations) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%santenna.plot.2D.annotations %s\n",indent,comment[matched],logic[data->antenna_plot_2D_annotations]);
-#else
-   prefix(); printf("%s%santenna.plot.2D.annotations %s\n",indent,comment[matched],logic[data->antenna_plot_2D_annotations]);
-#endif
 
    matched=0;  if (defaultData && data->antenna_plot_2D_save == defaultData->antenna_plot_2D_save) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%santenna.plot.2D.save %s\n",indent,comment[matched],logic[data->antenna_plot_2D_save]);
-#else
-   prefix(); printf("%s%santenna.plot.2D.save %s\n",indent,comment[matched],logic[data->antenna_plot_2D_save]);
-#endif
 
    matched=0; if (defaultData && double_compare(data->antenna_plot_3D_refinement,defaultData->antenna_plot_3D_refinement,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%santenna.plot.3D.refinement %d\n",indent,comment[matched],data->antenna_plot_3D_refinement);
-#else
-   prefix(); printf("%s%santenna.plot.3D.refinement %d\n",indent,comment[matched],data->antenna_plot_3D_refinement);
-#endif
 
    matched=0; if (defaultData && double_compare(data->antenna_plot_2D_interval,defaultData->antenna_plot_2D_interval,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%santenna.plot.2D.interval %.15g\n",indent,comment[matched],data->antenna_plot_2D_interval);
-#else
-   prefix(); printf("%s%santenna.plot.2D.interval %.15g\n",indent,comment[matched],data->antenna_plot_2D_interval);
-#endif
 
    matched=0;  if (defaultData && data->antenna_plot_3D_sphere == defaultData->antenna_plot_3D_sphere) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%santenna.plot.3D.sphere %s\n",indent,comment[matched],logic[data->antenna_plot_3D_sphere]);
-#else
-   prefix(); printf("%s%santenna.plot.3D.sphere %s\n",indent,comment[matched],logic[data->antenna_plot_3D_sphere]);
-#endif
 
    matched=0;  if (defaultData && data->antenna_plot_3D_save == defaultData->antenna_plot_3D_save) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%santenna.plot.3D.save %s\n",indent,comment[matched],logic[data->antenna_plot_3D_save]);
-#else
-   prefix(); printf("%s%santenna.plot.3D.save %s\n",indent,comment[matched],logic[data->antenna_plot_3D_save]);
-#endif
 
    matched=0;  if (defaultData && data->antenna_plot_raw_save == defaultData->antenna_plot_raw_save) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%santenna.plot.raw.save %s\n",indent,comment[matched],logic[data->antenna_plot_raw_save]);
-#else
-   prefix(); printf("%s%santenna.plot.raw.save %s\n",indent,comment[matched],logic[data->antenna_plot_raw_save]);
-#endif
 
    matched=0;  if (defaultData && data->output_show_refining_mesh == defaultData->output_show_refining_mesh) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%soutput.show.refining.mesh %s\n",indent,comment[matched],logic[data->output_show_refining_mesh]);
-#else
-   prefix(); printf("%s%soutput.show.refining.mesh %s\n",indent,comment[matched],logic[data->output_show_refining_mesh]);
-#endif
 
    matched=0;  if (defaultData && data->output_show_postprocessing == defaultData->output_show_postprocessing) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%soutput.show.postprocessing %s\n",indent,comment[matched],logic[data->output_show_postprocessing]);
-#else
-   prefix(); printf("%s%soutput.show.postprocessing %s\n",indent,comment[matched],logic[data->output_show_postprocessing]);
-#endif
 
    matched=0;  if (defaultData && data->output_show_iterations == defaultData->output_show_iterations) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%soutput.show.iterations %s\n",indent,comment[matched],logic[data->output_show_iterations]);
-#else
-   prefix(); printf("%s%soutput.show.iterations %s\n",indent,comment[matched],logic[data->output_show_iterations]);
-#endif
 
    matched=0;  if (defaultData && data->output_show_license == defaultData->output_show_license) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%soutput.show.license %s\n",indent,comment[matched],logic[data->output_show_license]);
-#else
-   prefix(); printf("%s%soutput.show.license %s\n",indent,comment[matched],logic[data->output_show_license]);
-#endif
 
    matched=0;  if (defaultData && data->test_create_cases == defaultData->test_create_cases) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%stest.create.cases %s\n",indent,comment[matched],logic[data->test_create_cases]);
-#else
-   prefix(); printf("%s%stest.create.cases %s\n",indent,comment[matched],logic[data->test_create_cases]);
-#endif
 
    matched=0;  if (defaultData && data->test_show_detailed_cases == defaultData->test_show_detailed_cases) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%stest.show.detailed.cases %s\n",indent,comment[matched],logic[data->test_show_detailed_cases]);
-#else
-   prefix(); printf("%s%stest.show.detailed.cases %s\n",indent,comment[matched],logic[data->test_show_detailed_cases]);
-#endif
 
    matched=0;  if (defaultData && data->debug_show_memory == defaultData->debug_show_memory) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.show.memory %s\n",indent,comment[matched],logic[data->debug_show_memory]);
-#else
-   prefix(); printf("%s%sdebug.show.memory %s\n",indent,comment[matched],logic[data->debug_show_memory]);
-#endif
 
    matched=0;  if (defaultData && data->debug_show_project == defaultData->debug_show_project) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.show.project %s\n",indent,comment[matched],logic[data->debug_show_project]);
-#else
-   prefix(); printf("%s%sdebug.show.project %s\n",indent,comment[matched],logic[data->debug_show_project]);
-#endif
 
    matched=0;  if (defaultData && data->debug_show_frequency_plan == defaultData->debug_show_frequency_plan) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.show.frequency.plan %s\n",indent,comment[matched],logic[data->debug_show_frequency_plan]);
-#else
-   prefix(); printf("%s%sdebug.show.frequency.plan %s\n",indent,comment[matched],logic[data->debug_show_frequency_plan]);
-#endif
 
    matched=0;  if (defaultData && data->debug_show_materials == defaultData->debug_show_materials) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.show.materials %s\n",indent,comment[matched],logic[data->debug_show_materials]);
-#else
-   prefix(); printf("%s%sdebug.show.materials %s\n",indent,comment[matched],logic[data->debug_show_materials]);
-#endif
 
    matched=0;  if (defaultData && data->debug_show_port_definitions == defaultData->debug_show_port_definitions) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.show.port.definitions %s\n",indent,comment[matched],logic[data->debug_show_port_definitions]);
-#else
-   prefix(); printf("%s%sdebug.show.port.definitions %s\n",indent,comment[matched],logic[data->debug_show_port_definitions]);
-#endif
 
    matched=0;  if (defaultData && data->debug_show_impedance_details == defaultData->debug_show_impedance_details) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.show.impedance.details %s\n",indent,comment[matched],logic[data->debug_show_impedance_details]);
-#else
-   prefix(); printf("%s%sdebug.show.impedance.details %s\n",indent,comment[matched],logic[data->debug_show_impedance_details]);
-#endif
 
    matched=0;  if (defaultData && data->debug_save_port_fields == defaultData->debug_save_port_fields) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.save.port.fields %s\n",indent,comment[matched],logic[data->debug_save_port_fields]);
-#else
-   prefix(); printf("%s%sdebug.save.port.fields %s\n",indent,comment[matched],logic[data->debug_save_port_fields]);
-#endif
 
    matched=0;  if (defaultData && data->debug_skip_mixed_conversion == defaultData->debug_skip_mixed_conversion) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.skip.mixed.conversion %s\n",indent,comment[matched],logic[data->debug_skip_mixed_conversion]);
-#else
-   prefix(); printf("%s%sdebug.skip.mixed.conversion %s\n",indent,comment[matched],logic[data->debug_skip_mixed_conversion]);
-#endif
 
    matched=0;  if (defaultData && data->debug_skip_forced_reciprocity == defaultData->debug_skip_forced_reciprocity) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.skip.forced.reciprocity %s\n",indent,comment[matched],logic[data->debug_skip_forced_reciprocity]);
-#else
-   prefix(); printf("%s%sdebug.skip.forced.reciprocity %s\n",indent,comment[matched],logic[data->debug_skip_forced_reciprocity]);
-#endif
 
    matched=0;  if (defaultData && data->debug_tempfiles_keep == defaultData->debug_tempfiles_keep) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.tempfiles.keep %s\n",indent,comment[matched],logic[data->debug_tempfiles_keep]);
-#else
-   prefix(); printf("%s%sdebug.tempfiles.keep %s\n",indent,comment[matched],logic[data->debug_tempfiles_keep]);
-#endif
 
    matched=0; if (defaultData && double_compare(data->debug_refine_preconditioner,defaultData->debug_refine_preconditioner,1e-14)) matched=1;
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.refine.preconditioner %d\n",indent,comment[matched],data->debug_refine_preconditioner);
-#else
-   prefix(); printf("%s%sdebug.refine.preconditioner %d\n",indent,comment[matched],data->debug_refine_preconditioner);
-#endif
 
    // no default field points, so print all
    i=0;
    while (i < data->field_points_count) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sfield.point %.15g,%.15g,%.15g\n",indent,indent,data->field_points_x[i],data->field_points_y[i],data->field_points_z[i]);
-#else
-      prefix(); printf("%s%sfield.point %.15g,%.15g,%.15g\n",indent,indent,data->field_points_x[i],data->field_points_y[i],data->field_points_z[i]);
-#endif
       i++;
    }
 
@@ -1304,11 +972,7 @@ int get_bool (char *a) {
 }
 
 void print_invalid_entry (PetscErrorCode *error, int lineNumber, const char *indent) {
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3133: Invalid entry at line %d.\n",indent,indent,lineNumber);
-#else
-   prefix(); printf("%s%sERROR3133: Invalid entry at line %d.\n",indent,indent,lineNumber);
-#endif
    *error=1;
    return;
 }
@@ -1351,17 +1015,11 @@ int has_refinementFrequencyPlan (struct projectData *data) {
 void print_antenna_patterns (struct projectData *data, PetscMPIInt rank_)
 {
 
-#if HAS_MPI
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-#else
-   PetscMPIInt rank=0;
-#endif
    int i;
 
-#if HAS_MPI
    MPI_Barrier(PETSC_COMM_WORLD);
-#endif
    if (rank == rank_) {
       i=0;
       while (i < data->inputAntennaPatternsCount) {
@@ -1378,9 +1036,7 @@ void print_antenna_patterns (struct projectData *data, PetscMPIInt rank_)
          i++;
       }
    }
-#if HAS_MPI
    MPI_Barrier(PETSC_COMM_WORLD);
-#endif
 }
 
 // returns test within commas skipping commas within {}
@@ -1532,12 +1188,8 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
 
    if (filename == NULL) return 1;
 
-   size=1;
-   rank=0;
-#if HAS_MPI
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-#endif
 
    lineIterationMax=-1;
 
@@ -1547,15 +1199,9 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       fp=fopen(filename,"r");
       if (fp) openedFile=1;
    }
-#if HAS_MPI
    ierr=MPI_Bcast (&openedFile,1,MPI_INT,0,PETSC_COMM_WORLD);
-#endif
    if (! openedFile) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3173: Failed to open file \"%s\" for reading.\n",indent,indent,filename);
-#else
-      prefix(); printf("%s%sERROR3173: Failed to open file \"%s\" for reading.\n",indent,indent,filename);
-#endif
       return 1;
    }
 
@@ -1579,26 +1225,16 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                   value=strtok(NULL," ");
                   if (is_text(value)) {
                      if (strcmp(value,data->version_value) != 0) {
-#if HAS_MPI
                         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3134: Version mismatch. Expecting on first line: %s %s\n",
                                     indent,indent,data->version_name,data->version_value);
-#else
-                        prefix(); printf("%s%sERROR3134: Version mismatch. Expecting on first line: %s %s\n",
-                                    indent,indent,data->version_name,data->version_value);
-#endif
                         ierr=1;
                      }
                      value=strtok(NULL," ");
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                   } else print_invalid_entry (&ierr,lineCount,indent);
                } else {
-#if HAS_MPI
                   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3135: Missing version. Expecting on first line: %s %s\n",
                               indent,indent,data->version_name,data->version_value);
-#else
-                  prefix(); printf("%s%sERROR3135: Missing version. Expecting on first line: %s %s\n",
-                              indent,indent,data->version_name,data->version_value);
-#endif
                   ierr=1;
                }
             }
@@ -1612,16 +1248,10 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
    // stop if an ierr is found so far
    failedLoad=0;
    if (rank == 0) failedLoad=ierr;
-#if HAS_MPI
    ierr=MPI_Bcast (&failedLoad,1,MPI_INT,0,PETSC_COMM_WORLD);
-#endif
    if (failedLoad) {
       if (rank == 0) fclose (fp);
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3165: Failed to load project.\n",indent,indent);
-#else
-      prefix(); printf("%s%sERROR3165: Failed to load project.\n",indent,indent);
-#endif
       return 1;
    }
 
@@ -2789,15 +2419,9 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
    // stop if an ierr is found so far
    failedLoad=0;
    if (rank == 0) failedLoad=ierr;
-#if HAS_MPI
    ierr=MPI_Bcast (&failedLoad,1,MPI_INT,0,PETSC_COMM_WORLD);
-#endif
    if (failedLoad) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3188: Failed to load project.\n",indent,indent);
-#else
-      prefix(); printf("%s%sERROR3188: Failed to load project.\n",indent,indent);
-#endif
       return 1;
    }
 
@@ -2854,21 +2478,14 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
    // stop if an ierr is found so far
    failedLoad=0;
    if (rank == 0) failedLoad=ierr;
-#if HAS_MPI
    ierr=MPI_Bcast (&failedLoad,1,MPI_INT,0,PETSC_COMM_WORLD);
-#endif
    if (failedLoad) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3000: Failed to load project.\n",indent,indent);
-#else
-      prefix(); printf("%s%sERROR3000: Failed to load project.\n",indent,indent);
-#endif
       return 1;
    }
 
    // send to other ranks
 
-#if HAS_MPI
    if (rank == 0) {
       i=1;
       while (i < size) {
@@ -3269,7 +2886,6 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       data->project_name[length]='\0';
  
    }
-#endif
 
    return ierr;
 }

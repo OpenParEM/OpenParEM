@@ -21,9 +21,9 @@
 #include "Refinement.h"
 #include "ui_Refinement.h"
 
-Refinement::Refinement(QWidget *parent)
+OPEMg_Refinement::OPEMg_Refinement(QWidget *parent)
     : QDialog(parent)
-    , ui(new Ui::Refinement)
+    , ui(new Ui::OPEMg_Refinement)
 {
     ui->setupUi(this);
     this->setFixedSize(450,317);
@@ -37,12 +37,12 @@ Refinement::Refinement(QWidget *parent)
     ui->refineOk->setEnabled(false);
 }
 
-Refinement::~Refinement()
+OPEMg_Refinement::~OPEMg_Refinement()
 {
     delete ui;
 }
 
-void Refinement::set_projData(struct projectData *a)
+void OPEMg_Refinement::set_projData(struct projectData *a)
 {
     projData=a;
 
@@ -81,13 +81,13 @@ void Refinement::set_projData(struct projectData *a)
 }
 
 
-void Refinement::on_requiredPasses_textChanged(const QString &arg1)
+void OPEMg_Refinement::on_requiredPasses_textChanged(const QString &arg1)
 {
     ui->refineOk->setEnabled(true);
 }
 
 
-void Refinement::on_refinementVariable_activated(int index)
+void OPEMg_Refinement::on_refinementVariable_activated(int index)
 {
     if (index == 0) {
         ui->absoluteTolLabel->setEnabled(false);
@@ -101,7 +101,7 @@ void Refinement::on_refinementVariable_activated(int index)
 }
 
 
-void Refinement::on_refineOk_clicked()
+void OPEMg_Refinement::on_refineOk_clicked()
 {
     projData->refinement_iteration_min=ui->refineMin->value();
     projData->refinement_iteration_max=ui->refineMax->value();
@@ -128,12 +128,12 @@ void Refinement::on_refineOk_clicked()
 }
 
 
-void Refinement::on_refineCancel_clicked()
+void OPEMg_Refinement::on_refineCancel_clicked()
 {
     close();
 }
 
-void Refinement::on_relativeTol_returnPressed()
+void OPEMg_Refinement::on_relativeTol_returnPressed()
 {
     double relativeTol=ui->relativeTol->text().toDouble();
     if (relativeTol < 1e-15*(1-1e-14)) {
@@ -153,7 +153,7 @@ void Refinement::on_relativeTol_returnPressed()
 }
 
 
-void Refinement::on_absoluteTol_returnPressed()
+void OPEMg_Refinement::on_absoluteTol_returnPressed()
 {
     double absoluteTol=ui->absoluteTol->text().toDouble();
     if (absoluteTol < 1e-15*(1-1e-14)) {
@@ -173,14 +173,14 @@ void Refinement::on_absoluteTol_returnPressed()
 }
 
 
-void Refinement::on_refineMin_valueChanged(int arg1)
+void OPEMg_Refinement::on_refineMin_valueChanged(int arg1)
 {
     if (arg1 > ui->refineMax->value()) ui->refineMin->setValue(ui->refineMax->value());
     ui->refineOk->setEnabled(true);
 }
 
 
-void Refinement::on_refineMax_valueChanged(int arg1)
+void OPEMg_Refinement::on_refineMax_valueChanged(int arg1)
 {
     if (arg1 < ui->refineMin->value()) ui->refineMax->setValue(ui->refineMin->value());
     ui->refineOk->setEnabled(true);

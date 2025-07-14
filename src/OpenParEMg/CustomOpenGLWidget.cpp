@@ -23,12 +23,6 @@
 
 #include <glx.h>
 
-Handle(OpenGl_Context) OcctGlTools::GetGlContext(const Handle(V3d_View)& theView)
-{
-    Handle(OpenGl_View) aGlView = Handle(OpenGl_View)::DownCast(theView->View());
-    return aGlView->GlWindow()->GetGlContext();
-}
-
 
 CustomOpenGLWidget::CustomOpenGLWidget(QWidget* theParent)
     : QOpenGLWidget(theParent)
@@ -56,18 +50,17 @@ CustomOpenGLWidget::CustomOpenGLWidget(QWidget* theParent)
   myViewCube->SetAutoStartAnimation(true);
   myViewCube->TransformPersistence()->SetOffset2d(Graphic3d_Vec2i(100, 150));
 
-  // note - window will be created later within initializeGL() callback!
   view = viewer->CreateView();
   view->SetImmediateUpdate(false);
-  view->ChangeRenderingParams().NbMsaaSamples = 4; // warning - affects performance
-  view->ChangeRenderingParams().ToShowStats    = false;
-  view->ChangeRenderingParams().CollectedStats = (Graphic3d_RenderingParams::PerfCounters)(
-    Graphic3d_RenderingParams::PerfCounters_FrameRate | Graphic3d_RenderingParams::PerfCounters_Triangles);
+  view->ChangeRenderingParams().NbMsaaSamples=4;
+  view->ChangeRenderingParams().ToShowStats=false;
+  //view->ChangeRenderingParams().CollectedStats = (Graphic3d_RenderingParams::PerfCounters)(
+  //  Graphic3d_RenderingParams::PerfCounters_FrameRate | Graphic3d_RenderingParams::PerfCounters_Triangles);
 
   // Qt widget setup
   setMouseTracking(true);
-  setBackgroundRole(QPalette::NoRole); // or NoBackground
-  setFocusPolicy(Qt::StrongFocus);     // set focus policy to threat QContextMenuEvent from keyboard
+  setBackgroundRole(QPalette::NoRole);
+  setFocusPolicy(Qt::StrongFocus);
   setUpdatesEnabled(true);
   setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
 
@@ -75,10 +68,6 @@ CustomOpenGLWidget::CustomOpenGLWidget(QWidget* theParent)
   QSurfaceFormat aGlFormat;
   aGlFormat.setDepthBufferSize(24);
   aGlFormat.setStencilBufferSize(8);
-
-  if (myIsCoreProfile) aGlFormat.setVersion(4, 5);  // uncommenting causes the window to not show the diagonal line
-
-  aGlFormat.setProfile(myIsCoreProfile ? QSurfaceFormat::CoreProfile : QSurfaceFormat::CompatibilityProfile);
   aGlFormat.setColorSpace (QSurfaceFormat::sRGBColorSpace);
   setTextureFormat (GL_SRGB8_ALPHA8);
 
@@ -120,7 +109,7 @@ void CustomOpenGLWidget::initializeGL ()
 
 
     Handle(OpenGl_Context) aGlCtx = new OpenGl_Context();
-    if (!aGlCtx->Init(myIsCoreProfile))
+    if (!aGlCtx->Init())
     {
         Message::SendFail() << "Error: OpenGl_Context is unable to wrap OpenGL context";
         QMessageBox::critical(0, "Failure", "OpenGl_Context is unable to wrap OpenGL context");
@@ -218,8 +207,10 @@ void CustomOpenGLWidget::paintGL ()
     //viewerContext->Display(aShape2, 0, 0, false);
 
     // show drawing
-    cout << "drawing.IsNull()=" << drawing.IsNull() << endl;
-    viewerContext->Display(drawing, 0, 0, true);
+    //cout << "drawing.IsNull()=" << drawing.IsNull() << endl;
+    //viewerContext->Display(drawing, 0, 0, true);
+
+    viewerContext->Display (myViewCube, 0, 0, false);
 
     // flush pending input events and redraw the viewer
     view->InvalidateImmediate();
@@ -305,4 +296,61 @@ void CustomOpenGLWidget::wheelEvent(QWheelEvent* theEvent)
 
     if (UpdateZoom(Aspect_ScrollDelta(aPos, double(theEvent->angleDelta().y()) / 8.0)))
         updateView();
+}
+
+void CustomOpenGLWidget::keyPressEvent(QKeyEvent* event)
+{
+    if (view.IsNull()) return;
+
+    const Aspect_VKey aKey = OcctQtTools::qtKey2VKey(event->key());
+    switch (aKey)
+    {
+        case Aspect_VKey_Escape: {
+            //QApplication::exit();
+            return;
+        }
+        case Aspect_VKey_F: {
+            view->FitAll(0.01, false);
+            update();
+            return;
+        }
+    }
+    QOpenGLWidget::keyPressEvent(event);
+}
+
+void CustomOpenGLWidget::mousePressEvent(QMouseEvent* event)
+{
+    QOpenGLWidget::mousePressEvent(event);
+    if (view.IsNull()) return;
+
+    const Graphic3d_Vec2i  aPnt(event->pos().x(), event->pos().y());
+    const Aspect_VKeyFlags aFlags = OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
+    if (UpdateMouseButtons(aPnt, OcctQtTools::qtMouseButtons2VKeys(event->buttons()), aFlags, false))
+        updateView();
+}
+
+void CustomOpenGLWidget::mouseReleaseEvent(QMouseEvent* event)
+{
+    QOpenGLWidget::mouseReleaseEvent(event);
+    if (view.IsNull()) return;
+
+    const Graphic3d_Vec2i  aPnt(event->pos().x(), event->pos().y());
+    const Aspect_VKeyFlags aFlags = OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
+    if (UpdateMouseButtons(aPnt, OcctQtTools::qtMouseButtons2VKeys(event->buttons()), aFlags, false))
+        updateView();
+}
+
+void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
+{
+    QOpenGLWidget::mouseMoveEvent(event);
+    if (view.IsNull()) return;
+
+    const Graphic3d_Vec2i aNewPos(event->pos().x(), event->pos().y());
+    if (UpdateMousePosition(aNewPos,
+                            OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
+                            OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),
+                            false))
+    {
+        updateView();
+    }
 }

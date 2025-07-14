@@ -5017,6 +5017,7 @@ esac
 
 
 # Compile with MPI
+
 printf "%s\n" "#define HAS_MPI 1" >>confdefs.h
 
 

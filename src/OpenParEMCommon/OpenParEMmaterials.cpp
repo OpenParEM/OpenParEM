@@ -92,75 +92,38 @@ Frequency::Frequency (int startLine_, int endLine_, bool checkLimits_)
 
 void Frequency::print (string indent)
 {
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%sFrequency\n",startLine,indent.c_str(),indent.c_str());
-#else
-   printf("%d: %s%sFrequency\n",startLine,indent.c_str(),indent.c_str());
-#endif
 
    if (frequency.is_loaded()) {
       if (frequency.is_any()) {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s%s=any\n",frequency.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),frequency.get_keyword().c_str());
-#else
-         printf("%d: %s%s%s%s=any\n",frequency.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),frequency.get_keyword().c_str());
-#endif
       } else {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s%s=%g\n",
                                                 frequency.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),frequency.get_keyword().c_str(),frequency.get_dbl_value());
-#else
-         printf("%d: %s%s%s%s=%g\n",
-                      frequency.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),frequency.get_keyword().c_str(),frequency.get_dbl_value());
-#endif
       }
    }
 
    if (relative_permittivity.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s%s=%g\n",
                                              relative_permittivity.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),relative_permittivity.get_keyword().c_str(),relative_permittivity.get_dbl_value());
-#else
-      printf("%d: %s%s%s%s=%g\n",
-             relative_permittivity.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),relative_permittivity.get_keyword().c_str(),relative_permittivity.get_dbl_value());
-#endif
    }
 
    if (relative_permeability.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s%s=%g\n",
                                              relative_permeability.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),relative_permeability.get_keyword().c_str(),relative_permeability.get_dbl_value());
-#else
-      printf("%d: %s%s%s%s=%g\n",
-             relative_permeability.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),relative_permeability.get_keyword().c_str(),relative_permeability.get_dbl_value());
-#endif
    }
 
    if (loss.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s%s=%g\n",
                                              loss.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),loss.get_keyword().c_str(),loss.get_dbl_value());
-#else
-      printf("%d: %s%s%s%s=%g\n",
-             loss.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),loss.get_keyword().c_str(),loss.get_dbl_value());
-#endif
    }
 
    if (Rz.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s%s=%g\n",
                                              Rz.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),Rz.get_keyword().c_str(),Rz.get_dbl_value());
-#else
-      printf("%d: %s%s%s%s=%g\n",
-             Rz.get_lineNumber(),indent.c_str(),indent.c_str(),indent.c_str(),Rz.get_keyword().c_str(),Rz.get_dbl_value());
-#endif
    }
 
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%sEndFrequency\n",endLine,indent.c_str(),indent.c_str());
-#else
-   printf("%d: %s%sEndFrequency\n",endLine,indent.c_str(),indent.c_str());
-#endif
 }
 
 bool Frequency::load (string *indent, inputFile *inputs)
@@ -197,13 +160,8 @@ bool Frequency::load (string *indent, inputFile *inputs)
 
       if (frequency.match_alias(&token)) {
          if (frequency.is_loaded()) {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1050: Duplicate entry at line %d for previous entry at line %d.\n",
                                                    indent->c_str(),lineNumber,frequency.get_lineNumber());
-#else
-            printf("%sERROR1050: Duplicate entry at line %d for previous entry at line %d.\n",
-                   indent->c_str(),lineNumber,frequency.get_lineNumber());
-#endif
             fail=true;
          } else {
             if (value.compare("any") == 0) {
@@ -220,11 +178,7 @@ bool Frequency::load (string *indent, inputFile *inputs)
 
       // should recognize one keyword
       if (recognized != 1) {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1052: Unrecognized keyword at line %d.\n",indent->c_str(),lineNumber);
-#else
-         printf("%sERROR1052: Unrecognized keyword at line %d.\n",indent->c_str(),lineNumber);
-#endif
          fail=true;
       }
 
@@ -244,47 +198,27 @@ bool Frequency::check (string indent)
    bool fail=false;
 
    if (!frequency.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1053: Frequency block at line %d must specify a frequency.\n",indent.c_str(),startLine);
-#else
-      printf("%sERROR1053: Frequency block at line %d must specify a frequency.\n",indent.c_str(),startLine);
-#endif
       fail=true;
    }
 
    if (!relative_permittivity.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1054: Frequency block at line %d must specify a relative permitivitty.\n",indent.c_str(),startLine);
-#else
-      printf("%sERROR1054: Frequency block at line %d must specify a relative permitivitty.\n",indent.c_str(),startLine);
-#endif
       fail=true;
    }
 
    if (!relative_permeability.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1055: Frequency block at line %d must specify a relative permeability.\n",indent.c_str(),startLine);
-#else
-      printf("%sERROR1055: Frequency block at line %d must specify a relative permeability.\n",indent.c_str(),startLine);
-#endif
       fail=true;
    }
 
    if (!loss.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1056: Frequency block at line %d must specify a loss tangent or a conductivity.\n",indent.c_str(),startLine);
-#else
-      printf("%sERROR1056: Frequency block at line %d must specify a loss tangent or a conductivity.\n",indent.c_str(),startLine);
-#endif
       fail=true;
    }
 
    if (!Rz.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1057: Frequency block at line %d must specify Rz.\n",indent.c_str(),startLine);
-#else
-      printf("%sERROR1057: Frequency block at line %d must specify Rz.\n",indent.c_str(),startLine);
-#endif
       fail=true;
    }
 
@@ -438,91 +372,46 @@ Temperature::Temperature (int startLine_, int endLine_, bool checkLimits_)
 
 void Temperature::print (string indent)
 {
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %sTemperature\n",startLine,indent.c_str());
-#else
-   printf("%d: %sTemperature\n",startLine,indent.c_str());
-#endif
 
    if (temperature.is_loaded()) {
       if (temperature.is_any()) {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s=any\n",
                                                 temperature.get_lineNumber(),indent.c_str(),indent.c_str(),temperature.get_keyword().c_str());
-#else
-         printf("%d: %s%s%s=any\n",
-                temperature.get_lineNumber(),indent.c_str(),indent.c_str(),temperature.get_keyword().c_str());
-#endif
       } else {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s=%g\n",
                                                 temperature.get_lineNumber(),indent.c_str(),indent.c_str(),temperature.get_keyword().c_str(),temperature.get_dbl_value());
-#else
-         printf("%d: %s%s%s=%g\n",
-                temperature.get_lineNumber(),indent.c_str(),indent.c_str(),temperature.get_keyword().c_str(),temperature.get_dbl_value());
-#endif
       }
    }
 
    if (er_infinity.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s=%g\n",
                                              er_infinity.get_lineNumber(),indent.c_str(),indent.c_str(),er_infinity.get_keyword().c_str(),er_infinity.get_dbl_value());
-#else
-      printf("%d: %s%s%s=%g\n",
-             er_infinity.get_lineNumber(),indent.c_str(),indent.c_str(),er_infinity.get_keyword().c_str(),er_infinity.get_dbl_value());
-#endif
    }
 
    if (delta_er.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s=%g\n",
                                              delta_er.get_lineNumber(),indent.c_str(),indent.c_str(),delta_er.get_keyword().c_str(),delta_er.get_dbl_value());
-#else
-      printf("%d: %s%s%s=%g\n",
-             delta_er.get_lineNumber(),indent.c_str(),indent.c_str(),delta_er.get_keyword().c_str(),delta_er.get_dbl_value());
-#endif
    }
 
    if (m1.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s=%g\n",
                                              m1.get_lineNumber(),indent.c_str(),indent.c_str(),m1.get_keyword().c_str(),m1.get_dbl_value());
-#else
-      printf("%d: %s%s%s=%g\n",
-             m1.get_lineNumber(),indent.c_str(),indent.c_str(),m1.get_keyword().c_str(),m1.get_dbl_value());
-#endif
    }
 
    if (m2.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s=%g\n",
                                              m2.get_lineNumber(),indent.c_str(),indent.c_str(),m2.get_keyword().c_str(),m2.get_dbl_value());
-#else
-      printf("%d: %s%s%s=%g\n",
-             m2.get_lineNumber(),indent.c_str(),indent.c_str(),m2.get_keyword().c_str(),m2.get_dbl_value());
-
-#endif
    }
 
    if (relative_permeability.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s=%g\n",
                                              relative_permeability.get_lineNumber(),indent.c_str(),indent.c_str(),relative_permeability.get_keyword().c_str(),relative_permeability.get_dbl_value());
-#else
-      printf("%d: %s%s%s=%g\n",
-             relative_permeability.get_lineNumber(),indent.c_str(),indent.c_str(),relative_permeability.get_keyword().c_str(),relative_permeability.get_dbl_value());
-#endif
    }
 
    if (loss.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s=%d\n",
                                              loss.get_lineNumber(),indent.c_str(),indent.c_str(),loss.get_keyword().c_str(),loss.get_lineNumber());
-#else
-      printf("%d: %s%s%s=%d\n",
-             loss.get_lineNumber(),indent.c_str(),indent.c_str(),loss.get_keyword().c_str(),loss.get_lineNumber());
-#endif
    }
 
    long unsigned int i=0;
@@ -531,11 +420,7 @@ void Temperature::print (string indent)
       i++;
    }
 
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %sEndTemperature\n",endLine,indent.c_str());
-#else
-   printf("%d: %sEndTemperature\n",endLine,indent.c_str());
-#endif
 }
 
 bool Temperature::findFrequencyBlocks(inputFile *inputs, bool checkLimits)
@@ -632,26 +517,16 @@ bool Temperature::load(string *indent, inputFile *inputs, bool checkInputs)
             if (er_infinity.match_alias(&token) || delta_er.match_alias(&token) ||
                 m1.match_alias(&token) || m2.match_alias(&token) ||
                 relative_permeability.match_alias(&token) || loss.match_alias(&token)) {
-#if HAS_MPI
                 prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1058: Debye variable at line %d is not allowed with frequency blocks defined.\n",
                                                        indent->c_str(),lineNumber);
-#else
-                printf("%sERROR1058: Debye variable at line %d is not allowed with frequency blocks defined.\n",
-                        indent->c_str(),lineNumber);
-#endif
                 fail=true;
             }
          }
 
          if (temperature.match_alias(&token)) {
             if (temperature.is_loaded()) {
-#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1059: Duplicate entry at line %d for previous entry at line %d.\n",
                                                       indent->c_str(),lineNumber,temperature.get_lineNumber());
-#else
-               printf("%sERROR1059: Duplicate entry at line %d for previous entry at line %d.\n",
-                      indent->c_str(),lineNumber,temperature.get_lineNumber());
-#endif
                fail=true;
             } else {
                if (value.compare("any") == 0) {
@@ -668,11 +543,7 @@ bool Temperature::load(string *indent, inputFile *inputs, bool checkInputs)
 
          // should recognize one keyword
          if (recognized != 1) {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1060: Unrecognized keyword at line %d.\n",indent->c_str(),lineNumber);
-#else
-            printf("%sERROR1060: Unrecognized keyword at line %d.\n",indent->c_str(),lineNumber);
-#endif
             fail=true;
          }
       }
@@ -694,80 +565,45 @@ bool Temperature::check(string indent)
    bool fail=false;
 
    if (!temperature.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1061: Temperature block at line %d must specify a temperature.\n",
                                              indent.c_str(),startLine);
-#else
-      printf("%sERROR1061: Temperature block at line %d must specify a temperature.\n",
-             indent.c_str(),startLine);
-#endif
       fail=true;
    }
 
    if (frequencyList.size() == 0) {
       if (!er_infinity.is_loaded()) {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1062: Temperature block at line %d must specify an er_infinity.\n",
                                                 indent.c_str(),startLine);
-#else
-         printf("%sERROR1062: Temperature block at line %d must specify an er_infinity.\n",
-                indent.c_str(),startLine);
-#endif
          fail=true;
       }
 
       if (!delta_er.is_loaded()) {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1063: Temperature block at line %d must specify a delta_er.\n",
                                                 indent.c_str(),startLine);
-#else
-         printf("%sERROR1063: Temperature block at line %d must specify a delta_er.\n",
-                indent.c_str(),startLine);
-#endif
          fail=true;
       }
 
       if (!m1.is_loaded()) {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1064: Temperature block at line %d must specify an m1.\n",
                                                 indent.c_str(),startLine);
-#else
-         printf("%sERROR1064: Temperature block at line %d must specify an m1.\n",
-                indent.c_str(),startLine);
-#endif
          fail=true;
       }
 
       if (!m2.is_loaded()) {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1065: Temperature block at line %d must specify an m2.\n",
                                                 indent.c_str(),startLine);
-#else
-         printf("%sERROR1065: Temperature block at line %d must specify an m2.\n",
-                indent.c_str(),startLine);
-#endif
          fail=true;
       }
 
       if (!relative_permeability.is_loaded()) {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1066: Temperature block at line %d must specify a relative permeability.\n",
                                                 indent.c_str(),startLine);
-#else
-         printf("%sERROR1066: Temperature block at line %d must specify a relative permeability.\n",
-                indent.c_str(),startLine);
-#endif
          fail=true;
       }
 
       if (!loss.is_loaded()) {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1067: Temperature block at line %d must specify a loss tangent or a conductivity.\n",
                                                 indent.c_str(),startLine);
-#else
-         printf("%sERROR1067: Temperature block at line %d must specify a loss tangent or a conductivity.\n",
-                indent.c_str(),startLine);
-#endif
          fail=true;
       }
 
@@ -788,43 +624,23 @@ bool Temperature::check(string indent)
 
          if (test->get_frequency()->is_any()) {
             if (check->get_frequency()->is_any()) {
-#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1068: Temperature block at line %d incorrectly specifies another frequency block with frequency=any at line %d.\n",
                                                       indent.c_str(),startLine,check->get_startLine());
-#else
-               printf("%sERROR1068: Temperature block at line %d incorrectly specifies another frequency block with frequency=any at line %d.\n",
-                      indent.c_str(),startLine,check->get_startLine());
-#endif
                fail=true;
             } else {
-#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1069: Temperature block at line %d incorrectly specifies a frequency block at line %d after specifying \"any\" at line %d.\n",
                                                       indent.c_str(),startLine,check->get_startLine(),test->get_frequency()->get_lineNumber());
-#else
-               printf("%sERROR1069: Temperature block at line %d incorrectly specifies a frequency block at line %d after specifying \"any\" at line %d.\n",
-                      indent.c_str(),startLine,check->get_startLine(),test->get_frequency()->get_lineNumber());
-#endif
                fail=true;
             }
          } else {
             if (check->get_frequency()->is_any()) {
-#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1070: Temperature block at line %d incorrectly specifies a frequency block at line %d after specifying \"any\" at line %d.\n",
                                                       indent.c_str(),startLine,test->get_startLine(),check->get_frequency()->get_lineNumber());
-#else
-               printf("%sERROR1070: Temperature block at line %d incorrectly specifies a frequency block at line %d after specifying \"any\" at line %d.\n",
-                      indent.c_str(),startLine,test->get_startLine(),check->get_frequency()->get_lineNumber());
-#endif
                fail=true;
             } else {
                if (test->get_frequency()->dbl_compare(check->get_frequency())) {
-#if HAS_MPI
                   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1071: Temperature block at line %d has frequency blocks with duplicated frequencies at lines %d and %d.\n",
                                                          indent.c_str(),startLine,test->get_frequency()->get_lineNumber(),check->get_frequency()->get_lineNumber());
-#else
-                  printf("%sERROR1071: Temperature block at line %d has frequency blocks with duplicated frequencies at lines %d and %d.\n",
-                         indent.c_str(),startLine,test->get_frequency()->get_lineNumber(),check->get_frequency()->get_lineNumber());
-#endif
                   fail=true;
                }
             }
@@ -1094,11 +910,7 @@ double Temperature::get_Rs(double frequency_, double tolerance, string indent)
          if (frequencyList[i]->get_loss()->get_keyword().compare("loss_tangent") == 0 ||
              frequencyList[i]->get_loss()->get_keyword().compare("tand") == 0 ||
              frequencyList[i]->get_loss()->get_keyword().compare("tandel") == 0) {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%s%sERROR1072: Attempt to use a dielectric model for an Rs calculation.\n",indent.c_str(),indent.c_str(),indent.c_str());
-#else
-            printf("%s%s%sERROR1072: Attempt to use a dielectric model for an Rs calculation.\n",indent.c_str(),indent.c_str(),indent.c_str());
-#endif
          } else {
 
             Rs=sqrt(M_PI*frequency_*4e-7*M_PI*mur_/loss_);
@@ -1121,11 +933,7 @@ double Temperature::get_Rs(double frequency_, double tolerance, string indent)
    } else {
 
       // Debye model
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%s%sERROR1073: Attempt to use a Debye model for an Rs calculation.\n",indent.c_str(),indent.c_str(),indent.c_str());
-#else
-      printf("%s%s%sERROR1073: Attempt to use a Debye model for an Rs calculation.\n",indent.c_str(),indent.c_str(),indent.c_str());
-#endif
    }
 
    return Rs;
@@ -1215,27 +1023,15 @@ Source::Source (int startLine_, int endLine_)
 
 void Source::print(string indent)
 {
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %sSource\n",startLine,indent.c_str());
-#else
-   printf("%d: %sSource\n",startLine,indent.c_str());
-#endif
 
    long unsigned int i=0;
    while (i < lineNumberList.size()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s%s\n",lineNumberList[i],indent.c_str(),indent.c_str(),lineList[i].c_str());
-#else
-      printf("%d: %s%s%s\n",lineNumberList[i],indent.c_str(),indent.c_str(),lineList[i].c_str());
-#endif
       i++;
    }
 
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %sEndSource\n",endLine,indent.c_str());
-#else
-   printf("%d: %sEndSource\n",endLine,indent.c_str());
-#endif
 }
 
 bool Source::load(inputFile *inputs)
@@ -1301,22 +1097,12 @@ Material::Material (int startLine_, int endLine_)
 
 void Material::print(string indent)
 {
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: Material",startLine);
    if (merged) PetscPrintf(PETSC_COMM_WORLD,"(merged)");
    PetscPrintf(PETSC_COMM_WORLD,"\n");
-#else
-   printf("%d: Material",startLine);
-   if (merged) printf("(merged)");
-   printf("\n");
-#endif
 
    if (name.is_loaded()) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s\n",name.get_lineNumber(),indent.c_str(),name.get_value().c_str());
-#else
-      printf("%d: %sname=%s\n",name.get_lineNumber(),indent.c_str(),name.get_value().c_str());
-#endif
    }
 
    long unsigned int i=0;
@@ -1331,11 +1117,7 @@ void Material::print(string indent)
       i++;
    }
 
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: EndMaterial\n",endLine);
-#else
-   printf("%d: EndMaterial\n",endLine);
-#endif
 }
 
 bool Material::findTemperatureBlocks(inputFile *inputs, bool checkLimits)
@@ -1438,13 +1220,8 @@ bool Material::load(string *indent, inputFile *inputs, bool checkInputs)
          int recognized=0;
          if (name.match_alias(&token)) {
             if (name.is_loaded()) {
-#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1074: Duplicate entry at line %d for previous entry at line %d.\n",
                                                       indent->c_str(),lineNumber,name.get_lineNumber());
-#else
-               printf("%sERROR1074: Duplicate entry at line %d for previous entry at line %d.\n",
-                      indent->c_str(),lineNumber,name.get_lineNumber());
-#endif
                fail=true;
             } else {
                name.set_keyword(token);
@@ -1457,11 +1234,7 @@ bool Material::load(string *indent, inputFile *inputs, bool checkInputs)
 
          // should recognize one keyword
          if (recognized != 1) {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1075: Unrecognized keyword at line %d.\n",indent->c_str(),lineNumber);
-#else
-            printf("%sERROR1075: Unrecognized keyword at line %d.\n",indent->c_str(),lineNumber);
-#endif
             fail=true;
          }
       }
@@ -1477,39 +1250,23 @@ bool Material::check(string indent)
 
    if (name.is_loaded()) {
       if (name.get_value().compare("") == 0) {
-#if HAS_MPI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1080: name is blank at line %d.\n",indent.c_str(),name.get_lineNumber());
-#else
-         printf("%sERROR1080: name is blank at line %d.\n",indent.c_str(),name.get_lineNumber());
-#endif
          fail=true;
       }
    } else {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1081: Material block at line %d must specify a name.\n",indent.c_str(),startLine);
-#else
-      printf("%sERROR1081: Material block at line %d must specify a name.\n",indent.c_str(),startLine);
-#endif
       fail=true;
    }
 
    // no Temperature blocks
    if (temperatureList.size() == 0) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1082: Material block at line %d must specify at least one Temperature block.\n",indent.c_str(),startLine);
-#else
-      printf("%sERROR1082: Material block at line %d must specify at least one Temperature block.\n",indent.c_str(),startLine);
-#endif
       fail=true;
    }
 
    // no Source blocks
    if (sourceList.size() == 0) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1083: Material block at line %d must specify at least one Source block.\n",indent.c_str(),startLine);
-#else
-      printf("%sERROR1083: Material block at line %d must specify at least one Source block.\n",indent.c_str(),startLine);
-#endif
       fail=true;
    }
 
@@ -1525,43 +1282,23 @@ bool Material::check(string indent)
       while (i < temperatureList.size()-1 && j < temperatureList.size()) {
          if (temperatureList[i]->get_temperature()->is_any()) {
             if (temperatureList[j]->get_temperature()->is_any()) {
-#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1084: Material block at line %d incorrectly specifies another temperature block with temperature=any at line %d\n",
                                                       indent.c_str(),startLine,temperatureList[j]->get_startLine());
-#else
-               printf("%sERROR1084: Material block at line %d incorrectly specifies another temperature block with temperature=any at line %d\n",
-                      indent.c_str(),startLine,temperatureList[j]->get_startLine());
-#endif
                fail=true;
             } else {
-#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1085: Material block at line %d incorrectly specifies a temperature block at line %d after specifying \"any\" at line %d.\n",
                                                       indent.c_str(),startLine,temperatureList[j]->get_startLine(),temperatureList[i]->get_temperature()->get_lineNumber());
-#else
-               printf("%sERROR1085: Material block at line %d incorrectly specifies a temperature block at line %d after specifying \"any\" at line %d.\n",
-                      indent.c_str(),startLine,temperatureList[j]->get_startLine(),temperatureList[i]->get_temperature()->get_lineNumber());
-#endif
                fail=true;
             }
          } else {
             if (temperatureList[j]->get_temperature()->is_any()) {
-#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1086: Material block at line %d incorrectly specifies a temperature block at line %d after specifying \"any\" at line %d.\n",
                                                       indent.c_str(),startLine,temperatureList[i]->get_startLine(),temperatureList[j]->get_temperature()->get_lineNumber());
-#else
-               printf("%sERROR1086: Material block at line %d incorrectly specifies a temperature block at line %d after specifying \"any\" at line %d.\n",
-                      indent.c_str(),startLine,temperatureList[i]->get_startLine(),temperatureList[j]->get_temperature()->get_lineNumber());
-#endif
                fail=true;
             } else {
                if (temperatureList[i]->get_temperature()->dbl_compare(temperatureList[j]->get_temperature())) {
-#if HAS_MPI
                   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1087: Material block at line %d has temperature blocks with duplicated temperatures at lines %d and %d.\n",
                                                          indent.c_str(),startLine,temperatureList[i]->get_temperature()->get_lineNumber(),temperatureList[j]->get_temperature()->get_lineNumber());
-#else
-                  printf("%sERROR1087: Material block at line %d has temperature blocks with duplicated temperatures at lines %d and %d.\n",
-                         indent.c_str(),startLine,temperatureList[i]->get_temperature()->get_lineNumber(),temperatureList[j]->get_temperature()->get_lineNumber());
-#endif
                   fail=true;
                }
             }
@@ -1594,13 +1331,8 @@ Temperature* Material::get_temperature(double temperature_, double tolerance, st
       i++;
    }
 
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%s%sERROR1088: Failed to find a temperature entry for material \"%s\" at a temperature of %g degrees.\n",
                                           indent.c_str(),indent.c_str(),indent.c_str(),name.get_value().c_str(),temperature_);
-#else
-   printf("%s%s%sERROR1088: Failed to find a temperature entry for material \"%s\" at a temperature of %g degrees.\n",
-          indent.c_str(),indent.c_str(),indent.c_str(),name.get_value().c_str(),temperature_);
-#endif
 
    return nullptr;
 }
@@ -1737,11 +1469,7 @@ bool MaterialDatabase::load(const char *path, const char *filename, bool checkIn
    char *fullPathName=(char *)malloc((strlen(path)+strlen(filename)+1)*sizeof(char));
    if (!fullPathName) return 1;
    sprintf (fullPathName,"%s%s",path,filename);
-#if HAS_MPI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sloading materials file \"%s\"\n",indent.c_str(),fullPathName);
-#else
-   printf("%sloading materials file \"%s\"\n",indent.c_str(),fullPathName);
-#endif
  
    bool fail=false;
    if (inputs.load(fullPathName)) {if (fullPathName) free(fullPathName); fullPathName=nullptr; return true;}
@@ -1749,13 +1477,8 @@ bool MaterialDatabase::load(const char *path, const char *filename, bool checkIn
    inputs.createCrossReference();
 
    if (inputs.checkVersion(version_name, version_value)) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1089: Version mismatch.  Expecting the first line to be: %s %s\n",
                                              indent.c_str(),indent.c_str(),version_name.c_str(),version_value.c_str());
-#else
-      printf("%s%sERROR1089: Version mismatch.  Expecting the first line to be: %s %s\n",
-             indent.c_str(),indent.c_str(),version_name.c_str(),version_value.c_str());
-#endif
       return true;
    }
 
@@ -1772,11 +1495,7 @@ bool MaterialDatabase::load(const char *path, const char *filename, bool checkIn
    if (check()) fail=true;
 
    if (fail) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1090: Failed to load materials.\n",indent.c_str(),indent.c_str());
-#else
-      printf("%s%sERROR1090: Failed to load materials.\n",indent.c_str(),indent.c_str());
-#endif
       return fail;
    }
 
@@ -1807,11 +1526,7 @@ bool MaterialDatabase::check()
    bool fail=false;
 
    if (materialList.size() == 0) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1091: No materials loaded.\n",indent.c_str());
-#else
-      printf("%sERROR1091: No materials loaded.\n",indent.c_str());
-#endif
       fail=true;
    }
 
@@ -1825,13 +1540,8 @@ bool MaterialDatabase::check()
       long unsigned int j=i+1;
       while (i < materialList.size()-1 && j < materialList.size()) {
          if (materialList[i]->get_name()->get_value().compare(materialList[j]->get_name()->get_value()) == 0) {
-#if HAS_MPI
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1092: name at line %d duplicates the name at line %d.\n",
                                                    indent.c_str(),materialList[j]->get_name()->get_lineNumber(),materialList[i]->get_name()->get_lineNumber());
-#else
-            printf("%sERROR1092: name at line %d duplicates the name at line %d.\n",
-                   indent.c_str(),materialList[j]->get_name()->get_lineNumber(),materialList[i]->get_name()->get_lineNumber());
-#endif
             fail=true;
          }
          j++;
@@ -1873,22 +1583,14 @@ bool MaterialDatabase::merge(MaterialDatabase *db, string indent)
    // check for version alignment
    if (version_name.compare(db->version_name) != 0 ||
        version_value.compare(db->version_value) != 0) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1093: Material database merge attempted with different versions.\n",indent.c_str());
-#else
-      printf("%sERROR1093: Material database merge attempted with different versions.\n",indent.c_str());
-#endif
       return true;
    }
 
    // merge in db
 
    if (! double_compare(tol,db->tol,db->tol)) {
-#if HAS_MPI
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sReplacing tol with the merged database value.\n",indent.c_str());
-#else
-      printf("%sReplacing tol with the merged database value.\n",indent.c_str());
-#endif
    }
 
    // add the new materials while checking for duplicates
@@ -1899,13 +1601,8 @@ bool MaterialDatabase::merge(MaterialDatabase *db, string indent)
       while (j < materialList.size()) {
          if (! materialList[j]->get_merged()) {
             if (db->materialList[i]->get_name()->get_value().compare(materialList[j]->get_name()->get_value()) == 0) {
-#if HAS_MPI
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sReplacing duplicate material \"%s\" with the material from the local material database.\n",
                                                       indent.c_str(),db->materialList[i]->get_name()->get_value().c_str());
-#else
-               printf("%sReplacing duplicate material \"%s\" with the material from the local material database.\n",
-                      indent.c_str(),db->materialList[i]->get_name()->get_value().c_str());
-#endif
                delete materialList[j];
                materialList[j]=db->materialList[i];
                materialList[j]->set_merged(true);

@@ -21,6 +21,7 @@
 #ifndef PORT_H
 #define PORT_H
 
+#include <quadmath.h>
 #include "mfem.hpp"
 #include "petscsys.h"
 #include <petsc.h>
@@ -40,7 +41,6 @@
 #include "pattern.hpp"
 
 using namespace std;
-using namespace mfem;
 
 #define lapack_int int
 #define lapack_complex_double std::complex<double>
@@ -133,7 +133,7 @@ class Boundary
       vector<keywordPair *> pathNameList;
       vector<long unsigned int> pathIndexList;
       vector<bool> reverseList;
-      Vector normal;                       // normal facing outward from the 3D volume
+      mfem::Vector normal;                       // normal facing outward from the 3D volume
       Path *outline=nullptr;               // outlien of the boundary
       int attribute=-1;                    // attribute assigned to the mesh indicating this boundary
       bool assignedToMesh=false;           // keeps track of whether the boundary was successfully assigned to the mesh
@@ -146,7 +146,7 @@ class Boundary
       bool inBlock (int);
       bool check (string *, vector<Path *>);
       bool assignPathIndices (vector<Path *> *);
-      bool checkBoundingBox (Vector *, Vector *, string *, double, vector<Path *> *);
+      bool checkBoundingBox (mfem::Vector *, mfem::Vector *, string *, double, vector<Path *> *);
       int get_startLine () {return startLine;}
       int get_endLine () {return endLine;}
       bool is_default_boundary () {return is_default;}
@@ -157,7 +157,7 @@ class Boundary
       bool name_is_loaded () {return name.is_loaded();}
       int get_name_lineNumber () {return name.get_lineNumber();}
       int get_wave_impedance_lineNumber () {return wave_impedance.get_lineNumber();}
-      Vector get_normal () {return normal;}
+      mfem::Vector get_normal () {return normal;}
       void set_normal (double nx, double ny, double nz) {normal(0)=nx; normal(1)=ny; normal(2)=nz;}
       void set_name (string name_) {name.set_value(name_);}
       void set_type (string type_) {type.set_value(type_);}
@@ -207,14 +207,14 @@ class OPEMIntegrationPoint
       int elementNumber;
       IntegrationPoint integrationPoint;
       complex<double> fieldX,fieldY,fieldZ;
-      Vector pt;  // working space
+      mfem::Vector pt;  // working space
    public:
       OPEMIntegrationPoint(int, double, double, double);
-      void update (ParMesh *);
+      void update (mfem::ParMesh *);
       void get_location (double *x, double *y, double *z);
       void set (double, double, double, double, double, double);
       void get_fields (complex<double> *, complex<double> *, complex<double> *);
-      void get_fieldValue (ParGridFunction *, ParGridFunction *);  // from grids to local value
+      void get_fieldValue (mfem::ParGridFunction *, mfem::ParGridFunction *);  // from grids to local value
       void get_field (complex<double> *fieldX_, complex<double> *fieldY_, complex<double> *fieldZ_) {
          *fieldX_=fieldX; *fieldY_=fieldY, *fieldZ_=fieldZ;
       }
@@ -236,8 +236,8 @@ class OPEMIntegrationPointList
       void push (OPEMIntegrationPoint *a) {points.push_back(a);}
       long unsigned int get_size() {return points.size();}
       OPEMIntegrationPoint* get_point (long unsigned int i) {return points[i];}
-      void update (ParMesh *);
-      void get_fieldValues (ParGridFunction *, ParGridFunction *);
+      void update (mfem::ParMesh *);
+      void get_fieldValues (mfem::ParGridFunction *, mfem::ParGridFunction *);
       void resetElementNumbers ();
       void assemble ();
       void integrate ();
@@ -270,7 +270,7 @@ class IntegrationPath
       bool load(string *, inputFile *);
       bool inIntegrationPathBlock (int);
       bool check (string *, vector<Path *> *);
-      bool checkBoundingBox(Vector *, Vector *, string *, double, vector<Path *> *);
+      bool checkBoundingBox(mfem::Vector *, mfem::Vector *, string *, double, vector<Path *> *);
       bool align (string *, vector<Path *> *, double *, bool);
       bool assignPathIndices (vector<Path *> *);
       void snapToMeshBoundary (vector<Path *> *, Mesh *);
@@ -294,48 +294,48 @@ class FieldSet
       double *eVecImE=nullptr;
       double *eVecReH=nullptr;
       double *eVecImH=nullptr;
-      Vector *eigenVecReEt=nullptr;
-      Vector *eigenVecImEt=nullptr;
-      Vector *eigenVecReEz=nullptr;
-      Vector *eigenVecImEz=nullptr;
-      Vector *eigenVecReHt=nullptr;
-      Vector *eigenVecImHt=nullptr;
-      Vector *eigenVecReHz=nullptr;
-      Vector *eigenVecImHz=nullptr;
+      mfem::Vector *eigenVecReEt=nullptr;
+      mfem::Vector *eigenVecImEt=nullptr;
+      mfem::Vector *eigenVecReEz=nullptr;
+      mfem::Vector *eigenVecImEz=nullptr;
+      mfem::Vector *eigenVecReHt=nullptr;
+      mfem::Vector *eigenVecImHt=nullptr;
+      mfem::Vector *eigenVecReHz=nullptr;
+      mfem::Vector *eigenVecImHz=nullptr;
       double alpha,beta;
       complex<double> impedance,voltage,current,Pz;
 
       // grid functions to hold the 2D modal fields from the 2D solution
-      ParGridFunction *grid2DReEt=nullptr;
-      ParGridFunction *grid2DImEt=nullptr;
-      ParGridFunction *grid2DReEz=nullptr;
-      ParGridFunction *grid2DImEz=nullptr;
-      ParGridFunction *grid2DReHt=nullptr;
-      ParGridFunction *grid2DImHt=nullptr;
-      ParGridFunction *grid2DReHz=nullptr;
-      ParGridFunction *grid2DImHz=nullptr;
+      mfem::ParGridFunction *grid2DReEt=nullptr;
+      mfem::ParGridFunction *grid2DImEt=nullptr;
+      mfem::ParGridFunction *grid2DReEz=nullptr;
+      mfem::ParGridFunction *grid2DImEz=nullptr;
+      mfem::ParGridFunction *grid2DReHt=nullptr;
+      mfem::ParGridFunction *grid2DImHt=nullptr;
+      mfem::ParGridFunction *grid2DReHz=nullptr;
+      mfem::ParGridFunction *grid2DImHz=nullptr;
 
       // grid functions to hold the 2D modal fields projected onto the 3D space
       // (holds the dof values applied when driving a port)
-      ParGridFunction *grid3DReEt=nullptr;
-      ParGridFunction *grid3DImEt=nullptr;
-      ParGridFunction *grid3DReEz=nullptr;
-      ParGridFunction *grid3DImEz=nullptr;
-      ParGridFunction *grid3DReHt=nullptr;
-      ParGridFunction *grid3DImHt=nullptr;
-      ParGridFunction *grid3DReHz=nullptr;
-      ParGridFunction *grid3DImHz=nullptr;
+      mfem::ParGridFunction *grid3DReEt=nullptr;
+      mfem::ParGridFunction *grid3DImEt=nullptr;
+      mfem::ParGridFunction *grid3DReEz=nullptr;
+      mfem::ParGridFunction *grid3DImEz=nullptr;
+      mfem::ParGridFunction *grid3DReHt=nullptr;
+      mfem::ParGridFunction *grid3DImHt=nullptr;
+      mfem::ParGridFunction *grid3DReHz=nullptr;
+      mfem::ParGridFunction *grid3DImHz=nullptr;
 
       // grid functions to hold the 2D modal solutions projected back onto 2D spaces
       // (to align with the grid functions grid2Dsolution* on the ports)
-      ParGridFunction *grid2DmodalReEt=nullptr;
-      ParGridFunction *grid2DmodalImEt=nullptr;
-      ParGridFunction *grid2DmodalReEz=nullptr;
-      ParGridFunction *grid2DmodalImEz=nullptr;
-      ParGridFunction *grid2DmodalReHt=nullptr;
-      ParGridFunction *grid2DmodalImHt=nullptr;
-      ParGridFunction *grid2DmodalReHz=nullptr;
-      ParGridFunction *grid2DmodalImHz=nullptr;
+      mfem::ParGridFunction *grid2DmodalReEt=nullptr;
+      mfem::ParGridFunction *grid2DmodalImEt=nullptr;
+      mfem::ParGridFunction *grid2DmodalReEz=nullptr;
+      mfem::ParGridFunction *grid2DmodalImEz=nullptr;
+      mfem::ParGridFunction *grid2DmodalReHt=nullptr;
+      mfem::ParGridFunction *grid2DmodalImHt=nullptr;
+      mfem::ParGridFunction *grid2DmodalReHz=nullptr;
+      mfem::ParGridFunction *grid2DmodalImHz=nullptr;
 
    public:
       ~FieldSet();
@@ -365,18 +365,18 @@ class FieldSet
       void set_voltage (double ReV, double ImV) {voltage=complex<double>(ReV,ImV);}
       void set_current (double ReI, double ImI) {current=complex<double>(ReI,ImI);}
       void set_Pz (double RePz, double ImPz) {Pz=complex<double>(RePz,ImPz);}
-      ParGridFunction* get_grid3DReEt() {return grid3DReEt;}
-      ParGridFunction* get_grid3DImEt() {return grid3DImEt;}
-      ParGridFunction* get_grid3DReHt() {return grid3DReHt;}
-      ParGridFunction* get_grid3DImHt() {return grid3DImHt;}
-      ParGridFunction* get_grid2DmodalReEt() {return grid2DmodalReEt;}
-      ParGridFunction* get_grid2DmodalImEt() {return grid2DmodalImEt;}
-      ParGridFunction* get_grid2DmodalReEz() {return grid2DmodalReEz;}
-      ParGridFunction* get_grid2DmodalImEz() {return grid2DmodalImEz;}
-      ParGridFunction* get_grid2DmodalReHt() {return grid2DmodalReHt;}
-      ParGridFunction* get_grid2DmodalImHt() {return grid2DmodalImHt;}
-      ParGridFunction* get_grid2DmodalReHz() {return grid2DmodalReHz;}
-      ParGridFunction* get_grid2DmodalImHz() {return grid2DmodalImHz;}
+      mfem::ParGridFunction* get_grid3DReEt() {return grid3DReEt;}
+      mfem::ParGridFunction* get_grid3DImEt() {return grid3DImEt;}
+      mfem::ParGridFunction* get_grid3DReHt() {return grid3DReHt;}
+      mfem::ParGridFunction* get_grid3DImHt() {return grid3DImHt;}
+      mfem::ParGridFunction* get_grid2DmodalReEt() {return grid2DmodalReEt;}
+      mfem::ParGridFunction* get_grid2DmodalImEt() {return grid2DmodalImEt;}
+      mfem::ParGridFunction* get_grid2DmodalReEz() {return grid2DmodalReEz;}
+      mfem::ParGridFunction* get_grid2DmodalImEz() {return grid2DmodalImEz;}
+      mfem::ParGridFunction* get_grid2DmodalReHt() {return grid2DmodalReHt;}
+      mfem::ParGridFunction* get_grid2DmodalImHt() {return grid2DmodalImHt;}
+      mfem::ParGridFunction* get_grid2DmodalReHz() {return grid2DmodalReHz;}
+      mfem::ParGridFunction* get_grid2DmodalImHz() {return grid2DmodalImHz;}
 };
 
 // Mode or Line 
@@ -437,7 +437,7 @@ class Mode
       bool inModeBlock (int);
       bool check(string *, vector<Path *> *, bool, long unsigned int);
       bool align_current_paths (string *, vector<Path *> *, bool);
-      bool checkBoundingBox (Vector *, Vector *, string *, double, vector<Path *> *);
+      bool checkBoundingBox (mfem::Vector *, mfem::Vector *, string *, double, vector<Path *> *);
       bool assignPathIndices(vector<Path *> *);
       bool is_enclosedByPath (vector<Path *> *, Path *, long unsigned int *);
       void print(string);
@@ -445,33 +445,33 @@ class Mode
       bool loadSolution (string *, string, size_t, size_t);
       bool scaleSolution ();
       void printSolution ();
-      void build2Dgrids (ParFiniteElementSpace *, ParFiniteElementSpace *);
-      void build3Dgrids (ParFiniteElementSpace *, ParFiniteElementSpace *);
-      void build2DModalGrids (ParFiniteElementSpace *, ParFiniteElementSpace *);
+      void build2Dgrids (mfem::ParFiniteElementSpace *, mfem::ParFiniteElementSpace *);
+      void build3Dgrids (mfem::ParFiniteElementSpace *, mfem::ParFiniteElementSpace *);
+      void build2DModalGrids (mfem::ParFiniteElementSpace *, mfem::ParFiniteElementSpace *);
       void fillX (Vec *, Vec *, Array<int> *, HYPRE_BigInt *, int);
       void fillIntegrationPoints (vector<Path *> *);
       IntegrationPath* get_voltageIntegrationPath ();
       IntegrationPath* get_currentIntegrationPath ();
-      void calculateLineIntegrals (ParMesh *, fem3D *);
-      void calculateLineIntegrals (ParMesh *, fem3D *, IntegrationPath *, IntegrationPath *);
-      void alignDirections (ParMesh *, fem3D *, IntegrationPath *, IntegrationPath *);
+      void calculateLineIntegrals (mfem::ParMesh *, fem3D *);
+      void calculateLineIntegrals (mfem::ParMesh *, fem3D *, IntegrationPath *, IntegrationPath *);
+      void alignDirections (mfem::ParMesh *, fem3D *, IntegrationPath *, IntegrationPath *);
       void addWeight (complex<double> value) {weight.push_back(value);}
       void setWeight (int drivingSet, complex<double> value) {weight[drivingSet]=value;}
       complex<double> getWeight (long unsigned int i) {return weight[i];}
-      void calculateSplits (ParFiniteElementSpace *, ParGridFunction *, ParGridFunction *, ParGridFunction *,
-                            ParGridFunction *, ParGridFunction *, ParGridFunction *, ParGridFunction *, ParGridFunction *, 
-                            Vector);
+      void calculateSplits (mfem::ParFiniteElementSpace *, mfem::ParGridFunction *, mfem::ParGridFunction *, mfem::ParGridFunction *,
+                            mfem::ParGridFunction *, mfem::ParGridFunction *, mfem::ParGridFunction *, mfem::ParGridFunction *, mfem::ParGridFunction *,
+                            mfem::Vector);
       complex<double> calculatePowerIn (int);
       complex<double> calculatePowerOut (int);
       void set_net_is_updated () {net_is_updated=true;}
       bool get_net_is_updated () {return net_is_updated;}
       void transfer_2Dsolution_2Dgrids_to_3Dgrids ();
       void transfer_2Dsolution_3Dgrids_to_2Dgrids ();
-      void save2DParaView (ParSubMesh *, struct projectData *, double, bool);
-      void save3DParaView (ParMesh *, struct projectData *, double, bool);
-      void save2DModalParaView (ParSubMesh *, struct projectData *, double, bool);
+      void save2DParaView (mfem::ParSubMesh *, struct projectData *, double, bool);
+      void save3DParaView (mfem::ParMesh *, struct projectData *, double, bool);
+      void save2DModalParaView (mfem::ParSubMesh *, struct projectData *, double, bool);
       void resetElementNumbers ();
-      void snapToMeshBoundary (vector<Path *> *, Mesh *);
+      void snapToMeshBoundary (vector<Path *> *, mfem::Mesh *);
       void populateGamma (double, GammaDatabase *);
       void reset ();
 };
@@ -531,14 +531,14 @@ class Port
 //      bool appliedPortABCreal=false;               // keeps track of whether the port absorbing boundary condition has been applied to the real part
 //      bool appliedPortABCimag=false;               // keeps track of whether the port absorbing boundary condition has been applied to the imag part
 
-      ND_FECollection *fec2D_ND=nullptr;           // Et
-      ParFiniteElementSpace *fes2D_ND=nullptr;     // on 2D ParMesh
+      mfem::ND_FECollection *fec2D_ND=nullptr;           // Et
+      mfem::ParFiniteElementSpace *fes2D_ND=nullptr;     // on 2D ParMesh
 
-      H1_FECollection *fec2D_H1=nullptr;           // Ez
-      ParFiniteElementSpace *fes2D_H1=nullptr;     // on 2D ParMesh
+      mfem::H1_FECollection *fec2D_H1=nullptr;           // Ez
+      mfem::ParFiniteElementSpace *fes2D_H1=nullptr;     // on 2D ParMesh
 
-      L2_FECollection *fec2D_L2=nullptr;           // for S-parameter calculations using modal projections
-      ParFiniteElementSpace *fes2D_L2=nullptr;     // on 2D ParMesh
+      mfem::L2_FECollection *fec2D_L2=nullptr;           // for S-parameter calculations using modal projections
+      mfem::ParFiniteElementSpace *fes2D_L2=nullptr;     // on 2D ParMesh
 
       bool spin180degrees;
       size_t t_size, z_size;
@@ -546,8 +546,8 @@ class Port
       string modesFilename="";
       Path *outline=nullptr;                       // port outline for 3D operations
       Path *rotated_outline=nullptr;               // port outline rotated to x-y plane for 2D operations
-      Vector normal;                               // normal facing outward from the 3D volume
-      Vector rotated_normal;                       // outward facing normal after rotation for the rotated 2D mesh
+      mfem::Vector normal;                               // normal facing outward from the 3D volume
+      mfem::Vector rotated_normal;                       // outward facing normal after rotation for the rotated 2D mesh
       lapack_complex_double* Ti;                   // for conversion between modal and line currents
       lapack_complex_double* Tv;                   // for conversion between modal and line voltages
       int TiTvSize;
@@ -556,14 +556,14 @@ class Port
       HYPRE_BigInt *offset;
 
       // grid functions to hold the 3D solutions on the 2D ports
-      ParGridFunction *grid2DsolutionReEt=nullptr;
-      ParGridFunction *grid2DsolutionImEt=nullptr;
-      ParGridFunction *grid2DsolutionReEz=nullptr;
-      ParGridFunction *grid2DsolutionImEz=nullptr;
-      ParGridFunction *grid2DsolutionReHt=nullptr;
-      ParGridFunction *grid2DsolutionImHt=nullptr;
-      ParGridFunction *grid2DsolutionReHz=nullptr;
-      ParGridFunction *grid2DsolutionImHz=nullptr;
+      mfem::ParGridFunction *grid2DsolutionReEt=nullptr;
+      mfem::ParGridFunction *grid2DsolutionImEt=nullptr;
+      mfem::ParGridFunction *grid2DsolutionReEz=nullptr;
+      mfem::ParGridFunction *grid2DsolutionImEz=nullptr;
+      mfem::ParGridFunction *grid2DsolutionReHt=nullptr;
+      mfem::ParGridFunction *grid2DsolutionImHt=nullptr;
+      mfem::ParGridFunction *grid2DsolutionReHz=nullptr;
+      mfem::ParGridFunction *grid2DsolutionImHz=nullptr;
 
    public:
       Port(int,int);
@@ -598,7 +598,7 @@ class Port
       bool findDifferentialPairBlocks (inputFile *);
       bool check (string *, vector<Path *> *, bool);
       bool assignPathIndices (vector<Path *> *);
-      bool checkBoundingBox(Vector *, Vector *, string *, double, vector<Path *> *);
+      bool checkBoundingBox(mfem::Vector *, mfem::Vector *, string *, double, vector<Path *> *);
       vector<int> get_SportList ();
       void push(long unsigned int a) {pathIndexList.push_back(a);}
       bool merge(vector<Path *> *);
@@ -613,8 +613,8 @@ class Port
       void saveModeFile (struct projectData *, vector<Path *> *, BoundaryDatabase *);
       void set_filenames();
       bool is_overlapPath (Path *);
-      Vector& get_normal() {return normal;}
-      Vector get_rotated_normal() {return rotated_normal;}
+      mfem::Vector& get_normal() {return normal;}
+      mfem::Vector get_rotated_normal() {return rotated_normal;}
       bool createDirectory(string *);
       void set2DModeNumbers();
       int get_last_attribute ();
@@ -642,25 +642,25 @@ class Port
       void build2DSolutionGrids ();
       void build2DModalGrids ();
       void build_essTdofList (ParFiniteElementSpace *, ParMesh *);
-      bool addPortIntegrators (ParMesh *, ParBilinearForm *, PWConstCoefficient *, PWConstCoefficient *, PWConstCoefficient *, vector<Array<int> *> &,
-                               vector<ConstantCoefficient *> &, vector<ConstantCoefficient *> &, vector<ConstantCoefficient *> &, vector<ConstantCoefficient *> &,
+      bool addPortIntegrators (mfem::ParMesh *, mfem::ParBilinearForm *, mfem::PWConstCoefficient *, mfem::PWConstCoefficient *, mfem::PWConstCoefficient *, vector<Array<int> *> &,
+                               vector<mfem::ConstantCoefficient *> &, vector<mfem::ConstantCoefficient *> &, vector<mfem::ConstantCoefficient *> &, vector<mfem::ConstantCoefficient *> &,
                                bool, int, bool, string);
       void fillX (Vec *, Vec *, int);
-      void extract2Dmesh (ParMesh *, vector<ParSubMesh> *);
+      void extract2Dmesh (mfem::ParMesh *, vector<ParSubMesh> *);
       void addWeight (complex<double>);
       void calculateSplits ();
       bool isDriving (int);
       Mode* getDrivingMode (int);
       void fillIntegrationPoints (vector<Path *> *);
-      void calculateLineIntegrals (ParMesh *, fem3D *);
-      void alignDirections (ParMesh *, fem3D *);
+      void calculateLineIntegrals (mfem::ParMesh *, fem3D *);
+      void alignDirections (mfem::ParMesh *, fem3D *);
       void transfer_2Dsolution_2Dgrids_to_3Dgrids ();
       void transfer_2Dsolution_3Dgrids_to_2Dgrids ();
       void transfer_3Dsolution_3Dgrids_to_2Dgrids (fem3D *);
-      void save2DParaView (ParSubMesh *, struct projectData *, double, bool);
-      void save3DParaView (ParMesh *, struct projectData *, double, bool);
-      void save2DSolutionParaView (ParSubMesh *, struct projectData *, double, int, bool);
-      void save2DModalParaView (ParSubMesh *, struct projectData *, double, bool);
+      void save2DParaView (mfem::ParSubMesh *, struct projectData *, double, bool);
+      void save3DParaView (mfem::ParMesh *, struct projectData *, double, bool);
+      void save2DSolutionParaView (mfem::ParSubMesh *, struct projectData *, double, int, bool);
+      void save2DModalParaView (mfem::ParSubMesh *, struct projectData *, double, bool);
       void resetElementNumbers ();
       bool snapToMeshBoundary (vector<Path *> *, Mesh *, string);
       void populateGamma (double, GammaDatabase *);

@@ -38,9 +38,8 @@
 #include "FrequencyPlanG.h"
 #include "Refinement.h"
 #include "Materials.h"
+//#include "port.hpp"
 #include "CustomOpenGLWidget.h"
-//#include "TestOpenGLWidget.h"
-//#include "BreptViewerWidget.h"
 #include <TopoDS_Shape.hxx>
 #include <BRep_Builder.hxx>
 #include <BRepTools.hxx>
@@ -50,6 +49,7 @@
 #include <AIS_InteractiveContext.hxx>
 #include <Xw_Window.hxx>
 #include <OpenGl_GraphicDriver.hxx>
+#include "petscsys.h"
 
 
 #include <QAction>
@@ -63,8 +63,6 @@
 #include <Standard_WarningsRestore.hxx>
 
 #include <Standard_Version.hxx>
-
-
 
 
 using namespace std;
@@ -114,5 +112,6 @@ private:
     bool hasProjData;
     QString projectFile;
     struct projectData projData,defaultData;
+    //BoundaryDatabase *boundaryDatabase;
 };
 #endif // OPEMG_H

@@ -808,7 +808,7 @@ bool Boundary::checkBoundingBox (Vector *lowerLeft, Vector *upperRight, string *
 
    long unsigned int i=0;
    while (i < pathIndexList.size()) {
-      if ((*pathList)[pathIndexList[i]]->checkBoundingBox(lowerLeft, upperRight, indent, tol)) fail=true;
+      if ((*pathList)[pathIndexList[i]]->checkBoundingBox(lowerLeft,upperRight,indent,tol)) fail=true;
       i++;
    }
    return fail;

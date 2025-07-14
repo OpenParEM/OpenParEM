@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Refinement</class>
- <widget class="QDialog" name="Refinement">
+ <class>OPEMg_Refinement</class>
+ <widget class="QDialog" name="OPEMg_Refinement">
   <property name="geometry">
    <rect>
     <x>0</x>
