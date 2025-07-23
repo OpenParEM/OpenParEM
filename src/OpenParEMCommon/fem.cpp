@@ -21,11 +21,11 @@
 #include "fem.hpp"
 
 // allocates memory that must be freed later
-bool loadData (ifstream *eVecFile, double **eVecRe, double **eVecIm, size_t *vectorSize, char *filename)
+bool loadData (std::ifstream *eVecFile, double **eVecRe, double **eVecIm, size_t *vectorSize, char *filename)
 {
-   string line;
+   std::string line;
    int lineNumber=0;
-   vector<string> tokens;
+   std::vector<std::string> tokens;
    bool foundVec=false,foundEndVec=false;
    size_t allocated,length,blockSize=256;
 

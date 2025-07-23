@@ -30,8 +30,6 @@
 #include "path.hpp"
 #include "prefix.h"
 
-using namespace std;
-
 class SourceFile {
    private:
       int startLine;
@@ -40,10 +38,10 @@ class SourceFile {
    public:
       SourceFile (int,int);
       SourceFile* clone ();
-      bool load (string *, inputFile *);
+      bool load (std::string *, inputFile *);
       bool inBlock (int);
-      string get_name () {return name.get_value();}
-      bool check (string *);
+      std::string get_name () {return name.get_value();}
+      bool check (std::string *);
       void print ();
 };
 

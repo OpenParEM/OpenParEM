@@ -32,8 +32,6 @@
 #include "CustomLineEdit.h"
 #include "FrequencyView.h"
 
-using namespace std;
-
 extern "C" void init_project (struct projectData *);
 extern "C" void free_project (struct projectData *);
 

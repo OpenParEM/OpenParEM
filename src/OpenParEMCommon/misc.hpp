@@ -31,47 +31,44 @@
 #include "petscsys.h"
 #include "prefix.h"
 
-
-using namespace std;
-
 extern "C" void prefix ();
 
-bool is_comment (string);
-bool is_hashComment (string);
-void split_on_space (vector<string> *, string);
+bool is_comment (std::string);
+bool is_hashComment (std::string);
+void split_on_space (std::vector<std::string> *, std::string);
 bool double_compare (double, double, double);
-bool complex_compare (complex<double>, complex<double>, double);
+bool complex_compare (std::complex<double>, std::complex<double>, double);
 double relative_error (double, double);
 bool is_double (const char *);
-bool is_double (string *);
-bool is_complex (complex<double>);
-bool is_int (string *);
-bool is_point (string *, int);
-bool point_get (string *, double *, double *, double *, int, string, int);
-void get_token_pair (string *, string *, string *, int *, string);
-string processOutputNumber (double);
-bool processInputNumber (string, double *);
+bool is_double (std::string *);
+bool is_complex (std::complex<double>);
+bool is_int (std::string *);
+bool is_point (std::string *, int);
+bool point_get (std::string *, double *, double *, double *, int, std::string, int);
+void get_token_pair (std::string *, std::string *, std::string *, int *, std::string);
+std::string processOutputNumber (double);
+bool processInputNumber (std::string, double *);
 
 class inputFile
 {
    private:
-      vector<string> lineTextList;
-      vector<int> lineNumberList;
-      vector<int> crossReferenceList;   // for easy lookup
-      string indent="   ";
+      std::vector<std::string> lineTextList;
+      std::vector<int> lineNumberList;
+      std::vector<int> crossReferenceList;   // for easy lookup
+      std::string indent="   ";
    public:
       bool load (const char *);
       void createCrossReference ();
-      bool checkVersion (string, string);
+      bool checkVersion (std::string, std::string);
       void print ();
-      bool findBlock (int, int, int *, int *, string, string, bool);
+      bool findBlock (int, int, int *, int *, std::string, std::string, bool);
       unsigned long int get_size () {return lineNumberList.size();}
       int get_lineNumber (int i) {return lineNumberList[i];}
       int get_first_lineNumber ();
       int get_last_lineNumber();
       int get_previous_lineNumber (int);
       int get_next_lineNumber (int);
-      string get_line (int);
+      std::string get_line (int);
       void clear ();
 };
 

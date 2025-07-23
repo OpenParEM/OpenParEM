@@ -21,15 +21,15 @@
 #include "mesh.hpp"
 
 // check that the field points are within the mesh's bounding box
-bool check_field_points (const char *filename, Mesh *mesh, ParMesh *pmesh, int order, int dim, int field_points_count,
+bool check_field_points (const char *filename, mfem::Mesh *mesh, mfem::ParMesh *pmesh, int order, int dim, int field_points_count,
                          double *field_points_x, double *field_points_y, double *field_points_z)
 {
    double tol=1e-12;
    bool fail=false;
 
-   Vector lowerLeft,upperRight;
-   if (mesh) mesh->GetBoundingBox(lowerLeft,upperRight,max(order,1));
-   if (pmesh) pmesh->GetBoundingBox(lowerLeft,upperRight,max(order,1));
+   mfem::Vector lowerLeft,upperRight;
+   if (mesh) mesh->GetBoundingBox(lowerLeft,upperRight,std::max(order,1));
+   if (pmesh) pmesh->GetBoundingBox(lowerLeft,upperRight,std::max(order,1));
 
    int i=0;
    while (i < field_points_count) {
@@ -69,17 +69,17 @@ bool check_field_points (const char *filename, Mesh *mesh, ParMesh *pmesh, int o
 
 // write x,y,z,attribute extracted from the mesh for the boundaries
 // view with ParaView
-bool write_attributes (const char *baseName, ParMesh *pmesh)
+bool write_attributes (const char *baseName, mfem::ParMesh *pmesh)
 {
    PetscMPIInt size,rank;
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   vector<double> x,y,z;
-   vector<int> attribute;
+   std::vector<double> x,y,z;
+   std::vector<int> attribute;
    int dim=pmesh->Dimension();
 
-   DenseMatrix pointMat;
+   mfem::DenseMatrix pointMat;
    if (dim == 2) pointMat.SetSize(3,2);
    if (dim == 3) pointMat.SetSize(3,3);
 
@@ -197,20 +197,20 @@ bool write_attributes (const char *baseName, ParMesh *pmesh)
 
    if (rank == 0) {
 
-      stringstream ss;
+      std::stringstream ss;
       ss << baseName << "_attributes.csv";
 
-      ofstream CSV;
-      CSV.open(ss.str().c_str(),ofstream::out);
+      std::ofstream CSV;
+      CSV.open(ss.str().c_str(),std::ofstream::out);
       if (CSV.is_open()) {
 
-         if (dim == 2) CSV << "\"X\",\"Y\",\"attribute\"" << endl;
-         if (dim == 3) CSV << "\"X\",\"Y\",\"Z\",\"attribute\"" << endl;
+         if (dim == 2) CSV << "\"X\",\"Y\",\"attribute\"" << std::endl;
+         if (dim == 3) CSV << "\"X\",\"Y\",\"Z\",\"attribute\"" << std::endl;
 
          int i=0;
          while (i < (int)x.size()) {
-            if (dim == 2) CSV << x[i] << "," << y[i] << "," << attribute[i] << endl;
-            if (dim == 3) CSV << x[i] << "," << y[i] << "," << z[i] << "," << attribute[i] << endl;
+            if (dim == 2) CSV << x[i] << "," << y[i] << "," << attribute[i] << std::endl;
+            if (dim == 3) CSV << x[i] << "," << y[i] << "," << z[i] << "," << attribute[i] << std::endl;
             i++;
          }
          CSV.close();
@@ -225,7 +225,7 @@ bool write_attributes (const char *baseName, ParMesh *pmesh)
    return false;
 }
 
-void push_if_unique (vector<int> *data, int value)
+void push_if_unique (std::vector<int> *data, int value)
 {
    long unsigned int i=0;
    while (i < data->size()) {
@@ -236,13 +236,13 @@ void push_if_unique (vector<int> *data, int value)
 }
 
 // reset the attributes so that they start with 1 and increase without gaps [required by MFEM]
-void reset_attributes (Mesh *mesh, ParMesh *pmesh, MeshMaterialList *meshMaterials)
+void reset_attributes (mfem::Mesh *mesh, mfem::ParMesh *pmesh, MeshMaterialList *meshMaterials)
 {
    PetscMPIInt size,rank;
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   vector<int> attributes;
+   std::vector<int> attributes;
 
    // make a list of unique attributes then sort
 
@@ -361,7 +361,7 @@ void reset_attributes (Mesh *mesh, ParMesh *pmesh, MeshMaterialList *meshMateria
 // MeshMaterialList
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-void MeshMaterialList::set_active (vector<int> *active_attributes)
+void MeshMaterialList::set_active (std::vector<int> *active_attributes)
 {
    long unsigned int i=0;
    while (i < index.size()) {
@@ -390,20 +390,20 @@ bool MeshMaterialList::load (const char *filename, int dimension)
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   ifstream meshFile;
-   string line;
+   std::ifstream meshFile;
+   std::string line;
 
-   stringstream ss;
+   std::stringstream ss;
    ss << filename;
 
    if (std::filesystem::exists(ss.str().c_str())) {
       // serial mesh
-      meshFile.open(ss.str().c_str(),ifstream::in);
+      meshFile.open(ss.str().c_str(),std::ifstream::in);
    } else {
       // parallel mesh
-      ss << "." << setw(6) << setfill('0') << rank;
+      ss << "." << std::setw(6) << std::setfill('0') << rank;
       if (std::filesystem::exists(ss.str().c_str())) {
-         meshFile.open(ss.str().c_str(),ifstream::in);
+         meshFile.open(ss.str().c_str(),std::ifstream::in);
       } else {
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1079: Mesh file for \"%s\" is not available for reading.\n",filename);
          return true;
@@ -452,13 +452,13 @@ int MeshMaterialList::loadGMSH (const char *filename, int dimension)
    int lineCount=0;
    bool startedFormat=false,completedFormat=false,loadedFormat=false;
    bool startedNames=false,completedNames=false,loadedEntryCount=false;
-   string line,version_number;
-   vector<string> tokens;
+   std::string line,version_number;
+   std::vector<std::string> tokens;
    size_t pos1,pos2;
 
    // the mesh file in Gmsh 2.2 format 
-   ifstream meshFile;
-   meshFile.open(filename,ifstream::in);
+   std::ifstream meshFile;
+   meshFile.open(filename,std::ifstream::in);
 
    if (meshFile.is_open()) {
 
@@ -499,8 +499,8 @@ int MeshMaterialList::loadGMSH (const char *filename, int dimension)
                         }
 
                         version_number=tokens[0];
-                        file_type=stoi(tokens[1]);
-                        data_size=stoi(tokens[2]);
+                        file_type=std::stoi(tokens[1]);
+                        data_size=std::stoi(tokens[2]);
 
                         tokens.clear();
                         loadedFormat=true;
@@ -528,7 +528,7 @@ int MeshMaterialList::loadGMSH (const char *filename, int dimension)
                            meshFile.close();
                            return 1;
                         }
-                        int dim=stoi(tokens[0]);
+                        int dim=std::stoi(tokens[0]);
                         if (dim != dimension) {
                            prefix(); PetscPrintf(PETSC_COMM_WORLD,"Warning: Dimension %d!=2 in file \"%s\" at line %d.\n",dim,filename,lineCount);
                         }
@@ -602,9 +602,9 @@ long unsigned int MeshMaterialList::get_index (int attribute)
    return 0;
 }
 
-string MeshMaterialList::get_name(long unsigned int m)
+std::string MeshMaterialList::get_name(long unsigned int m)
 {
-   string a="ERROR1046: out of bounds";
+   std::string a="ERROR1046: out of bounds";
    if (m >= 0 && m < list.size() && active[m]) return list[m];
    return a;
 }
@@ -619,7 +619,7 @@ void MeshMaterialList::print ()
    
    long unsigned int i=0;
    while (i < list.size()) {
-      string active_state="false";
+      std::string active_state="false";
       if (active[i]) active_state="true";
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"   %d %s active=%s\n",index[i],list[i].c_str(),active_state.c_str());
       i++;
@@ -629,19 +629,19 @@ void MeshMaterialList::print ()
 int MeshMaterialList::loadMFEM (const char *filename)
 {
    int lineCount=0;
-   string line;
-   vector<string> tokens;
+   std::string line;
+   std::vector<std::string> tokens;
    size_t pos1,pos2;
 
-   stringstream regionsFilename;
+   std::stringstream regionsFilename;
    regionsFilename << "materials_for_" << filename;
 
-   ifstream regionsFile;
-   regionsFile.open(regionsFilename.str().c_str(),ifstream::in);
+   std::ifstream regionsFile;
+   regionsFile.open(regionsFilename.str().c_str(),std::ifstream::in);
 
    if (regionsFile.is_open()) {
 
-      stringstream ss;
+      std::stringstream ss;
       ss << "OpenParEM Regions v" << regionsFile_version_number;
 
       // first line is the version
@@ -707,16 +707,16 @@ int MeshMaterialList::loadMFEM (const char *filename)
 
 bool MeshMaterialList::saveRegionsFile (const char *filename)
 {
-   ofstream regionsFile;
-   regionsFile.open(filename,ofstream::out);
+   std::ofstream regionsFile;
+   regionsFile.open(filename,std::ofstream::out);
 
    if (regionsFile.is_open()) {
-      regionsFile << "OpenParEM Regions v" << regionsFile_version_number << endl;
+      regionsFile << "OpenParEM Regions v" << regionsFile_version_number << std::endl;
 
       long unsigned int i=0;
       while (i < index.size()) {
          if (active[i]) {
-            regionsFile << index[i] << " " << list[i] << endl;
+            regionsFile << index[i] << " " << list[i] << std::endl;
          }
          i++;
       } 

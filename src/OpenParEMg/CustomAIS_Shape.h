@@ -18,45 +18,21 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MESHOPTIONS_H
-#define MESHOPTIONS_H
+#ifndef CUSTOMAIS_SHAPE_H
+#define CUSTOMAIS_SHAPE_H
 
-#include <QDialog>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <iostream>
-#include "project.h"
+#include "AIS_Shape.hxx"
+#include "TopoDS_Shape.hxx"
+#include <QString>
 
-namespace Ui {
-class MeshDialog;
-}
-
-class MeshDialog : public QDialog
+class CustomAIS_Shape : public AIS_Shape
 {
-    Q_OBJECT
-
 public:
-    explicit MeshDialog(QWidget *parent = nullptr);
-    void set_projData (struct projectData *);
-    ~MeshDialog();
-
-private slots:
-    void on_meshOrderSpinBox_valueChanged(int arg1);
-    void on_meshFileLineEdit_returnPressed();
-    void on_meshFilePushButton_clicked();
-    void on_meshSaveRefined_checkStateChanged(const Qt::CheckState &arg1);
-    void on_meshRefinementFraction_textChanged(const QString &arg1);
-    void on_meshQualityLimit_textChanged(const QString &arg1);
-    void on_meshOptionOk_clicked();
-    void on_meshOptionCancel_clicked();
+    CustomAIS_Shape (const TopoDS_Shape &aShape) : AIS_Shape(aShape) {}
+    void set_name (QString name_) {name=name_;}
+    QString get_name () {return name;}
 private:
-    Ui::MeshDialog *ui;
-    struct projectData *projData;
-    int meshOrder;
-    QString meshFile;
-    int meshSaveRefined;
-    double meshRefinementFraction;
-    double meshQualityLimit;
+    QString name;
 };
 
-#endif // MESHOPTIONS_H
+#endif // CUSTOMAIS_SHAPE_H

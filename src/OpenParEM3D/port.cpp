@@ -23,6 +23,15 @@
 #include "fem3D.hpp"
 #include "results.hpp"
 
+#ifdef HAS_GUI
+#include <Qt>
+#include <QComboBox>
+#include <QPushButton>
+#include "CustomAIS_Shape.h"
+#include "CustomLineEdit.h"
+#include "CustomComboBox.h"
+#endif
+
 string convertLogic (int a)
 {
    string retval;
@@ -556,6 +565,10 @@ Boundary::Boundary(int startLine_, int endLine_)
    is_default=false;
    normal.SetSize(3);
    normal(0)=-1; normal(1)=-1; normal(2)=-1;
+
+#if HAS_GUI
+   doubleValidator.setBottom(0);
+#endif
 }
 
 bool Boundary::load(string *indent, inputFile *inputs)
@@ -789,7 +802,7 @@ bool Boundary::inBlock (int lineNumber)
    return false;
 }
 
-bool Boundary::check (string *indent, vector<Path *> pathList)
+bool Boundary::check (string *indent, std::vector<Path *> pathList)
 {
    bool fail=false;
 
@@ -899,7 +912,7 @@ bool Boundary::assignPathIndices (vector<Path *> *pathList)
    return fail;
 }
 
-bool Boundary::checkBoundingBox (Vector *lowerLeft, Vector *upperRight, string *indent, double tol, vector<Path *> *pathList)
+bool Boundary::checkBoundingBox (mfem::Vector *lowerLeft, mfem::Vector *upperRight, string *indent, double tol, std::vector<Path *> *pathList)
 {
    bool fail=false;
 
@@ -1007,14 +1020,14 @@ bool Boundary::is_overlapPath (vector<Path *> *pathList, Path *testPath)
    return false;
 }
 
-void Boundary::addImpedanceIntegrator (double frequency, double temperature, ParMesh *pmesh, ParBilinearForm *pmblf, 
-                                       MaterialDatabase *materialDatabase, vector<Array<int> *> &borderAttributesList,
-                                       vector<ConstantCoefficient *> &ZconstList, bool isReal)
+void Boundary::addImpedanceIntegrator (double frequency, double temperature, mfem::ParMesh *pmesh, mfem::ParBilinearForm *pmblf,
+                                       MaterialDatabase *materialDatabase, std::vector<mfem::Array<int> *> &borderAttributesList,
+                                       std::vector<mfem::ConstantCoefficient *> &ZconstList, bool isReal)
 {
    if (is_perfect_electric_conductor() || is_perfect_magnetic_conductor()) return;
    if (isReal) return;
 
-   Array<int> *border_attributes=new Array<int>;
+   mfem::Array<int> *border_attributes=new mfem::Array<int>;
    border_attributes->SetSize(pmesh->bdr_attributes.Max());
    (*border_attributes)=0;                // default to nothing
    (*border_attributes)[attribute-1]=1;   // enable this boundary
@@ -1023,7 +1036,7 @@ void Boundary::addImpedanceIntegrator (double frequency, double temperature, Par
 
    if (is_surface_impedance()) {
       Material *material=materialDatabase->get(get_material());
-      string indent="    ";
+      std::string indent="    ";
       Rs=material->get_Rs(temperature,frequency,1e-12,indent);
    }
 
@@ -1372,6 +1385,79 @@ bool Boundary::snapToMeshBoundary (vector<Path *> *pathList, Mesh *mesh, string 
 
    return false;
 }
+
+//xxx
+#ifdef HAS_GUI
+void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, QTreeWidgetItem *boundaryWidgetItem)
+{
+    Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
+    drawingWindow->displayDrawing(drawingShape);
+    drawingWindow->updateView();
+
+    // boundary type
+
+    QString textName=QString::fromStdString(get_name());
+    QTreeWidgetItem *itemName=new QTreeWidgetItem(0);
+    itemName->setText(0,textName);
+    itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
+    boundaryWidgetItem->addChild(itemName);
+
+    QTreeWidgetItem *itemType=new QTreeWidgetItem(0);
+    itemType->setFlags(itemType->flags() | Qt::ItemIsEditable);
+    itemType->setToolTip(0,"Boundary type.");
+    itemName->addChild(itemType);
+
+    CustomComboBox *comboType=new CustomComboBox();
+    comboType->addItem("PEC");
+    comboType->addItem("PMC");
+    comboType->addItem("Zs");
+    comboType->addItem("Radiation");
+    comboType->set_port(nullptr);
+    comboType->set_boundary(this);
+    comboType->set_type(2);
+    if (is_perfect_electric_conductor()) comboType->setCurrentIndex(0);
+    if (is_perfect_magnetic_conductor()) comboType->setCurrentIndex(1);
+    if (is_surface_impedance()) comboType->setCurrentIndex(2);
+    if (is_radiation()) comboType->setCurrentIndex(3);
+    drawingItemTree->setItemWidget(itemType,0,comboType);
+
+    QObject::connect(comboType, &CustomComboBox::CustomCurrentIndexChanged, &comboZdefIndexChanged);
+
+    // boundary type dependent data
+
+    QString textMaterial=QString::fromStdString(get_material());
+    QTreeWidgetItem *itemMaterial=new QTreeWidgetItem(0);
+    itemMaterial->setText(0,textMaterial);
+    itemMaterial->setFlags(itemMaterial->flags() | Qt::ItemIsEditable);
+    itemMaterial->setToolTip(0,"Boundary material.");
+    itemName->addChild(itemMaterial);
+
+    QTreeWidgetItem *itemWaveImpedance=new QTreeWidgetItem(0);
+    itemWaveImpedance->setFlags(itemWaveImpedance->flags() | Qt::ItemIsEditable);
+    itemWaveImpedance->setToolTip(0,"Wave impedance in Ohms.");
+    itemName->addChild(itemWaveImpedance);
+
+    CustomLineEdit *textWaveImpedance=new CustomLineEdit();
+    textWaveImpedance->setText(QString::number(get_wave_impedance()));
+    textWaveImpedance->setValidator(&doubleValidator);
+    drawingItemTree->setItemWidget(itemWaveImpedance,0,textWaveImpedance);
+
+    // set initial visibility
+    if (is_surface_impedance()) itemWaveImpedance->setHidden(true);
+    if (is_radiation()) itemMaterial->setHidden(true);
+
+    // set the QTreeWidget items so they can be hidden as needed depending on type
+    comboType->set_itemMaterial(itemMaterial);
+    comboType->set_itemWaveImpedance(itemWaveImpedance);
+
+    if (is_default) {
+        QString textDefault="default";
+        QTreeWidgetItem *itemDefault=new QTreeWidgetItem(0);
+        itemDefault->setText(0,textDefault);
+        itemName->addChild(itemDefault);
+    }
+}
+#endif
 
 Boundary::~Boundary()
 {
@@ -2886,7 +2972,7 @@ FieldSet::~FieldSet()
 // Mode
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-Mode::Mode(int startLine_, int endLine_, string calculation_)
+Mode::Mode(int startLine_, int endLine_, std::string calculation_)
 {
    startLine=startLine_;
    endLine=endLine_;
@@ -3012,7 +3098,7 @@ bool Mode::inModeBlock (int lineNumber)
    return false;
 }
 
-bool Mode::check (string *indent, vector<Path *> *pathList, bool is_modal, long unsigned int modeCount)
+bool Mode::check (std::string *indent, std::vector<Path *> *pathList, bool is_modal, long unsigned int modeCount)
 {
    bool fail=false;
 
@@ -3781,7 +3867,7 @@ bool PortAttribute::has_attribute (int attribute_)
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 Port::Port (int startLine_, int endLine_)
-{
+{   
    startLine=startLine_;
    endLine=endLine_;
 
@@ -6214,6 +6300,139 @@ bool Port::has_mode (Mode *mode, long unsigned int *index)
    return false;
 }
 
+
+//xxx
+#ifdef HAS_GUI
+void comboZdefIndexChanged (int index, Port *port, Boundary *boundary, int type, QTreeWidgetItem *itemMaterial, QTreeWidgetItem *itemWaveImpedance) {
+    std::cout << "before:" << index << std::endl;
+    if (port) {
+       std::cout << "  port->is_line()=" << port->is_line() << std::endl;
+       std::cout << "  port->is_modal()=" << port->is_modal() << std::endl;
+       std::cout << "  impedance_definition=" << port->get_impedance_definition() << std::endl;
+       std::cout << "  impedance_calculation=" << port->get_impedance_calculation() << std::endl;
+    }
+    if (boundary) {
+        std::cout << "  boundary->is_perfect_electric_conductor()=" << boundary->is_perfect_electric_conductor() << endl;
+        std::cout << "  boundary->is_perfect_magnetic_conductor()=" << boundary->is_perfect_magnetic_conductor() << endl;
+        std::cout << "  boundary->is_surface_impedance()=" << boundary->is_surface_impedance() << endl;
+        std::cout << "  boundary->is_radiation()=" << boundary->is_radiation() << endl;
+    }
+
+    // Port: impedance definition
+    if (port && type == 0) {
+        if (index == 0) port->set_impedance_definition("VI");
+        if (index == 1) port->set_impedance_definition("PV");
+        if (index == 2) port->set_impedance_definition("PI");
+    }
+
+    // Port: impedance calculation
+    if (port && type == 1) {
+        if (index == 0) port->set_impedance_calculation("line");
+        if (index == 1) port->set_impedance_calculation("modal");
+    }
+
+    // Boundary: type
+    if (boundary && type == 2) {
+        std::cout << "set boundary type, index=" << index << std::endl;
+        if (index == 0) {
+            boundary->set_type("perfect_electric_conductor");
+            if (itemMaterial) itemMaterial->setHidden(true);
+            if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
+        }
+        if (index == 1) {
+            boundary->set_type("perfect_magnetic_conductor");
+            if (itemMaterial) itemMaterial->setHidden(true);
+            if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
+        }
+        if (index == 2) {
+            boundary->set_type("surface_impedance");
+            if (itemMaterial) itemMaterial->setHidden(false);
+            if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
+        }
+        if (index == 3) {
+            boundary->set_type("radiation");
+            if (itemMaterial) itemMaterial->setHidden(true);
+            if (itemWaveImpedance) itemWaveImpedance->setHidden(false);
+        }
+    }
+
+    std::cout << "after:" << index << std::endl;
+    if (port) {
+       std::cout << "  port->is_line()=" << port->is_line() << std::endl;
+       std::cout << "  port->is_modal()=" << port->is_modal() << std::endl;
+       std::cout << "  impedance_definition=" << port->get_impedance_definition() << std::endl;
+       std::cout << "  impedance_calculation=" << port->get_impedance_calculation() << std::endl;
+    }
+    if (boundary) {
+        std::cout << "  boundary->is_perfect_electric_conductor()=" << boundary->is_perfect_electric_conductor() << endl;
+        std::cout << "  boundary->is_perfect_magnetic_conductor()=" << boundary->is_perfect_magnetic_conductor() << endl;
+        std::cout << "  boundary->is_surface_impedance()=" << boundary->is_surface_impedance() << endl;
+        std::cout << "  boundary->is_radiation()=" << boundary->is_radiation() << endl;
+    }
+    return;
+}
+
+void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, QTreeWidgetItem *portWidgetItem)
+{
+    Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
+    drawingWindow->displayDrawing(drawingShape);
+    drawingWindow->updateView();
+
+    // name
+    QString textName=QString::fromStdString(get_name());
+    QTreeWidgetItem *itemName=new QTreeWidgetItem(0);
+    itemName->setText(0,textName);
+    itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
+    portWidgetItem->addChild(itemName);
+
+    // impedance definition
+
+    QString textImpedanceDefinition=QString::fromStdString(impedance_definition.get_value());
+    QTreeWidgetItem *itemImpedanceDefinition=new QTreeWidgetItem(0);
+    itemImpedanceDefinition->setText(0,textImpedanceDefinition);
+    itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() | Qt::ItemIsEditable);
+    itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
+    itemName->addChild(itemImpedanceDefinition);
+
+    CustomComboBox *comboZdef=new CustomComboBox();
+    comboZdef->addItem("VI");
+    comboZdef->addItem("PV");
+    comboZdef->addItem("PI");
+    comboZdef->set_port(this);
+    comboZdef->set_boundary(nullptr);
+    comboZdef->set_type(0);
+    if (impedance_definition.get_value().compare("VI") == 0) comboZdef->setCurrentIndex(0);
+    if (impedance_definition.get_value().compare("PV") == 0) comboZdef->setCurrentIndex(1);
+    if (impedance_definition.get_value().compare("PI") == 0) comboZdef->setCurrentIndex(2);
+    drawingItemTree->setItemWidget(itemImpedanceDefinition,0,comboZdef);
+
+    QObject::connect(comboZdef, &CustomComboBox::CustomCurrentIndexChanged, &comboZdefIndexChanged);
+
+    // impedance calculation
+
+    QString textImpedanceCalculation=QString::fromStdString(impedance_calculation.get_value());
+    QTreeWidgetItem *itemImpedanceCalculation=new QTreeWidgetItem(0);
+    itemImpedanceCalculation->setText(0,textImpedanceCalculation);
+    itemImpedanceCalculation->setFlags(itemImpedanceCalculation->flags() | Qt::ItemIsEditable);
+    itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
+    itemName->addChild(itemImpedanceCalculation);
+
+    CustomComboBox *comboZcalc=new CustomComboBox();
+    comboZcalc->addItem("line");
+    comboZcalc->addItem("modal");
+    comboZcalc->set_port(this);
+    comboZcalc->set_type(1);
+    comboZcalc->set_boundary(nullptr);
+    if (is_line()) comboZcalc->setCurrentIndex(0);
+    if (is_modal()) comboZcalc->setCurrentIndex(1);
+    drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
+
+    QObject::connect(comboZcalc, &CustomComboBox::CustomCurrentIndexChanged, &comboZdefIndexChanged);
+}
+
+
+#endif
+
 Port::~Port ()
 {
    long unsigned int i=0;
@@ -8260,6 +8479,27 @@ void BoundaryDatabase::calculateFarField (double r, Vector center, double radiat
       }
    }
 }
+
+#ifdef HAS_GUI
+void BoundaryDatabase::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, QTreeWidgetItem *portTreeItem, QTreeWidgetItem *boundaryTreeItem)
+{
+    // ports
+    long unsigned int i=0;
+    while (i < portList.size()) {
+        portList[i]->draw(projData,drawingWindow,drawingItemTree,portTreeItem);
+        i++;
+    }
+
+    // boundaries
+    i=0;
+    while (i < boundaryList.size()) {
+        boundaryList[i]->draw(projData,drawingWindow,drawingItemTree,boundaryTreeItem);
+        i++;
+    }
+
+
+}
+#endif
 
 BoundaryDatabase::~BoundaryDatabase ()
 {

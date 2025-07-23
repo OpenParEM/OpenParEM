@@ -34,12 +34,10 @@
 #include "prefix.h"
 
 #ifdef HAS_GUI
-//#include <BRepBuilderAPI_MakePolygon.hxx>
-//#include <gp_Pnt.hxx>
-//#include <TopoDS_Wire.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
+#include <gp_Pnt.hxx>
+#include <TopoDS_Wire.hxx>
 #endif
-
-using namespace std;
 
 struct point point_copy (struct point);
 struct point point_subtraction (struct point, struct point);
@@ -58,7 +56,7 @@ class Path {
       int startLine;
       int endLine;
       keywordPair name;
-      vector<keywordPair *> points;
+      std::vector<keywordPair *> points;
       keywordPair closed;
       double tol=1e-11; // 1e-11
       bool hasNormal;
@@ -77,12 +75,12 @@ class Path {
    public:
       Path (int, int);
       ~Path ();
-      bool load (int, string *, inputFile *);
+      bool load (int, std::string *, inputFile *);
       bool inBlock (int);
-      bool check (string *);
+      bool check (std::string *);
       //bool checkBoundingBox (Vector *, Vector *, string *, double);
-      bool checkBoundingBox (mfem::Vector *, mfem::Vector *, string *, double);
-      string get_name () {return name.get_value();}
+      bool checkBoundingBox (mfem::Vector *, mfem::Vector *, std::string *, double);
+      std::string get_name () {return name.get_value();}
       bool name_is_loaded () {return name.is_loaded();}
       int get_name_lineNumber () {return name.get_lineNumber();}
       bool get_closed () {return closed.get_bool_value();}
@@ -99,7 +97,7 @@ class Path {
       bool compare (long unsigned int i, keywordPair test_point);
       void set_closed (bool value) {closed.set_bool_value(value); closed.set_loaded(true);}
       bool is_closed () {return closed.get_bool_value();}
-      void set_name (string name_) {name.set_value(name_); name.set_loaded(true);}
+      void set_name (std::string name_) {name.set_value(name_); name.set_loaded(true);}
       void set_hasOutput () {hasOutput=true;}
       void unset_hasOutput () {hasOutput=false;}
       keywordPair* get_startPoint () {return points[0];}
@@ -128,8 +126,8 @@ class Path {
       void test_is_point_inside_sqr2 ();
       Path* clone ();
       void calculateBoundingBox ();
-      void print (string);
-      bool output (ofstream *, int);
+      void print (std::string);
+      bool output (std::ofstream *, int);
       bool snapToPoint (struct point);
       bool snapToMeshBoundary (mfem::Mesh *);
       double area ();
@@ -137,11 +135,11 @@ class Path {
       bool lineIntersects (struct point, struct point);
       struct point getInsidePoint ();
 #ifdef HAS_GUI
-      //TopoDS_Wire create_TopoDS_Wire ();
+      TopoDS_Wire create_TopoDS_Wire ();
 #endif
 };
 
-bool mergePaths (vector<Path *> *, vector<long unsigned int> *, vector<bool> *, string, string, Path **, double);
+bool mergePaths (std::vector<Path *> *, std::vector<long unsigned int> *, std::vector<bool> *, std::string, std::string, Path **, double);
 
 #endif
 

@@ -31,9 +31,7 @@
 #include "misc.hpp"
 #include "prefix.h"
 
-using namespace std;
-
-bool loadData (ifstream *, double **, double **, size_t *, char *);
+bool loadData (std::ifstream *, double **, double **, size_t *, char *);
 extern "C" void prefix ();
 
 #endif

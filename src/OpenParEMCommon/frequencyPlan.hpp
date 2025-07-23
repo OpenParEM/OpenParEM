@@ -31,8 +31,6 @@
 #include "prefix.h"
 #include <quadmath.h>
 
-using namespace std;
-
 extern "C" void prefix ();
 
 // meshRefinementType:
@@ -66,7 +64,7 @@ class FrequencyPlanPoint {
 
 class FrequencyPlan {
    private:
-      vector<FrequencyPlanPoint *> planList;
+      std::vector<FrequencyPlanPoint *> planList;
       int refinedCount;
       bool hasRefined;
    public:

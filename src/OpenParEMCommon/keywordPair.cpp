@@ -177,7 +177,7 @@ void point_print (struct point a)
 // keywordPair
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-bool keywordPair::int_limit_checks (string *keyword, int lineNumber)
+bool keywordPair::int_limit_checks (std::string *keyword, int lineNumber)
 {
    if (positive_required && int_value <= 0) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1017: %s at line %d is required to be positive.\n",
@@ -206,7 +206,7 @@ bool keywordPair::int_limit_checks (string *keyword, int lineNumber)
    return true;
 }
 
-bool keywordPair::dbl_limit_checks (string *keyword, int lineNumber)
+bool keywordPair::dbl_limit_checks (std::string *keyword, int lineNumber)
 {
    if (positive_required && dbl_value <= 0) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1021: %s at line %d is required to be positive.\n",
@@ -235,7 +235,7 @@ bool keywordPair::dbl_limit_checks (string *keyword, int lineNumber)
    return true;
 }
 
-bool keywordPair::point_limit_checks (string *keyword, int lineNumber)
+bool keywordPair::point_limit_checks (std::string *keyword, int lineNumber)
 {
    if (positive_required && (point_value.x <= 0 || point_value.y <= 0 || (point_value.dim == 3 && point_value.z <= 0))) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1025: %s at line %d is required to be positive.\n",
@@ -265,7 +265,7 @@ bool keywordPair::point_limit_checks (string *keyword, int lineNumber)
    return true;
 }
 
-bool keywordPair::limit_check (string type)
+bool keywordPair::limit_check (std::string type)
 {
    bool fail=false;
 
@@ -282,7 +282,7 @@ bool keywordPair::limit_check (string type)
    return fail;
 }
 
-bool keywordPair::match_alias (string *token)
+bool keywordPair::match_alias (std::string *token)
 {
    long unsigned int i=0;
    while (i < aliases.size()) {
@@ -292,7 +292,7 @@ bool keywordPair::match_alias (string *token)
    return false;
 }
 
-bool keywordPair::loadBool (string *token, string *value_, int lineNumber_)
+bool keywordPair::loadBool (std::string *token, std::string *value_, int lineNumber_)
 {
    // check for duplicate
    if (loaded) {
@@ -321,7 +321,7 @@ bool keywordPair::loadBool (string *token, string *value_, int lineNumber_)
    return false;
 }
 
-bool keywordPair::loadInt (string *token, string *value_, int lineNumber_)
+bool keywordPair::loadInt (std::string *token, std::string *value_, int lineNumber_)
 {
    // check for duplicate
    if (loaded) {
@@ -357,7 +357,7 @@ bool keywordPair::loadInt (string *token, string *value_, int lineNumber_)
    return false;
 }
 
-bool keywordPair::loadDouble (string *token, string *value_, int lineNumber_)
+bool keywordPair::loadDouble (std::string *token, std::string *value_, int lineNumber_)
 {
    // check for duplicate
    if (loaded) {
@@ -393,7 +393,7 @@ bool keywordPair::loadDouble (string *token, string *value_, int lineNumber_)
    return false;
 }
 
-bool keywordPair::loadPoint (int dim, string *token, string *value_, int lineNumber_)
+bool keywordPair::loadPoint (int dim, std::string *token, std::string *value_, int lineNumber_)
 {
    // check for duplicate
    if (loaded) {

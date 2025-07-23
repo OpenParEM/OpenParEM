@@ -4,26 +4,14 @@
 #include <QOpenGLWidget>
 #include <QMessageBox>
 #include <QOpenGLFunctions>
-#include <QOpenGLContext>
-#include <V3d_View.hxx>
-#include "Aspect_DisplayConnection.hxx"
-#include "OpenGl_GraphicDriver.hxx"
+
 #include "OpenGl_View.hxx"
-#include "OpenGl_Context.hxx"
-#include "OpenGl_Window.hxx"
-#include "V3d_Viewer.hxx"
-#include "AIS_InteractiveContext.hxx"
 #include "AIS_Shape.hxx"
-#include "Aspect_NeutralWindow.hxx"
-#include "BRepPrimAPI_MakeBox.hxx"
 #include "Aspect_NeutralWindow.hxx"
 #include "AIS_ViewCube.hxx"
 #include "AIS_ViewController.hxx"
-
-using namespace std;
-
-
 #include <Aspect_VKey.hxx>
+//#include "BRepPrimAPI_MakeBox.hxx"
 
 #include <Standard_WarningsDisable.hxx>
 #include <QMouseEvent>
@@ -269,7 +257,7 @@ public:
     //! Make this FBO active in context.
     void BindBuffer(const Handle(OpenGl_Context)& theGlCtx) override
     {
-        cout << "OcctQtFrameBuffer:BindBuffer" << endl;
+        std::cout << "OcctQtFrameBuffer:BindBuffer" << std::endl;
         OpenGl_FrameBuffer::BindBuffer(theGlCtx);
         //theGlCtx->SetFrameBufferSRGB(true, false);
     }
@@ -277,7 +265,7 @@ public:
     //! Make this FBO as drawing target in context.
     void BindDrawBuffer(const Handle(OpenGl_Context)& theGlCtx) override
     {
-        cout << "OcctQtFrameBuffer:BindDrawBuffer" << endl;
+        std::cout << "OcctQtFrameBuffer:BindDrawBuffer" << std::endl;
         OpenGl_FrameBuffer::BindDrawBuffer(theGlCtx);
         //theGlCtx->SetFrameBufferSRGB(true, false);
     }
@@ -285,7 +273,7 @@ public:
     //! Make this FBO as reading source in context.
     void BindReadBuffer(const Handle(OpenGl_Context)& theGlCtx) override
     {
-        cout << "OcctQtFrameBuffer:BindReadBuffer" << endl;
+        std::cout << "OcctQtFrameBuffer:BindReadBuffer" << std::endl;
         OpenGl_FrameBuffer::BindReadBuffer(theGlCtx);
     }
 };
@@ -308,6 +296,7 @@ public:
     void dumpGlInfo(bool, bool);
     void updateView();
 
+    void clearDrawing ();
     void displayDrawing (Handle(AIS_Shape));
 
     void wheelEvent(QWheelEvent*) override;

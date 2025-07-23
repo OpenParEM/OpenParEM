@@ -1692,6 +1692,20 @@ if [ "$with_mfem" = "1" ]; then
    cd ..
    remove_base_directory
    cd ..
+
+   # comment out some lines that cause compiling issues when using OCCT
+   current_dir=$PWD
+   if [ -f $install_path/include/mfem/linalg/linalg.hpp ]; then
+      cd $install_path/include/mfem/linalg
+      sed -i 's$#include "batched/batched.hpp"$//#include "batched/batched.hpp"$' linalg.hpp
+      sed -i 's$#include "batched/gpu_blas.hpp"$//#include "batched/gpu_blas.hpp"$' linalg.hpp
+      sed -i 's$#include "batched/solver.hpp"$//#include "batched/solver.hpp"$' linalg.hpp
+      cd $current_dir
+   else
+      echo "OpenParEM_ERROR: mfem failed include file edit"
+      exit 1
+   fi
+
 fi
 
 # OpenParEM

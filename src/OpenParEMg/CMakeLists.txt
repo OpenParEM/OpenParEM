@@ -11,8 +11,7 @@ add_compile_options (-DHAS_GUI -DHAS_MPI)
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
 find_package(OpenGL REQUIRED) #except QOpenGLWidget, which is handled separately below (include and lib)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} /opt/Qt/6.9.0/gcc_64/include/QtOpenGLWidgets /home/briany/OpenParEM/src/OpenParEM3D /home/briany/OpenParEM/include /home/briany/OpenParEM/include/opencascade /home/briany/OpenParEM/lib /home/briany/OpenParEM/src/OpenParEMCommon /usr/lib/gcc/x86_64-linux-gnu/9/include /usr/include/GL)
-
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} /opt/Qt/6.9.0/gcc_64/include/QtOpenGLWidgets /home/briany/OpenParEM/src/OpenParEM3D /home/briany/OpenParEM/include /home/briany/OpenParEM/lib /home/briany/OpenParEM/src/OpenParEMCommon /home/briany/OpenParEM/include/opencascade /usr/lib/gcc/x86_64-linux-gnu/9/include /usr/include/GL)
 
 # Open CASCADE Technology
 set (OpenCASCADE_DIR /home/briany/OpenParEM/lib/cmake/opencascade)
@@ -65,6 +64,8 @@ qt_add_executable(OpenParEMg
     ../OpenParEMCommon/sourcefile.cpp ../OpenParEMCommon/sourcefile.hpp
     ../OpenParEM3D/pattern.cpp ../OpenParEM3D/pattern.hpp
     ../OpenParEMCommon/mesh.cpp ../OpenParEMCommon/mesh.hpp
+    CustomAIS_Shape.h
+    CustomComboBox.h
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)

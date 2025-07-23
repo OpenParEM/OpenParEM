@@ -21,51 +21,9 @@
 #ifndef OPEMG_H
 #define OPEMG_H
 
-#include <quadmath.h>
-#include <iostream>
 #include "project.h"
+#include "port.hpp"
 #include <QMainWindow>
-#include <QFileDialog>
-#include <QFileInfo>
-#include <QDir>
-#include <QMessageBox>
-#include <QSpinBox>
-#include <QLineEdit>
-#include <QWindow>
-#include "MeshOptions.h"
-#include "SimulateOptions.h"
-#include "license.h"
-#include "FrequencyPlanG.h"
-#include "Refinement.h"
-#include "Materials.h"
-//#include "port.hpp"
-#include "CustomOpenGLWidget.h"
-#include <TopoDS_Shape.hxx>
-#include <BRep_Builder.hxx>
-#include <BRepTools.hxx>
-#include <AIS_Shape.hxx>
-#include <V3d_View.hxx>
-#include <V3d_Viewer.hxx>
-#include <AIS_InteractiveContext.hxx>
-#include <Xw_Window.hxx>
-#include <OpenGl_GraphicDriver.hxx>
-#include "petscsys.h"
-
-
-#include <QAction>
-#include <QLabel>
-#include <QMainWindow>
-#include <QMenuBar>
-#include <QMessageBox>
-#include <QVBoxLayout>
-#include <QPushButton>
-#include <QSlider>
-#include <Standard_WarningsRestore.hxx>
-
-#include <Standard_Version.hxx>
-
-
-using namespace std;
 
 extern "C" void init_project (struct projectData *);
 extern "C" void free_project (struct projectData *);
@@ -88,30 +46,29 @@ public:
 
 private slots:
     void on_fileOpen_triggered();
-
     void on_fileNew_triggered();
-
     void on_meshOptions_triggered();
-
     void on_simulateOptions_triggered();
-
     void on_actionLicense_triggered();
-
     void on_actionFrequency_Plan_triggered();
-
     void on_actionSave_triggered();
-
     void on_actionRefinement_triggered();
-
     void on_actionMaterials_Editor_triggered();
-
     void on_actionBrep_triggered();
+    void on_actionExit_triggered();
 
 private:
     Ui::OpenParEMg *ui;
     bool hasProjData;
     QString projectFile;
     struct projectData projData,defaultData;
-    //BoundaryDatabase *boundaryDatabase;
+    BoundaryDatabase *boundaryDatabase;
+
+    QString absolutePath;
+
+    QTreeWidgetItem drawing;
+    QTreeWidgetItem port;
+    QTreeWidgetItem boundary;
 };
+
 #endif // OPEMG_H

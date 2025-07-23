@@ -20,7 +20,7 @@
 
 #include "misc.hpp"
 
-bool is_comment (string a) {
+bool is_comment (std::string a) {
    long unsigned int i;
 
    // blank line
@@ -46,7 +46,7 @@ bool is_comment (string a) {
    return false;
 }
 
-bool is_hashComment (string a) {
+bool is_hashComment (std::string a) {
    long unsigned int i;
 
    // blank line
@@ -65,9 +65,9 @@ bool is_hashComment (string a) {
    return false;
 }
 
-void split_on_space (vector<string> *tokens, string a) {
-   string buf;
-   stringstream ss(a);
+void split_on_space (std::vector<std::string> *tokens, std::string a) {
+   std::string buf;
+   std::stringstream ss(a);
 
    tokens->clear();
    while (ss >> buf) tokens->push_back(buf);
@@ -83,7 +83,7 @@ bool double_compare (double a, double b, double tol)
    return false;
 }
 
-bool complex_compare (complex<double> a, complex<double> b, double tol)
+bool complex_compare (std::complex<double> a, std::complex<double> b, double tol)
 {
    if (a == b) return true;
    if (a == 0 && abs(b) < tol) return true;
@@ -148,18 +148,18 @@ bool is_double (const char *b) {
    return true;
 }
 
-bool is_double (string *a) {
+bool is_double (std::string *a) {
    return is_double((*a).c_str());
 }
 
-bool is_complex (complex<double> a)
+bool is_complex (std::complex<double> a)
 {
    if (real(a) != DBL_MAX) return true;
    if (imag(a) != DBL_MAX) return true;
    return false;
 }
 
-bool is_int (string *a) {
+bool is_int (std::string *a) {
    const char *b=(*a).c_str();
 
    // skip leading whitespace
@@ -177,7 +177,7 @@ bool is_int (string *a) {
 }
 
 // dim=2 for 2D and dim=3 for 3D
-bool is_point (string *a, int dim)
+bool is_point (std::string *a, int dim)
 {
    const char *b=(*a).c_str();
 
@@ -263,7 +263,7 @@ bool is_point (string *a, int dim)
    return true;
 }
 
-bool point_get (string *a, double *x_value, double *y_value, double *z_value, int dim, string indent, int lineNumber_)
+bool point_get (std::string *a, double *x_value, double *y_value, double *z_value, int dim, std::string indent, int lineNumber_)
 {
    const char *b=(*a).c_str();
 
@@ -309,9 +309,9 @@ bool point_get (string *a, double *x_value, double *y_value, double *z_value, in
    if (dim == 3) z[size_z]='\0';
 
    // convert to strings to use stod
-   string x_str=x;
-   string y_str=y;
-   string z_str;
+   std::string x_str=x;
+   std::string y_str=y;
+   std::string z_str;
    if (dim == 3) z_str=z;
 
    // get the values
@@ -338,11 +338,11 @@ bool point_get (string *a, double *x_value, double *y_value, double *z_value, in
    return false;
 }
 
-void get_token_pair (string *line, string *token, string *value, int *lineNumber, string indent) {
-   string test;
+void get_token_pair (std::string *line, std::string *token, std::string *value, int *lineNumber, std::string indent) {
+   std::string test;
    int count=0;
 
-   stringstream ss(*line);
+   std::stringstream ss(*line);
    while (getline(ss,test,'=')) {
       if (count == 0) *token=test;
       else if (count == 1) *value=test;
@@ -369,17 +369,17 @@ void get_token_pair (string *line, string *token, string *value, int *lineNumber
    return;
 }
 
-string processOutputNumber (double a)
+std::string processOutputNumber (double a)
 {
    if (a == DBL_MAX) return "NA";
    if (a == -DBL_MAX) return "NA";
 
-   stringstream ss;
-   ss << setprecision(15) << a;
+   std::stringstream ss;
+   ss << std::setprecision(15) << a;
    return ss.str();
 }
 
-bool processInputNumber (string a, double *b)
+bool processInputNumber (std::string a, double *b)
 {
    if (a.compare("NA") == 0) *b=DBL_MAX;
    else {
@@ -397,12 +397,12 @@ bool processInputNumber (string a, double *b)
 bool inputFile::load(const char *filename)
 {
    int lineNumber=0;
-   string line;
+   std::string line;
 
    if (strcmp(filename,"") == 0) return true;
 
-   ifstream materialFile;
-   materialFile.open(filename,ifstream::in);
+   std::ifstream materialFile;
+   materialFile.open(filename,std::ifstream::in);
 
    if (materialFile.is_open()) {
 
@@ -458,9 +458,9 @@ void inputFile::createCrossReference()
 }
 
 // return true on fail
-bool inputFile::checkVersion(string name, string version)
+bool inputFile::checkVersion(std::string name, std::string version)
 {
-   string line,token,value,test;
+   std::string line,token,value,test;
 
    if (lineTextList.size() == 0) return true;
 
@@ -523,14 +523,14 @@ int inputFile::get_next_lineNumber (int lineNumber) {
    return lineNumberList[i];
 }
 
-string inputFile::get_line (int lineNumber) {
+std::string inputFile::get_line (int lineNumber) {
    return lineTextList[crossReferenceList[lineNumber]];
 }
 
 // find the starting and stopping line numbers for a block inclusive of the keywords
 bool inputFile::findBlock(int search_startLine, int search_stopLine,
                          int *block_startLine, int *block_stopLine,
-                         string initiator, string terminator, bool reportUnmatchedText)
+                         std::string initiator, std::string terminator, bool reportUnmatchedText)
 {
    bool fail=false;
    *block_startLine=-1;

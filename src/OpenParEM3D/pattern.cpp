@@ -65,10 +65,10 @@ OPEMpoint::OPEMpoint (double x_, double y_, double z_)
    theta=DBL_MAX;
    phi=DBL_MAX;
 
-   Etheta=complex<double>(0,0);
-   Ephi=complex<double>(0,0);
-   Htheta=complex<double>(0,0);
-   Hphi=complex<double>(0,0);
+   Etheta=std::complex<double>(0,0);
+   Ephi=std::complex<double>(0,0);
+   Htheta=std::complex<double>(0,0);
+   Hphi=std::complex<double>(0,0);
 
    gain=-DBL_MAX;
    directivity=-DBL_MAX;
@@ -83,10 +83,10 @@ OPEMpoint::OPEMpoint (OPEMpoint *a)
    theta=DBL_MAX;
    phi=DBL_MAX;
  
-   Etheta=complex<double>(0,0);
-   Ephi=complex<double>(0,0);
-   Htheta=complex<double>(0,0);
-   Hphi=complex<double>(0,0);
+   Etheta=std::complex<double>(0,0);
+   Ephi=std::complex<double>(0,0);
+   Htheta=std::complex<double>(0,0);
+   Hphi=std::complex<double>(0,0);
 
    gain=-DBL_MAX;
    directivity=-DBL_MAX;
@@ -101,10 +101,10 @@ OPEMpoint::OPEMpoint ()
    theta=DBL_MAX;
    phi=DBL_MAX;
 
-   Etheta=complex<double>(0,0);
-   Ephi=complex<double>(0,0);
-   Htheta=complex<double>(0,0);
-   Hphi=complex<double>(0,0);
+   Etheta=std::complex<double>(0,0);
+   Ephi=std::complex<double>(0,0);
+   Htheta=std::complex<double>(0,0);
+   Hphi=std::complex<double>(0,0);
 
    gain=-DBL_MAX;
    directivity=-DBL_MAX;
@@ -259,12 +259,12 @@ void OPEMpoint::set_phi (OPEMpoint *global_center)
    phi=atan2(y-global_center->y,x-global_center->x);
 }
 
-void OPEMpoint::addMeshVertex (Mesh *mesh)
+void OPEMpoint::addMeshVertex (mfem::Mesh *mesh)
 {
    mesh->AddVertex(x,y,z);
 }
 
-complex<double> OPEMpoint::get_fieldValue (string quantity)
+std::complex<double> OPEMpoint::get_fieldValue (std::string quantity)
 {
    if (quantity.compare("Etheta") == 0) return Etheta;
    if (quantity.compare("Ephi") == 0) return Ephi;
@@ -273,7 +273,7 @@ complex<double> OPEMpoint::get_fieldValue (string quantity)
    if (quantity.compare("G") == 0) return get_power();
    if (quantity.compare("D") == 0) return get_power();
 
-   return complex<double>(-DBL_MAX,-DBL_MAX);
+   return std::complex<double>(-DBL_MAX,-DBL_MAX);
 }
 
 void OPEMpoint::sendFieldsTo (int rankTo)
@@ -305,19 +305,19 @@ void OPEMpoint::recvFieldsFrom (int rankFrom)
 
    MPI_Recv(&dataRe,1,MPI_DOUBLE,rankFrom,1100,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
    MPI_Recv(&dataIm,1,MPI_DOUBLE,rankFrom,1101,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   Etheta=complex<double>(dataRe,dataIm);
+   Etheta=std::complex<double>(dataRe,dataIm);
 
    MPI_Recv(&dataRe,1,MPI_DOUBLE,rankFrom,1102,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
    MPI_Recv(&dataIm,1,MPI_DOUBLE,rankFrom,1103,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   Ephi=complex<double>(dataRe,dataIm);
+   Ephi=std::complex<double>(dataRe,dataIm);
 
    MPI_Recv(&dataRe,1,MPI_DOUBLE,rankFrom,1104,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
    MPI_Recv(&dataIm,1,MPI_DOUBLE,rankFrom,1105,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   Htheta=complex<double>(dataRe,dataIm);
+   Htheta=std::complex<double>(dataRe,dataIm);
 
    MPI_Recv(&dataRe,1,MPI_DOUBLE,rankFrom,1106,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
    MPI_Recv(&dataIm,1,MPI_DOUBLE,rankFrom,1107,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   Hphi=complex<double>(dataRe,dataIm);
+   Hphi=std::complex<double>(dataRe,dataIm);
 }
 
 void OPEMpoint::print ()
@@ -327,32 +327,32 @@ void OPEMpoint::print ()
 
    if (rank == 0) {
 
-      cout << "         OPEMpoint: " << this << endl;
-      cout << "            x=" << x << endl;
-      cout << "            y=" << y << endl;
-      cout << "            z=" << z << endl;
-      cout << "            theta=" << theta << endl;
-      cout << "            phi=" << phi << endl;
-      cout << "            Etheta=" << Etheta << endl;
-      cout << "            Ephi=" << Ephi << endl;
-      cout << "            Htheta=" << Htheta << endl;
-      cout << "            Hphi=" << Hphi << endl;
-      cout << "            gain=" << gain << endl;
-      cout << "            directivity=" << directivity << endl;
+      std::cout << "         OPEMpoint: " << this << std::endl;
+      std::cout << "            x=" << x << std::endl;
+      std::cout << "            y=" << y << std::endl;
+      std::cout << "            z=" << z << std::endl;
+      std::cout << "            theta=" << theta << std::endl;
+      std::cout << "            phi=" << phi << std::endl;
+      std::cout << "            Etheta=" << Etheta << std::endl;
+      std::cout << "            Ephi=" << Ephi << std::endl;
+      std::cout << "            Htheta=" << Htheta << std::endl;
+      std::cout << "            Hphi=" << Hphi << std::endl;
+      std::cout << "            gain=" << gain << std::endl;
+      std::cout << "            directivity=" << directivity << std::endl;
    }
 }
 
 // area is the area on the sphere assigned to this point
 // use area=0 for circles
-void OPEMpoint::saveHeader (ostream *out, double area)
+void OPEMpoint::saveHeader (std::ostream *out, double area)
 {
    *out << "#theta(deg),phi(deg),";
    if (area > 0) {*out << "area,";}
    *out << "gain,directivity,"
-        << "Re(Etheta),Im(Etheta),Re(Ephi),Im(Ephi),Re(Htheta),Im(Htheta),Re(Hphi),Im(Hphi)" << endl;
+        << "Re(Etheta),Im(Etheta),Re(Ephi),Im(Ephi),Re(Htheta),Im(Htheta),Re(Hphi),Im(Hphi)" << std::endl;
 }
 
-void OPEMpoint::save (ostream *out, double area)
+void OPEMpoint::save (std::ostream *out, double area)
 {
    *out << theta*180/M_PI << ","
         << phi*180/M_PI << ",";
@@ -366,7 +366,7 @@ void OPEMpoint::save (ostream *out, double area)
         << real(Htheta) << ","
         << imag(Htheta) << ","
         << real(Hphi) << ","
-        << imag(Hphi) << endl;
+        << imag(Hphi) << std::endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -408,7 +408,7 @@ bool OPEMtriangle::has_point_index (long unsigned int index)
    return false;
 }
 
-OPEMpoint* OPEMtriangle::getCenterOPEMpoint (vector<OPEMpoint *> *pointList, OPEMpoint *sphere_center, double radius)
+OPEMpoint* OPEMtriangle::getCenterOPEMpoint (std::vector<OPEMpoint *> *pointList, OPEMpoint *sphere_center, double radius)
 {
    // shift by sphere center
    OPEMpoint *ac=new OPEMpoint((*pointList)[a]);
@@ -451,12 +451,12 @@ double OPEMtriangle::get_areaPlanar (vector<OPEMpoint *> *pointList)
 }
 */
 
-void OPEMtriangle::calculateArea (vector<OPEMpoint *> *pointList, OPEMpoint *sphere_center, double radius)
+void OPEMtriangle::calculateArea (std::vector<OPEMpoint *> *pointList, OPEMpoint *sphere_center, double radius)
 {
    area=get_areaSphereTriangle((*pointList)[a],(*pointList)[b],(*pointList)[c],sphere_center,radius);
 }
 
-void OPEMtriangle::set_metrics (OPEMpoint *sphere_center, double radius, vector<OPEMpoint *> *pointList)
+void OPEMtriangle::set_metrics (OPEMpoint *sphere_center, double radius, std::vector<OPEMpoint *> *pointList)
 {
    (*pointList)[a]->set_theta(sphere_center);
    (*pointList)[a]->set_phi(sphere_center);
@@ -531,29 +531,29 @@ bool OPEMtriangle::has_shared_edge (OPEMtriangle *t, long unsigned int index, lo
 
 void OPEMtriangle::print ()
 {
-   cout << "OPEMtriangle: " << this << endl;
-   cout << "   a=" << a << endl;
-   cout << "   b=" << b << endl;
-   cout << "   c=" << c << endl;
-   cout << "   ab=" << ab << endl;
-   cout << "   bc=" << bc << endl;
-   cout << "   ca=" << ca << endl;
-   cout << "   center=" << center << endl;
-   cout << "   area=" << area << endl;
-   cout << "   center data:" << endl;
+   std::cout << "OPEMtriangle: " << this << std::endl;
+   std::cout << "   a=" << a << std::endl;
+   std::cout << "   b=" << b << std::endl;
+   std::cout << "   c=" << c << std::endl;
+   std::cout << "   ab=" << ab << std::endl;
+   std::cout << "   bc=" << bc << std::endl;
+   std::cout << "   ca=" << ca << std::endl;
+   std::cout << "   center=" << center << std::endl;
+   std::cout << "   area=" << area << std::endl;
+   std::cout << "   center data:" << std::endl;
 }
 
-double OPEMtriangle::get_theta (vector<OPEMpoint *> *pointList)
+double OPEMtriangle::get_theta (std::vector<OPEMpoint *> *pointList)
 {
    return (*pointList)[center]->get_theta();
 }
 
-double OPEMtriangle::get_phi (vector<OPEMpoint *> *pointList)
+double OPEMtriangle::get_phi (std::vector<OPEMpoint *> *pointList)
 {
    return (*pointList)[center]->get_phi();
 }
 
-void OPEMtriangle::addMeshTriangle (Mesh *mesh)
+void OPEMtriangle::addMeshTriangle (mfem::Mesh *mesh)
 {
    mesh->AddTriangle(a,b,c);
 }
@@ -740,11 +740,11 @@ void Sphere::findNeighbors ()
 
 void Sphere::checkNeighbors ()
 {
-   cout << "Sphere::checkNeighbors:" << endl;
+   std::cout << "Sphere::checkNeighbors:" << std::endl;
    long unsigned int i=0;
    while (i < triangleList.size()) {
       if (! triangleList[i]->is_matched()) {
-         cout << "Unmatched triangle:" << endl;
+         std::cout << "Unmatched triangle:" << std::endl;
          triangleList[i]->print();
       }
       i++;
@@ -811,14 +811,14 @@ double Sphere::getTotalArea ()
    return total;
 }
 
-double Sphere::getMaxAbsValue (string quantity)
+double Sphere::getMaxAbsValue (std::string quantity)
 {
    if (quantity.compare("") == 0) return -DBL_MAX;
 
    double maxAbsValue=0;
    long unsigned int i=0;
    while (i < pointList.size()) {
-      complex<double> fieldValue=pointList[i]->get_fieldValue(quantity);
+      std::complex<double> fieldValue=pointList[i]->get_fieldValue(quantity);
 
       if (quantity.compare("G") == 0) {
          if (real(fieldValue) > maxAbsValue) maxAbsValue=real(fieldValue);
@@ -834,14 +834,14 @@ double Sphere::getMaxAbsValue (string quantity)
    return maxAbsValue;
 }
 
-complex<double> Sphere::getMaxValue (string quantity)
+std::complex<double> Sphere::getMaxValue (std::string quantity)
 {
-   if (quantity.compare("") == 0) return complex<double>(-DBL_MAX,-DBL_MAX);
+   if (quantity.compare("") == 0) return std::complex<double>(-DBL_MAX,-DBL_MAX);
 
-   complex<double> maxValue=0;
+   std::complex<double> maxValue=0;
    long unsigned int i=0;
    while (i < pointList.size()) {
-      complex<double> fieldValue=pointList[i]->get_fieldValue(quantity);
+      std::complex<double> fieldValue=pointList[i]->get_fieldValue(quantity);
       if (quantity.compare("G") == 0) {
          if (real(fieldValue) > real(maxValue)) maxValue=fieldValue;
       } else if (quantity.compare("D") == 0) {
@@ -855,9 +855,9 @@ complex<double> Sphere::getMaxValue (string quantity)
    return maxValue;
 }
 
-complex<double> Sphere::getRadiatedPower ()
+std::complex<double> Sphere::getRadiatedPower ()
 {
-   complex<double> radiatedPower=0;
+   std::complex<double> radiatedPower=0;
    long unsigned int i=0;
    while (i < pointList.size()) {
       radiatedPower+=pointList[i]->get_power()*areaList[i];
@@ -867,19 +867,19 @@ complex<double> Sphere::getRadiatedPower ()
 }
 
 // Can only plot one quantity on a 3D surface plot
-void Sphere::createPatternMesh (struct projectData *projData, double totalArea, complex<double> acceptedPower, complex<double> radiatedPower,
-                                string quantity, double frequency, int Sport)
+void Sphere::createPatternMesh (struct projectData *projData, double totalArea, std::complex<double> acceptedPower, std::complex<double> radiatedPower,
+                                std::string quantity, double frequency, int Sport)
 {
    PetscMPIInt rank,size;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
 
    // values at the vertices
-   vector<double> vertexValues;
+   std::vector<double> vertexValues;
 
    // plot limits
 
-   complex<double> maxValue=getMaxValue(quantity);
+   std::complex<double> maxValue=getMaxValue(quantity);
    double scaleMaxValue=0;
    if (quantity.compare("G") == 0){
       scaleMaxValue=real(maxValue/(acceptedPower/totalArea));  // accepted power
@@ -908,7 +908,7 @@ void Sphere::createPatternMesh (struct projectData *projData, double totalArea, 
 
       int chunk=pointList.size()/size;
       if (chunk == 0) chunk=1;
-      vector<int> start,stop;
+      std::vector<int> start,stop;
       start.push_back(0);
       stop.push_back(chunk);
 
@@ -938,7 +938,7 @@ void Sphere::createPatternMesh (struct projectData *projData, double totalArea, 
       // do the local work
       i=start[0];
       while (i < stop[0]) {
-         complex<double> value=pointList[i]->get_fieldValue(quantity);
+         std::complex<double> value=pointList[i]->get_fieldValue(quantity);
          double scaleValue=0;
          if (quantity.compare("G") == 0) {
             scaleValue=real(value/(acceptedPower/totalArea));   // accepted power
@@ -982,7 +982,7 @@ void Sphere::createPatternMesh (struct projectData *projData, double totalArea, 
       int i=start;
       while (i < stop) {
 
-         complex<double> value=pointList[i]->get_fieldValue(quantity);
+         std::complex<double> value=pointList[i]->get_fieldValue(quantity);
          double scaleValue=0;
          if (quantity.compare("G") == 0){
             scaleValue=real(value/(acceptedPower/totalArea));  // accepted power
@@ -1010,7 +1010,7 @@ void Sphere::createPatternMesh (struct projectData *projData, double totalArea, 
    if (rank == 0) {
 
       // 2D surface in 3D space
-      Mesh *mesh=new Mesh(2,pointList.size(),triangleList.size(),0,3);
+      mfem::Mesh *mesh=new mfem::Mesh(2,pointList.size(),triangleList.size(),0,3);
 
       // apply the values to the pattern
       long unsigned int i=0;
@@ -1043,9 +1043,9 @@ void Sphere::createPatternMesh (struct projectData *projData, double totalArea, 
       mesh->FinalizeTriMesh(1);
 
       // create a finite-element representation of the pattern
-      H1_FECollection fecPattern(1,2);
-      FiniteElementSpace fesPattern(mesh,&fecPattern);
-      GridFunction pattern=GridFunction(&fesPattern);
+      mfem::H1_FECollection fecPattern(1,2);
+      mfem::FiniteElementSpace fesPattern(mesh,&fecPattern);
+      mfem::GridFunction pattern=mfem::GridFunction(&fesPattern);
 
       // apply the values to the pattern
       i=0;
@@ -1057,25 +1057,25 @@ void Sphere::createPatternMesh (struct projectData *projData, double totalArea, 
       // smoothing
       // To view the power plot as smoothed, set "Normal Array" under "Lighting" to "normals". 
 
-      H1_FECollection fecPatternNormals(1,mesh->Dimension());
-      FiniteElementSpace fesPatternNormals(mesh,&fecPatternNormals,mesh->SpaceDimension());
+      mfem::H1_FECollection fecPatternNormals(1,mesh->Dimension());
+      mfem::FiniteElementSpace fesPatternNormals(mesh,&fecPatternNormals,mesh->SpaceDimension());
 
-      GridFunction normals(&fesPatternNormals);
+      mfem::GridFunction normals(&fesPatternNormals);
       normals=0.0;
 
-      Array<int> multiplicity(normals.Size());
+      mfem::Array<int> multiplicity(normals.Size());
       multiplicity=0;
 
       int e=0;
       while (e < mesh->GetNE()) {
-         ElementTransformation *T=mesh->GetElementTransformation(e);
-         Array<int> vdofs;
+         mfem::ElementTransformation *T=mesh->GetElementTransformation(e);
+         mfem::Array<int> vdofs;
          fesPatternNormals.GetElementVDofs(e,vdofs);
-         IntegrationRule ir=fesPatternNormals.GetFE(e)->GetNodes();
+         mfem::IntegrationRule ir=fesPatternNormals.GetFE(e)->GetNodes();
          int i=0;
          while (i < ir.Size()) {
             T->SetIntPoint(&ir[i]);
-            Vector normal_vector(mesh->SpaceDimension());
+            mfem::Vector normal_vector(mesh->SpaceDimension());
             CalcOrtho(T->Jacobian(),normal_vector);
             int d=0;
             while (d < mesh->SpaceDimension()) {
@@ -1097,22 +1097,22 @@ void Sphere::createPatternMesh (struct projectData *projData, double totalArea, 
 
       // ParaView
 
-      stringstream ssParaView;
+      std::stringstream ssParaView;
       ssParaView << "ParaView_" << projData->project_name << "_FarField";
 
-      stringstream ss;
+      std::stringstream ss;
       ss << quantity;
       ss << "_" << frequency;
       ss << "_SP" << Sport;
 
-      ParaViewDataCollection *pd=nullptr;
-      pd=new ParaViewDataCollection(ss.str(),mesh);
+      mfem::ParaViewDataCollection *pd=nullptr;
+      pd=new mfem::ParaViewDataCollection(ss.str(),mesh);
       pd->SetOwnData(false);
       pd->SetPrefixPath(ssParaView.str());
       pd->RegisterField(quantity.c_str(),&pattern);
       pd->RegisterField("normals",&normals);
       pd->SetLevelsOfDetail(3);
-      pd->SetDataFormat(VTKFormat::ASCII);
+      pd->SetDataFormat(mfem::VTKFormat::ASCII);
       pd->SetHighOrderOutput(true);
       pd->Save();
       delete pd;
@@ -1141,13 +1141,13 @@ void Sphere::calculateAngularResolution ()
    angularResolution*=180/M_PI;
 }
 
-double Sphere::calculateIsotropicGain (complex<double> acceptedPower, double totalArea)
+double Sphere::calculateIsotropicGain (std::complex<double> acceptedPower, double totalArea)
 {
    double gain=-DBL_MAX;
    long unsigned int i=0;
    while (i < pointList.size()) {
       // point value
-      complex<double> gaini=pointList[i]->get_power()/(acceptedPower/totalArea);
+      std::complex<double> gaini=pointList[i]->get_power()/(acceptedPower/totalArea);
       pointList[i]->set_gain (real(gaini));
 
       // max value
@@ -1158,13 +1158,13 @@ double Sphere::calculateIsotropicGain (complex<double> acceptedPower, double tot
    return gain;
 }
 
-double Sphere::calculateDirectivity (complex<double> radiatedPower, double totalArea)
+double Sphere::calculateDirectivity (std::complex<double> radiatedPower, double totalArea)
 {
    double directivity=-DBL_MAX;
    long unsigned int i=0;
    while (i < pointList.size()) {
       // point value
-      complex<double> directivityi=pointList[i]->get_power()/(radiatedPower/totalArea);
+      std::complex<double> directivityi=pointList[i]->get_power()/(radiatedPower/totalArea);
       pointList[i]->set_directivity(real(directivityi));
 
       // max value
@@ -1181,24 +1181,24 @@ void Sphere::print ()
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
    if (rank == 0) {
-      cout << "   Sphere: " << this << endl;
-      cout << "      radius=" << radius << endl;
-      cout << "      center=(" << center.get_x() << "," << center.get_y() << "," << center.get_z() << ")" << endl;
-      cout << "      pointList=" << &pointList << endl;
+      std::cout << "   Sphere: " << this << std::endl;
+      std::cout << "      radius=" << radius << std::endl;
+      std::cout << "      center=(" << center.get_x() << "," << center.get_y() << "," << center.get_z() << ")" << std::endl;
+      std::cout << "      pointList=" << &pointList << std::endl;
       long unsigned int i=0;
       while (i < pointList.size()) {
          pointList[i]->print();
          i++;
       }
-      cout << "      triangleList=" << &triangleList << endl;
+      std::cout << "      triangleList=" << &triangleList << std::endl;
    }
 }
 
-void Sphere::save (ostream *out)
+void Sphere::save (std::ostream *out)
 {
    if (hasSaved) return;
 
-   *out << "#3D pattern" << endl;
+   *out << "#3D pattern" << std::endl;
    if (pointList.size() > 0) pointList[0]->saveHeader(out,areaList[0]);
    long unsigned int i=0;
    while (i < pointList.size()) {
@@ -1310,9 +1310,9 @@ void rotate_point (double theta, double phi, double *x, double *y, double *z)
    *z=zpartial;
 }
 
-string get_axis_label (double x, double y, double z)
+std::string get_axis_label (double x, double y, double z)
 {
-   string label="";
+   std::string label="";
 
    if (double_compare(x,1,1e-12) && double_compare(y,0,1e-12) && double_compare(z,0,1e-12)) {label="x";}
    if (double_compare(x,-1,1e-12) && double_compare(y,0,1e-12) && double_compare(z,0,1e-12)) {label="-x";}
@@ -1326,7 +1326,7 @@ string get_axis_label (double x, double y, double z)
    return label;
 }
 
-double get_plot_rotation (string *xlabel, string *ylabel)
+double get_plot_rotation (std::string *xlabel, std::string *ylabel)
 {
    if (xlabel->compare("x") == 0) {
       return 0;
@@ -1399,7 +1399,7 @@ double get_plot_rotation (string *xlabel, string *ylabel)
    return 0;
 }
 
-void rotate_labels (double rotation, string *xlabel, string *ylabel)
+void rotate_labels (double rotation, std::string *xlabel, std::string *ylabel)
 {
    double x=1;
    double y=0;
@@ -1414,7 +1414,7 @@ void rotate_labels (double rotation, string *xlabel, string *ylabel)
 
    // +90 degrees
    else if (double_compare(theta,M_PI/2,1e-12)) {
-      string temp=*ylabel;
+      std::string temp=*ylabel;
       *ylabel=*xlabel;
       if (temp.compare("x") == 0) *xlabel="-x";
       else if (temp.compare("-x") == 0) *xlabel="x";
@@ -1427,7 +1427,7 @@ void rotate_labels (double rotation, string *xlabel, string *ylabel)
 
    // -90 degrees
    else if (double_compare(theta,-M_PI/2,1e-12)) {
-      string temp=*xlabel;
+      std::string temp=*xlabel;
       *xlabel=*ylabel;
       if (temp.compare("x") == 0) *ylabel="-x";
       else if (temp.compare("-x") == 0) *ylabel="x";
@@ -1440,7 +1440,7 @@ void rotate_labels (double rotation, string *xlabel, string *ylabel)
 
    // +/-180 degrees
    else if (double_compare(abs(theta),M_PI,1e-12)) {
-      string temp=*xlabel;
+      std::string temp=*xlabel;
       if (temp.compare("x") == 0) *xlabel="-x";
       else if (temp.compare("-x") == 0) *xlabel="x";
       else if (temp.compare("y") == 0) *xlabel="-y";
@@ -1503,8 +1503,8 @@ void Circle::create ()
    calculateAngularResolution();
 }
 
-void Circle::createPatternMesh (struct projectData *projData, double totalArea, complex<double> acceptedPower, complex<double> radiatedPower,
-                                Sphere *sphere, string quantity, double frequency, int Sport)
+void Circle::createPatternMesh (struct projectData *projData, double totalArea, std::complex<double> acceptedPower, std::complex<double> radiatedPower,
+                                Sphere *sphere, std::string quantity, double frequency, int Sport)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -1514,11 +1514,11 @@ void Circle::createPatternMesh (struct projectData *projData, double totalArea, 
    if (!projData->antenna_plot_3D_save) return;
 
    // 1D surface in 3D space
-   Mesh *mesh=new Mesh(1,pointList.size(),pointList.size(),0,3);
+   mfem::Mesh *mesh=new mfem::Mesh(1,pointList.size(),pointList.size(),0,3);
 
    // set limits to control plotting range
 
-   complex<double> maxValue=sphere->getMaxValue(quantity);
+   std::complex<double> maxValue=sphere->getMaxValue(quantity);
    double scaleMaxValue=0;
    if (quantity.compare("G") == 0){
       scaleMaxValue=real(maxValue/(acceptedPower/totalArea));
@@ -1534,13 +1534,13 @@ void Circle::createPatternMesh (struct projectData *projData, double totalArea, 
    double valueMin=valueMax-projData->antenna_plot_2D_range;
 
    // vector at the vertices
-   vector<double> vertexValues;
+   std::vector<double> vertexValues;
 
    // loop for each point
    long unsigned int i=0;
    while (i < pointList.size()) {
 
-      complex<double> fieldValue=pointList[i]->get_fieldValue(quantity);
+      std::complex<double> fieldValue=pointList[i]->get_fieldValue(quantity);
 
       double scaleValue=0;
       if (quantity.compare("G") == 0){
@@ -1576,9 +1576,9 @@ void Circle::createPatternMesh (struct projectData *projData, double totalArea, 
    mesh->FinalizeMesh();
 
    // finite element representation of the pattern
-   H1_FECollection fecPattern(1,2);
-   FiniteElementSpace fesPattern(mesh,&fecPattern);
-   GridFunction pattern=GridFunction(&fesPattern);
+   mfem::H1_FECollection fecPattern(1,2);
+   mfem::FiniteElementSpace fesPattern(mesh,&fecPattern);
+   mfem::GridFunction pattern=mfem::GridFunction(&fesPattern);
 
    // apply the values to the pattern
    i=0;
@@ -1589,10 +1589,10 @@ void Circle::createPatternMesh (struct projectData *projData, double totalArea, 
 
    // ParaView
 
-   stringstream ssParaView;
+   std::stringstream ssParaView;
    ssParaView << "ParaView_" << projData->project_name << "_FarField";
 
-   stringstream ss;
+   std::stringstream ss;
    ss << "slice";
    ss << "_" << quantity;
    ss << "_" << frequency;
@@ -1602,13 +1602,13 @@ void Circle::createPatternMesh (struct projectData *projData, double totalArea, 
    ss << "_" << rotation*180/M_PI;
    ss << "_SP" << Sport;
 
-   ParaViewDataCollection *pd=nullptr;
-   pd=new ParaViewDataCollection(ss.str(),mesh);
+   mfem::ParaViewDataCollection *pd=nullptr;
+   pd=new mfem::ParaViewDataCollection(ss.str(),mesh);
    pd->SetOwnData(false);
    pd->SetPrefixPath(ssParaView.str());
    pd->RegisterField(quantity.c_str(),&pattern);
    pd->SetLevelsOfDetail(3);
-   pd->SetDataFormat(VTKFormat::ASCII);
+   pd->SetDataFormat(mfem::VTKFormat::ASCII);
    pd->SetHighOrderOutput(true);
    pd->Save();
    delete pd;
@@ -1617,8 +1617,8 @@ void Circle::createPatternMesh (struct projectData *projData, double totalArea, 
 }
 
 // ToDo: update with byte counts for offsets
-bool Circle::createReport (struct projectData *projData, string quantity1, string quantity2,
-                           complex<double> acceptedPower, complex<double> radiatedPower, Sphere *sphere, double frequency, int Sport,
+bool Circle::createReport (struct projectData *projData, std::string quantity1, std::string quantity2,
+                           std::complex<double> acceptedPower, std::complex<double> radiatedPower, Sphere *sphere, double frequency, int Sport,
                            double totalArea, double gain, double directivity, double radiationEfficiency)
 {
    PetscMPIInt rank;
@@ -1628,7 +1628,7 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
 
    // directory to hold reports
 
-   stringstream farFieldDir;
+   std::stringstream farFieldDir;
    farFieldDir << "Report_" << projData->project_name << "_FarField";
 
    if (!std::filesystem::exists(farFieldDir.str().c_str())) {
@@ -1657,7 +1657,7 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
 
    // set limits to control plotting range
 
-   complex<double> maxValue=sphere->getMaxValue(quantity1);
+   std::complex<double> maxValue=sphere->getMaxValue(quantity1);
    double scaleMaxValue=0;
    if (quantity1.compare("G") == 0){
       scaleMaxValue=real(maxValue/(acceptedPower/totalArea));
@@ -1673,7 +1673,7 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
    double valueMin=valueMax-projData->antenna_plot_2D_range;
 
    // filename
-   stringstream ss;
+   std::stringstream ss;
    ss << "radiation_pattern";
    if (quantity1.compare("") != 0) ss << "_" << quantity1;
    if (quantity2.compare("") != 0) ss << "_" << quantity2;
@@ -1688,45 +1688,45 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
    // report
 
    bool fail=false;
-   ofstream patternout(ss.str().c_str());
+   std::ofstream patternout(ss.str().c_str());
    if (patternout.is_open()) {
       patternout.precision(15);
 
-      patternout << "%PDF-1.4" << endl;
-      patternout << "1 0 obj" << endl
-                 << "   << /Type /Catalog" << endl
-                 << "      /Outlines 2 0 R" << endl
-                 << "      /Pages 3 0 R" << endl
-                 << "   >>" << endl
-                 << "endobj" << endl;
-      patternout << "2 0 obj" << endl
-                 << "   << /Type /Outlines" << endl
-                 << "   /Count 0" << endl
-                 << "   >>" << endl
-                 << "endobj" << endl;
-      patternout << "3 0 obj" << endl
-                 << "   << /Type /Pages" << endl
-                 << "      /Kids [ 4 0 R ]" << endl
-                 << "      /Count 1" << endl
-                 << "   >>" << endl
-                 << "endobj" << endl;
-      patternout << "4 0 obj" << endl
-                 << "   << /Type /Page" << endl
-                 << "      /Parent 3 0 R" << endl
-                 << "      /MediaBox [ 0 0 " << width << " " << height << " ]" << endl
-                 << "      /Contents 5 0 R" << endl
-                 << "      /Resources << /ProcSet 6 0 R" << endl
-                 << "                    /Font << /F1 7 0 R" << endl
-                 << "                 >>" << endl
-                 << "   >> >>" << endl
-                 << "endobj" << endl;
+      patternout << "%PDF-1.4" << std::endl;
+      patternout << "1 0 obj" << std::endl
+                 << "   << /Type /Catalog" << std::endl
+                 << "      /Outlines 2 0 R" << std::endl
+                 << "      /Pages 3 0 R" << std::endl
+                 << "   >>" << std::endl
+                 << "endobj" << std::endl;
+      patternout << "2 0 obj" << std::endl
+                 << "   << /Type /Outlines" << std::endl
+                 << "   /Count 0" << std::endl
+                 << "   >>" << std::endl
+                 << "endobj" << std::endl;
+      patternout << "3 0 obj" << std::endl
+                 << "   << /Type /Pages" << std::endl
+                 << "      /Kids [ 4 0 R ]" << std::endl
+                 << "      /Count 1" << std::endl
+                 << "   >>" << std::endl
+                 << "endobj" << std::endl;
+      patternout << "4 0 obj" << std::endl
+                 << "   << /Type /Page" << std::endl
+                 << "      /Parent 3 0 R" << std::endl
+                 << "      /MediaBox [ 0 0 " << width << " " << height << " ]" << std::endl
+                 << "      /Contents 5 0 R" << std::endl
+                 << "      /Resources << /ProcSet 6 0 R" << std::endl
+                 << "                    /Font << /F1 7 0 R" << std::endl
+                 << "                 >>" << std::endl
+                 << "   >> >>" << std::endl
+                 << "endobj" << std::endl;
 
-      patternout << "5 0 obj" << endl
-                 << "   << /Length 883 >>" << endl    // not correct
-                 << "   stream" << endl;
+      patternout << "5 0 obj" << std::endl
+                 << "   << /Length 883 >>" << std::endl    // not correct
+                 << "   stream" << std::endl;
 
       // set width
-      patternout << "      " << lineWidth << " w" << endl;
+      patternout << "      " << lineWidth << " w" << std::endl;
 
       // determine axis labels 
 
@@ -1734,13 +1734,13 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
       double y=0;
       double z=0;
       rotate_point(theta,phi,&x,&y,&z);
-      string xlabel=get_axis_label(x,y,z);
+      std::string xlabel=get_axis_label(x,y,z);
 
       x=0;
       y=1;
       z=0;
       rotate_point(theta,phi,&x,&y,&z);
-      string ylabel=get_axis_label(x,y,z);
+      std::string ylabel=get_axis_label(x,y,z);
 
       double plot_rotation_angle=get_plot_rotation(&xlabel,&ylabel)*M_PI/180;
 
@@ -1768,7 +1768,7 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
 
          // plot value
 
-         complex<double> fieldValue=pointList[i]->get_fieldValue(quantity1);
+         std::complex<double> fieldValue=pointList[i]->get_fieldValue(quantity1);
 
          double plotValue=0;
          if (quantity1.compare("G") == 0) plotValue=real(fieldValue);
@@ -1792,22 +1792,22 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
          int yp=height-width/2+plotValue/projData->antenna_plot_2D_range*figureScale*width/2*sin(angle)+0.5;
 
          if (i == 0) {
-            patternout << "      " << xp << " " << yp << " m" << endl;
+            patternout << "      " << xp << " " << yp << " m" << std::endl;
             xpinit=xp;
             ypinit=yp;
-         } else patternout << "      " << xp << " " << yp << " l" << endl;
+         } else patternout << "      " << xp << " " << yp << " l" << std::endl;
 
          i++;
       }
-      patternout << "      " << xpinit << " " << ypinit << " l" << endl;
-      patternout << "      S" << endl;
+      patternout << "      " << xpinit << " " << ypinit << " l" << std::endl;
+      patternout << "      S" << std::endl;
 
       // quantity2
 
       if (quantity2.compare("") != 0) {
 
          // set to dash
-         patternout << "      " << "[" << lineWidth << " " << lineWidth << "] 0 d" << endl;
+         patternout << "      " << "[" << lineWidth << " " << lineWidth << "] 0 d" << std::endl;
 
          i=0;
          while (i < pointList.size()) {
@@ -1820,7 +1820,7 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
 
             // plot value
 
-            complex<double> fieldValue=pointList[i]->get_fieldValue(quantity2);
+            std::complex<double> fieldValue=pointList[i]->get_fieldValue(quantity2);
 
             double plotValue=0;
             if (quantity2.compare("G") == 0) plotValue=real(fieldValue);
@@ -1844,20 +1844,20 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
             int yp=height-width/2+plotValue/projData->antenna_plot_2D_range*figureScale*width/2*sin(angle)+0.5;
 
             if (i == 0) {
-               patternout << "      " << xp << " " << yp << " m" << endl;
+               patternout << "      " << xp << " " << yp << " m" << std::endl;
                xpinit=xp;
                ypinit=yp;
-            } else patternout << "      " << xp << " " << yp << " l" << endl;
+            } else patternout << "      " << xp << " " << yp << " l" << std::endl;
 
             i++;
          }
-         patternout << "      " << xpinit << " " << ypinit << " l" << endl;
-         patternout << "      S" << endl;
+         patternout << "      " << xpinit << " " << ypinit << " l" << std::endl;
+         patternout << "      S" << std::endl;
       }
 
       // set width to 1 point and solid line
-      patternout << "      " << "1 w" << endl;
-      patternout << "      [] 0 d" << endl;
+      patternout << "      " << "1 w" << std::endl;
+      patternout << "      [] 0 d" << std::endl;
 
       // circles
 
@@ -1880,7 +1880,7 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
       while (radius > 1e-12) {
          int r=radius/projData->antenna_plot_2D_range*figureScale*width/2+0.5;
 
-         patternout << "      " << "1 w" << endl;  // width=1pt
+         patternout << "      " << "1 w" << std::endl;  // width=1pt
 
          bool solidLine=false;
          bool isZeroCircle=false;
@@ -1893,23 +1893,23 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
              if (!hasZero) solidLine=true;
          }
 
-         if (solidLine) patternout << "      [] 0 d" << endl;
-         else           patternout << "      [1 2] 0 d" << endl;
+         if (solidLine) patternout << "      [] 0 d" << std::endl;
+         else           patternout << "      [1 2] 0 d" << std::endl;
 
          // circle
-         patternout << "      " << cx-r << " " << cy << " m" << endl
-                    << "      " << cx-r << " " << cy+k*r << " " << cx-k*r << " " << cy+r << " " << cx << " " << cy+r << " c" << endl
-                    << "      " << cx+k*r << " " << cy+r << " " << cx+r << " " << cy+k*r << " " << cx+r << " " << cy << " c" << endl
-                    << "      " << cx+r << " " << cy-k*r << " " << cx+k*r << " " << cy-r << " " << cx << " " << cy-r << " c" << endl
-                    << "      " << cx-k*r << " " << cy-r << " " << cx-r << " " << cy-k*r << " " << cx-r << " " << cy << " c" << endl
-                    << "      S" << endl;
+         patternout << "      " << cx-r << " " << cy << " m" << std::endl
+                    << "      " << cx-r << " " << cy+k*r << " " << cx-k*r << " " << cy+r << " " << cx << " " << cy+r << " c" << std::endl
+                    << "      " << cx+k*r << " " << cy+r << " " << cx+r << " " << cy+k*r << " " << cx+r << " " << cy << " c" << std::endl
+                    << "      " << cx+r << " " << cy-k*r << " " << cx+k*r << " " << cy-r << " " << cx << " " << cy-r << " c" << std::endl
+                    << "      " << cx-k*r << " " << cy-r << " " << cx-r << " " << cy-k*r << " " << cx-r << " " << cy << " c" << std::endl
+                    << "      S" << std::endl;
 
          // label
-         patternout << "      BT" << endl
-                    << "         /F1 28 Tf" << endl
-                    << "         " << cx-r+10 << " " << cy+10 << " Td" << endl
-                    << "         (" << label << ") Tj" << endl
-                    << "      ET" << endl;
+         patternout << "      BT" << std::endl
+                    << "         /F1 28 Tf" << std::endl
+                    << "         " << cx-r+10 << " " << cy+10 << " Td" << std::endl
+                    << "         (" << label << ") Tj" << std::endl
+                    << "      ET" << std::endl;
 
          radius-=projData->antenna_plot_2D_interval;
          label-=projData->antenna_plot_2D_interval;
@@ -1920,36 +1920,36 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
       radius=valueMax-valueMin;
       int r=radius/projData->antenna_plot_2D_range*figureScale*width/2+0.5;
 
-      patternout << "      BT" << endl
-                 << "         /F1 28 Tf" << endl
-                 << "         " << cx-r-60 << " " << cy+10 << " Td" << endl
-                 << "         (" << "dB" << ") Tj" << endl
-                 << "      ET" << endl;
+      patternout << "      BT" << std::endl
+                 << "         /F1 28 Tf" << std::endl
+                 << "         " << cx-r-60 << " " << cy+10 << " Td" << std::endl
+                 << "         (" << "dB" << ") Tj" << std::endl
+                 << "      ET" << std::endl;
 
       // axis labels
 
       int letterOffset=8;
-      patternout << "      BT" << endl
-         << "         /F1 36 Tf" << endl
-         << "         " << cx+r+10 << " " << cy-letterOffset << " Td" << endl
-         << "         (" << xlabel << ") Tj" << endl
-         << "      ET" << endl;
-      patternout << "      BT" << endl
-         << "         /F1 36 Tf" << endl
-         << "         " << cx-letterOffset << " " << cy+r+10 << " Td" << endl
-         << "         (" << ylabel << ") Tj" << endl
-         << "      ET" << endl;
+      patternout << "      BT" << std::endl
+         << "         /F1 36 Tf" << std::endl
+         << "         " << cx+r+10 << " " << cy-letterOffset << " Td" << std::endl
+         << "         (" << xlabel << ") Tj" << std::endl
+         << "      ET" << std::endl;
+      patternout << "      BT" << std::endl
+         << "         /F1 36 Tf" << std::endl
+         << "         " << cx-letterOffset << " " << cy+r+10 << " Td" << std::endl
+         << "         (" << ylabel << ") Tj" << std::endl
+         << "      ET" << std::endl;
 
       // draw x-axis
-      patternout << "      " << "[1 1] 0 d" << endl;
-      patternout << "      " << cx-r << " " << cy << " m" << endl
-                 << "      " << cx+r << " " << cy << " l" << endl
-                 << "      S" << endl;
+      patternout << "      " << "[1 1] 0 d" << std::endl;
+      patternout << "      " << cx-r << " " << cy << " m" << std::endl
+                 << "      " << cx+r << " " << cy << " l" << std::endl
+                 << "      S" << std::endl;
 
       // draw y-axis
-      patternout << "      " << cx << " " << cy-r << " m" << endl
-                 << "      " << cx << " " << cy+r << " l" << endl
-                 << "      S" << endl;
+      patternout << "      " << cx << " " << cy-r << " m" << std::endl
+                 << "      " << cx << " " << cy+r << " l" << std::endl
+                 << "      S" << std::endl;
 
       int startRow=height-width;
       int startCol=width*(1-figureScale)/2+0.5;
@@ -1962,36 +1962,36 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
 
       // quantity1 label
       if (quantity1.compare("") != 0) {
-         patternout << "      " << lineWidth << " w" << endl;
-         patternout << "      " << "[] 0 d" << endl;
+         patternout << "      " << lineWidth << " w" << std::endl;
+         patternout << "      " << "[] 0 d" << std::endl;
 
-         patternout << "      " << col << " " << row+15 << " m" << endl
-                    << "      " << col+100 << " " << row+15 << " l" << endl
-                    << "      S" << endl;
+         patternout << "      " << col << " " << row+15 << " m" << std::endl
+                    << "      " << col+100 << " " << row+15 << " l" << std::endl
+                    << "      S" << std::endl;
 
-         patternout << "      BT" << endl
-                    << "         /F1 36 Tf" << endl
-                    << "         " << col+120 << " " << row << " Td" << endl
-                    << "         (" << quantity1 << ") Tj" << endl
-                    << "      ET" << endl;
+         patternout << "      BT" << std::endl
+                    << "         /F1 36 Tf" << std::endl
+                    << "         " << col+120 << " " << row << " Td" << std::endl
+                    << "         (" << quantity1 << ") Tj" << std::endl
+                    << "      ET" << std::endl;
       }
 
       // quantity2 label
       if (quantity2.compare("") != 0) {
          row-=rowSpace;
 
-         patternout << "      " << lineWidth << " w" << endl;
-         patternout << "      " << "[" << lineWidth << " " << lineWidth << "] 0 d" << endl;
+         patternout << "      " << lineWidth << " w" << std::endl;
+         patternout << "      " << "[" << lineWidth << " " << lineWidth << "] 0 d" << std::endl;
 
-         patternout << "      " << col << " " << row+15 << " m" << endl
-                    << "      " << col+100 << " " << row+15 << " l" << endl
-                    << "      S" << endl;
+         patternout << "      " << col << " " << row+15 << " m" << std::endl
+                    << "      " << col+100 << " " << row+15 << " l" << std::endl
+                    << "      S" << std::endl;
 
-         patternout << "      BT" << endl
-                    << "         /F1 36 Tf" << endl
-                    << "         " << col+120 << " " << row << " Td" << endl
-                    << "         (" << quantity2 << ") Tj" << endl
-                    << "      ET" << endl;
+         patternout << "      BT" << std::endl
+                    << "         /F1 36 Tf" << std::endl
+                    << "         " << col+120 << " " << row << " Td" << std::endl
+                    << "         (" << quantity2 << ") Tj" << std::endl
+                    << "      ET" << std::endl;
       }
 
       if (projData->antenna_plot_2D_annotations) {
@@ -2002,132 +2002,132 @@ bool Circle::createReport (struct projectData *projData, string quantity1, strin
          // frequency
 
          double displayFrequency=frequency;
-         string displayFrequencyUnit="Hz";
+         std::string displayFrequencyUnit="Hz";
          if (displayFrequency < 1e6*0.999) {displayFrequency/=1e3; displayFrequencyUnit="kHz";}
          else if (displayFrequency < 1e9*0.999) {displayFrequency/=1e6; displayFrequencyUnit="MHz";}
          else if (displayFrequency < 1e12*0.999) {displayFrequency/=1e9; displayFrequencyUnit="GHz";}
          else if (displayFrequency < 1e15*0.999) {displayFrequency/=1e12; displayFrequencyUnit="THz";}
 
-         patternout << "      BT" << endl
-                    << "         /F1 36 Tf" << endl
-                    << "         " << col << " " << row << " Td" << endl
-                    << "         (frequency: " << displayFrequency << " " << displayFrequencyUnit << ") Tj" << endl
-                    << "      ET" << endl;
+         patternout << "      BT" << std::endl
+                    << "         /F1 36 Tf" << std::endl
+                    << "         " << col << " " << row << " Td" << std::endl
+                    << "         (frequency: " << displayFrequency << " " << displayFrequencyUnit << ") Tj" << std::endl
+                    << "      ET" << std::endl;
 
          // slice
          row-=rowSpace;
          int tab=100;
-         patternout << "      BT" << endl
-                    << "         /F1 36 Tf" << endl
-                    << "         " << col << " " << row << " Td" << endl
-                    << "         (slice:) Tj" << endl
-                    << "      ET" << endl;
+         patternout << "      BT" << std::endl
+                    << "         /F1 36 Tf" << std::endl
+                    << "         " << col << " " << row << " Td" << std::endl
+                    << "         (slice:) Tj" << std::endl
+                    << "      ET" << std::endl;
          if (has_named_plane()) {
-            patternout << "      BT" << endl
-                       << "         /F1 36 Tf" << endl
-                       << "         " << col+tab << " " << row << " Td" << endl
-                       << "         (" << plane << ") Tj" << endl
-                       << "      ET" << endl;
+            patternout << "      BT" << std::endl
+                       << "         /F1 36 Tf" << std::endl
+                       << "         " << col+tab << " " << row << " Td" << std::endl
+                       << "         (" << plane << ") Tj" << std::endl
+                       << "      ET" << std::endl;
          } else {
-            patternout << "      BT" << endl
-                       << "         /F1 36 Tf" << endl
-                       << "         " << col+tab << " " << row << " Td" << endl
-                       << setprecision(4) << "         (theta=" << theta*180/M_PI << " deg) Tj" << endl
-                       << "      ET" << endl;
+            patternout << "      BT" << std::endl
+                       << "         /F1 36 Tf" << std::endl
+                       << "         " << col+tab << " " << row << " Td" << std::endl
+                       << std::setprecision(4) << "         (theta=" << theta*180/M_PI << " deg) Tj" << std::endl
+                       << "      ET" << std::endl;
             row-=rowSpace;
-            patternout << "      BT" << endl
-                       << "         /F1 36 Tf" << endl
-                       << "         " << col+tab << " " << row << " Td" << endl
-                       << setprecision(4) << "         (phi=" << phi*180/M_PI << " deg) Tj" << endl
-                       << "      ET" << endl;
+            patternout << "      BT" << std::endl
+                       << "         /F1 36 Tf" << std::endl
+                       << "         " << col+tab << " " << row << " Td" << std::endl
+                       << std::setprecision(4) << "         (phi=" << phi*180/M_PI << " deg) Tj" << std::endl
+                       << "      ET" << std::endl;
          }
          row-=rowSpace;
-         patternout << "      BT" << endl
-                    << "         /F1 36 Tf" << endl
-                    << "         " << col+tab << " " << row << " Td" << endl
-                    << setprecision(4) << "         (latitude=" << latitude*180/M_PI << " deg) Tj" << endl
-                    << "      ET" << endl;
+         patternout << "      BT" << std::endl
+                    << "         /F1 36 Tf" << std::endl
+                    << "         " << col+tab << " " << row << " Td" << std::endl
+                    << std::setprecision(4) << "         (latitude=" << latitude*180/M_PI << " deg) Tj" << std::endl
+                    << "      ET" << std::endl;
 
 
 
          // Sport
          row-=rowSpace;
-         patternout << "      BT" << endl
-                    << "         /F1 36 Tf" << endl
-                    << "         " << col << " " << row << " Td" << endl
-                    << "         (S-port: " << Sport << ") Tj" << endl
-                    << "      ET" << endl;
+         patternout << "      BT" << std::endl
+                    << "         /F1 36 Tf" << std::endl
+                    << "         " << col << " " << row << " Td" << std::endl
+                    << "         (S-port: " << Sport << ") Tj" << std::endl
+                    << "      ET" << std::endl;
 
          row=startRow;
          col=startCol+500;
 
          // gain
-         patternout << "      BT" << endl
-                    << "         /F1 36 Tf" << endl
-                    << "         " << col << " " << row << " Td" << endl
-                    << setprecision(4) << "         (gain: " << gain << " dBi) Tj" << endl
-                    << "      ET" << endl;
+         patternout << "      BT" << std::endl
+                    << "         /F1 36 Tf" << std::endl
+                    << "         " << col << " " << row << " Td" << std::endl
+                    << std::setprecision(4) << "         (gain: " << gain << " dBi) Tj" << std::endl
+                    << "      ET" << std::endl;
 
          // directivity
          row-=rowSpace;
-         patternout << "      BT" << endl
-                    << "         /F1 36 Tf" << endl
-                    << "         " << col << " " << row << " Td" << endl
-                    << setprecision(4) << "         (directivity: " << directivity << " dBi) Tj" << endl
-                    << "      ET" << endl;
+         patternout << "      BT" << std::endl
+                    << "         /F1 36 Tf" << std::endl
+                    << "         " << col << " " << row << " Td" << std::endl
+                    << std::setprecision(4) << "         (directivity: " << directivity << " dBi) Tj" << std::endl
+                    << "      ET" << std::endl;
 
          row=startRow;
          col=startCol+1100;
 
          // circle and sphere resolutions
-         patternout << "      BT" << endl
-                    << "         /F1 36 Tf" << endl
-                    << "         " << col << " " << row << " Td" << endl
-                    << setprecision(3) << "         (sphere resolution: " << sphere->get_angularResolution() << " deg) Tj" << endl
-                    << "      ET" << endl;
+         patternout << "      BT" << std::endl
+                    << "         /F1 36 Tf" << std::endl
+                    << "         " << col << " " << row << " Td" << std::endl
+                    << std::setprecision(3) << "         (sphere resolution: " << sphere->get_angularResolution() << " deg) Tj" << std::endl
+                    << "      ET" << std::endl;
 
          row-=rowSpace;
-         patternout << "      BT" << endl
-                    << "         /F1 36 Tf" << endl
-                    << "         " << col << " " << row << " Td" << endl
-                    << setprecision(3) << "         (circle resolution: " << angularResolution << " deg) Tj" << endl
-                    << "      ET" << endl;
+         patternout << "      BT" << std::endl
+                    << "         /F1 36 Tf" << std::endl
+                    << "         " << col << " " << row << " Td" << std::endl
+                    << std::setprecision(3) << "         (circle resolution: " << angularResolution << " deg) Tj" << std::endl
+                    << "      ET" << std::endl;
 
       }
 
-      patternout << "   endstream" << endl
-                 << "endobj" << endl;
+      patternout << "   endstream" << std::endl
+                 << "endobj" << std::endl;
 
 
-      patternout << "6 0 obj" << endl
-                 << "   [ /PDF /Text]" << endl
-                 << "endobj" << endl;
+      patternout << "6 0 obj" << std::endl
+                 << "   [ /PDF /Text]" << std::endl
+                 << "endobj" << std::endl;
 
-      patternout << "7 0 obj" << endl
-                 << "   << /Type /Font" << endl
-                 << "      /Subtype /Type1" << endl
-                 << "      /BaseFont /Helvetica" << endl
-                 << "      /Encoding /MacRomanEncoding" << endl
-                 << "   >>" << endl;
+      patternout << "7 0 obj" << std::endl
+                 << "   << /Type /Font" << std::endl
+                 << "      /Subtype /Type1" << std::endl
+                 << "      /BaseFont /Helvetica" << std::endl
+                 << "      /Encoding /MacRomanEncoding" << std::endl
+                 << "   >>" << std::endl;
 
-      patternout << "xref" << endl
-                 << "0 8" << endl
-                 << "0000000000 65535 f" << endl
-                 << "0000000009 00000 n" << endl
-                 << "0000000074 00000 n" << endl
-                 << "0000000120 00000 n" << endl
-                 << "0000000179 00000 n" << endl
-                 << "0000000300 00000 n" << endl
-                 << "0000001532 00000 n" << endl
-                 << "0000000800 00000 n" << endl;
+      patternout << "xref" << std::endl
+                 << "0 8" << std::endl
+                 << "0000000000 65535 f" << std::endl
+                 << "0000000009 00000 n" << std::endl
+                 << "0000000074 00000 n" << std::endl
+                 << "0000000120 00000 n" << std::endl
+                 << "0000000179 00000 n" << std::endl
+                 << "0000000300 00000 n" << std::endl
+                 << "0000001532 00000 n" << std::endl
+                 << "0000000800 00000 n" << std::endl;
 
-      patternout << "trailer" << endl
-                 << "   << /Size 8" << endl
-                 << "      /Root 1 0 R" << endl
-                 << "   >>" << endl
-                 << "startxref" << endl
-                 << "1556" << endl                        // not correct
-                 << "%%EOF" << endl;
+      patternout << "trailer" << std::endl
+                 << "   << /Size 8" << std::endl
+                 << "      /Root 1 0 R" << std::endl
+                 << "   >>" << std::endl
+                 << "startxref" << std::endl
+                 << "1556" << std::endl                        // not correct
+                 << "%%EOF" << std::endl;
 
       patternout.close();
    } else fail=true;
@@ -2154,13 +2154,13 @@ void Circle::calculateAngularResolution ()
    angularResolution*=180/M_PI;
 }
 
-double Circle::calculateIsotropicGain (complex<double> acceptedPower, double totalArea)
+double Circle::calculateIsotropicGain (std::complex<double> acceptedPower, double totalArea)
 {
    double gain=-DBL_MAX;
    long unsigned int i=0;
    while (i < pointList.size()) {
       // point value
-      complex<double> gaini=pointList[i]->get_power()/(acceptedPower/totalArea);
+      std::complex<double> gaini=pointList[i]->get_power()/(acceptedPower/totalArea);
       pointList[i]->set_gain (real(gaini));
 
       // max value
@@ -2171,13 +2171,13 @@ double Circle::calculateIsotropicGain (complex<double> acceptedPower, double tot
    return gain;
 }
 
-double Circle::calculateDirectivity (complex<double> radiatedPower, double totalArea)
+double Circle::calculateDirectivity (std::complex<double> radiatedPower, double totalArea)
 {
    double directivity=-DBL_MAX;
    long unsigned int i=0;
    while (i < pointList.size()) {
       // point value
-      complex<double> directivityi=pointList[i]->get_power()/(radiatedPower/totalArea);
+      std::complex<double> directivityi=pointList[i]->get_power()/(radiatedPower/totalArea);
       pointList[i]->set_directivity(real(directivityi));
 
       // max value
@@ -2201,17 +2201,17 @@ void Circle::print (PetscMPIInt rank_)
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
    if (rank == rank_) {
-      cout << "   Circle: " << this << "  rank=" << rank_ << endl;
-      cout << "      radius=" << radius << endl;
-      cout << "      center=(" << center.get_x() << "," << center.get_y() << "," << center.get_z() << ")" << endl;
-      cout << "      plane=" << plane << endl;
-      cout << "      theta=" << theta << endl;
-      cout << "      phi=" << phi << endl;
-      cout << "      latitude=" << latitude << endl;
-      cout << "      rotation=" << rotation << endl;
-      cout << "      nPoints=" << nPoints << endl;
-      cout << "      xyzList=" << &xyzList << endl;
-      cout << "      pointList=" << &pointList << endl;
+      std::cout << "   Circle: " << this << "  rank=" << rank_ << std::endl;
+      std::cout << "      radius=" << radius << std::endl;
+      std::cout << "      center=(" << center.get_x() << "," << center.get_y() << "," << center.get_z() << ")" << std::endl;
+      std::cout << "      plane=" << plane << std::endl;
+      std::cout << "      theta=" << theta << std::endl;
+      std::cout << "      phi=" << phi << std::endl;
+      std::cout << "      latitude=" << latitude << std::endl;
+      std::cout << "      rotation=" << rotation << std::endl;
+      std::cout << "      nPoints=" << nPoints << std::endl;
+      std::cout << "      xyzList=" << &xyzList << std::endl;
+      std::cout << "      pointList=" << &pointList << std::endl;
       long unsigned int i=0;
       while (i < pointList.size()) {
          pointList[i]->print();
@@ -2220,7 +2220,7 @@ void Circle::print (PetscMPIInt rank_)
    }
 }
 
-void Circle::save (ostream *out)
+void Circle::save (std::ostream *out)
 {
    if (hasSaved) return;
 
@@ -2229,7 +2229,7 @@ void Circle::save (ostream *out)
         << ", theta=" << theta*180/M_PI << "(deg)"
         << ", phi=" << phi*180/M_PI << "(deg)"
         << ", latitude=" << latitude*180/M_PI << "(deg)"
-        << ", rotation=" << rotation*180/M_PI << "(deg)" << endl;
+        << ", rotation=" << rotation*180/M_PI << "(deg)" << std::endl;
    if (pointList.size() > 0) pointList[0]->saveHeader(out,0);
    long unsigned int i=0;
    while (i < pointList.size()) {
@@ -2257,8 +2257,8 @@ Circle::~Circle ()
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 Current::Current (double x_, double y_, double z_,
-                  complex<double> Jx_, complex<double> Jy_, complex<double> Jz_, 
-                  complex<double> Mx_, complex<double> My_, complex<double> Mz_,
+                  std::complex<double> Jx_, std::complex<double> Jy_, std::complex<double> Jz_,
+                  std::complex<double> Mx_, std::complex<double> My_, std::complex<double> Mz_,
                   double area_)
 {
    x=x_;
@@ -2348,35 +2348,35 @@ void Current::recvFrom (int rankFrom)
 
    MPI_Recv(&dataRe,1,MPI_DOUBLE,rankFrom,1004,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
    MPI_Recv(&dataIm,1,MPI_DOUBLE,rankFrom,1005,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   Jx=complex<double>(dataRe,dataIm);
+   Jx=std::complex<double>(dataRe,dataIm);
 
    MPI_Recv(&dataRe,1,MPI_DOUBLE,rankFrom,1006,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
    MPI_Recv(&dataIm,1,MPI_DOUBLE,rankFrom,1007,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   Jy=complex<double>(dataRe,dataIm);
+   Jy=std::complex<double>(dataRe,dataIm);
 
    MPI_Recv(&dataRe,1,MPI_DOUBLE,rankFrom,1008,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
    MPI_Recv(&dataIm,1,MPI_DOUBLE,rankFrom,1009,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   Jz=complex<double>(dataRe,dataIm);
+   Jz=std::complex<double>(dataRe,dataIm);
 
    MPI_Recv(&dataRe,1,MPI_DOUBLE,rankFrom,1010,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
    MPI_Recv(&dataIm,1,MPI_DOUBLE,rankFrom,1011,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   Mx=complex<double>(dataRe,dataIm);
+   Mx=std::complex<double>(dataRe,dataIm);
 
    MPI_Recv(&dataRe,1,MPI_DOUBLE,rankFrom,1012,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
    MPI_Recv(&dataIm,1,MPI_DOUBLE,rankFrom,1013,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   My=complex<double>(dataRe,dataIm);
+   My=std::complex<double>(dataRe,dataIm);
 
    MPI_Recv(&dataRe,1,MPI_DOUBLE,rankFrom,1014,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
    MPI_Recv(&dataIm,1,MPI_DOUBLE,rankFrom,1015,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   Mz=complex<double>(dataRe,dataIm);
+   Mz=std::complex<double>(dataRe,dataIm);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Pattern
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-Pattern::Pattern (double frequency_, int Sport_, int iteration_, complex<double> acceptedPower_, int dim_,
-                  string quantity1_, string quantity2_, string plane_,
+Pattern::Pattern (double frequency_, int Sport_, int iteration_, std::complex<double> acceptedPower_, int dim_,
+                  std::string quantity1_, std::string quantity2_, std::string plane_,
                   double theta_, double phi_, double latitude_, double rotation_, Circle *circle_, Sphere *sphere_)
 {
    quantity1=quantity1_;
@@ -2446,7 +2446,7 @@ bool Pattern::is_match (Sphere *a)
    return false;
 }
 
-bool Pattern::is_match (double frequency_, string quantity_)
+bool Pattern::is_match (double frequency_, std::string quantity_)
 {
    if (!double_compare(frequency,frequency_,1e-12)) return false;
    if (quantity1.compare(quantity_) == 0) return true;
@@ -2468,7 +2468,7 @@ bool Pattern::is_match (double frequency_, int Sport_, int iteration_)
    return true;
 }
 
-bool Pattern::is_match (double frequency_, int Sport_, int iteration_, string quantity_)
+bool Pattern::is_match (double frequency_, int Sport_, int iteration_, std::string quantity_)
 {
    if (iteration != iteration_) return false;
    if (!double_compare(frequency,frequency_,1e-12)) return false;
@@ -2477,7 +2477,7 @@ bool Pattern::is_match (double frequency_, int Sport_, int iteration_, string qu
    return true;
 }
 
-bool Pattern::is_match (double frequency_, int Sport_, string quantity_)
+bool Pattern::is_match (double frequency_, int Sport_, std::string quantity_)
 {
    if (!double_compare(frequency,frequency_,1e-12)) return false;
    if (Sport != Sport_) return false;
@@ -2576,34 +2576,34 @@ void Pattern::print (PetscMPIInt rank_)
 
    MPI_Barrier(PETSC_COMM_WORLD);
    if (rank == rank_) {
-      cout << "Pattern: " << this << "  rank=" << rank_ << endl;
-      cout << "   active=" << active << endl;
-      cout << "   iteration=" << iteration << endl;
-      cout << "   frequency=" << frequency << endl;
-      cout << "   Sport=" << Sport << endl;
-      cout << "   dim=" << dim << endl;
-      cout << "   quantity1=" << quantity1 << endl;
-      cout << "   quantity2=" << quantity2 << endl;
-      cout << "   plane=" << plane << endl;
-      cout << "   theta=" << theta << endl;
-      cout << "   phi=" << phi << endl;
-      cout << "   latitude=" << latitude << endl;
-      cout << "   rotation=" << rotation << endl;
-      cout << "   circle=" << circle << endl;
+      std::cout << "Pattern: " << this << "  rank=" << rank_ << std::endl;
+      std::cout << "   active=" << active << std::endl;
+      std::cout << "   iteration=" << iteration << std::endl;
+      std::cout << "   frequency=" << frequency << std::endl;
+      std::cout << "   Sport=" << Sport << std::endl;
+      std::cout << "   dim=" << dim << std::endl;
+      std::cout << "   quantity1=" << quantity1 << std::endl;
+      std::cout << "   quantity2=" << quantity2 << std::endl;
+      std::cout << "   plane=" << plane << std::endl;
+      std::cout << "   theta=" << theta << std::endl;
+      std::cout << "   phi=" << phi << std::endl;
+      std::cout << "   latitude=" << latitude << std::endl;
+      std::cout << "   rotation=" << rotation << std::endl;
+      std::cout << "   circle=" << circle << std::endl;
       if (verbose && circle) circle->print();
-      cout << "   sphere=" << sphere << endl;
+      std::cout << "   sphere=" << sphere << std::endl;
       if (verbose && sphere) sphere->print();
-      cout << "   totalArea=" << totalArea << endl;
-      cout << "   radiatedPower=" << radiatedPower << endl;
-      cout << "   acceptedPower=" << acceptedPower << endl;
-      cout << "   gain=" << gain << endl;
-      cout << "   directivity=" << directivity << endl;
-      cout << "   radiationEfficiency=" << radiationEfficiency << endl;
+      std::cout << "   totalArea=" << totalArea << std::endl;
+      std::cout << "   radiatedPower=" << radiatedPower << std::endl;
+      std::cout << "   acceptedPower=" << acceptedPower << std::endl;
+      std::cout << "   gain=" << gain << std::endl;
+      std::cout << "   directivity=" << directivity << std::endl;
+      std::cout << "   radiationEfficiency=" << radiationEfficiency << std::endl;
    }
    MPI_Barrier(PETSC_COMM_WORLD);
 }
 
-void Pattern::save (ostream *out)
+void Pattern::save (std::ostream *out)
 {
    if (!active) return;
 
@@ -2615,7 +2615,7 @@ void Pattern::save (ostream *out)
            << ", gain=" << gain
            << ", directivity=" << directivity
            << ", radiationEfficiency=" << radiationEfficiency
-           << endl;
+           << std::endl;
    }
 
    // results
@@ -2623,22 +2623,22 @@ void Pattern::save (ostream *out)
    if (dim == 3 && sphere) sphere->save(out);
 }
 
-void Pattern::save_as_test (ofstream *out, const char *casename, int frequency_index, int *casenumber)
+void Pattern::save_as_test (std::ofstream *out, const char *casename, int frequency_index, int *casenumber)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
    *out << casename << "_" << frequency_index+1 << "_" << (*casenumber)++ << "_farfield" << ",";
-   *out << setprecision(15) << frequency << ",";
-   *out << "gain," << Sport << ",equal," << gain << "," << equalMagLimit << endl;
+   *out << std::setprecision(15) << frequency << ",";
+   *out << "gain," << Sport << ",equal," << gain << "," << equalMagLimit << std::endl;
 
    *out << casename << "_" << frequency_index+1 << "_" << (*casenumber)++ << "_farfield" << ",";
-   *out << setprecision(15) << frequency << ",";
-   *out << "directivity," << Sport << ",equal," << directivity << "," << equalMagLimit << endl;
+   *out << std::setprecision(15) << frequency << ",";
+   *out << "directivity," << Sport << ",equal," << directivity << "," << equalMagLimit << std::endl;
 
    *out << casename << "_" << frequency_index+1 << "_" << (*casenumber)++ << "_farfield" << ",";
-   *out << setprecision(15) << frequency << ",";
-   *out << "radiationEfficiency," << Sport << ",equal," << radiationEfficiency << "," << equalMagLimit << endl;
+   *out << std::setprecision(15) << frequency << ",";
+   *out << "radiationEfficiency," << Sport << ",equal," << radiationEfficiency << "," << equalMagLimit << std::endl;
 }
 
 Pattern::~Pattern ()
@@ -2651,8 +2651,8 @@ Pattern::~Pattern ()
 // PatternDatabase
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-void PatternDatabase::addPattern (double frequency, int Sport, int iteration, complex<double> acceptedPower,
-                int dim, string quantity1, string quantity2, string plane,
+void PatternDatabase::addPattern (double frequency, int Sport, int iteration, std::complex<double> acceptedPower,
+                int dim, std::string quantity1, std::string quantity2, std::string plane,
                 double theta, double phi, double latitude, double rotation, Circle *circle, Sphere *sphere)
 {
    Pattern *pattern=new Pattern(frequency,Sport,iteration,acceptedPower,dim,
@@ -2842,7 +2842,7 @@ void PatternDatabase::saveParaView (struct projectData *projData, double frequen
 
 double PatternDatabase::get_gain (double frequency, int Sport, int iteration)
 {
-   string quantity="G";
+   std::string quantity="G";
    double gain=-DBL_MAX;
    long unsigned int i=0;
    while (i< patternList.size()) {
@@ -2857,7 +2857,7 @@ double PatternDatabase::get_gain (double frequency, int Sport, int iteration)
 
 double PatternDatabase::get_directivity (double frequency, int Sport, int iteration)
 {
-   string quantity="D";
+   std::string quantity="D";
    double directivity=-DBL_MAX;
    long unsigned int i=0;
    while (i< patternList.size()) {
@@ -2872,8 +2872,8 @@ double PatternDatabase::get_directivity (double frequency, int Sport, int iterat
 
 double PatternDatabase::get_radiationEfficiency (double frequency, int Sport, int iteration)
 {
-   string quantityG="G";
-   string quantityD="D";
+   std::string quantityG="G";
+   std::string quantityD="D";
    double radiationEfficiency=-DBL_MAX;
    long unsigned int i=0;
    while (i< patternList.size()) {
@@ -2890,7 +2890,7 @@ double PatternDatabase::get_radiationEfficiency (double frequency, int Sport, in
    return radiationEfficiency;
 }
 
-bool PatternDatabase::saveCSV (struct projectData *projData, vector<double> *unique_frequencies, int SportCount, bool allIterations)
+bool PatternDatabase::saveCSV (struct projectData *projData, std::vector<double> *unique_frequencies, int SportCount, bool allIterations)
 {
    if (patternList.size() == 0) return false;
 
@@ -2907,13 +2907,13 @@ bool PatternDatabase::saveCSV (struct projectData *projData, vector<double> *uni
 
    int isFail=0;
 
-   stringstream ss;
+   std::stringstream ss;
    ss << projData->project_name << "_FarField_results.csv";
 
-   ofstream out;
+   std::ofstream out;
 
    if (rank == 0) {
-      out.open(ss.str().c_str(),ofstream::out);
+      out.open(ss.str().c_str(),std::ofstream::out);
       if (!out.is_open()) isFail=1;
 
       int k=1;
@@ -2930,13 +2930,13 @@ bool PatternDatabase::saveCSV (struct projectData *projData, vector<double> *uni
       return true;
    }
 
-   string quantityG="G";
-   string quantityD="D";
+   std::string quantityG="G";
+   std::string quantityD="D";
 
    if (rank == 0) {
 
       // header
-      if (allIterations) out << "#prior iterations pre-pended by #" << endl;
+      if (allIterations) out << "#prior iterations pre-pended by #" << std::endl;
       out << "#S-port,frequency";
 
       double scale=1;
@@ -2945,7 +2945,7 @@ bool PatternDatabase::saveCSV (struct projectData *projData, vector<double> *uni
       if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) {out << "(MHz),"; scale=1e-6;}
       if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) {out << "(GHz),"; scale=1e-9;}
 
-      out << "gain,directivity,radiation efficiency" << endl;
+      out << "gain,directivity,radiation efficiency" << std::endl;
 
       int Sport=1;
       while (Sport <= SportCount) {
@@ -2970,11 +2970,11 @@ bool PatternDatabase::saveCSV (struct projectData *projData, vector<double> *uni
 
                   if (patternList[k]->get_hasSavedSphere()) printLine=false;
                   if (printLine) {
-                     out << setprecision(15) << Sport << "," 
+                     out << std::setprecision(15) << Sport << ","
                                              << (*unique_frequencies)[j]*scale << "," 
                                              << patternList[k]->get_gain() << "," 
                                              << patternList[k]->get_directivity() << "," 
-                                             << patternList[k]->get_radiationEfficiency() << endl;
+                                             << patternList[k]->get_radiationEfficiency() << std::endl;
                      patternList[k]->set_hasSavedSphere(true);
                   }
                }
@@ -2990,14 +2990,14 @@ bool PatternDatabase::saveCSV (struct projectData *projData, vector<double> *uni
    return false;
 }
 
-bool PatternDatabase::loadCSV (string filename, struct projectData *projData)
+bool PatternDatabase::loadCSV (std::string filename, struct projectData *projData)
 {
    bool fail=false;
 
-   ifstream CSV;
-   CSV.open(filename,ifstream::in);
+   std::ifstream CSV;
+   CSV.open(filename,std::ifstream::in);
    if (CSV.is_open()) {
-      string line;
+      std::string line;
       while (getline(CSV,line)) {
          if (line.compare("") != 0 && line.substr(0,1).compare("#") != 0) {
 
@@ -3007,8 +3007,8 @@ bool PatternDatabase::loadCSV (string filename, struct projectData *projData)
             double directivity=-DBL_MAX;
             double radiationEfficiency=-DBL_MAX;
 
-            stringstream ssLine(line);
-            string value;
+            std::stringstream ssLine(line);
+            std::string value;
 
             int count=1;
             while (std::getline(ssLine,value,',')) {
@@ -3028,10 +3028,10 @@ bool PatternDatabase::loadCSV (string filename, struct projectData *projData)
                count++;
             }
 
-            string quantity1="";
-            string quantity2="";
-            string plane="";
-            Pattern *newPattern=new Pattern(frequency,Sport,0,complex<double>(-DBL_MAX,-DBL_MAX),3,
+            std::string quantity1="";
+            std::string quantity2="";
+            std::string plane="";
+            Pattern *newPattern=new Pattern(frequency,Sport,0,std::complex<double>(-DBL_MAX,-DBL_MAX),3,
                  quantity1,quantity2,plane,-DBL_MAX,-DBL_MAX,-DBL_MAX,-DBL_MAX,nullptr,nullptr);
             newPattern->set_gain(gain);
             newPattern->set_directivity(directivity);
@@ -3083,7 +3083,7 @@ void PatternDatabase::reset ()
 void PatternDatabase::print (PetscMPIInt rank)
 {
    if (rank == 0) {
-      cout << "PatternDatabase: " << this << endl;
+      std::cout << "PatternDatabase: " << this << std::endl;
    }
 
    long unsigned int i=0;
@@ -3103,10 +3103,10 @@ void PatternDatabase::save (struct projectData *projData)
    if (rank == 0) {
       if (patternList.size() == 0) return;
 
-      ofstream out;
-      stringstream ss;
+      std::ofstream out;
+      std::stringstream ss;
       ss << projData->project_name << "_FarField.csv";
-      out.open(ss.str().c_str(),ofstream::out);
+      out.open(ss.str().c_str(),std::ofstream::out);
       if (!out.is_open()) return;
 
       long unsigned int i=0;
@@ -3119,7 +3119,7 @@ void PatternDatabase::save (struct projectData *projData)
    }
 }
 
-void PatternDatabase::save_as_test (string testFilename, struct projectData *projData, int SportCount, int *casenumber)
+void PatternDatabase::save_as_test (std::string testFilename, struct projectData *projData, int SportCount, int *casenumber)
 {
    if (patternList.size() == 0) return;
 
@@ -3128,10 +3128,10 @@ void PatternDatabase::save_as_test (string testFilename, struct projectData *pro
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
 
    int isFail=0;
-   ofstream out;
+   std::ofstream out;
 
    if (rank == 0) {
-      out.open(testFilename.c_str(),ofstream::app);
+      out.open(testFilename.c_str(),std::ofstream::app);
       if (!out.is_open()) isFail=1;
 
       int k=1;
@@ -3148,7 +3148,7 @@ void PatternDatabase::save_as_test (string testFilename, struct projectData *pro
       return;
    }
 
-   if (rank == 0) out << "# PatternDatabase::save_as_test" << endl;
+   if (rank == 0) out << "# PatternDatabase::save_as_test" << std::endl;
 
    long unsigned int i=0;
    while (i < unique_frequencies.size()) {

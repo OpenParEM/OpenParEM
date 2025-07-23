@@ -90,7 +90,7 @@ Frequency::Frequency (int startLine_, int endLine_, bool checkLimits_)
    Rz.set_checkLimits(checkLimits_);
 }
 
-void Frequency::print (string indent)
+void Frequency::print (std::string indent)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%sFrequency\n",startLine,indent.c_str(),indent.c_str());
 
@@ -126,14 +126,14 @@ void Frequency::print (string indent)
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%sEndFrequency\n",endLine,indent.c_str(),indent.c_str());
 }
 
-bool Frequency::load (string *indent, inputFile *inputs)
+bool Frequency::load (std::string *indent, inputFile *inputs)
 {
    bool fail=false;
 
    int lineNumber=inputs->get_next_lineNumber(startLine);
    int stopLineNumber=inputs->get_previous_lineNumber(endLine);
    while (lineNumber <= stopLineNumber) {
-      string token,value,line;
+      std::string token,value,line;
       line=inputs->get_line(lineNumber);
       get_token_pair(&line,&token,&value,&lineNumber,indent->c_str());
 
@@ -193,7 +193,7 @@ bool Frequency::inFrequencyBlock (int lineNumber)
    return false;
 }
 
-bool Frequency::check (string indent)
+bool Frequency::check (std::string indent)
 {
    bool fail=false;
 
@@ -370,7 +370,7 @@ Temperature::Temperature (int startLine_, int endLine_, bool checkLimits_)
    loss.set_checkLimits(checkLimits_);
 }
 
-void Temperature::print (string indent)
+void Temperature::print (std::string indent)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %sTemperature\n",startLine,indent.c_str());
 
@@ -455,7 +455,7 @@ bool Temperature::inFrequencyBlocks(int lineNumber)
    return false;
 }
 
-bool Temperature::load(string *indent, inputFile *inputs, bool checkInputs)
+bool Temperature::load(std::string *indent, inputFile *inputs, bool checkInputs)
 {
    bool fail=false;
 
@@ -476,7 +476,7 @@ bool Temperature::load(string *indent, inputFile *inputs, bool checkInputs)
    while (lineNumber <= stopLineNumber) {
 
       if (!inFrequencyBlocks(lineNumber)) {
-         string token,value,line; 
+         std::string token,value,line;
          line=inputs->get_line(lineNumber);
          get_token_pair(&line,&token,&value,&lineNumber,*indent);
 
@@ -560,7 +560,7 @@ bool Temperature::inTemperatureBlock (int lineNumber)
    return false;
 }
 
-bool Temperature::check(string indent)
+bool Temperature::check(std::string indent)
 {
    bool fail=false;
 
@@ -653,11 +653,11 @@ bool Temperature::check(string indent)
    return fail;
 }
 
-complex<double> Temperature::get_eps(double frequency_, double tolerance, string indent)
+std::complex<double> Temperature::get_eps(double frequency_, double tolerance, std::string indent)
 {
    double eps;
    double loss_;
-   complex<double> complex_eps=complex<double>(-DBL_MAX,0);
+   std::complex<double> complex_eps=std::complex<double>(-DBL_MAX,0);
    double eps0=8.8541878176e-12;
 
    double freq_low=0;         // for linear interpolation - extrapolation is not supported
@@ -725,9 +725,9 @@ complex<double> Temperature::get_eps(double frequency_, double tolerance, string
          if (frequencyList[i]->get_loss()->get_keyword().compare("loss_tangent") == 0 ||
              frequencyList[i]->get_loss()->get_keyword().compare("tand") == 0 || 
              frequencyList[i]->get_loss()->get_keyword().compare("tandel") == 0) {
-            complex_eps=complex<double>(eps*eps0,-loss_*eps*eps0);            // loss tangent
+            complex_eps=std::complex<double>(eps*eps0,-loss_*eps*eps0);            // loss tangent
          } else {
-            complex_eps=complex<double>(eps*eps0,-loss_/(2*M_PI*frequency_)); // conductivity
+            complex_eps=std::complex<double>(eps*eps0,-loss_/(2*M_PI*frequency_)); // conductivity
          }
       }
 
@@ -748,12 +748,12 @@ complex<double> Temperature::get_eps(double frequency_, double tolerance, string
          sigma=loss_;                              // conductivity
       }
 
-      complex<double> t1=complex<double>(pow(10,m1.get_dbl_value()),2*M_PI*frequency_);
-      complex<double> t2=complex<double>(pow(10,m2.get_dbl_value()),2*M_PI*frequency_);
-      complex<double> denom=complex<double>(log(10),0);
-      complex<double> conductivity_term=complex<double>(0,-sigma/(2*M_PI*frequency_));
-      complex<double> infinity_term=complex<double>(er_infinity.get_dbl_value()*eps0,0);
-      complex<double> delta_term=complex<double>(delta_er.get_dbl_value()*eps0/(m2.get_dbl_value()-m1.get_dbl_value()),0);
+      std::complex<double> t1=std::complex<double>(pow(10,m1.get_dbl_value()),2*M_PI*frequency_);
+      std::complex<double> t2=std::complex<double>(pow(10,m2.get_dbl_value()),2*M_PI*frequency_);
+      std::complex<double> denom=std::complex<double>(log(10),0);
+      std::complex<double> conductivity_term=std::complex<double>(0,-sigma/(2*M_PI*frequency_));
+      std::complex<double> infinity_term=std::complex<double>(er_infinity.get_dbl_value()*eps0,0);
+      std::complex<double> delta_term=std::complex<double>(delta_er.get_dbl_value()*eps0/(m2.get_dbl_value()-m1.get_dbl_value()),0);
 
       complex_eps=infinity_term+delta_term*log(t2/t1)/denom+conductivity_term;
    }
@@ -761,7 +761,7 @@ complex<double> Temperature::get_eps(double frequency_, double tolerance, string
    return complex_eps;
 }
 
-double Temperature::get_mu(double frequency_, double tolerance, string indent)
+double Temperature::get_mu(double frequency_, double tolerance, std::string indent)
 {
    double mu=-DBL_MAX;
 
@@ -830,13 +830,13 @@ double Temperature::get_mu(double frequency_, double tolerance, string indent)
    return mu;
 }
 
-double Temperature::get_Rs(double frequency_, double tolerance, string indent)
+double Temperature::get_Rs(double frequency_, double tolerance, std::string indent)
 {
    double Rs=-DBL_MAX;
    double loss_;
    double mur_;
    double Rz_;
-   string loss_tangent="loss_tangent";
+   std::string loss_tangent="loss_tangent";
 
    double freq_low=0;         // for linear interpolation - extrapolation is not supported
    double loss_low;           // ToDo - replace with spline interpolation or
@@ -1021,7 +1021,7 @@ Source::Source (int startLine_, int endLine_)
    endLine=endLine_;
 }
 
-void Source::print(string indent)
+void Source::print(std::string indent)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %sSource\n",startLine,indent.c_str());
 
@@ -1095,7 +1095,7 @@ Material::Material (int startLine_, int endLine_)
    name.set_checkLimits(false);
 }
 
-void Material::print(string indent)
+void Material::print(std::string indent)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: Material",startLine);
    if (merged) PetscPrintf(PETSC_COMM_WORLD,"(merged)");
@@ -1184,7 +1184,7 @@ bool Material::inSourceBlocks(int lineNumber)
    return false;
 }
 
-bool Material::load(string *indent, inputFile *inputs, bool checkInputs)
+bool Material::load(std::string *indent, inputFile *inputs, bool checkInputs)
 {
    bool fail=false;
 
@@ -1213,7 +1213,7 @@ bool Material::load(string *indent, inputFile *inputs, bool checkInputs)
    while (lineNumber <= stopLineNumber) {
 
       if (!inTemperatureBlocks(lineNumber) && !inSourceBlocks(lineNumber)) {
-         string token,value,line;
+         std::string token,value,line;
          line=inputs->get_line(lineNumber);
          get_token_pair(&line,&token,&value,&lineNumber,*indent);
 
@@ -1244,7 +1244,7 @@ bool Material::load(string *indent, inputFile *inputs, bool checkInputs)
    return fail;
 }
 
-bool Material::check(string indent)
+bool Material::check(std::string indent)
 {
    bool fail=false;
 
@@ -1313,7 +1313,7 @@ bool Material::check(string indent)
 
 // Find the temperature block matching the given temperature.
 // Do not interpolate or extrapolate.
-Temperature* Material::get_temperature(double temperature_, double tolerance, string indent)
+Temperature* Material::get_temperature(double temperature_, double tolerance, std::string indent)
 {
    long unsigned int i=0;
    while (i < temperatureList.size()) {
@@ -1337,10 +1337,10 @@ Temperature* Material::get_temperature(double temperature_, double tolerance, st
    return nullptr;
 }
 
-complex<double> Material::get_eps(double temperature_, double frequency, double tolerance, string indent)
+std::complex<double> Material::get_eps(double temperature_, double frequency, double tolerance, std::string indent)
 {
    Temperature *temperature;
-   complex<double> complex_eps=complex<double>(-DBL_MAX,0);
+   std::complex<double> complex_eps=std::complex<double>(-DBL_MAX,0);
 
    temperature=get_temperature(temperature_, tolerance, indent);
    if (temperature) complex_eps=temperature->get_eps(frequency, tolerance, indent);
@@ -1348,7 +1348,7 @@ complex<double> Material::get_eps(double temperature_, double frequency, double 
    return complex_eps;
 }
 
-double Material::get_mu(double temperature_, double frequency, double tolerance, string indent)
+double Material::get_mu(double temperature_, double frequency, double tolerance, std::string indent)
 {
    Temperature *temperature;
    double mu=-DBL_MAX;
@@ -1359,7 +1359,7 @@ double Material::get_mu(double temperature_, double frequency, double tolerance,
    return mu;
 }
 
-double Material::get_Rs(double temperature_, double frequency, double tolerance, string indent)
+double Material::get_Rs(double temperature_, double frequency, double tolerance, std::string indent)
 {
    Temperature *temperature;
    double Rs=-DBL_MAX;
@@ -1502,7 +1502,7 @@ bool MaterialDatabase::load(const char *path, const char *filename, bool checkIn
    return fail;
 };
 
-Material* MaterialDatabase::get(string name)
+Material* MaterialDatabase::get(std::string name)
 {
    long unsigned int i=0;
    while (i < materialList.size()) {
@@ -1512,7 +1512,7 @@ Material* MaterialDatabase::get(string name)
    return nullptr;
 }
 
-void MaterialDatabase::print(string indent)
+void MaterialDatabase::print(std::string indent)
 {
    long unsigned int i=0;
    while (i < materialList.size()) {
@@ -1574,7 +1574,7 @@ bool MaterialDatabase::load_materials (char *global_path, char *global_name, cha
 }
 
 // MaterialDatabase takes ownership of the contents of db
-bool MaterialDatabase::merge(MaterialDatabase *db, string indent)
+bool MaterialDatabase::merge(MaterialDatabase *db, std::string indent)
 {
    // checks for nothing to do
    if (!db) return false;

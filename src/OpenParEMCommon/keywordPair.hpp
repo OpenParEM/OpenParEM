@@ -32,11 +32,9 @@
 
 extern "C" void prefix ();
 
-using namespace std;
-
-void get_token_pair (string *, string *, string *, int *, string);
-bool is_double (string *);
-bool is_int (string *);
+void get_token_pair (std::string *, std::string *, std::string *, int *, std::string);
+bool is_double (std::string *);
+bool is_int (std::string *);
 bool double_compare (double, double, double);
 
 struct point {
@@ -58,9 +56,9 @@ struct point point_cross_product (struct point, struct point);
 class keywordPair
 {
    private:
-      vector<string> aliases;  // token name plus aliases ex. "frequency", "freq", "f"
-      string keyword;          // the text value from the input file
-      string value;            // the text value from the input file
+      std::vector<std::string> aliases;  // token name plus aliases ex. "frequency", "freq", "f"
+      std::string keyword;               // the text value from the input file
+      std::string value;                 // the text value from the input file
       int lineNumber;
 
       int int_value;
@@ -75,14 +73,14 @@ class keywordPair
       bool positive_required;
       bool non_negative_required;
 
-      string indent="   ";  // for error messages
+      std::string indent="   ";  // for error messages
       double dbl_tolerance=1e-14;
       bool checkLimits=true;
    public:
-      void push_alias (string a) {aliases.push_back(a);}
-      bool match_alias (string *);
-      void set_keyword (string a) {keyword=a;}
-      void set_value (string a) {value=a;}
+      void push_alias (std::string a) {aliases.push_back(a);}
+      bool match_alias (std::string *);
+      void set_keyword (std::string a) {keyword=a;}
+      void set_value (std::string a) {value=a;}
       void set_int_value (int i) {int_value=i;}
       void set_point_value_dim (int dim_) {point_value.dim=dim_;}
       void set_point_value (double x, double y) {point_value.x=x; point_value.y=y; point_value.dim=2;}
@@ -98,8 +96,8 @@ class keywordPair
       void set_upperLimit (double a) {upperLimit=a;}
       void set_checkLimits (bool a) {checkLimits=a;}
       bool is_loaded () {return loaded;}
-      string get_keyword () {return keyword;} 
-      string get_value () {return value;}
+      std::string get_keyword () {return keyword;}
+      std::string get_value () {return value;}
       int get_lineNumber () {return lineNumber;}
       int get_int_value () {return int_value;}
       struct point get_point_value () {return point_value;}
@@ -114,14 +112,14 @@ class keywordPair
       bool value_compare (keywordPair *);
       bool point_compare (keywordPair *);
       double get_point_distance (keywordPair *);
-      bool loadBool (string *, string *, int);
-      bool loadInt (string *, string *, int);
-      bool loadDouble (string *, string *, int);
-      bool loadPoint (int, string *, string *, int);
-      bool int_limit_checks (string *, int);
-      bool dbl_limit_checks (string *, int);
-      bool point_limit_checks (string *, int);
-      bool limit_check (string);
+      bool loadBool (std::string *, std::string *, int);
+      bool loadInt (std::string *, std::string *, int);
+      bool loadDouble (std::string *, std::string *, int);
+      bool loadPoint (int, std::string *, std::string *, int);
+      bool int_limit_checks (std::string *, int);
+      bool dbl_limit_checks (std::string *, int);
+      bool point_limit_checks (std::string *, int);
+      bool limit_check (std::string);
 
       void copy (keywordPair a);
       keywordPair* clone ();

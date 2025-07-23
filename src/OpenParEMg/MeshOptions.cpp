@@ -68,8 +68,8 @@ void MeshDialog::on_meshFileLineEdit_returnPressed()
     if (QFile::exists(trialMeshFile)) {
         meshFile=trialMeshFile;
     } else {
-        cout << "requested mesh file " << trialMeshFile.toLatin1().toStdString() << " does not exist" << endl;
-        cout.flush();
+        std::cout << "requested mesh file " << trialMeshFile.toLatin1().toStdString() << " does not exist" << std::endl;
+        std::cout.flush();
 
         QMessageBox mb;
         mb.critical(nullptr, "Error", "The requested mesh file does not exist.");
@@ -88,8 +88,8 @@ void MeshDialog::on_meshFilePushButton_clicked()
         meshFile=trialMeshFile;
         ui->meshFileLineEdit->setText(meshFile);
     } else {
-        cout << "requested mesh file " << trialMeshFile.toLatin1().toStdString() << " does not exist" << endl;
-        cout.flush();
+        std::cout << "requested mesh file " << trialMeshFile.toLatin1().toStdString() << " does not exist" << std::endl;
+        std::cout.flush();
 
         QMessageBox mb;
         mb.critical(nullptr, "Error", "The requested mesh file does not exist.");

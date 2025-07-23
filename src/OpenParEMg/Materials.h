@@ -15,8 +15,6 @@
 #include "OpenParEMmaterials.hpp"
 #include "CustomLineEdit.h"
 
-using namespace std;
-
 class Materials;
 class MaterialsModel;
 

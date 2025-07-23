@@ -1,4 +1,5 @@
 #include "CustomOpenGLWidget.h"
+#include "CustomAIS_Shape.h"
 #include <V3d_View.hxx>
 #include <iostream>
 
@@ -77,8 +78,6 @@ CustomOpenGLWidget::CustomOpenGLWidget(QWidget* theParent)
 
 CustomOpenGLWidget::~CustomOpenGLWidget()
 {
-    cout << "CustomOpenGLWidget::~CustomOpenGLWidget" << endl;
-
     Handle(Aspect_DisplayConnection) aDisp = viewer->Driver()->GetDisplayConnection();
 
     // release OCCT viewer
@@ -95,7 +94,6 @@ CustomOpenGLWidget::~CustomOpenGLWidget()
 
 void CustomOpenGLWidget::initializeGL ()
 {
-    cout << "CustomOpenGLWidget::initializeGL" << endl;
 
     initializeOpenGLFunctions(); // Required for using OpenGL functions
     //glClearColor(0.5f, 0.0f, 0.0f, 1.0f); // Set background color
@@ -105,8 +103,6 @@ void CustomOpenGLWidget::initializeGL ()
     const Graphic3d_Vec2i aViewSize(aRect.right() - aRect.left(), aRect.bottom() - aRect.top());
 
     Aspect_Drawable aNativeWin = (Aspect_Drawable)winId();
-
-
 
     Handle(OpenGl_Context) aGlCtx = new OpenGl_Context();
     if (!aGlCtx->Init())
@@ -150,8 +146,6 @@ void CustomOpenGLWidget::initializeGL ()
 
 void CustomOpenGLWidget::paintGL ()
 {
-    cout << "CustomOpenGLWidget::paintGL" << endl;
-
     if (view->Window().IsNull())
     {
         return;
@@ -195,15 +189,13 @@ void CustomOpenGLWidget::paintGL ()
     }
 
     // test shape
-    TopoDS_Shape      aBox   = BRepPrimAPI_MakeBox(100.0, 50.0, 90.0).Shape();
-    Handle(AIS_Shape) aShape = new AIS_Shape(aBox);
-    cout << "aShape.IsNull()=" << aShape.IsNull() << endl;
+    //TopoDS_Shape      aBox   = BRepPrimAPI_MakeBox(100.0, 50.0, 90.0).Shape();
+    //Handle(AIS_Shape) aShape = new AIS_Shape(aBox);
     //viewerContext->Display(aShape, 0, 0, false);
 
 
-    TopoDS_Shape      aBox2   = BRepPrimAPI_MakeBox(200.0, 100.0, 180.0).Shape();
-    Handle(AIS_Shape) aShape2 = new AIS_Shape(aBox2);
-    cout << "aShape2.IsNull()=" << aShape2.IsNull() << endl;
+    //TopoDS_Shape      aBox2   = BRepPrimAPI_MakeBox(200.0, 100.0, 180.0).Shape();
+    //Handle(AIS_Shape) aShape2 = new AIS_Shape(aBox2);
     //viewerContext->Display(aShape2, 0, 0, false);
 
     // show drawing
@@ -219,7 +211,6 @@ void CustomOpenGLWidget::paintGL ()
 
 void CustomOpenGLWidget::updateView()
 {
-    cout << "CustomOpenGLWidget::updateView" << endl;
     update();
     // if (window() != NULL) { window()->update(); }
 }
@@ -227,7 +218,6 @@ void CustomOpenGLWidget::updateView()
 void CustomOpenGLWidget::handleViewRedraw(const Handle(AIS_InteractiveContext)& theCtx,
                                                const Handle(V3d_View)&               theView)
 {
-    cout << "CustomOpenGLWidget::handleViewRedraw" << endl;
     AIS_ViewController::handleViewRedraw(theCtx, theView);
     if (myToAskNextFrame)
         updateView(); // ask more frames for animation
@@ -235,8 +225,6 @@ void CustomOpenGLWidget::handleViewRedraw(const Handle(AIS_InteractiveContext)& 
 
 void CustomOpenGLWidget::dumpGlInfo(bool theIsBasic, bool theToPrint)
 {
-    cout << "CustomOpenGLWidget::dumpGlInfo" << endl;
-
     TColStd_IndexedDataMapOfStringString aGlCapsDict;
     view->DiagnosticInformation(aGlCapsDict,
                                   theIsBasic ? Graphic3d_DiagnosticInfo_Basic : Graphic3d_DiagnosticInfo_Complete);
@@ -258,17 +246,20 @@ void CustomOpenGLWidget::dumpGlInfo(bool theIsBasic, bool theToPrint)
     myGlInfo=QString::fromUtf8(anInfo.ToCString());
 }
 
-void CustomOpenGLWidget::displayDrawing (Handle(AIS_Shape) drawing)
+void CustomOpenGLWidget::clearDrawing()
 {
-    // clear prior objects
     viewerContext->RemoveAll(false);
+    viewerContext->UpdateCurrentViewer();
+}
 
-    // show the new object
-    viewerContext->Display(drawing, 0, 0, false);
+void CustomOpenGLWidget::displayDrawing (Handle(AIS_Shape) aShape)
+{
+    viewerContext->Display(aShape, 0, 0, false);
     viewerContext->UpdateCurrentViewer();
 
+    // ToDo: scale for entire drawing
     // scale to fit the new object
-    viewerContext->SetSelected(drawing,false);
+    viewerContext->SetSelected(aShape,false);
     viewerContext->FitSelected(view,0,false);
 }
 

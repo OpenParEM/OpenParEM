@@ -35,27 +35,24 @@
 #include "misc.hpp"
 #include "prefix.h"
 
-using namespace std;
-using namespace mfem;
-
 extern "C" void prefix ();
 
-bool is_comment (string);
-void split_on_space (vector<string> *, string);
-bool check_field_points (const char *, Mesh *, ParMesh *, int, int, int, double *, double *, double *);
-bool write_attributes (const char *, ParMesh *);
+bool is_comment (std::string);
+void split_on_space (std::vector<std::string> *, std::string);
+bool check_field_points (const char *, mfem::Mesh *, mfem::ParMesh *, int, int, int, double *, double *, double *);
+bool write_attributes (const char *, mfem::ParMesh *);
 
 class MeshMaterialList {
     private:
-       string GMSH_version_number="2.2";
-       string regionsFile_version_number="1.0";
+       std::string GMSH_version_number="2.2";
+       std::string regionsFile_version_number="1.0";
        int file_type;
        int data_size;
-       vector<int> index;       // mesh attribute (-1)
-       vector<string> list;     // material name
-       vector<bool> active;
+       std::vector<int> index;       // mesh attribute (-1)
+       std::vector<std::string> list;     // material name
+       std::vector<bool> active;
     public:
-       void set_active (vector<int> *);
+       void set_active (std::vector<int> *);
        bool load (const char *, int);
        void replace_index (int, int);
        int loadGMSH (const char *, int);
@@ -64,10 +61,10 @@ class MeshMaterialList {
        void print ();
        int size ();
        long unsigned int get_index (int);
-       string get_name (long unsigned int);
+       std::string get_name (long unsigned int);
 };
 
-void reset_attributes (Mesh *, ParMesh *, MeshMaterialList *);
+void reset_attributes (mfem::Mesh *, mfem::ParMesh *, MeshMaterialList *);
 
 class Vertex3D {
    private:
@@ -81,7 +78,7 @@ class Vertex3D {
 
 class Vertex3Ddatabase {
    private:
-      vector<Vertex3D *> vertex3DList;
+      std::vector<Vertex3D *> vertex3DList;
       double tol=1e-12;
    public:
       ~Vertex3Ddatabase ();

@@ -187,12 +187,12 @@ void KeywordValueItem::print ()
 {
     int i=0;
     while (i < columnCount()) {
-        cout << data(i).toString().toStdString() << " ";
+        std::cout  << data(i).toString().toStdString() << " ";
         i++;
     }
-    cout << endl;
-    cout << "   level=" << level << endl;
-    cout << "   copyAllowed=" << copyAllowed << endl;
+    std::cout  << std::endl;
+    std::cout  << "   level=" << level << std::endl;
+    std::cout  << "   copyAllowed=" << copyAllowed << std::endl;
 
     i=0;
     while (i < childCount()) {
@@ -782,7 +782,7 @@ void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueI
         j=0;
         while (j < material->get_sourceList_size()) {
 
-            vector<string> lineList=material->get_source_lineList(j);
+            std::vector<std::string> lineList=material->get_source_lineList(j);
 
             long unsigned int k=0;
             while (k < lineList.size()) {

@@ -26,8 +26,6 @@
 #include <QDebug>
 #include <iostream>
 
-using namespace std;
-
 class CustomLineEdit : public QLineEdit {
     Q_OBJECT
 

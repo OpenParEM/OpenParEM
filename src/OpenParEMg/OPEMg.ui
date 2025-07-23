@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1401</width>
+    <height>904</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -20,20 +20,31 @@
    <string>OpenParEMg</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_2">
-    <item>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="CustomOpenGLWidget" name="drawingWindow">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
-      </item>
-     </layout>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="1">
+     <widget class="CustomOpenGLWidget" name="drawingWindow">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QTreeWidget" name="drawingItemTree">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <column>
+       <property name="text">
+        <string notr="true">1</string>
+       </property>
+      </column>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -42,7 +53,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1401</width>
      <height>22</height>
     </rect>
    </property>
@@ -60,6 +71,7 @@
     <addaction name="fileOpen"/>
     <addaction name="actionSave"/>
     <addaction name="menuImport"/>
+    <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuMesh">
     <property name="title">
@@ -149,6 +161,11 @@
   <action name="actionBrep">
    <property name="text">
     <string>Brep ...</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
    </property>
   </action>
  </widget>

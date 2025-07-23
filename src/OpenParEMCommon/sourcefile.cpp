@@ -24,7 +24,7 @@
 // SourceFile
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-SourceFile::SourceFile(int startLine_, int endLine_)
+SourceFile::SourceFile (int startLine_, int endLine_)
 {
    startLine=startLine_;
    endLine=endLine_;
@@ -39,7 +39,7 @@ SourceFile::SourceFile(int startLine_, int endLine_)
    name.set_checkLimits(false);
 }
 
-bool SourceFile::load(string *indent, inputFile *inputs)
+bool SourceFile::load (std::string *indent, inputFile *inputs)
 {
    bool fail=false;
 
@@ -47,7 +47,7 @@ bool SourceFile::load(string *indent, inputFile *inputs)
    int stopLineNumber=inputs->get_previous_lineNumber(endLine);
    while (lineNumber <= stopLineNumber) {
 
-      string token,value,line;
+      std::string token,value,line;
       line=inputs->get_line(lineNumber);
       get_token_pair(&line,&token,&value,&lineNumber,*indent);
 
@@ -84,7 +84,7 @@ bool SourceFile::inBlock (int lineNumber)
    return false;
 }
 
-bool SourceFile::check(string *indent)
+bool SourceFile::check (std::string *indent)
 {
    bool fail=false;
 
@@ -96,7 +96,7 @@ bool SourceFile::check(string *indent)
    return fail;
 }
 
-SourceFile* SourceFile::clone()
+SourceFile* SourceFile::clone ()
 {
    SourceFile *sc=new SourceFile(startLine,endLine);
    if (!sc) return nullptr;
@@ -106,7 +106,7 @@ SourceFile* SourceFile::clone()
    return sc;
 }
 
-void SourceFile::print() {
+void SourceFile::print () {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"File\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   name=%s\n",name.get_value().c_str());
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"EndFile\n");

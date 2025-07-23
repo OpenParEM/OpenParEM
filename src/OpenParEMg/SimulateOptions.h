@@ -28,8 +28,6 @@
 #include "project.h"
 #include "string.h"
 
-using namespace std;
-
 namespace Ui {
 class SimOptions;
 }
