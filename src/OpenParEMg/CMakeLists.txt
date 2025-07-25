@@ -66,6 +66,8 @@ qt_add_executable(OpenParEMg
     ../OpenParEMCommon/mesh.cpp ../OpenParEMCommon/mesh.hpp
     CustomAIS_Shape.h
     CustomComboBox.h
+    SelectMaterialsDatabase.h SelectMaterialsDatabase.cpp SelectMaterialsDatabase.ui
+    OcctQtTools.h
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)

@@ -29,7 +29,6 @@
 #include <quadmath.h>
 #include "frequencyPlan.hpp"
 #include "project.h"
-#include "prefix.h"
 
 namespace Ui {
 class FrequencyView;
@@ -40,12 +39,12 @@ class FrequencyView : public QDialog
     Q_OBJECT
 
 public:
-    explicit FrequencyView(QWidget *parent = nullptr);
+    explicit FrequencyView (QWidget *parent = nullptr);
     ~FrequencyView();
     void populate (struct projectData *);
 
 private slots:
-    void on_frequencyViewClose_clicked();
+    void on_frequencyViewClose_clicked ();
 
 private:
     Ui::FrequencyView *ui;

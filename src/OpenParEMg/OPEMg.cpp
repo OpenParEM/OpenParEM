@@ -56,6 +56,7 @@
 #include "Materials.h"
 #include "CustomOpenGLWidget.h"
 #include "CustomAIS_Shape.h"
+#include "SelectMaterialsDatabase.h"
 
 void deleteChildren (QTreeWidgetItem *item)
 {
@@ -68,13 +69,14 @@ void deleteChildren (QTreeWidgetItem *item)
     }
 }
 
-OpenParEMg::OpenParEMg(QWidget *parent)
+OpenParEMg::OpenParEMg (QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::OpenParEMg)
 {
     ui->setupUi(this);
 
     absolutePath=QDir::currentPath();
+    materialDatabase=new MaterialDatabase();
     boundaryDatabase=new BoundaryDatabase();
 
     projectFile="";
@@ -104,13 +106,13 @@ OpenParEMg::OpenParEMg(QWidget *parent)
     PetscInitializeNoArguments();
 }
 
-OpenParEMg::~OpenParEMg()
+OpenParEMg::~OpenParEMg ()
 {
     PetscFinalize();
     delete ui;
 }
 
-void OpenParEMg::on_fileOpen_triggered()
+void OpenParEMg::on_fileOpen_triggered ()
 {
     projectFile=QFileDialog::getOpenFileName(this,tr("Open Project"), "", tr("Project Files (*.proj);;All Files (*)"));
 
@@ -141,15 +143,11 @@ void OpenParEMg::on_fileOpen_triggered()
             return;
         }
 
-        print_project(&projData,&defaultData,">>>>  ");
-
-        std::cout << "OpenParEMg::on_fileOpen_triggered()  projData.solution_impedance_definition=" << projData.solution_impedance_definition << std::endl;
-        std::cout << "OpenParEMg::on_fileOpen_triggered()  projData.solution_impedance_calculation=" << projData.solution_impedance_calculation << std::endl;
-
-        // successfully loaded
-
+        // set project path
         QDir::setCurrent(absolutePath);
         projectFile=projectName;
+
+        // set GUI options
 
         ui->meshOptions->setEnabled(true);
         ui->simulateOptions->setEnabled(true);
@@ -158,10 +156,55 @@ void OpenParEMg::on_fileOpen_triggered()
         if (strcmp(projData.refinement_frequency,"none") == 0) ui->actionRefinement->setEnabled(false);
         else ui->actionRefinement->setEnabled(true);
 
-        // load boundaries, if any, and draw
-        if (!boundaryDatabase->load(projData.port_definition_file,projData.solution_check_closed_loop)) {
-            boundaryDatabase->draw(&projData,ui->drawingWindow,ui->drawingItemTree,&port,&boundary);
+        // load materials
+        if (materialDatabase->load_materials(projData.materials_global_path,projData.materials_global_name,
+                                             projData.materials_local_path,projData.materials_local_name,
+                                             projData.materials_check_limits)) {
+            QMessageBox mb;
+            mb.critical(nullptr, "Error", "Unable to load the specified materials files.  Use Tools->Materials Editor to select a materials database.");
+            mb.setFixedSize(500, 200);
         }
+
+        // load brep file, if defined
+        if (strcmp(projData.gui_brep_file,"") != 0) {
+
+            QFileInfo fileInfo(projData.gui_brep_file);
+            QString base=fileInfo.baseName();
+
+            std::ifstream brepFile(projData.gui_brep_file,std::ios_base::in);
+            if (brepFile.is_open()) {
+                TopoDS_Shape s;
+                BRep_Builder b;
+                BRepTools::Read(s,brepFile,b);
+                brepFile.close();
+
+                ui->drawingWindow->clearDrawing();
+                Handle(AIS_Shape) drawingShape=new AIS_Shape (s);
+                ui->drawingWindow->displayDrawing(drawingShape);
+
+                QTreeWidgetItem *item=new QTreeWidgetItem(0);
+                item->setText(0,base);
+                drawing.addChild(item);
+                ui->drawingItemTree->show();
+                ui->drawingWindow->updateView();
+            } else {
+                QMessageBox mb;
+                mb.critical(nullptr, "Error", "Unable to load the specified BRep drawing file.");
+                mb.setFixedSize(500, 200);
+            }
+        }
+
+        // load boundaries, if any, and draw
+        if (boundaryDatabase->load(projData.port_definition_file,projData.solution_check_closed_loop)) {
+            QMessageBox mb;
+            mb.critical(nullptr, "Error", "Error in loading port and boundary definitions.");
+            mb.setFixedSize(500, 200);
+        } else {
+            boundaryDatabase->draw(&projData,ui->drawingWindow,ui->drawingItemTree,&port,&boundary,materialDatabase);
+        }
+
+        // rescale after everything has been loaded
+        ui->drawingWindow->fitAll();
 
     } else {
         // should not occur
@@ -171,7 +214,7 @@ void OpenParEMg::on_fileOpen_triggered()
     }
 }
 
-void OpenParEMg::on_fileNew_triggered()
+void OpenParEMg::on_fileNew_triggered ()
 {
     projectFile="";
 
@@ -180,6 +223,9 @@ void OpenParEMg::on_fileNew_triggered()
 
     init_project (&defaultData);
     init_project (&projData);
+
+    if (materialDatabase) delete materialDatabase;
+    materialDatabase=new MaterialDatabase();
 
     if (boundaryDatabase) delete boundaryDatabase;
     boundaryDatabase=new BoundaryDatabase();
@@ -198,7 +244,7 @@ void OpenParEMg::on_fileNew_triggered()
     deleteChildren(&boundary);
 }
 
-void OpenParEMg::on_meshOptions_triggered()
+void OpenParEMg::on_meshOptions_triggered ()
 {
     MeshDialog *meshDialog=new MeshDialog();
     meshDialog->set_projData(&projData);
@@ -206,7 +252,7 @@ void OpenParEMg::on_meshOptions_triggered()
     delete meshDialog;
 }
 
-void OpenParEMg::on_simulateOptions_triggered()
+void OpenParEMg::on_simulateOptions_triggered ()
 {
     SimOptions *simOptions=new SimOptions();
     simOptions->set_projData(&projData);
@@ -214,14 +260,14 @@ void OpenParEMg::on_simulateOptions_triggered()
     delete simOptions;
 }
 
-void OpenParEMg::on_actionLicense_triggered()
+void OpenParEMg::on_actionLicense_triggered ()
 {
     License *license=new License();
     license->exec();
     delete license;
 }
 
-void OpenParEMg::on_actionFrequency_Plan_triggered()
+void OpenParEMg::on_actionFrequency_Plan_triggered ()
 {
     FrequencyPlanG *frequencyPlan=new FrequencyPlanG();
     frequencyPlan->set_projData(&projData);
@@ -232,13 +278,13 @@ void OpenParEMg::on_actionFrequency_Plan_triggered()
     else ui->actionRefinement->setEnabled(true);
 }
 
-void OpenParEMg::on_actionSave_triggered()
+void OpenParEMg::on_actionSave_triggered ()
 {
     print_project(&projData,&defaultData,"");
     std::cout.flush();
 }
 
-void OpenParEMg::on_actionRefinement_triggered()
+void OpenParEMg::on_actionRefinement_triggered ()
 {
     OPEMg_Refinement *refinement=new OPEMg_Refinement();
     refinement->set_projData(&projData);
@@ -253,7 +299,8 @@ void OpenParEMg::on_actionMaterials_Editor_triggered ()
     delete localMaterials;
 }
 
-void ListChildren(const TopoDS_Shape& theShape) {
+void ListChildren (const TopoDS_Shape& theShape)
+{
     // Using TopoDS_Iterator (iterates immediate sub-shapes)
     TopoDS_Iterator anIterator(theShape);
     std::cout << "Children using TopoDS_Iterator:" << std::endl;
@@ -264,13 +311,53 @@ void ListChildren(const TopoDS_Shape& theShape) {
     }
     std::cout << std::endl;
 
-    // Using TopExp_Explorer (iterates all sub-shapes of a given type)
-    std::cout << "Faces using TopExp_Explorer:" << std::endl;
-    for (TopExp_Explorer anExplorer(theShape, TopAbs_FACE); anExplorer.More(); anExplorer.Next()) {
-        const TopoDS_Face& aFace = TopoDS::Face(anExplorer.Current());
-        // You can now work with the face
-        std::cout << "  Found a Face" << std::endl;
+    // std::cout << "Faces using TopExp_Explorer:" << std::endl;
+    // for (TopExp_Explorer anExplorer(theShape, TopAbs_FACE); anExplorer.More(); anExplorer.Next()) {
+    //     const TopoDS_Face& aFace = TopoDS::Face(anExplorer.Current());
+    //     std::cout << "  Found a Face" << std::endl;
+    // }
+
+    std::cout << "Solid using TopExp_Explorer:" << std::endl;
+    for (TopExp_Explorer anExplorer(theShape, TopAbs_SOLID); anExplorer.More(); anExplorer.Next()) {
+        const TopoDS_Solid& aSolid = TopoDS::Solid(anExplorer.Current());
+        std::cout << "  Found a Solid" << std::endl;
     }
+
+    // std::cout << "Wire using TopExp_Explorer:" << std::endl;
+    // for (TopExp_Explorer anExplorer(theShape, TopAbs_WIRE); anExplorer.More(); anExplorer.Next()) {
+    //     const TopoDS_Wire& aWire = TopoDS::Wire(anExplorer.Current());
+    //     std::cout << "  Found a Wire" << std::endl;
+    // }
+
+    // std::cout << "CompSolid using TopExp_Explorer:" << std::endl;
+    // for (TopExp_Explorer anExplorer(theShape, TopAbs_COMPSOLID); anExplorer.More(); anExplorer.Next()) {
+    //     const TopoDS_CompSolid& aCompSolid = TopoDS::CompSolid(anExplorer.Current());
+    //     std::cout << "  Found a CompSolid" << std::endl;
+    // }
+
+    // std::cout << "Compound using TopExp_Explorer:" << std::endl;
+    // for (TopExp_Explorer anExplorer(theShape, TopAbs_COMPOUND); anExplorer.More(); anExplorer.Next()) {
+    //     const TopoDS_Compound& aCompound = TopoDS::Compound(anExplorer.Current());
+    //     std::cout << "  Found a Compound" << std::endl;
+    // }
+
+    // std::cout << "Edge using TopExp_Explorer:" << std::endl;
+    // for (TopExp_Explorer anExplorer(theShape, TopAbs_EDGE); anExplorer.More(); anExplorer.Next()) {
+    //     const TopoDS_Edge& aEdge = TopoDS::Edge(anExplorer.Current());
+    //     std::cout << "  Found a Edge" << std::endl;
+    // }
+
+    // std::cout << "Shell using TopExp_Explorer:" << std::endl;
+    // for (TopExp_Explorer anExplorer(theShape, TopAbs_SHELL); anExplorer.More(); anExplorer.Next()) {
+    //     const TopoDS_Shell& aShell = TopoDS::Shell(anExplorer.Current());
+    //     std::cout << "  Found a Shell" << std::endl;
+    // }
+
+    // std::cout << "Vertex using TopExp_Explorer:" << std::endl;
+    // for (TopExp_Explorer anExplorer(theShape, TopAbs_VERTEX); anExplorer.More(); anExplorer.Next()) {
+    //     const TopoDS_Vertex& aVertex = TopoDS::Vertex(anExplorer.Current());
+    //     std::cout << "  Found a Vertex" << std::endl;
+    // }
 }
 
 void OpenParEMg::on_actionBrep_triggered ()
@@ -291,24 +378,48 @@ void OpenParEMg::on_actionBrep_triggered ()
             BRepTools::Read(s,brepFile,b);
             brepFile.close();
             //TopTools::Dump(s, std::cout);
-            //ListChildren(s);
+            //xxx
+            std::cout << "Number of children=" << s.NbChildren() << std::endl; std::cout.flush();
+            ListChildren(s);
 
             ui->drawingWindow->clearDrawing();
             Handle(AIS_Shape) drawingShape=new AIS_Shape (s);
             ui->drawingWindow->displayDrawing(drawingShape);
+            ui->drawingWindow->fitAll();
 
             QTreeWidgetItem *item=new QTreeWidgetItem(0);
             item->setText(0,base);
             drawing.addChild(item);
             ui->drawingItemTree->show();
+
+            int i=0;
+            for (TopExp_Explorer anExplorer(s,TopAbs_SOLID); anExplorer.More(); anExplorer.Next()) {
+                const TopoDS_Solid& aSolid = TopoDS::Solid(anExplorer.Current());
+
+                QString text="Volume";
+                text.append(QString::number(i));
+                QTreeWidgetItem *solid=new QTreeWidgetItem(0);
+                solid->setText(0,text);
+                item->addChild(solid);
+                ui->drawingItemTree->show();
+
+                i++;
+            }
         }
     }
 
     ui->drawingWindow->updateView();
 }
 
-void OpenParEMg::on_actionExit_triggered()
+void OpenParEMg::on_actionExit_triggered ()
 {
     exit(0);
+}
+
+void OpenParEMg::on_actionSelect_Database_triggered ()
+{
+    SelectMaterialsDatabase *selectMaterialsDatabase=new SelectMaterialsDatabase(&projData,&absolutePath);
+    selectMaterialsDatabase->exec();
+    delete selectMaterialsDatabase;
 }
 

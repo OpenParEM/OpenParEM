@@ -566,10 +566,10 @@ void init_project (struct projectData *data) {
    data->refinement_absolute_tolerance=1e-6;
    data->refinement_variable=allocCopyString("SandH");  
 
-   data->materials_global_path=allocCopyString("../");
-   data->materials_global_name=allocCopyString("global_materials");
+   data->materials_global_path=allocCopyString("./");
+   data->materials_global_name=allocCopyString("");
    data->materials_local_path=allocCopyString("./");
-   data->materials_local_name=allocCopyString("local_materials");
+   data->materials_local_name=allocCopyString("");
    data->materials_default_boundary=allocCopyString("PEC");
    data->materials_check_limits=1;
 
@@ -638,6 +638,8 @@ void init_project (struct projectData *data) {
    data->debug_tempfiles_keep=0;
    data->debug_refine_preconditioner=1;
 
+   data->gui_brep_file=allocCopyString("");
+
    data->field_points_count=0;
    data->field_points_allocated=0;
    data->field_points_x=NULL;
@@ -680,6 +682,8 @@ void free_project (struct projectData *data) {
    }
    data->inputAntennaPatternsCount=0;
    data->inputAntennaPatternsAllocated=0;
+
+   if (data->gui_brep_file) free (data->gui_brep_file);
 
    if (data->field_points_x) free(data->field_points_x);
    if (data->field_points_y) free(data->field_points_y);
@@ -952,6 +956,9 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
 
    matched=0; if (defaultData && double_compare(data->debug_refine_preconditioner,defaultData->debug_refine_preconditioner,1e-14)) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.refine.preconditioner %d\n",indent,comment[matched],data->debug_refine_preconditioner);
+
+   matched=0; if (defaultData && strcmp(data->gui_brep_file,defaultData->gui_brep_file) == 0) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.brep.file %s\n",indent,comment[matched],data->gui_brep_file);
 
    // no default field points, so print all
    i=0;
@@ -2371,6 +2378,16 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
+               else if (strcmp(keyword,"gui.brep.file") == 0) {
+                   value=strtok(NULL," ");
+                   if (is_text(value)) {
+                       free(data->gui_brep_file);
+                       data->gui_brep_file=allocCopyString(value);
+                       value=strtok(NULL," ");
+                       if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
                else if (strcmp(keyword,"field.point") == 0) {
                   if (commaCount == 2) {
                      value=strtok(NULL," ,");
@@ -2650,6 +2667,10 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send(&(data->debug_tempfiles_keep),1,MPI_INT,i,1000076,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->debug_refine_preconditioner),1,MPI_INT,i,1000110,PETSC_COMM_WORLD);
 
+         length=strlen(data->gui_brep_file);
+         ierr=MPI_Send (&length,1,MPI_INT,i,1000089,PETSC_COMM_WORLD);
+         ierr=MPI_Send(data->gui_brep_file,length,MPI_CHAR,i,1000090,PETSC_COMM_WORLD);
+
          ierr=MPI_Send(&(data->field_points_count),1,MPI_INT,i,1000077,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->field_points_x,data->field_points_count,MPI_DOUBLE,i,1000078,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->field_points_y,data->field_points_count,MPI_DOUBLE,i,1000079,PETSC_COMM_WORLD);
@@ -2863,6 +2884,12 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(&(data->debug_skip_forced_reciprocity),1,MPI_INT,0,1000086,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->debug_tempfiles_keep),1,MPI_INT,0,1000076,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->debug_refine_preconditioner),1,MPI_INT,0,1000110,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+      ierr=MPI_Recv(&length,1,MPI_INT,0,1000089,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      if (data->gui_brep_file) free(data->gui_brep_file);
+      data->gui_brep_file=(char *) malloc((length+1)*sizeof(char));
+      ierr=MPI_Recv(data->gui_brep_file,length,MPI_CHAR,0,1000090,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      data->gui_brep_file[length]='\0';
 
       ierr=MPI_Recv(&(data->field_points_count),1,MPI_INT,0,1000077,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       data->field_points_allocated=data->field_points_count;

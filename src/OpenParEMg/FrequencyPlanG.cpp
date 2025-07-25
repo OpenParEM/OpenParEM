@@ -20,14 +20,15 @@
 
 #include "FrequencyPlanG.h"
 #include "ui_FrequencyPlanG.h"
+#include "CustomLineEdit.h"
+#include "FrequencyView.h"
 
-FrequencyPlanG::FrequencyPlanG(QWidget *parent)
+FrequencyPlanG::FrequencyPlanG (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::FrequencyPlanG)
 {
     ui->setupUi(this);
     this->setFixedWidth(695);
-    //this->setFixedSize(695,252);
 
     doubleValidator.setBottom(0);
     intValidator.setBottom(0);
@@ -82,7 +83,7 @@ FrequencyPlanG::FrequencyPlanG(QWidget *parent)
     ui->adaptiveFrequencies->setEnabled(false);
 }
 
-FrequencyPlanG::~FrequencyPlanG()
+FrequencyPlanG::~FrequencyPlanG ()
 {
     delete ui;
 }
@@ -333,7 +334,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
     ui->frequencyPlanGOk->setEnabled(false);
 }
 
-void FrequencyPlanG::on_frequencyAdd_clicked()
+void FrequencyPlanG::on_frequencyAdd_clicked ()
 {
     int currentRow=ui->frequencyTable->currentRow()+1;
     ui->frequencyTable->insertRow(currentRow);
@@ -437,8 +438,7 @@ void FrequencyPlanG::on_frequencyAdd_clicked()
     ui->adaptiveFrequencies->setEnabled(true);
 }
 
-
-void FrequencyPlanG::on_frequencyDelete_clicked()
+void FrequencyPlanG::on_frequencyDelete_clicked ()
 {
     int currentRow=ui->frequencyTable->currentRow();
     ui->frequencyTable->removeRow(currentRow);
@@ -479,7 +479,7 @@ void FrequencyPlanG::on_frequencyDelete_clicked()
     ui->frequencyPlanGOk->setEnabled(true);
 }
 
-void FrequencyPlanG::on_frequencyPlanGOk_clicked()
+void FrequencyPlanG::on_frequencyPlanGOk_clicked ()
 {
     // checks
     if (check_inputs()) return;
@@ -489,7 +489,7 @@ void FrequencyPlanG::on_frequencyPlanGOk_clicked()
     close();
 }
 
-void FrequencyPlanG::get_projData()
+void FrequencyPlanG::get_projData ()
 {
     // AMR
     if (projData->refinement_frequency) free(projData->refinement_frequency);
@@ -607,13 +607,12 @@ void FrequencyPlanG::get_projData()
     }
 }
 
-
-void FrequencyPlanG::on_frequencyPlanGCancel_clicked()
+void FrequencyPlanG::on_frequencyPlanGCancel_clicked ()
 {
     close();
 }
 
-void FrequencyPlanG::typeComboBox_changed(int newIndex)
+void FrequencyPlanG::typeComboBox_changed (int newIndex)
 {
     int currentRow=ui->frequencyTable->currentRow();
     QLineEdit *currentRowWidget=(QLineEdit *) ui->frequencyTable->cellWidget(currentRow,6);
@@ -783,8 +782,7 @@ void FrequencyPlanG::typeComboBox_changed(int newIndex)
     }
 }
 
-
-void FrequencyPlanG::on_AMR_checkStateChanged(const Qt::CheckState &arg1)
+void FrequencyPlanG::on_AMR_checkStateChanged (const Qt::CheckState &arg1)
 {
     // nothing to do if there is no data
     if (ui->frequencyTable->rowCount() == 0) return;
@@ -827,8 +825,7 @@ void FrequencyPlanG::on_AMR_checkStateChanged(const Qt::CheckState &arg1)
     ui->frequencyPlanGOk->setEnabled(true);
 }
 
-
-void FrequencyPlanG::on_adaptiveFrequencies_activated(int newIndex)
+void FrequencyPlanG::on_adaptiveFrequencies_activated (int newIndex)
 {
     // nothing to do if there is no data
     if (ui->frequencyTable->rowCount() == 0) return;
@@ -879,19 +876,19 @@ void FrequencyPlanG::on_adaptiveFrequencies_activated(int newIndex)
     ui->frequencyPlanGOk->setEnabled(true);
 }
 
-void FrequencyPlanG::refine_checkStateChanged()
+void FrequencyPlanG::refine_checkStateChanged ()
 {
     ui->frequencyDelete->setEnabled(true);
     ui->frequencyPlanGOk->setEnabled(true);
 }
 
-void FrequencyPlanG::frequency_textChanged()
+void FrequencyPlanG::frequency_textChanged ()
 {
     ui->frequencyDelete->setEnabled(true);
     ui->frequencyPlanGOk->setEnabled(true);
 }
 
-bool FrequencyPlanG::check_inputs()
+bool FrequencyPlanG::check_inputs ()
 {
     // must have a refine box checked for plan refinement_frequency
     if (ui->AMR->isChecked() && ui->adaptiveFrequencies->currentIndex() == 0) {
@@ -1034,7 +1031,7 @@ bool FrequencyPlanG::check_inputs()
     return false;
 }
 
-void FrequencyPlanG::on_planView_clicked()
+void FrequencyPlanG::on_planView_clicked ()
 {
     if (check_inputs()) return;
 
@@ -1059,4 +1056,3 @@ void FrequencyPlanG::on_planView_clicked()
     free_project(&tempProjData);
     projData=saveProjData;
 }
-

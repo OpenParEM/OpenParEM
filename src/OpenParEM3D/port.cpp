@@ -19,9 +19,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <quadmath.h>
+#include <iostream>
+#include <sstream>
+#include <filesystem>
+
 #include "port.hpp"
 #include "fem3D.hpp"
 #include "results.hpp"
+#include "petscsys.h"
+
 
 #ifdef HAS_GUI
 #include <Qt>
@@ -1388,7 +1394,9 @@ bool Boundary::snapToMeshBoundary (vector<Path *> *pathList, Mesh *mesh, string 
 
 //xxx
 #ifdef HAS_GUI
-void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, QTreeWidgetItem *boundaryWidgetItem)
+
+void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+                     QTreeWidgetItem *boundaryWidgetItem, MaterialDatabase *materialDatabase)
 {
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
     drawingWindow->displayDrawing(drawingShape);
@@ -1396,11 +1404,15 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
 
     // boundary type
 
+    // name
+
     QString textName=QString::fromStdString(get_name());
     QTreeWidgetItem *itemName=new QTreeWidgetItem(0);
     itemName->setText(0,textName);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     boundaryWidgetItem->addChild(itemName);
+
+    // type
 
     QTreeWidgetItem *itemType=new QTreeWidgetItem(0);
     itemType->setFlags(itemType->flags() | Qt::ItemIsEditable);
@@ -1421,16 +1433,33 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
     if (is_radiation()) comboType->setCurrentIndex(3);
     drawingItemTree->setItemWidget(itemType,0,comboType);
 
-    QObject::connect(comboType, &CustomComboBox::CustomCurrentIndexChanged, &comboZdefIndexChanged);
+    QObject::connect(comboType, &CustomComboBox::CustomCurrentIndexChanged, &comboIndexChanged);
+
 
     // boundary type dependent data
 
-    QString textMaterial=QString::fromStdString(get_material());
+    // material
+
     QTreeWidgetItem *itemMaterial=new QTreeWidgetItem(0);
-    itemMaterial->setText(0,textMaterial);
     itemMaterial->setFlags(itemMaterial->flags() | Qt::ItemIsEditable);
     itemMaterial->setToolTip(0,"Boundary material.");
     itemName->addChild(itemMaterial);
+
+    CustomComboBox *comboMaterial=new CustomComboBox();
+    if (materialDatabase) {
+        long unsigned int i=0;
+        while (i < materialDatabase->get_size()) {
+            Material *material=materialDatabase->get_material(i);
+            // Todo: add only conductors
+            comboMaterial->addItem(QString::fromStdString(material->get_name()->get_value()));
+            i++;
+        }
+    }
+    drawingItemTree->setItemWidget(itemMaterial,0,comboMaterial);
+
+    QObject::connect(comboMaterial, &CustomComboBox::CustomCurrentTextChanged, &comboTextChanged);
+
+    // wave impedance
 
     QTreeWidgetItem *itemWaveImpedance=new QTreeWidgetItem(0);
     itemWaveImpedance->setFlags(itemWaveImpedance->flags() | Qt::ItemIsEditable);
@@ -1441,6 +1470,7 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
     textWaveImpedance->setText(QString::number(get_wave_impedance()));
     textWaveImpedance->setValidator(&doubleValidator);
     drawingItemTree->setItemWidget(itemWaveImpedance,0,textWaveImpedance);
+
 
     // set initial visibility
     if (is_surface_impedance()) itemWaveImpedance->setHidden(true);
@@ -6303,20 +6333,7 @@ bool Port::has_mode (Mode *mode, long unsigned int *index)
 
 //xxx
 #ifdef HAS_GUI
-void comboZdefIndexChanged (int index, Port *port, Boundary *boundary, int type, QTreeWidgetItem *itemMaterial, QTreeWidgetItem *itemWaveImpedance) {
-    std::cout << "before:" << index << std::endl;
-    if (port) {
-       std::cout << "  port->is_line()=" << port->is_line() << std::endl;
-       std::cout << "  port->is_modal()=" << port->is_modal() << std::endl;
-       std::cout << "  impedance_definition=" << port->get_impedance_definition() << std::endl;
-       std::cout << "  impedance_calculation=" << port->get_impedance_calculation() << std::endl;
-    }
-    if (boundary) {
-        std::cout << "  boundary->is_perfect_electric_conductor()=" << boundary->is_perfect_electric_conductor() << endl;
-        std::cout << "  boundary->is_perfect_magnetic_conductor()=" << boundary->is_perfect_magnetic_conductor() << endl;
-        std::cout << "  boundary->is_surface_impedance()=" << boundary->is_surface_impedance() << endl;
-        std::cout << "  boundary->is_radiation()=" << boundary->is_radiation() << endl;
-    }
+void comboIndexChanged (int index, Port *port, Boundary *boundary, int type, QTreeWidgetItem *itemMaterial, QTreeWidgetItem *itemWaveImpedance) {
 
     // Port: impedance definition
     if (port && type == 0) {
@@ -6356,20 +6373,12 @@ void comboZdefIndexChanged (int index, Port *port, Boundary *boundary, int type,
         }
     }
 
-    std::cout << "after:" << index << std::endl;
-    if (port) {
-       std::cout << "  port->is_line()=" << port->is_line() << std::endl;
-       std::cout << "  port->is_modal()=" << port->is_modal() << std::endl;
-       std::cout << "  impedance_definition=" << port->get_impedance_definition() << std::endl;
-       std::cout << "  impedance_calculation=" << port->get_impedance_calculation() << std::endl;
-    }
-    if (boundary) {
-        std::cout << "  boundary->is_perfect_electric_conductor()=" << boundary->is_perfect_electric_conductor() << endl;
-        std::cout << "  boundary->is_perfect_magnetic_conductor()=" << boundary->is_perfect_magnetic_conductor() << endl;
-        std::cout << "  boundary->is_surface_impedance()=" << boundary->is_surface_impedance() << endl;
-        std::cout << "  boundary->is_radiation()=" << boundary->is_radiation() << endl;
-    }
     return;
+}
+
+void comboTextChanged (QString text, Boundary *boundary)
+{
+    if (boundary) boundary->set_material(text.toStdString());
 }
 
 void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, QTreeWidgetItem *portWidgetItem)
@@ -6406,7 +6415,7 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
     if (impedance_definition.get_value().compare("PI") == 0) comboZdef->setCurrentIndex(2);
     drawingItemTree->setItemWidget(itemImpedanceDefinition,0,comboZdef);
 
-    QObject::connect(comboZdef, &CustomComboBox::CustomCurrentIndexChanged, &comboZdefIndexChanged);
+    QObject::connect(comboZdef, &CustomComboBox::CustomCurrentIndexChanged, &comboIndexChanged);
 
     // impedance calculation
 
@@ -6427,9 +6436,8 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
     if (is_modal()) comboZcalc->setCurrentIndex(1);
     drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
 
-    QObject::connect(comboZcalc, &CustomComboBox::CustomCurrentIndexChanged, &comboZdefIndexChanged);
+    QObject::connect(comboZcalc, &CustomComboBox::CustomCurrentIndexChanged, &comboIndexChanged);
 }
-
 
 #endif
 
@@ -8481,7 +8489,8 @@ void BoundaryDatabase::calculateFarField (double r, Vector center, double radiat
 }
 
 #ifdef HAS_GUI
-void BoundaryDatabase::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, QTreeWidgetItem *portTreeItem, QTreeWidgetItem *boundaryTreeItem)
+void BoundaryDatabase::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+                             QTreeWidgetItem *portTreeItem, QTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
 {
     // ports
     long unsigned int i=0;
@@ -8493,7 +8502,7 @@ void BoundaryDatabase::draw (struct projectData *projData, CustomOpenGLWidget *d
     // boundaries
     i=0;
     while (i < boundaryList.size()) {
-        boundaryList[i]->draw(projData,drawingWindow,drawingItemTree,boundaryTreeItem);
+        boundaryList[i]->draw(projData,drawingWindow,drawingItemTree,boundaryTreeItem,materialDatabase);
         i++;
     }
 

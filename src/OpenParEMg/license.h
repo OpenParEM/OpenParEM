@@ -32,11 +32,11 @@ class License : public QDialog
     Q_OBJECT
 
 public:
-    explicit License(QWidget *parent = nullptr);
+    explicit License (QWidget *parent = nullptr);
     ~License();
 
 private slots:
-    void on_showLicense_clicked();
+    void on_showLicense_clicked ();
 
 private:
     Ui::License *ui;

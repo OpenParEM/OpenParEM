@@ -21,20 +21,19 @@
 #include "license.h"
 #include "ui_license.h"
 
-License::License(QWidget *parent)
+License::License (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::License)
 {
     ui->setupUi(this);
-    //this->setFixedSize(872,487);
 }
 
-License::~License()
+License::~License ()
 {
     delete ui;
 }
 
-void License::on_showLicense_clicked()
+void License::on_showLicense_clicked ()
 {
     close();
 }

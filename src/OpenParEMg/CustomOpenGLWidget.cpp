@@ -1,299 +1,174 @@
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//    OpenParEM3g - A GUI for OpenParEM3D                                     //
+//    Copyright (C) 2025 Brian Young                                          //
+//                                                                            //
+//    This program is free software: you can redistribute it and/or modify    //
+//    it under the terms of the GNU General Public License as published by    //
+//    the Free Software Foundation, either version 3 of the License, or       //
+//    (at your option) any later version.                                     //
+//                                                                            //
+//    This program is distributed in the hope that it will be useful,         //
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of          //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           //
+//    GNU General Public License for more details.                            //
+//                                                                            //
+//    You should have received a copy of the GNU General Public License       //
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.   //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 #include "CustomOpenGLWidget.h"
-#include "CustomAIS_Shape.h"
-#include <V3d_View.hxx>
-#include <iostream>
+#include <glx.h>
+#include "OcctQtTools.h"
 
 #include <QWidget>
-#include <AIS_InteractiveContext.hxx>
-#include <V3d_View.hxx>
-#include <Graphic3d_GraphicDriver.hxx>
-#include <OpenGl_GraphicDriver.hxx>
+#include <QResizeEvent>
+#include <QColorSpace>
 
-//#include "BreptViewerWidget.h"
-#include <Aspect_DisplayConnection.hxx>
-#include <Xw_Window.hxx>
+#include <V3d_View.hxx>
 #include <TopoDS_Shape.hxx>
 #include <AIS_Shape.hxx>
-#include <QResizeEvent>
-
-#include <Standard_Stream.hxx>
-
-
 #include <BRepTools.hxx>
-#include <TopoDS_Shape.hxx>
+#include "Aspect_NeutralWindow.hxx"
+#include <OpenGl_FrameBuffer.hxx>
 
-#include <glx.h>
-
-
-CustomOpenGLWidget::CustomOpenGLWidget(QWidget* theParent)
-    : QOpenGLWidget(theParent)
+CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (theParent)
 {
-  aDisp   = new Aspect_DisplayConnection();
+    // settings
+    setMouseTracking(true);
+    setBackgroundRole(QPalette::NoRole);
+    setFocusPolicy(Qt::StrongFocus);
+    setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
 
-  aDriver = new OpenGl_GraphicDriver(aDisp);
-  //aDriver->ChangeOptions().buffersNoSwap = true;
-  //aDriver->ChangeOptions().buffersOpaqueAlpha = true;
-  aDriver->ChangeOptions().useSystemBuffer = false;
+    // displacy connection
+    displayConnection=new Aspect_DisplayConnection();
 
-  // create viewer
-  viewer = new V3d_Viewer(aDriver);
-  viewer->SetDefaultBackgroundColor(Quantity_NOC_BLACK);
-  viewer->SetDefaultLights();
-  viewer->SetLightOn();
-  //viewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines);
+    // graphics driver
+    graphicDriver=new OpenGl_GraphicDriver(displayConnection);
+    graphicDriver->ChangeOptions().buffersNoSwap = true;
+    graphicDriver->ChangeOptions().useSystemBuffer = false;
 
-  // create AIS context
-  viewerContext = new AIS_InteractiveContext(viewer);
+    // 3D viewer
+    viewer=new V3d_Viewer(graphicDriver);
+    viewer->SetDefaultBackgroundColor(Quantity_NOC_BLACK);
+    viewer->SetDefaultLights();
+    viewer->SetLightOn();
+    //viewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines);  // shows a 2D grid; ToDo: hook this up when drawing is enabled
 
-  myViewCube = new AIS_ViewCube();
-  myViewCube->SetViewAnimation(myViewAnimation);
-  myViewCube->SetFixedAnimationLoop(false);
-  myViewCube->SetAutoStartAnimation(true);
-  myViewCube->TransformPersistence()->SetOffset2d(Graphic3d_Vec2i(100, 150));
+    // AIS context
+    viewerContext=new AIS_InteractiveContext(viewer);
 
-  view = viewer->CreateView();
-  view->SetImmediateUpdate(false);
-  view->ChangeRenderingParams().NbMsaaSamples=4;
-  view->ChangeRenderingParams().ToShowStats=false;
-  //view->ChangeRenderingParams().CollectedStats = (Graphic3d_RenderingParams::PerfCounters)(
-  //  Graphic3d_RenderingParams::PerfCounters_FrameRate | Graphic3d_RenderingParams::PerfCounters_Triangles);
+    // create an orientation cube for the display
+    viewCube=new AIS_ViewCube();
+    viewCube->SetViewAnimation(myViewAnimation);
+    viewCube->SetFixedAnimationLoop(false);
+    viewCube->SetAutoStartAnimation(true);
+    viewCube->TransformPersistence()->SetOffset2d(Graphic3d_Vec2i(100, 150));
 
-  // Qt widget setup
-  setMouseTracking(true);
-  setBackgroundRole(QPalette::NoRole);
-  setFocusPolicy(Qt::StrongFocus);
-  setUpdatesEnabled(true);
-  setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
-
-  // OpenGL setup managed by Qt
-  QSurfaceFormat aGlFormat;
-  aGlFormat.setDepthBufferSize(24);
-  aGlFormat.setStencilBufferSize(8);
-  aGlFormat.setColorSpace (QSurfaceFormat::sRGBColorSpace);
-  setTextureFormat (GL_SRGB8_ALPHA8);
-
-  setFormat(aGlFormat);
+    // viewer
+    view=viewer->CreateView();
+    view->SetImmediateUpdate(false);
+    view->ChangeRenderingParams().NbMsaaSamples=4;
+    view->ChangeRenderingParams().ToShowStats=false;
 }
 
-
-CustomOpenGLWidget::~CustomOpenGLWidget()
+CustomOpenGLWidget::~CustomOpenGLWidget ()
 {
-    Handle(Aspect_DisplayConnection) aDisp = viewer->Driver()->GetDisplayConnection();
-
-    // release OCCT viewer
     viewerContext->RemoveAll(false);
     viewerContext.Nullify();
     view->Remove();
     view.Nullify();
     viewer.Nullify();
 
-    // make active OpenGL context created by Qt
     makeCurrent();
-    aDisp.Nullify();
+    displayConnection.Nullify();
 }
 
 void CustomOpenGLWidget::initializeGL ()
 {
+    const QRect viewGeometry=rect();
+    const Graphic3d_Vec2i viewSize(viewGeometry.right()-viewGeometry.left(),viewGeometry.bottom()-viewGeometry.top());
 
-    initializeOpenGLFunctions(); // Required for using OpenGL functions
-    //glClearColor(0.5f, 0.0f, 0.0f, 1.0f); // Set background color
-
-
-    const QRect           aRect = rect();
-    const Graphic3d_Vec2i aViewSize(aRect.right() - aRect.left(), aRect.bottom() - aRect.top());
-
-    Aspect_Drawable aNativeWin = (Aspect_Drawable)winId();
-
-    Handle(OpenGl_Context) aGlCtx = new OpenGl_Context();
-    if (!aGlCtx->Init())
-    {
-        Message::SendFail() << "Error: OpenGl_Context is unable to wrap OpenGL context";
-        QMessageBox::critical(0, "Failure", "OpenGl_Context is unable to wrap OpenGL context");
-        //QApplication::exit(1);
-        return;
-    }
-
-    Handle(Aspect_NeutralWindow) aWindow = Handle(Aspect_NeutralWindow)::DownCast(view->Window());
-    if (!aWindow.IsNull())
-    {
-        //aWindow->SetNativeHandle(aNativeWin);
-        aWindow->SetSize(aViewSize.x(), aViewSize.y());
-        view->SetWindow(aWindow, aGlCtx->RenderingContext());
-        //dumpGlInfo(true, true);
-    }
-    else
-    {
-        aWindow = new Aspect_NeutralWindow();
-
-        Aspect_Drawable aNativeWin = (Aspect_Drawable )winId();
-        aWindow->SetNativeHandle (aNativeWin);
-        aWindow->SetSize (aViewSize.x(), aViewSize.y());
-        view->SetWindow (aWindow, (Aspect_RenderingContext) glXGetCurrentContext());
-        //dumpGlInfo (true);
-
-        //viewerContext->Display (myViewCube, 0, 0, false);
-    }
-
-    {
-        // dummy shape for testing
-        //TopoDS_Shape      aBox   = BRepPrimAPI_MakeBox(100.0, 50.0, 90.0).Shape();
-        //Handle(AIS_Shape) aShape = new AIS_Shape(aBox);
-        //viewerContext->Display(aShape, 0, 0, false);
-    }
-
-
+    Handle(Aspect_NeutralWindow) aspectNeutralWindow=new Aspect_NeutralWindow();
+    Aspect_Drawable nativeWindow=(Aspect_Drawable)winId();
+    aspectNeutralWindow->SetNativeHandle(nativeWindow);
+    aspectNeutralWindow->SetSize (viewSize.x(),viewSize.y());
+    view->SetWindow (aspectNeutralWindow,(Aspect_RenderingContext) glXGetCurrentContext());
 }
 
 void CustomOpenGLWidget::paintGL ()
 {
-    if (view->Window().IsNull())
-    {
-        return;
-    }
+    if (view->Window().IsNull()) return;
 
-    glBegin(GL_LINES);
-    // Define the start point of the line
-    glVertex2f(-0.5f, -0.5f);
-    // Define the end point of the line
-    glVertex2f(0.5f, 0.5f);
-    glEnd();
-
-    // wrap FBO created by QOpenGLWidget
-    Handle(OpenGl_GraphicDriver) aDriver = Handle(OpenGl_GraphicDriver)::DownCast (viewerContext->CurrentViewer()->Driver());
-    const Handle(OpenGl_Context)& aGlCtx = aDriver->GetSharedContext();
-    Handle(OpenGl_FrameBuffer) aDefaultFbo = aGlCtx->DefaultFrameBuffer();
-    if (aDefaultFbo.IsNull())
-    {
-        aDefaultFbo = new OpenGl_FrameBuffer();
-        aGlCtx->SetDefaultFrameBuffer (aDefaultFbo);
+    // wrap frame buffer
+    const Handle(OpenGl_Context)& sharedContext=graphicDriver->GetSharedContext();
+    Handle(OpenGl_FrameBuffer) defaultFrameBuffer=sharedContext->DefaultFrameBuffer();
+    if (defaultFrameBuffer.IsNull()) {
+        defaultFrameBuffer=new OpenGl_FrameBuffer();
+        sharedContext->SetDefaultFrameBuffer(defaultFrameBuffer);
     }
-    if (!aDefaultFbo->InitWrapper (aGlCtx))
-    {
-        aDefaultFbo.Nullify();
-        Message::DefaultMessenger()->Send ("Default FBO wrapper creation failed", Message_Fail);
-        QMessageBox::critical (0, "Failure", "Default FBO wrapper creation failed");
-        //QApplication::exit (1);
-        return;
-    }
+    defaultFrameBuffer->InitWrapper(sharedContext);
 
-    Graphic3d_Vec2i aViewSizeOld;
-    //const QRect aRect = rect(); Graphic3d_Vec2i aViewSizeNew(aRect.right() - aRect.left(), aRect.bottom() - aRect.top());
-    Graphic3d_Vec2i aViewSizeNew(aDefaultFbo->GetVPSizeX(),aDefaultFbo->GetVPSizeY());
-    Handle(Aspect_NeutralWindow) aWindow = Handle(Aspect_NeutralWindow)::DownCast (view->Window());
-    aWindow->Size (aViewSizeOld.x(), aViewSizeOld.y());
-    if (aViewSizeNew != aViewSizeOld)
-    {
-        aWindow->SetSize (aViewSizeNew.x(), aViewSizeNew.y());
+    // handle re-sizing of the window
+
+    Handle(Aspect_NeutralWindow) aspectNeutralWindow=Handle(Aspect_NeutralWindow)::DownCast(view->Window());
+    Graphic3d_Vec2i viewSizeOld;
+    aspectNeutralWindow->Size(viewSizeOld.x(),viewSizeOld.y());
+
+    Graphic3d_Vec2i viewSizeNew(defaultFrameBuffer->GetVPSizeX(),defaultFrameBuffer->GetVPSizeY());
+
+    if (viewSizeNew != viewSizeOld) {
+        aspectNeutralWindow->SetSize(viewSizeNew.x(),viewSizeNew.y());
         view->MustBeResized();
         view->Invalidate();
     }
 
-    // test shape
-    //TopoDS_Shape      aBox   = BRepPrimAPI_MakeBox(100.0, 50.0, 90.0).Shape();
-    //Handle(AIS_Shape) aShape = new AIS_Shape(aBox);
-    //viewerContext->Display(aShape, 0, 0, false);
+    // display the orientation cube
+    viewerContext->Display(viewCube,0,0,false);
 
-
-    //TopoDS_Shape      aBox2   = BRepPrimAPI_MakeBox(200.0, 100.0, 180.0).Shape();
-    //Handle(AIS_Shape) aShape2 = new AIS_Shape(aBox2);
-    //viewerContext->Display(aShape2, 0, 0, false);
-
-    // show drawing
-    //cout << "drawing.IsNull()=" << drawing.IsNull() << endl;
-    //viewerContext->Display(drawing, 0, 0, true);
-
-    viewerContext->Display (myViewCube, 0, 0, false);
-
-    // flush pending input events and redraw the viewer
+    // flush and redraw
     view->InvalidateImmediate();
-    FlushViewEvents (viewerContext, view, true);
+    FlushViewEvents (viewerContext,view,true);
 }
 
-void CustomOpenGLWidget::updateView()
+void CustomOpenGLWidget::updateView ()
 {
     update();
-    // if (window() != NULL) { window()->update(); }
 }
 
-void CustomOpenGLWidget::handleViewRedraw(const Handle(AIS_InteractiveContext)& theCtx,
-                                               const Handle(V3d_View)&               theView)
-{
-    AIS_ViewController::handleViewRedraw(theCtx, theView);
-    if (myToAskNextFrame)
-        updateView(); // ask more frames for animation
-}
-
-void CustomOpenGLWidget::dumpGlInfo(bool theIsBasic, bool theToPrint)
-{
-    TColStd_IndexedDataMapOfStringString aGlCapsDict;
-    view->DiagnosticInformation(aGlCapsDict,
-                                  theIsBasic ? Graphic3d_DiagnosticInfo_Basic : Graphic3d_DiagnosticInfo_Complete);
-    TCollection_AsciiString anInfo;
-    for (TColStd_IndexedDataMapOfStringString::Iterator aValueIter(aGlCapsDict); aValueIter.More(); aValueIter.Next())
-    {
-        if (!aValueIter.Value().IsEmpty())
-        {
-            if (!anInfo.IsEmpty())
-                anInfo += "\n";
-
-            anInfo += aValueIter.Key() + ": " + aValueIter.Value();
-        }
-    }
-
-    if (theToPrint)
-        Message::SendInfo(anInfo);
-
-    myGlInfo=QString::fromUtf8(anInfo.ToCString());
-}
-
-void CustomOpenGLWidget::clearDrawing()
+void CustomOpenGLWidget::clearDrawing ()
 {
     viewerContext->RemoveAll(false);
     viewerContext->UpdateCurrentViewer();
 }
 
-void CustomOpenGLWidget::displayDrawing (Handle(AIS_Shape) aShape)
+void CustomOpenGLWidget::displayDrawing (Handle(AIS_Shape) shape)
 {
-    viewerContext->Display(aShape, 0, 0, false);
+    viewerContext->Display(shape,0,0,false);
     viewerContext->UpdateCurrentViewer();
 
-    // ToDo: scale for entire drawing
     // scale to fit the new object
-    viewerContext->SetSelected(aShape,false);
-    viewerContext->FitSelected(view,0,false);
+    //viewerContext->SetSelected(shape,false);
+    //viewerContext->FitSelected(view,0,false);
 }
 
-void CustomOpenGLWidget::wheelEvent(QWheelEvent* theEvent)
+void CustomOpenGLWidget::wheelEvent (QWheelEvent* event)
 {
-    QOpenGLWidget::wheelEvent(theEvent);
+    QOpenGLWidget::wheelEvent(event);
     if (view.IsNull()) return;
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    const Graphic3d_Vec2i aPos(Graphic3d_Vec2d(theEvent->position().x(), theEvent->position().y()));
-#else
-    const Graphic3d_Vec2i aPos(theEvent->pos().x(), theEvent->pos().y());
-#endif
-    if (!view->Subviews().IsEmpty())
-    {
-        Handle(V3d_View) aPickedView = view->PickSubview(aPos);
-        if (!aPickedView.IsNull() && aPickedView != focusView)
-        {
-            // switch input focus to another subview
-            OnSubviewChanged(viewerContext, focusView, aPickedView);
-            updateView();
-            return;
-        }
-    }
-
-    if (UpdateZoom(Aspect_ScrollDelta(aPos, double(theEvent->angleDelta().y()) / 8.0)))
-        updateView();
+    const Graphic3d_Vec2i position(Graphic3d_Vec2d(event->position().x(),event->position().y()));
+    if (UpdateZoom(Aspect_ScrollDelta(position,double(event->angleDelta().y())/8.0))) updateView();
 }
 
-void CustomOpenGLWidget::keyPressEvent(QKeyEvent* event)
+void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
 {
     if (view.IsNull()) return;
 
-    const Aspect_VKey aKey = OcctQtTools::qtKey2VKey(event->key());
+    // define hot keys for specific functionality
+    /*
+    const Aspect_VKey aKey=OcctQtTools::qtKey2VKey(event->key());
     switch (aKey)
     {
         case Aspect_VKey_Escape: {
@@ -306,29 +181,30 @@ void CustomOpenGLWidget::keyPressEvent(QKeyEvent* event)
             return;
         }
     }
+*/
     QOpenGLWidget::keyPressEvent(event);
 }
 
-void CustomOpenGLWidget::mousePressEvent(QMouseEvent* event)
+void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
     QOpenGLWidget::mousePressEvent(event);
     if (view.IsNull()) return;
 
-    const Graphic3d_Vec2i  aPnt(event->pos().x(), event->pos().y());
-    const Aspect_VKeyFlags aFlags = OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
-    if (UpdateMouseButtons(aPnt, OcctQtTools::qtMouseButtons2VKeys(event->buttons()), aFlags, false))
-        updateView();
+    // pass the mouse press from Qt to OCCT
+    const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
+    const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
+    if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateView();
 }
 
-void CustomOpenGLWidget::mouseReleaseEvent(QMouseEvent* event)
+void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
 
-    const Graphic3d_Vec2i  aPnt(event->pos().x(), event->pos().y());
-    const Aspect_VKeyFlags aFlags = OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
-    if (UpdateMouseButtons(aPnt, OcctQtTools::qtMouseButtons2VKeys(event->buttons()), aFlags, false))
-        updateView();
+    // pass the mouse release from Qt to OCCT
+    const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
+    const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
+    if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateView();
 }
 
 void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
@@ -336,12 +212,8 @@ void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
     QOpenGLWidget::mouseMoveEvent(event);
     if (view.IsNull()) return;
 
-    const Graphic3d_Vec2i aNewPos(event->pos().x(), event->pos().y());
-    if (UpdateMousePosition(aNewPos,
-                            OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
-                            OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),
-                            false))
-    {
-        updateView();
-    }
+    // pass the mouse position from Qt to OCCT
+    const Graphic3d_Vec2i position(event->pos().x(),event->pos().y());
+    if (UpdateMousePosition(position,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
+                                     OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateView();
 }

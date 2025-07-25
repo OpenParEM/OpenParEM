@@ -22,16 +22,11 @@
 #define PORT_H
 
 #include <quadmath.h>
-#include "mfem.hpp"
-#include "petscsys.h"
 #include <petsc.h>
 #include <fstream>
-#include <iostream>
-#include <sstream>
 #include <string>
-#include <limits>
-#include <filesystem>
 #include <unistd.h>
+#include "mfem.hpp"
 #include "project.h"
 #include "path.hpp"
 #include "OpenParEMmaterials.hpp"
@@ -205,7 +200,7 @@ class Boundary
       void print();
       bool snapToMeshBoundary (std::vector<Path *> *, mfem::Mesh *, std::string);
 #ifdef HAS_GUI
-      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, QTreeWidgetItem *);
+      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, QTreeWidgetItem *, MaterialDatabase *);
 #endif
 };
 
@@ -801,7 +796,7 @@ class BoundaryDatabase
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *, long unsigned int, long unsigned int);
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *);
 #ifdef HAS_GUI
-      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, QTreeWidgetItem *, QTreeWidgetItem *);
+      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, QTreeWidgetItem *, QTreeWidgetItem *, MaterialDatabase *);
 #endif
 };
 

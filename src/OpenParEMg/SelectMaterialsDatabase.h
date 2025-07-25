@@ -17,56 +17,44 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.   //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
-///
-#ifndef CUSTOMOPENGLWIDGET_H
-#define CUSTOMOPENGLWIDGET_H
 
-#include <QOpenGLWidget>
-#include <QMessageBox>
+#ifndef SELECTMATERIALSDATABASE_H
+#define SELECTMATERIALSDATABASE_H
 
-#include "OpenGl_GraphicDriver.hxx"
-#include <Aspect_DisplayConnection.hxx>
-#include <AIS_InteractiveContext.hxx>
-#include "AIS_ViewController.hxx"
-#include "AIS_Shape.hxx"
-#include "AIS_ViewCube.hxx"
+#include <QDialog>
+#include <unistd.h>
+#include "project.h"
 
-#include <Standard_WarningsDisable.hxx>
-#include <QMouseEvent>
-#include <Standard_WarningsRestore.hxx>
-#include <V3d_View.hxx>
+namespace Ui {
+class SelectMaterialsDatabase;
+}
 
-class CustomOpenGLWidget : public QOpenGLWidget, public AIS_ViewController
+class SelectMaterialsDatabase : public QDialog
 {
     Q_OBJECT
+
 public:
-    CustomOpenGLWidget (QWidget *parent = nullptr);
-    virtual ~CustomOpenGLWidget ();
+    explicit SelectMaterialsDatabase (struct projectData *, QString *, QWidget *parent = nullptr);
+    ~SelectMaterialsDatabase();
 
-    void updateView ();
-    void clearDrawing ();
-    void displayDrawing (Handle(AIS_Shape));
-
-    void fitAll () {view->FitAll(); view->Redraw();}
-
-    void wheelEvent (QWheelEvent*) override;
-    void keyPressEvent (QKeyEvent*) override;
-    void mousePressEvent (QMouseEvent*) override;
-    void mouseReleaseEvent (QMouseEvent*) override;
-    void mouseMoveEvent (QMouseEvent*) override;
-
-protected:
-    void initializeGL () override;
-    void paintGL () override;
+private slots:
+    void on_selectLocal_clicked ();
+    void on_selectGlobal_clicked ();
+    void on_OkButton_clicked ();
+    void on_cancelButton_clicked ();
+    void on_globalFile_stateChanged (int);
+    void on_localFile_stateChanged (int);
+    void on_globalMaterialFile_returnPressed ();
+    void on_localMaterialFile_returnPressed ();
 
 private:
-    Handle(Aspect_DisplayConnection) displayConnection;
-    Handle(OpenGl_GraphicDriver) graphicDriver;
-    Handle(V3d_Viewer) viewer;
-    Handle(V3d_View) view;
-    Handle(AIS_InteractiveContext) viewerContext;
-    Handle(V3d_View) focusView;
-    Handle(AIS_ViewCube) viewCube;
+    Ui::SelectMaterialsDatabase *ui;
+    struct projectData *projData;
+    QString *absolutePath;
+    char *globalPath, *globalFilename;
+    char *localPath, *localFilename;
+    bool globalIsValid;
+    bool localIsValid;
 };
 
-#endif // CUSTOMOPENGLWIDGET_H
+#endif // SELECTMATERIALSDATABASE_H

@@ -28,10 +28,6 @@
 #include <QMessageBox>
 #include "project.h"
 
-#include <iostream>
-#include "CustomLineEdit.h"
-#include "FrequencyView.h"
-
 extern "C" void init_project (struct projectData *);
 extern "C" void free_project (struct projectData *);
 
@@ -44,33 +40,23 @@ class FrequencyPlanG : public QDialog
     Q_OBJECT
 
 public:
-    explicit FrequencyPlanG(QWidget *parent = nullptr);
-    void set_projData(struct projectData *);
-    void get_projData();
-    ~FrequencyPlanG();
+    explicit FrequencyPlanG (QWidget *parent = nullptr);
+    void set_projData (struct projectData *);
+    void get_projData ();
+    ~FrequencyPlanG ();
 
 private slots:
-    void on_frequencyAdd_clicked();
-
-    void on_frequencyDelete_clicked();
-
-    void on_frequencyPlanGOk_clicked();
-
-    void on_frequencyPlanGCancel_clicked();
-
-    void typeComboBox_changed(int);
-
-    void refine_checkStateChanged();
-
-    void frequency_textChanged();
-
-    void on_AMR_checkStateChanged(const Qt::CheckState &arg1);
-
-    void on_adaptiveFrequencies_activated(int index);
-
-    bool check_inputs();
-
-    void on_planView_clicked();
+    void on_frequencyAdd_clicked ();
+    void on_frequencyDelete_clicked ();
+    void on_frequencyPlanGOk_clicked ();
+    void on_frequencyPlanGCancel_clicked ();
+    void typeComboBox_changed (int);
+    void refine_checkStateChanged ();
+    void frequency_textChanged ();
+    void on_AMR_checkStateChanged (const Qt::CheckState &arg1);
+    void on_adaptiveFrequencies_activated (int);
+    bool check_inputs ();
+    void on_planView_clicked ();
 
 private:
     Ui::FrequencyPlanG *ui;

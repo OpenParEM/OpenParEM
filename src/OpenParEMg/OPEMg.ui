@@ -101,7 +101,14 @@
     <addaction name="separator"/>
     <addaction name="actionMaterials_Editor"/>
    </widget>
+   <widget class="QMenu" name="menuMaterials">
+    <property name="title">
+     <string>Materials</string>
+    </property>
+    <addaction name="actionSelect_Database"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuMaterials"/>
    <addaction name="menuMesh"/>
    <addaction name="menuSimulate"/>
    <addaction name="menuTools"/>
@@ -166,6 +173,11 @@
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionSelect_Database">
+   <property name="text">
+    <string>Select Database ...</string>
    </property>
   </action>
  </widget>

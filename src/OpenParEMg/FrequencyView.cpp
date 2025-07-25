@@ -22,7 +22,7 @@
 #include "ui_FrequencyView.h"
 #include <qlineedit.h>
 
-FrequencyView::FrequencyView(QWidget *parent)
+FrequencyView::FrequencyView (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::FrequencyView)
 {
@@ -59,12 +59,12 @@ FrequencyView::FrequencyView(QWidget *parent)
     if (headerItem) headerItem->setToolTip("Adaptive mesh refinement restarts with the initial mesh if the frequency is marked with \"restart\".");
 }
 
-FrequencyView::~FrequencyView()
+FrequencyView::~FrequencyView ()
 {
     delete ui;
 }
 
-void FrequencyView::populate(struct projectData *projData)
+void FrequencyView::populate (struct projectData *projData)
 {
     if (projData->inputFrequencyPlansCount > 0 &&
         !frequencyPlan.assemble(projData->refinement_frequency,projData->inputFrequencyPlansCount,projData->inputFrequencyPlans)) {
@@ -118,7 +118,7 @@ void FrequencyView::populate(struct projectData *projData)
     }
 }
 
-void FrequencyView::on_frequencyViewClose_clicked()
+void FrequencyView::on_frequencyViewClose_clicked ()
 {
     close();
 }

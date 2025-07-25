@@ -22,6 +22,7 @@
 #define OPEMG_H
 
 #include "project.h"
+#include "OpenParEMmaterials.hpp"
 #include "port.hpp"
 #include <QMainWindow>
 
@@ -41,27 +42,30 @@ class OpenParEMg : public QMainWindow
     Q_OBJECT
 
 public:
-    OpenParEMg(QWidget *parent = nullptr);
-    ~OpenParEMg();
+    OpenParEMg (QWidget *parent = nullptr);
+    ~OpenParEMg ();
 
 private slots:
-    void on_fileOpen_triggered();
-    void on_fileNew_triggered();
-    void on_meshOptions_triggered();
-    void on_simulateOptions_triggered();
-    void on_actionLicense_triggered();
-    void on_actionFrequency_Plan_triggered();
-    void on_actionSave_triggered();
-    void on_actionRefinement_triggered();
-    void on_actionMaterials_Editor_triggered();
-    void on_actionBrep_triggered();
-    void on_actionExit_triggered();
+    void on_fileOpen_triggered ();
+    void on_fileNew_triggered ();
+    void on_meshOptions_triggered ();
+    void on_simulateOptions_triggered ();
+    void on_actionLicense_triggered ();
+    void on_actionFrequency_Plan_triggered ();
+    void on_actionSave_triggered ();
+    void on_actionRefinement_triggered ();
+    void on_actionMaterials_Editor_triggered ();
+    void on_actionBrep_triggered ();
+    void on_actionExit_triggered ();
+    void on_actionSelect_Database_triggered ();
 
 private:
     Ui::OpenParEMg *ui;
     bool hasProjData;
     QString projectFile;
     struct projectData projData,defaultData;
+
+    MaterialDatabase *materialDatabase;
     BoundaryDatabase *boundaryDatabase;
 
     QString absolutePath;

@@ -145,6 +145,9 @@ struct projectData {
    double *field_points_y;
    double *field_points_z;
 
+   // GUI keywords - not required for standalone operation
+   char *gui_brep_file;
+
    // not user settable
 
    char *project_name;
