@@ -221,7 +221,7 @@ wrap_executable() {
 
    HAS_COMPILED_OPENMPI=$2
 
-   cd ../bin
+   cd "$install_path/bin"
 
       if [ $? -ne 0 ]; then
          echo "ERROR: failed to change to the bin directory"
@@ -267,7 +267,7 @@ wrap_executable() {
          exit 1
       fi
 
-   cd ../scripts
+   cd "$scripts_dir"
 }
 
 #----------------------------------------------------
@@ -1416,7 +1416,7 @@ echo "# OpenParEM_build: creating wrappers for executables"
 echo "#------------------------------------------------------------------------------------"
 
 # see if a compiled version of Open MPI exists
-cd ../bin
+cd "$install_path/bin"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: failed to change to bin directory."
       exit 1
@@ -1432,7 +1432,7 @@ cd ../bin
       HAS_ORTERUNBIN=1
    fi
 
-cd ../scripts
+cd "$scripts_dir"
 
 
 if [ "$with_OpenParEM" = "1" ]; then
@@ -1450,7 +1450,7 @@ if [ "$HAS_ORTERUN" = "1" ]; then
       wrap_executable orterun $HAS_ORTERUN
    fi
 else
-   cd ../bin
+   cd "$install_path/bin"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: failed to change to bin directory."
       exit 1
@@ -1470,7 +1470,7 @@ else
 
    fi
 
-   cd ../scripts
+   cd "$scripts_dir"
 fi
 
 # finish up with elapsed time
