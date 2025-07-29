@@ -100,7 +100,12 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->drawingItemTree->show();
     ui->drawingItemTree->viewport()->installEventFilter(this);
 
+    ui->drawingItemTree->setSelectionMode(QAbstractItemView::MultiSelection);
     CTRLpressed=false;
+    SHIFTpressed=false;
+
+    clickedItem=nullptr;
+    previousClickedItem=nullptr;
 
     PetscInitializeNoArguments();
 }
@@ -150,51 +155,55 @@ void OpenParEMg::contextMenu_triggered(const QPoint& pnt)
 
 void OpenParEMg::showShape ()
 {
-    clickedItem->setForeground(0,Qt::black);
-    ui->drawingWindow->showShape(clickedItem->get_AIS_Shape());
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        item->setForeground(0,Qt::black);
+        ui->drawingWindow->showShape(item->get_AIS_Shape());
+        i++;
+    }
     ui->drawingWindow->repaint();
 }
 
 void OpenParEMg::hideShape ()
 {
-    clickedItem->setForeground(0,Qt::gray);
-    ui->drawingWindow->unselectShape(clickedItem->get_AIS_Shape());
-    ui->drawingWindow->hideShape(clickedItem->get_AIS_Shape());
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        item->setForeground(0,Qt::gray);
+        ui->drawingWindow->unselectShape(item->get_AIS_Shape());
+        ui->drawingWindow->hideShape(item->get_AIS_Shape());
+        i++;
+    }
     ui->drawingWindow->repaint();
 }
 
 void OpenParEMg::selectShape ()
 {
-    ui->drawingWindow->selectShape(clickedItem->get_AIS_Shape());
-    ui->drawingWindow->repaint();
-}
-
-void OpenParEMg::unselectItemShape (CustomTreeWidgetItem *item)
-{
-    ui->drawingWindow->unselectShape(item->get_AIS_Shape());
-
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     int i=0;
-    while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-        unselectItemShape(child);
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        item->setForeground(0,Qt::red);
+        ui->drawingWindow->selectShape(item->get_AIS_Shape());
         i++;
     }
+    ui->drawingWindow->repaint();
 }
 
 void OpenParEMg::unselectShape ()
 {
-    ui->drawingWindow->unselectShape(clickedItem->get_AIS_Shape());
-    ui->drawingWindow->repaint();
-
-    /*
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     int i=0;
-    while (i < clickedItem->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)clickedItem->child(i);
-        ui->drawingWindow->unselectShape(child->get_AIS_Shape());
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        item->setForeground(0,Qt::black);
+        ui->drawingWindow->unselectShape(item->get_AIS_Shape());
         i++;
     }
-    ui->drawingWindow->updateView();
-*/
+    ui->drawingWindow->repaint();
 }
 
 void OpenParEMg::on_fileOpen_triggered ()
@@ -555,12 +564,61 @@ void OpenParEMg::on_actionSelect_Database_triggered ()
     delete selectMaterialsDatabase;
 }
 
-
-void OpenParEMg::on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column)
+//xxx
+void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int column)
 {
     clickedItem=(CustomTreeWidgetItem *)item;
-    if (!CTRLpressed) ui->drawingWindow->unselectAll();
-    selectShape();
+    clickedItem->setSelected(false);
+    ui->drawingItemTree->setCurrentItem(nullptr);
+
+    if (CTRLpressed) {
+        if (SHIFTpressed) {
+            ui->drawingItemTree->setCurrentItem(previousClickedItem);
+        } else {
+            ui->drawingItemTree->setCurrentItem(clickedItem);
+            clickedItem->setSelected(true);
+            previousClickedItem=clickedItem;
+        }
+    } else if (SHIFTpressed) {
+        if (CTRLpressed) {
+            ui->drawingItemTree->setCurrentItem(previousClickedItem);
+        } else {
+            if (previousClickedItem) {
+                if (clickedItem->QTreeWidgetItem::parent() == previousClickedItem->QTreeWidgetItem::parent()) {
+
+                    // check ordering
+                    bool isReversed=false;
+                    if (clickedItem->QTreeWidgetItem::parent()->indexOfChild(clickedItem) <
+                        clickedItem->QTreeWidgetItem::parent()->indexOfChild(previousClickedItem)) isReversed=true;
+
+                    // select
+                    bool enableSelect=false;
+                    int i=0;
+                    while (i < clickedItem->QTreeWidgetItem::parent()->childCount()) {
+                        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)clickedItem->QTreeWidgetItem::parent()->child(i);
+                        if (!isReversed && child == previousClickedItem) enableSelect=true;
+                        if (isReversed && child == clickedItem) enableSelect=true;
+                        if (enableSelect) {
+                            ui->drawingItemTree->setCurrentItem(child);
+                            child->setSelected(true);
+                        }
+                        if (!isReversed && child == clickedItem) enableSelect=false;
+                        if (isReversed && child == previousClickedItem) enableSelect=false;
+                        i++;
+                    }
+                    previousClickedItem=clickedItem;
+                } else {
+                    ui->drawingItemTree->setCurrentItem(previousClickedItem);
+                    previousClickedItem->setSelected(true);
+                }
+            }
+        }
+    } else {
+        ui->drawingItemTree->clearSelection();
+        ui->drawingItemTree->setCurrentItem(clickedItem);
+        clickedItem->setSelected(true);
+        previousClickedItem=clickedItem;
+    }
 }
 
 void OpenParEMg::on_actionFit_Selected_triggered ()
@@ -653,6 +711,8 @@ bool OpenParEMg::eventFilter(QObject *obj, QEvent *event)
             if (ui->drawingItemTree->indexAt(mouseEvent->pos()).isValid() == false) {
                 ui->drawingItemTree->clearSelection();
                 ui->drawingItemTree->setCurrentItem(nullptr);
+                clickedItem=nullptr;
+                previousClickedItem=nullptr;
             }
             return false;
         }
@@ -660,26 +720,24 @@ bool OpenParEMg::eventFilter(QObject *obj, QEvent *event)
     return QObject::eventFilter(obj, event);
 }
 
-void OpenParEMg::keyPressEvent(QKeyEvent *event)
+void OpenParEMg::keyPressEvent (QKeyEvent *event)
 {
-    // CTRL key
-    if (event->key() & Qt::Key_Control) {
+    if (event->key() == Qt::Key_Control) {
         CTRLpressed=true;
-        std::cout << "CTRLpressed=" << CTRLpressed << std::endl; std::cout.flush();
+    } else if (event->key() == Qt::Key_Shift) {
+        SHIFTpressed=true;
     }
-
     QWidget::keyPressEvent(event);
 }
 
-void OpenParEMg::keyReleaseEvent(QKeyEvent *event)
+void OpenParEMg::keyReleaseEvent (QKeyEvent *event)
 {
-    // CTRL key
-    if (event->key() & Qt::Key_Control) {
+    if (event->key() == Qt::Key_Control) {
         CTRLpressed=false;
-        std::cout << "CTRLpressed=" << CTRLpressed << std::endl; std::cout.flush();
+    } else if (event->key() == Qt::Key_Shift) {
+        SHIFTpressed=false;
     }
-
-    QWidget::keyReleaseEvent(event);
+    QWidget::keyPressEvent(event);
 }
 
 void OpenParEMg::grayOutTreeItems (CustomTreeWidgetItem *item)
@@ -702,6 +760,9 @@ void OpenParEMg::on_actionHide_All_triggered ()
     grayOutTreeItems(&drawing);
     grayOutTreeItems(&port);
     grayOutTreeItems(&boundary);
+
+    clickedItem=nullptr;
+    previousClickedItem=nullptr;
 }
 
 void OpenParEMg::on_actionShow_All_triggered ()
@@ -709,6 +770,7 @@ void OpenParEMg::on_actionShow_All_triggered ()
     //ui->drawingWindow->showAll();
     ui->drawingWindow->hideAll();
     clickedItem=&drawing;
+    previousClickedItem=nullptr;
     showShape();
 }
 

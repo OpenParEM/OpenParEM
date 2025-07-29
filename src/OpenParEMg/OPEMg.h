@@ -73,7 +73,6 @@ private slots:
     void grayOutTreeItems (CustomTreeWidgetItem *);
     void hideShape ();
     void selectShape ();
-    void unselectItemShape (CustomTreeWidgetItem *);
     void unselectShape ();
 
     void contextMenu_triggered (const QPoint& pnt);
@@ -113,11 +112,12 @@ private:
     CustomTreeWidgetItem port;
     CustomTreeWidgetItem boundary;
 
-    CustomTreeWidgetItem *clickedItem;
+    CustomTreeWidgetItem *clickedItem,*previousClickedItem;
 
     QAction *currentSelectionAction;
 
     bool CTRLpressed;
+    bool SHIFTpressed;
 
 };
 
