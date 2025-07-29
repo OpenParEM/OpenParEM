@@ -134,23 +134,14 @@ void CustomOpenGLWidget::paintGL ()
 
 void CustomOpenGLWidget::updateView ()
 {
-    update();
+    //update();
+    repaint();
 }
 
 void CustomOpenGLWidget::clearDrawing ()
 {
     viewerContext->RemoveAll(false);
     viewerContext->UpdateCurrentViewer();
-}
-
-void CustomOpenGLWidget::displayDrawing (Handle(AIS_Shape) shape)
-{
-    viewerContext->Display(shape,0,0,false);
-    viewerContext->UpdateCurrentViewer();
-
-    // scale to fit the new object
-    //viewerContext->SetSelected(shape,false);
-    //viewerContext->FitSelected(view,0,false);
 }
 
 void CustomOpenGLWidget::wheelEvent (QWheelEvent* event)
@@ -217,3 +208,4 @@ void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
     if (UpdateMousePosition(position,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
                                      OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateView();
 }
+

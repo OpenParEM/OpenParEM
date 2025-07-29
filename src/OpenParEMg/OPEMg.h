@@ -21,10 +21,15 @@
 #ifndef OPEMG_H
 #define OPEMG_H
 
+#include <QMainWindow>
+
+#include "AIS_Shape.hxx"
+
 #include "project.h"
 #include "OpenParEMmaterials.hpp"
 #include "port.hpp"
-#include <QMainWindow>
+#include "CustomTreeWidgetItem.h"
+
 
 extern "C" void init_project (struct projectData *);
 extern "C" void free_project (struct projectData *);
@@ -45,6 +50,9 @@ public:
     OpenParEMg (QWidget *parent = nullptr);
     ~OpenParEMg ();
 
+    void addShape (TopoDS_Shape, CustomTreeWidgetItem *, bool);
+    bool loadBrepFile (QString);
+
 private slots:
     void on_fileOpen_triggered ();
     void on_fileNew_triggered ();
@@ -59,6 +67,37 @@ private slots:
     void on_actionExit_triggered ();
     void on_actionSelect_Database_triggered ();
 
+    void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
+
+    void showShape ();
+    void grayOutTreeItems (CustomTreeWidgetItem *);
+    void hideShape ();
+    void selectShape ();
+    void unselectItemShape (CustomTreeWidgetItem *);
+    void unselectShape ();
+
+    void contextMenu_triggered (const QPoint& pnt);
+
+    void on_actionFit_Selected_triggered ();
+
+    void on_actionFit_All_triggered ();
+
+    void on_actionShape_triggered ();
+    void on_actionVertex_triggered ();
+    void on_actionEdge_triggered ();
+    void on_actionWire_triggered ();
+    void on_actionFace_triggered ();
+    void on_actionShell_triggered ();
+    void on_actionSolid_triggered ();
+
+    bool eventFilter (QObject *, QEvent *) override;
+    void keyPressEvent (QKeyEvent *) override;
+    void keyReleaseEvent (QKeyEvent *) override;
+
+    void on_actionHide_All_triggered ();
+
+    void on_actionShow_All_triggered ();
+
 private:
     Ui::OpenParEMg *ui;
     bool hasProjData;
@@ -70,9 +109,16 @@ private:
 
     QString absolutePath;
 
-    QTreeWidgetItem drawing;
-    QTreeWidgetItem port;
-    QTreeWidgetItem boundary;
+    CustomTreeWidgetItem drawing;
+    CustomTreeWidgetItem port;
+    CustomTreeWidgetItem boundary;
+
+    CustomTreeWidgetItem *clickedItem;
+
+    QAction *currentSelectionAction;
+
+    bool CTRLpressed;
+
 };
 
 #endif // OPEMG_H

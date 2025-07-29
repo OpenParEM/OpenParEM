@@ -1396,10 +1396,10 @@ bool Boundary::snapToMeshBoundary (vector<Path *> *pathList, Mesh *mesh, string 
 #ifdef HAS_GUI
 
 void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                     QTreeWidgetItem *boundaryWidgetItem, MaterialDatabase *materialDatabase)
+                     CustomTreeWidgetItem *boundaryWidgetItem, MaterialDatabase *materialDatabase)
 {
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
-    drawingWindow->displayDrawing(drawingShape);
+    drawingWindow->displayShape(drawingShape);
     drawingWindow->updateView();
 
     // boundary type
@@ -1407,14 +1407,15 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
     // name
 
     QString textName=QString::fromStdString(get_name());
-    QTreeWidgetItem *itemName=new QTreeWidgetItem(0);
+    CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
+    itemName->set_AIS_Shape(drawingShape);
     itemName->setText(0,textName);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     boundaryWidgetItem->addChild(itemName);
 
     // type
 
-    QTreeWidgetItem *itemType=new QTreeWidgetItem(0);
+    CustomTreeWidgetItem *itemType=new CustomTreeWidgetItem(0);
     itemType->setFlags(itemType->flags() | Qt::ItemIsEditable);
     itemType->setToolTip(0,"Boundary type.");
     itemName->addChild(itemType);
@@ -1440,7 +1441,7 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
 
     // material
 
-    QTreeWidgetItem *itemMaterial=new QTreeWidgetItem(0);
+    CustomTreeWidgetItem *itemMaterial=new CustomTreeWidgetItem(0);
     itemMaterial->setFlags(itemMaterial->flags() | Qt::ItemIsEditable);
     itemMaterial->setToolTip(0,"Boundary material.");
     itemName->addChild(itemMaterial);
@@ -1461,7 +1462,7 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
 
     // wave impedance
 
-    QTreeWidgetItem *itemWaveImpedance=new QTreeWidgetItem(0);
+    CustomTreeWidgetItem *itemWaveImpedance=new CustomTreeWidgetItem(0);
     itemWaveImpedance->setFlags(itemWaveImpedance->flags() | Qt::ItemIsEditable);
     itemWaveImpedance->setToolTip(0,"Wave impedance in Ohms.");
     itemName->addChild(itemWaveImpedance);
@@ -1476,13 +1477,13 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
     if (is_surface_impedance()) itemWaveImpedance->setHidden(true);
     if (is_radiation()) itemMaterial->setHidden(true);
 
-    // set the QTreeWidget items so they can be hidden as needed depending on type
+    // set the CustomTreeWidget items so they can be hidden as needed depending on type
     comboType->set_itemMaterial(itemMaterial);
     comboType->set_itemWaveImpedance(itemWaveImpedance);
 
     if (is_default) {
         QString textDefault="default";
-        QTreeWidgetItem *itemDefault=new QTreeWidgetItem(0);
+        CustomTreeWidgetItem *itemDefault=new CustomTreeWidgetItem(0);
         itemDefault->setText(0,textDefault);
         itemName->addChild(itemDefault);
     }
@@ -6333,7 +6334,7 @@ bool Port::has_mode (Mode *mode, long unsigned int *index)
 
 //xxx
 #ifdef HAS_GUI
-void comboIndexChanged (int index, Port *port, Boundary *boundary, int type, QTreeWidgetItem *itemMaterial, QTreeWidgetItem *itemWaveImpedance) {
+void comboIndexChanged (int index, Port *port, Boundary *boundary, int type, CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance) {
 
     // Port: impedance definition
     if (port && type == 0) {
@@ -6381,15 +6382,16 @@ void comboTextChanged (QString text, Boundary *boundary)
     if (boundary) boundary->set_material(text.toStdString());
 }
 
-void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, QTreeWidgetItem *portWidgetItem)
+void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, CustomTreeWidgetItem *portWidgetItem)
 {
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
-    drawingWindow->displayDrawing(drawingShape);
+    drawingWindow->displayShape(drawingShape);
     drawingWindow->updateView();
 
     // name
     QString textName=QString::fromStdString(get_name());
-    QTreeWidgetItem *itemName=new QTreeWidgetItem(0);
+    CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
+    itemName->set_AIS_Shape(drawingShape);
     itemName->setText(0,textName);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     portWidgetItem->addChild(itemName);
@@ -6397,7 +6399,7 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
     // impedance definition
 
     QString textImpedanceDefinition=QString::fromStdString(impedance_definition.get_value());
-    QTreeWidgetItem *itemImpedanceDefinition=new QTreeWidgetItem(0);
+    CustomTreeWidgetItem *itemImpedanceDefinition=new CustomTreeWidgetItem(0);
     itemImpedanceDefinition->setText(0,textImpedanceDefinition);
     itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() | Qt::ItemIsEditable);
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
@@ -6420,7 +6422,7 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
     // impedance calculation
 
     QString textImpedanceCalculation=QString::fromStdString(impedance_calculation.get_value());
-    QTreeWidgetItem *itemImpedanceCalculation=new QTreeWidgetItem(0);
+    CustomTreeWidgetItem *itemImpedanceCalculation=new CustomTreeWidgetItem(0);
     itemImpedanceCalculation->setText(0,textImpedanceCalculation);
     itemImpedanceCalculation->setFlags(itemImpedanceCalculation->flags() | Qt::ItemIsEditable);
     itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
@@ -8490,7 +8492,7 @@ void BoundaryDatabase::calculateFarField (double r, Vector center, double radiat
 
 #ifdef HAS_GUI
 void BoundaryDatabase::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                             QTreeWidgetItem *portTreeItem, QTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
+                             CustomTreeWidgetItem *portTreeItem, CustomTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
 {
     // ports
     long unsigned int i=0;

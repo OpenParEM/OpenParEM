@@ -57,17 +57,7 @@
 #include "CustomOpenGLWidget.h"
 #include "CustomAIS_Shape.h"
 #include "SelectMaterialsDatabase.h"
-
-void deleteChildren (QTreeWidgetItem *item)
-{
-    if (!item) return;
-
-    QList<QTreeWidgetItem*> children=item->takeChildren();
-    for (QTreeWidgetItem* child : children) {
-        deleteChildren(child);
-        delete child;
-    }
-}
+#include "CustomTreeWidgetItem.h"
 
 OpenParEMg::OpenParEMg (QWidget *parent)
     : QMainWindow(parent)
@@ -82,6 +72,10 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     projectFile="";
     init_project (&defaultData);
     init_project (&projData);
+
+    ui->actionShape->setCheckable(true);
+    ui->actionShape->setChecked(true);
+    currentSelectionAction=ui->actionShape;
 
     hasProjData=false;
     ui->meshOptions->setEnabled(false);
@@ -101,7 +95,12 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->drawingItemTree->addTopLevelItem(&boundary);
 
 
+    ui->drawingItemTree->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->drawingItemTree,&QTreeView::customContextMenuRequested,this,&OpenParEMg::contextMenu_triggered);
     ui->drawingItemTree->show();
+    ui->drawingItemTree->viewport()->installEventFilter(this);
+
+    CTRLpressed=false;
 
     PetscInitializeNoArguments();
 }
@@ -112,12 +111,102 @@ OpenParEMg::~OpenParEMg ()
     delete ui;
 }
 
+
+void OpenParEMg::contextMenu_triggered(const QPoint& pnt)
+{
+    clickedItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemAt(pnt);
+    if (!clickedItem) return;
+    if (!clickedItem->get_AIS_Shape()) return;
+
+    QAction *showAction=new QAction("Show",this);
+    QAction *hideAction=new QAction("Hide",this);
+    QAction *selectAction=new QAction("Select",this);
+    QAction *unselectAction=new QAction("Unselect",this);
+    QAction *deleteAction=new QAction("Delete",this);
+
+    connect(showAction, &QAction::triggered, this, &OpenParEMg::showShape);
+    connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideShape);
+    connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectShape);
+    connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectShape);
+
+    if (ui->drawingWindow->isDisplayed(clickedItem->get_AIS_Shape())) {
+        showAction->setEnabled(false);
+    } else {
+        hideAction->setEnabled(false);
+        selectAction->setEnabled(false);
+        unselectAction->setEnabled(false);
+        deleteAction->setEnabled(false);
+    }
+
+    QMenu menu(this);
+    menu.addAction(showAction);
+    menu.addAction(hideAction);
+    menu.addAction(selectAction);
+    menu.addAction(unselectAction);
+    menu.addAction(deleteAction);
+
+    menu.exec(ui->drawingItemTree->mapToGlobal(pnt));
+}
+
+void OpenParEMg::showShape ()
+{
+    clickedItem->setForeground(0,Qt::black);
+    ui->drawingWindow->showShape(clickedItem->get_AIS_Shape());
+    ui->drawingWindow->repaint();
+}
+
+void OpenParEMg::hideShape ()
+{
+    clickedItem->setForeground(0,Qt::gray);
+    ui->drawingWindow->unselectShape(clickedItem->get_AIS_Shape());
+    ui->drawingWindow->hideShape(clickedItem->get_AIS_Shape());
+    ui->drawingWindow->repaint();
+}
+
+void OpenParEMg::selectShape ()
+{
+    ui->drawingWindow->selectShape(clickedItem->get_AIS_Shape());
+    ui->drawingWindow->repaint();
+}
+
+void OpenParEMg::unselectItemShape (CustomTreeWidgetItem *item)
+{
+    ui->drawingWindow->unselectShape(item->get_AIS_Shape());
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        unselectItemShape(child);
+        i++;
+    }
+}
+
+void OpenParEMg::unselectShape ()
+{
+    ui->drawingWindow->unselectShape(clickedItem->get_AIS_Shape());
+    ui->drawingWindow->repaint();
+
+    /*
+    int i=0;
+    while (i < clickedItem->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)clickedItem->child(i);
+        ui->drawingWindow->unselectShape(child->get_AIS_Shape());
+        i++;
+    }
+    ui->drawingWindow->updateView();
+*/
+}
+
 void OpenParEMg::on_fileOpen_triggered ()
 {
-    projectFile=QFileDialog::getOpenFileName(this,tr("Open Project"), "", tr("Project Files (*.proj);;All Files (*)"));
+    QString testProjectFile=QFileDialog::getOpenFileName(this,tr("Open Project"), "", tr("Project Files (*.proj);;All Files (*)"));
 
     // return if user cancels
-    if (projectFile.isNull()) return;
+    if (testProjectFile.isNull()) return;
+
+    // reset as new
+    on_fileNew_triggered ();
+    projectFile=testProjectFile;
 
     // break up the full path
     QFileInfo fileInfo(projectFile);
@@ -126,12 +215,6 @@ void OpenParEMg::on_fileOpen_triggered ()
 
     // load the file
     if (QFile::exists(projectFile)) {
-
-        free_project(&defaultData);
-        free_project(&projData);
-
-        init_project (&defaultData);
-        init_project (&projData);
 
         if (load_project_file (projectFile.toLatin1().toStdString().c_str(),&projData,"   ")) {
             projectFile="";
@@ -168,28 +251,14 @@ void OpenParEMg::on_fileOpen_triggered ()
         // load brep file, if defined
         if (strcmp(projData.gui_brep_file,"") != 0) {
 
-            QFileInfo fileInfo(projData.gui_brep_file);
-            QString base=fileInfo.baseName();
+            QString filePath=projData.gui_brep_file;
 
-            std::ifstream brepFile(projData.gui_brep_file,std::ios_base::in);
-            if (brepFile.is_open()) {
-                TopoDS_Shape s;
-                BRep_Builder b;
-                BRepTools::Read(s,brepFile,b);
-                brepFile.close();
-
-                ui->drawingWindow->clearDrawing();
-                Handle(AIS_Shape) drawingShape=new AIS_Shape (s);
-                ui->drawingWindow->displayDrawing(drawingShape);
-
-                QTreeWidgetItem *item=new QTreeWidgetItem(0);
-                item->setText(0,base);
-                drawing.addChild(item);
-                ui->drawingItemTree->show();
-                ui->drawingWindow->updateView();
-            } else {
+            if (loadBrepFile(filePath)) {
+                QString message="Unable to load Brep file \"";
+                message.append(filePath);
+                message.append("\".");
                 QMessageBox mb;
-                mb.critical(nullptr, "Error", "Unable to load the specified BRep drawing file.");
+                mb.critical(nullptr, "Error",message);
                 mb.setFixedSize(500, 200);
             }
         }
@@ -203,9 +272,8 @@ void OpenParEMg::on_fileOpen_triggered ()
             boundaryDatabase->draw(&projData,ui->drawingWindow,ui->drawingItemTree,&port,&boundary,materialDatabase);
         }
 
-        // rescale after everything has been loaded
         ui->drawingWindow->fitAll();
-
+        ui->drawingWindow->updateView();
     } else {
         // should not occur
         QMessageBox mb;
@@ -216,6 +284,8 @@ void OpenParEMg::on_fileOpen_triggered ()
 
 void OpenParEMg::on_fileNew_triggered ()
 {
+    // reset project data
+
     projectFile="";
 
     free_project(&defaultData);
@@ -224,11 +294,15 @@ void OpenParEMg::on_fileNew_triggered ()
     init_project (&defaultData);
     init_project (&projData);
 
+    // reset material database
     if (materialDatabase) delete materialDatabase;
     materialDatabase=new MaterialDatabase();
 
+    // reset boundary database
     if (boundaryDatabase) delete boundaryDatabase;
     boundaryDatabase=new BoundaryDatabase();
+
+    // reset GUI options
 
     ui->meshOptions->setEnabled(true);
     ui->simulateOptions->setEnabled(true);
@@ -237,11 +311,15 @@ void OpenParEMg::on_fileNew_triggered ()
     if (strcmp(projData.refinement_frequency,"none") == 0) ui->actionRefinement->setEnabled(false);
     else ui->actionRefinement->setEnabled(true);
 
+    // reset drawing window
+
     ui->drawingWindow->clearDrawing();
     ui->drawingWindow->updateView();
-    deleteChildren(&drawing);
-    deleteChildren(&port);
-    deleteChildren(&boundary);
+
+    // reset selection tree
+    drawing.reset();
+    port.reset();
+    boundary.reset();
 }
 
 void OpenParEMg::on_meshOptions_triggered ()
@@ -360,54 +438,108 @@ void ListChildren (const TopoDS_Shape& theShape)
     // }
 }
 
+void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool isRoot)
+{
+    if (shape.IsNull()) return;
+
+    // tree item name
+
+    QString name="";
+
+    TopAbs_ShapeEnum shapeType=shape.ShapeType();
+    switch (shapeType) {
+    case TopAbs_COMPOUND:
+        name="COMPOUND";
+        break;
+    case TopAbs_COMPSOLID:
+        name="COMPSOLID";
+        break;
+    case TopAbs_SOLID:
+        name="SOLID";
+        break;
+    case TopAbs_SHELL:
+        name="SHELL";
+        break;
+    case TopAbs_FACE:
+        name="FACE";
+        break;
+    case TopAbs_WIRE:
+        name="WIRE";
+        break;
+    case TopAbs_EDGE:
+        name="EDGE";
+        break;
+    case TopAbs_VERTEX:
+        name="VERTEX";
+        break;
+    case TopAbs_SHAPE:
+        name="SHAPE";
+        break;
+    default:
+        std::cout << "ASSERT:: Unknown shape type." << std::endl;  std::cout.flush();
+        break;
+    }
+
+    // item entry
+
+    Handle(AIS_Shape) drawingShape=new AIS_Shape(shape);
+    CustomTreeWidgetItem *newItem;
+
+    if (isRoot) {
+        isRoot=false;
+        drawing.set_AIS_Shape(drawingShape);
+        drawing.setForeground(0,Qt::black);
+        ui->drawingWindow->showShape(drawingShape);
+        newItem=&drawing;
+    } else {
+        newItem=new CustomTreeWidgetItem(0);
+        newItem->set_AIS_Shape(drawingShape);
+        newItem->setText(0,name);
+        newItem->setForeground(0,Qt::gray);
+        item->addChild(newItem);
+    }
+
+    // children
+    TopoDS_Iterator topoIterator(shape);
+    while (topoIterator.More()) {
+        const TopoDS_Shape& child=topoIterator.Value();
+        addShape(child,newItem,isRoot);
+        topoIterator.Next();
+    }
+}
+
+bool OpenParEMg::loadBrepFile (QString filePath)
+{
+    if (filePath.isEmpty()) {
+        return true;
+    } else {
+
+        QFileInfo fileInfo(filePath);
+        QString base=fileInfo.baseName();
+
+        TopoDS_Shape s;
+        BRep_Builder b;
+        if (!BRepTools::Read(s,filePath.toStdString().c_str(),b)) return true;
+
+        ui->drawingWindow->clearDrawing();
+        addShape(s,nullptr,true);
+    }
+    return false;
+}
+
 void OpenParEMg::on_actionBrep_triggered ()
 {
     QString filePath = QFileDialog::getOpenFileName(this, tr("Open BREP File"), "", tr("BREP Files (*.brep)"));
-    if (!filePath.isEmpty()) {
-
-        // break up the full path
-        QFileInfo fileInfo(filePath);
-        absolutePath=fileInfo.absolutePath();
-        QString base=fileInfo.baseName();
-
-        //std::ifstream brepFile(filePath.toStdString().c_str(), std::ios_base::in | std::ios_base::binary);
-        std::ifstream brepFile(filePath.toStdString().c_str(), std::ios_base::in);
-        if (brepFile.is_open()) {
-            TopoDS_Shape s;
-            BRep_Builder b;
-            BRepTools::Read(s,brepFile,b);
-            brepFile.close();
-            //TopTools::Dump(s, std::cout);
-            //xxx
-            std::cout << "Number of children=" << s.NbChildren() << std::endl; std::cout.flush();
-            ListChildren(s);
-
-            ui->drawingWindow->clearDrawing();
-            Handle(AIS_Shape) drawingShape=new AIS_Shape (s);
-            ui->drawingWindow->displayDrawing(drawingShape);
-            ui->drawingWindow->fitAll();
-
-            QTreeWidgetItem *item=new QTreeWidgetItem(0);
-            item->setText(0,base);
-            drawing.addChild(item);
-            ui->drawingItemTree->show();
-
-            int i=0;
-            for (TopExp_Explorer anExplorer(s,TopAbs_SOLID); anExplorer.More(); anExplorer.Next()) {
-                const TopoDS_Solid& aSolid = TopoDS::Solid(anExplorer.Current());
-
-                QString text="Volume";
-                text.append(QString::number(i));
-                QTreeWidgetItem *solid=new QTreeWidgetItem(0);
-                solid->setText(0,text);
-                item->addChild(solid);
-                ui->drawingItemTree->show();
-
-                i++;
-            }
-        }
+    if (filePath.isEmpty()) return;
+    if (loadBrepFile(filePath)) {
+        QString message="Unable to load Brep file \"";
+        message.append(filePath);
+        message.append("\".");
+        QMessageBox mb;
+        mb.critical(nullptr, "Error",message);
+        mb.setFixedSize(500, 200);
     }
-
+    ui->drawingWindow->fitAll();
     ui->drawingWindow->updateView();
 }
 
@@ -421,5 +553,162 @@ void OpenParEMg::on_actionSelect_Database_triggered ()
     SelectMaterialsDatabase *selectMaterialsDatabase=new SelectMaterialsDatabase(&projData,&absolutePath);
     selectMaterialsDatabase->exec();
     delete selectMaterialsDatabase;
+}
+
+
+void OpenParEMg::on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column)
+{
+    clickedItem=(CustomTreeWidgetItem *)item;
+    if (!CTRLpressed) ui->drawingWindow->unselectAll();
+    selectShape();
+}
+
+void OpenParEMg::on_actionFit_Selected_triggered ()
+{
+    ui->drawingWindow->fitSelected();
+    ui->drawingWindow->updateView();
+}
+
+void OpenParEMg::on_actionFit_All_triggered ()
+{
+    ui->drawingWindow->fitAll();
+    ui->drawingWindow->updateView();
+}
+
+void OpenParEMg::on_actionShape_triggered()
+{
+    currentSelectionAction->setCheckable(false);
+    currentSelectionAction=ui->actionShape;
+    currentSelectionAction->setCheckable(true);
+    currentSelectionAction->setChecked(true);
+    ui->drawingWindow->setSelectionShape();
+}
+
+void OpenParEMg::on_actionVertex_triggered()
+{
+    currentSelectionAction->setCheckable(false);
+    currentSelectionAction=ui->actionVertex;
+    currentSelectionAction->setCheckable(true);
+    currentSelectionAction->setChecked(true);
+    ui->drawingWindow->setSelectionShape();
+    ui->drawingWindow->setSelectionVertex();
+}
+
+void OpenParEMg::on_actionEdge_triggered()
+{
+    currentSelectionAction->setCheckable(false);
+    currentSelectionAction=ui->actionEdge;
+    currentSelectionAction->setCheckable(true);
+    currentSelectionAction->setChecked(true);
+    ui->drawingWindow->setSelectionShape();
+    ui->drawingWindow->setSelectionEdge();
+}
+
+void OpenParEMg::on_actionWire_triggered()
+{
+    currentSelectionAction->setCheckable(false);
+    currentSelectionAction=ui->actionWire;
+    currentSelectionAction->setCheckable(true);
+    currentSelectionAction->setChecked(true);
+    ui->drawingWindow->setSelectionShape();
+    ui->drawingWindow->setSelectionWire();
+}
+
+void OpenParEMg::on_actionFace_triggered()
+{
+    currentSelectionAction->setCheckable(false);
+    currentSelectionAction=ui->actionFace;
+    currentSelectionAction->setCheckable(true);
+    currentSelectionAction->setChecked(true);
+    ui->drawingWindow->setSelectionShape();
+    ui->drawingWindow->setSelectionFace();
+}
+
+void OpenParEMg::on_actionShell_triggered()
+{
+    currentSelectionAction->setCheckable(false);
+    currentSelectionAction=ui->actionShell;
+    currentSelectionAction->setCheckable(true);
+    currentSelectionAction->setChecked(true);
+    ui->drawingWindow->setSelectionShape();
+    ui->drawingWindow->setSelectionShell();
+}
+
+void OpenParEMg::on_actionSolid_triggered()
+{
+    currentSelectionAction->setCheckable(false);
+    currentSelectionAction=ui->actionSolid;
+    currentSelectionAction->setCheckable(true);
+    currentSelectionAction->setChecked(true);
+    ui->drawingWindow->setSelectionShape();
+    ui->drawingWindow->setSelectionSolid();
+}
+
+// click on background in the item tree to clear the selection
+bool OpenParEMg::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == ui->drawingItemTree->viewport()) {
+        if (event->type() == QEvent::MouseButtonPress) {
+            QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+            if (ui->drawingItemTree->indexAt(mouseEvent->pos()).isValid() == false) {
+                ui->drawingItemTree->clearSelection();
+                ui->drawingItemTree->setCurrentItem(nullptr);
+            }
+            return false;
+        }
+    }
+    return QObject::eventFilter(obj, event);
+}
+
+void OpenParEMg::keyPressEvent(QKeyEvent *event)
+{
+    // CTRL key
+    if (event->key() & Qt::Key_Control) {
+        CTRLpressed=true;
+        std::cout << "CTRLpressed=" << CTRLpressed << std::endl; std::cout.flush();
+    }
+
+    QWidget::keyPressEvent(event);
+}
+
+void OpenParEMg::keyReleaseEvent(QKeyEvent *event)
+{
+    // CTRL key
+    if (event->key() & Qt::Key_Control) {
+        CTRLpressed=false;
+        std::cout << "CTRLpressed=" << CTRLpressed << std::endl; std::cout.flush();
+    }
+
+    QWidget::keyReleaseEvent(event);
+}
+
+void OpenParEMg::grayOutTreeItems (CustomTreeWidgetItem *item)
+{
+    item->setForeground(0,Qt::gray);
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        grayOutTreeItems(child);
+        i++;
+    }
+}
+
+void OpenParEMg::on_actionHide_All_triggered ()
+{
+    ui->drawingWindow->hideAll();
+    ui->drawingWindow->repaint();
+
+    grayOutTreeItems(&drawing);
+    grayOutTreeItems(&port);
+    grayOutTreeItems(&boundary);
+}
+
+void OpenParEMg::on_actionShow_All_triggered ()
+{
+    //ui->drawingWindow->showAll();
+    ui->drawingWindow->hideAll();
+    clickedItem=&drawing;
+    showShape();
 }
 

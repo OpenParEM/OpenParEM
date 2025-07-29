@@ -59,4 +59,4 @@ debug.show.impedance.details   false
 debug.save.port.fields         false
 debug.tempfiles.keep           false
 
-
+gui.brep.file                  filter.brep

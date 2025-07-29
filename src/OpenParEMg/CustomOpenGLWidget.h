@@ -45,15 +45,72 @@ public:
 
     void updateView ();
     void clearDrawing ();
-    void displayDrawing (Handle(AIS_Shape));
 
     void fitAll () {view->FitAll(); view->Redraw();}
+    void fitSelected () {viewerContext->FitSelected(view); view->Redraw();}
 
     void wheelEvent (QWheelEvent*) override;
     void keyPressEvent (QKeyEvent*) override;
     void mousePressEvent (QMouseEvent*) override;
     void mouseReleaseEvent (QMouseEvent*) override;
     void mouseMoveEvent (QMouseEvent*) override;
+
+    void displayShape (Handle(AIS_Shape) shape) {
+        viewerContext->Display(shape,Standard_True);
+        //viewerContext->UpdateCurrentViewer();
+    }
+
+    void selectShape (Handle(AIS_Shape) shape) {
+        //viewerContext->ClearSelected(false);
+        if (!viewerContext->IsDisplayed(shape)) return;
+        if (viewerContext->IsSelected(shape)) return;
+        viewerContext->AddOrRemoveSelected(shape,Standard_True);
+        //viewerContext->UpdateCurrentViewer();
+    }
+
+    void unselectShape (Handle(AIS_Shape) shape) {
+        if (!viewerContext->IsDisplayed(shape)) return;
+        if (!viewerContext->IsSelected(shape)) return;
+        viewerContext->AddOrRemoveSelected(shape,Standard_True);
+        //viewerContext->UpdateCurrentViewer();
+    }
+
+    void hideShape (Handle(AIS_Shape) shape) {
+        if (!viewerContext->IsDisplayed(shape)) return;
+        if (viewerContext->IsSelected(shape)) viewerContext->AddOrRemoveSelected(shape,Standard_True);
+        viewerContext->Erase(shape,Standard_True);
+        //viewerContext->UpdateCurrentViewer();
+    }
+
+    void showShape (Handle(AIS_Shape) shape) {
+        viewerContext->Display(shape,Standard_True);
+        //viewerContext->UpdateCurrentViewer();;
+    }
+
+    void hideAll () {
+        viewerContext->EraseAll(Standard_True);
+        viewerContext->UpdateCurrentViewer();
+    }
+
+    void showAll () {
+        viewerContext->DisplayAll(Standard_True);
+        viewerContext->UpdateCurrentViewer();
+    }
+
+    void unselectAll () {
+        viewerContext->ClearSelected(Standard_True);
+        viewerContext->UpdateCurrentViewer();
+    }
+
+    void setSelectionShape () {viewerContext->Activate(0);}
+    void setSelectionVertex () {viewerContext->Activate(1);}
+    void setSelectionEdge () {viewerContext->Activate(2);}
+    void setSelectionWire () {viewerContext->Activate(3);}
+    void setSelectionFace () {viewerContext->Activate(4);}
+    void setSelectionShell () {viewerContext->Activate(5);}
+    void setSelectionSolid () {viewerContext->Activate(6);}
+
+    bool isDisplayed (Handle(AIS_Shape) shape) {return viewerContext->IsDisplayed(shape);}
 
 protected:
     void initializeGL () override;

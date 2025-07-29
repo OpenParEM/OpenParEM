@@ -107,7 +107,30 @@
     </property>
     <addaction name="actionSelect_Database"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <widget class="QMenu" name="menuSelection">
+     <property name="title">
+      <string>Selection ...</string>
+     </property>
+     <addaction name="actionShape"/>
+     <addaction name="actionVertex"/>
+     <addaction name="actionEdge"/>
+     <addaction name="actionWire"/>
+     <addaction name="actionFace"/>
+     <addaction name="actionShell"/>
+     <addaction name="actionSolid"/>
+    </widget>
+    <addaction name="actionFit_Selected"/>
+    <addaction name="actionFit_All"/>
+    <addaction name="menuSelection"/>
+    <addaction name="actionHide_All"/>
+    <addaction name="actionShow_All"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuView"/>
    <addaction name="menuMaterials"/>
    <addaction name="menuMesh"/>
    <addaction name="menuSimulate"/>
@@ -178,6 +201,67 @@
   <action name="actionSelect_Database">
    <property name="text">
     <string>Select Database ...</string>
+   </property>
+  </action>
+  <action name="actionFit_Selected">
+   <property name="text">
+    <string>Fit Selected</string>
+   </property>
+  </action>
+  <action name="actionFit_All">
+   <property name="text">
+    <string>Fit All</string>
+   </property>
+  </action>
+  <action name="actionVertex">
+   <property name="text">
+    <string>Vertex</string>
+   </property>
+  </action>
+  <action name="actionFace">
+   <property name="text">
+    <string>Face</string>
+   </property>
+  </action>
+  <action name="actionShell">
+   <property name="text">
+    <string>Shell</string>
+   </property>
+   <property name="toolTip">
+    <string>Shell</string>
+   </property>
+  </action>
+  <action name="actionEdge">
+   <property name="text">
+    <string>Edge</string>
+   </property>
+  </action>
+  <action name="actionShape">
+   <property name="text">
+    <string>Shape</string>
+   </property>
+  </action>
+  <action name="actionSolid">
+   <property name="text">
+    <string>Solid</string>
+   </property>
+  </action>
+  <action name="actionWire">
+   <property name="text">
+    <string>Wire</string>
+   </property>
+  </action>
+  <action name="actionHide_All">
+   <property name="text">
+    <string>Hide All</string>
+   </property>
+  </action>
+  <action name="actionShow_All">
+   <property name="text">
+    <string>Show All</string>
+   </property>
+   <property name="toolTip">
+    <string>Show All</string>
    </property>
   </action>
  </widget>

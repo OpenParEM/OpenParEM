@@ -39,6 +39,7 @@
 //#include <QObject>
 #include <QTreeWidget>
 #include "CustomOpenGLWidget.h"
+#include "CustomTreeWidgetItem.h"
 #endif
 
 #define lapack_int int
@@ -200,7 +201,7 @@ class Boundary
       void print();
       bool snapToMeshBoundary (std::vector<Path *> *, mfem::Mesh *, std::string);
 #ifdef HAS_GUI
-      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, QTreeWidgetItem *, MaterialDatabase *);
+      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, MaterialDatabase *);
 #endif
 };
 
@@ -681,7 +682,7 @@ class Port
       void buildAggregateModeList (std::vector<Mode *> *);
       bool has_mode (Mode *, long unsigned int *);
 #ifdef HAS_GUI
-      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, QTreeWidgetItem *);
+      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -796,7 +797,7 @@ class BoundaryDatabase
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *, long unsigned int, long unsigned int);
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *);
 #ifdef HAS_GUI
-      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, QTreeWidgetItem *, QTreeWidgetItem *, MaterialDatabase *);
+      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
 #endif
 };
 
