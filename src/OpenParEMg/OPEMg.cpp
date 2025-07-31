@@ -65,6 +65,10 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 {
     ui->setupUi(this);
 
+    /////////////////////////////////////////////////////////////////////////////
+    // main window setup
+    /////////////////////////////////////////////////////////////////////////////
+
     absolutePath=QDir::currentPath();
     materialDatabase=new MaterialDatabase();
     boundaryDatabase=new BoundaryDatabase();
@@ -83,10 +87,23 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->actionFrequency_Plan->setEnabled(false);
     ui->actionRefinement->setEnabled(false);
 
-    ui->drawingWindow->show();
+    /////////////////////////////////////////////////////////////////////////////
+    // drawing window
+    /////////////////////////////////////////////////////////////////////////////
+
+    ui->drawingWindow->set_drawingItemTree(&drawing);
+    ui->drawingWindow->set_portItemTree(&port);
+    ui->drawingWindow->set_boundaryItemTree(&boundary);
+
+    /////////////////////////////////////////////////////////////////////////////
+    // item selection tree
+    /////////////////////////////////////////////////////////////////////////////
 
     ui->drawingItemTree->setHeaderHidden(true);
+    //ToDo: uncomment and work with the colors
+    //ui->drawingItemTree->setItemDelegate(new CustomStyledItemDelegate(ui->drawingItemTree));
 
+    // three base list items: drawing, port, and boundary
     drawing.setText(0,"Drawing");
     ui->drawingItemTree->addTopLevelItem(&drawing);
     port.setText(0,"Port");
@@ -94,18 +111,48 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     boundary.setText(0,"Boundary");
     ui->drawingItemTree->addTopLevelItem(&boundary);
 
-
+    // context menu
     ui->drawingItemTree->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(ui->drawingItemTree,&QTreeView::customContextMenuRequested,this,&OpenParEMg::contextMenu_triggered);
-    ui->drawingItemTree->show();
+    connect(ui->drawingItemTree,&QTreeView::customContextMenuRequested,this,&OpenParEMg::itemTreeContextMenu_triggered);
+
     ui->drawingItemTree->viewport()->installEventFilter(this);
 
+    // enable multi-selection with CTRL and SHIFT modifiers
     ui->drawingItemTree->setSelectionMode(QAbstractItemView::MultiSelection);
     CTRLpressed=false;
     SHIFTpressed=false;
-
     clickedItem=nullptr;
     previousClickedItem=nullptr;
+
+    // hash between the drawing and item tree
+    std::cout << "OpenParEMg: drawingToItemMap=" << &drawingToItemMap << std::endl; std::cout.flush();
+    ui->drawingWindow->set_drawingToItemMap(&drawingToItemMap);
+
+    /////////////////////////////////////////////////////////////////////////////
+    // context menu for drawingWindow
+    /////////////////////////////////////////////////////////////////////////////
+
+    QAction *hideAction=new QAction("Hide",this);
+    QAction *selectAction=new QAction("Select",this);
+    QAction *unselectAction=new QAction("Unselect",this);
+
+    connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideShape);
+    connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectShape);
+    connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectShape);
+
+    drawingContextMenu=new QMenu(this);
+    drawingContextMenu->addAction(hideAction);
+    drawingContextMenu->addAction(selectAction);
+    drawingContextMenu->addAction(unselectAction);
+    ui->drawingWindow->set_contextMenu(drawingContextMenu);
+
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    ///
+
+    ui->drawingItemTree->show();
+    ui->drawingWindow->show();
 
     PetscInitializeNoArguments();
 }
@@ -116,18 +163,19 @@ OpenParEMg::~OpenParEMg ()
     delete ui;
 }
 
-
-void OpenParEMg::contextMenu_triggered(const QPoint& pnt)
+//xxx
+void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
 {
     clickedItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemAt(pnt);
     if (!clickedItem) return;
+    if (!clickedItem->isSelected()) return;
     if (!clickedItem->get_AIS_Shape()) return;
 
     QAction *showAction=new QAction("Show",this);
     QAction *hideAction=new QAction("Hide",this);
     QAction *selectAction=new QAction("Select",this);
     QAction *unselectAction=new QAction("Unselect",this);
-    QAction *deleteAction=new QAction("Delete",this);
+    //QAction *deleteAction=new QAction("Delete",this);
 
     connect(showAction, &QAction::triggered, this, &OpenParEMg::showShape);
     connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideShape);
@@ -140,7 +188,7 @@ void OpenParEMg::contextMenu_triggered(const QPoint& pnt)
         hideAction->setEnabled(false);
         selectAction->setEnabled(false);
         unselectAction->setEnabled(false);
-        deleteAction->setEnabled(false);
+        //deleteAction->setEnabled(false);
     }
 
     QMenu menu(this);
@@ -148,7 +196,7 @@ void OpenParEMg::contextMenu_triggered(const QPoint& pnt)
     menu.addAction(hideAction);
     menu.addAction(selectAction);
     menu.addAction(unselectAction);
-    menu.addAction(deleteAction);
+    //menu.addAction(deleteAction);
 
     menu.exec(ui->drawingItemTree->mapToGlobal(pnt));
 }
@@ -278,6 +326,7 @@ void OpenParEMg::on_fileOpen_triggered ()
             mb.critical(nullptr, "Error", "Error in loading port and boundary definitions.");
             mb.setFixedSize(500, 200);
         } else {
+            boundaryDatabase->set_drawingToItemMap(&drawingToItemMap);
             boundaryDatabase->draw(&projData,ui->drawingWindow,ui->drawingItemTree,&port,&boundary,materialDatabase);
         }
 
@@ -507,6 +556,7 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
         newItem->setForeground(0,Qt::gray);
         item->addChild(newItem);
     }
+    drawingToItemMap.insert({drawingShape,newItem});
 
     // children
     TopoDS_Iterator topoIterator(shape);
@@ -524,7 +574,7 @@ bool OpenParEMg::loadBrepFile (QString filePath)
     } else {
 
         QFileInfo fileInfo(filePath);
-        QString base=fileInfo.baseName();
+        //QString base=fileInfo.baseName();
 
         TopoDS_Shape s;
         BRep_Builder b;
@@ -767,10 +817,30 @@ void OpenParEMg::on_actionHide_All_triggered ()
 
 void OpenParEMg::on_actionShow_All_triggered ()
 {
-    //ui->drawingWindow->showAll();
     ui->drawingWindow->hideAll();
+    grayOutTreeItems(&drawing);
+    drawing.setSelected(true);
     clickedItem=&drawing;
     previousClickedItem=nullptr;
     showShape();
+}
+
+void OpenParEMg::unselectTreeItems (CustomTreeWidgetItem *item)
+{
+    if (item->foreground(0) == Qt::red) item->setForeground(0,Qt::black);
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        unselectTreeItems(child);
+        i++;
+    }
+}
+
+void OpenParEMg::on_actionUnselect_All_triggered ()
+{
+    ui->drawingWindow->unselectAll();
+    unselectTreeItems(&drawing);
+    ui->drawingWindow->repaint();
 }
 

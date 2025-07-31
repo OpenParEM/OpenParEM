@@ -1412,6 +1412,7 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
     itemName->setText(0,textName);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     boundaryWidgetItem->addChild(itemName);
+    drawingToItemMap->insert({drawingShape,itemName});
 
     // type
 
@@ -6395,6 +6396,7 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
     itemName->setText(0,textName);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     portWidgetItem->addChild(itemName);
+    drawingToItemMap->insert({drawingShape,itemName});
 
     // impedance definition
 
@@ -8507,9 +8509,25 @@ void BoundaryDatabase::draw (struct projectData *projData, CustomOpenGLWidget *d
         boundaryList[i]->draw(projData,drawingWindow,drawingItemTree,boundaryTreeItem,materialDatabase);
         i++;
     }
-
-
 }
+
+void BoundaryDatabase::set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap)
+{
+    // ports
+    long unsigned int i=0;
+    while (i < portList.size()) {
+        portList[i]->set_drawingToItemMap(drawingToItemMap);
+        i++;
+    }
+
+    // boundaries
+    i=0;
+    while (i < boundaryList.size()) {
+        boundaryList[i]->set_drawingToItemMap(drawingToItemMap);
+        i++;
+    }
+}
+
 #endif
 
 BoundaryDatabase::~BoundaryDatabase ()

@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "CustomOpenGLWidget.h"
+#include <TopoDS_Face.hxx>
 #include <glx.h>
 #include "OcctQtTools.h"
 
@@ -187,6 +188,19 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateView();
 }
 
+void CustomOpenGLWidget::unselectTreeItems (CustomTreeWidgetItem *item)
+{
+    if (item->foreground(0) == Qt::red) item->setForeground(0,Qt::black);
+    item->setSelected(false);
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        unselectTreeItems(child);
+        i++;
+    }
+}
+
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
     QOpenGLWidget::mouseReleaseEvent(event);
@@ -196,6 +210,44 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
     const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
     if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateView();
+
+    if (event->button() == Qt::LeftButton) {
+        if (viewerContext->NbSelected() > 0) {
+            unselectTreeItems(drawingItemTree);
+            unselectTreeItems(portItemTree);
+            unselectTreeItems(boundaryItemTree);
+
+            viewerContext->InitSelected();
+            while (viewerContext->MoreSelected()) {
+                Handle(AIS_InteractiveObject) anIO = viewerContext->SelectedInteractive();
+                Handle(AIS_Shape) shape = Handle(AIS_Shape)::DownCast(anIO);
+                CustomTreeWidgetItem *item=(*drawingToItemMap)[shape];
+                item->setForeground(0,Qt::red);
+                item->setSelected(true);
+                viewerContext->NextSelected();
+            }
+        } else {
+            unselectAll();
+            unselectTreeItems(drawingItemTree);
+            unselectTreeItems(portItemTree);
+            unselectTreeItems(boundaryItemTree);
+            repaint();
+        }
+    } else if (event->button() == Qt::RightButton) {
+        if (viewerContext->NbSelected() > 0) {
+
+            viewerContext->InitSelected();
+            while (viewerContext->MoreSelected()) {
+                Handle(AIS_InteractiveObject) anIO = viewerContext->SelectedInteractive();
+                Handle(AIS_Shape) shape = Handle(AIS_Shape)::DownCast(anIO);
+                CustomTreeWidgetItem *item=(*drawingToItemMap)[shape];
+                item->setSelected(true);
+                viewerContext->NextSelected();
+            }
+
+            contextMenu->exec(QCursor::pos());
+        }
+    }
 }
 
 void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)

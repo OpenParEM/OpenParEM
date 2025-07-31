@@ -22,6 +22,7 @@
 #define OPEMG_H
 
 #include <QMainWindow>
+#include <QStyledItemDelegate>
 
 #include "AIS_Shape.hxx"
 
@@ -29,6 +30,7 @@
 #include "OpenParEMmaterials.hpp"
 #include "port.hpp"
 #include "CustomTreeWidgetItem.h"
+#include <unordered_map>
 
 
 extern "C" void init_project (struct projectData *);
@@ -41,6 +43,34 @@ namespace Ui {
 class OpenParEMg;
 }
 QT_END_NAMESPACE
+
+class CustomStyledItemDelegate : public QStyledItemDelegate
+{
+public:
+    CustomStyledItemDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
+
+    void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override
+    {
+        QStyledItemDelegate::initStyleOption(option, index);
+
+        if (option->state & QStyle::State_Selected) {
+            //QVariant backgroundData = index.data(Qt::BackgroundRole);
+            //if (backgroundData.canConvert<QBrush>()) {
+            //    option->palette.setBrush(QPalette::Highlight, qvariant_cast<QBrush>(backgroundData));
+            //} else {
+            //    option->palette.setBrush(QPalette::Highlight, option->palette.brush(QPalette::Base));
+            //}
+
+            // keep the original text color
+            QVariant foregroundData=index.data(Qt::ForegroundRole);
+            if (foregroundData.canConvert<QBrush>()) {
+                option->palette.setBrush(QPalette::HighlightedText, qvariant_cast<QBrush>(foregroundData));
+            } else {
+                option->palette.setBrush(QPalette::HighlightedText, option->palette.brush(QPalette::Text));
+            }
+        }
+    }
+};
 
 class OpenParEMg : public QMainWindow
 {
@@ -75,10 +105,9 @@ private slots:
     void selectShape ();
     void unselectShape ();
 
-    void contextMenu_triggered (const QPoint& pnt);
+    void itemTreeContextMenu_triggered (const QPoint& pnt);
 
     void on_actionFit_Selected_triggered ();
-
     void on_actionFit_All_triggered ();
 
     void on_actionShape_triggered ();
@@ -97,6 +126,9 @@ private slots:
 
     void on_actionShow_All_triggered ();
 
+    void unselectTreeItems (CustomTreeWidgetItem *);
+    void on_actionUnselect_All_triggered ();   // note similar functionality in CustomOpenGLWidget
+
 private:
     Ui::OpenParEMg *ui;
     bool hasProjData;
@@ -113,11 +145,13 @@ private:
     CustomTreeWidgetItem boundary;
 
     CustomTreeWidgetItem *clickedItem,*previousClickedItem;
-
     QAction *currentSelectionAction;
-
     bool CTRLpressed;
     bool SHIFTpressed;
+
+    std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> drawingToItemMap;
+
+    QMenu *drawingContextMenu;
 
 };
 

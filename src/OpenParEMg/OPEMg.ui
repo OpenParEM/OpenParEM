@@ -126,6 +126,7 @@
     <addaction name="actionFit_Selected"/>
     <addaction name="actionFit_All"/>
     <addaction name="menuSelection"/>
+    <addaction name="actionUnselect_All"/>
     <addaction name="actionHide_All"/>
     <addaction name="actionShow_All"/>
    </widget>
@@ -262,6 +263,11 @@
    </property>
    <property name="toolTip">
     <string>Show All</string>
+   </property>
+  </action>
+  <action name="actionUnselect_All">
+   <property name="text">
+    <string>Unselect All</string>
    </property>
   </action>
  </widget>

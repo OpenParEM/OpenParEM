@@ -23,6 +23,9 @@
 
 #include <QOpenGLWidget>
 #include <QMessageBox>
+#include <QMouseEvent>
+
+#include "CustomTreeWidgetItem.h"
 
 #include "OpenGl_GraphicDriver.hxx"
 #include <Aspect_DisplayConnection.hxx>
@@ -32,7 +35,6 @@
 #include "AIS_ViewCube.hxx"
 
 #include <Standard_WarningsDisable.hxx>
-#include <QMouseEvent>
 #include <Standard_WarningsRestore.hxx>
 #include <V3d_View.hxx>
 
@@ -42,6 +44,12 @@ class CustomOpenGLWidget : public QOpenGLWidget, public AIS_ViewController
 public:
     CustomOpenGLWidget (QWidget *parent = nullptr);
     virtual ~CustomOpenGLWidget ();
+
+    void set_drawingItemTree (CustomTreeWidgetItem *drawingItemTree_) {drawingItemTree=drawingItemTree_;}
+    void set_portItemTree (CustomTreeWidgetItem *portItemTree_) {portItemTree=portItemTree_;}
+    void set_boundaryItemTree (CustomTreeWidgetItem *boundaryItemTree_) {boundaryItemTree=boundaryItemTree_;}
+    void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
+    void set_contextMenu (QMenu *contextMenu_) {contextMenu=contextMenu_;}
 
     void updateView ();
     void clearDrawing ();
@@ -112,6 +120,8 @@ public:
 
     bool isDisplayed (Handle(AIS_Shape) shape) {return viewerContext->IsDisplayed(shape);}
 
+    void unselectTreeItems (CustomTreeWidgetItem *);
+
 protected:
     void initializeGL () override;
     void paintGL () override;
@@ -124,6 +134,13 @@ private:
     Handle(AIS_InteractiveContext) viewerContext;
     Handle(V3d_View) focusView;
     Handle(AIS_ViewCube) viewCube;
+
+    CustomTreeWidgetItem *drawingItemTree;
+    CustomTreeWidgetItem *portItemTree;
+    CustomTreeWidgetItem *boundaryItemTree;
+    std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap;
+
+    QMenu *contextMenu;
 };
 
 #endif // CUSTOMOPENGLWIDGET_H
