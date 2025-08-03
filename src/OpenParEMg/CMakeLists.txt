@@ -101,6 +101,8 @@ set_target_properties(petscts PROPERTIES IMPORTED_LOCATION "/home/briany/OpenPar
 add_library(petscvec SHARED IMPORTED)
 set_target_properties(petscvec PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libpetscvec.so")
 
+add_library(gmsh SHARED IMPORTED)
+set_target_properties(gmsh PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libgmsh.so")
 
 set(MPI_LIBS mpi_mpifh  mpi  mpi_usempif08  mpi_usempi_ignore_tkr)
 
@@ -123,6 +125,7 @@ target_link_libraries(OpenParEMg
         petscts
         petscdm
         petscksp
+        gmsh
 
         #freetype
 )

@@ -48,6 +48,9 @@ tk="tk8.6.16-src.tar.gz"
 #https://dev.opencascade.org/release
 occt="OCCT-7_9_1.tar.gz"
 
+#https://gmsh.info/
+gmsh="gmsh-4.14.0-source.tgz"
+
 #----------------------------------------------------
 # packages downloaded by petsc
 #----------------------------------------------------
@@ -66,6 +69,8 @@ cmake="https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6.t
 with_freetype=1
 with_tcl=1
 with_tk=1
+with_occt=1
+with_gmsh=1
 with_m4=1
 with_bison=1
 with_zlib=1
@@ -338,6 +343,7 @@ for arg in "$@"; do
          with_tcl=0
          with_tk=0
          with_occt=0
+         with_gmsh=0
          with_m4=0
          with_bison=0
          with_zlib=0
@@ -357,6 +363,7 @@ for arg in "$@"; do
          with_tcl=1
          with_tk=1
          with_occt=1
+         with_gmsh=1
          with_m4=1
          with_bison=1
          with_zlib=1
@@ -406,6 +413,13 @@ for arg in "$@"; do
          occt=$value
       elif [ "$arg" = "--without-occt" ]; then
          with_occt=0
+      elif [ "$arg" = "--with-gmsh" ]; then
+         with_gmsh=1
+      elif [ "$keyword" = "--with-gmsh" ]; then
+         with_gmsh=1
+         gmsh=$value
+      elif [ "$arg" = "--without-gmsh" ]; then
+         with_gmsh=0
       elif [ "$arg" = "--with-m4" ]; then
          with_m4=1
       elif [ "$keyword" = "--with-m4" ]; then
@@ -552,6 +566,7 @@ if [ $print_help -eq 1 ]; then
    echo "  --with-tcl=file]         compile tcl using the default distribution or the provided file"
    echo "  --with-tk[=file]         compile tk using the default distribution or the provided file"
    echo "  --with-occt[=file]       compile occt using the default distribution or the provided file"
+   echo "  --with-gmsh[=file]       compile gmsh using the default distribution or the provided file"
    echo "  --with-m4[=file]         compile m4 using the default distribution or the provided file"
    echo "  --without-m4             skip compiling m4"
    echo "  --with-bison[=file]      compile bison using the default distribution or the provided file"
@@ -622,6 +637,12 @@ echo "jobs=$jobs"
       echo "with-occt=$with_occt using $occt"
    else
       echo "with-occt=$with_occt"
+   fi
+
+   if [ "$with_gmsh" = "1" ]; then
+      echo "with-gmsh=$with_gmsh using $gmsh"
+   else
+      echo "with-gmsh=$with_gmsh"
    fi
 
    if [ "$with_m4" = "1" ]; then
@@ -833,6 +854,11 @@ if [ "$with_occt" = "1" -a ! -f "../external_packages/$occt" ]; then
    echo "OpenParEM_ERROR: occt compile requested but the file ../external_packages/$occt is missing."
 fi
 
+if [ "$with_gmsh" = "1" -a ! -f "../external_packages/$gmsh" ]; then
+   missing_sources=1
+   echo "OpenParEM_ERROR: gmsh compile requested but the file ../external_packages/$gmsh is missing."
+fi
+
 if [ "$with_m4" = "1" -a ! -f "../external_packages/$m4" ]; then
    missing_sources=1
    echo "OpenParEM_ERROR: m4 compile requested but the file ../external_packages/$m4 is missing."
@@ -921,6 +947,10 @@ if [ "$with_tk" = "1" ]; then
 fi
 
 if [ "$with_occt" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_gmsh" = "1" ]; then
    has_build=1
 fi
 
@@ -1241,6 +1271,51 @@ if [ "$with_occt" = "1" ]; then
 #   remove_base_directory
    cd ..
 fi
+
+# gmsh
+if [ "$with_gmsh" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: gmsh"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$gmsh"
+
+   mkdir build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to create a build directory"
+      exit 1
+   fi
+
+   cd build
+
+   # EIGEN is enabled; can substitute Blas/Lapack if EIGEN becomes a problem
+   cmake -D CMAKE_INSTALL_PREFIX="$install_path" -D ENABLE_BUILD_SHARED=ON -D ENABLE_DOMHEX=OFF -D ENABLE_EIGEN=ON -D ENABLE_FLTK=OFF -D ENABLE_GETDP=OFF -D ENABLE_GMM=OFF -D ENABLE_GMP=OFF -D ENABLE_KBIPACK=OFF -D ENABLE_MED=OFF -D ENABLE_MMG=OFF -D ENABLE_MPEG_ENCODE=OFF -D ENABLE_ONELAB=OFF -D ENABLE_ONELAB_METAMODEL=OFF -D ENABLE_OPENMP=OFF -D ENABLE_OPTHOM=OFF -D ENABLE_PLUGINS=OFF -D ENABLE_POST=OFF -D ENABLE_QUADMESHINGTOOLS=OFF -D ENABLE_QUADTRI=OFF -D ENABLE_SOLVER=OFF -D ENABLE_TOUCHBAR=OFF -D ENABLE_VOROPP=OFF  ..
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to install"
+      exit 1
+   fi
+
+   cd ../..
+#   remove_base_directory
+   cd ..
+fi
+
 
 # m4
 if [ "$with_m4" = "1" ]; then

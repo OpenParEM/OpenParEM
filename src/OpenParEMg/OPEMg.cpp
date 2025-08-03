@@ -28,6 +28,10 @@
 #include <TopoDS.hxx>
 #include <BRep_Builder.hxx>
 #include <BRepTools.hxx>
+#include <BRepBuilderAPI_MakeVertex.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
 
 #include <QFileDialog>
 #include <QFileInfo>
@@ -94,6 +98,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->drawingWindow->set_drawingItemTree(&drawing);
     ui->drawingWindow->set_portItemTree(&port);
     ui->drawingWindow->set_boundaryItemTree(&boundary);
+    ui->drawingWindow->set_meshItemTree(&mesh);
 
     /////////////////////////////////////////////////////////////////////////////
     // item selection tree
@@ -103,13 +108,15 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     //ToDo: uncomment and work with the colors
     //ui->drawingItemTree->setItemDelegate(new CustomStyledItemDelegate(ui->drawingItemTree));
 
-    // three base list items: drawing, port, and boundary
+    // four base list items: drawing, port, boundary, and mesh
     drawing.setText(0,"Drawing");
     ui->drawingItemTree->addTopLevelItem(&drawing);
     port.setText(0,"Port");
     ui->drawingItemTree->addTopLevelItem(&port);
     boundary.setText(0,"Boundary");
     ui->drawingItemTree->addTopLevelItem(&boundary);
+    mesh.setText(0,"Mesh");
+    ui->drawingItemTree->addTopLevelItem(&mesh);
 
     // context menu
     ui->drawingItemTree->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -146,10 +153,14 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     drawingContextMenu->addAction(unselectAction);
     ui->drawingWindow->set_contextMenu(drawingContextMenu);
 
+    /////////////////////////////////////////////////////////////////////////////
+    // gmsh
+    /////////////////////////////////////////////////////////////////////////////
 
+    gmsh::initialize();
 
     /////////////////////////////////////////////////////////////////////////////
-    ///
+
 
     ui->drawingItemTree->show();
     ui->drawingWindow->show();
@@ -159,6 +170,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
 OpenParEMg::~OpenParEMg ()
 {
+    gmsh::finalize();
     PetscFinalize();
     delete ui;
 }
@@ -169,7 +181,7 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
     clickedItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemAt(pnt);
     if (!clickedItem) return;
     if (!clickedItem->isSelected()) return;
-    if (!clickedItem->get_AIS_Shape()) return;
+    if (!clickedItem->get_AIS_Shape() && !clickedItem->get_meshEntities()) return;
 
     QAction *showAction=new QAction("Show",this);
     QAction *hideAction=new QAction("Hide",this);
@@ -177,28 +189,85 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
     QAction *unselectAction=new QAction("Unselect",this);
     //QAction *deleteAction=new QAction("Delete",this);
 
-    connect(showAction, &QAction::triggered, this, &OpenParEMg::showShape);
-    connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideShape);
-    connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectShape);
-    connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectShape);
 
-    if (ui->drawingWindow->isDisplayed(clickedItem->get_AIS_Shape())) {
-        showAction->setEnabled(false);
-    } else {
-        hideAction->setEnabled(false);
-        selectAction->setEnabled(false);
-        unselectAction->setEnabled(false);
-        //deleteAction->setEnabled(false);
-    }
 
     QMenu menu(this);
-    menu.addAction(showAction);
-    menu.addAction(hideAction);
-    menu.addAction(selectAction);
-    menu.addAction(unselectAction);
-    //menu.addAction(deleteAction);
+
+    // drawing item
+    if (clickedItem->get_AIS_Shape()) {
+        connect(showAction, &QAction::triggered, this, &OpenParEMg::showShape);
+        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideShape);
+        connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectShape);
+        connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectShape);
+
+        if (ui->drawingWindow->isDisplayed(clickedItem->get_AIS_Shape())) {
+            showAction->setEnabled(false);
+        } else {
+            hideAction->setEnabled(false);
+            selectAction->setEnabled(false);
+            unselectAction->setEnabled(false);
+            //deleteAction->setEnabled(false);
+        }
+
+        menu.addAction(showAction);
+        menu.addAction(hideAction);
+        menu.addAction(selectAction);
+        menu.addAction(unselectAction);
+        //menu.addAction(deleteAction);
+    }
+
+    // mesh item
+    if (clickedItem->get_meshEntities()) {
+        connect(showAction, &QAction::triggered, this, &OpenParEMg::showMeshEntities);
+        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideMeshEntities);
+
+        if (clickedItem->foreground(0) == Qt::black) {
+            showAction->setEnabled(false);
+            hideAction->setEnabled(true);
+        } else {
+            showAction->setEnabled(true);
+            hideAction->setEnabled(false);
+        }
+
+        menu.addAction(showAction);
+        menu.addAction(hideAction);
+    }
 
     menu.exec(ui->drawingItemTree->mapToGlobal(pnt));
+}
+
+void OpenParEMg::showMeshEntities ()
+{
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        item->setForeground(0,Qt::black);
+        long unsigned int j=0;
+        while (j < item->get_meshEntitiesSize()) {
+            ui->drawingWindow->showShape(item->get_meshEntity(j));
+            j++;
+        }
+        i++;
+    }
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::hideMeshEntities ()
+{
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        item->setForeground(0,Qt::gray);
+        long unsigned int j=0;
+        while (j < item->get_meshEntitiesSize()) {
+            ui->drawingWindow->hideShape(item->get_meshEntity(j));
+            j++;
+        }
+        i++;
+    }
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::showShape ()
@@ -211,7 +280,7 @@ void OpenParEMg::showShape ()
         ui->drawingWindow->showShape(item->get_AIS_Shape());
         i++;
     }
-    ui->drawingWindow->repaint();
+     ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::hideShape ()
@@ -225,7 +294,7 @@ void OpenParEMg::hideShape ()
         ui->drawingWindow->hideShape(item->get_AIS_Shape());
         i++;
     }
-    ui->drawingWindow->repaint();
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::selectShape ()
@@ -238,7 +307,7 @@ void OpenParEMg::selectShape ()
         ui->drawingWindow->selectShape(item->get_AIS_Shape());
         i++;
     }
-    ui->drawingWindow->repaint();
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::unselectShape ()
@@ -251,7 +320,7 @@ void OpenParEMg::unselectShape ()
         ui->drawingWindow->unselectShape(item->get_AIS_Shape());
         i++;
     }
-    ui->drawingWindow->repaint();
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::on_fileOpen_triggered ()
@@ -320,6 +389,15 @@ void OpenParEMg::on_fileOpen_triggered ()
             }
         }
 
+        // extract drawing entities for gmsh
+        TopoDS_Shape shape=drawing.get_AIS_Shape()->Shape();
+        gmsh::model::occ::importShapesNativePointer((void *) &shape,drawingEntities,false);
+        gmsh::model::occ::synchronize();
+        gmsh::model::mesh::generate();
+        gmsh::write("testfile.msh");
+        drawMesh();
+
+
         // load boundaries, if any, and draw
         if (boundaryDatabase->load(projData.port_definition_file,projData.solution_check_closed_loop)) {
             QMessageBox mb;
@@ -331,7 +409,7 @@ void OpenParEMg::on_fileOpen_triggered ()
         }
 
         ui->drawingWindow->fitAll();
-        ui->drawingWindow->updateView();
+        ui->drawingWindow->updateViewer();
     } else {
         // should not occur
         QMessageBox mb;
@@ -372,7 +450,7 @@ void OpenParEMg::on_fileNew_triggered ()
     // reset drawing window
 
     ui->drawingWindow->clearDrawing();
-    ui->drawingWindow->updateView();
+    ui->drawingWindow->updateViewer();
 
     // reset selection tree
     drawing.reset();
@@ -599,7 +677,7 @@ void OpenParEMg::on_actionBrep_triggered ()
         mb.setFixedSize(500, 200);
     }
     ui->drawingWindow->fitAll();
-    ui->drawingWindow->updateView();
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::on_actionExit_triggered ()
@@ -674,13 +752,13 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
 void OpenParEMg::on_actionFit_Selected_triggered ()
 {
     ui->drawingWindow->fitSelected();
-    ui->drawingWindow->updateView();
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::on_actionFit_All_triggered ()
 {
     ui->drawingWindow->fitAll();
-    ui->drawingWindow->updateView();
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::on_actionShape_triggered()
@@ -805,7 +883,7 @@ void OpenParEMg::grayOutTreeItems (CustomTreeWidgetItem *item)
 void OpenParEMg::on_actionHide_All_triggered ()
 {
     ui->drawingWindow->hideAll();
-    ui->drawingWindow->repaint();
+    ui->drawingWindow->updateViewer();
 
     grayOutTreeItems(&drawing);
     grayOutTreeItems(&port);
@@ -841,6 +919,213 @@ void OpenParEMg::on_actionUnselect_All_triggered ()
 {
     ui->drawingWindow->unselectAll();
     unselectTreeItems(&drawing);
-    ui->drawingWindow->repaint();
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::drawMesh()
+{
+    // get all nodes
+    std::vector<std::size_t> nodeTags;
+    std::vector<double> nodeCoords, nodeParams;
+    gmsh::model::mesh::getNodes(nodeTags, nodeCoords, nodeParams);
+
+    // map node tag to coordinates
+    std::map<std::size_t,gp_Pnt> nodeMap;
+    long unsigned int i=0;
+    while (i < nodeTags.size()) {
+        double x=nodeCoords[3*i];
+        double y=nodeCoords[3*i+1];
+        double z=nodeCoords[3*i+2];
+        nodeMap[nodeTags[i]]=gp_Pnt(x, y, z);
+        i++;
+    }
+
+    // get all elements
+    std::vector<int> elementTypes;
+    std::vector<std::vector<std::size_t>> elementTags, nodeTagsPerElem;
+    gmsh::model::mesh::getElements(elementTypes, elementTags, nodeTagsPerElem);
+
+    meshVertices.clear();
+    meshEdges.clear();
+    meshWires.clear();
+    meshTriangles.clear();
+    meshTetrahedrons.clear();
+
+    size_t e=0;
+    while (e < elementTypes.size()) {
+        std::cout << "elementType=" << elementTypes[e] << std::endl; std::cout.flush();
+
+        // edges
+        if (elementTypes[e] == 1) {
+            int count=0;
+            std::vector<std::size_t> conn=nodeTagsPerElem[e];
+            long unsigned int i=0;
+            while (i < conn.size()) {
+                gp_Pnt p1=nodeMap[conn[i]];
+                gp_Pnt p2=nodeMap[conn[i+1]];
+                TopoDS_Edge edge=BRepBuilderAPI_MakeEdge(p1,p2);
+                Handle(AIS_Shape) shape=new AIS_Shape(edge);
+                meshEdges.push_back(shape);
+                i+=2;
+                count++;
+            }
+            std::cout << "   element type 1: edges: n=" << count << std::endl; std::cout.flush();
+        }
+
+        // triangles
+        if (elementTypes[e] == 2) {
+            int count=0;
+            std::vector<std::size_t> conn=nodeTagsPerElem[e];
+            long unsigned int i=0;
+            while (i < conn.size()) {
+                gp_Pnt p1=nodeMap[conn[i]];
+                gp_Pnt p2=nodeMap[conn[i+1]];
+                gp_Pnt p3=nodeMap[conn[i+2]];
+
+                TopoDS_Edge edge12=BRepBuilderAPI_MakeEdge(p1,p2);
+                TopoDS_Edge edge23=BRepBuilderAPI_MakeEdge(p2,p3);
+                TopoDS_Edge edge31=BRepBuilderAPI_MakeEdge(p3,p1);
+
+                TopoDS_Wire wire=BRepBuilderAPI_MakeWire(edge12,edge23,edge31);
+                Handle(AIS_Shape) shape=new AIS_Shape(wire);
+                meshWires.push_back(shape);
+
+                TopoDS_Face face=BRepBuilderAPI_MakeFace(wire);
+                shape=new AIS_Shape(face);
+                meshTriangles.push_back(shape);
+
+                i+=3;
+                count++;
+            }
+            std::cout << "   element type 2: triangles: n=" << count << std::endl; std::cout.flush();
+        }
+
+        // tetrahedron
+        if (elementTypes[e] == 4) {
+            int count=0;
+            std::vector<std::size_t> conn=nodeTagsPerElem[e];
+            long unsigned int i=0;
+            while (i < conn.size()) {
+                gp_Pnt p1=nodeMap[conn[i]];
+                gp_Pnt p2=nodeMap[conn[i+1]];
+                gp_Pnt p3=nodeMap[conn[i+2]];
+                gp_Pnt p4=nodeMap[conn[i+3]];
+
+                TopoDS_Edge edge12=BRepBuilderAPI_MakeEdge(p1,p2);
+                TopoDS_Edge edge13=BRepBuilderAPI_MakeEdge(p1,p3);
+                TopoDS_Edge edge14=BRepBuilderAPI_MakeEdge(p1,p4);
+                TopoDS_Edge edge23=BRepBuilderAPI_MakeEdge(p2,p3);
+                TopoDS_Edge edge34=BRepBuilderAPI_MakeEdge(p3,p4);
+                TopoDS_Edge edge42=BRepBuilderAPI_MakeEdge(p4,p2);
+
+                TopoDS_Wire wire123=BRepBuilderAPI_MakeWire(edge12,edge23,edge13);
+                TopoDS_Wire wire134=BRepBuilderAPI_MakeWire(edge13,edge34,edge14);
+                TopoDS_Wire wire124=BRepBuilderAPI_MakeWire(edge12,edge42,edge14);
+                TopoDS_Wire wire234=BRepBuilderAPI_MakeWire(edge23,edge34,edge42);
+
+                TopoDS_Face face123=BRepBuilderAPI_MakeFace(wire123);
+                TopoDS_Face face134=BRepBuilderAPI_MakeFace(wire134);
+                TopoDS_Face face124=BRepBuilderAPI_MakeFace(wire124);
+                TopoDS_Face face234=BRepBuilderAPI_MakeFace(wire234);
+
+                TopoDS_Compound tetrahedron;
+                BRep_Builder builder;
+                builder.MakeCompound(tetrahedron);
+                builder.Add(tetrahedron, face123);
+                builder.Add(tetrahedron, face134);
+                builder.Add(tetrahedron, face124);
+                builder.Add(tetrahedron, face234);
+
+                Handle(AIS_Shape) shape=new AIS_Shape(tetrahedron);
+                meshTetrahedrons.push_back(shape);
+
+                i+=4;
+                count++;
+            }
+            std::cout << "   element type 4: tetrahedra: n=" << count << std::endl; std::cout.flush();
+        }
+
+        // vertices
+        if (elementTypes[e] == 15) {
+            int count=0;
+            std::vector<std::size_t> conn=nodeTagsPerElem[e];
+            long unsigned int i=0;
+            while (i < conn.size()) {
+                gp_Pnt p=nodeMap[conn[i]];
+                TopoDS_Vertex vertex=BRepBuilderAPI_MakeVertex(p);
+                Handle(AIS_Shape) shape=new AIS_Shape(vertex);
+                meshVertices.push_back(shape);
+                i+=1;
+                count++;
+            }
+            std::cout << "   element type 15: vertices: n=" << count << std::endl; std::cout.flush();
+        }
+
+        e++;
+    }
+
+    // display the shapes
+
+    i=0;
+    while (i < meshVertices.size()) {
+        ui->drawingWindow->displayShape(meshVertices[i]);
+        i++;
+    }
+
+    i=0;
+    while (i < meshEdges.size()) {
+        ui->drawingWindow->displayShape(meshEdges[i]);
+        i++;
+    }
+
+    i=0;
+    while (i < meshWires.size()) {
+        ui->drawingWindow->displayShape(meshWires[i]);
+        i++;
+    }
+
+    i=0;
+    while (i < meshTriangles.size()) {
+        ui->drawingWindow->displayShape(meshTriangles[i]);
+        i++;
+    }
+
+    i=0;
+    while (i < meshTetrahedrons.size()) {
+        ui->drawingWindow->displayShape(meshTetrahedrons[i]);
+        i++;
+    }
+
+    // add the shape lists to the menu
+
+    CustomTreeWidgetItem *verticesItem=new CustomTreeWidgetItem(0);
+    verticesItem->set_meshEntities(&meshVertices);
+    verticesItem->setText(0,"Vertices");
+    verticesItem->setForeground(0,Qt::black);
+    mesh.addChild(verticesItem);
+
+    CustomTreeWidgetItem *edgesItem=new CustomTreeWidgetItem(0);
+    edgesItem->set_meshEntities(&meshEdges);
+    edgesItem->setText(0,"Edges");
+    edgesItem->setForeground(0,Qt::black);
+    mesh.addChild(edgesItem);
+
+    CustomTreeWidgetItem *wiresItem=new CustomTreeWidgetItem(0);
+    wiresItem->set_meshEntities(&meshWires);
+    wiresItem->setText(0,"Wires");
+    wiresItem->setForeground(0,Qt::black);
+    mesh.addChild(wiresItem);
+
+    CustomTreeWidgetItem *trianglesItem=new CustomTreeWidgetItem(0);
+    trianglesItem->set_meshEntities(&meshTriangles);
+    trianglesItem->setText(0,"Triangles");
+    trianglesItem->setForeground(0,Qt::black);
+    mesh.addChild(trianglesItem);
+
+    CustomTreeWidgetItem *tetrahedronsItem=new CustomTreeWidgetItem(0);
+    tetrahedronsItem->set_meshEntities(&meshTetrahedrons);
+    tetrahedronsItem->setText(0,"Tetrahedrons");
+    tetrahedronsItem->setForeground(0,Qt::black);
+    mesh.addChild(tetrahedronsItem);
 }
 

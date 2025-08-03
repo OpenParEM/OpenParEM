@@ -21,6 +21,9 @@
 #ifndef OPEMG_H
 #define OPEMG_H
 
+#include <Standard_Handle.hxx>
+#include <unordered_map>
+
 #include <QMainWindow>
 #include <QStyledItemDelegate>
 
@@ -30,7 +33,7 @@
 #include "OpenParEMmaterials.hpp"
 #include "port.hpp"
 #include "CustomTreeWidgetItem.h"
-#include <unordered_map>
+#include "gmsh.h"
 
 
 extern "C" void init_project (struct projectData *);
@@ -82,6 +85,7 @@ public:
 
     void addShape (TopoDS_Shape, CustomTreeWidgetItem *, bool);
     bool loadBrepFile (QString);
+    void drawMesh ();
 
 private slots:
     void on_fileOpen_triggered ();
@@ -98,6 +102,9 @@ private slots:
     void on_actionSelect_Database_triggered ();
 
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
+
+    void hideMeshEntities();
+    void showMeshEntities();
 
     void showShape ();
     void grayOutTreeItems (CustomTreeWidgetItem *);
@@ -129,6 +136,8 @@ private slots:
     void unselectTreeItems (CustomTreeWidgetItem *);
     void on_actionUnselect_All_triggered ();   // note similar functionality in CustomOpenGLWidget
 
+
+
 private:
     Ui::OpenParEMg *ui;
     bool hasProjData;
@@ -143,6 +152,7 @@ private:
     CustomTreeWidgetItem drawing;
     CustomTreeWidgetItem port;
     CustomTreeWidgetItem boundary;
+    CustomTreeWidgetItem mesh;
 
     CustomTreeWidgetItem *clickedItem,*previousClickedItem;
     QAction *currentSelectionAction;
@@ -153,6 +163,13 @@ private:
 
     QMenu *drawingContextMenu;
 
+    //gmsh
+    gmsh::vectorpair drawingEntities;
+    std::vector<Handle(AIS_Shape)> meshVertices;
+    std::vector<Handle(AIS_Shape)> meshEdges;
+    std::vector<Handle(AIS_Shape)> meshWires;
+    std::vector<Handle(AIS_Shape)> meshTriangles;
+    std::vector<Handle(AIS_Shape)> meshTetrahedrons;
 };
 
 #endif // OPEMG_H

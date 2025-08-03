@@ -133,9 +133,9 @@ void CustomOpenGLWidget::paintGL ()
     FlushViewEvents (viewerContext,view,true);
 }
 
-void CustomOpenGLWidget::updateView ()
+void CustomOpenGLWidget::updateViewer ()
 {
-    //update();
+    viewerContext->UpdateCurrentViewer();
     repaint();
 }
 
@@ -151,7 +151,7 @@ void CustomOpenGLWidget::wheelEvent (QWheelEvent* event)
     if (view.IsNull()) return;
 
     const Graphic3d_Vec2i position(Graphic3d_Vec2d(event->position().x(),event->position().y()));
-    if (UpdateZoom(Aspect_ScrollDelta(position,double(event->angleDelta().y())/8.0))) updateView();
+    if (UpdateZoom(Aspect_ScrollDelta(position,double(event->angleDelta().y())/8.0))) updateViewer();
 }
 
 void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
@@ -185,7 +185,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     // pass the mouse press from Qt to OCCT
     const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
     const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
-    if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateView();
+    if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
 }
 
 void CustomOpenGLWidget::unselectTreeItems (CustomTreeWidgetItem *item)
@@ -209,8 +209,9 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     // pass the mouse release from Qt to OCCT
     const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
     const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
-    if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateView();
+    if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
 
+    // process mouse buttons
     if (event->button() == Qt::LeftButton) {
         if (viewerContext->NbSelected() > 0) {
             unselectTreeItems(drawingItemTree);
@@ -222,8 +223,10 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                 Handle(AIS_InteractiveObject) anIO = viewerContext->SelectedInteractive();
                 Handle(AIS_Shape) shape = Handle(AIS_Shape)::DownCast(anIO);
                 CustomTreeWidgetItem *item=(*drawingToItemMap)[shape];
-                item->setForeground(0,Qt::red);
-                item->setSelected(true);
+                if (item) {
+                    item->setForeground(0,Qt::red);
+                    item->setSelected(true);
+                }
                 viewerContext->NextSelected();
             }
         } else {
@@ -231,7 +234,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
             unselectTreeItems(drawingItemTree);
             unselectTreeItems(portItemTree);
             unselectTreeItems(boundaryItemTree);
-            repaint();
+            updateViewer();
         }
     } else if (event->button() == Qt::RightButton) {
         if (viewerContext->NbSelected() > 0) {
@@ -258,6 +261,6 @@ void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
     // pass the mouse position from Qt to OCCT
     const Graphic3d_Vec2i position(event->pos().x(),event->pos().y());
     if (UpdateMousePosition(position,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
-                                     OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateView();
+                                     OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateViewer();
 }
 

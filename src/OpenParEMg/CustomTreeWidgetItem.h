@@ -31,10 +31,16 @@ class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
 public:
     CustomTreeWidgetItem(QTreeWidgetItem *parent = nullptr,int type=Type) : QTreeWidgetItem(parent,type) {
         shape=nullptr;
+        meshEntities=nullptr;
     }
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
     Handle(AIS_Shape) get_AIS_Shape () {return shape;}
+
+    void set_meshEntities (std::vector<Handle(AIS_Shape)> *meshEntities_) {meshEntities=meshEntities_;}
+    std::vector<Handle(AIS_Shape)>* get_meshEntities () {return meshEntities;}
+    long unsigned int get_meshEntitiesSize () {return meshEntities->size();}
+    Handle(AIS_Shape) get_meshEntity (long unsigned int i) {return (*meshEntities)[i];}
 
     void deleteChildren (QTreeWidgetItem *item)
     {
@@ -50,12 +56,14 @@ public:
         set_AIS_Shape(nullptr);
         setForeground(0,Qt::black);
         setExpanded(Standard_False);
+        set_meshEntities(nullptr);
     }
 
 private slots:
 
 private:
-    Handle(AIS_Shape) shape;
+    Handle(AIS_Shape) shape;                       // for drawing
+    std::vector<Handle(AIS_Shape)> *meshEntities;  // for mesh
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

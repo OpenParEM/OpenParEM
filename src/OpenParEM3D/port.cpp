@@ -1400,7 +1400,7 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
 {
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
     drawingWindow->displayShape(drawingShape);
-    drawingWindow->updateView();
+    drawingWindow->updateViewer();
 
     // boundary type
 
@@ -6387,7 +6387,7 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
 {
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
     drawingWindow->displayShape(drawingShape);
-    drawingWindow->updateView();
+    drawingWindow->updateViewer();
 
     // name
     QString textName=QString::fromStdString(get_name());

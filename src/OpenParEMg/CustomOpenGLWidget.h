@@ -48,10 +48,11 @@ public:
     void set_drawingItemTree (CustomTreeWidgetItem *drawingItemTree_) {drawingItemTree=drawingItemTree_;}
     void set_portItemTree (CustomTreeWidgetItem *portItemTree_) {portItemTree=portItemTree_;}
     void set_boundaryItemTree (CustomTreeWidgetItem *boundaryItemTree_) {boundaryItemTree=boundaryItemTree_;}
+    void set_meshItemTree (CustomTreeWidgetItem *meshItemTree_) {meshItemTree=meshItemTree_;}
     void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
     void set_contextMenu (QMenu *contextMenu_) {contextMenu=contextMenu_;}
 
-    void updateView ();
+    void updateViewer ();
     void clearDrawing ();
 
     void fitAll () {view->FitAll(); view->Redraw();}
@@ -64,7 +65,7 @@ public:
     void mouseMoveEvent (QMouseEvent*) override;
 
     void displayShape (Handle(AIS_Shape) shape) {
-        viewerContext->Display(shape,Standard_True);
+        viewerContext->Display(shape,Standard_False);  //True
         //viewerContext->UpdateCurrentViewer();
     }
 
@@ -72,26 +73,26 @@ public:
         //viewerContext->ClearSelected(false);
         if (!viewerContext->IsDisplayed(shape)) return;
         if (viewerContext->IsSelected(shape)) return;
-        viewerContext->AddOrRemoveSelected(shape,Standard_True);
+        viewerContext->AddOrRemoveSelected(shape,Standard_False);
         //viewerContext->UpdateCurrentViewer();
     }
 
     void unselectShape (Handle(AIS_Shape) shape) {
         if (!viewerContext->IsDisplayed(shape)) return;
         if (!viewerContext->IsSelected(shape)) return;
-        viewerContext->AddOrRemoveSelected(shape,Standard_True);
+        viewerContext->AddOrRemoveSelected(shape,Standard_False);
         //viewerContext->UpdateCurrentViewer();
     }
 
     void hideShape (Handle(AIS_Shape) shape) {
         if (!viewerContext->IsDisplayed(shape)) return;
         if (viewerContext->IsSelected(shape)) viewerContext->AddOrRemoveSelected(shape,Standard_True);
-        viewerContext->Erase(shape,Standard_True);
+        viewerContext->Erase(shape,Standard_False);
         //viewerContext->UpdateCurrentViewer();
     }
 
     void showShape (Handle(AIS_Shape) shape) {
-        viewerContext->Display(shape,Standard_True);
+        viewerContext->Display(shape,Standard_False);
         //viewerContext->UpdateCurrentViewer();;
     }
 
@@ -138,6 +139,7 @@ private:
     CustomTreeWidgetItem *drawingItemTree;
     CustomTreeWidgetItem *portItemTree;
     CustomTreeWidgetItem *boundaryItemTree;
+    CustomTreeWidgetItem *meshItemTree;
     std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap;
 
     QMenu *contextMenu;
