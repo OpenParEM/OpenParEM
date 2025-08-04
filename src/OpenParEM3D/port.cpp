@@ -1410,6 +1410,8 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
     CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
     itemName->set_AIS_Shape(drawingShape);
     itemName->setText(0,textName);
+    itemName->set_type(2);
+    itemName->setForeground(0,Qt::black);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     boundaryWidgetItem->addChild(itemName);
     drawingToItemMap->insert({drawingShape,itemName});
@@ -6394,6 +6396,8 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
     CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
     itemName->set_AIS_Shape(drawingShape);
     itemName->setText(0,textName);
+    itemName->set_type(1);
+    itemName->setForeground(0,Qt::black);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     portWidgetItem->addChild(itemName);
     drawingToItemMap->insert({drawingShape,itemName});

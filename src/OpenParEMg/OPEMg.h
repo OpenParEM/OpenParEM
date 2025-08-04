@@ -85,6 +85,10 @@ public:
 
     void addShape (TopoDS_Shape, CustomTreeWidgetItem *, bool);
     bool loadBrepFile (QString);
+    bool menuAllHidden (CustomTreeWidgetItem *);
+    bool menuAllShown (CustomTreeWidgetItem *);
+    void meshShowEntities ();
+    void meshHideEntities ();
     void drawMesh ();
 
 private slots:
@@ -103,13 +107,15 @@ private slots:
 
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
 
-    void hideMeshEntities();
-    void showMeshEntities();
-
+    void showShapeItem (CustomTreeWidgetItem *);
     void showShape ();
-    void grayOutTreeItems (CustomTreeWidgetItem *);
+    void showPortShape ();
+    void hideShapeItem (CustomTreeWidgetItem *);
     void hideShape ();
+    void hidePortShape ();
+    void selectShapeItem (CustomTreeWidgetItem *);
     void selectShape ();
+    void unselectShapeItem (CustomTreeWidgetItem *);
     void unselectShape ();
 
     void itemTreeContextMenu_triggered (const QPoint& pnt);
@@ -165,11 +171,6 @@ private:
 
     //gmsh
     gmsh::vectorpair drawingEntities;
-    std::vector<Handle(AIS_Shape)> meshVertices;
-    std::vector<Handle(AIS_Shape)> meshEdges;
-    std::vector<Handle(AIS_Shape)> meshWires;
-    std::vector<Handle(AIS_Shape)> meshTriangles;
-    std::vector<Handle(AIS_Shape)> meshTetrahedrons;
 };
 
 #endif // OPEMG_H

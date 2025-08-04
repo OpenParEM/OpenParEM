@@ -66,7 +66,6 @@ public:
 
     void displayShape (Handle(AIS_Shape) shape) {
         viewerContext->Display(shape,Standard_False);  //True
-        //viewerContext->UpdateCurrentViewer();
     }
 
     void selectShape (Handle(AIS_Shape) shape) {
@@ -74,26 +73,22 @@ public:
         if (!viewerContext->IsDisplayed(shape)) return;
         if (viewerContext->IsSelected(shape)) return;
         viewerContext->AddOrRemoveSelected(shape,Standard_False);
-        //viewerContext->UpdateCurrentViewer();
     }
 
     void unselectShape (Handle(AIS_Shape) shape) {
         if (!viewerContext->IsDisplayed(shape)) return;
         if (!viewerContext->IsSelected(shape)) return;
         viewerContext->AddOrRemoveSelected(shape,Standard_False);
-        //viewerContext->UpdateCurrentViewer();
     }
 
     void hideShape (Handle(AIS_Shape) shape) {
         if (!viewerContext->IsDisplayed(shape)) return;
         if (viewerContext->IsSelected(shape)) viewerContext->AddOrRemoveSelected(shape,Standard_True);
         viewerContext->Erase(shape,Standard_False);
-        //viewerContext->UpdateCurrentViewer();
     }
 
     void showShape (Handle(AIS_Shape) shape) {
         viewerContext->Display(shape,Standard_False);
-        //viewerContext->UpdateCurrentViewer();;
     }
 
     void hideAll () {
