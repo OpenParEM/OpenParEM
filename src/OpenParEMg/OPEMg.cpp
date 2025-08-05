@@ -154,9 +154,9 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QAction *selectAction=new QAction("Select",this);
     QAction *unselectAction=new QAction("Unselect",this);
 
-    connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideShape);
-    connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectShape);
-    connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectShape);
+    connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideItems);
+    connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectItems);
+    connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectItems);
 
     drawingContextMenu=new QMenu(this);
     drawingContextMenu->addAction(hideAction);
@@ -190,7 +190,9 @@ bool OpenParEMg::menuAllHidden (CustomTreeWidgetItem *item)
 {
     int i=0;
     while (i < item->childCount()) {
-        if (item->child(i)->foreground(0) == Qt::black) return false;
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        if (child->foreground(0) == Qt::black) return false;
+        if (!menuAllHidden(child)) return false;
         i++;
     }
     return true;
@@ -200,7 +202,9 @@ bool OpenParEMg::menuAllShown(CustomTreeWidgetItem *item)
 {
     int i=0;
     while (i < item->childCount()) {
-        if (item->child(i)->foreground(0) == Qt::gray) return false;
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        if (child->foreground(0) == Qt::gray) return false;
+        if (!menuAllShown(child)) return false;
         i++;
     }
     return true;
@@ -211,228 +215,156 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
     clickedItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemAt(pnt);
     if (!clickedItem) return;
     if (!clickedItem->isSelected()) return;
-    if (!clickedItem->get_AIS_Shape() && !clickedItem->get_meshEntities()) return;
 
     QMenu menu(this);
 
-    if (clickedItem->is_root()) {
-        if (clickedItem->is_drawing()) {
-            if (clickedItem->get_AIS_Shape()) {
-                QAction *showAction=new QAction("Show",this);
-                QAction *hideAction=new QAction("Hide",this);
-                QAction *selectAction=new QAction("Select",this);
-                QAction *unselectAction=new QAction("Unselect",this);
-                //QAction *deleteAction=new QAction("Delete",this);
+    QAction *showAction=new QAction("Show",this);
+    QAction *hideAction=new QAction("Hide",this);
+    QAction *selectAction=new QAction("Select",this);
+    QAction *unselectAction=new QAction("Unselect",this);
+    //QAction *deleteAction=new QAction("Delete",this);
 
-                connect(showAction, &QAction::triggered, this, &OpenParEMg::showShape);
-                connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideShape);
-                connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectShape);
-                connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectShape);
+    connect(showAction, &QAction::triggered, this, &OpenParEMg::showItems);
+    connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideItems);
+    connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectItems);
+    connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectItems);
 
-                if (ui->drawingWindow->isDisplayed(clickedItem->get_AIS_Shape())) {
-                    showAction->setEnabled(false);
-                } else {
-                    hideAction->setEnabled(false);
-                    selectAction->setEnabled(false);
-                    unselectAction->setEnabled(false);
-                    //deleteAction->setEnabled(false);
-                }
-
-                menu.addAction(showAction);
-                menu.addAction(hideAction);
-                menu.addAction(selectAction);
-                menu.addAction(unselectAction);
-                //menu.addAction(deleteAction);
-            }
-        } else if (clickedItem->is_port()) {
-            QAction *showAction=new QAction("Show",this);
-            QAction *hideAction=new QAction("Hide",this);
-
-            connect(showAction, &QAction::triggered, this, &OpenParEMg::showPortShape);
-            connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePortShape);
-
-            if (clickedItem->foreground(0) == Qt::black) {
-                showAction->setEnabled(false);
-                hideAction->setEnabled(true);
-            } else {
-                showAction->setEnabled(true);
-                hideAction->setEnabled(false);
-            }
-
-            menu.addAction(showAction);
-            menu.addAction(hideAction);
-        } else if (clickedItem->is_boundary()) {
-            QAction *showAction=new QAction("Show",this);
-            QAction *hideAction=new QAction("Hide",this);
-
-            connect(showAction, &QAction::triggered, this, &OpenParEMg::showPortShape);
-            connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePortShape);
-
-            if (clickedItem->foreground(0) == Qt::black) {
-                showAction->setEnabled(false);
-                hideAction->setEnabled(true);
-            } else {
-                showAction->setEnabled(true);
-                hideAction->setEnabled(false);
-            }
-
-            menu.addAction(showAction);
-            menu.addAction(hideAction);
-        } else if (clickedItem->is_mesh()) {
-            QAction *showAction=new QAction("Show",this);
-            QAction *hideAction=new QAction("Hide",this);
-
-            connect(showAction, &QAction::triggered, this, &OpenParEMg::meshShowEntities);
-            connect(hideAction, &QAction::triggered, this, &OpenParEMg::meshHideEntities);
-
-            if (clickedItem->foreground(0) == Qt::black) {
-                showAction->setEnabled(false);
-                hideAction->setEnabled(true);
-            } else {
-                showAction->setEnabled(true);
-                hideAction->setEnabled(false);
-            }
-
-            menu.addAction(showAction);
-            menu.addAction(hideAction);
-        } else {
-            // should not happen
-            std::cout << "ASSERT: found invalid item type." << std::endl;
-        }
-    } else {
-        if (clickedItem->is_drawing()) {
-            if (clickedItem->get_AIS_Shape()) {
-                QAction *showAction=new QAction("Show",this);
-                QAction *hideAction=new QAction("Hide",this);
-                QAction *selectAction=new QAction("Select",this);
-                QAction *unselectAction=new QAction("Unselect",this);
-                //QAction *deleteAction=new QAction("Delete",this);
-
-                connect(showAction, &QAction::triggered, this, &OpenParEMg::showShape);
-                connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideShape);
-                connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectShape);
-                connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectShape);
-
-                if (ui->drawingWindow->isDisplayed(clickedItem->get_AIS_Shape())) {
-                    showAction->setEnabled(false);
-                } else {
-                    hideAction->setEnabled(false);
-                    selectAction->setEnabled(false);
-                    unselectAction->setEnabled(false);
-                    //deleteAction->setEnabled(false);
-                }
-
-                menu.addAction(showAction);
-                menu.addAction(hideAction);
-                menu.addAction(selectAction);
-                menu.addAction(unselectAction);
-                //menu.addAction(deleteAction);
-            }
-        } else if (clickedItem->is_port()) {
-            if (clickedItem->get_AIS_Shape()) {
-                QAction *showAction=new QAction("Show",this);
-                QAction *hideAction=new QAction("Hide",this);
-                QAction *selectAction=new QAction("Select",this);
-                QAction *unselectAction=new QAction("Unselect",this);
-                //QAction *deleteAction=new QAction("Delete",this);
-
-                connect(showAction, &QAction::triggered, this, &OpenParEMg::showPortShape);
-                connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePortShape);
-                connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectShape);
-                connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectShape);
-
-                if (clickedItem->foreground(0) == Qt::black) {
-                    showAction->setEnabled(false);
-                    hideAction->setEnabled(true);
-                } else {
-                    showAction->setEnabled(true);
-                    hideAction->setEnabled(false);
-                }
-
-                menu.addAction(showAction);
-                menu.addAction(hideAction);
-                menu.addAction(selectAction);
-                menu.addAction(unselectAction);
-                //menu.addAction(deleteAction);
-            }
-
-        } else if (clickedItem->is_boundary()) {
-            if (clickedItem->get_AIS_Shape()) {
-                QAction *showAction=new QAction("Show",this);
-                QAction *hideAction=new QAction("Hide",this);
-                QAction *selectAction=new QAction("Select",this);
-                QAction *unselectAction=new QAction("Unselect",this);
-                //QAction *deleteAction=new QAction("Delete",this);
-
-                connect(showAction, &QAction::triggered, this, &OpenParEMg::showPortShape);
-                connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePortShape);
-                connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectShape);
-                connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectShape);
-
-                if (clickedItem->foreground(0) == Qt::black) {
-                    showAction->setEnabled(false);
-                    hideAction->setEnabled(true);
-                } else {
-                    showAction->setEnabled(true);
-                    hideAction->setEnabled(false);
-                }
-
-                menu.addAction(showAction);
-                menu.addAction(hideAction);
-                menu.addAction(selectAction);
-                menu.addAction(unselectAction);
-                //menu.addAction(deleteAction);
-            }
-        } else if (clickedItem->is_mesh()) {
-            QAction *showAction=new QAction("Show",this);
-            QAction *hideAction=new QAction("Hide",this);
-
-            connect(showAction, &QAction::triggered, this, &OpenParEMg::meshShowEntities);
-            connect(hideAction, &QAction::triggered, this, &OpenParEMg::meshHideEntities);
-
-            if (clickedItem->foreground(0) == Qt::black) {
-                showAction->setEnabled(false);
-                hideAction->setEnabled(true);
-            } else {
-                showAction->setEnabled(true);
-                hideAction->setEnabled(false);
-            }
-
-            menu.addAction(showAction);
-            menu.addAction(hideAction);
-        } else {
-            // should not happen
-            std::cout << "ASSERT: found invalid item type." << std::endl;
-        }
-
+    if (clickedItem->foreground(0) == Qt::black) {  // visible
+        showAction->setEnabled(false);
+        hideAction->setEnabled(true);
+        selectAction->setEnabled(true);
+        unselectAction->setEnabled(false);
+        //deleteAction->setEnabled(false);
+    } else if (clickedItem->foreground(0) == Qt::gray) {  // invisible
+        showAction->setEnabled(true);
+        hideAction->setEnabled(false);
+        selectAction->setEnabled(false);
+        unselectAction->setEnabled(false);
+        //deleteAction->setEnabled(false);
+    } else if (clickedItem->foreground(0) == Qt::red) {  // selected
+        showAction->setEnabled(false);
+        hideAction->setEnabled(true);
+        selectAction->setEnabled(false);
+        unselectAction->setEnabled(true);
+        //deleteAction->setEnabled(false);
     }
+
+    // special cases
+    if (clickedItem->is_port() && clickedItem->is_root()) selectAction->setEnabled(false);
+    if (clickedItem->is_boundary() && clickedItem->is_root()) selectAction->setEnabled(false);
+    if (clickedItem->is_mesh()) selectAction->setEnabled(false);
+
+    menu.addAction(showAction);
+    menu.addAction(hideAction);
+    menu.addAction(selectAction);
+    menu.addAction(unselectAction);
+    //menu.addAction(deleteAction);
+
 
     menu.exec(ui->drawingItemTree->mapToGlobal(pnt));
 }
 
-
-// non-recursive
-void OpenParEMg::showShapeItem (CustomTreeWidgetItem *item)
-{
-    item->setForeground(0,Qt::black);
-    ui->drawingWindow->showShape(item->get_AIS_Shape());
-}
-
-void OpenParEMg::showShape ()
+void OpenParEMg::showItems ()
 {
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        unselectShapeItem(item);  // recursive
-        showShapeItem(item);      // non-recursive
+
+        if (item->is_drawing()) {
+            unselectDisplayShape(item);
+            hideDisplayShape(item);
+            showDisplayShape(item);
+        }
+
+        if (item->is_port()) showPortShape(item);
+        if (item->is_boundary()) showPortShape(item);
+        if (item->is_mesh()) showMeshEntitiesItem(item);
         i++;
     }
     ui->drawingWindow->updateViewer();
 }
 
+void OpenParEMg::hideItems ()
+{
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_drawing()) hideDisplayShape(item);
+        if (item->is_port()) hidePortShape(item);
+        if (item->is_boundary()) hidePortShape(item);
+        if (item->is_mesh()) hideMeshEntitiesItem(item);
+        i++;
+    }
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::selectItems()
+{
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_drawing()) {
+            selectDisplayShape(item);
+            item->setForeground(0,Qt::red);
+        }
+
+        if (item->is_port() && !item->is_root()) {
+            selectDisplayShape(item);
+            item->setForeground(0,Qt::red);
+        }
+
+        if (item->is_boundary() && !item->is_root()) {
+            selectDisplayShape(item);
+            item->setForeground(0,Qt::red);
+        }
+
+        i++;
+    }
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::unselectItems()
+{
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_drawing()) {
+            unselectDisplayShape(item);
+            item->setForeground(0,Qt::black);
+        }
+
+        if (item->is_port()) {
+            unselectDisplayShape(item);
+            item->setForeground(0,Qt::black);
+        }
+
+        if (item->is_boundary()) {
+            unselectDisplayShape(item);
+            item->setForeground(0,Qt::black);
+        }
+        i++;
+    }
+    ui->drawingWindow->updateViewer();
+}
+
+// non-recursive
+void OpenParEMg::showDisplayShape (CustomTreeWidgetItem *item)
+{
+    item->setForeground(0,Qt::black);
+    ui->drawingWindow->showShape(item->get_AIS_Shape());
+
+    if (menuAllHidden(&drawing)) drawing.setForeground(0,Qt::gray);
+    else drawing.setForeground(0,Qt::black);
+
+    if (item->is_root()) item->setForeground(0,Qt::black);
+}
+
 // recurseive
-void OpenParEMg::hideShapeItem (CustomTreeWidgetItem *item)
+void OpenParEMg::hideDisplayShape (CustomTreeWidgetItem *item)
 {
     item->setForeground(0,Qt::gray);
     ui->drawingWindow->unselectShape(item->get_AIS_Shape());
@@ -441,48 +373,25 @@ void OpenParEMg::hideShapeItem (CustomTreeWidgetItem *item)
     int i=0;
     while (i < item->childCount()) {
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-        hideShapeItem(child);
+        hideDisplayShape(child);
         i++;
     }
-}
 
-void OpenParEMg::hideShape ()
-{
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    int i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        hideShapeItem(item);     // recursive
-        i++;
-    }
-    ui->drawingWindow->updateViewer();
+    if (menuAllHidden(&drawing)) drawing.setForeground(0,Qt::gray);
+    else drawing.setForeground(0,Qt::black);
 }
 
 // non-recursive
-void OpenParEMg::selectShapeItem (CustomTreeWidgetItem *item)
+void OpenParEMg::selectDisplayShape (CustomTreeWidgetItem *item)
 {
     item->setForeground(0,Qt::red);
+    unselectDisplayShape(item);
     ui->drawingWindow->showShape(item->get_AIS_Shape());
     ui->drawingWindow->selectShape(item->get_AIS_Shape());
 }
 
-void OpenParEMg::selectShape ()
-{
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    int i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        unselectShapeItem(item);    // recursive
-        //hideShapeItem(item);        // recursive
-        //showShapeItem(item);        // non-recursive
-        selectShapeItem(item);      // non-recursive
-        i++;
-    }
-    ui->drawingWindow->updateViewer();
-}
-
 // recursive
-void OpenParEMg::unselectShapeItem (CustomTreeWidgetItem *item)
+void OpenParEMg::unselectDisplayShape (CustomTreeWidgetItem *item)
 {
     item->setForeground(0,Qt::gray);
     ui->drawingWindow->unselectShape(item->get_AIS_Shape());
@@ -491,44 +400,50 @@ void OpenParEMg::unselectShapeItem (CustomTreeWidgetItem *item)
     int i=0;
     while (i < item->childCount()) {
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-        unselectShapeItem(child);
+        unselectDisplayShape(child);
         i++;
     }
 }
 
-void OpenParEMg::unselectShape ()
+void OpenParEMg::showPortShape (CustomTreeWidgetItem *item)
 {
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    int i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        unselectShapeItem(item);  // recursive
-        showShapeItem(item);      // non-recursive
-        i++;
-    }
-    ui->drawingWindow->updateViewer();
-}
+    item->setForeground(0,Qt::black);
 
-void OpenParEMg::showPortShape ()
-{
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    int i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        item->setForeground(0,Qt::black);
-
-        if (item->is_root()) {
-            int j=0;
-            while (j < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(j);
-                ui->drawingWindow->showShape(child->get_AIS_Shape());
-                child->setForeground(0,Qt::black);
-                j++;
-            }
-        } else {
-            ui->drawingWindow->showShape(item->get_AIS_Shape());
+    if (item->is_root()) {
+        int j=0;
+        while (j < item->childCount()) {
+            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(j);
+            ui->drawingWindow->showShape(child->get_AIS_Shape());
+            child->setForeground(0,Qt::black);
+            j++;
         }
-        i++;
+    } else {
+        ui->drawingWindow->showShape(item->get_AIS_Shape());
+    }
+
+    // do both port and boundary menu since this method is used for both
+
+    if (menuAllHidden(&port)) port.setForeground(0,Qt::gray);
+    else port.setForeground(0,Qt::black);
+
+    if (menuAllHidden(&boundary)) boundary.setForeground(0,Qt::gray);
+    else boundary.setForeground(0,Qt::black);
+}
+
+void OpenParEMg::hidePortShape (CustomTreeWidgetItem *item)
+{
+    item->setForeground(0,Qt::gray);
+
+    if (item->is_root()) {
+        int j=0;
+        while (j < item->childCount()) {
+            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(j);
+            ui->drawingWindow->hideShape(child->get_AIS_Shape());
+            child->setForeground(0,Qt::gray);
+            j++;
+        }
+    } else {
+        ui->drawingWindow->hideShape(item->get_AIS_Shape());
     }
 
     // do both port and boundary menu since this method is used for both
@@ -539,40 +454,7 @@ void OpenParEMg::showPortShape ()
     if (menuAllHidden(&boundary)) boundary.setForeground(0,Qt::gray);
     else boundary.setForeground(0,Qt::black);
 
-    ui->drawingWindow->updateViewer();
-}
-
-void OpenParEMg::hidePortShape ()
-{
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    int i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        item->setForeground(0,Qt::gray);
-
-        if (item->is_root()) {
-            int j=0;
-            while (j < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(j);
-                ui->drawingWindow->hideShape(child->get_AIS_Shape());
-                child->setForeground(0,Qt::gray);
-                j++;
-            }
-        } else {
-            ui->drawingWindow->hideShape(item->get_AIS_Shape());
-        }
-        i++;
-    }
-
-    // do both port and boundary menu since this method is used for both
-
-    if (menuAllHidden(&port)) port.setForeground(0,Qt::gray);
-    else port.setForeground(0,Qt::black);
-
-    if (menuAllHidden(&boundary)) boundary.setForeground(0,Qt::gray);
-    else boundary.setForeground(0,Qt::black);
-
-    ui->drawingWindow->updateViewer();
+    //ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::on_fileOpen_triggered ()
@@ -965,26 +847,42 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
             if (previousClickedItem) {
                 if (clickedItem->QTreeWidgetItem::parent() == previousClickedItem->QTreeWidgetItem::parent()) {
 
-                    // check ordering
-                    bool isReversed=false;
-                    if (clickedItem->QTreeWidgetItem::parent()->indexOfChild(clickedItem) <
-                        clickedItem->QTreeWidgetItem::parent()->indexOfChild(previousClickedItem)) isReversed=true;
+                    ui->drawingItemTree->clearSelection();
 
-                    // select
-                    bool enableSelect=false;
-                    int i=0;
-                    while (i < clickedItem->QTreeWidgetItem::parent()->childCount()) {
-                        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)clickedItem->QTreeWidgetItem::parent()->child(i);
-                        if (!isReversed && child == previousClickedItem) enableSelect=true;
-                        if (isReversed && child == clickedItem) enableSelect=true;
-                        if (enableSelect) {
-                            ui->drawingItemTree->setCurrentItem(child);
-                            child->setSelected(true);
+                    // select the end items
+
+                    previousClickedItem->setSelected(true);
+                    clickedItem->setSelected(true);
+
+                    // select the middle items
+
+                    int count=ui->drawingItemTree->indexFromItem(clickedItem,0).row()-
+                              ui->drawingItemTree->indexFromItem(previousClickedItem,0).row();
+
+                    if (count > 1) {  // forward
+                        CustomTreeWidgetItem *nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(previousClickedItem);
+                        int i=0;
+                        while (i < count-1) {
+                            //std::cout << "forward: nextItem=" << nextItem->text(0).toStdString() << std::endl; std::cout.flush();
+                            if (nextItem->QTreeWidgetItem::parent() == clickedItem->QTreeWidgetItem::parent()) {
+                                nextItem->setSelected(true);
+                                i++;
+                            }
+                            nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(nextItem);
                         }
-                        if (!isReversed && child == clickedItem) enableSelect=false;
-                        if (isReversed && child == previousClickedItem) enableSelect=false;
-                        i++;
+                    } else if (-count > 1) {  // reversed
+                        CustomTreeWidgetItem *nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(clickedItem);
+                        int i=0;
+                        while (i < -count-1) {
+                            //std::cout << "reverse: nextItem=" << nextItem->text(0).toStdString() << std::endl; std::cout.flush();
+                            if (nextItem->QTreeWidgetItem::parent() == clickedItem->QTreeWidgetItem::parent()) {
+                                nextItem->setSelected(true);
+                                i++;
+                            }
+                            nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(nextItem);
+                        }
                     }
+
                     previousClickedItem=clickedItem;
                 } else {
                     ui->drawingItemTree->setCurrentItem(previousClickedItem);
@@ -1126,28 +1024,28 @@ void OpenParEMg::on_actionHide_All_triggered ()
     drawing.setSelected(true);
     clickedItem=&drawing;
     previousClickedItem=nullptr;
-    hideShape();
+    hideDisplayShape(&drawing);
 
     // port
     ui->drawingItemTree->clearSelection();
     port.setSelected(true);
     clickedItem=&port;
     previousClickedItem=nullptr;
-    hidePortShape();
+    hidePortShape(&port);
 
     // boundary
     ui->drawingItemTree->clearSelection();
     boundary.setSelected(true);
     clickedItem=&boundary;
     previousClickedItem=nullptr;
-    hidePortShape();
+    hidePortShape(&boundary);
 
     // mesh
     ui->drawingItemTree->clearSelection();
     mesh.setSelected(true);
     clickedItem=&mesh;
     previousClickedItem=nullptr;
-    meshHideEntities();
+    hideMeshEntitiesItem(&mesh);
 
     ui->drawingItemTree->clearSelection();
     ui->drawingItemTree->setCurrentItem(nullptr);
@@ -1155,7 +1053,6 @@ void OpenParEMg::on_actionHide_All_triggered ()
     previousClickedItem=nullptr;
 }
 
-//xxx
 void OpenParEMg::on_actionShow_All_triggered ()
 {
     // drawing
@@ -1163,28 +1060,32 @@ void OpenParEMg::on_actionShow_All_triggered ()
     drawing.setSelected(true);
     clickedItem=&drawing;
     previousClickedItem=nullptr;
-    showShape();
+    //showDisplayShape();
+    showDisplayShape(&drawing);
 
     // port
     ui->drawingItemTree->clearSelection();
     port.setSelected(true);
     clickedItem=&port;
     previousClickedItem=nullptr;
-    showPortShape();
+    //showPortShape();
+    showPortShape(&port);
 
     // boundary
     ui->drawingItemTree->clearSelection();
     boundary.setSelected(true);
     clickedItem=&boundary;
     previousClickedItem=nullptr;
-    showPortShape();
+    //showPortShape();
+    showPortShape(&boundary);
 
     // mesh
     ui->drawingItemTree->clearSelection();
     mesh.setSelected(true);
     clickedItem=&mesh;
     previousClickedItem=nullptr;
-    meshShowEntities();
+    //meshShowEntities();
+    showMeshEntitiesItem(&mesh);
 
     ui->drawingItemTree->clearSelection();
     ui->drawingItemTree->setCurrentItem(nullptr);
@@ -1212,6 +1113,71 @@ void OpenParEMg::on_actionUnselect_All_triggered ()
     ui->drawingWindow->updateViewer();
 }
 
+void OpenParEMg::showMeshEntitiesItem (CustomTreeWidgetItem *item)
+{
+    item->setForeground(0,Qt::black);
+
+    if (item->is_root()) {
+        int i=0;
+        while (i < mesh.childCount()) {
+            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)mesh.child(i);
+            child->setForeground(0,Qt::black);
+            std::vector<Handle(AIS_Shape)> *entities=child->get_meshEntities();
+            long unsigned int j=0;
+            while (j < entities->size()) {
+                ui->drawingWindow->displayShape((*entities)[j]);
+                j++;
+            }
+            i++;
+        }
+    } else {
+        std::vector<Handle(AIS_Shape)> *entities=item->get_meshEntities();
+        long unsigned int j=0;
+        while (j < entities->size()) {
+            ui->drawingWindow->displayShape((*entities)[j]);
+            j++;
+        }
+    }
+
+    if (menuAllHidden(&mesh)) mesh.setForeground(0,Qt::gray);
+    else mesh.setForeground(0,Qt::black);
+
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::hideMeshEntitiesItem (CustomTreeWidgetItem *item)
+{
+    item->setForeground(0,Qt::gray);
+
+    if (item->is_root()) {
+        int i=0;
+        while (i < mesh.childCount()) {
+            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)mesh.child(i);
+            child->setForeground(0,Qt::gray);
+            std::vector<Handle(AIS_Shape)> *entities=child->get_meshEntities();
+            long unsigned int j=0;
+            while (j < entities->size()) {
+                ui->drawingWindow->hideShape((*entities)[j]);
+                j++;
+            }
+            i++;
+        }
+    } else {
+        std::vector<Handle(AIS_Shape)> *entities=item->get_meshEntities();
+        long unsigned int j=0;
+        while (j < entities->size()) {
+            ui->drawingWindow->hideShape((*entities)[j]);
+            j++;
+        }
+    }
+
+    if (menuAllHidden(&mesh)) mesh.setForeground(0,Qt::gray);
+    else mesh.setForeground(0,Qt::black);
+
+    ui->drawingWindow->updateViewer();
+}
+
+/*
 void OpenParEMg::meshShowEntities ()
 {
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
@@ -1250,7 +1216,9 @@ void OpenParEMg::meshShowEntities ()
 
     ui->drawingWindow->updateViewer();
 }
+*/
 
+/*
 void OpenParEMg::meshHideEntities ()
 {
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
@@ -1288,6 +1256,7 @@ void OpenParEMg::meshHideEntities ()
 
     ui->drawingWindow->updateViewer();
 }
+*/
 
 void OpenParEMg::drawMesh()
 {
@@ -1460,7 +1429,8 @@ void OpenParEMg::drawMesh()
 
     // display the shapes
     mesh.setSelected(true);
-    meshShowEntities();
+    //meshShowEntities();
+    showMeshEntitiesItem(&mesh);
     mesh.setSelected(false);
 }
 

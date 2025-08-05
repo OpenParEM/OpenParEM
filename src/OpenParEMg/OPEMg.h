@@ -87,8 +87,8 @@ public:
     bool loadBrepFile (QString);
     bool menuAllHidden (CustomTreeWidgetItem *);
     bool menuAllShown (CustomTreeWidgetItem *);
-    void meshShowEntities ();
-    void meshHideEntities ();
+    //void meshShowEntities ();
+    //void meshHideEntities ();
     void drawMesh ();
 
 private slots:
@@ -107,16 +107,18 @@ private slots:
 
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
 
-    void showShapeItem (CustomTreeWidgetItem *);
-    void showShape ();
-    void showPortShape ();
-    void hideShapeItem (CustomTreeWidgetItem *);
-    void hideShape ();
-    void hidePortShape ();
-    void selectShapeItem (CustomTreeWidgetItem *);
-    void selectShape ();
-    void unselectShapeItem (CustomTreeWidgetItem *);
-    void unselectShape ();
+    void showItems ();
+    void hideItems ();
+    void selectItems ();
+    void unselectItems ();
+    void showDisplayShape (CustomTreeWidgetItem *);
+    void showPortShape (CustomTreeWidgetItem *);
+    void hideDisplayShape (CustomTreeWidgetItem *);
+    void hidePortShape (CustomTreeWidgetItem *);
+    void selectDisplayShape (CustomTreeWidgetItem *);
+    void unselectDisplayShape (CustomTreeWidgetItem *);
+    void showMeshEntitiesItem (CustomTreeWidgetItem *);
+    void hideMeshEntitiesItem (CustomTreeWidgetItem *);
 
     void itemTreeContextMenu_triggered (const QPoint& pnt);
 
