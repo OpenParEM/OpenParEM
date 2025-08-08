@@ -146,6 +146,7 @@ private slots:
 
     void on_actionHide_All_triggered ();
     void on_actionShow_All_triggered ();
+    void set_displayMode (CustomTreeWidgetItem *, int);
     void set_selectionMode (CustomTreeWidgetItem *, int);
 
     void unselectTreeItems (CustomTreeWidgetItem *);
@@ -154,6 +155,8 @@ private slots:
     void on_actionMeshSave_triggered ();
 
     void on_actionDeleteMesh_triggered();
+
+    void on_allWireframe_triggered();
 
 private:
     Ui::OpenParEMg *ui;

@@ -92,6 +92,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->actionFrequency_Plan->setEnabled(false);
     ui->actionRefinement->setEnabled(false);
 
+    ui->allWireframe->setChecked(true);
+
     /////////////////////////////////////////////////////////////////////////////
     // drawing window
     /////////////////////////////////////////////////////////////////////////////
@@ -441,6 +443,19 @@ void OpenParEMg::set_selectionMode (CustomTreeWidgetItem *item, int selectionMod
     while (i < item->childCount()) {
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
         set_selectionMode(child,selectionMode);
+        i++;
+    }
+}
+
+// recursive
+void OpenParEMg::set_displayMode (CustomTreeWidgetItem *item, int displayMode)
+{
+    item->set_displayMode(displayMode);
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        set_displayMode(child,displayMode);
         i++;
     }
 }
@@ -1575,5 +1590,24 @@ void OpenParEMg::on_actionMeshSave_triggered ()
 void OpenParEMg::on_actionDeleteMesh_triggered ()
 {
     deleteMesh();
+}
+
+void OpenParEMg::on_allWireframe_triggered ()
+{
+    if (ui->allWireframe->isChecked() == true) {
+        set_displayMode(&drawing,0);
+        set_displayMode(&port,0);
+        set_displayMode(&boundary,0);
+    } else {
+        set_displayMode(&drawing,1);
+        set_displayMode(&port,1);
+        set_displayMode(&boundary,1);
+    }
+
+    reshowItem(&drawing);
+    reshowItem(&port);
+    reshowItem(&boundary);
+
+    ui->drawingWindow->updateViewer();
 }
 

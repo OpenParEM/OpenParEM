@@ -132,6 +132,7 @@
     <addaction name="actionUnselect_All"/>
     <addaction name="actionHide_All"/>
     <addaction name="actionShow_All"/>
+    <addaction name="allWireframe"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -286,6 +287,14 @@
   <action name="actionDeleteMesh">
    <property name="text">
     <string>Delete</string>
+   </property>
+  </action>
+  <action name="allWireframe">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Wireframe</string>
    </property>
   </action>
  </widget>
