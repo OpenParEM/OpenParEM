@@ -65,7 +65,7 @@
      <property name="title">
       <string>Import</string>
      </property>
-     <addaction name="actionBrep"/>
+     <addaction name="importBrep"/>
     </widget>
     <addaction name="fileNew"/>
     <addaction name="fileOpen"/>
@@ -79,8 +79,9 @@
     </property>
     <addaction name="meshOptions"/>
     <addaction name="actionGenerate"/>
-    <addaction name="actionDeleteMesh"/>
+    <addaction name="actionMeshLoad"/>
     <addaction name="actionMeshSave"/>
+    <addaction name="actionDeleteMesh"/>
    </widget>
    <widget class="QMenu" name="menuSimulate">
     <property name="title">
@@ -193,7 +194,7 @@
     <string>Materials Editor ...</string>
    </property>
   </action>
-  <action name="actionBrep">
+  <action name="importBrep">
    <property name="text">
     <string>Brep ...</string>
    </property>
@@ -295,6 +296,11 @@
    </property>
    <property name="text">
     <string>Wireframe</string>
+   </property>
+  </action>
+  <action name="actionMeshLoad">
+   <property name="text">
+    <string>Load ...</string>
    </property>
   </action>
  </widget>

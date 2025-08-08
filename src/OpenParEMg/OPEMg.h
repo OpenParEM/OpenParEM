@@ -105,7 +105,7 @@ private slots:
     void on_actionSave_triggered ();
     void on_actionRefinement_triggered ();
     void on_actionMaterials_Editor_triggered ();
-    void on_actionBrep_triggered ();
+    void on_importBrep_triggered ();
     void on_actionExit_triggered ();
     void on_actionSelect_Database_triggered ();
 
@@ -157,6 +157,9 @@ private slots:
     void on_actionDeleteMesh_triggered();
 
     void on_allWireframe_triggered();
+
+    void loadMeshFile (QString);
+    void on_actionMeshLoad_triggered ();
 
 private:
     Ui::OpenParEMg *ui;

@@ -23,6 +23,7 @@
 
 #include <quadmath.h>
 #include <iostream>
+#include <thread>
 
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
@@ -515,7 +516,8 @@ void OpenParEMg::dumpDrawingEntities ()
 
 void OpenParEMg::on_fileOpen_triggered ()
 {
-    QString testProjectFile=QFileDialog::getOpenFileName(this,tr("Open Project"), "", tr("Project Files (*.proj);;All Files (*)"));
+    QString testProjectFile=QFileDialog::getOpenFileName(this,tr("Open Project"), "", tr("Project Files (*.proj);;All Files (*)"),
+                                                         nullptr,QFileDialog::DontUseNativeDialog);
 
     // return if user cancels
     if (testProjectFile.isNull()) return;
@@ -564,7 +566,6 @@ void OpenParEMg::on_fileOpen_triggered ()
             mb.setFixedSize(500, 200);
         }
 
-        //xxx
         // load brep file, if defined
         if (strcmp(projData.gui_brep_file,"") != 0) {
 
@@ -579,7 +580,7 @@ void OpenParEMg::on_fileOpen_triggered ()
                 mb.setFixedSize(500, 200);
             } else {
                 // generate and draw the mesh
-                on_actionGenerate_triggered();
+                //on_actionGenerate_triggered();
             }
         }
 
@@ -593,8 +594,16 @@ void OpenParEMg::on_fileOpen_triggered ()
             boundaryDatabase->draw(&projData,ui->drawingWindow,ui->drawingItemTree,&port,&boundary,materialDatabase);
         }
 
+        //xxx
+        // load mesh, if any, and draw
+        loadMeshFile(QString::fromStdString(projData.mesh_file));
+
         ui->drawingWindow->fitAll();
         ui->drawingWindow->updateViewer();
+
+        // menu options
+        ui->importBrep->setEnabled(false);
+
     } else {
         // should not occur
         QMessageBox mb;
@@ -642,6 +651,9 @@ void OpenParEMg::on_fileNew_triggered ()
     port.reset();
     boundary.reset();
     mesh.reset();
+
+    // menu options
+    ui->importBrep->setEnabled(true);
 }
 
 void OpenParEMg::on_meshOptions_triggered ()
@@ -875,15 +887,15 @@ bool OpenParEMg::loadBrepFile (QString filePath)
         if (!BRepTools::Read(s,filePath.toStdString().c_str(),b)) return true;
 
         pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
-        ui->drawingWindow->clearDrawing();
         addShape(s,nullptr,true);
     }
     return false;
 }
 
-void OpenParEMg::on_actionBrep_triggered ()
+void OpenParEMg::on_importBrep_triggered ()
 {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Open BREP File"), "", tr("BREP Files (*.brep)"));
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Open BREP File"), "", tr("BREP Files (*.brep)"),
+                                                    nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isEmpty()) return;
     if (loadBrepFile(filePath)) {
         QString message="Unable to load Brep file \"";
@@ -1543,9 +1555,10 @@ void OpenParEMg::drawMesh()
 
     // display the shapes
     mesh.setSelected(true);
-    //meshShowEntities();
     showMeshEntitiesItem(&mesh);
     mesh.setSelected(false);
+    ui->drawingWindow->fitAll();
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::deleteMesh ()
@@ -1578,6 +1591,34 @@ void OpenParEMg::on_actionGenerate_triggered ()
     gmsh::model::mesh::generate();
 
     drawMesh();
+}
+
+void OpenParEMg::loadMeshFile (QString meshfile)
+{
+    if (QFile::exists(meshfile)) {
+        deleteMesh();
+        gmsh::open(meshfile.toStdString());
+        drawMesh();
+    } else {
+        QMessageBox mb;
+        QString message="Error in loading the specified mesh file \"";
+        message.append(meshfile);
+        message.append("\".");
+        mb.critical(nullptr, "Error",message);
+        mb.setFixedSize(500, 200);
+    }
+}
+
+void OpenParEMg::on_actionMeshLoad_triggered ()
+{
+    //QString meshfile=get_meshfileName();
+    QString meshfile=QFileDialog::getOpenFileName(this,tr("Open Mesh"), "", tr("Mesh Files (*.msh);;All Files (*)"),
+                                                  nullptr,QFileDialog::DontUseNativeDialog);
+
+    // return if user cancels
+    if (meshfile.isNull()) return;
+
+    loadMeshFile(meshfile);
 }
 
 void OpenParEMg::on_actionMeshSave_triggered ()
