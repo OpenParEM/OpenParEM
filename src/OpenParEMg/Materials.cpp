@@ -1333,7 +1333,7 @@ void Materials::saveAsAction_triggered ()
 {
     if (check_duplicates()) return;
 
-    QString testMaterialsFile=QFileDialog::getSaveFileName(this,tr("Open Materials File"), "/home/briany/OpenParEM", tr("Data Files (*.txt);;All Files (*)"));
+    QString testMaterialsFile=QFileDialog::getSaveFileName(this,tr("Save Materials File"), "/home/briany/OpenParEM", tr("Data Files (*.txt);;All Files (*)"));
 
     // return if user cancels
     if (testMaterialsFile.isNull()) return;

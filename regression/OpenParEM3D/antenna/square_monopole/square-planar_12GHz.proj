@@ -55,4 +55,5 @@ debug.show.port.definitions    false
 debug.show.impedance.details   false
 debug.tempfiles.keep           false
 
-gui.brep.file                  square-planar.brep
+//gui.brep.file                  square-planar.brep
+gui.brep.file                  test.brep

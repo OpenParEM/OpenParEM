@@ -90,6 +90,10 @@ public:
     //void meshShowEntities ();
     //void meshHideEntities ();
     void drawMesh ();
+    void deleteMesh ();
+
+    void dumpDrawingEntities ();
+    void shapeCount (TopoDS_Shape, int *);
 
 private slots:
     void on_fileOpen_triggered ();
@@ -108,6 +112,7 @@ private slots:
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
 
     void showItems ();
+    void reshowItem (CustomTreeWidgetItem *);
     void hideItems ();
     void selectItems ();
     void unselectItems ();
@@ -119,6 +124,8 @@ private slots:
     void unselectDisplayShape (CustomTreeWidgetItem *);
     void showMeshEntitiesItem (CustomTreeWidgetItem *);
     void hideMeshEntitiesItem (CustomTreeWidgetItem *);
+
+    void assignMaterial ();
 
     void itemTreeContextMenu_triggered (const QPoint& pnt);
 
@@ -138,13 +145,15 @@ private slots:
     void keyReleaseEvent (QKeyEvent *) override;
 
     void on_actionHide_All_triggered ();
-
     void on_actionShow_All_triggered ();
+    void set_selectionMode (CustomTreeWidgetItem *, int);
 
     void unselectTreeItems (CustomTreeWidgetItem *);
     void on_actionUnselect_All_triggered ();   // note similar functionality in CustomOpenGLWidget
+    void on_actionGenerate_triggered ();
+    void on_actionMeshSave_triggered ();
 
-
+    void on_actionDeleteMesh_triggered();
 
 private:
     Ui::OpenParEMg *ui;
@@ -153,6 +162,7 @@ private:
     struct projectData projData,defaultData;
 
     MaterialDatabase *materialDatabase;
+    QString selectedMaterial;
     BoundaryDatabase *boundaryDatabase;
 
     QString absolutePath;
@@ -173,6 +183,10 @@ private:
 
     //gmsh
     gmsh::vectorpair drawingEntities;
+    int pointCount;
+    int curveCount;
+    int surfaceCount;
+    int volumeCount;
 };
 
 #endif // OPEMG_H

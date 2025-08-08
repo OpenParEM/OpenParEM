@@ -69,6 +69,7 @@ qt_add_executable(OpenParEMg
     SelectMaterialsDatabase.h SelectMaterialsDatabase.cpp SelectMaterialsDatabase.ui
     OcctQtTools.h
     CustomTreeWidgetItem.h
+    MaterialSelection.h MaterialSelection.cpp MaterialSelection.ui
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)

@@ -29,27 +29,42 @@ class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
     Q_OBJECT
 
 public:
-    CustomTreeWidgetItem(QTreeWidgetItem *parent = nullptr,int type=Type) : QTreeWidgetItem(parent,type) {
+    CustomTreeWidgetItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type) {
         shape=nullptr;
-        root=false;     // default to non-root item
-        type=0;         // not relied on
+        root=false;         // default to non-root item
+        rootType=0;
+        set_dimTag(-1,-1);  // invalid initialization
+        displayMode=0;      // 0 - wireframe, 1 - shaded
+        selectionMode=0;
     }
 
     void set_root (bool root_) {root=root_;}
     bool is_root () {return root;}
 
-    void set_type (int type_) {type=type_;}
-    bool is_drawing () {if (type == 0) return true; return false;}
-    bool is_port () {if (type == 1) return true; return false;}
-    bool is_boundary () {if (type == 2) return true; return false;}
-    bool is_mesh () {if (type == 3) return true; return false;}
+    void set_rootType (int rootType_) {rootType=rootType_;}
+    int get_rootType () {return rootType;}
+    bool is_drawing () {if (rootType == 0) return true; return false;}
+    bool is_port () {if (rootType == 1) return true; return false;}
+    bool is_boundary () {if (rootType == 2) return true; return false;}
+    bool is_mesh () {if (rootType == 3) return true; return false;}
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
     Handle(AIS_Shape) get_AIS_Shape () {return shape;}
 
+    void set_dimTag (int dim, int tag) {dimTag.first=dim; dimTag.second=tag;}
+    void set_dimTag (std::pair<int,int> dimTag_) {dimTag=dimTag_;}
+    std::pair<int,int> get_dimTag () {return dimTag;}
+    bool is_solid () {if (dimTag.first == 3) return true; return false;}
+
     std::vector<Handle(AIS_Shape)>* get_meshEntities () {return &meshEntities;}
     long unsigned int get_meshEntitiesSize () {return meshEntities.size();}
     Handle(AIS_Shape) get_meshEntity (long unsigned int i) {return meshEntities[i];}
+
+    int get_displayMode () {return displayMode;}
+    void set_displayMode (int displayMode_) {displayMode=displayMode_;}
+    int get_selectionMode () {return selectionMode;}
+    void set_selectionMode (int selectionMode_) {selectionMode=selectionMode_;}
+
 
     void deleteChildren (QTreeWidgetItem *item)
     {
@@ -72,9 +87,13 @@ private slots:
 
 private:
     Handle(AIS_Shape) shape;                       // for drawing
+    int displayMode;                               //    0 - wireframe, 1 - shaded
+    int selectionMode;                             //    0 - shape, 1 - vertex, ...
     std::vector<Handle(AIS_Shape)> meshEntities;   // for mesh
+    std::pair<int,int> dimTag;                     //
     bool root;                                     // false - not a root item, true - is a root item
-    int type;                                      // root item: 0 - drawing, 1 - port, 2 - boundary, 3 - mesh
+    int rootType;                                  // root item: 0 - drawing, 1 - port, 2 - boundary, 3 - mesh
+
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

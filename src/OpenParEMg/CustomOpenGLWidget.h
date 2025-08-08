@@ -64,12 +64,18 @@ public:
     void mouseReleaseEvent (QMouseEvent*) override;
     void mouseMoveEvent (QMouseEvent*) override;
 
-    void displayShape (Handle(AIS_Shape) shape) {
-        viewerContext->Display(shape,Standard_False);  //True
+    void displayShape (Handle(AIS_Shape) shape, int displayMode, int selectionMode)
+    {
+        viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
+    }
+
+    void redisplayShape(Handle(AIS_Shape) shape, int displayMode, int selectionMode)
+    {
+        viewerContext->Erase(shape,Standard_False);
+        viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
     }
 
     void selectShape (Handle(AIS_Shape) shape) {
-        //viewerContext->ClearSelected(false);
         if (!viewerContext->IsDisplayed(shape)) return;
         if (viewerContext->IsSelected(shape)) return;
         viewerContext->AddOrRemoveSelected(shape,Standard_False);
@@ -87,8 +93,8 @@ public:
         viewerContext->Erase(shape,Standard_False);
     }
 
-    void showShape (Handle(AIS_Shape) shape) {
-        viewerContext->Display(shape,Standard_False);
+    void deleteShape (Handle(AIS_Shape) shape) {
+        viewerContext->Remove(shape,Standard_True);
     }
 
     void hideAll () {

@@ -62,6 +62,7 @@
 #include "CustomAIS_Shape.h"
 #include "SelectMaterialsDatabase.h"
 #include "CustomTreeWidgetItem.h"
+#include "MaterialSelection.h"
 
 OpenParEMg::OpenParEMg (QWidget *parent)
     : QMainWindow(parent)
@@ -109,10 +110,10 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     boundary.set_root(true);
     mesh.set_root(true);
 
-    drawing.set_type(0);
-    port.set_type(1);
-    boundary.set_type(2);
-    mesh.set_type(3);
+    drawing.set_rootType(0);
+    port.set_rootType(1);
+    boundary.set_rootType(2);
+    mesh.set_rootType(3);
 
     ui->drawingItemTree->setHeaderHidden(true);
     //ToDo: uncomment and work with the colors
@@ -222,30 +223,35 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
     QAction *hideAction=new QAction("Hide",this);
     QAction *selectAction=new QAction("Select",this);
     QAction *unselectAction=new QAction("Unselect",this);
+    QAction *assignMaterialAction=new QAction("Assign Material");
     //QAction *deleteAction=new QAction("Delete",this);
 
     connect(showAction, &QAction::triggered, this, &OpenParEMg::showItems);
     connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideItems);
     connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectItems);
     connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectItems);
+    connect(assignMaterialAction, &QAction::triggered, this, &OpenParEMg::assignMaterial);
 
     if (clickedItem->foreground(0) == Qt::black) {  // visible
         showAction->setEnabled(false);
         hideAction->setEnabled(true);
         selectAction->setEnabled(true);
         unselectAction->setEnabled(false);
+        assignMaterialAction->setEnabled(false);
         //deleteAction->setEnabled(false);
     } else if (clickedItem->foreground(0) == Qt::gray) {  // invisible
         showAction->setEnabled(true);
         hideAction->setEnabled(false);
         selectAction->setEnabled(false);
         unselectAction->setEnabled(false);
+        assignMaterialAction->setEnabled(false);
         //deleteAction->setEnabled(false);
     } else if (clickedItem->foreground(0) == Qt::red) {  // selected
         showAction->setEnabled(false);
         hideAction->setEnabled(true);
         selectAction->setEnabled(false);
         unselectAction->setEnabled(true);
+        assignMaterialAction->setEnabled(false);
         //deleteAction->setEnabled(false);
     }
 
@@ -253,13 +259,14 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
     if (clickedItem->is_port() && clickedItem->is_root()) selectAction->setEnabled(false);
     if (clickedItem->is_boundary() && clickedItem->is_root()) selectAction->setEnabled(false);
     if (clickedItem->is_mesh()) selectAction->setEnabled(false);
+    if (clickedItem->is_solid()) assignMaterialAction->setEnabled(true);
 
     menu.addAction(showAction);
     menu.addAction(hideAction);
     menu.addAction(selectAction);
     menu.addAction(unselectAction);
+    menu.addAction(assignMaterialAction);
     //menu.addAction(deleteAction);
-
 
     menu.exec(ui->drawingItemTree->mapToGlobal(pnt));
 }
@@ -270,13 +277,7 @@ void OpenParEMg::showItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-
-        if (item->is_drawing()) {
-            unselectDisplayShape(item);
-            hideDisplayShape(item);
-            showDisplayShape(item);
-        }
-
+        if (item->is_drawing()) showDisplayShape(item);
         if (item->is_port()) showPortShape(item);
         if (item->is_boundary()) showPortShape(item);
         if (item->is_mesh()) showMeshEntitiesItem(item);
@@ -285,13 +286,29 @@ void OpenParEMg::showItems ()
     ui->drawingWindow->updateViewer();
 }
 
+// for after changing the selection mode
+// recursive
+void OpenParEMg::reshowItem (CustomTreeWidgetItem *item)
+{
+    if (item->foreground(0) == Qt::black || item->foreground(0) == Qt::red) {
+        ui->drawingWindow->redisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+        if (item->foreground(0) == Qt::red) ui->drawingWindow->selectShape(item->get_AIS_Shape());
+    }
+
+    int i=0;
+    while (i < item->childCount()) {
+        reshowItem((CustomTreeWidgetItem *)item->child(i));
+        i++;
+    }
+}
+
 void OpenParEMg::hideItems ()
 {
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_drawing()) hideDisplayShape(item);
+        if (item->is_drawing()) {hideDisplayShape(item);}
         if (item->is_port()) hidePortShape(item);
         if (item->is_boundary()) hidePortShape(item);
         if (item->is_mesh()) hideMeshEntitiesItem(item);
@@ -306,20 +323,9 @@ void OpenParEMg::selectItems()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_drawing()) {
-            selectDisplayShape(item);
-            item->setForeground(0,Qt::red);
-        }
-
-        if (item->is_port() && !item->is_root()) {
-            selectDisplayShape(item);
-            item->setForeground(0,Qt::red);
-        }
-
-        if (item->is_boundary() && !item->is_root()) {
-            selectDisplayShape(item);
-            item->setForeground(0,Qt::red);
-        }
+        if (item->is_drawing()) selectDisplayShape(item);
+        if (item->is_port() && !item->is_root()) selectDisplayShape(item);
+        if (item->is_boundary() && !item->is_root()) selectDisplayShape(item);
 
         i++;
     }
@@ -332,20 +338,9 @@ void OpenParEMg::unselectItems()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_drawing()) {
-            unselectDisplayShape(item);
-            item->setForeground(0,Qt::black);
-        }
-
-        if (item->is_port()) {
-            unselectDisplayShape(item);
-            item->setForeground(0,Qt::black);
-        }
-
-        if (item->is_boundary()) {
-            unselectDisplayShape(item);
-            item->setForeground(0,Qt::black);
-        }
+        if (item->is_drawing()) unselectDisplayShape(item);
+        if (item->is_port()) unselectDisplayShape(item);
+        if (item->is_boundary()) unselectDisplayShape(item);
         i++;
     }
     ui->drawingWindow->updateViewer();
@@ -355,19 +350,13 @@ void OpenParEMg::unselectItems()
 void OpenParEMg::showDisplayShape (CustomTreeWidgetItem *item)
 {
     item->setForeground(0,Qt::black);
-    ui->drawingWindow->showShape(item->get_AIS_Shape());
-
-    if (menuAllHidden(&drawing)) drawing.setForeground(0,Qt::gray);
-    else drawing.setForeground(0,Qt::black);
-
-    if (item->is_root()) item->setForeground(0,Qt::black);
+    ui->drawingWindow->displayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
 }
 
 // recurseive
 void OpenParEMg::hideDisplayShape (CustomTreeWidgetItem *item)
 {
     item->setForeground(0,Qt::gray);
-    ui->drawingWindow->unselectShape(item->get_AIS_Shape());
     ui->drawingWindow->hideShape(item->get_AIS_Shape());
 
     int i=0;
@@ -376,33 +365,21 @@ void OpenParEMg::hideDisplayShape (CustomTreeWidgetItem *item)
         hideDisplayShape(child);
         i++;
     }
-
-    if (menuAllHidden(&drawing)) drawing.setForeground(0,Qt::gray);
-    else drawing.setForeground(0,Qt::black);
 }
 
 // non-recursive
 void OpenParEMg::selectDisplayShape (CustomTreeWidgetItem *item)
 {
     item->setForeground(0,Qt::red);
-    unselectDisplayShape(item);
-    ui->drawingWindow->showShape(item->get_AIS_Shape());
+    ui->drawingWindow->displayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
     ui->drawingWindow->selectShape(item->get_AIS_Shape());
 }
 
-// recursive
+// non-recursive
 void OpenParEMg::unselectDisplayShape (CustomTreeWidgetItem *item)
 {
-    item->setForeground(0,Qt::gray);
+    item->setForeground(0,Qt::black);
     ui->drawingWindow->unselectShape(item->get_AIS_Shape());
-    ui->drawingWindow->hideShape(item->get_AIS_Shape());
-
-    int i=0;
-    while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-        unselectDisplayShape(child);
-        i++;
-    }
 }
 
 void OpenParEMg::showPortShape (CustomTreeWidgetItem *item)
@@ -413,12 +390,12 @@ void OpenParEMg::showPortShape (CustomTreeWidgetItem *item)
         int j=0;
         while (j < item->childCount()) {
             CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(j);
-            ui->drawingWindow->showShape(child->get_AIS_Shape());
+            ui->drawingWindow->displayShape(child->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
             child->setForeground(0,Qt::black);
             j++;
         }
     } else {
-        ui->drawingWindow->showShape(item->get_AIS_Shape());
+        ui->drawingWindow->displayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
     }
 
     // do both port and boundary menu since this method is used for both
@@ -453,8 +430,72 @@ void OpenParEMg::hidePortShape (CustomTreeWidgetItem *item)
 
     if (menuAllHidden(&boundary)) boundary.setForeground(0,Qt::gray);
     else boundary.setForeground(0,Qt::black);
+}
 
-    //ui->drawingWindow->updateViewer();
+// recursive
+void OpenParEMg::set_selectionMode (CustomTreeWidgetItem *item, int selectionMode)
+{
+    item->set_selectionMode(selectionMode);
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        set_selectionMode(child,selectionMode);
+        i++;
+    }
+}
+
+void OpenParEMg::assignMaterial ()
+{
+    MaterialSelection *materialSelection=new MaterialSelection();
+    materialSelection->set_materialDatabase(materialDatabase);
+    materialSelection->set_selectedMaterial(&selectedMaterial);
+    materialSelection->populate();
+    materialSelection->exec();
+    delete materialSelection;
+
+    if (selectedMaterial != "") {
+        clickedItem->setText(0,selectedMaterial);
+        std::vector<int> physicalGroups;
+        physicalGroups.push_back(0);
+        physicalGroups[0]=clickedItem->get_dimTag().second;
+        gmsh::model::addPhysicalGroup(3,physicalGroups,-1,selectedMaterial.toStdString());
+    }
+}
+
+void OpenParEMg::dumpDrawingEntities ()
+{
+    long unsigned int i=0;
+    while (i < drawingEntities.size()) {
+        std::pair<int,int> pair=drawingEntities[i];
+        std::string type,name;
+        gmsh::model::getEntityType(pair.first,pair.second,type);
+        gmsh::model::getEntityName(pair.first,pair.second,name);
+        //std::cout << "pari=" << "<" << pair.first << "," << pair.second << ">" << "  type=" << type << "  name=" << name << std::endl;
+
+        if (pair.first == 3) {
+            std::cout << "pari=" << "<" << pair.first << "," << pair.second << ">" << "  type=" << type << "  name=" << name << std::endl;
+            std::vector<int> integers;
+            std::vector<double> reals;
+            gmsh::model::getEntityProperties(pair.first,pair.second,integers,reals);
+
+            std::cout << "   integer.size()=" << integers.size() << std::endl;
+            long unsigned int i=0;
+            while (i < integers.size()) {
+                std::cout << "   integer=" << integers[i] << std::endl;
+                i++;
+            }
+
+            std::cout << "   reals.size()=" << reals.size() << std::endl;
+            i=0;
+            while (i < reals.size()) {
+                std::cout << "   real=" << reals[i] << std::endl;
+                i++;
+            }
+        }
+        i++;
+    }
+
 }
 
 void OpenParEMg::on_fileOpen_triggered ()
@@ -508,6 +549,7 @@ void OpenParEMg::on_fileOpen_triggered ()
             mb.setFixedSize(500, 200);
         }
 
+        //xxx
         // load brep file, if defined
         if (strcmp(projData.gui_brep_file,"") != 0) {
 
@@ -520,17 +562,11 @@ void OpenParEMg::on_fileOpen_triggered ()
                 QMessageBox mb;
                 mb.critical(nullptr, "Error",message);
                 mb.setFixedSize(500, 200);
+            } else {
+                // generate and draw the mesh
+                on_actionGenerate_triggered();
             }
         }
-
-        // extract drawing entities for gmsh
-        TopoDS_Shape shape=drawing.get_AIS_Shape()->Shape();
-        gmsh::model::occ::importShapesNativePointer((void *) &shape,drawingEntities,false);
-        gmsh::model::occ::synchronize();
-        gmsh::model::mesh::generate();
-        gmsh::write("testfile.msh");
-        drawMesh();
-
 
         // load boundaries, if any, and draw
         if (boundaryDatabase->load(projData.port_definition_file,projData.solution_check_closed_loop)) {
@@ -590,6 +626,7 @@ void OpenParEMg::on_fileNew_triggered ()
     drawing.reset();
     port.reset();
     boundary.reset();
+    mesh.reset();
 }
 
 void OpenParEMg::on_meshOptions_triggered ()
@@ -708,6 +745,17 @@ void ListChildren (const TopoDS_Shape& theShape)
     // }
 }
 
+void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
+{
+    TopoDS_Iterator topoIterator(shape);
+    while (topoIterator.More()) {
+        const TopoDS_Shape& child=topoIterator.Value();
+        (*count)++;
+        shapeCount(child,count);
+        topoIterator.Next();
+    }
+}
+
 void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool isRoot)
 {
     if (shape.IsNull()) return;
@@ -716,6 +764,9 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
 
     QString name="";
 
+    std::pair<int,int> dimTag;
+    dimTag.first=-1; dimTag.second=-1;
+
     TopAbs_ShapeEnum shapeType=shape.ShapeType();
     switch (shapeType) {
     case TopAbs_COMPOUND:
@@ -723,24 +774,38 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
         break;
     case TopAbs_COMPSOLID:
         name="COMPSOLID";
+        volumeCount++;   // a guess
+        dimTag.first=3; dimTag.second=volumeCount++;
         break;
     case TopAbs_SOLID:
         name="SOLID";
+        volumeCount++;
+        dimTag.first=3; dimTag.second=volumeCount++;
         break;
     case TopAbs_SHELL:
         name="SHELL";
+        surfaceCount++;  // a guess
+        dimTag.first=2; dimTag.second=surfaceCount++;
         break;
     case TopAbs_FACE:
         name="FACE";
+        surfaceCount++;  // aguess
+        dimTag.first=2; dimTag.second=surfaceCount++;
         break;
     case TopAbs_WIRE:
         name="WIRE";
+        curveCount++;    // a guess
+        dimTag.first=2; dimTag.second=surfaceCount++;
         break;
     case TopAbs_EDGE:
         name="EDGE";
+        curveCount++;
+        dimTag.first=2; dimTag.second=surfaceCount++;
         break;
     case TopAbs_VERTEX:
         name="VERTEX";
+        pointCount++;
+        dimTag.first=1; dimTag.second=pointCount++;
         break;
     case TopAbs_SHAPE:
         name="SHAPE";
@@ -759,7 +824,7 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
         isRoot=false;
         drawing.set_AIS_Shape(drawingShape);
         drawing.setForeground(0,Qt::black);
-        ui->drawingWindow->showShape(drawingShape);
+        ui->drawingWindow->displayShape(drawingShape,drawing.get_displayMode(),drawing.get_selectionMode());
         newItem=&drawing;
     } else {
         newItem=new CustomTreeWidgetItem(0);
@@ -769,6 +834,8 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
         item->addChild(newItem);
     }
     drawingToItemMap.insert({drawingShape,newItem});
+
+    newItem->set_dimTag(dimTag);
 
     // children
     TopoDS_Iterator topoIterator(shape);
@@ -792,6 +859,7 @@ bool OpenParEMg::loadBrepFile (QString filePath)
         BRep_Builder b;
         if (!BRepTools::Read(s,filePath.toStdString().c_str(),b)) return true;
 
+        pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
         ui->drawingWindow->clearDrawing();
         addShape(s,nullptr,true);
     }
@@ -916,7 +984,12 @@ void OpenParEMg::on_actionShape_triggered()
     currentSelectionAction=ui->actionShape;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    ui->drawingWindow->setSelectionShape();
+    set_selectionMode(&drawing,0);
+    set_selectionMode(&port,0);
+    set_selectionMode(&boundary,0);
+    reshowItem(&drawing);
+    reshowItem(&port);
+    reshowItem(&boundary);
 }
 
 void OpenParEMg::on_actionVertex_triggered()
@@ -925,8 +998,12 @@ void OpenParEMg::on_actionVertex_triggered()
     currentSelectionAction=ui->actionVertex;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    ui->drawingWindow->setSelectionShape();
-    ui->drawingWindow->setSelectionVertex();
+    set_selectionMode(&drawing,1);
+    set_selectionMode(&port,1);
+    set_selectionMode(&boundary,1);
+    reshowItem(&drawing);
+    reshowItem(&port);
+    reshowItem(&boundary);
 }
 
 void OpenParEMg::on_actionEdge_triggered()
@@ -935,8 +1012,12 @@ void OpenParEMg::on_actionEdge_triggered()
     currentSelectionAction=ui->actionEdge;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    ui->drawingWindow->setSelectionShape();
-    ui->drawingWindow->setSelectionEdge();
+    set_selectionMode(&drawing,2);
+    set_selectionMode(&port,2);
+    set_selectionMode(&boundary,2);
+    reshowItem(&drawing);
+    reshowItem(&port);
+    reshowItem(&boundary);
 }
 
 void OpenParEMg::on_actionWire_triggered()
@@ -945,8 +1026,12 @@ void OpenParEMg::on_actionWire_triggered()
     currentSelectionAction=ui->actionWire;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    ui->drawingWindow->setSelectionShape();
-    ui->drawingWindow->setSelectionWire();
+    set_selectionMode(&drawing,3);
+    set_selectionMode(&port,3);
+    set_selectionMode(&boundary,3);
+    reshowItem(&drawing);
+    reshowItem(&port);
+    reshowItem(&boundary);
 }
 
 void OpenParEMg::on_actionFace_triggered()
@@ -955,8 +1040,12 @@ void OpenParEMg::on_actionFace_triggered()
     currentSelectionAction=ui->actionFace;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    ui->drawingWindow->setSelectionShape();
-    ui->drawingWindow->setSelectionFace();
+    set_selectionMode(&drawing,4);
+    set_selectionMode(&port,4);
+    set_selectionMode(&boundary,4);
+    reshowItem(&drawing);
+    reshowItem(&port);
+    reshowItem(&boundary);
 }
 
 void OpenParEMg::on_actionShell_triggered()
@@ -965,8 +1054,12 @@ void OpenParEMg::on_actionShell_triggered()
     currentSelectionAction=ui->actionShell;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    ui->drawingWindow->setSelectionShape();
-    ui->drawingWindow->setSelectionShell();
+    set_selectionMode(&drawing,5);
+    set_selectionMode(&port,5);
+    set_selectionMode(&boundary,5);
+    reshowItem(&drawing);
+    reshowItem(&port);
+    reshowItem(&boundary);
 }
 
 void OpenParEMg::on_actionSolid_triggered()
@@ -975,8 +1068,12 @@ void OpenParEMg::on_actionSolid_triggered()
     currentSelectionAction=ui->actionSolid;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    ui->drawingWindow->setSelectionShape();
-    ui->drawingWindow->setSelectionSolid();
+    set_selectionMode(&drawing,6);
+    set_selectionMode(&port,6);
+    set_selectionMode(&boundary,6);
+    reshowItem(&drawing);
+    reshowItem(&port);
+    reshowItem(&boundary);
 }
 
 // click on background in the item tree to clear the selection
@@ -1125,7 +1222,8 @@ void OpenParEMg::showMeshEntitiesItem (CustomTreeWidgetItem *item)
             std::vector<Handle(AIS_Shape)> *entities=child->get_meshEntities();
             long unsigned int j=0;
             while (j < entities->size()) {
-                ui->drawingWindow->displayShape((*entities)[j]);
+                //ui->drawingWindow->displayShape((*entities)[j],child->get_displayMode(),selectionMode);
+                ui->drawingWindow->displayShape((*entities)[j],child->get_displayMode(),-1);  // mesh is non-selectable
                 j++;
             }
             i++;
@@ -1134,7 +1232,8 @@ void OpenParEMg::showMeshEntitiesItem (CustomTreeWidgetItem *item)
         std::vector<Handle(AIS_Shape)> *entities=item->get_meshEntities();
         long unsigned int j=0;
         while (j < entities->size()) {
-            ui->drawingWindow->displayShape((*entities)[j]);
+            //ui->drawingWindow->displayShape((*entities)[j],item->get_displayMode(),selectionMode);
+            ui->drawingWindow->displayShape((*entities)[j],item->get_displayMode(),-1);  // mesh is non-selectable
             j++;
         }
     }
@@ -1292,7 +1391,7 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 15) {
             CustomTreeWidgetItem *verticesItem=new CustomTreeWidgetItem(0);
             verticesItem->setText(0,"Vertices");
-            verticesItem->set_type(3);
+            verticesItem->set_rootType(3);
             verticesItem->setForeground(0,Qt::black);
             mesh.insertChild(0,verticesItem);
 
@@ -1314,7 +1413,7 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 1) {
             CustomTreeWidgetItem *edgesItem=new CustomTreeWidgetItem(0);
             edgesItem->setText(0,"Edges");
-            edgesItem->set_type(3);
+            edgesItem->set_rootType(3);
             edgesItem->setForeground(0,Qt::black);
             mesh.addChild(edgesItem);
 
@@ -1337,13 +1436,13 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 2) {
             CustomTreeWidgetItem *wiresItem=new CustomTreeWidgetItem(0);
             wiresItem->setText(0,"Wires");
-            wiresItem->set_type(3);
+            wiresItem->set_rootType(3);
             wiresItem->setForeground(0,Qt::black);
             mesh.addChild(wiresItem);
 
             CustomTreeWidgetItem *trianglesItem=new CustomTreeWidgetItem(0);
             trianglesItem->setText(0,"Triangles");
-            trianglesItem->set_type(3);
+            trianglesItem->set_rootType(3);
             trianglesItem->setForeground(0,Qt::black);
             mesh.addChild(trianglesItem);
 
@@ -1377,7 +1476,7 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 4) {
             CustomTreeWidgetItem *tetrahedronsItem=new CustomTreeWidgetItem(0);
             tetrahedronsItem->setText(0,"Tetrahedrons");
-            tetrahedronsItem->set_type(3);
+            tetrahedronsItem->set_rootType(3);
             tetrahedronsItem->setForeground(0,Qt::black);
             mesh.addChild(tetrahedronsItem);
 
@@ -1432,5 +1531,49 @@ void OpenParEMg::drawMesh()
     //meshShowEntities();
     showMeshEntitiesItem(&mesh);
     mesh.setSelected(false);
+}
+
+void OpenParEMg::deleteMesh ()
+{
+    int i=0;
+    while (i < mesh.childCount()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *) mesh.child(i);
+        std::vector<Handle(AIS_Shape)> *meshEntities=item->get_meshEntities();
+        long unsigned int j=0;
+        while (j < meshEntities->size()) {
+            ui->drawingWindow->deleteShape((*meshEntities)[j]);
+            j++;
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    mesh.deleteChildren(&mesh);
+    drawingEntities.clear();
+    gmsh::clear();
+}
+
+void OpenParEMg::on_actionGenerate_triggered ()
+{
+    deleteMesh();
+
+    TopoDS_Shape shape=drawing.get_AIS_Shape()->Shape();
+    gmsh::model::occ::importShapesNativePointer((void *) &shape,drawingEntities,false);
+    gmsh::model::occ::synchronize();
+    gmsh::model::mesh::generate();
+
+    drawMesh();
+}
+
+void OpenParEMg::on_actionMeshSave_triggered ()
+{
+    QString testMeshFile=QFileDialog::getSaveFileName(this,tr("Save Mesh File"), "/home/briany/OpenParEM", tr("Data Files (*.msh);;All Files (*)"));
+    if (testMeshFile.isNull()) return;
+    gmsh::write(testMeshFile.toStdString());
+}
+
+void OpenParEMg::on_actionDeleteMesh_triggered ()
+{
+    deleteMesh();
 }
 

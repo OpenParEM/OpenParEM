@@ -1399,7 +1399,7 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
                      CustomTreeWidgetItem *boundaryWidgetItem, MaterialDatabase *materialDatabase)
 {
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
-    drawingWindow->displayShape(drawingShape);
+    drawingWindow->displayShape(drawingShape,boundaryWidgetItem->get_displayMode(),boundaryWidgetItem->get_selectionMode());
     drawingWindow->updateViewer();
 
     // boundary type
@@ -1410,7 +1410,7 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
     CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
     itemName->set_AIS_Shape(drawingShape);
     itemName->setText(0,textName);
-    itemName->set_type(2);
+    itemName->set_rootType(2);
     itemName->setForeground(0,Qt::black);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     boundaryWidgetItem->addChild(itemName);
@@ -6388,7 +6388,7 @@ void comboTextChanged (QString text, Boundary *boundary)
 void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, CustomTreeWidgetItem *portWidgetItem)
 {
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
-    drawingWindow->displayShape(drawingShape);
+    drawingWindow->displayShape(drawingShape,portWidgetItem->get_displayMode(),portWidgetItem->get_selectionMode());
     drawingWindow->updateViewer();
 
     // name
@@ -6396,7 +6396,7 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
     CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
     itemName->set_AIS_Shape(drawingShape);
     itemName->setText(0,textName);
-    itemName->set_type(1);
+    itemName->set_rootType(1);
     itemName->setForeground(0,Qt::black);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     portWidgetItem->addChild(itemName);
