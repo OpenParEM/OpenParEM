@@ -23,7 +23,7 @@
 
 #include <quadmath.h>
 #include <iostream>
-#include <thread>
+#include <filesystem>
 
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
@@ -60,16 +60,18 @@
 #include "Refinement.h"
 #include "Materials.h"
 #include "CustomOpenGLWidget.h"
-#include "CustomAIS_Shape.h"
 #include "SelectMaterialsDatabase.h"
 #include "CustomTreeWidgetItem.h"
 #include "MaterialSelection.h"
+#include "mpi.h"
 
 OpenParEMg::OpenParEMg (QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::OpenParEMg)
 {
     ui->setupUi(this);
+
+    MPI_PORT_COMM=nullptr;
 
     /////////////////////////////////////////////////////////////////////////////
     // main window setup
@@ -150,6 +152,13 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     std::cout << "OpenParEMg: drawingToItemMap=" << &drawingToItemMap << std::endl; std::cout.flush();
     ui->drawingWindow->set_drawingToItemMap(&drawingToItemMap);
 
+    // menu initial settings
+    ui->actionGenerate->setEnabled(false);
+    ui->actionMeshSave->setEnabled(false);
+    ui->actionDeleteMesh->setEnabled(false);
+    ui->actionStop->setEnabled(false);
+    ui->actionAbort->setEnabled(false);
+
     /////////////////////////////////////////////////////////////////////////////
     // context menu for drawingWindow
     /////////////////////////////////////////////////////////////////////////////
@@ -175,6 +184,13 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     gmsh::initialize();
 
     /////////////////////////////////////////////////////////////////////////////
+    // timer or checking when OpenParEM3D finishes
+    /////////////////////////////////////////////////////////////////////////////
+
+    timer=new QTimer(this);
+    connect(timer,&QTimer::timeout,this,&OpenParEMg::checkFinish);
+
+    /////////////////////////////////////////////////////////////////////////////
 
 
     ui->drawingItemTree->show();
@@ -185,6 +201,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
 OpenParEMg::~OpenParEMg ()
 {
+    if (timer) delete timer;
+    if (MPI_PORT_COMM) delete MPI_PORT_COMM;
     gmsh::finalize();
     PetscFinalize();
     delete ui;
@@ -534,8 +552,15 @@ void OpenParEMg::on_fileOpen_triggered ()
     // load the file
     if (QFile::exists(projectFile)) {
 
-        if (load_project_file (projectFile.toLatin1().toStdString().c_str(),&projData,"   ")) {
+        QString currentPath;
+        currentPath=QDir::currentPath();
+
+        QDir::setCurrent(absolutePath);
+        projectFile=projectName;
+
+        if (load_project_file (projectName.toLatin1().toStdString().c_str(),&projData,"   ")) {
             projectFile="";
+            QDir::setCurrent(currentPath);
 
             QMessageBox mb;
             mb.critical(nullptr, "Error", "Unable to load the requested project file.");
@@ -543,10 +568,6 @@ void OpenParEMg::on_fileOpen_triggered ()
 
             return;
         }
-
-        // set project path
-        QDir::setCurrent(absolutePath);
-        projectFile=projectName;
 
         // set GUI options
 
@@ -579,8 +600,7 @@ void OpenParEMg::on_fileOpen_triggered ()
                 mb.critical(nullptr, "Error",message);
                 mb.setFixedSize(500, 200);
             } else {
-                // generate and draw the mesh
-                //on_actionGenerate_triggered();
+                ui->actionGenerate->setEnabled(true);
             }
         }
 
@@ -594,7 +614,6 @@ void OpenParEMg::on_fileOpen_triggered ()
             boundaryDatabase->draw(&projData,ui->drawingWindow,ui->drawingItemTree,&port,&boundary,materialDatabase);
         }
 
-        //xxx
         // load mesh, if any, and draw
         loadMeshFile(QString::fromStdString(projData.mesh_file));
 
@@ -635,6 +654,9 @@ void OpenParEMg::on_fileNew_triggered ()
     // reset GUI options
 
     ui->meshOptions->setEnabled(true);
+    ui->actionGenerate->setEnabled(false);
+    ui->actionMeshSave->setEnabled(false);
+    ui->actionDeleteMesh->setEnabled(false);
     ui->simulateOptions->setEnabled(true);
     ui->actionFrequency_Plan->setEnabled(true);
 
@@ -1579,6 +1601,9 @@ void OpenParEMg::deleteMesh ()
     mesh.deleteChildren(&mesh);
     drawingEntities.clear();
     gmsh::clear();
+    ui->actionMeshSave->setEnabled(false);
+    ui->actionDeleteMesh->setEnabled(false);
+
 }
 
 void OpenParEMg::on_actionGenerate_triggered ()
@@ -1591,21 +1616,50 @@ void OpenParEMg::on_actionGenerate_triggered ()
     gmsh::model::mesh::generate();
 
     drawMesh();
+
+    ui->actionMeshSave->setEnabled(true);
+    ui->actionDeleteMesh->setEnabled(true);
 }
 
 void OpenParEMg::loadMeshFile (QString meshfile)
 {
     if (QFile::exists(meshfile)) {
+
+        // load and display
         deleteMesh();
         gmsh::open(meshfile.toStdString());
         drawMesh();
+
+        // save the file name
+        if (projData.mesh_file) free(projData.mesh_file);
+        projData.mesh_file=(char *)malloc((meshfile.length()+1)*sizeof(char));
+        int i=0;
+        while (i < meshfile.length()) {
+            projData.mesh_file[i]=meshfile.data()[i].toLatin1();
+            i++;
+        }
+        projData.mesh_file[i]='\0';
+
+        ui->actionMeshSave->setEnabled(true);
+        ui->actionDeleteMesh->setEnabled(true);
     } else {
+
+        // alert the user
         QMessageBox mb;
         QString message="Error in loading the specified mesh file \"";
         message.append(meshfile);
         message.append("\".");
         mb.critical(nullptr, "Error",message);
         mb.setFixedSize(500, 200);
+
+        // null out the file name
+        if (strlen(projData.mesh_file) > 0) {
+            projData.mesh_file[0]='\0';
+        } else {
+            if (projData.mesh_file) free(projData.mesh_file);
+            projData.mesh_file=(char*)malloc(sizeof(char));
+            projData.mesh_file[0]='\0';
+        }
     }
 }
 
@@ -1650,5 +1704,176 @@ void OpenParEMg::on_allWireframe_triggered ()
     reshowItem(&boundary);
 
     ui->drawingWindow->updateViewer();
+}
+
+void eh3D(MPI_Comm *comm, int *err, ...)
+{
+    QMessageBox mb;
+    mb.critical(nullptr, "Error","eh3D: Failed to launch OpenParEM3D.");
+}
+
+void OpenParEMg::on_actionRun_triggered ()
+{
+    // check for an existing lock file
+
+    std::string lockfile=".";
+    lockfile.append(projData.project_name);
+    lockfile.append(".lock");
+    std::cout << "projData.project_name=\"" << projData.project_name << "\"" << std::endl; std::cout.flush();
+    std::cout << "check for lock file \"" << lockfile << "\"" << std::endl; std::cout.flush();
+
+    if (std::filesystem::exists(lockfile)) {
+        QMessageBox mb;
+        mb.setText("A lock file is present preventing execution, indicating a running job or a killed job.");
+        mb.setInformativeText("Click OK to remove the lock and continue or Cancel to abort.");
+        mb.setStandardButtons(QMessageBox::Ok|QMessageBox::Cancel);
+        mb.setDefaultButton(QMessageBox::Cancel);
+        if (mb.exec() == QMessageBox::Cancel) return;
+
+        if (remove(lockfile.c_str())) {
+            QMessageBox mb;
+            QString message="Error removing the lock file \"";
+            message.append(lockfile);
+            message.append("\".");
+            mb.critical(nullptr, "Error",message);
+            return;
+        }
+    }
+
+    // OpenParEM2D
+
+    if (system("OpenParEM2D -h > /dev/null")) {
+        QMessageBox mb;
+        mb.critical(nullptr, "Error","Cannot execute OpenParEM2D.");
+        mb.setFixedSize(500, 200);
+        return;
+    }
+
+    // OpenParEM3D
+
+    if (system("which OpenParEM3D > /dev/null")) {
+        QMessageBox mb;
+        mb.critical(nullptr, "Error","Cannot find OpenParEM3D.");
+        mb.setFixedSize(500, 200);
+        return;
+    }
+
+    if (system("OpenParEM3D -h > /dev/null")) {
+        QMessageBox mb;
+        mb.critical(nullptr, "Error","Cannot execute OpenParEM3D.");
+        mb.setFixedSize(500, 200);
+        return;
+    }
+
+    // run OpenParEM3D
+
+    int size=12;  // ToDo: pull this from an option panel
+
+    pidList.clear();
+    char *project=(char *)malloc((projectFile.toLatin1().toStdString().length()+1)*sizeof(char));
+    int i=0;
+    while (i < projectFile.toLatin1().toStdString().length()) {
+        project[i]=projectFile.data()[i].toLatin1();
+        pidList.push_back(0);
+        i++;
+    }
+    project[i]='\0';
+
+    char** argv=(char **)malloc(2*sizeof(char *));
+    argv[0]=project;
+    argv[1]=nullptr;
+
+    int *error_codes=(int *)malloc(size*sizeof(int));
+
+    // launch the job
+    MPI_Errhandler errorHandler;
+    MPI_Comm_create_errhandler(eh3D,&errorHandler);
+    MPI_Comm_set_errhandler(PETSC_COMM_WORLD,errorHandler);
+
+    if (MPI_PORT_COMM) delete MPI_PORT_COMM;
+    MPI_PORT_COMM=new MPI_Comm();
+    MPI_Comm_spawn ("OpenParEM3D",argv,size,MPI_INFO_NULL,0,PETSC_COMM_WORLD,MPI_PORT_COMM,error_codes);
+
+    // check that all processes spawned
+    bool fail=false;
+    i=0;
+    while (i < size) {
+        if (error_codes[i] == MPI_ERR_SPAWN) {
+            fail=true;
+            break;
+        }
+        i++;
+    }
+    if (fail) {
+        QMessageBox mb;
+        mb.critical(nullptr, "Error","Failed to launch OpenParEM3D.");
+    }
+
+    // get the pids
+    i=0;
+    while (i < size) {
+        int pid;
+        MPI_Recv(&pid,1,MPI_INT,i,10000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
+        pidList[i]=pid;
+        i++;
+    }
+
+    timer->start(500);
+    MPI_Irecv(&signal,1,MPI_INT,0,10003,*MPI_PORT_COMM,&request);
+
+    ui->actionOptions->setEnabled(false);
+    ui->actionRun->setEnabled(false);
+    ui->actionStop->setEnabled(true);
+    ui->actionAbort->setEnabled(true);
+
+    // clean up
+
+    MPI_Comm_set_errhandler(PETSC_COMM_WORLD,MPI_ERRORS_RETURN);
+    MPI_Errhandler_free(&errorHandler);
+
+    if (project) free(project);
+    if (argv) free(argv);
+    if (error_codes) free(error_codes);
+}
+
+void OpenParEMg::on_actionStop_triggered ()
+{
+    ui->actionAbort->setEnabled(false);
+    MPI_Send(&signal,1,MPI_INT,0,10001,*MPI_PORT_COMM);
+}
+
+void OpenParEMg::checkFinish ()
+{
+    std::cout << "OpenParEMg::checkFinish" << std::endl; std::cout.flush();
+    ui->actionStop->setEnabled(true);
+    int test;
+    MPI_Test(&request,&test,MPI_STATUS_IGNORE);
+
+    if (test) {
+        std::cout << "   finished" << std::endl; std::cout.flush();
+        timer->stop();
+        pidList.clear();
+        //MPI_Comm_free(MPI_PORT_COMM);  //MPI_Comm_disconnect also doesn't clear the resources
+        delete MPI_PORT_COMM;
+        MPI_PORT_COMM=nullptr;
+
+        ui->actionOptions->setEnabled(true);
+        ui->actionRun->setEnabled(true);
+        ui->actionStop->setEnabled(false);
+        ui->actionAbort->setEnabled(false);
+    }
+}
+
+void OpenParEMg::on_actionAbort_triggered ()
+{
+    int i=0;
+    while (i < pidList.size()) {
+        //std::string command="kill -9 ";
+        std::string command="kill ";
+        command.append(std::to_string(pidList[i]));
+        system(command.c_str());
+        i++;
+    }
+    pidList.clear();
 }
 

@@ -135,11 +135,21 @@
     <addaction name="actionShow_All"/>
     <addaction name="allWireframe"/>
    </widget>
+   <widget class="QMenu" name="menuRun">
+    <property name="title">
+     <string>Run</string>
+    </property>
+    <addaction name="actionOptions"/>
+    <addaction name="actionRun"/>
+    <addaction name="actionStop"/>
+    <addaction name="actionAbort"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
    <addaction name="menuMaterials"/>
    <addaction name="menuMesh"/>
    <addaction name="menuSimulate"/>
+   <addaction name="menuRun"/>
    <addaction name="menuTools"/>
    <addaction name="menuAbout"/>
   </widget>
@@ -301,6 +311,26 @@
   <action name="actionMeshLoad">
    <property name="text">
     <string>Load ...</string>
+   </property>
+  </action>
+  <action name="actionOptions">
+   <property name="text">
+    <string>Options ...</string>
+   </property>
+  </action>
+  <action name="actionRun">
+   <property name="text">
+    <string>Run</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </action>
+  <action name="actionAbort">
+   <property name="text">
+    <string>Abort</string>
    </property>
   </action>
  </widget>

@@ -26,6 +26,7 @@
 
 #include <QMainWindow>
 #include <QStyledItemDelegate>
+#include <QTimer>
 
 #include "AIS_Shape.hxx"
 
@@ -161,6 +162,14 @@ private slots:
     void loadMeshFile (QString);
     void on_actionMeshLoad_triggered ();
 
+    void on_actionRun_triggered ();
+
+    void on_actionStop_triggered();
+
+    void checkFinish ();
+
+    void on_actionAbort_triggered();
+
 private:
     Ui::OpenParEMg *ui;
     bool hasProjData;
@@ -186,6 +195,12 @@ private:
     std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> drawingToItemMap;
 
     QMenu *drawingContextMenu;
+
+    MPI_Comm *MPI_PORT_COMM;
+    MPI_Request request;
+    int signal;
+    std::vector<int> pidList;   // for killing spawned OpenParEM3D
+    QTimer *timer;
 
     //gmsh
     gmsh::vectorpair drawingEntities;

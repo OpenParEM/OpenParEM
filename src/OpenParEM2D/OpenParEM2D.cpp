@@ -332,13 +332,14 @@ int main(int argc, char *argv[])
    chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
 
    // parse inputs
+   int retVal=1;
    int printHelp=0;
    if (argc <= 1) printHelp=1;
    else {
-      if (strcmp(argv[1],"-h") == 0) printHelp=1;
+      if (strcmp(argv[1],"-h") == 0) {printHelp=1; retVal=0;}
       else projFile=argv[1];
    }
-   if (printHelp) {help(); /*PetscFinalize()*/ SlepcFinalize();; exit(1);}
+   if (printHelp) {help(); /*PetscFinalize()*/ SlepcFinalize();; exit(retVal);}
 
    char *baseName=get_project_name(projFile);
    print_copyright_notice ("OpenParEM2D",version_major,version_minor,version_patch);

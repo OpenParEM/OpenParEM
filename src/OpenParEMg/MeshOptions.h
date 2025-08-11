@@ -24,7 +24,6 @@
 #include <QDialog>
 #include <QFileDialog>
 #include <QMessageBox>
-#include <iostream>
 #include "project.h"
 
 namespace Ui {
@@ -36,19 +35,17 @@ class MeshDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit MeshDialog(QWidget *parent = nullptr);
+    explicit MeshDialog (QWidget *parent = nullptr);
     void set_projData (struct projectData *);
     ~MeshDialog();
 
 private slots:
-    void on_meshOrderSpinBox_valueChanged(int arg1);
-    void on_meshFileLineEdit_returnPressed();
-    void on_meshFilePushButton_clicked();
-    void on_meshSaveRefined_checkStateChanged(const Qt::CheckState &arg1);
+    void on_meshOrderSpinBox_valueChanged (int);
+    void on_meshSaveRefined_checkStateChanged (const Qt::CheckState &arg1);
     void on_meshRefinementFraction_textChanged(const QString &arg1);
-    void on_meshQualityLimit_textChanged(const QString &arg1);
-    void on_meshOptionOk_clicked();
-    void on_meshOptionCancel_clicked();
+    void on_meshQualityLimit_textChanged (const QString &arg1);
+    void on_meshOptionOk_clicked ();
+    void on_meshOptionCancel_clicked ();
 private:
     Ui::MeshDialog *ui;
     struct projectData *projData;

@@ -29,6 +29,7 @@
 #include <chrono>
 #include <unistd.h>
 #include <HYPRE.h>
+#include <csignal>
 #include "port.hpp"
 #include "fem3D.hpp"
 #include "results.hpp"
@@ -58,6 +59,23 @@ extern "C" void prefix ();
 extern "C" char* get_prefix_text ();
 extern "C" void set_prefix_text (char *);
 
+// global to work with the signal handler
+MPI_Comm parent;
+
+
+void signalHandler(int signum) {
+    std::cout << "Received signal: " << signum << ". Performing cleanup..." << std::endl;
+
+   PetscMPIInt rank;
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+   MPI_Barrier(PETSC_COMM_WORLD);
+
+   int signal=0;
+   if (parent != MPI_COMM_NULL && rank == 0) MPI_Send(&signal,1,MPI_INT,0,10003,parent);
+   PetscFinalize();
+   exit(0); // 1
+}
 
 double edgeLength (double *a, double *b)
 {
@@ -226,6 +244,10 @@ int main(int argc, char *argv[])
    PatternDatabase patternDatabase;
    GammaDatabase gammaDatabase;
    vector<DifferentialPair *> aggregateList;
+   bool gracefulExit=false;
+
+   signal(SIGINT,signalHandler);
+   signal(SIGTERM,signalHandler);
 
    // Initialize Petsc and MPI
    PetscInitializeNoArguments();
@@ -234,6 +256,20 @@ int main(int argc, char *argv[])
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
    MPI_Barrier(PETSC_COMM_WORLD);
+
+   // send pid to the parent, if it exists
+   MPI_Comm_get_parent (&parent);
+   if (parent != MPI_COMM_NULL) {
+      int pid=getpid();
+      MPI_Send(&pid,1,MPI_INT,0,10000,parent);
+   }
+
+   // look for a stop signal
+   MPI_Request request;
+   int signal;
+   if (parent != MPI_COMM_NULL && rank == 0) { 
+      MPI_Irecv(&signal,1,MPI_INT,0,10001,parent,&request);
+   }
 
    prefix_text=(char *)malloc(256*sizeof(char));
    snprintf(prefix_text,256,"%s","");
@@ -246,13 +282,14 @@ int main(int argc, char *argv[])
    chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
 
    // parse inputs
+   int retVal=1;
    int printHelp=0;
    if (argc <= 1) printHelp=1;
    else {
-      if (strcmp(argv[1],"-h") == 0) printHelp=1;
+      if (strcmp(argv[1],"-h") == 0) {printHelp=1; retVal=0;}
       else projFile=argv[1];
    }
-   if (printHelp) {help(); PetscFinalize(); exit(1);}
+   if (printHelp) {help(); PetscFinalize(); exit(retVal);}
    
    print_copyright_notice ("OpenParEM3D",version_major,version_minor,version_patch);
    char *baseName=get_project_name(projFile);
@@ -650,11 +687,33 @@ int main(int argc, char *argv[])
          delete fem; fem=nullptr;
          boundaryDatabase.reset();
 
-        // for benchmarking
-        //chrono::steady_clock::time_point iteration_end_time=chrono::steady_clock::now();
-        //if (rank == 0) cout << "CUMMULATIVETIME," << iteration+1 << "," << elapsed_time(job_start_time,iteration_end_time) << endl;
+         // for benchmarking
+         //chrono::steady_clock::time_point iteration_end_time=chrono::steady_clock::now();
+         //if (rank == 0) cout << "CUMMULATIVETIME," << iteration+1 << "," << elapsed_time(job_start_time,iteration_end_time) << endl;
 
          ++iteration;
+
+         // check for signaled stop
+         if (parent != MPI_COMM_NULL) {
+            if (rank == 0) {
+               // look for a non-blocking message to stop
+               int test;
+               MPI_Test(&request,&test,MPI_STATUS_IGNORE); 
+
+               // send a blocking message to the other ranks
+               int i=1;
+               while (i < size) {
+                  MPI_Send(&test,1,MPI_INT,i,10002,PETSC_COMM_WORLD);
+                  i++;
+               }
+               if (test) gracefulExit=true;
+            } else {
+               int test;
+               MPI_Recv(&test,1,MPI_INT,0,10002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+               if (test) gracefulExit=true;  
+            }
+         }
+         if (gracefulExit) break;
       }
 
       // keep track of mesh sizes to check whether a frequency needs to be recalculated due to refinement at another frequency
@@ -662,6 +721,7 @@ int main(int argc, char *argv[])
       frequencyPlanPoint->set_meshSize(meshSize);
 
       lastFrequency=frequency;
+      if (gracefulExit) break;
    }
 
    // save the results as test cases
@@ -682,7 +742,8 @@ int main(int argc, char *argv[])
       else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"NOT CONVERGED\n");}
    }
 
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job Complete\n");
+   if (gracefulExit) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job Stopped\n");}
+   else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job Complete\n");}
 
    if (rank == 0) {
       stringstream ss;
@@ -707,6 +768,7 @@ int main(int argc, char *argv[])
 
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",resultDatabase.get_solve_time());
 
+   if (parent != MPI_COMM_NULL && rank == 0) MPI_Send(&signal,1,MPI_INT,0,10003,parent);
    PetscFinalize();
 
    exit(0);

@@ -79,19 +79,6 @@
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QPushButton" name="meshFilePushButton">
-       <property name="focusPolicy">
-        <enum>Qt::FocusPolicy::ClickFocus</enum>
-       </property>
-       <property name="text">
-        <string>File ...</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
     </layout>
    </item>
    <item>
