@@ -59,20 +59,50 @@ extern "C" void prefix ();
 extern "C" char* get_prefix_text ();
 extern "C" void set_prefix_text (char *);
 
-// global to work with the signal handler
-MPI_Comm parent;
+// globals to work with the signal handler
+vector<int> pidList;
+char *lockfile;
+std::filesystem::path currentPath;
 
-
-void signalHandler(int signum) {
-    std::cout << "Received signal: " << signum << ". Performing cleanup..." << std::endl;
+void signalHandler (int signum)
+{
+   if (PETSC_COMM_WORLD == MPI_COMM_NULL) {
+      cout.flush();
+      cout << "OpenParEM3D Job Aborted" << endl;
+      exit(0);
+   }
 
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   MPI_Barrier(PETSC_COMM_WORLD);
+   MPI_Comm parent;
+   MPI_Comm_get_parent (&parent);
 
-   int signal=0;
-   if (parent != MPI_COMM_NULL && rank == 0) MPI_Send(&signal,1,MPI_INT,0,10003,parent);
+   std::filesystem::current_path(currentPath);
+
+   // kill any OpenParEM2D jobs that may be running
+   if (rank == 0) {
+      int i=0;
+      while (i < pidList.size()) {
+         //std::string command="kill -9 ";
+         std::string command="kill ";
+         command.append(std::to_string(pidList[i]));
+         system(command.c_str());
+         i++;
+      }
+      pidList.clear();
+   }
+
+   if (parent != MPI_COMM_NULL) {
+      int retval=1;
+      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
+   }
+
+   remove_lock_file(lockfile);
+
+   cout.flush();
+   if (rank == 0) cout << "OpenParEM3D Job Aborted" << endl;
+
    PetscFinalize();
    exit(0); // 1
 }
@@ -249,6 +279,8 @@ int main(int argc, char *argv[])
    signal(SIGINT,signalHandler);
    signal(SIGTERM,signalHandler);
 
+   currentPath=std::filesystem::current_path();
+
    // Initialize Petsc and MPI
    PetscInitializeNoArguments();
    PetscMPIInt size,rank;
@@ -258,6 +290,7 @@ int main(int argc, char *argv[])
    MPI_Barrier(PETSC_COMM_WORLD);
 
    // send pid to the parent, if it exists
+   MPI_Comm parent;
    MPI_Comm_get_parent (&parent);
    if (parent != MPI_COMM_NULL) {
       int pid=getpid();
@@ -268,7 +301,7 @@ int main(int argc, char *argv[])
    MPI_Request request;
    int signal;
    if (parent != MPI_COMM_NULL && rank == 0) { 
-      MPI_Irecv(&signal,1,MPI_INT,0,10001,parent,&request);
+      MPI_Irecv(&signal,1,MPI_INT,0,300000,parent,&request);
    }
 
    prefix_text=(char *)malloc(256*sizeof(char));
@@ -293,7 +326,7 @@ int main(int argc, char *argv[])
    
    print_copyright_notice ("OpenParEM3D",version_major,version_minor,version_patch);
    char *baseName=get_project_name(projFile);
-   char *lockfile=create_lock_file(baseName);
+   lockfile=create_lock_file(baseName);
    isOpenParEM2Dreachable();
 
    appCtx.job_start_time=job_start_time;
@@ -500,8 +533,7 @@ int main(int argc, char *argv[])
 
          // solve the 2D ports
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"      solving 2D ports ...\n");
-
-         if (boundaryDatabase.solve2Dports(pmesh,&parSubMeshesPort,&projData,frequency,&meshMaterials,&gammaDatabase)) {
+         if (boundaryDatabase.solve2Dports(pmesh,&parSubMeshesPort,&projData,frequency,&meshMaterials,&gammaDatabase,&pidList)) {
             exit_job_on_error (job_start_time,lockfile,true);
          }
 
@@ -703,13 +735,13 @@ int main(int argc, char *argv[])
                // send a blocking message to the other ranks
                int i=1;
                while (i < size) {
-                  MPI_Send(&test,1,MPI_INT,i,10002,PETSC_COMM_WORLD);
+                  MPI_Send(&test,1,MPI_INT,i,300001,PETSC_COMM_WORLD);
                   i++;
                }
                if (test) gracefulExit=true;
             } else {
                int test;
-               MPI_Recv(&test,1,MPI_INT,0,10002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+               MPI_Recv(&test,1,MPI_INT,0,300001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
                if (test) gracefulExit=true;  
             }
          }
@@ -768,9 +800,13 @@ int main(int argc, char *argv[])
 
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",resultDatabase.get_solve_time());
 
-   if (parent != MPI_COMM_NULL && rank == 0) MPI_Send(&signal,1,MPI_INT,0,10003,parent);
+   if (parent != MPI_COMM_NULL) {
+      int retval=0;
+      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
+   }
+
    PetscFinalize();
 
-   exit(0);
+   return 0;
 }
 

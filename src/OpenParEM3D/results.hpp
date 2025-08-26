@@ -138,9 +138,9 @@ class ResultDatabase
       double solve_time=0;
       double tol=1e-12;
    public:
-      ResultDatabase(){}
-      ~ResultDatabase();
-      void push(Result *);
+      ResultDatabase () {}
+      ~ResultDatabase ();
+      void push (Result *);
       Result* get_Result (double, int);
       Result* get_Result (double);
       vector<double>* get_unique_frequencies () {return &unique_frequencies;}

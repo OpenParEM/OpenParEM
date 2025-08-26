@@ -39,6 +39,7 @@
 #include <string>
 #include <chrono>
 #include <unistd.h>
+#include <csignal>
 #include "modes.hpp"
 #include "results.hpp"
 #include "convergence.hpp"
@@ -69,6 +70,40 @@ extern "C" int is_modal_impedance (char *);
 extern "C" void prefix ();
 extern "C" char* get_prefix_text ();
 extern "C" void set_prefix_text (char *);
+
+// globals to work with the signal handler
+char *lockfile;
+std::filesystem::path currentPath;
+
+void signalHandler (int signum)
+{
+   if (PETSC_COMM_WORLD == MPI_COMM_NULL) {
+      cout.flush();
+      cout << "OpenParEM2D Job Aborted" << endl;
+      exit(0);
+   }
+
+   PetscMPIInt rank;
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+   MPI_Comm parent;
+   MPI_Comm_get_parent (&parent);
+
+   std::filesystem::current_path(currentPath);
+
+   cout.flush();
+   if (parent == MPI_COMM_NULL) {
+      if (rank == 0) cout << "OpenParEM2D Job Aborted" << endl;
+   } else {
+      int retval=1;
+      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
+   }
+
+   remove_lock_file (lockfile);
+
+   PetscFinalize();
+   exit(0); // 1
+}
 
 void help () {
    PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM2D [-h] filename\n");
@@ -299,6 +334,7 @@ int main(int argc, char *argv[])
    double eps0=8.8541878176e-12;
    const char *projFile;
    char* prefix_text;
+   bool gracefulExit=false;
    struct projectData projData,defaultData;
    BoundaryDatabase boundaryDatabase;
    BorderDatabase borderDatabase;
@@ -310,6 +346,11 @@ int main(int argc, char *argv[])
    MaterialDatabase localMaterialDatabase;
    MaterialDatabase materialDatabase;
 
+   signal(SIGINT,signalHandler);
+   signal(SIGTERM,signalHandler);
+
+   currentPath=std::filesystem::current_path();
+
    // Initialize Petsc and MPI
    SlepcInitializeNoArguments();
    PetscMPIInt size,rank;
@@ -318,8 +359,22 @@ int main(int argc, char *argv[])
 
    MPI_Barrier(PETSC_COMM_WORLD);
 
+   // send pid to the parent, if it exists
    MPI_Comm parent;
    MPI_Comm_get_parent (&parent);
+   if (parent != MPI_COMM_NULL) {
+      int pid=getpid();
+      MPI_Send(&pid,1,MPI_INT,0,200001,parent);
+   }
+
+   // look for a stop signal
+   MPI_Request request;
+   int signal;
+   if (parent != MPI_COMM_NULL && rank == 0) {
+      MPI_Irecv(&signal,1,MPI_INT,0,200000,parent,&request);
+   }
+
+   // set the indent characters
    prefix_text=(char *)malloc(256*sizeof(char));
    if (parent == MPI_COMM_NULL) snprintf(prefix_text,256,"%s","");
    else snprintf(prefix_text,256,"%s","         | ");
@@ -343,7 +398,7 @@ int main(int argc, char *argv[])
 
    char *baseName=get_project_name(projFile);
    print_copyright_notice ("OpenParEM2D",version_major,version_minor,version_patch);
-   char *lockfile=create_lock_file(baseName);
+   lockfile=create_lock_file(baseName);
 
    appCtx.job_start_time=job_start_time;
    appCtx.lockfile=lockfile;
@@ -648,6 +703,29 @@ int main(int argc, char *argv[])
          ++iteration;
 
          if (iteration == projData.refinement_iteration_max) iterate=false;
+
+         // check for signaled stop
+         if (parent != MPI_COMM_NULL) {
+            if (rank == 0) {
+               // look for a non-blocking message to stop
+               int test;
+               MPI_Test(&request,&test,MPI_STATUS_IGNORE);
+
+               // send a blocking message to the other ranks
+               int i=1;
+               while (i < size) {
+                  MPI_Send(&test,1,MPI_INT,i,200002,PETSC_COMM_WORLD);
+                  i++;
+               }
+               if (test) gracefulExit=true;
+            } else {
+               int test;
+               MPI_Recv(&test,1,MPI_INT,0,200002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+               if (test) gracefulExit=true;
+            }
+         }
+
+         if (gracefulExit) break; 
       }
 
       if (refineMesh && convergenceDatabase->is_converged()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Converged\n");}
@@ -659,6 +737,7 @@ int main(int argc, char *argv[])
 
       delete convergenceDatabase;
       lastFrequency=frequency;
+      if (gracefulExit) break;
    }
 
    // save the results and field point data as test cases
@@ -694,11 +773,9 @@ int main(int argc, char *argv[])
 
    remove_lock_file (lockfile);
 
-   // notifiy the barrier and send the exit code in case OpenParEM2D was spawned by OpenParEM3D
    if (parent != MPI_COMM_NULL) {
-      MPI_Barrier(parent);
-      int retval[1]={0};
-      MPI_Send(retval,1,MPI_INT,0,0,parent);
+      int retval=0;
+      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
    }
 
    SlepcFinalize();

@@ -38,13 +38,12 @@ void exit_job_on_error (chrono::steady_clock::time_point job_start_time, const c
    chrono::duration<double> elapsed = job_end_time - job_start_time;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",elapsed.count());
 
-   // notifiy the barrier and send the exit code in case OpenParEM2D was spawned by OpenParEM3D
+   // send an exit code to the parent with tag 100000
    MPI_Comm parent;
    MPI_Comm_get_parent (&parent);
    if (parent != MPI_COMM_NULL) {
-      MPI_Barrier(parent);
-      int retval[1]={1};
-      MPI_Send(retval,1,MPI_INT,0,0,parent);
+      int retval=1;
+      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
    }
 
    PetscFinalize();
@@ -85,10 +84,26 @@ char* create_lock_file (const char *baseName)
       lock.open(lockfile,ofstream::out);
       if (lock.is_open()) {
          lock << "locked" << endl;
+         lock.flush();
          lock.close();
          is_locked=1;
       } else {
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1016: Cannot open \"%s\" for writing.\n",lockfile);
+      }
+
+      // wait for the lock file to appear
+      chrono::duration<double> elapsed;
+      chrono::steady_clock::time_point start;
+      chrono::steady_clock::time_point current;
+      start=chrono::steady_clock::now();
+      current=chrono::steady_clock::now();
+      elapsed=current-start;
+      while (!std::filesystem::exists(lockfile)) {
+         current=chrono::steady_clock::now();
+         elapsed=current-start;
+         if (elapsed.count() > 60) { // wait up to 60 seconds before proceeding anyway
+            break;
+         }
       }
    }
 
@@ -106,13 +121,11 @@ void remove_lock_file (const char *lockfile)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
    if (rank == 0) {
       if (std::filesystem::exists(lockfile)) {
         std::filesystem::remove(lockfile);
       }
    }
-   MPI_Barrier(PETSC_COMM_WORLD);
 }
 
 void delete_file (const char *baseName, string pre, string post)

@@ -5194,14 +5194,13 @@ void Port::set_filenames()
    modesFilename=ssModesFilename.str();
 }
 
-void eh(MPI_Comm *comm, int *err, ...)
+void eh (MPI_Comm *comm, int *err, ...)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3085: Failed to launch OpenParEM2D.\n");
 }
 
-bool Port::solve(string *directory)
+bool Port::solve(string *directory, std::vector<int> *pidList)
 {
-   bool fail=false;
    PetscMPIInt size,rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
@@ -5210,10 +5209,6 @@ bool Port::solve(string *directory)
    stringstream projDirectory;
    projDirectory << *directory << "/S" << get_name();
    std::filesystem::current_path(projDirectory.str().c_str());
-
-   // lock file name
-   stringstream ssLock;
-   ssLock << "." << "S" << get_name() << ".lock";
 
    // argv
    char *argv[2];
@@ -5224,72 +5219,74 @@ bool Port::solve(string *directory)
    argv[0]=project;
    argv[1]=nullptr;
 
+   int *error_codes=(int *)malloc(size*sizeof(int));
+
    // launch the jobs from rank 0
    MPI_Errhandler errorHandler;
    MPI_Comm_create_errhandler(eh,&errorHandler);
    MPI_Comm_set_errhandler(PETSC_COMM_WORLD,errorHandler);
 
    MPI_Comm MPI_PORT_COMM;
-   MPI_Comm_spawn ("OpenParEM2D",argv,size,MPI_INFO_NULL,0,PETSC_COMM_WORLD,&MPI_PORT_COMM,MPI_ERRCODES_IGNORE);
+   MPI_Comm_spawn ("OpenParEM2D",argv,size,MPI_INFO_NULL,0,PETSC_COMM_WORLD,&MPI_PORT_COMM,error_codes);
 
-   if (rank == 0) {
-
-      // wait for the lock file to appear
-      bool launch_success=true;
-      int watchdog=0;
-      while (!std::filesystem::exists(ssLock.str().c_str())) {
-         sleep(0.001);
-         watchdog+=1;
-         if (watchdog == 100000) { // ~100 seconds
-            launch_success=false;
-            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3086: OpenParEM2D failed to launch for \"%s\"\n",project);
-            break;
-         }
-      }
-
-      if (launch_success) {
-         // wait for the lock file to disappear - can hang
-         while (std::filesystem::exists(ssLock.str().c_str())) {sleep(0.01);}
-      }
-
-      // send breakout tags
-      int message=1;
-      int i=1;
-      while (i < size) {
-         MPI_Send(&message,1,MPI_INT,i,10,PETSC_COMM_WORLD);
-         i++;
-      }
-
-   } else {
-
-      // wait for breakout tag
-      int flag=0;
-      while (!flag) {
-         sleep(0.01);
-         MPI_Iprobe(0,10,PETSC_COMM_WORLD,&flag,MPI_STATUS_IGNORE);
-      }
-
-      // get the tag to clear it
-      int retVal;
-      MPI_Recv(&retVal,1,MPI_INT,0,10,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+   // check that all processes spawned
+   bool fail=false;
+   int i=0;
+   while (i < size) {
+       if (error_codes[i] == MPI_ERR_SPAWN) {
+           fail=true;
+           break;
+       }
+       i++;
    }
 
-   MPI_Barrier(MPI_PORT_COMM);
+   if (error_codes) {free(error_codes); error_codes=nullptr;}
+
+   if (fail) {
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3086: OpenParEM2D failed to launch for \"%s\"\n",project);
+       return true;
+   }
+
+   // get the pids
+   pidList->clear();
+   if (rank == 0) {
+       int i=0;
+       while (i < size) {
+           int pid;
+           MPI_Recv(&pid,1,MPI_INT,i,200001,MPI_PORT_COMM,MPI_STATUS_IGNORE);
+           pidList->push_back(pid);
+           i++;
+       }
+   }
+
+   // wait for the 2D simulations to finish
+   int fail2D=0;
+   if (rank == 0) {
+       int i=0;
+       while (i < size) {
+           int status;
+           MPI_Recv(&status,1,MPI_INT,i,100000,MPI_PORT_COMM,MPI_STATUS_IGNORE);
+           if (status) fail2D=1;
+           i++;
+       }
+
+       // notify the other ranks
+       i=1;
+       while (i < size) {
+           MPI_Send(&fail2D,1,MPI_INT,i,300002,PETSC_COMM_WORLD);
+           i++;
+       }
+   } else {
+       MPI_Recv(&fail2D,1,MPI_INT,0,300002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+   }
+
+   if (fail2D) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3087: OpenParEM2D error in execution for Port \"%s\".\n",get_name().c_str());
+      fail=true;
+   }
 
    MPI_Comm_set_errhandler(PETSC_COMM_WORLD,MPI_ERRORS_RETURN);
    MPI_Errhandler_free(&errorHandler);
-
-   // get the return values
-   if (rank == 0) {
-      int i=0;
-      while (i < size) {
-         int retVal;
-         MPI_Recv(&retVal,1,MPI_INT,i,0,MPI_PORT_COMM,MPI_STATUS_IGNORE);
-         if (retVal > 0) fail=true;
-         i++;
-      }
-      if (fail) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3087: OpenParEM2D error in execution for Port \"%s\".\n",get_name().c_str());}
-   }
 
    std::filesystem::current_path("../../");
 
@@ -7376,7 +7373,7 @@ void BoundaryDatabase::extract2Dmesh(ParMesh *pmesh, vector<ParSubMesh> *parSubM
 }
 
 bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSubMesh> *parSubMeshesPort, double frequency, MeshMaterialList *meshMaterials,
-                                   struct projectData *projData, GammaDatabase *gammaDatabase)
+                                   struct projectData *projData, GammaDatabase *gammaDatabase, std::vector<int> *pidList)
 {
    bool fail=false;
    PetscMPIInt rank;
@@ -7399,20 +7396,25 @@ bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSub
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"         Port \"%s\" ...\n",portList[i]->get_name().c_str());
       //prefix(); PetscPrintf(PETSC_COMM_WORLD,"         ------------------------------------------------------------------------------------------------------------------------------------\n");
 
-      if (portList[i]->solve(&tempDirectory)) fail=true;
+      // run the 2D simulation
+      if (portList[i]->solve(&tempDirectory,pidList)) fail=true;
 
-      // wait for the lock file to disappear
+      // verify that the lock file is removed
       stringstream ssLock;
       ssLock << tempDirectory << "/" << "S" << portList[i]->get_name() << "/" << "." << portList[i]->get_name() << ".lock";
       start=chrono::steady_clock::now();
       while (std::filesystem::exists(ssLock.str().c_str())) {
          current=chrono::steady_clock::now();
          elapsed=current-start;
-         if (elapsed.count() > 60) {
+         if (elapsed.count() > 60) { // wait up to 60 seconds
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3118: OpenParEM2D lock file is present, implying a failed 2D port simulation.\n");
+            fail=true;
             break;
          }
       }
+
+      // clear the list of pids since these jobs are no longer running
+      pidList->clear();
 
       i++;
    }
@@ -7991,7 +7993,7 @@ void BoundaryDatabase::buildGrids (fem3D *fem)
 }
 
 bool BoundaryDatabase::solve2Dports (ParMesh *pmesh, vector<ParSubMesh> *parSubMeshesPort, struct projectData *projData,
-                                     double frequency, MeshMaterialList *meshMaterials, GammaDatabase *gammaDatabase)
+                                     double frequency, MeshMaterialList *meshMaterials, GammaDatabase *gammaDatabase, vector<int> *pidList)
 {
    bool fail=false;
    PetscMPIInt rank;
@@ -8023,7 +8025,7 @@ bool BoundaryDatabase::solve2Dports (ParMesh *pmesh, vector<ParSubMesh> *parSubM
    if (rank == 0 && createPortDirectories()) fail=true;
    if (fail) return fail;
 
-   if (solvePorts(projData->mesh_order,pmesh,parSubMeshesPort,frequency,meshMaterials,projData,gammaDatabase)) fail=true;
+   if (solvePorts(projData->mesh_order,pmesh,parSubMeshesPort,frequency,meshMaterials,projData,gammaDatabase,pidList)) fail=true;
    if (fail) return fail;
 
    build2Dgrids();

@@ -1769,12 +1769,10 @@ void OpenParEMg::on_actionRun_triggered ()
 
     int size=12;  // ToDo: pull this from an option panel
 
-    pidList.clear();
     char *project=(char *)malloc((projectFile.toLatin1().toStdString().length()+1)*sizeof(char));
     int i=0;
     while (i < projectFile.toLatin1().toStdString().length()) {
         project[i]=projectFile.data()[i].toLatin1();
-        pidList.push_back(0);
         i++;
     }
     project[i]='\0';
@@ -1810,16 +1808,18 @@ void OpenParEMg::on_actionRun_triggered ()
     }
 
     // get the pids
+    pidList.clear();
     i=0;
     while (i < size) {
         int pid;
         MPI_Recv(&pid,1,MPI_INT,i,10000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
-        pidList[i]=pid;
+        pidList.push_back(pid);
         i++;
     }
 
     timer->start(500);
-    MPI_Irecv(&signal,1,MPI_INT,0,10003,*MPI_PORT_COMM,&request);
+    MPI_Irecv(&signal,1,MPI_INT,0,100000,*MPI_PORT_COMM,&request);
+    //MPI_Comm_disconnect(MPI_PORT_COMM);
 
     ui->actionOptions->setEnabled(false);
     ui->actionRun->setEnabled(false);
@@ -1838,14 +1838,14 @@ void OpenParEMg::on_actionRun_triggered ()
 
 void OpenParEMg::on_actionStop_triggered ()
 {
-    ui->actionAbort->setEnabled(false);
-    MPI_Send(&signal,1,MPI_INT,0,10001,*MPI_PORT_COMM);
+    ui->actionStop->setEnabled(false);
+    ui->actionAbort->setEnabled(true);
+    MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);
 }
 
 void OpenParEMg::checkFinish ()
 {
-    std::cout << "OpenParEMg::checkFinish" << std::endl; std::cout.flush();
-    ui->actionStop->setEnabled(true);
+    //std::cout << "OpenParEMg::checkFinish" << std::endl; std::cout.flush();
     int test;
     MPI_Test(&request,&test,MPI_STATUS_IGNORE);
 
@@ -1875,5 +1875,10 @@ void OpenParEMg::on_actionAbort_triggered ()
         i++;
     }
     pidList.clear();
+
+    ui->actionOptions->setEnabled(true);
+    ui->actionRun->setEnabled(true);
+    ui->actionStop->setEnabled(false);
+    ui->actionAbort->setEnabled(false);
 }
 

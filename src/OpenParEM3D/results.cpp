@@ -629,7 +629,8 @@ PetscErrorCode Result::SparameterConversion (BoundaryDatabase *boundaryDatabase,
 
 Result::~Result ()
 {
-   if (S) {MatDestroy(S); S=nullptr;}
+   //Cannot perform MPI in a destructor if PETSCFinalize has been called.
+   //if (S) {MatDestroy(S); S=nullptr;}
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------
@@ -708,7 +709,6 @@ void ResultDatabase::push (Result *result)
          }
       }
    }
-
 }
 
 double ResultDatabase::calculate_maxRelativeError (struct projectData *projData, double frequency, int iteration)
