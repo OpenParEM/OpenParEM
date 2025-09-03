@@ -64,6 +64,15 @@ public:
     void mouseReleaseEvent (QMouseEvent*) override;
     void mouseMoveEvent (QMouseEvent*) override;
 
+    void showGrid ();
+    void hideGrid ();
+    bool PixelToPointOnPlane (const Standard_Integer, const Standard_Integer, gp_Pnt& thePoint3D);
+    void set_snapToGrid (bool state) {
+        snapToGrid=state;
+        viewer->SetGridEcho(state);
+    }
+    bool set_gridPlane ();
+
     void displayShape (Handle(AIS_Shape) shape, int displayMode, int selectionMode)
     {
         viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
@@ -144,6 +153,12 @@ private:
     std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap;
 
     QMenu *contextMenu;
+
+    gp_Pln drawingPlane;
+    gp_Pnt drawingPlaneOrigin;
+    gp_Dir drawingPlaneDirection;
+    gp_Ax1 drawingPlaneAxis;
+    bool snapToGrid;
 };
 
 #endif // CUSTOMOPENGLWIDGET_H

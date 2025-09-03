@@ -34,6 +34,7 @@
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 
+
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QDir>
@@ -51,6 +52,7 @@
 #include <QSlider>
 #include <QList>
 #include <QTreeWidgetItem>
+#include <STEPControl_Reader.hxx>
 
 //#include "petscsys.h"
 #include "MeshOptions.h"
@@ -622,6 +624,7 @@ void OpenParEMg::on_fileOpen_triggered ()
 
         // menu options
         ui->importBrep->setEnabled(false);
+        ui->importSTEP->setEnabled(false);
 
     } else {
         // should not occur
@@ -676,6 +679,7 @@ void OpenParEMg::on_fileNew_triggered ()
 
     // menu options
     ui->importBrep->setEnabled(true);
+    ui->importSTEP->setEnabled(true);
 }
 
 void OpenParEMg::on_meshOptions_triggered ()
@@ -914,6 +918,22 @@ bool OpenParEMg::loadBrepFile (QString filePath)
     return false;
 }
 
+bool OpenParEMg::loadStepFile (QString filePath)
+{
+    if (!filePath.isEmpty()) {
+        STEPControl_Reader reader;
+        IFSelect_ReturnStatus status=reader.ReadFile(filePath.toStdString().c_str());
+        if (status == IFSelect_RetDone) {
+            reader.TransferRoots();
+            TopoDS_Shape s=reader.OneShape();
+            pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
+            addShape(s,nullptr,true);
+            return false;
+        }
+    }
+    return true;
+}
+
 void OpenParEMg::on_importBrep_triggered ()
 {
     QString filePath = QFileDialog::getOpenFileName(this, tr("Open BREP File"), "", tr("BREP Files (*.brep)"),
@@ -921,6 +941,23 @@ void OpenParEMg::on_importBrep_triggered ()
     if (filePath.isEmpty()) return;
     if (loadBrepFile(filePath)) {
         QString message="Unable to load Brep file \"";
+        message.append(filePath);
+        message.append("\".");
+        QMessageBox mb;
+        mb.critical(nullptr, "Error",message);
+        mb.setFixedSize(500, 200);
+    }
+    ui->drawingWindow->fitAll();
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::on_importSTEP_triggered()
+{
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Open BREP File"), "", tr("BREP Files (*.step *.stp)"),
+                                                    nullptr,QFileDialog::DontUseNativeDialog);
+    if (filePath.isEmpty()) return;
+    if (loadStepFile(filePath)) {
+        QString message="Unable to load STEP file \"";
         message.append(filePath);
         message.append("\".");
         QMessageBox mb;
@@ -1767,7 +1804,7 @@ void OpenParEMg::on_actionRun_triggered ()
 
     // run OpenParEM3D
 
-    int size=12;  // ToDo: pull this from an option panel
+    int size=10;  // ToDo: pull this from an option panel
 
     char *project=(char *)malloc((projectFile.toLatin1().toStdString().length()+1)*sizeof(char));
     int i=0;
@@ -1880,5 +1917,33 @@ void OpenParEMg::on_actionAbort_triggered ()
     ui->actionRun->setEnabled(true);
     ui->actionStop->setEnabled(false);
     ui->actionAbort->setEnabled(false);
+}
+
+void OpenParEMg::on_actionShow_triggered()
+{
+    ui->drawingWindow->showGrid();
+    ui->drawingWindow->updateViewer();
+}
+
+
+void OpenParEMg::on_actionHide_triggered()
+{
+    ui->drawingWindow->hideGrid();
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::on_actionSnap_To_Grid_triggered()
+{
+    if (ui->actionSnap_To_Grid->isChecked()) {
+        ui->drawingWindow->set_snapToGrid(true);
+    } else {
+        ui->drawingWindow->set_snapToGrid(false);
+    }
+}
+
+void OpenParEMg::on_actionSet_To_Face_triggered()
+{
+    ui->drawingWindow->set_gridPlane();
+    ui->drawingWindow->updateViewer();
 }
 

@@ -86,6 +86,7 @@ public:
 
     void addShape (TopoDS_Shape, CustomTreeWidgetItem *, bool);
     bool loadBrepFile (QString);
+    bool loadStepFile (QString);
     bool menuAllHidden (CustomTreeWidgetItem *);
     bool menuAllShown (CustomTreeWidgetItem *);
     //void meshShowEntities ();
@@ -107,6 +108,7 @@ private slots:
     void on_actionRefinement_triggered ();
     void on_actionMaterials_Editor_triggered ();
     void on_importBrep_triggered ();
+    void on_importSTEP_triggered();
     void on_actionExit_triggered ();
     void on_actionSelect_Database_triggered ();
 
@@ -170,6 +172,14 @@ private slots:
 
     void on_actionAbort_triggered();
 
+    void on_actionShow_triggered();
+
+    void on_actionHide_triggered();
+
+    void on_actionSnap_To_Grid_triggered();
+
+    void on_actionSet_To_Face_triggered();
+
 private:
     Ui::OpenParEMg *ui;
     bool hasProjData;
@@ -202,12 +212,13 @@ private:
     std::vector<int> pidList;   // for killing spawned OpenParEM3D
     QTimer *timer;
 
-    //gmsh
+    // gmsh
     gmsh::vectorpair drawingEntities;
     int pointCount;
     int curveCount;
     int surfaceCount;
     int volumeCount;
+
 };
 
 #endif // OPEMG_H

@@ -19,6 +19,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "CustomOpenGLWidget.h"
+#include <Geom_Plane.hxx>
+#include <TopoDS.hxx>
 #include <TopoDS_Face.hxx>
 #include <glx.h>
 #include "OcctQtTools.h"
@@ -30,9 +32,21 @@
 #include <V3d_View.hxx>
 #include <TopoDS_Shape.hxx>
 #include <AIS_Shape.hxx>
+#include <BRep_Tool.hxx>
 #include <BRepTools.hxx>
+#include <TopoDS_Face.hxx>
 #include "Aspect_NeutralWindow.hxx"
 #include <OpenGl_FrameBuffer.hxx>
+#include <V3d_RectangularGrid.hxx>
+
+#include <V3d_View.hxx>
+#include <gp_Pln.hxx>
+#include <gp_Lin.hxx>
+#include <gp_Pnt.hxx>
+#include <gp_Dir.hxx>
+#include <IntAna_IntConicQuad.hxx>
+#include <Standard_Boolean.hxx>
+#include <StdSelect_BRepOwner.hxx>
 
 CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (theParent)
 {
@@ -72,6 +86,17 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     view->SetImmediateUpdate(false);
     view->ChangeRenderingParams().NbMsaaSamples=4;
     view->ChangeRenderingParams().ToShowStats=false;
+
+    // drawing plane
+    drawingPlaneOrigin.SetCoord(0,0,0);
+    drawingPlane.SetLocation(drawingPlaneOrigin);
+
+    drawingPlaneDirection.SetCoord(0,0,1);
+    drawingPlaneAxis.SetDirection(drawingPlaneDirection);
+    drawingPlane.SetAxis(drawingPlaneAxis);
+
+    snapToGrid=false;
+    viewer->SetGridEcho(Standard_False);
 }
 
 CustomOpenGLWidget::~CustomOpenGLWidget ()
@@ -177,10 +202,49 @@ void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
     QOpenGLWidget::keyPressEvent(event);
 }
 
+bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const Standard_Integer yPix, gp_Pnt& thePoint3D)
+{
+    Standard_Real Xv,Yv,Zv;
+    Standard_Real Vx,Vy,Vz;
+
+    view->ConvertWithProj(xPix,yPix,Xv,Yv,Zv,Vx,Vy,Vz);
+
+    gp_Pnt eyePnt(Xv,Yv,Zv);
+    gp_Dir viewDir(Vx,Vy,Vz);
+    gp_Lin viewRay(eyePnt,viewDir);
+
+    IntAna_IntConicQuad intersector(viewRay, drawingPlane, Precision::Confusion());
+
+    if (intersector.IsDone() && intersector.NbPoints() > 0) {
+        thePoint3D = intersector.Point(1);
+        return false;
+    }
+
+    return true;
+}
+
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
     QOpenGLWidget::mousePressEvent(event);
     if (view.IsNull()) return;
+
+    // point click position
+    QPointF pos=event->position();
+    std::cout << "CustomOpenGLWidget::mousePressEvent: x=" << pos.x() << "  y=" << pos.y() << std::endl; std::cout.flush();
+
+    //Standard_Real X,Y,Z;
+    //view->Convert(pos.x(),pos.y(),X,Y,Z);
+    //std::cout << "                                   : X=" << X << "  Y=" << Y << "  Z=" << Z << std::endl; std::cout.flush();
+
+    if (viewer->IsGridActive() && snapToGrid) {
+        Standard_Real X,Y,Z;
+        view->ConvertToGrid(pos.x(),pos.y(),X,Y,Z);
+        std::cout << "                                   : X=" << X << "  Y=" << Y << "  Z=" << Z << std::endl; std::cout.flush();
+    } else {
+        gp_Pnt pointOnPlane;
+        PixelToPointOnPlane (pos.x(),pos.y(),pointOnPlane);
+        std::cout << "                                   : X=" << pointOnPlane.X() << "  Y=" << pointOnPlane.Y() << "  Z=" << pointOnPlane.Z() << std::endl; std::cout.flush();
+    }
 
     // pass the mouse press from Qt to OCCT
     const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
@@ -206,6 +270,9 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
 
+    QPointF pos=event->position();
+    std::cout << "CustomOpenGLWidget::mouseReleaseEvent: x=" << pos.x() << "  y=" << pos.y() << std::endl; std::cout.flush();
+
     // pass the mouse release from Qt to OCCT
     const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
     const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
@@ -218,9 +285,13 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
             unselectTreeItems(portItemTree);
             unselectTreeItems(boundaryItemTree);
 
+
             viewerContext->InitSelected();
             while (viewerContext->MoreSelected()) {
+                std::cout << "CustomOpenGLWidget::mouseReleaseEvent: found selected object" << std::endl; std::cout.flush();
+
                 Handle(AIS_InteractiveObject) anIO = viewerContext->SelectedInteractive();
+
                 Handle(AIS_Shape) shape = Handle(AIS_Shape)::DownCast(anIO);
                 CustomTreeWidgetItem *item=(*drawingToItemMap)[shape];
                 if (item) {
@@ -229,6 +300,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                 }
                 viewerContext->NextSelected();
             }
+
         } else {
             unselectAll();
             unselectTreeItems(drawingItemTree);
@@ -241,8 +313,8 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
             viewerContext->InitSelected();
             while (viewerContext->MoreSelected()) {
-                Handle(AIS_InteractiveObject) anIO = viewerContext->SelectedInteractive();
-                Handle(AIS_Shape) shape = Handle(AIS_Shape)::DownCast(anIO);
+                Handle(AIS_InteractiveObject) io=viewerContext->SelectedInteractive();
+                Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(io);
                 CustomTreeWidgetItem *item=(*drawingToItemMap)[shape];
                 item->setSelected(true);
                 viewerContext->NextSelected();
@@ -262,5 +334,90 @@ void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
     const Graphic3d_Vec2i position(event->pos().x(),event->pos().y());
     if (UpdateMousePosition(position,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
                                      OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateViewer();
+}
+
+bool CustomOpenGLWidget::set_gridPlane ()
+{
+    std::cout << "place 0" << std::endl; std::cout.flush();
+    std::cout << "   viewerContext->NbSelected()=" << viewerContext->NbSelected() << std::endl; std::cout.flush();
+    if (viewerContext->NbSelected() == 1) {
+        std::cout << "place 1" << std::endl; std::cout.flush();
+        viewerContext->InitSelected();
+        while (viewerContext->MoreSelected()) {
+            std::cout << "place 2" << std::endl; std::cout.flush();
+            Handle(AIS_InteractiveObject) io=viewerContext->SelectedInteractive();
+            std::cout << "place 3" << std::endl; std::cout.flush();
+            Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(io);
+            std::cout << "place 4" << std::endl; std::cout.flush();
+            if (!shape.IsNull()) {
+                std::cout << "place 5" << std::endl; std::cout.flush();
+                const TopoDS_Shape& aShape = shape->Shape();
+                std::cout << "place 6a" << std::endl; std::cout.flush();
+                std::cout << "aShape.ShapeType()=" << aShape.ShapeType() << std::endl; std::cout.flush();
+                if (aShape.ShapeType() == TopAbs_FACE) {
+
+                    TopoDS_Face face = TopoDS::Face(aShape);
+                    std::cout << "place 6b" << std::endl; std::cout.flush();
+
+                    // get the place of the face
+                    Handle(Geom_Surface) surface=BRep_Tool::Surface(face);
+                    Handle(Geom_Plane) gPlane=Handle(Geom_Plane)::DownCast(surface);
+                    drawingPlane=gPlane->Pln();
+                    std::cout << "place 7" << std::endl; std::cout.flush();
+
+                    //view->SetGrid(drawingPlane.Position(),Aspect_GT_Rectangular);
+                    viewer->SetPrivilegedPlane(drawingPlane.Position());
+                    std::cout << "place 8" << std::endl; std::cout.flush();
+
+                    /*
+                // current grid's data
+                Standard_Real xOrigin,yOrigin,xStep,yStep,rotationAngle,xSize,ySize,offset;
+                viewer->RectangularGridValues(xOrigin,yOrigin,xStep,yStep,rotationAngle);
+                viewer->RectangularGridGraphicValues(xSize,ySize,offset);
+
+                // new grid data
+
+                gp_Pnt origin=drawingPlane.Location();
+
+
+
+                viewer->SetRectangularGridValues(xOrigin,yOrigin,xStep,yStep,rotationAngle);
+                viewer->SetRectangularGridGraphicValues(xSize,ySize,offset);
+
+
+                */
+
+                    return true;
+                }
+            }
+            viewerContext->NextSelected();
+        }
+        return false;
+    } else {
+        std::cout << "No face selected to set the grid plane." << std::endl; std::cout.flush();
+    }
+    return true;
+}
+
+void CustomOpenGLWidget::showGrid ()
+{
+    //Handle(V3d_RectangularGrid) grid=new V3d_RectangularGrid(&(*viewer),Quantity_NOC_GRAY80,Quantity_NOC_GRAY50);
+    viewer->ActivateGrid(Aspect_GT_Rectangular,Aspect_GDM_Lines);
+
+    Standard_Real xOrigin,yOrigin,xStep,yStep,rotationAngle,xSize,ySize,offset;
+    viewer->RectangularGridValues(xOrigin,yOrigin,xStep,yStep,rotationAngle);
+    viewer->RectangularGridGraphicValues(xSize,ySize,offset);
+    std::cout << "Origin: (" << xOrigin << "," << yOrigin << "), step: (" << xStep << "," << yStep << ")" << ", size: (" << xSize << "," << ySize << "), offset=" << offset << std::endl; std::cout.flush();
+
+    xStep=0.01; yStep=0.01;
+    viewer->SetRectangularGridValues(xOrigin,yOrigin,xStep,yStep,rotationAngle);
+
+    xSize=10*xStep; ySize=10*yStep; offset=0;
+    viewer->SetRectangularGridGraphicValues(xSize,ySize,offset);
+}
+
+void CustomOpenGLWidget::hideGrid()
+{
+    viewer->DeactivateGrid();
 }
 

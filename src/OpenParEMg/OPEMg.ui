@@ -66,6 +66,7 @@
       <string>Import</string>
      </property>
      <addaction name="importBrep"/>
+     <addaction name="importSTEP"/>
     </widget>
     <addaction name="fileNew"/>
     <addaction name="fileOpen"/>
@@ -144,8 +145,24 @@
     <addaction name="actionStop"/>
     <addaction name="actionAbort"/>
    </widget>
+   <widget class="QMenu" name="menuDraw">
+    <property name="title">
+     <string>Draw</string>
+    </property>
+    <widget class="QMenu" name="menuDrawing_Plane">
+     <property name="title">
+      <string>Drawing Plane</string>
+     </property>
+     <addaction name="actionShow"/>
+     <addaction name="actionHide"/>
+     <addaction name="actionSnap_To_Grid"/>
+     <addaction name="actionSet_To_Face"/>
+    </widget>
+    <addaction name="menuDrawing_Plane"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
+   <addaction name="menuDraw"/>
    <addaction name="menuMaterials"/>
    <addaction name="menuMesh"/>
    <addaction name="menuSimulate"/>
@@ -331,6 +348,34 @@
   <action name="actionAbort">
    <property name="text">
     <string>Abort</string>
+   </property>
+  </action>
+  <action name="importSTEP">
+   <property name="text">
+    <string>STEP ...</string>
+   </property>
+  </action>
+  <action name="actionShow">
+   <property name="text">
+    <string>Show</string>
+   </property>
+  </action>
+  <action name="actionHide">
+   <property name="text">
+    <string>Hide</string>
+   </property>
+  </action>
+  <action name="actionSnap_To_Grid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Snap To Grid</string>
+   </property>
+  </action>
+  <action name="actionSet_To_Face">
+   <property name="text">
+    <string>Set To Face</string>
    </property>
   </action>
  </widget>
