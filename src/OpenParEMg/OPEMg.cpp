@@ -33,6 +33,8 @@
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
+#include <STEPControl_Reader.hxx>
+#include <STEPControl_Writer.hxx>
 
 
 #include <QFileDialog>
@@ -52,7 +54,6 @@
 #include <QSlider>
 #include <QList>
 #include <QTreeWidgetItem>
-#include <STEPControl_Reader.hxx>
 
 //#include "petscsys.h"
 #include "MeshOptions.h"
@@ -66,6 +67,7 @@
 #include "CustomTreeWidgetItem.h"
 #include "MaterialSelection.h"
 #include "mpi.h"
+#include "RectangleSelector.h"
 
 OpenParEMg::OpenParEMg (QWidget *parent)
     : QMainWindow(parent)
@@ -168,15 +170,18 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QAction *hideAction=new QAction("Hide",this);
     QAction *selectAction=new QAction("Select",this);
     QAction *unselectAction=new QAction("Unselect",this);
+    QAction *deleteAction=new QAction("Delete",this);
 
     connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideItems);
     connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectItems);
     connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectItems);
+    connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteItems);
 
     drawingContextMenu=new QMenu(this);
     drawingContextMenu->addAction(hideAction);
     drawingContextMenu->addAction(selectAction);
     drawingContextMenu->addAction(unselectAction);
+    drawingContextMenu->addAction(deleteAction);
     ui->drawingWindow->set_contextMenu(drawingContextMenu);
 
     /////////////////////////////////////////////////////////////////////////////
@@ -184,6 +189,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     /////////////////////////////////////////////////////////////////////////////
 
     gmsh::initialize();
+    pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
 
     /////////////////////////////////////////////////////////////////////////////
     // timer or checking when OpenParEM3D finishes
@@ -193,7 +199,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     connect(timer,&QTimer::timeout,this,&OpenParEMg::checkFinish);
 
     /////////////////////////////////////////////////////////////////////////////
-
 
     ui->drawingItemTree->show();
     ui->drawingWindow->show();
@@ -246,13 +251,14 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
     QAction *hideAction=new QAction("Hide",this);
     QAction *selectAction=new QAction("Select",this);
     QAction *unselectAction=new QAction("Unselect",this);
+    QAction *deleteAction=new QAction("Delete",this);
     QAction *assignMaterialAction=new QAction("Assign Material");
-    //QAction *deleteAction=new QAction("Delete",this);
 
     connect(showAction, &QAction::triggered, this, &OpenParEMg::showItems);
     connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideItems);
     connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectItems);
     connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectItems);
+    connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteItems);
     connect(assignMaterialAction, &QAction::triggered, this, &OpenParEMg::assignMaterial);
 
     if (clickedItem->foreground(0) == Qt::black) {  // visible
@@ -260,6 +266,7 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         hideAction->setEnabled(true);
         selectAction->setEnabled(true);
         unselectAction->setEnabled(false);
+        deleteAction->setEnabled(true);
         assignMaterialAction->setEnabled(false);
         //deleteAction->setEnabled(false);
     } else if (clickedItem->foreground(0) == Qt::gray) {  // invisible
@@ -267,6 +274,7 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         hideAction->setEnabled(false);
         selectAction->setEnabled(false);
         unselectAction->setEnabled(false);
+        deleteAction->setEnabled(true);
         assignMaterialAction->setEnabled(false);
         //deleteAction->setEnabled(false);
     } else if (clickedItem->foreground(0) == Qt::red) {  // selected
@@ -274,6 +282,7 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         hideAction->setEnabled(true);
         selectAction->setEnabled(false);
         unselectAction->setEnabled(true);
+        deleteAction->setEnabled(true);
         assignMaterialAction->setEnabled(false);
         //deleteAction->setEnabled(false);
     }
@@ -288,8 +297,8 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
     menu.addAction(hideAction);
     menu.addAction(selectAction);
     menu.addAction(unselectAction);
+    menu.addAction(deleteAction);
     menu.addAction(assignMaterialAction);
-    //menu.addAction(deleteAction);
 
     menu.exec(ui->drawingItemTree->mapToGlobal(pnt));
 }
@@ -369,6 +378,26 @@ void OpenParEMg::unselectItems()
     ui->drawingWindow->updateViewer();
 }
 
+void OpenParEMg::deleteItems()
+{
+    std::cout << "place 1" << std::endl; std::cout.flush();
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    std::cout << "place 2" << std::endl; std::cout.flush();
+    int i=0;
+    while (i < selectedItems.count()) {
+        std::cout << "place 3" << std::endl; std::cout.flush();
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        std::cout << "place 4" << std::endl; std::cout.flush();
+        if (item->is_drawing()) {deleteDisplayShape(item); delete item;}
+        if (item->is_port()) {deleteDisplayShape(item); delete item;}
+        if (item->is_boundary()) {deleteDisplayShape(item); delete item;}
+        i++;
+    }
+    std::cout << "place 4" << std::endl; std::cout.flush();
+    ui->drawingWindow->updateViewer();
+    std::cout << "place 6" << std::endl; std::cout.flush();
+}
+
 // non-recursive
 void OpenParEMg::showDisplayShape (CustomTreeWidgetItem *item)
 {
@@ -403,6 +432,21 @@ void OpenParEMg::unselectDisplayShape (CustomTreeWidgetItem *item)
 {
     item->setForeground(0,Qt::black);
     ui->drawingWindow->unselectShape(item->get_AIS_Shape());
+}
+
+// recursive
+void OpenParEMg::deleteDisplayShape (CustomTreeWidgetItem *item)
+{
+    item->setForeground(0,Qt::gray);
+    ui->drawingWindow->deleteShape(item->get_AIS_Shape());
+    item->get_AIS_Shape().Nullify();
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        deleteDisplayShape(child);
+        i++;
+    }
 }
 
 void OpenParEMg::showPortShape (CustomTreeWidgetItem *item)
@@ -912,7 +956,6 @@ bool OpenParEMg::loadBrepFile (QString filePath)
         BRep_Builder b;
         if (!BRepTools::Read(s,filePath.toStdString().c_str(),b)) return true;
 
-        pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
         addShape(s,nullptr,true);
     }
     return false;
@@ -925,9 +968,52 @@ bool OpenParEMg::loadStepFile (QString filePath)
         IFSelect_ReturnStatus status=reader.ReadFile(filePath.toStdString().c_str());
         if (status == IFSelect_RetDone) {
             reader.TransferRoots();
+//xxx
             TopoDS_Shape s=reader.OneShape();
-            pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
             addShape(s,nullptr,true);
+
+            // seems equivalent
+            // int shapeCount=reader.NbShapes();
+            // int i=0;
+            // while (i < reader.NbShapes()) {
+            //     TopoDS_Shape s=reader.Shape(i+1);
+            //     addShape(s,nullptr,true);
+            //     i++;
+            // }
+
+
+            return false;
+        }
+    }
+    return true;
+}
+
+bool OpenParEMg::saveStepFile (QString filePath, std::vector<Handle(AIS_InteractiveObject)> *selectedList)
+{
+    if (!filePath.isEmpty()) {
+
+        // create a compund object from the selected objects
+        TopoDS_Compound compound;
+        BRep_Builder builder;
+        builder.MakeCompound(compound);
+        Handle(AIS_Shape) shape;
+
+        long unsigned int i=0;
+        while (i < selectedList->size()) {
+            shape=Handle(AIS_Shape)::DownCast((*selectedList)[i]);
+            builder.Add(compound,shape->Shape());
+            i++;
+        }
+
+        // write the STEP file
+
+        STEPControl_Writer writer;
+        writer.Transfer(compound,STEPControl_ManifoldSolidBrep,Standard_True);
+
+        IFSelect_ReturnStatus status=writer.Write(filePath.toStdString().c_str());
+        //xxx
+        std::cout << "   IFSelect_ReturnStatus=" << status << std::endl; std::cout.flush();
+        if (status == IFSelect_RetDone) {
             return false;
         }
     }
@@ -953,7 +1039,7 @@ void OpenParEMg::on_importBrep_triggered ()
 
 void OpenParEMg::on_importSTEP_triggered()
 {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Open BREP File"), "", tr("BREP Files (*.step *.stp)"),
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Open STEP File"), "", tr("STEP Files (*.step *.stp)"),
                                                     nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isEmpty()) return;
     if (loadStepFile(filePath)) {
@@ -966,6 +1052,32 @@ void OpenParEMg::on_importSTEP_triggered()
     }
     ui->drawingWindow->fitAll();
     ui->drawingWindow->updateViewer();
+}
+
+//xxx
+void OpenParEMg::on_exportSTEP_triggered()
+{
+    std::vector<Handle(AIS_InteractiveObject)> selectedList;
+    ui->drawingWindow->getSelected (&selectedList);
+    if (selectedList.size() == 0) {
+        QMessageBox mb;
+        mb.critical(nullptr,"Error","Select solid shapes to export.");
+        mb.setFixedSize(500, 200);
+        return;
+    }
+
+    QString filePath=QFileDialog::getSaveFileName(this,tr("Save STEP File"), "/home/briany/OpenParEM", tr("STEP Files (*.step *.stp)"),
+                                                  nullptr,QFileDialog::DontUseNativeDialog);
+    if (filePath.isNull()) return;
+
+    if (saveStepFile(filePath,&selectedList)) {
+        QString message="Unable to save STEP file \"";
+        message.append(filePath);
+        message.append("\".");
+        QMessageBox mb;
+        mb.critical(nullptr, "Error",message);
+        mb.setFixedSize(500, 200);
+    }
 }
 
 void OpenParEMg::on_actionExit_triggered ()
@@ -1197,7 +1309,7 @@ void OpenParEMg::keyReleaseEvent (QKeyEvent *event)
     } else if (event->key() == Qt::Key_Shift) {
         SHIFTpressed=false;
     }
-    QWidget::keyPressEvent(event);
+    QWidget::keyReleaseEvent(event);
 }
 
 void OpenParEMg::on_actionHide_All_triggered ()
@@ -1714,7 +1826,8 @@ void OpenParEMg::on_actionMeshLoad_triggered ()
 
 void OpenParEMg::on_actionMeshSave_triggered ()
 {
-    QString testMeshFile=QFileDialog::getSaveFileName(this,tr("Save Mesh File"), "/home/briany/OpenParEM", tr("Data Files (*.msh);;All Files (*)"));
+    QString testMeshFile=QFileDialog::getSaveFileName(this,tr("Save Mesh File"), "/home/briany/OpenParEM", tr("Data Files (*.msh);;All Files (*)"),
+                                                      nullptr,QFileDialog::DontUseNativeDialog);
     if (testMeshFile.isNull()) return;
     gmsh::write(testMeshFile.toStdString());
 }
@@ -1945,5 +2058,12 @@ void OpenParEMg::on_actionSet_To_Face_triggered()
 {
     ui->drawingWindow->set_gridPlane();
     ui->drawingWindow->updateViewer();
+}
+
+
+
+void OpenParEMg::on_actionSelect_with_Box_triggered()
+{
+    ui->drawingWindow->selectRectangle();
 }
 

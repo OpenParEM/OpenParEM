@@ -68,10 +68,17 @@
      <addaction name="importBrep"/>
      <addaction name="importSTEP"/>
     </widget>
+    <widget class="QMenu" name="menuExport">
+     <property name="title">
+      <string>Export</string>
+     </property>
+     <addaction name="exportSTEP"/>
+    </widget>
     <addaction name="fileNew"/>
     <addaction name="fileOpen"/>
     <addaction name="actionSave"/>
     <addaction name="menuImport"/>
+    <addaction name="menuExport"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuMesh">
@@ -131,6 +138,7 @@
     <addaction name="actionFit_Selected"/>
     <addaction name="actionFit_All"/>
     <addaction name="menuSelection"/>
+    <addaction name="actionSelect_with_Box"/>
     <addaction name="actionUnselect_All"/>
     <addaction name="actionHide_All"/>
     <addaction name="actionShow_All"/>
@@ -376,6 +384,16 @@
   <action name="actionSet_To_Face">
    <property name="text">
     <string>Set To Face</string>
+   </property>
+  </action>
+  <action name="exportSTEP">
+   <property name="text">
+    <string>STEP ...</string>
+   </property>
+  </action>
+  <action name="actionSelect_with_Box">
+   <property name="text">
+    <string>Select with Box</string>
    </property>
   </action>
  </widget>

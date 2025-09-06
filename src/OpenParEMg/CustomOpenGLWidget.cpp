@@ -97,6 +97,8 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
 
     snapToGrid=false;
     viewer->SetGridEcho(Standard_False);
+
+    rectSelect=nullptr;
 }
 
 CustomOpenGLWidget::~CustomOpenGLWidget ()
@@ -296,7 +298,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                 CustomTreeWidgetItem *item=(*drawingToItemMap)[shape];
                 if (item) {
                     item->setForeground(0,Qt::red);
-                    item->setSelected(true);
+                    //item->setSelected(true);
                 }
                 viewerContext->NextSelected();
             }
@@ -322,6 +324,21 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
             contextMenu->exec(QCursor::pos());
         }
+    }
+}
+
+void CustomOpenGLWidget::getSelected (std::vector<Handle(AIS_InteractiveObject)> *selectedList)
+{
+    if (!selectedList) return;
+    selectedList->clear();
+
+    viewerContext->InitSelected();
+    while (viewerContext->MoreSelected()) {
+
+        Handle(AIS_InteractiveObject) io=viewerContext->SelectedInteractive();
+        selectedList->push_back(io);
+
+        viewerContext->NextSelected();
     }
 }
 
@@ -416,8 +433,34 @@ void CustomOpenGLWidget::showGrid ()
     viewer->SetRectangularGridGraphicValues(xSize,ySize,offset);
 }
 
-void CustomOpenGLWidget::hideGrid()
+void CustomOpenGLWidget::hideGrid ()
 {
     viewer->DeactivateGrid();
+}
+
+void CustomOpenGLWidget::selectRectangle ()
+{
+    if (rectSelect) delete rectSelect;
+    rectSelect=new RectangleSelector(viewerContext,view,this);
+
+    connect(rectSelect,&RectangleSelector::selectionFinished,this,&CustomOpenGLWidget::endSelectRectangle);
+}
+
+void CustomOpenGLWidget::endSelectRectangle ()
+{
+    viewerContext->InitSelected();
+    while (viewerContext->MoreSelected()) {
+        Handle(AIS_InteractiveObject) anIO = viewerContext->SelectedInteractive();
+        Handle(AIS_Shape) shape = Handle(AIS_Shape)::DownCast(anIO);
+        CustomTreeWidgetItem *item=(*drawingToItemMap)[shape];
+        if (item) {
+            item->setForeground(0,Qt::red);
+            //item->setSelected(true);
+        }
+        viewerContext->NextSelected();
+    }
+
+    if (rectSelect) delete rectSelect;
+    rectSelect=nullptr;
 }
 

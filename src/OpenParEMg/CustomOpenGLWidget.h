@@ -26,6 +26,7 @@
 #include <QMouseEvent>
 
 #include "CustomTreeWidgetItem.h"
+#include "RectangleSelector.h"
 
 #include "OpenGl_GraphicDriver.hxx"
 #include <Aspect_DisplayConnection.hxx>
@@ -133,6 +134,11 @@ public:
 
     void unselectTreeItems (CustomTreeWidgetItem *);
 
+    void getSelected (std::vector<Handle(AIS_InteractiveObject)> *);
+
+    void selectRectangle ();
+    void endSelectRectangle ();
+
 protected:
     void initializeGL () override;
     void paintGL () override;
@@ -159,6 +165,8 @@ private:
     gp_Dir drawingPlaneDirection;
     gp_Ax1 drawingPlaneAxis;
     bool snapToGrid;
+
+    RectangleSelector *rectSelect;
 };
 
 #endif // CUSTOMOPENGLWIDGET_H

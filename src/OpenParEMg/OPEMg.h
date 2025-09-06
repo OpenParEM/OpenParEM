@@ -87,6 +87,7 @@ public:
     void addShape (TopoDS_Shape, CustomTreeWidgetItem *, bool);
     bool loadBrepFile (QString);
     bool loadStepFile (QString);
+    bool saveStepFile (QString, std::vector<Handle(AIS_InteractiveObject)> *);
     bool menuAllHidden (CustomTreeWidgetItem *);
     bool menuAllShown (CustomTreeWidgetItem *);
     //void meshShowEntities ();
@@ -109,6 +110,7 @@ private slots:
     void on_actionMaterials_Editor_triggered ();
     void on_importBrep_triggered ();
     void on_importSTEP_triggered();
+    void on_exportSTEP_triggered();
     void on_actionExit_triggered ();
     void on_actionSelect_Database_triggered ();
 
@@ -119,12 +121,14 @@ private slots:
     void hideItems ();
     void selectItems ();
     void unselectItems ();
+    void deleteItems ();
     void showDisplayShape (CustomTreeWidgetItem *);
     void showPortShape (CustomTreeWidgetItem *);
     void hideDisplayShape (CustomTreeWidgetItem *);
     void hidePortShape (CustomTreeWidgetItem *);
     void selectDisplayShape (CustomTreeWidgetItem *);
     void unselectDisplayShape (CustomTreeWidgetItem *);
+    void deleteDisplayShape (CustomTreeWidgetItem *);
     void showMeshEntitiesItem (CustomTreeWidgetItem *);
     void hideMeshEntitiesItem (CustomTreeWidgetItem *);
 
@@ -179,6 +183,8 @@ private slots:
     void on_actionSnap_To_Grid_triggered();
 
     void on_actionSet_To_Face_triggered();
+
+    void on_actionSelect_with_Box_triggered();
 
 private:
     Ui::OpenParEMg *ui;
