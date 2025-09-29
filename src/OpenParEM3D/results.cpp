@@ -711,6 +711,7 @@ void ResultDatabase::push (Result *result)
    }
 }
 
+// original
 double ResultDatabase::calculate_maxRelativeError (struct projectData *projData, double frequency, int iteration)
 {
    PetscErrorCode ierr=0;
@@ -747,8 +748,8 @@ double ResultDatabase::calculate_maxRelativeError (struct projectData *projData,
          ierr=MatAXPY(difference,-1,Scurrent,SAME_NONZERO_PATTERN);
 
          ierr=MatInvert(&Scurrent,0); if (ierr) return maxRelativeError;
-     
-         Mat error;  
+
+         Mat error;
          ierr=MatMatMult(Scurrent,difference,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&error); if (ierr) return maxRelativeError;
          MatDestroy(&Scurrent);
          MatDestroy(&difference);
@@ -773,6 +774,114 @@ double ResultDatabase::calculate_maxRelativeError (struct projectData *projData,
 
    return maxRelativeError;
 }
+
+
+/* original using NORM_1
+double ResultDatabase::calculate_maxRelativeError (struct projectData *projData, double frequency, int iteration)
+{
+   PetscErrorCode ierr=0;
+   double maxRelativeError=-1;
+
+   //PetscPrintf (PETSC_COMM_WORLD,"MatInvert Testing:\n");
+   //ierr=MatInvertTest (5); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
+   //ierr=MatInvertTest (10); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
+   //ierr=MatInvertTest (20); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
+   //ierr=MatInvertTest (30); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
+
+   if (iteration > 1) {
+
+      if (calculate_relative_error_on_S(projData->refinement_variable)) {
+
+         // current iteration
+
+         Result *result=get_Result(frequency,iteration);
+         Mat *S;
+         S=result->get_S();
+
+         Mat Scurrent;
+         ierr=MatConvert(*S,MATSAME,MAT_INITIAL_MATRIX,&Scurrent); if (ierr) return ierr;
+
+         // prior iteration - to become difference
+
+         result=get_Result(frequency,iteration-1);
+         S=result->get_S();
+
+         Mat difference;
+         ierr=MatConvert(*S,MATSAME,MAT_INITIAL_MATRIX,&difference); if (ierr) return ierr;
+
+         // difference
+         ierr=MatAXPY(difference,-1,Scurrent,SAME_NONZERO_PATTERN);
+
+         ierr=MatInvert(&Scurrent,0); if (ierr) return maxRelativeError;
+
+         Mat error;
+         ierr=MatMatMult(Scurrent,difference,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&error); if (ierr) return maxRelativeError;
+         MatDestroy(&Scurrent);
+         MatDestroy(&difference);
+
+         PetscReal normError;
+         //ierr=MatNorm(error,NORM_FROBENIUS,&normError); if (ierr) return ierr;
+         MatNorm(error,NORM_1,&normError); if (ierr) return ierr;
+         maxRelativeError=normError;
+
+         MatDestroy(&error);
+      }
+
+   }
+
+   return maxRelativeError;
+}
+*/
+
+/*
+//xxx
+// Error = ||Sn-Sn-1||/||Sn|| using the Frobenius norm.
+// More standard calculation
+double ResultDatabase::calculate_maxRelativeError (struct projectData *projData, double frequency, int iteration)
+{
+   PetscErrorCode ierr=0;
+   PetscReal normN,normNmNm1;
+   double maxRelativeError=-1;
+
+   if (iteration > 1) {
+
+      if (calculate_relative_error_on_S(projData->refinement_variable)) {
+
+         // current iteration
+
+         Result *result=get_Result(frequency,iteration);
+         Mat *S;
+         S=result->get_S();
+
+         Mat SN;
+         ierr=MatConvert(*S,MATSAME,MAT_INITIAL_MATRIX,&SN); if (ierr) return ierr;
+
+         ierr=MatNorm(SN,NORM_FROBENIUS,&normN); if (ierr) return ierr;
+
+         // prior iteration
+ 
+         result=get_Result(frequency,iteration-1); 
+         S=result->get_S();
+
+         // difference, saved in difference
+
+         Mat difference;
+         ierr=MatConvert(*S,MATSAME,MAT_INITIAL_MATRIX,&difference); if (ierr) return ierr;
+
+         ierr=MatAXPY(difference,-1,SN,SAME_NONZERO_PATTERN); if (ierr) return ierr;
+         ierr=MatNorm(difference,NORM_FROBENIUS,&normNmNm1); if (ierr) return ierr;
+
+         maxRelativeError=normNmNm1/normN;
+
+         MatDestroy(&SN);
+         MatDestroy(&difference);
+
+      }
+   }
+
+   return maxRelativeError;
+}
+*/
 
 double ResultDatabase::calculate_maxAbsoluteError (struct projectData *projData, double frequency, int iteration)
 {

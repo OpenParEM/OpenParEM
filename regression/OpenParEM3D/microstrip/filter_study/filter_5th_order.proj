@@ -38,7 +38,6 @@ solution.iteration.limit       1000000
 solution.modes.buffer          0
 solution.accurate.residual     false
 solution.shift.invert          true
-solution.use.initial.guess     true
 
 output.show.refining.mesh      false
 output.show.postprocessing     false

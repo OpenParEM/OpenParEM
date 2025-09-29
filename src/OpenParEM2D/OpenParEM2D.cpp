@@ -58,7 +58,7 @@ int version_major=2;
 int version_minor=1;
 int version_patch=0;
 
-extern "C" int eigensolve (struct projectData *, int, double, int, PetscInt *, int, PetscInt *, double **, double **, int *, PetscMPIInt);
+extern "C" int eigensolve (struct projectData *, int, double, int, int, PetscInt *, int, PetscInt *, double **, double **, int *, PetscMPIInt);
 extern "C" void init_project (struct projectData *);
 extern "C" int load_project_file(const char*, projectData*, const char*);
 extern "C" void print_project (struct projectData *, struct projectData *, const char *indent);
@@ -101,6 +101,7 @@ void signalHandler (int signum)
 
    remove_lock_file (lockfile);
 
+   MPI_Barrier(PETSC_COMM_WORLD);
    PetscFinalize();
    exit(0); // 1
 }
@@ -329,6 +330,31 @@ char* create_temp_directory (struct projectData *projData, chrono::steady_clock:
    return tempdir;
 }
 
+void clearLists (double **alphaList, double **betaList, int size)
+{
+   if (*alphaList == nullptr) return;
+   if (*betaList == nullptr) return;
+
+   int i=0;
+   while (i < size) {
+      (*alphaList)[i]=0;
+      (*betaList)[i]=0;
+      i++;
+   }
+}
+
+void resetLists (double **alphaList, double **betaList, int size, double initial_alpha, double initial_beta)
+{
+   if (*alphaList == nullptr) return;
+   if (*betaList == nullptr) return;
+
+   clearLists(alphaList,betaList,size);
+   if (size > 0) {
+      (*alphaList)[0]=initial_alpha;
+      (*betaList)[0]=initial_beta;
+   }
+}
+
 int main(int argc, char *argv[])
 {
    double eps0=8.8541878176e-12;
@@ -485,8 +511,11 @@ int main(int argc, char *argv[])
    //   exit_job_on_error (job_start_time,lockfile,true);
    //}
 
-   double *alphaList=(double *)malloc (projData.solution_modes*sizeof(double));
-   double *betaList=(double *)malloc (projData.solution_modes*sizeof(double));
+   // create space for alpha and beta solutions, clear, and set initial value (if available)
+   int listSize=projData.solution_modes;
+   double *alphaList=(double *)malloc (listSize*sizeof(double));
+   double *betaList=(double *)malloc (listSize*sizeof(double));
+   resetLists(&alphaList,&betaList,listSize,projData.solution_initial_alpha,projData.solution_initial_beta);
 
    // loop for all frequencies
 
@@ -503,9 +532,6 @@ int main(int argc, char *argv[])
    if (! frequencyPlan.is_refining() && mesh) {
       pmesh=new ParMesh(MPI_COMM_WORLD,*mesh);
    }
-   // starting use_initial_guess state
-   int use_initial_guess=0;
-   if (projData.solution_initial_alpha > 0 || projData.solution_initial_beta > 0) use_initial_guess=1;
 
    // loop
    FrequencyPlanPoint *frequencyPlanPoint;
@@ -519,9 +545,7 @@ int main(int argc, char *argv[])
       double ko=2*M_PI*frequency*sqrt(4.0e-7*M_PI*eps0);
       double ko2=pow(ko,2);
 
-      // for initial guess scaling with frequency
       if (lastFrequency == 0) lastFrequency=frequency;
-      double betaScale=frequency/lastFrequency;
 
       // set up pmesh when using adaptive mesh refinement
       if (refineMesh && restartMesh) {
@@ -529,8 +553,8 @@ int main(int argc, char *argv[])
          if (mesh) pmesh=new ParMesh(MPI_COMM_WORLD,*mesh);
          else pmesh=new ParMesh(*restart_pmesh);
 
-         // new mesh means that the existing solution is invalid unless an initial guess has been provided
-         if (projData.solution_initial_alpha == 0 && projData.solution_initial_beta == 0) use_initial_guess=0;
+//         // new mesh means that the existing solution is invalid unless an initial guess has been provided
+//         if (projData.solution_initial_alpha == 0 && projData.solution_initial_beta == 0) use_initial_guess=0;
       }
 
       if (refineMesh) {
@@ -608,21 +632,90 @@ int main(int argc, char *argv[])
          if (kappa_max < 5) {PetscPrintf(PETSC_COMM_WORLD," < target: 5\n");}
          else {PetscPrintf(PETSC_COMM_WORLD," > target: 5\n");}
 
+         // initial guess and order ramping order ramping
+
+         // 0 - use no initial guess or order ramping
+         // 1 - use prior solution as initial guess with frequency scaling (used in version 2.1 and earlier)
+         // 2 - level 1 plus plus order ramping on the first iteration (default)
+         // 3 - use order ramping for every solution without using any prior solution
+
+         double initialGuessFactor=2; // tuned by trial-and-error
+         bool apply_order_ramping=false;
+         int use_initial_guess=0;
+         if (projData.solution_initial_guess_level == 0) {
+            clearLists(&alphaList,&betaList,listSize);
+         } else if (projData.solution_initial_guess_level == 1) {
+            if (listSize > 0) {
+               if (betaList[0] != 0) use_initial_guess=1;
+               if (iteration == 0) betaList[0]*=frequency/lastFrequency*initialGuessFactor;
+               else betaList[0]*=initialGuessFactor;
+            }
+         } else if (projData.solution_initial_guess_level == 2) {
+            if (listSize > 0) {
+               if (betaList[0] != 0) use_initial_guess=1;
+               if (iteration == 0) betaList[0]*=frequency/lastFrequency*initialGuessFactor;
+               else betaList[0]*=initialGuessFactor;
+            }
+            if (iteration == 0) apply_order_ramping=true;
+         } else if (projData.solution_initial_guess_level == 3) {
+            clearLists(&alphaList,&betaList,listSize);
+            apply_order_ramping=true;
+         }
+
+         // no point of order ramping for first order elements
+         if (projData.mesh_order == 1) apply_order_ramping=false;
+
+         // order ramping
+         if (apply_order_ramping) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"      Using finite element order ramping ...\n");
+
+            int order=1;
+            while (order < projData.mesh_order) {
+
+               // create the finite element spaces and matrices on the parallel mesh
+               fem2D *fem=new fem2D(&projData,pmesh,order,frequency,iteration,&ko2Re_e,&ko2Im_e,&Inv_mu,&w_mu,tempdir);
+
+               // solve the eigenvalue problem, Ax=kBx
+               int matrixSize=-1;
+               PetscInt *ess_tdof_ND=fem->get_ess_tdof_ND(&boundaryDatabase,&borderDatabase);
+               PetscInt *ess_tdof_H1=fem->get_ess_tdof_H1(&boundaryDatabase,&borderDatabase);
+               if (projData.debug_skip_solve || eigensolve (&projData,use_initial_guess,frequency,order,
+                                                            fem->get_ess_tdof_size_ND(),ess_tdof_ND,
+                                                            fem->get_ess_tdof_size_H1(),ess_tdof_H1,
+                                                            &alphaList,&betaList,&matrixSize,rank) != 0)
+               {
+                  delete fem;
+                  if (ess_tdof_ND) {PetscFree(ess_tdof_ND); ess_tdof_ND=nullptr;}
+                  if (ess_tdof_H1) {PetscFree(ess_tdof_H1); ess_tdof_H1=nullptr;}
+
+                  use_initial_guess=0;
+                  listSize=projData.solution_active_mode_count;
+                  clearLists(&alphaList,&betaList,listSize);
+                  break;
+               } else {
+                  delete fem;
+                  if (ess_tdof_ND) {PetscFree(ess_tdof_ND); ess_tdof_ND=nullptr;}
+                  if (ess_tdof_H1) {PetscFree(ess_tdof_H1); ess_tdof_H1=nullptr;}
+
+                  listSize=projData.solution_active_mode_count;
+                  use_initial_guess=1;  // solution is available
+                  if (listSize > 0) betaList[0]*=initialGuessFactor;
+               }
+
+               order++;
+            }
+         }
+
+
          // create the finite element spaces and matrices on the parallel mesh
          fem2D *fem=new fem2D(&projData,pmesh,projData.mesh_order,frequency,iteration,&ko2Re_e,&ko2Im_e,&Inv_mu,&w_mu,tempdir);
          //fem->dumpDof2DData();
-
-         // scale beta to approximate the change due to a shift in frequency
-         if (use_initial_guess && projData.solution_active_mode_count > 0) {
-            betaList[0]*=betaScale*2;  // align with similar option in OpenParEM3D
-            betaScale=1;                      // will update when the frequency changes
-         }
 
          // solve the eigenvalue problem, Ax=kBx
          int matrixSize=-1;
          PetscInt *ess_tdof_ND=fem->get_ess_tdof_ND(&boundaryDatabase,&borderDatabase);
          PetscInt *ess_tdof_H1=fem->get_ess_tdof_H1(&boundaryDatabase,&borderDatabase);
-         if (projData.debug_skip_solve || eigensolve (&projData,use_initial_guess,frequency,
+         if (projData.debug_skip_solve || eigensolve (&projData,use_initial_guess,frequency,projData.mesh_order,
                                                       fem->get_ess_tdof_size_ND(),ess_tdof_ND,
                                                       fem->get_ess_tdof_size_H1(),ess_tdof_H1,
                                                       &alphaList,&betaList,&matrixSize,rank) != 0) 
@@ -676,7 +769,7 @@ int main(int argc, char *argv[])
             }
 
             // write the fields as the initial guess for the next calculation
-            if (projData.solution_use_initial_guess) fem->writeInitialGuess();
+            if (use_initial_guess) fem->writeInitialGuess();
 
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"      Finished\n");
 
@@ -687,6 +780,8 @@ int main(int argc, char *argv[])
             result->set_end_refine_time(iteration_end_time);
          }
 
+         listSize=projData.solution_active_mode_count;
+
          if (ess_tdof_ND) {PetscFree(ess_tdof_ND); ess_tdof_ND=nullptr;}
          if (ess_tdof_H1) {PetscFree(ess_tdof_H1); ess_tdof_H1=nullptr;}
 
@@ -696,8 +791,8 @@ int main(int argc, char *argv[])
          // save the results to a results csv file
          if (rank == 0) resultDatabase.save(&projData,baseName);
 
-         // initial guess
-         if (projData.solution_use_initial_guess) use_initial_guess=1;
+//         // initial guess
+//         if (projData.solution_use_initial_guess) use_initial_guess=1;
 
          delete fem;
          ++iteration;
@@ -778,6 +873,7 @@ int main(int argc, char *argv[])
       MPI_Send(&retval,1,MPI_INT,0,100000,parent);
    }
 
+   MPI_Barrier(PETSC_COMM_WORLD);
    SlepcFinalize();
 
    return 0;

@@ -43,7 +43,6 @@ solution.impedance.definition      PI
 solution.impedance.calculation     line
 solution.accurate.residual         false
 solution.shift.invert              true
-solution.use.initial.guess         true
 
 output.show.refining.mesh          false
 output.show.postprocessing         false

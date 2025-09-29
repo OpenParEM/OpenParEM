@@ -17,8 +17,8 @@ materials.check.limits         true
 refinement.frequency           plan
 refinement.iteration.min       1 
 refinement.iteration.max       50
-refinement.required.passes     1
-refinement.relative.tolerance  1e-6
+refinement.required.passes     2 // 1
+refinement.relative.tolerance  1e-5 // 1e-6
 refinement.variable            S
 
 frequency.plan.point.refine    9e9
@@ -34,7 +34,6 @@ solution.iteration.limit       100000
 solution.modes.buffer          0
 solution.accurate.residual     false
 solution.shift.invert          true
-solution.use.initial.guess     true
 
 output.show.refining.mesh      false
 output.show.postprocessing     false

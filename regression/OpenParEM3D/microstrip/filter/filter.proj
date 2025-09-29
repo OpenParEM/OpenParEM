@@ -4,7 +4,7 @@
 // to obtain about the same number of iteration as version 2.0.0:
 // 10 iterations for 2.0.0 vs. 9 now for 2.1.0
 
-project.save.fields            false
+project.save.fields            true // false
 
 mesh.file                      filter.msh
 mesh.refinement.fraction       0.0025
@@ -41,7 +41,6 @@ solution.iteration.limit       30000
 solution.modes.buffer          0
 solution.accurate.residual     false
 solution.shift.invert          true
-solution.use.initial.guess     true
 
 output.show.refining.mesh      false
 output.show.postprocessing     false

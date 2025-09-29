@@ -35,7 +35,6 @@ solution.iteration.limit       100000
 solution.modes.buffer          0
 solution.accurate.residual     false
 solution.shift.invert          true
-solution.use.initial.guess     true
 
 antenna.plot.3D.pattern        q=G
 

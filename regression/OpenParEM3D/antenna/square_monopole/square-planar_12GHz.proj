@@ -1,6 +1,6 @@
 #OpenParEM3Dproject 1.0
 
-project.save.fields            false
+project.save.fields            true // false
 
 mesh.file                      square-planar.msh
 mesh.save.refined              false
@@ -38,7 +38,6 @@ solution.iteration.limit       100000
 solution.modes.buffer          0
 solution.accurate.residual     false
 solution.shift.invert          true
-solution.use.initial.guess     true
 
 output.show.refining.mesh      false
 output.show.postprocessing     false

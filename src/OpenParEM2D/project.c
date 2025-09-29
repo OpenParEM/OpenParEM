@@ -512,10 +512,10 @@ void init_project (struct projectData *data) {
    data->solution_check_closed_loop=1;
    data->solution_accurate_residual=0;
    data->solution_shift_invert=1;
-   data->solution_use_initial_guess=1;
    data->solution_shift_factor=1;
    data->solution_initial_alpha=0;
    data->solution_initial_beta=0;
+   data->solution_initial_guess_level=2; //xxx update the manual to remove solution_use_initial_guess and add solution_initial_guess_level
 
    data->output_show_refining_mesh=0;
    data->output_show_postprocessing=0;
@@ -694,9 +694,6 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0;  if (defaultData && data->solution_shift_invert == defaultData->solution_shift_invert) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.shift.invert %s\n",indent,comment[matched],logic[data->solution_shift_invert]);
 
-   matched=0;  if (defaultData && data->solution_use_initial_guess == defaultData->solution_use_initial_guess) matched=1;
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.use.initial.guess %s\n",indent,comment[matched],logic[data->solution_use_initial_guess]);
-
    matched=0; if (defaultData && double_compare(data->solution_shift_factor,defaultData->solution_shift_factor,1e-14)) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.shift.factor %.15g\n",indent,comment[matched],data->solution_shift_factor);
 
@@ -705,6 +702,9 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
 
    matched=0; if (defaultData && double_compare(data->solution_initial_beta,defaultData->solution_initial_beta,1e-14)) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.initial.beta %.15g\n",indent,comment[matched],data->solution_initial_beta);
+
+   matched=0; if (defaultData && data->solution_initial_guess_level == defaultData->solution_initial_guess_level) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.initial.guess.level %d\n",indent,comment[matched],data->solution_initial_guess_level);
 
    matched=0;  if (defaultData && data->output_show_refining_mesh == defaultData->output_show_refining_mesh) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%soutput.show.refining.mesh %s\n",indent,comment[matched],logic[data->output_show_refining_mesh]);
@@ -1354,15 +1354,6 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
-               else if (strcmp(keyword,"solution.use.initial.guess") == 0) {
-                  value=strtok(NULL," ");
-                  if (is_bool(value)) {
-                     data->solution_use_initial_guess=get_bool(value);
-                     value=strtok(NULL," ");
-                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
-                  } else print_invalid_entry (&ierr,lineCount,indent);
-               }
-
                else if (strcmp(keyword,"solution.shift.factor") == 0) {
                   value=strtok(NULL," ");
                   if (is_double(value)) {
@@ -1398,6 +1389,19 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (data->solution_initial_beta < 0) {
                         ierr=1;
                         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2256: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
+                     }
+                  } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"solution.initial.guess.level") == 0) {
+                  value=strtok(NULL," ");
+                  if (is_int(value)) {
+                     data->solution_initial_guess_level=atoi(value);
+                     value=strtok(NULL," ");
+                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                     if (data->solution_initial_guess_level < 0 || data->solution_initial_guess_level > 3) {
+                        ierr=1;
+                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2244: Value must be 0, 1, 2, or 3 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1782,10 +1786,10 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send(&(data->solution_check_closed_loop),1,MPI_INT,i,1000047,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_accurate_residual),1,MPI_INT,i,1000048,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_shift_invert),1,MPI_INT,i,1000049,PETSC_COMM_WORLD);
-         ierr=MPI_Send(&(data->solution_use_initial_guess),1,MPI_INT,i,1000050,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_shift_factor),1,MPI_DOUBLE,i,1000051,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_initial_alpha),1,MPI_DOUBLE,i,1000074,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_initial_beta),1,MPI_DOUBLE,i,1000075,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->solution_initial_guess_level),1,MPI_INT,i,1000076,PETSC_COMM_WORLD);
 
          ierr=MPI_Send(&(data->output_show_refining_mesh),1,MPI_INT,i,1000052,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->output_show_postprocessing),1,MPI_INT,i,1000053,PETSC_COMM_WORLD);
@@ -1926,10 +1930,10 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(&(data->solution_check_closed_loop),1,MPI_INT,0,1000047,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_accurate_residual),1,MPI_INT,0,1000048,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_shift_invert),1,MPI_INT,0,1000049,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-      ierr=MPI_Recv(&(data->solution_use_initial_guess),1,MPI_INT,0,1000050,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_shift_factor),1,MPI_DOUBLE,0,1000051,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_initial_alpha),1,MPI_DOUBLE,0,1000074,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_initial_beta),1,MPI_DOUBLE,0,1000075,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->solution_initial_guess_level),1,MPI_INT,0,1000076,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
       ierr=MPI_Recv(&(data->output_show_refining_mesh),1,MPI_INT,0,1000052,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->output_show_postprocessing),1,MPI_INT,0,1000053,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);

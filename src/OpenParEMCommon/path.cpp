@@ -882,12 +882,12 @@ void Path::subdivide (Path *test)
 
                // maintain ordering along the line
                if (points[i]->get_point_distance(test->points[j]) < points[i]->get_point_distance(test->points[j+1])) {
-                  if (! points[points.size()-1]->is_close_point (test->points[j])) {
+                  if (! points[points.size()-1]->is_close_point (test->points[j],1e-12)) {
                      newPoints.push_back(test->points[j]->clone());
                   }
                   newPoints.push_back(test->points[j+1]->clone());
                } else {
-                  if (! points[points.size()-1]->is_close_point (test->points[j+1])) {
+                  if (! points[points.size()-1]->is_close_point (test->points[j+1],1e-12)) {
                      newPoints.push_back(test->points[j+1]->clone());
                   }
                   newPoints.push_back(test->points[j]->clone());
@@ -1758,6 +1758,8 @@ void Path::test_is_point_inside_sqr2 ()
 // return true if there is a snap
 bool Path::snapToPoint (struct point p)
 {
+    double tol=1e-08;
+
     // nothing to do
     if (points.size() == 0) return false;
 
@@ -1769,7 +1771,7 @@ bool Path::snapToPoint (struct point p)
 
     long unsigned int i=0;
     while (i < points.size()) {
-        if (points[i]->is_close_point(p)) {
+        if (points[i]->is_close_point(p,tol)) {
             points[i]->set_point_value(p);
             return true;
         }
@@ -1781,6 +1783,7 @@ bool Path::snapToPoint (struct point p)
 
 bool Path::snapToMeshBoundary (mfem::Mesh *mesh)
 {
+   double tol=1e-08;
    bool fail=false;
    mfem::DenseMatrix pointMat(3,3);
 
@@ -1804,15 +1807,15 @@ bool Path::snapToMeshBoundary (mfem::Mesh *mesh)
             struct point p2; p2.dim=3; p2.x=pointMat.Elem(0,1); p2.y=pointMat.Elem(1,1); p2.z=pointMat.Elem(2,1);
             struct point p3; p3.dim=3; p3.x=pointMat.Elem(0,2); p3.y=pointMat.Elem(1,2); p3.z=pointMat.Elem(2,2);
 
-            if (points[i]->is_close_point(p1)) {
+            if (points[i]->is_close_point(p1,tol)) {
                points[i]->set_point_value(p1);
                found_point=true;
                break;
-            } else if (points[i]->is_close_point(p2)) {
+            } else if (points[i]->is_close_point(p2,tol)) {
                points[i]->set_point_value(p2);
                found_point=true;
                break;
-            } else if (points[i]->is_close_point(p3)) {
+            } else if (points[i]->is_close_point(p3,tol)) {
                points[i]->set_point_value(p3);
                found_point=true;
                break;
@@ -1820,7 +1823,9 @@ bool Path::snapToMeshBoundary (mfem::Mesh *mesh)
          }
          j++;
       }
-      if (!found_point) fail=true;
+      if (!found_point) {
+         fail=true;
+      }
       i++;
    }
 

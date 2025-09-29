@@ -103,6 +103,7 @@ void signalHandler (int signum)
    cout.flush();
    if (rank == 0) cout << "OpenParEM3D Job Aborted" << endl;
 
+   MPI_Barrier(PETSC_COMM_WORLD);
    PetscFinalize();
    exit(0); // 1
 }
@@ -805,6 +806,7 @@ int main(int argc, char *argv[])
       MPI_Send(&retval,1,MPI_INT,0,100000,parent);
    }
 
+   MPI_Barrier(PETSC_COMM_WORLD);
    PetscFinalize();
 
    return 0;

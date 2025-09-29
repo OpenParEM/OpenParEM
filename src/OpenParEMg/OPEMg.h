@@ -88,8 +88,8 @@ public:
     bool loadBrepFile (QString);
     bool loadStepFile (QString);
     bool saveStepFile (QString, std::vector<Handle(AIS_InteractiveObject)> *);
-    bool menuAllHidden (CustomTreeWidgetItem *);
-    bool menuAllShown (CustomTreeWidgetItem *);
+    //bool menuAllHidden (CustomTreeWidgetItem *);
+    //bool menuAllShown (CustomTreeWidgetItem *);
     //void meshShowEntities ();
     //void meshHideEntities ();
     void drawMesh ();
@@ -117,7 +117,6 @@ private slots:
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
 
     void showItems ();
-    void reshowItem (CustomTreeWidgetItem *);
     void hideItems ();
     void selectItems ();
     void unselectItems ();
@@ -128,7 +127,6 @@ private slots:
     void hidePortShape (CustomTreeWidgetItem *);
     void selectDisplayShape (CustomTreeWidgetItem *);
     void unselectDisplayShape (CustomTreeWidgetItem *);
-    void deleteDisplayShape (CustomTreeWidgetItem *);
     void showMeshEntitiesItem (CustomTreeWidgetItem *);
     void hideMeshEntitiesItem (CustomTreeWidgetItem *);
 
@@ -152,11 +150,9 @@ private slots:
     void keyReleaseEvent (QKeyEvent *) override;
 
     void on_actionHide_All_triggered ();
-    void on_actionShow_All_triggered ();
     void set_displayMode (CustomTreeWidgetItem *, int);
     void set_selectionMode (CustomTreeWidgetItem *, int);
 
-    void unselectTreeItems (CustomTreeWidgetItem *);
     void on_actionUnselect_All_triggered ();   // note similar functionality in CustomOpenGLWidget
     void on_actionGenerate_triggered ();
     void on_actionMeshSave_triggered ();
@@ -217,6 +213,11 @@ private:
     int signal;
     std::vector<int> pidList;   // for killing spawned OpenParEM3D
     QTimer *timer;
+
+    QAction *showAction;
+    QAction *hideAction;
+    QAction *unselectAction;
+    QAction *deleteAction;
 
     // gmsh
     gmsh::vectorpair drawingEntities;

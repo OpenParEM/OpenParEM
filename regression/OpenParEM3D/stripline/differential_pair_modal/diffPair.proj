@@ -26,7 +26,6 @@ solution.3D.tolerance             1e-14
 solution.iteration.limit          100000
 solution.modes.buffer             0
 solution.shift.invert             true
-solution.use.initial.guess        true
 output.show.refining.mesh         false
 output.show.postprocessing        false
 output.show.iterations            false

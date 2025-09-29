@@ -91,10 +91,10 @@ struct projectData {
    int solution_check_closed_loop;
    int solution_accurate_residual;
    int solution_shift_invert;
-   int solution_use_initial_guess;
    double solution_initial_alpha;
    double solution_initial_beta;
    double solution_shift_factor;
+   int solution_initial_guess_level;
 
    int output_show_refining_mesh;
    int output_show_postprocessing;

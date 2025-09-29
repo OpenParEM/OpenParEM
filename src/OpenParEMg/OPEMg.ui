@@ -141,7 +141,6 @@
     <addaction name="actionSelect_with_Box"/>
     <addaction name="actionUnselect_All"/>
     <addaction name="actionHide_All"/>
-    <addaction name="actionShow_All"/>
     <addaction name="allWireframe"/>
    </widget>
    <widget class="QMenu" name="menuRun">
@@ -295,14 +294,6 @@
   <action name="actionHide_All">
    <property name="text">
     <string>Hide All</string>
-   </property>
-  </action>
-  <action name="actionShow_All">
-   <property name="text">
-    <string>Show All</string>
-   </property>
-   <property name="toolTip">
-    <string>Show All</string>
    </property>
   </action>
   <action name="actionUnselect_All">

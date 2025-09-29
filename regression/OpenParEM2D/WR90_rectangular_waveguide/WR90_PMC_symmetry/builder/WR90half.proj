@@ -25,7 +25,6 @@ solution.modes.buffer             10
 solution.impedance.definition     PV
 solution.impedance.calculation    modal
 solution.shift.invert             true
-solution.use.initial.guess        true
 output.show.refining.mesh         false
 output.show.postprocessing        false
 output.show.iterations            false

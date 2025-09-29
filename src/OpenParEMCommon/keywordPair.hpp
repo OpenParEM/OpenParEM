@@ -102,8 +102,8 @@ class keywordPair
       int get_int_value () {return int_value;}
       struct point get_point_value () {return point_value;}
       int get_point_value_dim () {return point_value.dim;}
-      bool is_close_point (keywordPair *);
-      bool is_close_point (struct point);
+      bool is_close_point (keywordPair *, double);
+      bool is_close_point (struct point, double);
       double distance_to_point (struct point);
       double get_dbl_value () {return dbl_value;}
       bool get_bool_value () {return bool_value;}

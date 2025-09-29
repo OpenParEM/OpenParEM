@@ -74,6 +74,12 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     // AIS context
     viewerContext=new AIS_InteractiveContext(viewer);
 
+    // item tracking
+    drawingTracker=new ItemTracker(viewerContext);
+    portTracker=new ItemTracker(viewerContext);
+    boundaryTracker=new ItemTracker(viewerContext);
+    meshTracker=new ItemTracker(viewerContext);
+
     // create an orientation cube for the display
     viewCube=new AIS_ViewCube();
     viewCube->SetViewAnimation(myViewAnimation);
@@ -108,6 +114,11 @@ CustomOpenGLWidget::~CustomOpenGLWidget ()
     view->Remove();
     view.Nullify();
     viewer.Nullify();
+
+    if (drawingTracker) delete drawingTracker;
+    if (portTracker) delete portTracker;
+    if (boundaryTracker) delete boundaryTracker;
+    if (meshTracker) delete meshTracker;
 
     makeCurrent();
     displayConnection.Nullify();
@@ -254,18 +265,18 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
 }
 
-void CustomOpenGLWidget::unselectTreeItems (CustomTreeWidgetItem *item)
-{
-    if (item->foreground(0) == Qt::red) item->setForeground(0,Qt::black);
-    item->setSelected(false);
+// void CustomOpenGLWidget::unselectTreeItems (CustomTreeWidgetItem *item)
+// {
+//     if (item->foreground(0) == Qt::red) item->setForeground(0,Qt::black);
+//     item->setSelected(false);
 
-    int i=0;
-    while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-        unselectTreeItems(child);
-        i++;
-    }
-}
+//     int i=0;
+//     while (i < item->childCount()) {
+//         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+//         unselectTreeItems(child);
+//         i++;
+//     }
+// }
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
@@ -282,50 +293,52 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     // process mouse buttons
     if (event->button() == Qt::LeftButton) {
-        if (viewerContext->NbSelected() > 0) {
-            unselectTreeItems(drawingItemTree);
-            unselectTreeItems(portItemTree);
-            unselectTreeItems(boundaryItemTree);
 
 
-            viewerContext->InitSelected();
-            while (viewerContext->MoreSelected()) {
-                std::cout << "CustomOpenGLWidget::mouseReleaseEvent: found selected object" << std::endl; std::cout.flush();
+        bool hasModifier=false;
+        if (event->button() == Qt::LeftButton) {
+            AIS_SelectionScheme scheme;
 
-                Handle(AIS_InteractiveObject) anIO = viewerContext->SelectedInteractive();
-
-                Handle(AIS_Shape) shape = Handle(AIS_Shape)::DownCast(anIO);
-                CustomTreeWidgetItem *item=(*drawingToItemMap)[shape];
-                if (item) {
-                    item->setForeground(0,Qt::red);
-                    //item->setSelected(true);
-                }
-                viewerContext->NextSelected();
+            if (event->modifiers() & Qt::ControlModifier) {
+                hasModifier=true;
+                scheme = AIS_SelectionScheme_Add;
+            } else {
+                scheme = AIS_SelectionScheme_Replace;
             }
 
-        } else {
-            unselectAll();
-            unselectTreeItems(drawingItemTree);
-            unselectTreeItems(portItemTree);
-            unselectTreeItems(boundaryItemTree);
-            updateViewer();
+            viewerContext->SelectDetected(scheme);
         }
+
+        Handle(AIS_InteractiveObject) anIO=getLastSelected();
+
+        if (anIO.IsNull()) {
+            drawingTracker->unselectAllItems();
+        } else {
+            Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
+            if (!hasModifier) drawingTracker->unselectAllItems();
+            drawingTracker->selectShape(shape);
+        }
+
+        updateViewer();
+
     } else if (event->button() == Qt::RightButton) {
-        if (viewerContext->NbSelected() > 0) {
-
-            viewerContext->InitSelected();
-            while (viewerContext->MoreSelected()) {
-                Handle(AIS_InteractiveObject) io=viewerContext->SelectedInteractive();
-                Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(io);
-                CustomTreeWidgetItem *item=(*drawingToItemMap)[shape];
-                item->setSelected(true);
-                viewerContext->NextSelected();
-            }
-
+        if (drawingTracker->hasSelectedItems()) {
             contextMenu->exec(QCursor::pos());
         }
     }
 }
+
+// void CustomOpenGLWidget::showItemsSelected ()
+// {
+//     viewerContext->InitSelected();
+//     while (viewerContext->MoreSelected()) {
+//         Handle(AIS_InteractiveObject) io=viewerContext->SelectedInteractive();
+//         Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(io);
+//         CustomTreeWidgetItem *item=(*drawingToItemMap)[shape];
+//         item->setSelected(true);
+//         viewerContext->NextSelected();
+//     }
+// }
 
 void CustomOpenGLWidget::getSelected (std::vector<Handle(AIS_InteractiveObject)> *selectedList)
 {
@@ -342,6 +355,17 @@ void CustomOpenGLWidget::getSelected (std::vector<Handle(AIS_InteractiveObject)>
     }
 }
 
+Handle(AIS_InteractiveObject) CustomOpenGLWidget::getLastSelected ()
+{
+    Handle(AIS_InteractiveObject) io;
+    viewerContext->InitSelected();
+    while (viewerContext->MoreSelected()) {
+        io=viewerContext->SelectedInteractive();
+        viewerContext->NextSelected();
+    }
+    return io;
+}
+
 void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
 {
     QOpenGLWidget::mouseMoveEvent(event);
@@ -355,36 +379,25 @@ void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
 
 bool CustomOpenGLWidget::set_gridPlane ()
 {
-    std::cout << "place 0" << std::endl; std::cout.flush();
     std::cout << "   viewerContext->NbSelected()=" << viewerContext->NbSelected() << std::endl; std::cout.flush();
     if (viewerContext->NbSelected() == 1) {
-        std::cout << "place 1" << std::endl; std::cout.flush();
         viewerContext->InitSelected();
         while (viewerContext->MoreSelected()) {
-            std::cout << "place 2" << std::endl; std::cout.flush();
             Handle(AIS_InteractiveObject) io=viewerContext->SelectedInteractive();
-            std::cout << "place 3" << std::endl; std::cout.flush();
             Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(io);
-            std::cout << "place 4" << std::endl; std::cout.flush();
             if (!shape.IsNull()) {
-                std::cout << "place 5" << std::endl; std::cout.flush();
                 const TopoDS_Shape& aShape = shape->Shape();
-                std::cout << "place 6a" << std::endl; std::cout.flush();
-                std::cout << "aShape.ShapeType()=" << aShape.ShapeType() << std::endl; std::cout.flush();
                 if (aShape.ShapeType() == TopAbs_FACE) {
 
                     TopoDS_Face face = TopoDS::Face(aShape);
-                    std::cout << "place 6b" << std::endl; std::cout.flush();
 
                     // get the place of the face
                     Handle(Geom_Surface) surface=BRep_Tool::Surface(face);
                     Handle(Geom_Plane) gPlane=Handle(Geom_Plane)::DownCast(surface);
                     drawingPlane=gPlane->Pln();
-                    std::cout << "place 7" << std::endl; std::cout.flush();
 
                     //view->SetGrid(drawingPlane.Position(),Aspect_GT_Rectangular);
                     viewer->SetPrivilegedPlane(drawingPlane.Position());
-                    std::cout << "place 8" << std::endl; std::cout.flush();
 
                     /*
                 // current grid's data
@@ -452,15 +465,12 @@ void CustomOpenGLWidget::endSelectRectangle ()
     while (viewerContext->MoreSelected()) {
         Handle(AIS_InteractiveObject) anIO = viewerContext->SelectedInteractive();
         Handle(AIS_Shape) shape = Handle(AIS_Shape)::DownCast(anIO);
-        CustomTreeWidgetItem *item=(*drawingToItemMap)[shape];
-        if (item) {
-            item->setForeground(0,Qt::red);
-            //item->setSelected(true);
-        }
+        drawingTracker->selectShape(shape);
         viewerContext->NextSelected();
     }
 
     if (rectSelect) delete rectSelect;
     rectSelect=nullptr;
+    updateViewer();
 }
 

@@ -71,6 +71,7 @@ qt_add_executable(OpenParEMg
     CustomTreeWidgetItem.h
     MaterialSelection.h MaterialSelection.cpp MaterialSelection.ui
     RectangleSelector.h
+    ItemTracking.h
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)

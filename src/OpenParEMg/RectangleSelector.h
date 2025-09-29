@@ -20,31 +20,32 @@ class RectangleSelector : public QObject
 {
     Q_OBJECT
 public:
-    RectangleSelector(const Handle(AIS_InteractiveContext)& context,
-                      const Handle(V3d_View)& view,
-                      QWidget* widget)
-        : QObject(widget), m_context(context), m_view(view), m_widget(widget)
+    RectangleSelector (const Handle(AIS_InteractiveContext)& context,
+                       const Handle(V3d_View)& view,
+                       QWidget* widget)
+        : QObject(widget),m_context(context),m_view(view),m_widget(widget)
     {
-        m_rubber = new AIS_RubberBand();
+        m_rubber=new AIS_RubberBand();
         //xxx
         m_rubber->SetLineColor(Quantity_NOC_WHITE);
         if (m_widget) m_widget->installEventFilter(this);
     }
 
-    ~RectangleSelector() override {
+    ~RectangleSelector () override {
         if (!m_rubber.IsNull() && !m_context.IsNull()) {
             m_context->Erase(m_rubber, Standard_True);
         }
+        if (!m_rubber.IsNull()) m_rubber.Nullify();
         if (m_widget) m_widget->removeEventFilter(this);
     }
 
-    const std::vector<TopoDS_Shape>& selectedShapes() const { return m_selected; }
+    const std::vector<TopoDS_Shape>& selectedShapes () const { return m_selected; }
 
 signals:
-    void selectionFinished();
+    void selectionFinished ();
 
 protected:
-    bool eventFilter(QObject* obj, QEvent* ev) override {
+    bool eventFilter (QObject* obj, QEvent* ev) override {
         if (obj != m_widget) return QObject::eventFilter(obj, ev);
 
         switch (ev->type()) {
@@ -81,61 +82,37 @@ protected:
 
 private:
 
-    void beginSelection(int x, int y, Qt::KeyboardModifiers mods) {
-        m_isSelecting = true;
-        m_startX = x; m_startY = y;
-        m_shiftPressed = (mods & Qt::ShiftModifier);
+    void beginSelection (int x, int y, Qt::KeyboardModifiers mods) {
+        m_isSelecting=true;
+        m_startX=x; m_startY=y;
+        m_shiftPressed=(mods & Qt::ShiftModifier);
 
-        m_rubber->SetRectangle(m_startX, m_startY, m_startX, m_startY);
-        m_context->Display(m_rubber, Standard_True); // don't redraw yet
-        m_context->UpdateCurrentViewer();              // force immediate update
+        m_rubber->SetRectangle(m_startX,m_startY,m_startX,m_startY);
+        m_context->Display(m_rubber,Standard_True);
+        m_context->UpdateCurrentViewer();
     }
 
-    void updateSelection(int x, int y) {
+    void updateSelection (int x, int y) {
         if (!m_isSelecting) return;
 
-        int xmin = std::min(m_startX, x);
-        int ymin = std::min(m_startY, y);
-        int xmax = std::max(m_startX, x);
-        int ymax = std::max(m_startY, y);
+        int xmin=std::min(m_startX, x);
+        int ymin=std::min(m_startY, y);
+        int xmax=std::max(m_startX, x);
+        int ymax=std::max(m_startY, y);
 
-        m_rubber->SetRectangle(xmin, ymin, xmax, ymax);
+        m_rubber->SetRectangle(xmin,ymin,xmax,ymax);
         m_context->Redisplay(m_rubber, Standard_True); // mark for redraw
         m_context->UpdateCurrentViewer();               // force immediate update
     }
 
-
-    /*
-    void beginSelection(int x, int y, Qt::KeyboardModifiers mods) {
-        if (m_context.IsNull() || m_view.IsNull()) return;
-        m_isSelecting = true;
-        m_startX = x; m_startY = y;
-        m_shiftPressed = (mods & Qt::ShiftModifier);
-
-        m_rubber->SetRectangle(m_startX, m_startY, m_startX, m_startY);
-        m_context->Display(m_rubber, Standard_True);
-    }
-
-    void updateSelection(int x, int y) {
-        if (!m_isSelecting) return;
-        int xmin = std::min(m_startX, x);
-        int ymin = std::min(m_startY, y);
-        int xmax = std::max(m_startX, x);
-        int ymax = std::max(m_startY, y);
-
-        m_rubber->SetRectangle(xmin, ymin, xmax, ymax);
-        m_context->Redisplay(m_rubber, Standard_True);
-    }
-*/
-
-    void finishSelection(int x, int y) {
+    void finishSelection (int x, int y) {
         if (!m_isSelecting) return;
         m_isSelecting = false;
 
-        int xmin = std::min(m_startX, x);
-        int ymin = std::min(m_startY, y);
-        int xmax = std::max(m_startX, x);
-        int ymax = std::max(m_startY, y);
+        int xmin=std::min(m_startX, x);
+        int ymin=std::min(m_startY, y);
+        int xmax=std::max(m_startX, x);
+        int ymax=std::max(m_startY, y);
 
         m_context->Erase(m_rubber, Standard_True);
 

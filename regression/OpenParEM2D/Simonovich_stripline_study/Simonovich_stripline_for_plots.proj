@@ -37,7 +37,6 @@ solution.impedance.definition     PI
 solution.impedance.calculation    modal
 solution.accurate.residual        false
 solution.shift.invert             true
-solution.use.initial.guess        true
 solution.shift.factor             1
 
 output.show.refining.mesh         false

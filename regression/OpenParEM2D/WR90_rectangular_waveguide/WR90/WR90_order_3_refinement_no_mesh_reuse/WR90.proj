@@ -31,7 +31,6 @@ solution.modes.buffer          10
 solution.impedance.definition  PV
 solution.accurate.residual     false
 solution.shift.invert          true
-solution.use.initial.guess     true
 
 output.show.refining.mesh      false
 output.show.postprocessing     false

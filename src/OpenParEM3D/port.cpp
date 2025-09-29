@@ -1410,7 +1410,7 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
     CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
     itemName->set_AIS_Shape(drawingShape);
     itemName->setText(0,textName);
-    itemName->set_rootType(2);
+    itemName->set_type(2);
     itemName->setForeground(0,Qt::black);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     boundaryWidgetItem->addChild(itemName);
@@ -4793,7 +4793,7 @@ void Port::save2Dsetup (struct projectData *projData, string *directory, double 
       out << "solution.impedance.calculation           " << impedance_calculation.get_value() << endl;
       out << "solution.accurate.residual               " << convertLogic(projData->solution_accurate_residual) << endl;
       out << "solution.shift.invert                    " << convertLogic(projData->solution_shift_invert) << endl;
-      out << "solution.use.initial.guess               " << convertLogic(projData->solution_use_initial_guess) << endl;
+      out << "solution.initial.guess.level             " << projData->solution_initial_guess_level << endl;
       if (gamma && gamma->get_alpha() > 0) {
          out << "solution.initial.alpha                   " << gamma->get_alpha() << endl;
       }
@@ -6393,7 +6393,7 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
     CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
     itemName->set_AIS_Shape(drawingShape);
     itemName->setText(0,textName);
-    itemName->set_rootType(1);
+    itemName->set_type(1);
     itemName->setForeground(0,Qt::black);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     portWidgetItem->addChild(itemName);
@@ -8048,22 +8048,15 @@ bool BoundaryDatabase::snapToMeshBoundary (Mesh *mesh)
 {
    bool fail=false;
 
-   long unsigned int j=0;
-   while (j < boundaryList.size()) {
-      if (boundaryList[j]->snapToMeshBoundary(&pathList,mesh,indent)) fail=true;
-      j++;
-   }
-
    long unsigned int i=0;
-   while (i < portList.size()) {
-      if (portList[i]->snapToMeshBoundary(&pathList,mesh,indent)) fail=true;
+   while (i < boundaryList.size()) {
+      if (boundaryList[i]->snapToMeshBoundary(&pathList,mesh,indent)) fail=true;
       i++;
    }
 
-   // seems redundant - delete?
    i=0;
-   while (i < boundaryList.size()) {
-      if (boundaryList[i]->snapToMeshBoundary(&pathList,mesh,indent)) fail=true;
+   while (i < portList.size()) {
+      if (portList[i]->snapToMeshBoundary(&pathList,mesh,indent)) fail=true;
       i++;
    }
 

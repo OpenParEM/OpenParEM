@@ -33,7 +33,6 @@ solution.impedance.definition     none
 solution.impedance.calculation    modal
 solution.accurate.residual        false
 solution.shift.invert             true
-solution.use.initial.guess        true
 solution.shift.factor             10
 
 output.show.refining.mesh         false

@@ -21,7 +21,8 @@ refinement.iteration.max          1
 refinement.required.passes        1
 refinement.tolerance              1e-6
 
-frequency.plan.linear             6e9,15e9,1e9
+//frequency.plan.linear             6e9,15e9,1e9
+frequency.plan.point              6e9
 
 solution.modes                    5
 solution.temperature              20
@@ -32,11 +33,11 @@ solution.impedance.definition     none
 solution.impedance.calculation    modal
 solution.accurate.residual        false
 solution.shift.invert             true
-solution.use.initial.guess        true
+solution.initial.guess.level      1
 
 output.show.refining.mesh         false
 output.show.postprocessing        false
-output.show.iterations            false
+output.show.iterations            true // false
 
 test.create.cases                 false
 test.show.audit                   false

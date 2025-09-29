@@ -626,7 +626,7 @@ PetscErrorCode monitorEM2D(EPS eps,PetscInt its,PetscInt nconv,PetscScalar *eigr
 // for passing out eigenvalue results: alphaList, betaList
 // alphaList and betaList are used from the prior iteration as part of the initial guess
 
-int eigensolve (struct projectData *projData, int use_initial_guess, double frequency,
+int eigensolve (struct projectData *projData, int use_initial_guess, double frequency, int order,
                 int ess_tdof_size_Et, PetscInt *Et_ess_tdof, int ess_tdof_size_Ez, PetscInt *Ez_ess_tdof, 
                 double **alphaList, double **betaList, int *matrixSize, PetscMPIInt rank)
 {
@@ -660,7 +660,7 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
 
    pi=4.*atan(1.);
 
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"      Solving ...\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"      Solving with order %d ...\n",order);
 
    //print_project(&projData);
 

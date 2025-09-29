@@ -31,7 +31,6 @@ solution.modes.buffer             0
 solution.impedance.definition     PI
 solution.impedance.calculation    line
 solution.shift.invert             true
-solution.use.initial.guess        true
 
 output.show.refining.mesh         false
 output.show.postprocessing        false

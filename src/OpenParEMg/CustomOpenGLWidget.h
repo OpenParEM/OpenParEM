@@ -27,6 +27,7 @@
 
 #include "CustomTreeWidgetItem.h"
 #include "RectangleSelector.h"
+#include "ItemTracking.h"
 
 #include "OpenGl_GraphicDriver.hxx"
 #include <Aspect_DisplayConnection.hxx>
@@ -50,7 +51,7 @@ public:
     void set_portItemTree (CustomTreeWidgetItem *portItemTree_) {portItemTree=portItemTree_;}
     void set_boundaryItemTree (CustomTreeWidgetItem *boundaryItemTree_) {boundaryItemTree=boundaryItemTree_;}
     void set_meshItemTree (CustomTreeWidgetItem *meshItemTree_) {meshItemTree=meshItemTree_;}
-    void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
+//    void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
     void set_contextMenu (QMenu *contextMenu_) {contextMenu=contextMenu_;}
 
     void updateViewer ();
@@ -74,11 +75,108 @@ public:
     }
     bool set_gridPlane ();
 
+    void reshowItems () {
+        drawingTracker->reshowVisibleItems();
+        portTracker->reshowVisibleItems();
+        boundaryTracker->reshowVisibleItems();
+        meshTracker->reshowVisibleItems();
+    }
+
+    void showItem (CustomTreeWidgetItem *item)
+    {
+        if (item->is_drawing()) drawingTracker->showItem(item);
+        if (item->is_port()) portTracker->showItem(item);
+        if (item->is_boundary()) boundaryTracker->showItem(item);
+        if (item->is_mesh()) meshTracker->showItem(item);
+    }
+
+    bool isDrawingValidShow ()
+    {
+        return drawingTracker->isValidShow();
+    }
+
+    bool isDrawingValidHide ()
+    {
+        return drawingTracker->isValidHide();
+    }
+
+    void hideItem (CustomTreeWidgetItem *item)
+    {
+        if (item->is_drawing()) drawingTracker->hideItem(item);
+        if (item->is_port()) portTracker->hideItem(item);
+        if (item->is_boundary()) boundaryTracker->hideItem(item);
+        if (item->is_mesh()) meshTracker->hideItem(item);
+    }
+
+    void hideAllItems () {
+        drawingTracker->hideAllItems();
+        portTracker->hideAllItems();
+        boundaryTracker->hideAllItems();
+        meshTracker->hideAllItems();
+    }
+
+    void hideItems () {
+        drawingTracker->hideItems();
+        portTracker->hideItems();
+        boundaryTracker->hideItems();
+        meshTracker->hideItems();
+    }
+
+    void selectItem (CustomTreeWidgetItem *item)
+    {
+        if (item->is_drawing()) drawingTracker->selectItem(item);
+        if (item->is_port()) portTracker->selectItem(item);
+        if (item->is_boundary()) boundaryTracker->selectItem(item);
+        if (item->is_mesh()) meshTracker->selectItem(item);
+    }
+
+    bool hasDrawingSelectedItems ()
+    {
+        return drawingTracker->hasSelectedItems();
+    }
+
+    void unselectItem (CustomTreeWidgetItem *item)
+    {
+        if (item->is_drawing()) drawingTracker->unselectItem(item);
+        if (item->is_port()) portTracker->unselectItem(item);
+        if (item->is_boundary()) boundaryTracker->unselectItem(item);
+        if (item->is_mesh()) meshTracker->unselectItem(item);
+    }
+
+    void unselectAllItems () {
+        drawingTracker->unselectAllItems();
+        portTracker->unselectAllItems();
+        boundaryTracker->unselectAllItems();
+        meshTracker->unselectAllItems();
+    }
+
+    void deleteItem (CustomTreeWidgetItem *item) {
+        if (item->is_drawing()) drawingTracker->deleteItem(item);
+        if (item->is_port()) portTracker->deleteItem(item);
+        if (item->is_boundary()) boundaryTracker->deleteItem(item);
+        if (item->is_mesh()) meshTracker->deleteItem(item);
+    }
+
+
+    void insertItemToMap (Handle(AIS_Shape) shape, CustomTreeWidgetItem *item)
+    {
+        if (item->is_drawing()) drawingTracker->insertItemToMap(shape,item);
+        if (item->is_port()) portTracker->insertItemToMap(shape,item);
+        if (item->is_boundary()) boundaryTracker->insertItemToMap(shape,item);
+        if (item->is_mesh()) meshTracker->insertItemToMap(shape,item);
+    }
+
     void displayShape (Handle(AIS_Shape) shape, int displayMode, int selectionMode)
     {
         viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
     }
 
+    bool isDrawingValidDelete ()
+    {
+        return drawingTracker->isValidDelete();
+    }
+
+    /*
     void redisplayShape(Handle(AIS_Shape) shape, int displayMode, int selectionMode)
     {
         viewerContext->Erase(shape,Standard_False);
@@ -105,6 +203,8 @@ public:
 
     void deleteShape (Handle(AIS_Shape) shape) {
         viewerContext->Remove(shape,Standard_True);
+        drawingToItemMap->erase(shape);
+        shape.Nullify();
     }
 
     void hideAll () {
@@ -121,6 +221,7 @@ public:
         viewerContext->ClearSelected(Standard_True);
         viewerContext->UpdateCurrentViewer();
     }
+*/
 
     void setSelectionShape () {viewerContext->Activate(0);}
     void setSelectionVertex () {viewerContext->Activate(1);}
@@ -130,14 +231,26 @@ public:
     void setSelectionShell () {viewerContext->Activate(5);}
     void setSelectionSolid () {viewerContext->Activate(6);}
 
-    bool isDisplayed (Handle(AIS_Shape) shape) {return viewerContext->IsDisplayed(shape);}
+//    bool isDisplayed (Handle(AIS_Shape) shape) {return viewerContext->IsDisplayed(shape);}
 
-    void unselectTreeItems (CustomTreeWidgetItem *);
+//    void unselectTreeItems (CustomTreeWidgetItem *);
 
     void getSelected (std::vector<Handle(AIS_InteractiveObject)> *);
+    Handle(AIS_InteractiveObject) getLastSelected ();
+//    void showItemsSelected ();
 
     void selectRectangle ();
     void endSelectRectangle ();
+
+//    long unsigned int get_shownItemListSize() {return shownItemList.size();}
+//    long unsigned int get_selectedItemListSize() {return selectedItemList.size();}
+
+    void reset () {
+        drawingTracker->reset();
+        portTracker->reset();
+        boundaryTracker->reset();
+        meshTracker->reset();
+    }
 
 protected:
     void initializeGL () override;
@@ -156,7 +269,15 @@ private:
     CustomTreeWidgetItem *portItemTree;
     CustomTreeWidgetItem *boundaryItemTree;
     CustomTreeWidgetItem *meshItemTree;
-    std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap;
+
+    ItemTracker *drawingTracker;
+    ItemTracker *portTracker;
+    ItemTracker *boundaryTracker;
+    ItemTracker *meshTracker;
+
+//    std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap;
+//    std::vector<CustomTreeWidgetItem *> shownItemList;     // for drawing
+//    std::vector<CustomTreeWidgetItem *> selectedItemList;  // for drawing
 
     QMenu *contextMenu;
 

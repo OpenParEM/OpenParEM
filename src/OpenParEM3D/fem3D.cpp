@@ -1099,10 +1099,20 @@ bool OPEM_L2ZZErrorEstimator (BilinearFormIntegrator &flux_integrator,
    PC pc;
 
    ierr=KSPCreate(PETSC_COMM_WORLD, &ksp); if (ierr) return 12;
-   ierr=KSPSetType(ksp,KSPCG); if (ierr) return 13;
+//xxx
+//   ierr=KSPSetType(ksp,KSPCG); if (ierr) return 13;
+ierr=KSPSetType(ksp,KSPGMRES); if (ierr) return 13;
+//ierr=KSPSetType(ksp,KSPFGMRES); if (ierr) return 13;
+//ierr=KSPSetType(ksp,KSPLGMRES); if (ierr) return 13;
+//ierr=KSPSetType(ksp,KSPBCGS); if (ierr) return 13;
    ierr=KSPSetOperators(ksp,A,A); if (ierr) return 14;
    ierr=KSPGetPC(ksp,&pc); if (ierr) return 15;
-   ierr=PCSetType(pc,PCSOR); if (ierr) return 19;
+//   ierr=PCSetType(pc,PCSOR); if (ierr) return 19;  // 2X  with CG and GMRES
+ierr=PCSetType(pc,PCCHOLESKY); if (ierr) return 19;  // 1/2X with GC and GMRES
+//ierr=PCSetType(pc,PCLU); if (ierr) return 19; // slightly more that 1/2X with GMRES
+//ierr=PCSetType(pc,PCJACOBI); if (ierr) return 19;  // almost 2X with GMRES
+//ierr=PCSetType(pc,PCILU); // fails with GMRES
+//ierr=PCSetType(pc,PCICC); // fails with GMRES
    ierr=PCFactorSetShiftType(pc,MAT_SHIFT_NONZERO); if (ierr) return 16;
    ierr=KSPSetFromOptions(ksp); if (ierr) return 17;
 
@@ -1127,6 +1137,13 @@ bool OPEM_L2ZZErrorEstimator (BilinearFormIntegrator &flux_integrator,
 
    // move x back onto ParFiniteElementSpace partitioning
    vecToHypreParVector (&x,Re_B,Im_B);
+
+   //xxx
+   //ToDo: fix the return values
+   // cleanup
+   ierr=MatDestroy(&A);  if (ierr) return ierr;
+   ierr=VecDestroy(&x);  if (ierr) return 27;
+   ierr=VecDestroy(&b);  if (ierr) return 27;
 
    // put on grid functions
 
@@ -1176,10 +1193,14 @@ bool fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
    double solution_tolerance=1e-12;
    double solution_tolerance_message_limit=1e-3;
    int iteration_limit=2000;
+//xxx
    double norm_p=1;
+//double norm_p=2;
    Vector ReLocalErrors;
 
+//xxx
    bool use_complex=false;
+//bool use_complex=true;
    if (use_complex) {
       double FinalResidualNorm=0;
       bool printError=false;
@@ -1213,7 +1234,10 @@ bool fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
 
       int i=0; 
       while (i < ReLocalErrors.Size()) {
+//xxx
          ReLocalErrors[i]=sqrt(ReLocalErrors[i]*ReLocalErrors[i]+ImLocalErrors[i]*ImLocalErrors[i]);
+//ReLocalErrors[i]=ReLocalErrors[i]+ImLocalErrors[i];
+//ReLocalErrors[i]=sqrt(ReLocalErrors[i]*ImLocalErrors[i]);
          i++;
       }
    }
@@ -1246,16 +1270,19 @@ bool fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
    }
    */
 
-   /* Does not work as well as with no scaling
+   // Does not work as well as with no scaling
    // scale the local errors by the element volume
-   i=0;
+//xxx 
+/*
+   int i=0;
    while (i < (*pmesh)->GetNE()) {
       real_t volume=(*pmesh)->GetElementVolume(i);
       ReLocalErrors[i]*=volume;
       //ReLocalErrors[i]*=pow(volume,0.3333);
       i++;
    }
-   */
+*/
+   
 
    // merge in the errors from the prior pass (i.e. different driven port) - keep the larger error
    int i=0;

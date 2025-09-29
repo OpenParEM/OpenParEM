@@ -32,7 +32,7 @@ public:
     CustomTreeWidgetItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type) {
         shape=nullptr;
         root=false;         // default to non-root item
-        rootType=0;
+        type=0;
         set_dimTag(-1,-1);  // invalid initialization
         displayMode=0;      // 0 - wireframe, 1 - shaded
         selectionMode=0;
@@ -41,12 +41,13 @@ public:
     void set_root (bool root_) {root=root_;}
     bool is_root () {return root;}
 
-    void set_rootType (int rootType_) {rootType=rootType_;}
-    int get_rootType () {return rootType;}
-    bool is_drawing () {if (rootType == 0) return true; return false;}
-    bool is_port () {if (rootType == 1) return true; return false;}
-    bool is_boundary () {if (rootType == 2) return true; return false;}
-    bool is_mesh () {if (rootType == 3) return true; return false;}
+    void set_type (int type_) {type=type_;}
+    int get_type () {return type;}
+
+    bool is_drawing () {if (type == 0) return true; return false;}
+    bool is_port () {if (type == 1) return true; return false;}
+    bool is_boundary () {if (type == 2) return true; return false;}
+    bool is_mesh () {if (type == 3) return true; return false;}
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
     Handle(AIS_Shape) get_AIS_Shape () {return shape;}
@@ -88,11 +89,11 @@ private slots:
 private:
     Handle(AIS_Shape) shape;                       // for drawing
     int displayMode;                               //    0 - wireframe, 1 - shaded
-    int selectionMode;                             //    0 - shape, 1 - vertex, ...
+    int selectionMode;                             //    0 - shape, 1 - vertex, ...                              //
     std::vector<Handle(AIS_Shape)> meshEntities;   // for mesh
     std::pair<int,int> dimTag;                     //
     bool root;                                     // false - not a root item, true - is a root item
-    int rootType;                                  // root item: 0 - drawing, 1 - port, 2 - boundary, 3 - mesh
+    int type;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh
 
 };
 

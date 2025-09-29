@@ -101,8 +101,8 @@ struct projectData {
    int solution_check_homogeneous;
    int solution_accurate_residual;
    int solution_shift_invert;
-   int solution_use_initial_guess;
    double solution_shift_factor;
+   int solution_initial_guess_level;
 
    int inputAntennaPatternsCount;
    int inputAntennaPatternsAllocated;

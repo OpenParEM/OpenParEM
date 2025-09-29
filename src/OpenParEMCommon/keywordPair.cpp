@@ -460,15 +460,16 @@ double keywordPair::get_point_distance (keywordPair *p)
    return point_magnitude(point_subtraction(a,b));
 }
 
-bool keywordPair::is_close_point (keywordPair *a)
+// 1e-12
+bool keywordPair::is_close_point (keywordPair *a, double tolerance)
 {
-   return point_comparison(get_point_value(),a->get_point_value(),1e-12);
+   return point_comparison(get_point_value(),a->get_point_value(),tolerance);
 }
 
-// note the change in tolerance from above
-bool keywordPair::is_close_point (struct point p)
+// 1e-08
+bool keywordPair::is_close_point (struct point p, double tolerance)
 {
-   return point_comparison(get_point_value(),p,1e-8);
+   return point_comparison(get_point_value(),p,tolerance);
 }
 
 double keywordPair::distance_to_point (struct point b)
