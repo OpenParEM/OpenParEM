@@ -361,6 +361,13 @@ void reset_attributes (mfem::Mesh *mesh, mfem::ParMesh *pmesh, MeshMaterialList 
 // MeshMaterialList
 ///////////////////////////////////////////////////////////////////////////////////////////
 
+void MeshMaterialList::clear ()
+{
+   index.clear();
+   list.clear();
+   active.clear();
+}
+
 void MeshMaterialList::set_active (std::vector<int> *active_attributes)
 {
    long unsigned int i=0;
@@ -602,7 +609,13 @@ long unsigned int MeshMaterialList::get_index (int attribute)
    return 0;
 }
 
-std::string MeshMaterialList::get_name(long unsigned int m)
+int MeshMaterialList::get_index (long unsigned int m)
+{
+   if (m >= 0 && m < list.size() && active[m]) return index[m];
+   return -1;
+}
+
+std::string MeshMaterialList::get_name (long unsigned int m)
 {
    std::string a="ERROR1046: out of bounds";
    if (m >= 0 && m < list.size() && active[m]) return list[m];

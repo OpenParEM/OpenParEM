@@ -85,8 +85,11 @@ $ OpenParEM_test
 
 \section{Compiling from Source}
 
-OpenParEM can be compiled for Linux-based operating systems and does not require administrator priviledges if the needed build tools make, g++, gfortran, perl, and tcl/tk are already installed.
-The basic steps for compilation are listed below.  See the INSTALL file for more details and options.
+OpenParEM can be compiled for Linux-based operating systems and does not require administrator priviledges if the needed build tools make, g++, gfortran, perl, and tcl/tk are already installed.  If cloning the project from GitHub, then autoconf is also required.
+
+\subsection{Using a Downloaded Package}
+
+For installing using a downloaded installation package, the basic steps for installation are listed below.  See the INSTALL file for more details and options.
 \begin{itemize}[nosep]
    \item Download the installation package OpenParEM-\textit{version}.tar.gz
    \item Unpack the package:
@@ -100,6 +103,34 @@ $ cd OpenParEM
 $ more INSTALL
          \end{Verbatim}
    \item Install make, g++, gfortran, and/or perl as needed.
+   \item Change into the scripts directory and compile:
+         \begin{Verbatim}
+$ cd scripts
+$ ./OpenParEM_build --jobs=4 --with-all
+         \end{Verbatim}
+   \item On successful compilation, OpenParEM2D and OpenParEM3D are tested.  If both tests report \texttt{pass}, then compilation is complete.
+   \item Set the PATH environment variable.  See the INSTALL file for details.
+   \item Verify that PATH has been properly set by re-running the tests:
+         \begin{Verbatim}
+$ OpenParEM_test
+         \end{Verbatim}
+   \item If the two tests report \texttt{pass}, then installation is complete.
+\end{itemize}
+
+\subsection{Cloning from GitHub}
+
+For installing using using a cloned package from GitHub, the basic steps for installation are listed below.  See the INSTALL file for more details and options.
+\begin{itemize}[nosep]
+   \item Clone the project from GitHub.  This step requires that git is installed on the system.
+         \begin{Verbatim}
+$ git clone https://github.com/OpenParEM/OpenParEM
+         \end{Verbatim}
+   \item Change into the base directory and view the installation instructions:
+         \begin{Verbatim}
+$ cd OpenParEM
+$ more INSTALL
+         \end{Verbatim}
+   \item Install make, g++, gfortran, perl, and/or autoconf as needed.
    \item Change into the scripts directory and compile:
          \begin{Verbatim}
 $ cd scripts

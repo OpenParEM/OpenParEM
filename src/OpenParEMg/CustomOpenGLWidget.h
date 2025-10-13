@@ -77,17 +77,11 @@ public:
 
     void reshowItems () {
         drawingTracker->reshowVisibleItems();
-        portTracker->reshowVisibleItems();
-        boundaryTracker->reshowVisibleItems();
-        meshTracker->reshowVisibleItems();
     }
 
     void showItem (CustomTreeWidgetItem *item)
     {
-        if (item->is_drawing()) drawingTracker->showItem(item);
-        if (item->is_port()) portTracker->showItem(item);
-        if (item->is_boundary()) boundaryTracker->showItem(item);
-        if (item->is_mesh()) meshTracker->showItem(item);
+        drawingTracker->showItem(item);
     }
 
     bool isDrawingValidShow ()
@@ -102,32 +96,20 @@ public:
 
     void hideItem (CustomTreeWidgetItem *item)
     {
-        if (item->is_drawing()) drawingTracker->hideItem(item);
-        if (item->is_port()) portTracker->hideItem(item);
-        if (item->is_boundary()) boundaryTracker->hideItem(item);
-        if (item->is_mesh()) meshTracker->hideItem(item);
+        drawingTracker->hideItem(item);
     }
 
     void hideAllItems () {
         drawingTracker->hideAllItems();
-        portTracker->hideAllItems();
-        boundaryTracker->hideAllItems();
-        meshTracker->hideAllItems();
     }
 
     void hideItems () {
         drawingTracker->hideItems();
-        portTracker->hideItems();
-        boundaryTracker->hideItems();
-        meshTracker->hideItems();
     }
 
     void selectItem (CustomTreeWidgetItem *item)
     {
-        if (item->is_drawing()) drawingTracker->selectItem(item);
-        if (item->is_port()) portTracker->selectItem(item);
-        if (item->is_boundary()) boundaryTracker->selectItem(item);
-        if (item->is_mesh()) meshTracker->selectItem(item);
+        drawingTracker->selectItem(item);
     }
 
     bool hasDrawingSelectedItems ()
@@ -137,33 +119,21 @@ public:
 
     void unselectItem (CustomTreeWidgetItem *item)
     {
-        if (item->is_drawing()) drawingTracker->unselectItem(item);
-        if (item->is_port()) portTracker->unselectItem(item);
-        if (item->is_boundary()) boundaryTracker->unselectItem(item);
-        if (item->is_mesh()) meshTracker->unselectItem(item);
+        drawingTracker->unselectItem(item);
     }
 
     void unselectAllItems () {
         drawingTracker->unselectAllItems();
-        portTracker->unselectAllItems();
-        boundaryTracker->unselectAllItems();
-        meshTracker->unselectAllItems();
     }
 
     void deleteItem (CustomTreeWidgetItem *item) {
-        if (item->is_drawing()) drawingTracker->deleteItem(item);
-        if (item->is_port()) portTracker->deleteItem(item);
-        if (item->is_boundary()) boundaryTracker->deleteItem(item);
-        if (item->is_mesh()) meshTracker->deleteItem(item);
+        drawingTracker->deleteItem(item);
     }
 
 
     void insertItemToMap (Handle(AIS_Shape) shape, CustomTreeWidgetItem *item)
     {
-        if (item->is_drawing()) drawingTracker->insertItemToMap(shape,item);
-        if (item->is_port()) portTracker->insertItemToMap(shape,item);
-        if (item->is_boundary()) boundaryTracker->insertItemToMap(shape,item);
-        if (item->is_mesh()) meshTracker->insertItemToMap(shape,item);
+        drawingTracker->insertItemToMap(shape,item);
     }
 
     void displayShape (Handle(AIS_Shape) shape, int displayMode, int selectionMode)
@@ -174,6 +144,11 @@ public:
     bool isDrawingValidDelete ()
     {
         return drawingTracker->isValidDelete();
+    }
+
+    long unsigned int trackerDrawingCount ()
+    {
+        return drawingTracker->get_drawingCount();
     }
 
     /*
@@ -194,7 +169,7 @@ public:
         if (!viewerContext->IsSelected(shape)) return;
         viewerContext->AddOrRemoveSelected(shape,Standard_False);
     }
-
+*/
     void hideShape (Handle(AIS_Shape) shape) {
         if (!viewerContext->IsDisplayed(shape)) return;
         if (viewerContext->IsSelected(shape)) viewerContext->AddOrRemoveSelected(shape,Standard_True);
@@ -203,10 +178,10 @@ public:
 
     void deleteShape (Handle(AIS_Shape) shape) {
         viewerContext->Remove(shape,Standard_True);
-        drawingToItemMap->erase(shape);
         shape.Nullify();
     }
 
+/*
     void hideAll () {
         viewerContext->EraseAll(Standard_True);
         viewerContext->UpdateCurrentViewer();
@@ -247,10 +222,16 @@ public:
 
     void reset () {
         drawingTracker->reset();
-        portTracker->reset();
-        boundaryTracker->reset();
-        meshTracker->reset();
+        //portTracker->reset();
+        //boundaryTracker->reset();
+        //meshTracker->reset();
     }
+
+    void set_meshVisibility (bool value) {meshVisibility=value;}
+    bool get_meshVisibility () {return meshVisibility;}
+
+    void set_hasMesh (bool value) {hasMesh=value;}
+    bool get_hasMesh () {return hasMesh;}
 
 protected:
     void initializeGL () override;
@@ -271,13 +252,8 @@ private:
     CustomTreeWidgetItem *meshItemTree;
 
     ItemTracker *drawingTracker;
-    ItemTracker *portTracker;
-    ItemTracker *boundaryTracker;
-    ItemTracker *meshTracker;
-
-//    std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap;
-//    std::vector<CustomTreeWidgetItem *> shownItemList;     // for drawing
-//    std::vector<CustomTreeWidgetItem *> selectedItemList;  // for drawing
+    bool hasMesh;
+    bool meshVisibility;
 
     QMenu *contextMenu;
 

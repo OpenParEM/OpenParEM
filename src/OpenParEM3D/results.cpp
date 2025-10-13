@@ -712,6 +712,7 @@ void ResultDatabase::push (Result *result)
 }
 
 // original
+/*
 double ResultDatabase::calculate_maxRelativeError (struct projectData *projData, double frequency, int iteration)
 {
    PetscErrorCode ierr=0;
@@ -774,7 +775,7 @@ double ResultDatabase::calculate_maxRelativeError (struct projectData *projData,
 
    return maxRelativeError;
 }
-
+*/
 
 /* original using NORM_1
 double ResultDatabase::calculate_maxRelativeError (struct projectData *projData, double frequency, int iteration)
@@ -833,8 +834,7 @@ double ResultDatabase::calculate_maxRelativeError (struct projectData *projData,
 }
 */
 
-/*
-//xxx
+//xxx update manuals
 // Error = ||Sn-Sn-1||/||Sn|| using the Frobenius norm.
 // More standard calculation
 double ResultDatabase::calculate_maxRelativeError (struct projectData *projData, double frequency, int iteration)
@@ -881,7 +881,7 @@ double ResultDatabase::calculate_maxRelativeError (struct projectData *projData,
 
    return maxRelativeError;
 }
-*/
+
 
 double ResultDatabase::calculate_maxAbsoluteError (struct projectData *projData, double frequency, int iteration)
 {

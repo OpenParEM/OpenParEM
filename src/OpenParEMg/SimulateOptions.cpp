@@ -21,6 +21,8 @@
 #include "SimulateOptions.h"
 #include "ui_SimulateOptions.h"
 
+#include "string.h"
+
 
 SimOptions::SimOptions(QWidget *parent)
     : QDialog(parent)
@@ -48,7 +50,7 @@ void SimOptions::set_projData (struct projectData *a)
     tolerance2D=projData->solution_2D_tolerance;
     tolerance3D=projData->solution_3D_tolerance;
     iterationLimit=projData->solution_iteration_limit;
-    useInitialGuess=projData->solution_use_initial_guess;
+    initialGuessLevel=projData->solution_initial_guess_level;
     checkHomogeneous=projData->solution_check_homogeneous;
     modesBuffer=projData->solution_modes_buffer;
     checkClosedLoop=projData->solution_check_closed_loop;
@@ -123,8 +125,12 @@ void SimOptions::set_projData (struct projectData *a)
 
     ui->iterationLimit->setValue(iterationLimit);
 
-    if (useInitialGuess) ui->useInitialGuess->setCheckState(Qt::Checked);
-    else ui->useInitialGuess->setCheckState(Qt::Unchecked);
+    ui->levelComboBox->addItem("none");
+    ui->levelComboBox->addItem("prior solution");
+    ui->levelComboBox->addItem("prior solution with order ramping");
+    ui->levelComboBox->addItem("order ramping");
+    ui->levelComboBox->setCurrentIndex(projData->solution_initial_guess_level);
+    ui->levelComboBox->setFixedWidth(150);
 
     if (checkHomogeneous) ui->checkHomogeneous->setCheckState(Qt::Checked);
     else ui->checkHomogeneous->setCheckState(Qt::Unchecked);
@@ -223,38 +229,104 @@ void SimOptions::on_referenceImpedance_textChanged(const QString &arg1)
 
 void SimOptions::on_simulateOptionOk_clicked()
 {
-    projData->reference_impedance=referenceImpedance;
-
-    if (projData->touchstone_frequency_unit) free(projData->touchstone_frequency_unit);
-    projData->touchstone_frequency_unit=(char *)malloc((frequencyUnit.length()+1)*sizeof(char));
-    int i=0;
-    while (i < frequencyUnit.length()) {
-        projData->touchstone_frequency_unit[i]=frequencyUnit.data()[i].toLatin1();
-        i++;
+    // reference_impedance
+    if (projData->reference_impedance != referenceImpedance) {
+        projData->reference_impedance=referenceImpedance;
+        projData->modified=1;
     }
-    projData->touchstone_frequency_unit[i]='\0';
 
-    if (projData->touchstone_format) free(projData->touchstone_format);
-    projData->touchstone_format=(char *)malloc((touchstoneFormat.length()+1)*sizeof(char));
-    i=0;
-    while (i < touchstoneFormat.length()) {
-        projData->touchstone_format[i]=touchstoneFormat.data()[i].toLatin1();
-        i++;
+    // touchstone_frequency_unit
+    if (frequencyUnit.compare(projData->touchstone_frequency_unit,Qt::CaseSensitive) != 0) {
+        if (projData->touchstone_frequency_unit) free(projData->touchstone_frequency_unit);
+        projData->touchstone_frequency_unit=(char *)malloc((frequencyUnit.length()+1)*sizeof(char));
+        int i=0;
+        while (i < frequencyUnit.length()) {
+            projData->touchstone_frequency_unit[i]=frequencyUnit.data()[i].toLatin1();
+            i++;
+        }
+        projData->touchstone_frequency_unit[i]='\0';
+        projData->modified=1;
     }
-    projData->touchstone_format[i]='\0';
 
-    projData->solution_temperature=temperature;
-    projData->solution_2D_tolerance=tolerance2D;
-    projData->solution_3D_tolerance=tolerance3D;
-    projData->solution_iteration_limit=iterationLimit;
-    projData->solution_use_initial_guess=useInitialGuess;
-    projData->solution_check_homogeneous=checkHomogeneous;
-    projData->solution_modes_buffer=modesBuffer;
-    projData->solution_check_closed_loop=checkClosedLoop;
-    projData->solution_accurate_residual=accurateResidual;
+    // touchstone_format
+    if (touchstoneFormat.compare(projData->touchstone_format,Qt::CaseSensitive) != 0) {
+        if (projData->touchstone_format) free(projData->touchstone_format);
+        projData->touchstone_format=(char *)malloc((touchstoneFormat.length()+1)*sizeof(char));
+        int i=0;
+        while (i < touchstoneFormat.length()) {
+            projData->touchstone_format[i]=touchstoneFormat.data()[i].toLatin1();
+            i++;
+        }
+        projData->touchstone_format[i]='\0';
+        projData->modified=1;
+    }
 
-    projData->solution_shift_invert=shiftInvert;
-    projData->solution_shift_factor=shiftFactor;
+    // temperature
+    if (projData->solution_temperature != temperature) {
+        projData->solution_temperature=temperature;
+        projData->modified=1;
+    }
+
+    // solution_2D_tolerance
+    if (projData->solution_2D_tolerance != tolerance2D) {
+        projData->solution_2D_tolerance=tolerance2D;
+        projData->modified=1;
+    }
+
+    // solution_3D_tolerance
+    if (projData->solution_3D_tolerance != tolerance3D) {
+        projData->solution_3D_tolerance=tolerance3D;
+        projData->modified=1;
+    }
+
+    //solution_iteration_limit
+    if (projData->solution_iteration_limit != iterationLimit) {
+        projData->solution_iteration_limit=iterationLimit;
+        projData->modified=1;
+    }
+
+    // solution_initial_guess
+    if (projData->solution_initial_guess_level != initialGuessLevel) {
+        projData->solution_initial_guess_level=initialGuessLevel;
+        projData->modified=1;
+    }
+
+    // solution_check_homogeneous
+    if (projData->solution_check_homogeneous != checkHomogeneous) {
+        projData->solution_check_homogeneous=checkHomogeneous;
+        projData->modified=1;
+    }
+
+    // solution_modes_buffer
+    if (projData->solution_modes_buffer != modesBuffer) {
+        projData->solution_modes_buffer=modesBuffer;
+        projData->modified=1;
+    }
+
+    // solution_check_closed_loop
+    if (projData->solution_check_closed_loop != checkClosedLoop) {
+        projData->solution_check_closed_loop=checkClosedLoop;
+        projData->modified=1;
+    }
+
+    // solution_accurate_residual
+    if (projData->solution_accurate_residual != accurateResidual) {
+        projData->solution_accurate_residual=accurateResidual;
+        projData->modified=1;
+    }
+
+    // sollution_shift_invert
+    if (projData->solution_shift_invert != shiftInvert) {
+        projData->solution_shift_invert=shiftInvert;
+        projData->modified=1;
+    }
+
+    // solution_shift_factor
+    if (projData->solution_shift_factor != shiftFactor) {
+        projData->solution_shift_factor=shiftFactor;
+        projData->modified=1;
+    }
+
     if (projData->solution_shift_invert) {
         ui->shiftFactorLabel->setEnabled(true);
         ui->shiftFactor->setEnabled(true);
@@ -263,21 +335,95 @@ void SimOptions::on_simulateOptionOk_clicked()
         ui->shiftFactor->setEnabled(false);
     }
 
-    projData->project_save_fields=saveFields;
-    projData->project_calculate_poynting=calculatePoynting;
-    projData->debug_show_project=showProjectFile;
-    projData->debug_show_frequency_plan=showFrequencyPlan;
-    projData->debug_show_impedance_details=showImpedanceDetails;
-    projData->debug_show_port_definitions=showPortDefinitions;
-    projData->debug_show_materials=showMaterials;
-    projData->debug_show_memory=showMemoryUsage;
-    projData->debug_save_port_fields=savePortFields;
-    projData->debug_tempfiles_keep=keepTempFiles;
-    projData->debug_skip_mixed_conversion=skipMixedModeConversion;
-    projData->debug_skip_forced_reciprocity=skipForcedReciprocity;
-    projData->debug_refine_preconditioner=preconditioner;
-    projData->test_create_cases=createTestCases;
-    projData->test_show_detailed_cases=showDetailedCases;
+    // project_save_fields
+    if (projData->project_save_fields != saveFields) {
+        projData->project_save_fields=saveFields;
+        projData->modified=1;
+    }
+
+    // project_calculate_poynting
+    if (projData->project_calculate_poynting != calculatePoynting) {
+        projData->project_calculate_poynting=calculatePoynting;
+        projData->modified=1;
+    }
+
+    // debug_show_project
+    if (projData->debug_show_project != showProjectFile) {
+        projData->debug_show_project=showProjectFile;
+        projData->modified=1;
+    }
+
+    // debug_show_frequency_plan
+    if (projData->debug_show_frequency_plan != showFrequencyPlan) {
+        projData->debug_show_frequency_plan=showFrequencyPlan;
+        projData->modified=1;
+    }
+
+    // debug_show_impedance_details
+    if (projData->debug_show_impedance_details != showImpedanceDetails) {
+        projData->debug_show_impedance_details=showImpedanceDetails;
+        projData->modified=1;
+    }
+
+    // debug_show_port_definitions
+    if (projData->debug_show_port_definitions != showPortDefinitions) {
+        projData->debug_show_port_definitions=showPortDefinitions;
+        projData->modified=1;
+    }
+
+    // debug_show_materials
+    if (projData->debug_show_materials != showMaterials) {
+        projData->debug_show_materials=showMaterials;
+        projData->modified=1;
+    }
+
+    //debug_show_memory
+    if (projData->debug_show_memory != showMemoryUsage) {
+        projData->debug_show_memory=showMemoryUsage;
+        projData->modified=1;
+    }
+
+    // debug_save_port
+    if (projData->debug_save_port_fields != savePortFields) {
+        projData->debug_save_port_fields=savePortFields;
+        projData->modified=1;
+    }
+
+    // debug_tempfiles_keep
+    if (projData->debug_tempfiles_keep != keepTempFiles) {
+        projData->debug_tempfiles_keep=keepTempFiles;
+        projData->modified=1;
+    }
+
+    // debug_skip_mixed_conversion
+    if (projData->debug_skip_mixed_conversion != skipMixedModeConversion) {
+        projData->debug_skip_mixed_conversion=skipMixedModeConversion;
+        projData->modified=1;
+    }
+
+    // debug_skip_forced_reciprocity
+    if (projData->debug_skip_forced_reciprocity != skipForcedReciprocity) {
+        projData->debug_skip_mixed_conversion=skipMixedModeConversion;
+        projData->modified=1;
+    }
+
+    // debug_refine_preconditioner
+    if (projData->debug_refine_preconditioner != preconditioner) {
+        projData->debug_refine_preconditioner=preconditioner;
+        projData->modified=1;
+    }
+
+    // test_create_cases
+    if (projData->test_create_cases != createTestCases) {
+        projData->test_create_cases=createTestCases;
+        projData->modified=1;
+    }
+
+    // test_show_detailed_cases
+    if (projData->test_show_detailed_cases != showDetailedCases) {
+        projData->test_show_detailed_cases=showDetailedCases;
+        projData->modified=1;
+    }
 
     close();
 }
@@ -314,19 +460,19 @@ void SimOptions::on_normalizeSparam_checkStateChanged(const Qt::CheckState &arg1
 }
 
 
-void SimOptions::on_touchstoneFormat_activated(int index)
+void SimOptions::on_touchstoneFormat_activated (int index)
 {
     touchstoneFormat=ui->touchstoneFormat->currentText();
     ui->simulateOptionOk->setEnabled(true);
 }
 
-void SimOptions::on_temperature_valueChanged(double arg1)
+void SimOptions::on_temperature_valueChanged (double arg1)
 {
     temperature=arg1;
     ui->simulateOptionOk->setEnabled(true);
 }
 
-void SimOptions::on_tolerance2D_returnPressed()
+void SimOptions::on_tolerance2D_returnPressed ()
 {
     tolerance2D=ui->tolerance2D->text().toDouble();
     if (tolerance2D < 1e-15*(1-1e-14)) {
@@ -367,14 +513,6 @@ void SimOptions::on_tolerance3D_returnPressed()
 void SimOptions::on_iterationLimit_valueChanged(int arg1)
 {
     iterationLimit=arg1;
-    ui->simulateOptionOk->setEnabled(true);
-}
-
-
-void SimOptions::on_useInitialGuess_checkStateChanged(const Qt::CheckState &arg1)
-{
-    if (arg1 == Qt::Checked) useInitialGuess=1;
-    else useInitialGuess=0;
     ui->simulateOptionOk->setEnabled(true);
 }
 
@@ -555,3 +693,9 @@ void SimOptions::on_showDetailedCases_checkStateChanged(const Qt::CheckState &ar
     else showDetailedCases=0;
     ui->simulateOptionOk->setEnabled(true);
 }
+
+void SimOptions::on_levelComboBox_currentIndexChanged(int index)
+{
+    initialGuessLevel=index;
+}
+

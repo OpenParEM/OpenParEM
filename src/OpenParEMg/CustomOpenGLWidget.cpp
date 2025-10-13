@@ -76,9 +76,10 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
 
     // item tracking
     drawingTracker=new ItemTracker(viewerContext);
-    portTracker=new ItemTracker(viewerContext);
-    boundaryTracker=new ItemTracker(viewerContext);
-    meshTracker=new ItemTracker(viewerContext);
+
+    // mesh
+    hasMesh=false;
+    meshVisibility=false;
 
     // create an orientation cube for the display
     viewCube=new AIS_ViewCube();
@@ -116,9 +117,9 @@ CustomOpenGLWidget::~CustomOpenGLWidget ()
     viewer.Nullify();
 
     if (drawingTracker) delete drawingTracker;
-    if (portTracker) delete portTracker;
-    if (boundaryTracker) delete boundaryTracker;
-    if (meshTracker) delete meshTracker;
+    //if (portTracker) delete portTracker;
+    //if (boundaryTracker) delete boundaryTracker;
+    //if (meshTracker) delete meshTracker;
 
     makeCurrent();
     displayConnection.Nullify();
@@ -293,7 +294,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     // process mouse buttons
     if (event->button() == Qt::LeftButton) {
-
 
         bool hasModifier=false;
         if (event->button() == Qt::LeftButton) {

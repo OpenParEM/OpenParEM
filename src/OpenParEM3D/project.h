@@ -48,6 +48,13 @@ struct inputAntennaPattern {
    double theta,phi,latitude,rotation;
 };
 
+struct physicalGroupMaterial {
+    int lineNumber;        // line number in the project file
+    int dim;               // dimension of the physicalGroup in the Brep model
+    int tag;               // tag of the physicalGroup in the Brep model
+    char *materialName;    // material name for the physical group
+};
+
 struct projectData {
    char* version_name;       // set in init_project 
    char* version_value;      // set in init_project
@@ -146,7 +153,14 @@ struct projectData {
    double *field_points_z;
 
    // GUI keywords - not required for standalone operation
+
    char *gui_brep_file;
+
+   // keyword and format:
+   // gui_physical_group dim,tag,material
+   int physicalGroupMaterialCount;
+   int physicalGroupMaterialAllocated;
+   struct physicalGroupMaterial *physicalGroupMaterials;
 
    // not user settable
 
@@ -155,6 +169,8 @@ struct projectData {
    int version_major;
    int version_minor;
    int version_patch;
+
+   int modified;
 };
 
 #endif

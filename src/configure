@@ -6693,97 +6693,18 @@ else $as_nop
   as_fn_error $? "cannot link to libpmix; check config.log" "$LINENO" 5
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for opal_event_alloc in -lopen-pal" >&5
-printf %s "checking for opal_event_alloc in -lopen-pal... " >&6; }
-if test ${ac_cv_lib_open_pal_opal_event_alloc+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lopen-pal  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char opal_event_alloc ();
-int
-main (void)
-{
-return opal_event_alloc ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_open_pal_opal_event_alloc=yes
-else $as_nop
-  ac_cv_lib_open_pal_opal_event_alloc=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_open_pal_opal_event_alloc" >&5
-printf "%s\n" "$ac_cv_lib_open_pal_opal_event_alloc" >&6; }
-if test "x$ac_cv_lib_open_pal_opal_event_alloc" = xyes
-then :
-  printf "%s\n" "#define HAVE_LIBOPEN_PAL 1" >>confdefs.h
+#AC_CHECK_LIB([open-pal], [opal_event_alloc], ,AC_MSG_ERROR([cannot link to libopen-pal; check config.log]))
+#AC_CHECK_LIB([open-rte], [orte_util_print_name_args], ,AC_MSG_ERROR([cannot link to libopen-rte; check config.log]))
 
-  LIBS="-lopen-pal $LIBS"
-
-else $as_nop
-  as_fn_error $? "cannot link to libopen-pal; check config.log" "$LINENO" 5
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for orte_util_print_name_args in -lopen-rte" >&5
-printf %s "checking for orte_util_print_name_args in -lopen-rte... " >&6; }
-if test ${ac_cv_lib_open_rte_orte_util_print_name_args+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lopen-rte  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char orte_util_print_name_args ();
-int
-main (void)
-{
-return orte_util_print_name_args ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_open_rte_orte_util_print_name_args=yes
-else $as_nop
-  ac_cv_lib_open_rte_orte_util_print_name_args=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_open_rte_orte_util_print_name_args" >&5
-printf "%s\n" "$ac_cv_lib_open_rte_orte_util_print_name_args" >&6; }
-if test "x$ac_cv_lib_open_rte_orte_util_print_name_args" = xyes
-then :
-  printf "%s\n" "#define HAVE_LIBOPEN_RTE 1" >>confdefs.h
-
-  LIBS="-lopen-rte $LIBS"
-
-else $as_nop
-  as_fn_error $? "cannot link to libopen-rte; check config.log" "$LINENO" 5
-fi
+#AC_CHECK_LIB([mpi], [MPI_Init], ,AC_MSG_ERROR([cannot link to libmpi; check config.log]))
+#AC_CHECK_LIB([mpi_mpifh], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_mpifh; check config.log]))
+#AC_CHECK_LIB([mpi_usempif08], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_usempif08; check config.log]))
+#AC_CHECK_LIB([mpi_usempi_ignore_tkr], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_usempi_ignore_tkr; check config.log]))
 
 
+
+# Check C library variants
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpi" >&5
 printf %s "checking for MPI_Init in -lmpi... " >&6; }
 if test ${ac_cv_lib_mpi_MPI_Init+y}
@@ -6829,140 +6750,283 @@ else $as_nop
   as_fn_error $? "cannot link to libmpi; check config.log" "$LINENO" 5
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for mpi_init_ in -lmpi_mpifh" >&5
-printf %s "checking for mpi_init_ in -lmpi_mpifh... " >&6; }
-if test ${ac_cv_lib_mpi_mpifh_mpi_init_+y}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpich" >&5
+printf %s "checking for MPI_Init in -lmpich... " >&6; }
+if test ${ac_cv_lib_mpich_MPI_Init+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmpi_mpifh  $LIBS"
+LIBS="-lmpich  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
    Use char because int might match the return type of a GCC
    builtin and then its argument prototype would still apply.  */
-char mpi_init_ ();
+char MPI_Init ();
 int
 main (void)
 {
-return mpi_init_ ();
+return MPI_Init ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_mpi_mpifh_mpi_init_=yes
+  ac_cv_lib_mpich_MPI_Init=yes
 else $as_nop
-  ac_cv_lib_mpi_mpifh_mpi_init_=no
+  ac_cv_lib_mpich_MPI_Init=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpi_mpifh_mpi_init_" >&5
-printf "%s\n" "$ac_cv_lib_mpi_mpifh_mpi_init_" >&6; }
-if test "x$ac_cv_lib_mpi_mpifh_mpi_init_" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpich_MPI_Init" >&5
+printf "%s\n" "$ac_cv_lib_mpich_MPI_Init" >&6; }
+if test "x$ac_cv_lib_mpich_MPI_Init" = xyes
 then :
-  printf "%s\n" "#define HAVE_LIBMPI_MPIFH 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_LIBMPICH 1" >>confdefs.h
 
-  LIBS="-lmpi_mpifh $LIBS"
+  LIBS="-lmpich $LIBS"
 
 else $as_nop
-  as_fn_error $? "cannot link to libmpi_mpifh; check config.log" "$LINENO" 5
+  as_fn_error $? "cannot link to libmpich; check config.log" "$LINENO" 5
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for mpi_init_ in -lmpi_usempif08" >&5
-printf %s "checking for mpi_init_ in -lmpi_usempif08... " >&6; }
-if test ${ac_cv_lib_mpi_usempif08_mpi_init_+y}
+
+# Check C++ library variants
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpicxx" >&5
+printf %s "checking for MPI_Init in -lmpicxx... " >&6; }
+if test ${ac_cv_lib_mpicxx_MPI_Init+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmpi_usempif08  $LIBS"
+LIBS="-lmpicxx  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
    Use char because int might match the return type of a GCC
    builtin and then its argument prototype would still apply.  */
-char mpi_init_ ();
+char MPI_Init ();
 int
 main (void)
 {
-return mpi_init_ ();
+return MPI_Init ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_mpi_usempif08_mpi_init_=yes
+  ac_cv_lib_mpicxx_MPI_Init=yes
 else $as_nop
-  ac_cv_lib_mpi_usempif08_mpi_init_=no
+  ac_cv_lib_mpicxx_MPI_Init=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpi_usempif08_mpi_init_" >&5
-printf "%s\n" "$ac_cv_lib_mpi_usempif08_mpi_init_" >&6; }
-if test "x$ac_cv_lib_mpi_usempif08_mpi_init_" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpicxx_MPI_Init" >&5
+printf "%s\n" "$ac_cv_lib_mpicxx_MPI_Init" >&6; }
+if test "x$ac_cv_lib_mpicxx_MPI_Init" = xyes
 then :
-  printf "%s\n" "#define HAVE_LIBMPI_USEMPIF08 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_LIBMPICXX 1" >>confdefs.h
 
-  LIBS="-lmpi_usempif08 $LIBS"
+  LIBS="-lmpicxx $LIBS"
 
 else $as_nop
-  as_fn_error $? "cannot link to libmpi_usempif08; check config.log" "$LINENO" 5
+  as_fn_error $? "cannot link to libcxx; check config.log" "$LINENO" 5
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for mpi_init_ in -lmpi_usempi_ignore_tkr" >&5
-printf %s "checking for mpi_init_ in -lmpi_usempi_ignore_tkr... " >&6; }
-if test ${ac_cv_lib_mpi_usempi_ignore_tkr_mpi_init_+y}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpichcxx" >&5
+printf %s "checking for MPI_Init in -lmpichcxx... " >&6; }
+if test ${ac_cv_lib_mpichcxx_MPI_Init+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmpi_usempi_ignore_tkr  $LIBS"
+LIBS="-lmpichcxx  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
    Use char because int might match the return type of a GCC
    builtin and then its argument prototype would still apply.  */
-char mpi_init_ ();
+char MPI_Init ();
 int
 main (void)
 {
-return mpi_init_ ();
+return MPI_Init ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_mpi_usempi_ignore_tkr_mpi_init_=yes
+  ac_cv_lib_mpichcxx_MPI_Init=yes
 else $as_nop
-  ac_cv_lib_mpi_usempi_ignore_tkr_mpi_init_=no
+  ac_cv_lib_mpichcxx_MPI_Init=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpi_usempi_ignore_tkr_mpi_init_" >&5
-printf "%s\n" "$ac_cv_lib_mpi_usempi_ignore_tkr_mpi_init_" >&6; }
-if test "x$ac_cv_lib_mpi_usempi_ignore_tkr_mpi_init_" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpichcxx_MPI_Init" >&5
+printf "%s\n" "$ac_cv_lib_mpichcxx_MPI_Init" >&6; }
+if test "x$ac_cv_lib_mpichcxx_MPI_Init" = xyes
 then :
-  printf "%s\n" "#define HAVE_LIBMPI_USEMPI_IGNORE_TKR 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_LIBMPICHCXX 1" >>confdefs.h
 
-  LIBS="-lmpi_usempi_ignore_tkr $LIBS"
+  LIBS="-lmpichcxx $LIBS"
 
 else $as_nop
-  as_fn_error $? "cannot link to libmpi_usempi_ignore_tkr; check config.log" "$LINENO" 5
+  as_fn_error $? "cannot link to libmpicxx; check config.log" "$LINENO" 5
 fi
+
+
+# Check Fortran libraries
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpifort" >&5
+printf %s "checking for MPI_Init in -lmpifort... " >&6; }
+if test ${ac_cv_lib_mpifort_MPI_Init+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmpifort  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char MPI_Init ();
+int
+main (void)
+{
+return MPI_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_mpifort_MPI_Init=yes
+else $as_nop
+  ac_cv_lib_mpifort_MPI_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpifort_MPI_Init" >&5
+printf "%s\n" "$ac_cv_lib_mpifort_MPI_Init" >&6; }
+if test "x$ac_cv_lib_mpifort_MPI_Init" = xyes
+then :
+  printf "%s\n" "#define HAVE_LIBMPIFORT 1" >>confdefs.h
+
+  LIBS="-lmpifort $LIBS"
+
+else $as_nop
+  as_fn_error $? "cannot link to libmpifort; check config.log" "$LINENO" 5
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpichf90" >&5
+printf %s "checking for MPI_Init in -lmpichf90... " >&6; }
+if test ${ac_cv_lib_mpichf90_MPI_Init+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmpichf90  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char MPI_Init ();
+int
+main (void)
+{
+return MPI_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_mpichf90_MPI_Init=yes
+else $as_nop
+  ac_cv_lib_mpichf90_MPI_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpichf90_MPI_Init" >&5
+printf "%s\n" "$ac_cv_lib_mpichf90_MPI_Init" >&6; }
+if test "x$ac_cv_lib_mpichf90_MPI_Init" = xyes
+then :
+  printf "%s\n" "#define HAVE_LIBMPICHF90 1" >>confdefs.h
+
+  LIBS="-lmpichf90 $LIBS"
+
+else $as_nop
+  as_fn_error $? "cannot link to libmpichf90; check config.log" "$LINENO" 5
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lfmpich" >&5
+printf %s "checking for MPI_Init in -lfmpich... " >&6; }
+if test ${ac_cv_lib_fmpich_MPI_Init+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lfmpich  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char MPI_Init ();
+int
+main (void)
+{
+return MPI_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_fmpich_MPI_Init=yes
+else $as_nop
+  ac_cv_lib_fmpich_MPI_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_fmpich_MPI_Init" >&5
+printf "%s\n" "$ac_cv_lib_fmpich_MPI_Init" >&6; }
+if test "x$ac_cv_lib_fmpich_MPI_Init" = xyes
+then :
+  printf "%s\n" "#define HAVE_LIBFMPICH 1" >>confdefs.h
+
+  LIBS="-lfmpich $LIBS"
+
+else $as_nop
+  as_fn_error $? "cannot link to libfmpich; check config.log" "$LINENO" 5
+fi
+
+
+
+
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for METIS_PartGraphKway in -lmetis" >&5
@@ -8606,7 +8670,8 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 LDFLAGS="$LDFLAGS -L$PWD/OpenParEMCommon"
-LIBS="$LIBS -lOpenParEMCommon -lpetscsys -ldl -lmpi_mpifh -lgfortran -lquadmath"
+#LIBS="$LIBS -lOpenParEMCommon -lpetscsys -ldl -lmpi_mpifh -lgfortran -lquadmath"
+LIBS="$LIBS -lOpenParEMCommon -lpetscsys -ldl -lgfortran -lquadmath"
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'

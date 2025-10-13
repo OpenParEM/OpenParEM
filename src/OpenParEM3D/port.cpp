@@ -1414,7 +1414,9 @@ void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWi
     itemName->setForeground(0,Qt::black);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     boundaryWidgetItem->addChild(itemName);
-    drawingToItemMap->insert({drawingShape,itemName});
+    drawingWindow->insertItemToMap(drawingShape,itemName);
+    drawingWindow->showItem(itemName);
+    drawingWindow->unselectItem(itemName);
 
     // type
 
@@ -5285,6 +5287,9 @@ bool Port::solve(string *directory, std::vector<int> *pidList)
       fail=true;
    }
 
+//xxx
+MPI_Comm_free(&MPI_PORT_COMM);
+
    MPI_Comm_set_errhandler(PETSC_COMM_WORLD,MPI_ERRORS_RETURN);
    MPI_Errhandler_free(&errorHandler);
 
@@ -6397,7 +6402,9 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
     itemName->setForeground(0,Qt::black);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     portWidgetItem->addChild(itemName);
-    drawingToItemMap->insert({drawingShape,itemName});
+    drawingWindow->insertItemToMap(drawingShape,itemName);
+    drawingWindow->showItem(itemName);
+    drawingWindow->unselectItem(itemName);
 
     // impedance definition
 
@@ -8510,22 +8517,22 @@ void BoundaryDatabase::draw (struct projectData *projData, CustomOpenGLWidget *d
     }
 }
 
-void BoundaryDatabase::set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap)
-{
-    // ports
-    long unsigned int i=0;
-    while (i < portList.size()) {
-        portList[i]->set_drawingToItemMap(drawingToItemMap);
-        i++;
-    }
+// void BoundaryDatabase::set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap)
+// {
+//     // ports
+//     long unsigned int i=0;
+//     while (i < portList.size()) {
+//         portList[i]->set_drawingToItemMap(drawingToItemMap);
+//         i++;
+//     }
 
-    // boundaries
-    i=0;
-    while (i < boundaryList.size()) {
-        boundaryList[i]->set_drawingToItemMap(drawingToItemMap);
-        i++;
-    }
-}
+//     // boundaries
+//     i=0;
+//     while (i < boundaryList.size()) {
+//         boundaryList[i]->set_drawingToItemMap(drawingToItemMap);
+//         i++;
+//     }
+//}
 
 #endif
 

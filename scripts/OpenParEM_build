@@ -1,5 +1,7 @@
 #!/bin/sh
 
+#ToDo: unset PETSC_DIR, PETSC_ARCH, and SLEPC_DIR
+
 #----------------------------------------------------
 # downloaded packages included with this distribution
 #----------------------------------------------------
@@ -22,6 +24,9 @@ prrte="prrte-3.0.9.tar.gz"
 
 # www.open-mpi.org
 openmpi="openmpi-4.1.8.tar.gz"
+
+# www.mpich.org
+mpich="mpich-4.3.2.tar.gz"
 
 # Compile HYPRE separately because PETSc would compile it for complex, which
 # is incompatible with MFEM.
@@ -80,6 +85,7 @@ with_libevent=1
 with_pmix=1
 with_prrte=1
 with_openmpi=1
+with_mpich=0
 with_hypre=1
 with_cmake=1
 with_petsc=1
@@ -126,6 +132,7 @@ fi
 which mpirun > /dev/null 2>&1
 if [ $? -eq 0 ]; then
    with_openmpi=0
+   with_mpich=0
 fi
 
 #----------------------------------------------------
@@ -353,6 +360,7 @@ for arg in "$@"; do
          with_pmix=0
          with_prrte=0
          with_openmpi=0
+         with_mpich=0
          with_hypre=0
          with_cmake=0
          with_petsc=0
@@ -373,6 +381,7 @@ for arg in "$@"; do
          with_pmix=1
          with_prrte=1
          with_openmpi=1
+         with_mpich=0
          with_hypre=1
          with_cmake=1
          with_petsc=1
@@ -483,6 +492,13 @@ for arg in "$@"; do
          openmpi=$value
       elif [ "$arg" = "--without-openmpi" ]; then
          with_openmpi=0
+      elif [ "$arg" = "--with-mpich" ]; then
+         with_mpich=1
+      elif [ "$keyword" = "--with-mpich" ]; then
+         with_mpich=1
+         mpich=$value
+      elif [ "$arg" = "--without-mpich" ]; then
+         with_mpich=0
       elif [ "$arg" = "--with-hypre" ]; then
          with_hypre=1
       elif [ "$keyword" = "--with-hypre" ]; then
@@ -585,6 +601,8 @@ if [ $print_help -eq 1 ]; then
    echo "  --without-prrte          skip compiling libprrte"
    echo "  --with-openmpi[=file]    compile OpenMPI and related libraries using the default distribution or the provided file"
    echo "  --without-openmpi        skip compiling OpenMPI and related libraries; MPI plus development libraries must be installed on the system"
+   echo "  --with-MPICH[=file]      compile MPICH and related libraries using the default distribution or the provided file"
+   echo "  --without-mpich          skip compiling MPICH and related libraries; MPI plus development libraries must be installed on the system"
    echo "  --with-hypre[=file]      compile libHYPRE using the default distribution or the provided file"
    echo "  --without-hypre          skip compiling libHYPRE"
    echo "  --with-cmake[=file]      compile cmake during petsc compilation"
@@ -612,6 +630,12 @@ echo "scripts_dir=$scripts_dir"
 echo "install_path=$install_path"
 echo "PATH=$PATH"
 echo "jobs=$jobs"
+
+# override openmpi
+if [ "$with_openmpi" = "1" ] && [ "$with_mpich" = "1" ]; then
+   echo "Overriding OpenMPI with MPICH"
+   with_openmpi=0
+fi
 
 # show the setup
 
@@ -697,6 +721,12 @@ echo "jobs=$jobs"
       echo "with-openmpi=$with_openmpi using $openmpi"
    else
       echo "with-openmpi=$with_openmpi"
+   fi
+
+   if [ "$with_mpich" = "1" ]; then
+      echo "with-mpich=$with_mpich using $mpich"
+   else
+      echo "with-mpich=$with_mpich"
    fi
 
    if [ "$with_hypre" = "1" ]; then
@@ -904,6 +934,11 @@ if [ "$with_openmpi" = "1" -a ! -f "../external_packages/$openmpi" ]; then
    echo "OpenParEM_ERROR: openmpi compile requested but the file ../external_packages/$openmpi is missing."
 fi
 
+if [ "$with_mpich" = "1" -a ! -f "../external_packages/$mpich" ]; then
+   missing_sources=1
+   echo "OpenParEM_ERROR: mpich compile requested but the file ../external_packages/$mpich is missing."
+fi
+
 if [ "$with_hypre" = "1" -a ! -f "../external_packages/$hypre" ]; then
    missing_sources=1
    echo "OpenParEM_ERROR: hypre compile requested but the file ../external_packages/$hypre is missing."
@@ -987,6 +1022,10 @@ if [ "$with_prrte" = "1" ]; then
 fi
 
 if [ "$with_openmpi" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_mpich" = "1" ]; then
    has_build=1
 fi
 
@@ -1628,6 +1667,43 @@ if [ "$with_openmpi" = "1" ]; then
 
    cd ..
    remove_base_directory
+   cd ..
+
+fi
+
+# mpich
+if [ "$with_mpich" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: mpich"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$mpich"
+
+#   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-hwloc="$install_path" --with-pmix="$install_path" --with-pm=hydra
+./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-hwloc="$install_path" --with-pmix="$install_path" 
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mpich failed to configure"
+      exit 1
+   fi
+
+#   make -j "$jobs"
+make
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mpich failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mpich failed to install"
+      exit 1
+   fi
+
+   cd ..
+#   remove_base_directory
    cd ..
 
 fi

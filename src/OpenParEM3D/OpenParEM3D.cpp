@@ -557,6 +557,7 @@ int main(int argc, char *argv[])
 
          Result *result=new Result();
          result->set("S",frequency,shortestPerWavelength,longestPerWavelength,iteration,pmesh);
+         result->set_fem_setup_time(elapsed_time(fem_setup_start_time,fem_setup_end_time));
          resultDatabase.push(result);
 
          // loop through the driving sets
@@ -593,7 +594,6 @@ int main(int argc, char *argv[])
 
             chrono::steady_clock::time_point solve_end_time=chrono::steady_clock::now();
             result->set_solve_time(elapsed_time(solve_start_time,solve_end_time));
-            result->set_fem_setup_time(elapsed_time(fem_setup_start_time,fem_setup_end_time));
 
             if (iterate) {
                chrono::steady_clock::time_point mesh_error_start_time=chrono::steady_clock::now();

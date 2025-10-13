@@ -1757,7 +1757,8 @@ OpenParEM3D is controlled by a text file consisting of keyword/value pairs.  The
     debug.skip.forced.reciprocity & bool   & false  & Skip enforcement of reciprocity on S-parameter matrices \\
     debug.refine.preconditioner   & int    & 1      & Select the pre-conditioner to use for adaptive mesh refinement mesh error calculation.  Select 0 for the preconditioner used in OpenParEM3D Version 1.0 \\
     debug.tempfiles.keep          & bool   & false  & Keep temporary files \\
-    gui.brep.file                 & string &        & File name of the the layout brep file - optional in all cases and used only in the OpenParEM3D GUI OpenParEMg \\
+    gui.brep.file                 & string &        & Only used for the GUI OpenParEMg. File name of the the layout brep file. \\
+    gui.physical.group            & int, int, string & Only used for the GUI OpenParEMg.  Provides the material name for a solid in the Brep model.  The three inputs are dim,tag,material_name \\
 
     \hline
 \end{longtable}

@@ -40,7 +40,8 @@
 extern "C" void init_project (struct projectData *);
 extern "C" void free_project (struct projectData *);
 extern "C" PetscErrorCode load_project_file (const char *, struct projectData *, const char *);
-extern "C" void print_project (struct projectData *, struct projectData *, const char *);
+extern "C" int save_project (const char *, struct projectData *, struct projectData *, const char *);
+extern "C" void add_physicalGroupMaterial (struct projectData *, int, int, int, char *);
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -97,6 +98,7 @@ public:
 
     void dumpDrawingEntities ();
     void shapeCount (TopoDS_Shape, int *);
+    void setPhysicalGroups ();
 
 private slots:
     void on_fileOpen_triggered ();
@@ -127,8 +129,8 @@ private slots:
     void hidePortShape (CustomTreeWidgetItem *);
     void selectDisplayShape (CustomTreeWidgetItem *);
     void unselectDisplayShape (CustomTreeWidgetItem *);
-    void showMeshEntitiesItem (CustomTreeWidgetItem *);
-    void hideMeshEntitiesItem (CustomTreeWidgetItem *);
+    void showMeshEntitiesItem ();
+    void hideMeshEntitiesItem ();
 
     void assignMaterial ();
 
@@ -182,9 +184,12 @@ private slots:
 
     void on_actionSelect_with_Box_triggered();
 
+    void on_actionMeshSaveAs_triggered();
+
+    void on_actionSaveAs_triggered();
+
 private:
     Ui::OpenParEMg *ui;
-    bool hasProjData;
     QString projectFile;
     struct projectData projData,defaultData;
 
@@ -204,8 +209,6 @@ private:
     bool CTRLpressed;
     bool SHIFTpressed;
 
-    std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> drawingToItemMap;
-
     QMenu *drawingContextMenu;
 
     MPI_Comm *MPI_PORT_COMM;
@@ -218,6 +221,7 @@ private:
     QAction *hideAction;
     QAction *unselectAction;
     QAction *deleteAction;
+    QAction *assignMaterialAction;
 
     // gmsh
     gmsh::vectorpair drawingEntities;
@@ -225,6 +229,12 @@ private:
     int curveCount;
     int surfaceCount;
     int volumeCount;
+
+    // lockouts
+    bool projectFileLoaded;
+    bool projectFileChanged;
+    bool meshFileLoaded;
+    bool meshFileChanged;
 
 };
 

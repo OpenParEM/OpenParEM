@@ -577,7 +577,7 @@ class Port
       mfem::ParGridFunction *grid2DsolutionImHz=nullptr;
 
 #ifdef HAS_GUI
-      std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap=nullptr;
+      //std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap=nullptr;
 #endif
 
    public:
@@ -689,7 +689,7 @@ class Port
       bool has_mode (Mode *, long unsigned int *);
 #ifdef HAS_GUI
       void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
-      void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
+      //void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
 #endif
 };
 
@@ -805,7 +805,7 @@ class BoundaryDatabase
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *);
 #ifdef HAS_GUI
       void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
-      void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *);
+      //void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *);
 #endif
 };
 

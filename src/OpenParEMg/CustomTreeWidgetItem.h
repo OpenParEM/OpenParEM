@@ -66,7 +66,6 @@ public:
     int get_selectionMode () {return selectionMode;}
     void set_selectionMode (int selectionMode_) {selectionMode=selectionMode_;}
 
-
     void deleteChildren (QTreeWidgetItem *item)
     {
         QList<QTreeWidgetItem*> children=item->takeChildren();
@@ -94,7 +93,6 @@ private:
     std::pair<int,int> dimTag;                     //
     bool root;                                     // false - not a root item, true - is a root item
     int type;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh
-
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

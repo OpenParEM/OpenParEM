@@ -77,6 +77,7 @@
     <addaction name="fileNew"/>
     <addaction name="fileOpen"/>
     <addaction name="actionSave"/>
+    <addaction name="actionSaveAs"/>
     <addaction name="menuImport"/>
     <addaction name="menuExport"/>
     <addaction name="actionExit"/>
@@ -89,6 +90,7 @@
     <addaction name="actionGenerate"/>
     <addaction name="actionMeshLoad"/>
     <addaction name="actionMeshSave"/>
+    <addaction name="actionMeshSaveAs"/>
     <addaction name="actionDeleteMesh"/>
    </widget>
    <widget class="QMenu" name="menuSimulate">
@@ -213,9 +215,9 @@
     <string>Frequency Plan ...</string>
    </property>
   </action>
-  <action name="actionSave">
+  <action name="actionSaveAs">
    <property name="text">
-    <string>Save ...</string>
+    <string>Save As ...</string>
    </property>
   </action>
   <action name="actionRefinement">
@@ -385,6 +387,16 @@
   <action name="actionSelect_with_Box">
    <property name="text">
     <string>Select with Box</string>
+   </property>
+  </action>
+  <action name="actionMeshSaveAs">
+   <property name="text">
+    <string>Save As ...</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>Save</string>
    </property>
   </action>
  </widget>

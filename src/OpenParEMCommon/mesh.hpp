@@ -52,6 +52,7 @@ class MeshMaterialList {
        std::vector<std::string> list;     // material name
        std::vector<bool> active;
     public:
+       void clear ();
        void set_active (std::vector<int> *);
        bool load (const char *, int);
        void replace_index (int, int);
@@ -61,6 +62,7 @@ class MeshMaterialList {
        void print ();
        int size ();
        long unsigned int get_index (int);
+       int get_index (long unsigned int);
        std::string get_name (long unsigned int);
 };
 

@@ -131,6 +131,33 @@ void removeSpaces (char *a) {
    while (removeSpace(a));
 }
 
+int removeQuote (char *a) {
+    int i,j,len;
+
+    if (a == NULL) return 0;
+
+    len=strlen(a);
+    i=0;
+    while (i < len) {
+        if (a[i] == '"') {
+            j=i;
+            while (j < len) {
+                a[j]=a[j+1];
+                j++;
+            }
+            return 1;
+        }
+        i++;
+    }
+
+    return 0;
+}
+
+void removeQuotes (char *a) {
+    while (removeQuote(a));
+}
+
+
 int is_blank (char *a) {
    int i=0;
    while (i < strlen(a)) {
@@ -434,10 +461,20 @@ int is_valid_plane (char *a)
 void add_antennaPattern (struct projectData *data, int lineNumber, int dim, char *quantity1, char *quantity2,
                          char *plane, double theta, double phi, double latitude, double rotation)
 {
+   int i;
+
    // allocate more patterns, if needed
    if (data->inputAntennaPatternsCount == data->inputAntennaPatternsAllocated) {
       data->inputAntennaPatternsAllocated+=5;
       data->inputAntennaPatterns=(struct inputAntennaPattern *) realloc (data->inputAntennaPatterns,data->inputAntennaPatternsAllocated*sizeof(struct inputAntennaPattern));
+
+      long unsigned int i=data->inputAntennaPatternsCount;
+      while (i < data->inputAntennaPatternsAllocated) {
+          data->inputAntennaPatterns[i].quantity1=NULL;
+          data->inputAntennaPatterns[i].quantity2=NULL;
+          data->inputAntennaPatterns[i].plane=NULL;
+          i++;
+      }
    }
 
    // assign
@@ -540,6 +577,33 @@ int check_antennaPatterns (struct projectData *projData, const char* indent)
    return fail;
 }
 
+void add_physicalGroupMaterial (struct projectData *data, int lineNumber, int dim, int tag, char *materialName)
+{   int i;
+
+    // allocate more groups, if needed
+    if (data->physicalGroupMaterialCount == data->physicalGroupMaterialAllocated) {
+        data->physicalGroupMaterialAllocated+=5;
+        data->physicalGroupMaterials=(struct physicalGroupMaterial *)
+            realloc (data->physicalGroupMaterials,data->physicalGroupMaterialAllocated*sizeof(struct physicalGroupMaterial));
+
+        i=data->physicalGroupMaterialCount;
+        while (i < data->physicalGroupMaterialAllocated) {
+            data->physicalGroupMaterials[i].materialName=NULL;
+            i++;
+        }
+    }
+
+    // assign
+    data->physicalGroupMaterials[data->physicalGroupMaterialCount].lineNumber=lineNumber;
+    data->physicalGroupMaterials[data->physicalGroupMaterialCount].dim=dim;
+    data->physicalGroupMaterials[data->physicalGroupMaterialCount].tag=tag;
+    data->physicalGroupMaterials[data->physicalGroupMaterialCount].materialName=allocCopyString(materialName);
+
+    data->physicalGroupMaterialCount++;
+
+    data->modified=1;
+}
+
 void init_project (struct projectData *data) {
 
    data->version_name=allocCopyString("#OpenParEM3Dproject");
@@ -640,56 +704,78 @@ void init_project (struct projectData *data) {
 
    data->gui_brep_file=allocCopyString("");
 
+   data->physicalGroupMaterialAllocated=5;
+   data->physicalGroupMaterialCount=0;
+   data->physicalGroupMaterials=(struct physicalGroupMaterial *)malloc(data->physicalGroupMaterialAllocated*sizeof(struct physicalGroupMaterial));
+   i=0;
+   while (i < data->physicalGroupMaterialAllocated) {
+       data->physicalGroupMaterials[i].materialName=NULL;
+       i++;
+   }
+
    data->field_points_count=0;
    data->field_points_allocated=0;
    data->field_points_x=NULL;
    data->field_points_y=NULL;
    data->field_points_z=NULL;
+
+   data->modified=0;
 }
 
 void free_project (struct projectData *data) {
    if (data == NULL) return;
 
-   if (data->version_name) free (data->version_name);
-   if (data->version_value) free (data->version_value);
-   if (data->mesh_file) free (data->mesh_file);
-   if (data->port_definition_file) free (data->port_definition_file);
-   if (data->materials_global_path) free (data->materials_global_path);
-   if (data->materials_global_name) free (data->materials_global_name);
-   if (data->materials_local_path) free (data->materials_local_path);
-   if (data->materials_local_name) free (data->materials_local_name);
-   if (data->materials_default_boundary) free (data->materials_default_boundary);
-   if (data->refinement_frequency) free (data->refinement_frequency);
-   if (data->refinement_variable) free (data->refinement_variable);
-   if (data->touchstone_frequency_unit) free (data->touchstone_frequency_unit);
-   if (data->touchstone_format) free (data->touchstone_format);
-   if (data->solution_impedance_definition) free (data->solution_impedance_definition);
-   if (data->solution_impedance_calculation) free (data->solution_impedance_calculation);
+   if (data->version_name) {free (data->version_name); data->version_name=NULL;}
+   if (data->version_value) {free (data->version_value); data->version_value=NULL;}
+   if (data->mesh_file) {free (data->mesh_file); data->mesh_file=NULL;}
+   if (data->port_definition_file) {free (data->port_definition_file); data->port_definition_file=NULL;}
+   if (data->materials_global_path) {free (data->materials_global_path); data->materials_global_path=NULL;}
+   if (data->materials_global_name) {free (data->materials_global_name); data->materials_global_name=NULL;}
+   if (data->materials_local_path) {free (data->materials_local_path); data->materials_local_path=NULL;}
+   if (data->materials_local_name) {free (data->materials_local_name); data->materials_local_name=NULL;}
+   if (data->materials_default_boundary) {free (data->materials_default_boundary); data->materials_default_boundary=NULL;}
+   if (data->refinement_frequency) {free (data->refinement_frequency); data->refinement_frequency=NULL;}
+   if (data->refinement_variable) {free (data->refinement_variable); data->refinement_variable=NULL;}
+   if (data->touchstone_frequency_unit) {free (data->touchstone_frequency_unit); data->touchstone_frequency_unit=NULL;}
+   if (data->touchstone_format) {free (data->touchstone_format); data->touchstone_format=NULL;}
+   if (data->solution_impedance_definition) {free (data->solution_impedance_definition); data->solution_impedance_definition=NULL;}
+   if (data->solution_impedance_calculation) {free (data->solution_impedance_calculation); data->solution_impedance_calculation=NULL;}
 
-   if (data->inputFrequencyPlans) free(data->inputFrequencyPlans);
+   if (data->inputFrequencyPlans) {free(data->inputFrequencyPlans); data->inputFrequencyPlans=NULL;}
    data->inputFrequencyPlansAllocated=0;
    data->inputFrequencyPlansCount=0;
 
    if (data->inputAntennaPatterns) {
       long unsigned int i=0;
       while (i < data->inputAntennaPatternsAllocated) {
-         if (data->inputAntennaPatterns[i].quantity1) free(data->inputAntennaPatterns[i].quantity1);
-         if (data->inputAntennaPatterns[i].quantity2) free(data->inputAntennaPatterns[i].quantity2);
-         if (data->inputAntennaPatterns[i].plane) free(data->inputAntennaPatterns[i].plane);
+          if (data->inputAntennaPatterns[i].quantity1) {free(data->inputAntennaPatterns[i].quantity1); data->inputAntennaPatterns[i].quantity1=NULL;}
+          if (data->inputAntennaPatterns[i].quantity2) {free(data->inputAntennaPatterns[i].quantity2); data->inputAntennaPatterns[i].quantity2=NULL;}
+          if (data->inputAntennaPatterns[i].plane) {free(data->inputAntennaPatterns[i].plane); data->inputAntennaPatterns[i].plane=NULL;}
          i++;
       }
-      free(data->inputAntennaPatterns);
+      free(data->inputAntennaPatterns); data->inputAntennaPatterns=NULL;
    }
    data->inputAntennaPatternsCount=0;
    data->inputAntennaPatternsAllocated=0;
 
-   if (data->gui_brep_file) free (data->gui_brep_file);
+   if (data->gui_brep_file) {free (data->gui_brep_file); data->gui_brep_file=NULL;}
 
-   if (data->field_points_x) free(data->field_points_x);
-   if (data->field_points_y) free(data->field_points_y);
-   if (data->field_points_z) free(data->field_points_z);
+   if (data->physicalGroupMaterials) {
+       long unsigned int i=0;
+       while (i < data->physicalGroupMaterialAllocated) {
+           if (data->physicalGroupMaterials[i].materialName) {free(data->physicalGroupMaterials[i].materialName); data->physicalGroupMaterials[i].materialName=NULL;}
+           i++;
+       }
+       free(data->physicalGroupMaterials); data->physicalGroupMaterials=NULL;
+   }
+   data->physicalGroupMaterialCount=0;
+   data->physicalGroupMaterialAllocated=0;
 
-   if (data->project_name) free (data->project_name);
+   if (data->field_points_x) {free(data->field_points_x); data->field_points_x=NULL;}
+   if (data->field_points_y) {free(data->field_points_y); data->field_points_y=NULL;}
+   if (data->field_points_z) {free(data->field_points_z); data->field_points_z=NULL;}
+
+   if (data->project_name) {free (data->project_name); data->project_name=NULL;}
 }
 
 void print_project (struct projectData *data, struct projectData *defaultData, const char *indent) {
@@ -962,6 +1048,16 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
 
    // no default field points, so print all
    i=0;
+   while (i < data->physicalGroupMaterialCount) {
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.physical.group %d,%d,%s\n",indent,indent,
+                             data->physicalGroupMaterials[i].dim,
+                             data->physicalGroupMaterials[i].tag,
+                             data->physicalGroupMaterials[i].materialName);
+       i++;
+   }
+
+   // no default field points, so print all
+   i=0;
    while (i < data->field_points_count) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sfield.point %.15g,%.15g,%.15g\n",indent,indent,data->field_points_x[i],data->field_points_y[i],data->field_points_z[i]);
       i++;
@@ -971,6 +1067,309 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    free(logic[1]);
    free(comment[0]);
    free(comment[1]);
+}
+
+int save_project (const char *filename, struct projectData *data, struct projectData *defaultData, const char *indent)
+{
+    PetscMPIInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+    if (rank != 0) return 0;
+
+    FILE *fptr;
+    fptr=fopen(filename,"w");
+    if (fptr == NULL) return 1;
+
+    int i;
+    int matched=0;
+    char* logic[2];
+    char* comment[2];
+
+    if (data == NULL) return 0;
+
+    logic[0]=allocCopyString("false");
+    logic[1]=allocCopyString("true");
+
+    comment[0]=allocCopyString("");
+    comment[1]=allocCopyString("//");
+
+    fprintf(fptr,"%s%s %s\n",indent,data->version_name,data->version_value);
+    fprintf(fptr,"%s//Commented lines show either unspecified inputs that utilize the default values or specified inputs that match the default values.\n",indent);
+
+    matched=0;  if (defaultData && data->project_calculate_poynting == defaultData->project_calculate_poynting) matched=1;
+    fprintf(fptr,"%s%sproject.calculate.poynting %s\n",indent,comment[matched],logic[data->project_calculate_poynting]);
+
+    matched=0;  if (defaultData && data->project_save_fields == defaultData->project_save_fields) matched=1;
+    fprintf(fptr,"%s%sproject.save.fields %s\n",indent,comment[matched],logic[data->project_save_fields]);
+
+    matched=0; if (defaultData && strcmp(data->mesh_file,defaultData->mesh_file) == 0) matched=1;
+    fprintf(fptr,"%s%smesh.file %s\n",indent,comment[matched],data->mesh_file);
+
+    matched=0; if (defaultData && data->mesh_order == defaultData->mesh_order) matched=1;
+    fprintf(fptr,"%s%smesh.order %d\n",indent,comment[matched],data->mesh_order);
+
+    matched=0;  if (defaultData && data->mesh_save_refined == defaultData->mesh_save_refined) matched=1;
+    fprintf(fptr,"%s%smesh.save.refined %s\n",indent,comment[matched],logic[data->mesh_save_refined]);
+
+    matched=0; if (defaultData && double_compare(data->mesh_3D_refinement_fraction,defaultData->mesh_3D_refinement_fraction,1e-14)) matched=1;
+    fprintf(fptr,"%s%smesh.refinement.fraction %.15g\n",indent,comment[matched],data->mesh_3D_refinement_fraction);
+
+    matched=0; if (defaultData && double_compare(data->mesh_quality_limit,defaultData->mesh_quality_limit,1e-14)) matched=1;
+    fprintf(fptr,"%s%smesh.quality.limit %.15g\n",indent,comment[matched],data->mesh_quality_limit);
+
+    matched=0; if (defaultData && strcmp(data->port_definition_file,defaultData->port_definition_file) == 0) matched=1;
+    fprintf(fptr,"%s%sport.definition.file %s\n",indent,comment[matched],data->port_definition_file);
+
+    matched=0; if (defaultData && strcmp(data->refinement_frequency,defaultData->refinement_frequency) == 0) matched=1;
+    fprintf(fptr,"%s%srefinement.frequency %s\n",indent,comment[matched],data->refinement_frequency);
+
+    matched=0; if (defaultData && data->refinement_iteration_min == defaultData->refinement_iteration_min) matched=1;
+    fprintf(fptr,"%s%srefinement.iteration.min %d\n",indent,comment[matched],data->refinement_iteration_min);
+
+    matched=0; if (defaultData && data->refinement_iteration_max == defaultData->refinement_iteration_max) matched=1;
+    fprintf(fptr,"%s%srefinement.iteration.max %d\n",indent,comment[matched],data->refinement_iteration_max);
+
+    matched=0; if (defaultData && data->refinement_required_passes == defaultData->refinement_required_passes) matched=1;
+    fprintf(fptr,"%s%srefinement.required.passes %d\n",indent,comment[matched],data->refinement_required_passes);
+
+    matched=0; if (defaultData && double_compare(data->refinement_relative_tolerance,defaultData->refinement_relative_tolerance,1e-14)) matched=1;
+    fprintf(fptr,"%s%srefinement.relative.tolerance %.15g\n",indent,comment[matched],data->refinement_relative_tolerance);
+
+    matched=0; if (defaultData && double_compare(data->refinement_absolute_tolerance,defaultData->refinement_absolute_tolerance,1e-14)) matched=1;
+    fprintf(fptr,"%s%srefinement.absolute.tolerance %.15g\n",indent,comment[matched],data->refinement_absolute_tolerance);
+
+    matched=0; if (defaultData && strcmp(data->refinement_variable,defaultData->refinement_variable) == 0) matched=1;
+    fprintf(fptr,"%s%srefinement.variable %s\n",indent,comment[matched],data->refinement_variable);
+
+    matched=0; if (defaultData && strcmp(data->materials_global_path,defaultData->materials_global_path) == 0) matched=1;
+    fprintf(fptr,"%smaterials.global.path %s\n",indent,data->materials_global_path);
+
+    matched=0; if (defaultData && strcmp(data->materials_global_name,defaultData->materials_global_name) == 0) matched=1;
+    fprintf(fptr,"%smaterials.global.name %s\n",indent,data->materials_global_name);
+
+    matched=0; if (defaultData && strcmp(data->materials_local_path,defaultData->materials_local_path) == 0) matched=1;
+    fprintf(fptr,"%smaterials.local.path %s\n",indent,data->materials_local_path);
+
+    matched=0; if (defaultData && strcmp(data->materials_local_name,defaultData->materials_local_name) == 0) matched=1;
+    fprintf(fptr,"%smaterials.local.name %s\n",indent,data->materials_local_name);
+
+    matched=0; if (defaultData && strcmp(data->materials_default_boundary,defaultData->materials_default_boundary) == 0) matched=1;
+    fprintf(fptr,"%smaterials.default.boundary %s\n",indent,data->materials_default_boundary);
+
+    matched=0;  if (defaultData && data->materials_check_limits == defaultData->materials_check_limits) matched=1;
+    fprintf(fptr,"%s%smaterials.check.limits %s\n",indent,comment[matched],logic[data->materials_check_limits]);
+
+    // no default frequency plans, so print all
+    i=0;
+    while (i < data->inputFrequencyPlansCount) {
+        if (data->inputFrequencyPlans[i].type == 0) {
+            if (data->inputFrequencyPlans[i].refine == 0) {
+                fprintf(fptr,"%sfrequency.plan.linear %.15g,%.15g,%.15g\n",indent,
+                            data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].step);
+            } else {
+                fprintf(fptr,"%sfrequency.plan.linear.refine %.15g,%.15g,%.15g\n",indent,
+                            data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].step);
+            }
+        } else if (data->inputFrequencyPlans[i].type == 1) {
+            if (data->inputFrequencyPlans[i].refine == 0) {
+                fprintf(fptr,"%sfrequency.plan.log %.15g,%.15g,%d\n",indent,
+                            data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].pointsPerDecade);
+            } else {
+                fprintf(fptr,"%sfrequency.plan.log.refine %.15g,%.15g,%d\n",indent,
+                            data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].pointsPerDecade);
+            }
+        } else if (data->inputFrequencyPlans[i].type == 2) {
+            if (data->inputFrequencyPlans[i].refine == 0) {
+                fprintf(fptr,"%sfrequency.plan.point %.15g\n",indent,data->inputFrequencyPlans[i].frequency);
+            } else {
+                fprintf(fptr,"%sfrequency.plan.point.refine %.15g\n",indent,data->inputFrequencyPlans[i].frequency);
+            }
+        }
+        i++;
+    }
+
+    matched=0; if (defaultData && double_compare(data->reference_impedance,defaultData->reference_impedance,1e-14)) matched=1;
+    fprintf(fptr,"%s%sreference.impedance %.15g\n",indent,comment[matched],data->reference_impedance);
+
+    matched=0; if (defaultData && strcmp(data->touchstone_frequency_unit,defaultData->touchstone_frequency_unit) == 0) matched=1;
+    fprintf(fptr,"%s%stouchstone.frequency.unit %s\n",indent,comment[matched],data->touchstone_frequency_unit);
+
+    matched=0; if (defaultData && strcmp(data->touchstone_format,defaultData->touchstone_format) == 0) matched=1;
+    fprintf(fptr,"%s%stouchstone.format %s\n",indent,comment[matched],data->touchstone_format);
+
+    matched=0; if (defaultData && double_compare(data->solution_temperature,defaultData->solution_temperature,1e-14)) matched=1;
+    fprintf(fptr,"%s%ssolution.temperature %.15g\n",indent,comment[matched],data->solution_temperature);
+
+    matched=0; if (defaultData && double_compare(data->solution_2D_tolerance,defaultData->solution_2D_tolerance,1e-14)) matched=1;
+    fprintf(fptr,"%s%ssolution.2D.tolerance %.15g\n",indent,comment[matched],data->solution_2D_tolerance);
+
+    matched=0; if (defaultData && double_compare(data->solution_3D_tolerance,defaultData->solution_3D_tolerance,1e-14)) matched=1;
+    fprintf(fptr,"%s%ssolution.3D.tolerance %.15g\n",indent,comment[matched],data->solution_3D_tolerance);
+
+    matched=0; if (defaultData && data->solution_iteration_limit == defaultData->solution_iteration_limit) matched=1;
+    fprintf(fptr,"%s%ssolution.iteration.limit %d\n",indent,comment[matched],data->solution_iteration_limit);
+
+    matched=0; if (defaultData && data->solution_modes_buffer == defaultData->solution_modes_buffer) matched=1;
+    fprintf(fptr,"%s%ssolution.modes.buffer %d\n",indent,comment[matched],data->solution_modes_buffer);
+
+    matched=0;  if (defaultData && data->solution_check_closed_loop == defaultData->solution_check_closed_loop) matched=1;
+    fprintf(fptr,"%s%ssolution.check.closed.loop %s\n",indent,comment[matched],logic[data->solution_check_closed_loop]);
+
+    matched=0;  if (defaultData && data->solution_check_homogeneous == defaultData->solution_check_homogeneous) matched=1;
+    fprintf(fptr,"%s%ssolution.check.homogeneous %s\n",indent,comment[matched],logic[data->solution_check_homogeneous]);
+
+    matched=0;  if (defaultData && data->solution_accurate_residual == defaultData->solution_accurate_residual) matched=1;
+    fprintf(fptr,"%s%ssolution.accurate.residual %s\n",indent,comment[matched],logic[data->solution_accurate_residual]);
+
+    matched=0;  if (defaultData && data->solution_shift_invert == defaultData->solution_shift_invert) matched=1;
+    fprintf(fptr,"%s%ssolution.shift.invert %s\n",indent,comment[matched],logic[data->solution_shift_invert]);
+
+    matched=0; if (defaultData && double_compare(data->solution_shift_factor,defaultData->solution_shift_factor,1e-14)) matched=1;
+    fprintf(fptr,"%s%ssolution.shift.factor %.15g\n",indent,comment[matched],data->solution_shift_factor);
+
+    matched=0; if (defaultData && data->solution_initial_guess_level == defaultData->solution_initial_guess_level) matched=1;
+    fprintf(fptr,"%s%ssolution.initial.guess.level %d\n",indent,comment[matched],data->solution_initial_guess_level);
+
+    // no default antenna patterns, so print all
+    i=0;
+    while (i < data->inputAntennaPatternsCount) {
+        if (data->inputAntennaPatterns[i].dim == 2) {
+            prefix();
+            if (data->inputAntennaPatterns[i].quantity1 == NULL) {
+                fprintf(fptr,"%santenna.plot.2D.pattern NULL",indent);
+            } else {
+                fprintf(fptr,"%santenna.plot.2D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
+            }
+            if (data->inputAntennaPatterns[i].quantity2 != NULL) {
+                fprintf(fptr,",%s",data->inputAntennaPatterns[i].quantity2);
+            }
+            if (data->inputAntennaPatterns[i].plane != NULL) {
+                fprintf(fptr,",%s",data->inputAntennaPatterns[i].plane);
+            } else {
+                fprintf(fptr,",%.15g,%.15g",data->inputAntennaPatterns[i].theta,data->inputAntennaPatterns[i].phi);
+            }
+            fprintf(fptr,",%.15g",data->inputAntennaPatterns[i].latitude);
+            fprintf(fptr,",%.15g",data->inputAntennaPatterns[i].rotation);
+            fprintf(fptr,"\n");
+        } else {
+            prefix();
+            if (data->inputAntennaPatterns[i].quantity1 == NULL) {
+                fprintf(fptr,"%santenna.plot.3D.pattern NULL",indent);
+            } else {
+                fprintf(fptr,"%santenna.plot.3D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
+            }
+            fprintf(fptr,"\n");
+        }
+        i++;
+    }
+
+    matched=0; if (defaultData && double_compare(data->antenna_plot_current_resolution,defaultData->antenna_plot_current_resolution,1e-14)) matched=1;
+    fprintf(fptr,"%s%santenna.plot.current.resolution %.15g\n",indent,comment[matched],data->antenna_plot_current_resolution);
+
+    matched=0; if (defaultData && double_compare(data->antenna_plot_2D_range,defaultData->antenna_plot_2D_range,1e-14)) matched=1;
+    fprintf(fptr,"%s%santenna.plot.2D.range %.15g\n",indent,comment[matched],data->antenna_plot_2D_range);
+
+    matched=0; if (defaultData && double_compare(data->antenna_plot_2D_resolution,defaultData->antenna_plot_2D_resolution,1e-14)) matched=1;
+    fprintf(fptr,"%s%santenna.plot.2D.resolution %.15g\n",indent,comment[matched],data->antenna_plot_2D_resolution);
+
+    matched=0;  if (defaultData && data->antenna_plot_2D_annotations == defaultData->antenna_plot_2D_annotations) matched=1;
+    fprintf(fptr,"%s%santenna.plot.2D.annotations %s\n",indent,comment[matched],logic[data->antenna_plot_2D_annotations]);
+
+    matched=0;  if (defaultData && data->antenna_plot_2D_save == defaultData->antenna_plot_2D_save) matched=1;
+    fprintf(fptr,"%s%santenna.plot.2D.save %s\n",indent,comment[matched],logic[data->antenna_plot_2D_save]);
+
+    matched=0; if (defaultData && double_compare(data->antenna_plot_3D_refinement,defaultData->antenna_plot_3D_refinement,1e-14)) matched=1;
+    fprintf(fptr,"%s%santenna.plot.3D.refinement %d\n",indent,comment[matched],data->antenna_plot_3D_refinement);
+
+    matched=0; if (defaultData && double_compare(data->antenna_plot_2D_interval,defaultData->antenna_plot_2D_interval,1e-14)) matched=1;
+    fprintf(fptr,"%s%santenna.plot.2D.interval %.15g\n",indent,comment[matched],data->antenna_plot_2D_interval);
+
+    matched=0;  if (defaultData && data->antenna_plot_3D_sphere == defaultData->antenna_plot_3D_sphere) matched=1;
+    fprintf(fptr,"%s%santenna.plot.3D.sphere %s\n",indent,comment[matched],logic[data->antenna_plot_3D_sphere]);
+
+    matched=0;  if (defaultData && data->antenna_plot_3D_save == defaultData->antenna_plot_3D_save) matched=1;
+    fprintf(fptr,"%s%santenna.plot.3D.save %s\n",indent,comment[matched],logic[data->antenna_plot_3D_save]);
+
+    matched=0;  if (defaultData && data->antenna_plot_raw_save == defaultData->antenna_plot_raw_save) matched=1;
+    fprintf(fptr,"%s%santenna.plot.raw.save %s\n",indent,comment[matched],logic[data->antenna_plot_raw_save]);
+
+    matched=0;  if (defaultData && data->output_show_refining_mesh == defaultData->output_show_refining_mesh) matched=1;
+    fprintf(fptr,"%s%soutput.show.refining.mesh %s\n",indent,comment[matched],logic[data->output_show_refining_mesh]);
+
+    matched=0;  if (defaultData && data->output_show_postprocessing == defaultData->output_show_postprocessing) matched=1;
+    fprintf(fptr,"%s%soutput.show.postprocessing %s\n",indent,comment[matched],logic[data->output_show_postprocessing]);
+
+    matched=0;  if (defaultData && data->output_show_iterations == defaultData->output_show_iterations) matched=1;
+    fprintf(fptr,"%s%soutput.show.iterations %s\n",indent,comment[matched],logic[data->output_show_iterations]);
+
+    matched=0;  if (defaultData && data->output_show_license == defaultData->output_show_license) matched=1;
+    fprintf(fptr,"%s%soutput.show.license %s\n",indent,comment[matched],logic[data->output_show_license]);
+
+    matched=0;  if (defaultData && data->test_create_cases == defaultData->test_create_cases) matched=1;
+    fprintf(fptr,"%s%stest.create.cases %s\n",indent,comment[matched],logic[data->test_create_cases]);
+
+    matched=0;  if (defaultData && data->test_show_detailed_cases == defaultData->test_show_detailed_cases) matched=1;
+    fprintf(fptr,"%s%stest.show.detailed.cases %s\n",indent,comment[matched],logic[data->test_show_detailed_cases]);
+
+    matched=0;  if (defaultData && data->debug_show_memory == defaultData->debug_show_memory) matched=1;
+    fprintf(fptr,"%s%sdebug.show.memory %s\n",indent,comment[matched],logic[data->debug_show_memory]);
+
+    matched=0;  if (defaultData && data->debug_show_project == defaultData->debug_show_project) matched=1;
+    fprintf(fptr,"%s%sdebug.show.project %s\n",indent,comment[matched],logic[data->debug_show_project]);
+
+    matched=0;  if (defaultData && data->debug_show_frequency_plan == defaultData->debug_show_frequency_plan) matched=1;
+    fprintf(fptr,"%s%sdebug.show.frequency.plan %s\n",indent,comment[matched],logic[data->debug_show_frequency_plan]);
+
+    matched=0;  if (defaultData && data->debug_show_materials == defaultData->debug_show_materials) matched=1;
+    fprintf(fptr,"%s%sdebug.show.materials %s\n",indent,comment[matched],logic[data->debug_show_materials]);
+
+    matched=0;  if (defaultData && data->debug_show_port_definitions == defaultData->debug_show_port_definitions) matched=1;
+    fprintf(fptr,"%s%sdebug.show.port.definitions %s\n",indent,comment[matched],logic[data->debug_show_port_definitions]);
+
+    matched=0;  if (defaultData && data->debug_show_impedance_details == defaultData->debug_show_impedance_details) matched=1;
+    fprintf(fptr,"%s%sdebug.show.impedance.details %s\n",indent,comment[matched],logic[data->debug_show_impedance_details]);
+
+    matched=0;  if (defaultData && data->debug_save_port_fields == defaultData->debug_save_port_fields) matched=1;
+    fprintf(fptr,"%s%sdebug.save.port.fields %s\n",indent,comment[matched],logic[data->debug_save_port_fields]);
+
+    matched=0;  if (defaultData && data->debug_skip_mixed_conversion == defaultData->debug_skip_mixed_conversion) matched=1;
+    fprintf(fptr,"%s%sdebug.skip.mixed.conversion %s\n",indent,comment[matched],logic[data->debug_skip_mixed_conversion]);
+
+    matched=0;  if (defaultData && data->debug_skip_forced_reciprocity == defaultData->debug_skip_forced_reciprocity) matched=1;
+    fprintf(fptr,"%s%sdebug.skip.forced.reciprocity %s\n",indent,comment[matched],logic[data->debug_skip_forced_reciprocity]);
+
+    matched=0;  if (defaultData && data->debug_tempfiles_keep == defaultData->debug_tempfiles_keep) matched=1;
+    fprintf(fptr,"%s%sdebug.tempfiles.keep %s\n",indent,comment[matched],logic[data->debug_tempfiles_keep]);
+
+    matched=0; if (defaultData && double_compare(data->debug_refine_preconditioner,defaultData->debug_refine_preconditioner,1e-14)) matched=1;
+    fprintf(fptr,"%s%sdebug.refine.preconditioner %d\n",indent,comment[matched],data->debug_refine_preconditioner);
+
+    matched=0; if (defaultData && strcmp(data->gui_brep_file,defaultData->gui_brep_file) == 0) matched=1;
+    fprintf(fptr,"%s%sgui.brep.file %s\n",indent,comment[matched],data->gui_brep_file);
+
+    // no default field points, so print all
+    i=0;
+    while (i < data->physicalGroupMaterialCount) {
+        fprintf(fptr,"%s%sgui.physical.group %d,%d,%s\n",indent,indent,
+                data->physicalGroupMaterials[i].dim,
+                data->physicalGroupMaterials[i].tag,
+                data->physicalGroupMaterials[i].materialName);
+        i++;
+    }
+
+    // no default field points, so print all
+    i=0;
+    while (i < data->field_points_count) {
+        fprintf(fptr,"%s%sfield.point %.15g,%.15g,%.15g\n",indent,indent,data->field_points_x[i],data->field_points_y[i],data->field_points_z[i]);
+        i++;
+    }
+
+    free(logic[0]);
+    free(logic[1]);
+    free(comment[0]);
+    free(comment[1]);
+
+    fclose(fptr);
+    return 0;
 }
 
 int get_bool (char *a) {
@@ -1192,6 +1591,9 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
    int lineNumber;
    int dim;
    int match;
+   int physicalGroupMaterialCount;
+   int tag;
+   char *materialName=NULL;
 
    if (filename == NULL) return 1;
 
@@ -2392,6 +2794,24 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                    } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
+               else if (strcmp(keyword,"gui.physical.group") == 0) {
+                   if (commaCount == 2) {
+                       value=strtok(NULL," ,");
+                       if (is_int(value)) {
+                           dim=atoi(value);
+                           value=strtok(NULL," ,");
+                           if (is_int(value)) {
+                               tag=atoi(value);
+                               value=strtok(NULL," ,");
+                               if (materialName) free(materialName);
+                               materialName=allocCopyString(value);
+                               removeQuotes(materialName);
+                               add_physicalGroupMaterial(data,lineCount,dim,tag,materialName);
+                           } else print_invalid_entry (&ierr,lineCount,indent);
+                       } else print_invalid_entry (&ierr,lineCount,indent);
+                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
                else if (strcmp(keyword,"field.point") == 0) {
                   if (commaCount == 2) {
                      value=strtok(NULL," ,");
@@ -2488,11 +2908,18 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       if (check_antennaPatterns (data,indent)) ierr=1;
 
       if (data->refinement_iteration_max < data->refinement_iteration_min) {
-         ierr=1;//
+         ierr=1;
          prefix(); printf("%s%sERROR3172: The maximum iteration limit of %d must be >= to the minimum iteration limit of %d",
                                                  indent,indent,data->refinement_iteration_max,data->refinement_iteration_min);
          if (lineIterationMax >= 0) {prefix(); printf(" at line %d.\n",lineIterationMax);}
          else {prefix(); printf(".\n");}
+      }
+
+      // avoid using invalid field dofs as initial guesses when using order ramping
+      if (!data->solution_shift_invert && data->solution_initial_guess_level > 1 && data->mesh_order > 1) {
+         prefix(); printf("%s%sERROR3244: Invalid combination of keyword values for solution.shift.invert and solution.initial.guess.level",
+                                                 indent,indent);
+         ierr=1;
       }
    }
 
@@ -2675,6 +3102,21 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send (&length,1,MPI_INT,i,1000089,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->gui_brep_file,length,MPI_CHAR,i,1000090,PETSC_COMM_WORLD);
 
+         ierr=MPI_Send(&(data->physicalGroupMaterialCount),1,MPI_INT,i,1000115,PETSC_COMM_WORLD);
+         j=0;
+         while (j < data->physicalGroupMaterialCount) {
+             ierr=MPI_Send(&(data->physicalGroupMaterials[j].lineNumber),1,MPI_INT,i,1000116,PETSC_COMM_WORLD);
+             ierr=MPI_Send(&(data->physicalGroupMaterials[j].dim),1,MPI_INT,i,1000117,PETSC_COMM_WORLD);
+             ierr=MPI_Send(&(data->physicalGroupMaterials[j].tag),1,MPI_INT,i,1000118,PETSC_COMM_WORLD);
+
+             length=0;
+             if (data->physicalGroupMaterials[j].materialName != NULL) length=strlen(data->physicalGroupMaterials[j].materialName);
+             ierr=MPI_Send (&length,1,MPI_INT,i,1000119,PETSC_COMM_WORLD);
+             if (length > 0) ierr=MPI_Send(data->physicalGroupMaterials[j].materialName,length,MPI_CHAR,i,1000120,PETSC_COMM_WORLD);
+
+             j++;
+         }
+
          ierr=MPI_Send(&(data->field_points_count),1,MPI_INT,i,1000077,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->field_points_x,data->field_points_count,MPI_DOUBLE,i,1000078,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->field_points_y,data->field_points_count,MPI_DOUBLE,i,1000079,PETSC_COMM_WORLD);
@@ -2854,6 +3296,10 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
 
          add_antennaPattern(data,lineNumber,dim,quantity1,quantity2,plane,theta,phi,latitude,rotation);
 
+         if (quantity1) {free(quantity1); quantity1=NULL;}
+         if (quantity2) {free(quantity2); quantity2=NULL;}
+         if (plane) {free(plane); plane=NULL;}
+
          j++;
       }
 
@@ -2894,6 +3340,28 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       data->gui_brep_file=(char *) malloc((length+1)*sizeof(char));
       ierr=MPI_Recv(data->gui_brep_file,length,MPI_CHAR,0,1000090,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       data->gui_brep_file[length]='\0';
+
+      ierr=MPI_Recv(&physicalGroupMaterialCount,1,MPI_INT,0,1000115,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      j=0;
+      while (j < physicalGroupMaterialCount) {
+          ierr=MPI_Recv(&lineNumber,1,MPI_INT,0,1000116,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+          ierr=MPI_Recv(&dim,1,MPI_INT,0,1000117,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+          ierr=MPI_Recv(&tag,1,MPI_INT,0,1000118,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+          materialName=NULL;
+          ierr=MPI_Recv(&length,1,MPI_INT,0,1000119,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+          if (length > 0) {
+              materialName=(char *) malloc((length+1)*sizeof(char));
+              ierr=MPI_Recv(materialName,length,MPI_CHAR,0,1000120,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+              materialName[length]='\0';
+          }
+
+          add_physicalGroupMaterial(data,lineNumber,dim,tag,materialName);
+
+          if (materialName) {free(materialName); materialName=NULL;}
+
+          j++;
+      }
 
       ierr=MPI_Recv(&(data->field_points_count),1,MPI_INT,0,1000077,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       data->field_points_allocated=data->field_points_count;

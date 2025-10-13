@@ -709,14 +709,37 @@
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_10">
          <item>
-          <widget class="QCheckBox" name="useInitialGuess">
+          <widget class="QLabel" name="label_14">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use the current eigenvalue solution as the initial guess in the following iteration.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets what initial guess is used to solve the iterative eigenvalue problem.&lt;/p&gt;&lt;p&gt;none - Initial guess is 0+j0 for the complex propagation constant&lt;/p&gt;&lt;p&gt;prior solution - use the previously solved complex propagation constant with frequency scaling&lt;/p&gt;&lt;p&gt;prior solution with order ramping - use the previously solved complex propagation constant with frequency scaling and finite element order ramping.&lt;/p&gt;&lt;p&gt;order ramping - Initial guess is 0+j0 for the complex propagation constant plus order ramping.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
-            <string>Use Initial Guess</string>
+            <string>Initial Guess</string>
            </property>
           </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="levelComboBox">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_30">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
          <item alignment="Qt::AlignmentFlag::AlignRight">
           <widget class="QCheckBox" name="checkHomogeneous">

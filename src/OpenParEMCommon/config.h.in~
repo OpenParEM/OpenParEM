@@ -1,5 +1,8 @@
 /* OpenParEMCommon/config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Set to 1 for MPI */
+#undef HAS_MPI
+
 /* define if the compiler supports basic C++17 syntax */
 #undef HAVE_CXX17
 
@@ -36,6 +39,9 @@
 /* Define to 1 if you have the `flapack' library (-lflapack). */
 #undef HAVE_LIBFLAPACK
 
+/* Define to 1 if you have the `fmpich' library (-lfmpich). */
+#undef HAVE_LIBFMPICH
+
 /* Define to 1 if you have the `gfortran' library (-lgfortran). */
 #undef HAVE_LIBGFORTRAN
 
@@ -57,24 +63,20 @@
 /* Define to 1 if you have the `mpi' library (-lmpi). */
 #undef HAVE_LIBMPI
 
-/* Define to 1 if you have the `mpi_mpifh' library (-lmpi_mpifh). */
-#undef HAVE_LIBMPI_MPIFH
+/* Define to 1 if you have the `mpichcxx' library (-lmpichcxx). */
+#undef HAVE_LIBMPICHCXX
 
-/* Define to 1 if you have the `mpi_usempif08' library (-lmpi_usempif08). */
-#undef HAVE_LIBMPI_USEMPIF08
+/* Define to 1 if you have the `mpichf90' library (-lmpichf90). */
+#undef HAVE_LIBMPICHF90
 
-/* Define to 1 if you have the `mpi_usempi_ignore_tkr' library
-   (-lmpi_usempi_ignore_tkr). */
-#undef HAVE_LIBMPI_USEMPI_IGNORE_TKR
+/* Define to 1 if you have the `mpicxx' library (-lmpicxx). */
+#undef HAVE_LIBMPICXX
+
+/* Define to 1 if you have the `mpifort' library (-lmpifort). */
+#undef HAVE_LIBMPIFORT
 
 /* Define to 1 if you have the `mumps_common' library (-lmumps_common). */
 #undef HAVE_LIBMUMPS_COMMON
-
-/* Define to 1 if you have the `open-pal' library (-lopen-pal). */
-#undef HAVE_LIBOPEN_PAL
-
-/* Define to 1 if you have the `open-rte' library (-lopen-rte). */
-#undef HAVE_LIBOPEN_RTE
 
 /* Define to 1 if you have the `petscdm' library (-lpetscdm). */
 #undef HAVE_LIBPETSCDM

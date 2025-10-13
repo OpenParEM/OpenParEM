@@ -41,13 +41,33 @@ AC_CHECK_LIB([event], [event_config_new], ,AC_MSG_ERROR([cannot link to libevent
 AC_CHECK_LIB([hwloc], [hwloc_obj_type_snprintf], ,AC_MSG_ERROR([cannot link to libhwloc; check config.log]))
 AC_CHECK_LIB([event_pthreads], [evthread_use_pthreads], ,AC_MSG_ERROR([cannot link to libevent_pthreads; check config.log]))
 AC_CHECK_LIB([pmix], [PMIx_Info_load], ,AC_MSG_ERROR([cannot link to libpmix; check config.log]))
-AC_CHECK_LIB([open-pal], [opal_event_alloc], ,AC_MSG_ERROR([cannot link to libopen-pal; check config.log]))
-AC_CHECK_LIB([open-rte], [orte_util_print_name_args], ,AC_MSG_ERROR([cannot link to libopen-rte; check config.log]))
 
+#AC_CHECK_LIB([open-pal], [opal_event_alloc], ,AC_MSG_ERROR([cannot link to libopen-pal; check config.log]))
+#AC_CHECK_LIB([open-rte], [orte_util_print_name_args], ,AC_MSG_ERROR([cannot link to libopen-rte; check config.log]))
+
+#AC_CHECK_LIB([mpi], [MPI_Init], ,AC_MSG_ERROR([cannot link to libmpi; check config.log]))
+#AC_CHECK_LIB([mpi_mpifh], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_mpifh; check config.log]))
+#AC_CHECK_LIB([mpi_usempif08], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_usempif08; check config.log]))
+#AC_CHECK_LIB([mpi_usempi_ignore_tkr], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_usempi_ignore_tkr; check config.log]))
+
+
+
+# Check C library variants
 AC_CHECK_LIB([mpi], [MPI_Init], ,AC_MSG_ERROR([cannot link to libmpi; check config.log]))
-AC_CHECK_LIB([mpi_mpifh], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_mpifh; check config.log]))
-AC_CHECK_LIB([mpi_usempif08], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_usempif08; check config.log]))
-AC_CHECK_LIB([mpi_usempi_ignore_tkr], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_usempi_ignore_tkr; check config.log]))
+AC_CHECK_LIB([mpich], [MPI_Init], ,AC_MSG_ERROR([cannot link to libmpich; check config.log]))
+
+# Check C++ library variants
+AC_CHECK_LIB([mpicxx], [MPI_Init], ,AC_MSG_ERROR([cannot link to libcxx; check config.log]))
+AC_CHECK_LIB([mpichcxx], [MPI_Init], ,AC_MSG_ERROR([cannot link to libmpicxx; check config.log]))
+
+# Check Fortran libraries
+AC_CHECK_LIB([mpifort], [MPI_Init], ,AC_MSG_ERROR([cannot link to libmpifort; check config.log]))
+AC_CHECK_LIB([mpichf90], [MPI_Init], ,AC_MSG_ERROR([cannot link to libmpichf90; check config.log]))
+AC_CHECK_LIB([fmpich], [MPI_Init], ,AC_MSG_ERROR([cannot link to libfmpich; check config.log]))
+
+
+
+
 
 AC_CHECK_LIB([metis], [METIS_PartGraphKway], ,AC_MSG_ERROR([cannot link to libmetis; check config.log]))
 AC_CHECK_LIB([HYPRE], [hypre_ParCSRMatrixCreate], ,AC_MSG_ERROR([cannot link to libHYPRE; check config.log]))
@@ -118,7 +138,8 @@ AC_LANG([C])
 
 AC_LANG([C++])
 LDFLAGS="$LDFLAGS -L$PWD/OpenParEMCommon"
-LIBS="$LIBS -lOpenParEMCommon -lpetscsys -ldl -lmpi_mpifh -lgfortran -lquadmath"
+#LIBS="$LIBS -lOpenParEMCommon -lpetscsys -ldl -lmpi_mpifh -lgfortran -lquadmath"
+LIBS="$LIBS -lOpenParEMCommon -lpetscsys -ldl -lgfortran -lquadmath"
 AC_LANG([C])
 
 # Checks for header files.

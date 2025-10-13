@@ -199,13 +199,13 @@ public:
 
     void deleteItem (CustomTreeWidgetItem *item)
     {
-        //std::cout << "before: deleteItem visibleItems.size()=" << visibleItems.size() << std::endl; std::cout.flush();
-        //std::cout << "                   selectedItems.size()=" << selectedItems.size() << std::endl; std::cout.flush();
         if (item->is_root()) return;
+        if (item->is_drawing()) drawingCount--;
+        if (item->is_port()) portCount--;
+        if (item->is_boundary()) boundaryCount--;
+        if (item->is_mesh()) meshCount--;
         DeleteItem(item);
         delete item;
-        //std::cout << "after:  deleteItem visibleItems.size()=" << visibleItems.size() << std::endl; std::cout.flush();
-        //std::cout << "                   selectedItems.size()=" << selectedItems.size() << std::endl; std::cout.flush();
     }
 
     bool isValidDelete ()
@@ -222,6 +222,10 @@ public:
 
     void insertItemToMap (Handle(AIS_Shape) shape, CustomTreeWidgetItem *item)
     {
+        if (item->is_drawing()) drawingCount++;
+        if (item->is_port()) portCount++;
+        if (item->is_boundary()) boundaryCount++;
+        if (item->is_mesh()) meshCount++;
         shapeToItemMap.insert({shape,item});
     }
 
@@ -232,6 +236,11 @@ public:
         visibleItems.clear();
         selectedItems.clear();
         shapeToItemMap.clear();
+    }
+
+    long unsigned int get_drawingCount ()
+    {
+        return drawingCount;
     }
 
 private:
@@ -281,6 +290,11 @@ private:
     std::vector<CustomTreeWidgetItem *> visibleItems;
     std::vector<CustomTreeWidgetItem *> selectedItems;
     std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> shapeToItemMap;
+
+    long unsigned int drawingCount=0;
+    long unsigned int portCount=0;
+    long unsigned int boundaryCount=0;
+    long unsigned int meshCount=0;
 };
 
 #endif // ITEMTRACKING_H
