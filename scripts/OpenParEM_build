@@ -327,6 +327,9 @@ install_path=$PWD
 cd "$scripts_dir"
 jobs=1
 
+# convenience variable for simplifying command line options
+with_gui=0
+
 #----------------------------------------------------
 # input processing
 #----------------------------------------------------
@@ -531,6 +534,11 @@ for arg in "$@"; do
          with_OpenParEM=1
       elif [ "$arg" = "--without-OpenParEM" ]; then
          with_OpenParEM=0
+
+      elif [ "$arg" = "--with-gui" ]; then
+         with_gui=1
+      elif [ "$arg" = "--without-gui" ]; then
+         with_gui=0
       else
          echo "ERROR: unrecognized option ""$arg"
          exit 1
@@ -575,10 +583,13 @@ if [ $print_help -eq 1 ]; then
 #   echo "  --shared                  build using shared libraries. Default is to build static libraries whenever possible"
    echo "  --clean-in-place         remove any prior in-place installation"
    echo "  --with-all               compile everything to minimize potential compatibility issues"
+   echo "  --with-gui               compile the GUI
    echo "  --show-setup             show the compilation setup and exit"
    echo ""
    echo "advanced OPTIONS:"
    echo "  --without-all            skip compiling all; generally followed by --with-* options to add back in something to compile"
+   echo "  --with-gui               compile the libraries needed for the GUI"
+   echo "  --without-gui            no not compile the librareis needed for the GUI (default)"
    echo "  --with-tcl=file]         compile tcl using the default distribution or the provided file"
    echo "  --with-tk[=file]         compile tk using the default distribution or the provided file"
    echo "  --with-occt[=file]       compile occt using the default distribution or the provided file"
@@ -645,6 +656,15 @@ if [ "$with_mpich" = "1" ]; then
    with_libevent=0
    with_pmix=0
    with_prrte=0
+fi
+
+# do not compile things that are only needed for the GUI
+if [ "with_gui" = "0" ], then
+   with_freetype=0
+   with_tcl=0
+   with_tk=0
+   with_occt=0
+   with_gmsh=0
 fi
 
 # show the setup

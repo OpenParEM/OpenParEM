@@ -1743,14 +1743,10 @@ bool fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
    double solution_tolerance=1e-12;
    double solution_tolerance_message_limit=1e-3;
    int iteration_limit=2000;
-//xxx
    double norm_p=1;
-//double norm_p=2;
    Vector ReLocalErrors;
 
-//xxx
    bool use_complex=false;
-//bool use_complex=true;
    if (use_complex) {
       double FinalResidualNorm=0;
       bool printError=false;
@@ -1784,10 +1780,7 @@ bool fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
 
       int i=0; 
       while (i < ReLocalErrors.Size()) {
-//xxx
          ReLocalErrors[i]=sqrt(ReLocalErrors[i]*ReLocalErrors[i]+ImLocalErrors[i]*ImLocalErrors[i]);
-//ReLocalErrors[i]=ReLocalErrors[i]+ImLocalErrors[i];
-//ReLocalErrors[i]=sqrt(ReLocalErrors[i]*ImLocalErrors[i]);
          i++;
       }
    }
@@ -1820,10 +1813,8 @@ bool fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
    }
    */
 
-   // Does not work as well as with no scaling
+   /* Does not work as well as with no scaling
    // scale the local errors by the element volume
-//xxx 
-/*
    int i=0;
    while (i < (*pmesh)->GetNE()) {
       real_t volume=(*pmesh)->GetElementVolume(i);
@@ -1831,8 +1822,7 @@ bool fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
       //ReLocalErrors[i]*=pow(volume,0.3333);
       i++;
    }
-*/
-   
+   */
 
    // merge in the errors from the prior pass (i.e. different driven port) - keep the larger error
    int i=0;
@@ -1861,36 +1851,65 @@ bool fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
          int transfer_size;
          MPI_Recv(&transfer_size,1,MPI_INT,i,1000,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
+         double *pack=(double *)malloc(transfer_size*sizeof(double));
+         MPI_Recv(pack,transfer_size,MPI_DOUBLE,i,1001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
          int j=0;
          while (j < transfer_size) {
-
-            double transfer_error=0;
-            MPI_Recv(&transfer_error,1,MPI_DOUBLE,i,1001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            errors.push_back(transfer_error);
-
-            int transfer_element=0;
-            MPI_Recv(&transfer_element,1,MPI_INT,i,1002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            elements.push_back(transfer_element);
-
-            int transfer_rank=0;
-            MPI_Recv(&transfer_rank,1,MPI_INT,i,1003,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            ranks.push_back(transfer_rank);
-            
+            errors.push_back(pack[j]);
             j++;
          }
+         if (pack) free(pack);
+
+         int *packi=(int *)malloc(transfer_size*sizeof(int));
+
+         MPI_Recv(packi,transfer_size,MPI_INT,i,1002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+         j=0;
+         while (j < transfer_size) {
+            elements.push_back(packi[j]);
+            j++;
+         }
+
+         MPI_Recv(packi,transfer_size,MPI_INT,i,1003,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+         j=0;
+         while (j < transfer_size) {
+            ranks.push_back(packi[j]);
+            j++;
+         }
+
+         if (packi) free(packi);
+
          i++;
       }
    } else {
       int local_size=errors.size();
       MPI_Send(&local_size,1,MPI_INT,0,1000,PETSC_COMM_WORLD);
 
+      double *pack=(double *)malloc(local_size*sizeof(double));
       int i=0;
       while (i < local_size) {
-         MPI_Send(&(errors[i]),1,MPI_DOUBLE,0,1001,PETSC_COMM_WORLD);
-         MPI_Send(&(elements[i]),1,MPI_INT,0,1002,PETSC_COMM_WORLD);
-         MPI_Send(&(ranks[i]),1,MPI_INT,0,1003,PETSC_COMM_WORLD);
+         pack[i]=errors[i];
          i++;
       }
+      MPI_Send(pack,local_size,MPI_DOUBLE,0,1001,PETSC_COMM_WORLD);
+      if (pack) free(pack);
+
+      int *packi=(int *)malloc(local_size*sizeof(int));
+
+      i=0;
+      while (i < local_size) {
+         packi[i]=elements[i];
+         i++;
+      }
+      MPI_Send(packi,local_size,MPI_INT,0,1002,PETSC_COMM_WORLD);
+
+      i=0;
+      while (i < local_size) {
+         packi[i]=ranks[i];
+         i++;
+      }
+      MPI_Send(packi,local_size,MPI_INT,0,1003,PETSC_COMM_WORLD);
+
+      if (packi) free(packi);
    }
 
    // sort and find the top errors
