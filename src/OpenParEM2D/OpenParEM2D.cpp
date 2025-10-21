@@ -376,6 +376,8 @@ int main(int argc, char *argv[])
    signal(SIGINT,signalHandler);
    signal(SIGTERM,signalHandler);
 
+   chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
+
    currentPath=std::filesystem::current_path();
 
    // Initialize Petsc and MPI
@@ -411,7 +413,10 @@ int main(int argc, char *argv[])
       workingDir[length]='\0';
 
       if (workingDir) {
-         chdir(workingDir);
+         if (chdir(workingDir) != 0) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2277: Failed to change to the working directory \"%s\".\n",workingDir);
+            exit_job_on_error (job_start_time,lockfile,true);
+         }
          free(workingDir);
       }
    }
@@ -425,8 +430,6 @@ int main(int argc, char *argv[])
    // trap PETSc errors to enable graceful exit, primarily for out-of-memory errors
    struct applicationContext appCtx;
    PetscPushErrorHandler(errorHandler,(struct applicationContext *) &appCtx);
-
-   chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
 
    // parse inputs
    int retVal=1;

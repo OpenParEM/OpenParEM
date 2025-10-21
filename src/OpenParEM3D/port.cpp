@@ -1322,6 +1322,90 @@ void Boundary::collectRadiationCurrents (vector<Current *> *collectedCurrents)
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
 
+   int varCount=16;
+
+   if (rank == 0) {
+
+      // collect currents from this rank
+      int i=0;
+      while (i < (int)radiationCurrents.size()) {
+         Current *current=radiationCurrents[i]->clone();
+         collectedCurrents->push_back(current);
+         i++;
+      }
+      deleteRadiationCurrents();
+
+      // collect the currents from other ranks
+      i=1;
+      while (i < size) {
+         int length;
+         MPI_Recv(&length,1,MPI_INT,i,10000,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+         double *pack=(double *)malloc(length*sizeof(double));
+         MPI_Recv(pack,length,MPI_DOUBLE,i,10001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+         int k=0;
+         while (k < length/varCount) {
+            Current *current=new Current(pack[k*varCount+0],
+                                         pack[k*varCount+1],
+                                         pack[k*varCount+2],
+                                         std::complex(pack[k*varCount+4],pack[k*varCount+5]),
+                                         std::complex(pack[k*varCount+6],pack[k*varCount+7]),
+                                         std::complex(pack[k*varCount+8],pack[k*varCount+9]),
+                                         std::complex(pack[k*varCount+10],pack[k*varCount+11]),
+                                         std::complex(pack[k*varCount+12],pack[k*varCount+13]),
+                                         std::complex(pack[k*varCount+14],pack[k*varCount+15]),
+                                         pack[k*varCount+3]);
+            collectedCurrents->push_back(current);
+            k++;
+         }
+
+         if (pack) free(pack);
+         i++;
+      }
+   } else {
+
+      // pack the data for efficient sending/receiving
+      int length=varCount*radiationCurrents.size();
+      double *pack=(double *)malloc(length*sizeof(double));
+      MPI_Send(&length,1,MPI_INT,0,10000,PETSC_COMM_WORLD);
+
+      long unsigned int i=0;
+      while (i < radiationCurrents.size()) {
+         pack[varCount*i+0]=radiationCurrents[i]->get_x();
+         pack[varCount*i+1]=radiationCurrents[i]->get_y();
+         pack[varCount*i+2]=radiationCurrents[i]->get_z();
+         pack[varCount*i+3]=radiationCurrents[i]->get_area();
+         pack[varCount*i+4]=real(radiationCurrents[i]->get_Jx());
+         pack[varCount*i+5]=imag(radiationCurrents[i]->get_Jx());
+         pack[varCount*i+6]=real(radiationCurrents[i]->get_Jy());
+         pack[varCount*i+7]=imag(radiationCurrents[i]->get_Jy());
+         pack[varCount*i+8]=real(radiationCurrents[i]->get_Jz());
+         pack[varCount*i+9]=imag(radiationCurrents[i]->get_Jz());
+         pack[varCount*i+10]=real(radiationCurrents[i]->get_Mx());
+         pack[varCount*i+11]=imag(radiationCurrents[i]->get_Mx());
+         pack[varCount*i+12]=real(radiationCurrents[i]->get_My());
+         pack[varCount*i+13]=imag(radiationCurrents[i]->get_My());
+         pack[varCount*i+14]=real(radiationCurrents[i]->get_Mz());
+         pack[varCount*i+15]=imag(radiationCurrents[i]->get_Mz());
+         i++;
+      }
+
+      MPI_Send(pack,length,MPI_DOUBLE,0,10001,PETSC_COMM_WORLD); 
+
+      if (pack) free(pack);
+      deleteRadiationCurrents();
+   }
+
+}
+
+/* very slow in MPICH
+void Boundary::collectRadiationCurrents (vector<Current *> *collectedCurrents)
+{
+   PetscMPIInt rank,size;
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+   MPI_Comm_size(PETSC_COMM_WORLD, &size);
+
    if (rank == 0) {
 
       // collect currents from this rank
@@ -1362,6 +1446,7 @@ void Boundary::collectRadiationCurrents (vector<Current *> *collectedCurrents)
    // clear the local currents
    deleteRadiationCurrents();
 }
+*/
 
 void Boundary::deleteRadiationCurrents ()
 {
@@ -5227,10 +5312,11 @@ bool Port::solve(string *directory, std::vector<int> *pidList)
    int *error_codes=(int *)malloc(size*sizeof(int));
 
    // define the working directory for OpenParEM2D
-   std::string workingDir;
-   workingDir.append(projectPath.c_str());
-   workingDir.append("/");
-   workingDir.append(projDirectory.str().c_str());
+   //std::string workingDir;
+   //workingDir.append(projectPath.c_str());
+   //workingDir.append("/");
+   //workingDir.append(projDirectory.str().c_str());
+   std::string workingDir=projDirectory.str().c_str();
 
    // launch the jobs from rank 0
    MPI_Errhandler errorHandler;
