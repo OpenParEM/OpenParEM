@@ -51,8 +51,12 @@ rm -f $projectName"_FarField_results.csv"
 rm -f $projectName"_results.log"
 
 # run the job
-echo "process3D.sh: mpirun -np "$numProc" --oversubscribe OpenParEM3D "$projectFile
-mpirun -np $numProc --oversubscribe OpenParEM3D $projectFile 
+#xxx
+#echo "process3D.sh: mpirun -np "$numProc" --oversubscribe OpenParEM3D "$projectFile
+#mpirun -np $numProc --oversubscribe OpenParEM3D $projectFile 
+echo "process3D.sh: mpirun -np "$numProc" "$projectFile
+mpirun -np $numProc OpenParEM3D $projectFile
+
 
 # check for files
 

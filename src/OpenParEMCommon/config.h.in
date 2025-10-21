@@ -27,12 +27,6 @@
 /* Define to 1 if you have the `esmumps' library (-lesmumps). */
 #undef HAVE_LIBESMUMPS
 
-/* Define to 1 if you have the `event' library (-levent). */
-#undef HAVE_LIBEVENT
-
-/* Define to 1 if you have the `event_pthreads' library (-levent_pthreads). */
-#undef HAVE_LIBEVENT_PTHREADS
-
 /* Define to 1 if you have the `fblas' library (-lfblas). */
 #undef HAVE_LIBFBLAS
 
@@ -44,9 +38,6 @@
 
 /* Define to 1 if you have the `gfortran' library (-lgfortran). */
 #undef HAVE_LIBGFORTRAN
-
-/* Define to 1 if you have the `hwloc' library (-lhwloc). */
-#undef HAVE_LIBHWLOC
 
 /* Define to 1 if you have the `HYPRE' library (-lHYPRE). */
 #undef HAVE_LIBHYPRE
@@ -78,8 +69,24 @@
 /* Define to 1 if you have the `mpifort' library (-lmpifort). */
 #undef HAVE_LIBMPIFORT
 
+/* Define to 1 if you have the `mpi_mpifh' library (-lmpi_mpifh). */
+#undef HAVE_LIBMPI_MPIFH
+
+/* Define to 1 if you have the `mpi_usempif08' library (-lmpi_usempif08). */
+#undef HAVE_LIBMPI_USEMPIF08
+
+/* Define to 1 if you have the `mpi_usempi_ignore_tkr' library
+   (-lmpi_usempi_ignore_tkr). */
+#undef HAVE_LIBMPI_USEMPI_IGNORE_TKR
+
 /* Define to 1 if you have the `mumps_common' library (-lmumps_common). */
 #undef HAVE_LIBMUMPS_COMMON
+
+/* Define to 1 if you have the `open-pal' library (-lopen-pal). */
+#undef HAVE_LIBOPEN_PAL
+
+/* Define to 1 if you have the `open-rte' library (-lopen-rte). */
+#undef HAVE_LIBOPEN_RTE
 
 /* Define to 1 if you have the `petscdm' library (-lpetscdm). */
 #undef HAVE_LIBPETSCDM
@@ -104,9 +111,6 @@
 
 /* Define to 1 if you have the `petscvec' library (-lpetscvec). */
 #undef HAVE_LIBPETSCVEC
-
-/* Define to 1 if you have the `pmix' library (-lpmix). */
-#undef HAVE_LIBPMIX
 
 /* Define to 1 if you have the `pord' library (-lpord). */
 #undef HAVE_LIBPORD
@@ -171,9 +175,6 @@
 
 /* Define to 1 if you have the `util' library (-lutil). */
 #undef HAVE_LIBUTIL
-
-/* Define to 1 if you have the `z' library (-lz). */
-#undef HAVE_LIBZ
 
 /* Define to 1 if you have the `zmumps' library (-lzmumps). */
 #undef HAVE_LIBZMUMPS

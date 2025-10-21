@@ -5207,10 +5207,13 @@ bool Port::solve(string *directory, std::vector<int> *pidList)
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
 
-   // cd to the project directory
+   // project directory
    stringstream projDirectory;
    projDirectory << *directory << "/S" << get_name();
-   std::filesystem::current_path(projDirectory.str().c_str());
+
+   // current path
+   std::filesystem::path currentPath=std::filesystem::current_path();
+   std::string projectPath=currentPath.string();
 
    // argv
    char *argv[2];
@@ -5222,6 +5225,12 @@ bool Port::solve(string *directory, std::vector<int> *pidList)
    argv[1]=nullptr;
 
    int *error_codes=(int *)malloc(size*sizeof(int));
+
+   // define the working directory for OpenParEM2D
+   std::string workingDir;
+   workingDir.append(projectPath.c_str());
+   workingDir.append("/");
+   workingDir.append(projDirectory.str().c_str());
 
    // launch the jobs from rank 0
    MPI_Errhandler errorHandler;
@@ -5261,6 +5270,17 @@ bool Port::solve(string *directory, std::vector<int> *pidList)
        }
    }
 
+   // send workingDir
+   int length=workingDir.length();
+   if (rank == 0) {
+      int i=0;
+      while (i < size) {
+         MPI_Send(&length,1,MPI_INT,i,10,MPI_PORT_COMM);
+         MPI_Send(workingDir.c_str(),length,MPI_CHAR,i,11,MPI_PORT_COMM);
+         i++;
+      }
+   }
+
    // wait for the 2D simulations to finish
    int fail2D=0;
    if (rank == 0) {
@@ -5287,13 +5307,10 @@ bool Port::solve(string *directory, std::vector<int> *pidList)
       fail=true;
    }
 
-//xxx
-MPI_Comm_free(&MPI_PORT_COMM);
+   MPI_Comm_free(&MPI_PORT_COMM);
 
    MPI_Comm_set_errhandler(PETSC_COMM_WORLD,MPI_ERRORS_RETURN);
    MPI_Errhandler_free(&errorHandler);
-
-   std::filesystem::current_path("../../");
 
    return fail;
 }

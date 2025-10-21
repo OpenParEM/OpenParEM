@@ -97,6 +97,7 @@ void signalHandler (int signum)
    } else {
       int retval=1;
       MPI_Send(&retval,1,MPI_INT,0,100000,parent);
+      MPI_Comm_free(&parent);
    }
 
    remove_lock_file (lockfile);
@@ -398,6 +399,21 @@ int main(int argc, char *argv[])
    int signal;
    if (parent != MPI_COMM_NULL && rank == 0) {
       MPI_Irecv(&signal,1,MPI_INT,0,200000,parent,&request);
+   }
+
+   // get the working directory
+   if (parent != MPI_COMM_NULL) {
+      int length;
+      MPI_Recv(&length,1,MPI_INT,0,10,parent,MPI_STATUS_IGNORE);
+
+      char *workingDir=(char *)malloc((length+1)*sizeof(char));
+      MPI_Recv(workingDir,length,MPI_CHAR,0,11,parent,MPI_STATUS_IGNORE);
+      workingDir[length]='\0';
+
+      if (workingDir) {
+         chdir(workingDir);
+         free(workingDir);
+      }
    }
 
    // set the indent characters
@@ -871,8 +887,7 @@ int main(int argc, char *argv[])
    if (parent != MPI_COMM_NULL) {
       int retval=0;
       MPI_Send(&retval,1,MPI_INT,0,100000,parent);
-//xxx
-MPI_Comm_free(&parent);
+      MPI_Comm_free(&parent);
    }
 
    MPI_Barrier(PETSC_COMM_WORLD);

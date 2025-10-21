@@ -44,6 +44,7 @@ void exit_job_on_error (chrono::steady_clock::time_point job_start_time, const c
    if (parent != MPI_COMM_NULL) {
       int retval=1;
       MPI_Send(&retval,1,MPI_INT,0,100000,parent);
+      MPI_Comm_free(&parent);
    }
 
    PetscFinalize();

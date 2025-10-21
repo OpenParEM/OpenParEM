@@ -637,6 +637,16 @@ if [ "$with_openmpi" = "1" ] && [ "$with_mpich" = "1" ]; then
    with_openmpi=0
 fi
 
+# do not compile things that are only needed by openmpi
+if [ "$with_mpich" = "1" ]; then
+   with_m4=0
+   with_zlib=0
+   with_hwloc=0
+   with_libevent=0
+   with_pmix=0
+   with_prrte=0
+fi
+
 # show the setup
 
    if [ "$with_freetype" = "1" ]; then
@@ -1682,15 +1692,15 @@ if [ "$with_mpich" = "1" ]; then
 
    unpack_and_enter "$mpich"
 
-#   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-hwloc="$install_path" --with-pmix="$install_path" --with-pm=hydra
-./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-hwloc="$install_path" --with-pmix="$install_path" 
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" 
+#./configure --with-pm=hydra --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-hwloc="$install_path" --with-pmix="$install_path" 2>&1 | tee mpich_configure.log
+#./configure --with-pmi=pmix --with-pmix=$install_path --with-pm=hydra --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-hwloc="$install_path" 2>&1 | tee mpich_configure.log
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: mpich failed to configure"
       exit 1
    fi
 
-#   make -j "$jobs"
-make
+   make -j "$jobs"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: mpich failed to make"
       exit 1
@@ -1703,7 +1713,7 @@ make
    fi
 
    cd ..
-#   remove_base_directory
+   remove_base_directory
    cd ..
 
 fi
@@ -1936,33 +1946,39 @@ if [ "$with_OpenParEM" = "1" ]; then
    wrap_executable simplify3D $HAS_ORTERUN
 fi
 
-if [ "$HAS_ORTERUN" = "1" ]; then
-   if [ "$HAS_ORTERUNBIN" = "0" ]; then
-      wrap_executable orterun $HAS_ORTERUN
-   fi
-else
-   cd "$install_path/bin"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to change to bin directory."
-      exit 1
-   fi
-
-   if [ ! -f orterun ]; then
-
-      rm -f mpirun
-      echo "#!/bin/sh" > mpirun
+if [ "$with_openmpi" = "1" ]; then 
+   if [ "$HAS_ORTERUN" = "1" ]; then
+      if [ "$HAS_ORTERUNBIN" = "0" ]; then
+         wrap_executable orterun $HAS_ORTERUN
+      fi
+   else
+      cd "$install_path/bin"
       if [ $? -ne 0 ]; then
-         echo "OpenParEM_ERROR: failed to create file mpirun."
+         echo "OpenParEM_ERROR: failed to change to bin directory."
          exit 1
       fi
 
-      echo 'export OMP_NUM_THREADS=1' >> mpirun
-      echo 'orterun "$@"' >> mpirun
+      if [ ! -f orterun ]; then
 
+         rm -f mpirun
+         echo "#!/bin/sh" > mpirun
+         if [ $? -ne 0 ]; then
+            echo "OpenParEM_ERROR: failed to create file mpirun."
+            exit 1
+         fi
+
+         echo 'export OMP_NUM_THREADS=1' >> mpirun
+         echo 'orterun "$@"' >> mpirun
+
+      fi
+
+      cd "$scripts_dir"
    fi
-
-   cd "$scripts_dir"
 fi
+
+#if [ "$with_mpich" = "1" ]; then
+#   # TBD
+#fi
 
 # finish up with elapsed time
 end_time="$(date -u +%s)"
