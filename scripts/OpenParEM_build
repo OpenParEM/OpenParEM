@@ -1974,6 +1974,12 @@ cd "$install_path/bin"
    if [ -f orterun.bin ]; then
       HAS_ORTERUNBIN=1
    fi
+
+   HAS_MPIRUNBIN=0
+   if [ -f mpirun.bin ]; then
+      HAS_MPIRUNBIN=1
+   fi
+
 cd "$scripts_dir"
 
 if [ "$with_OpenParEM" = "1" ]; then
@@ -2033,6 +2039,13 @@ if [ "$HAS_OPENMPI" = "1" ]; then
       fi
 
       cd "$scripts_dir"
+   fi
+fi
+
+# wrapping for MPICH
+if [ "$HAS_MPICH" = "1" ]; then
+   if [ "$HAS_MPIRUNBIN" = "0" ]; then
+      wrap_executable mpirun 0
    fi
 fi
 
