@@ -95,8 +95,10 @@ void signalHandler (int signum)
    if (parent == MPI_COMM_NULL) {
       if (rank == 0) cout << "OpenParEM2D Job Aborted" << endl;
    } else {
+      MPI_Barrier(parent);
       int retval=1;
-      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
+//      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
+MPI_Send(&retval,1,MPI_INT,rank,100000,parent);
       MPI_Comm_free(&parent);
    }
 
@@ -113,6 +115,12 @@ void help () {
    PetscPrintf(PETSC_COMM_WORLD,"       filename    : Filename of an OpenParEM setup file.\n");
    PetscPrintf(PETSC_COMM_WORLD,"\nOpenParEM2D is a full-wave 2D electromagnetic solver.\n");
    PetscPrintf(PETSC_COMM_WORLD,"Version %d.%d.%d\n",version_major,version_minor,version_patch);
+
+   // get the MPI version
+   char version_string[MPI_MAX_LIBRARY_VERSION_STRING];
+   int resultlen;
+   MPI_Get_library_version(version_string, &resultlen);
+   PetscPrintf(PETSC_COMM_WORLD,"%s\n",version_string);
 }
 
 // load the mesh - either serial or parallel
@@ -403,6 +411,12 @@ int main(int argc, char *argv[])
       MPI_Irecv(&signal,1,MPI_INT,0,200000,parent,&request);
    }
 
+   // set the indent characters
+   prefix_text=(char *)malloc(256*sizeof(char));
+   if (parent == MPI_COMM_NULL) snprintf(prefix_text,256,"%s","");
+   else snprintf(prefix_text,256,"%s","         | ");
+   set_prefix_text(prefix_text);
+
    // get the working directory
    if (parent != MPI_COMM_NULL) {
       int length;
@@ -420,12 +434,6 @@ int main(int argc, char *argv[])
          free(workingDir);
       }
    }
-
-   // set the indent characters
-   prefix_text=(char *)malloc(256*sizeof(char));
-   if (parent == MPI_COMM_NULL) snprintf(prefix_text,256,"%s","");
-   else snprintf(prefix_text,256,"%s","         | ");
-   set_prefix_text(prefix_text);
 
    // trap PETSc errors to enable graceful exit, primarily for out-of-memory errors
    struct applicationContext appCtx;
@@ -885,12 +893,23 @@ int main(int argc, char *argv[])
 
    show_memory (projData.debug_show_memory, "");
 
+   PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+   MPI_Barrier(PETSC_COMM_WORLD);
+
    remove_lock_file (lockfile);
 
    if (parent != MPI_COMM_NULL) {
+      PetscSynchronizedFlush(parent,PETSC_STDOUT);
+//      MPI_Barrier(parent);
       int retval=0;
-      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
-      MPI_Comm_free(&parent);
+//      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
+MPI_Send(&retval,1,MPI_INT,rank,100000,parent);
+
+      if (rank == 0) {
+         MPI_Wait(&request,MPI_STATUS_IGNORE);
+      }
+
+      MPI_Comm_disconnect(&parent);
    }
 
    MPI_Barrier(PETSC_COMM_WORLD);

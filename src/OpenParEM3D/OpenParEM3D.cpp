@@ -795,7 +795,6 @@ int main(int argc, char *argv[])
    resultDatabase.save(&projData);
 
    free_project (&projData);
-
    show_memory (projData.debug_show_memory, "");
 
    remove_lock_file(lockfile);

@@ -128,67 +128,90 @@ bool write_attributes (const char *baseName, mfem::ParMesh *pmesh)
    if (rank == 0) {
       int i=1;
       while (i < size) {
+         int transfer_size=0;
+         MPI_Recv(&transfer_size,1,MPI_INT,i,100,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+         // x
+         double *pack=(double *)malloc(transfer_size*sizeof(double));
+         MPI_Recv(pack,transfer_size,MPI_DOUBLE,i,101,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
          int j=0;
-         MPI_Recv(&j,1,MPI_INT,i,100,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-         int k=0;
-         while (k < j) {
-
-            if (dim == 2) {
-               double position;
-               MPI_Recv(&position,1,MPI_DOUBLE,i,101,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-               x.push_back(position);
-
-               MPI_Recv(&position,1,MPI_DOUBLE,i,102,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-               y.push_back(position);
-
-               int attr=0;
-               MPI_Recv(&attr,1,MPI_INT,i,104,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-               attribute.push_back(attr);
-            }
-
-            if (dim == 3) {
-               double position;
-               MPI_Recv(&position,1,MPI_DOUBLE,i,101,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-               x.push_back(position);
-
-               MPI_Recv(&position,1,MPI_DOUBLE,i,102,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-               y.push_back(position);
-
-               MPI_Recv(&position,1,MPI_DOUBLE,i,103,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-               z.push_back(position);
-
-               int attr=0;
-               MPI_Recv(&attr,1,MPI_INT,i,104,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-               attribute.push_back(attr);
-            }
-
-            k++;
+         while (j < transfer_size) {
+            x.push_back(pack[j]);
+            j++;
          }
+
+         // y
+         MPI_Recv(pack,transfer_size,MPI_DOUBLE,i,102,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+         j=0;
+         while (j < transfer_size) {
+            y.push_back(pack[j]);
+            j++;
+         }
+
+         // z
+         if (dim == 3) {
+            MPI_Recv(pack,transfer_size,MPI_DOUBLE,i,103,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+            int j=0;
+            while (j < transfer_size) {
+               z.push_back(pack[j]);
+               j++;
+            }
+         }
+         if (pack) {free(pack); pack=nullptr;}
+
+         // attribute
+         int *packi=(int *)malloc(transfer_size*sizeof(int));
+         MPI_Recv(packi,transfer_size,MPI_INT,i,104,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+         j=0;
+         while (j < transfer_size) {
+            attribute.push_back(packi[j]);
+            j++;
+         }
+         if (packi) {free(packi); packi=nullptr;}
+
          i++;
       }
    } else {
       int local_size=x.size();
       MPI_Send(&local_size,1,MPI_INT,0,100,PETSC_COMM_WORLD);
 
+      // x
+      double *pack=(double *)malloc(local_size*sizeof(double));
       long unsigned int i=0;
-      while (i < x.size()) {
-
-         if (dim == 2) {
-            MPI_Send(&(x[i]),1,MPI_DOUBLE,0,101,PETSC_COMM_WORLD);
-            MPI_Send(&(y[i]),1,MPI_DOUBLE,0,102,PETSC_COMM_WORLD);
-            MPI_Send(&(attribute[i]),1,MPI_INT,0,104,PETSC_COMM_WORLD);
-         }
-
-         if (dim == 3) {
-            MPI_Send(&(x[i]),1,MPI_DOUBLE,0,101,PETSC_COMM_WORLD);
-            MPI_Send(&(y[i]),1,MPI_DOUBLE,0,102,PETSC_COMM_WORLD);
-            MPI_Send(&(z[i]),1,MPI_DOUBLE,0,103,PETSC_COMM_WORLD);
-            MPI_Send(&(attribute[i]),1,MPI_INT,0,104,PETSC_COMM_WORLD);
-         }
- 
+      while (i < local_size) {
+         pack[i]=x[i];
          i++;
       }
+      MPI_Send(pack,local_size,MPI_DOUBLE,0,101,PETSC_COMM_WORLD);
+
+      // y
+      i=0;
+      while (i < local_size) {
+         pack[i]=y[i];
+         i++;
+      }
+      MPI_Send(pack,local_size,MPI_DOUBLE,0,102,PETSC_COMM_WORLD);
+
+      // z
+      if (dim == 3) {
+         i=0;
+         while (i < local_size) {
+            pack[i]=z[i];
+            i++;
+         }
+         MPI_Send(pack,local_size,MPI_DOUBLE,0,103,PETSC_COMM_WORLD);
+      }
+      if (pack) {free(pack); pack=nullptr;}
+
+      // attribute
+      int *packi=(int *)malloc(local_size*sizeof(int));
+      i=0;
+      while (i < local_size) {
+         packi[i]=attribute[i];
+         i++;
+      }
+      MPI_Send(packi,local_size,MPI_INT,0,104,PETSC_COMM_WORLD);
+      if (packi) {free(packi); packi=nullptr;}
    }
 
    MPI_Barrier(PETSC_COMM_WORLD);

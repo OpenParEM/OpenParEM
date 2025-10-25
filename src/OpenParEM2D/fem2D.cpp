@@ -1090,13 +1090,15 @@ Vector* getGlobalVector (HypreParVector *a)
          MPI_Recv(&low,1,MPI_INT,i,100,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
          MPI_Recv(&high,1,MPI_INT,i,101,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
+         double *pack=(double *)malloc((high-low)*sizeof(double));
+         MPI_Recv(pack,high-low,MPI_DOUBLE,i,102,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
          int j=low;
          while (j < high) {
-            double data;
-            MPI_Recv(&data,1,MPI_DOUBLE,i,102,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            b->Elem(j)=data;
+            b->Elem(j)=pack[j-low];
             j++;
          }
+         if (pack) free(pack);
+
          i++;
       }
    } else {
@@ -1105,12 +1107,14 @@ Vector* getGlobalVector (HypreParVector *a)
       MPI_Send(&low,1,MPI_INT,0,100,PETSC_COMM_WORLD);
       MPI_Send(&high,1,MPI_INT,0,101,PETSC_COMM_WORLD);
 
+      double *pack=(double *)malloc((high-low)*sizeof(double));
       int j=low;
       while (j < high) {
-         double data=a->Elem(j-low);
-         MPI_Send(&data,1,MPI_DOUBLE,0,102,PETSC_COMM_WORLD);
+         pack[j-low]=a->Elem(j-low);
          j++;
       }
+      MPI_Send(pack,high-low,MPI_DOUBLE,0,102,PETSC_COMM_WORLD);
+      if (pack) free(pack);
    }
 
    // distribute
@@ -1118,22 +1122,25 @@ Vector* getGlobalVector (HypreParVector *a)
    if (rank == 0) {
       int i=1;
       while (i < size) {
+         double *pack=(double *)malloc(b->Size()*sizeof(double));
          int j=0;
          while (j < b->Size()) {
-            double data=b->Elem(j);
-            MPI_Send(&data,1,MPI_DOUBLE,i,103,PETSC_COMM_WORLD);
+            pack[j]=b->Elem(j);
             j++;
          }
+         MPI_Send(pack,b->Size(),MPI_DOUBLE,i,103,PETSC_COMM_WORLD);
+         if (pack) free(pack);
          i++;
       }
    } else {
+      double *pack=(double *)malloc(b->Size()*sizeof(double));
+      MPI_Recv(pack,b->Size(),MPI_DOUBLE,0,103,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       int i=0;
       while (i < b->Size()) {
-         double data;
-         MPI_Recv(&data,1,MPI_DOUBLE,0,103,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-         b->Elem(i)=data;
+         b->Elem(i)=pack[i];
          i++;
       }
+      if (pack) free(pack);
    } 
 
    return b;

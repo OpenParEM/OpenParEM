@@ -3,6 +3,31 @@
 # first argument is the *.proj file name
 # third argument is the number of processors to use
 
+# find which MPI library is being used
+HAS_OPENMPI=0
+HAS_MPICH=0
+which mpirun > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+   output=$(mpirun --version 2>/dev/null)
+
+   echo "$output" | grep -qi "Open MPI"
+   if [ $? -eq 0 ]; then
+      HAS_OPENMPI=1
+   fi
+
+   echo "$output" | grep -qi "OpenRTE"
+   if [ $? -eq 0 ]; then
+      HAS_OPENMPI=1
+   fi
+
+   echo "$output" | grep -qi "MPICH"
+   if [ $? -eq 0 ]; then
+      HAS_MPICH=1
+   fi
+fi
+echo "HAS_OPENMPI="$HAS_OPENMPI
+echo "HAS_MPICH="$HAS_MPICH
+
 #--------------------------------------------------------------------------
 # input processing
 #--------------------------------------------------------------------------
@@ -51,12 +76,15 @@ rm -f $projectName"_FarField_results.csv"
 rm -f $projectName"_results.log"
 
 # run the job
-#xxx
-#echo "process3D.sh: mpirun -np "$numProc" --oversubscribe OpenParEM3D "$projectFile
-#mpirun -np $numProc --oversubscribe OpenParEM3D $projectFile 
-echo "process3D.sh: mpirun -np "$numProc" "$projectFile
-mpirun -np $numProc OpenParEM3D $projectFile
+if [ "$HAS_OPENMPI" = "1" ]; then
+   echo "process3D.sh: mpirun -np "$numProc" --oversubscribe OpenParEM3D "$projectFile
+   mpirun -np $numProc --oversubscribe OpenParEM3D $projectFile 
+fi
 
+if [ "$HAS_MPICH" = "1" ]; then
+   echo "process3D.sh: mpirun -np "$numProc" OpenParEM3D "$projectFile
+   mpirun -np $numProc OpenParEM3D $projectFile
+fi
 
 # check for files
 

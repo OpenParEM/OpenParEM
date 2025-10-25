@@ -22,6 +22,7 @@
 #include <iostream>
 #include <sstream>
 #include <filesystem>
+#include <thread>
 
 #include "port.hpp"
 #include "fem3D.hpp"
@@ -3477,48 +3478,54 @@ void Mode::fillX (Vec *X, Vec *Xdofs, Array<int> *ess_tdof_port_list, HYPRE_BigI
       while (i < size) {
          int transfer_size=0;
          MPI_Recv(&transfer_size,1,MPI_INT,i,10000,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
+         int *pack=(int *)malloc(transfer_size*sizeof(int));
+         MPI_Recv(pack,transfer_size,MPI_INT,i,10001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
          int k=0;
          while (k < transfer_size) {
-            int location=0;
-            MPI_Recv(&location,1,MPI_INT,i,10001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            global_ess[location]=1;
+            global_ess[pack[k]]=1;
             k++;
          }
+         if (pack) free(pack);
          i++;
       }
    } else {
       MPI_Send(&local_size,1,MPI_INT,0,10000,PETSC_COMM_WORLD);
 
-      int i=0;
+      int *pack=(int *)malloc(local_size*sizeof(int));
+      int i=0; 
       while (i < local_size) {
-         int location=offset_port[0]+(*ess_tdof_port_list)[i];
-         MPI_Send(&location,1,MPI_INT,0,10001,PETSC_COMM_WORLD);
+         pack[i]=offset_port[0]+(*ess_tdof_port_list)[i];
          i++;
       }
+      MPI_Send(pack,local_size,MPI_INT,0,10001,PETSC_COMM_WORLD);
+      if (pack) free(pack);
    }
 
    // send global to all ranks
 
    if (rank == 0) {
-      int i=1;
-      while (i < size) {
-         int k=0;
-         while (k < global_size) {
-            int transfer=global_ess[k];
-            MPI_Send(&transfer,1,MPI_INT,i,20001,PETSC_COMM_WORLD);
-            k++;
-         }
+      int *pack=(int *)malloc(global_size*sizeof(int));
+      int i=0;
+      while (i < global_size) {
+         pack[i]=global_ess[i];
          i++;
       }
-   } else {
-      int k=0;
-      while (k < global_size) {
-         int transfer=0;
-         MPI_Recv(&transfer,1,MPI_INT,0,20001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-         global_ess[k]=transfer;
-         k++;
+
+      i=1;
+      while (i < size) {
+         MPI_Send(pack,global_size,MPI_INT,i,20001,PETSC_COMM_WORLD);
+         i++;
       }
+      if (pack) free(pack);
+   } else {
+      int *pack=(int *)malloc(global_size*sizeof(int));
+      MPI_Recv(pack,global_size,MPI_INT,0,20001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      int i=0;
+      while (i < global_size) {
+         global_ess[i]=pack[i];
+         i++;
+      }
+      if (pack) free(pack);
    }
 
    // transfer to X
@@ -5367,33 +5374,51 @@ bool Port::solve(string *directory, std::vector<int> *pidList)
       }
    }
 
+//yyy
    // wait for the 2D simulations to finish
-   int fail2D=0;
-   if (rank == 0) {
-       int i=0;
-       while (i < size) {
-           int status;
-           MPI_Recv(&status,1,MPI_INT,i,100000,MPI_PORT_COMM,MPI_STATUS_IGNORE);
-           if (status) fail2D=1;
-           i++;
-       }
+   PetscSynchronizedFlush(MPI_PORT_COMM,PETSC_STDOUT);
+//   MPI_Barrier(MPI_PORT_COMM);
+   int flag=0;
+   while (!flag) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      MPI_Iprobe(rank,100000,MPI_PORT_COMM,&flag,MPI_STATUS_IGNORE);
+   } 
 
-       // notify the other ranks
-       i=1;
-       while (i < size) {
-           MPI_Send(&fail2D,1,MPI_INT,i,300002,PETSC_COMM_WORLD);
-           i++;
-       }
-   } else {
-       MPI_Recv(&fail2D,1,MPI_INT,0,300002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   }
+   // get the status of the 2D simulations 
+   int fail2D=0;
+MPI_Recv(&fail2D,1,MPI_INT,rank,100000,MPI_PORT_COMM,MPI_STATUS_IGNORE);
+
+//   if (rank == 0) {
+//       int i=0;
+//       while (i < size) {
+//           int status;
+//           MPI_Recv(&status,1,MPI_INT,i,100000,MPI_PORT_COMM,MPI_STATUS_IGNORE);
+//           if (status) fail2D=1;
+//           i++;
+//       }
+
+//       // notify the other ranks
+//       i=1;
+//       while (i < size) {
+//           MPI_Send(&fail2D,1,MPI_INT,i,300002,PETSC_COMM_WORLD);
+//           i++;
+//       }
+//   } else {
+//       MPI_Recv(&fail2D,1,MPI_INT,0,300002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+//   }
 
    if (fail2D) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3087: OpenParEM2D error in execution for Port \"%s\".\n",get_name().c_str());
       fail=true;
    }
 
-   MPI_Comm_free(&MPI_PORT_COMM);
+   // unblock OpenParEM2D
+   if (rank == 0) {
+      int signal;
+      MPI_Send(&signal,1,MPI_INT,0,200000,MPI_PORT_COMM);
+   }
+
+   MPI_Comm_disconnect(&MPI_PORT_COMM);
 
    MPI_Comm_set_errhandler(PETSC_COMM_WORLD,MPI_ERRORS_RETURN);
    MPI_Errhandler_free(&errorHandler);
@@ -7502,6 +7527,11 @@ bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSub
 
    long unsigned int i=0;
    while (i < portList.size()) {
+//xxx
+//MPI_Barrier(PETSC_COMM_WORLD);
+//std::cout.flush();
+//MPI_Barrier(PETSC_COMM_WORLD);
+
       //prefix(); PetscPrintf(PETSC_COMM_WORLD,"         ------------------------------------------------------------------------------------------------------------------------------------\n");
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"         Port \"%s\" ...\n",portList[i]->get_name().c_str());
       //prefix(); PetscPrintf(PETSC_COMM_WORLD,"         ------------------------------------------------------------------------------------------------------------------------------------\n");
@@ -7525,6 +7555,10 @@ bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSub
 
       // clear the list of pids since these jobs are no longer running
       pidList->clear();
+
+//xxx
+//MPI_Barrier(PETSC_COMM_WORLD);
+//std::cout.flush();
 
       i++;
    }
@@ -8374,6 +8408,8 @@ void BoundaryDatabase::collectRadiationCurrents ()
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
 
+   int varCount=16;
+
    // collect at rank 0
    long unsigned int i=0;
    while (i < boundaryList.size()) {
@@ -8381,29 +8417,64 @@ void BoundaryDatabase::collectRadiationCurrents ()
       i++;
    }
 
+   // distribute
    if (rank == 0) {
-      int count=radiationCurrents.size();
-      int i=1;
-      while (i < size) {
-         MPI_Send(&count,1,MPI_INT,i,2000,PETSC_COMM_WORLD);
-         long unsigned int j=0;
-         while (j < radiationCurrents.size()) {
-            radiationCurrents[j]->sendTo(i);
-            j++;
-         }
+
+      int length=varCount*radiationCurrents.size();
+      double *pack=(double *)malloc(length*sizeof(double));
+      long unsigned int i=0;
+      while (i < radiationCurrents.size()) {
+         pack[varCount*i+0]=radiationCurrents[i]->get_x();
+         pack[varCount*i+1]=radiationCurrents[i]->get_y();
+         pack[varCount*i+2]=radiationCurrents[i]->get_z();
+         pack[varCount*i+3]=radiationCurrents[i]->get_area();
+         pack[varCount*i+4]=real(radiationCurrents[i]->get_Jx());
+         pack[varCount*i+5]=imag(radiationCurrents[i]->get_Jx());
+         pack[varCount*i+6]=real(radiationCurrents[i]->get_Jy());
+         pack[varCount*i+7]=imag(radiationCurrents[i]->get_Jy());
+         pack[varCount*i+8]=real(radiationCurrents[i]->get_Jz());
+         pack[varCount*i+9]=imag(radiationCurrents[i]->get_Jz());
+         pack[varCount*i+10]=real(radiationCurrents[i]->get_Mx());
+         pack[varCount*i+11]=imag(radiationCurrents[i]->get_Mx());
+         pack[varCount*i+12]=real(radiationCurrents[i]->get_My());
+         pack[varCount*i+13]=imag(radiationCurrents[i]->get_My());
+         pack[varCount*i+14]=real(radiationCurrents[i]->get_Mz());
+         pack[varCount*i+15]=imag(radiationCurrents[i]->get_Mz());
          i++;
       }
-   } else {
-      int count;
-      MPI_Recv(&count,1,MPI_INT,0,2000,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
-      long unsigned int j=0;
-      while (j < (long unsigned int)count) {
-         Current *current=new Current();
-         current->recvFrom(0);
-         radiationCurrents.push_back(current);
+      int j=1;
+      while (j < size) {
+         MPI_Send(&length,1,MPI_INT,j,2000,PETSC_COMM_WORLD);
+         MPI_Send(pack,length,MPI_DOUBLE,j,2001,PETSC_COMM_WORLD);
          j++;
       }
+
+      if (pack) free(pack);
+   } else {
+      int length;
+      MPI_Recv(&length,1,MPI_INT,0,2000,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+      double *pack=(double *)malloc(length*sizeof(double));
+      MPI_Recv(pack,length,MPI_DOUBLE,0,2001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+      int k=0;
+      while (k < length/varCount) {
+         Current *current=new Current(pack[k*varCount+0],
+                                      pack[k*varCount+1],
+                                      pack[k*varCount+2],
+                                      std::complex(pack[k*varCount+4],pack[k*varCount+5]),
+                                      std::complex(pack[k*varCount+6],pack[k*varCount+7]),
+                                      std::complex(pack[k*varCount+8],pack[k*varCount+9]),
+                                      std::complex(pack[k*varCount+10],pack[k*varCount+11]),
+                                      std::complex(pack[k*varCount+12],pack[k*varCount+13]),
+                                      std::complex(pack[k*varCount+14],pack[k*varCount+15]),
+                                      pack[k*varCount+3]);
+         radiationCurrents.push_back(current);
+         k++;
+      }
+
+      if (pack) free(pack);
    }
 }
 

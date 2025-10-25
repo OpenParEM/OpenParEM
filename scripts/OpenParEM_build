@@ -534,7 +534,6 @@ for arg in "$@"; do
          with_OpenParEM=1
       elif [ "$arg" = "--without-OpenParEM" ]; then
          with_OpenParEM=0
-
       elif [ "$arg" = "--with-gui" ]; then
          with_gui=1
       elif [ "$arg" = "--without-gui" ]; then
@@ -583,13 +582,13 @@ if [ $print_help -eq 1 ]; then
 #   echo "  --shared                  build using shared libraries. Default is to build static libraries whenever possible"
    echo "  --clean-in-place         remove any prior in-place installation"
    echo "  --with-all               compile everything to minimize potential compatibility issues"
-   echo "  --with-gui               compile the GUI
+   echo "  --with-gui               compile the libraries needed for the GUI"
    echo "  --show-setup             show the compilation setup and exit"
    echo ""
    echo "advanced OPTIONS:"
    echo "  --without-all            skip compiling all; generally followed by --with-* options to add back in something to compile"
    echo "  --with-gui               compile the libraries needed for the GUI"
-   echo "  --without-gui            no not compile the librareis needed for the GUI (default)"
+   echo "  --without-gui            do not compile the libraries needed for the GUI (default)"
    echo "  --with-tcl=file]         compile tcl using the default distribution or the provided file"
    echo "  --with-tk[=file]         compile tk using the default distribution or the provided file"
    echo "  --with-occt[=file]       compile occt using the default distribution or the provided file"
@@ -659,7 +658,7 @@ if [ "$with_mpich" = "1" ]; then
 fi
 
 # do not compile things that are only needed for the GUI
-if [ "with_gui" = "0" ], then
+if [ "$with_gui" = "0" ]; then
    with_freetype=0
    with_tcl=0
    with_tk=0
@@ -1712,9 +1711,32 @@ if [ "$with_mpich" = "1" ]; then
 
    unpack_and_enter "$mpich"
 
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" 
-#./configure --with-pm=hydra --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-hwloc="$install_path" --with-pmix="$install_path" 2>&1 | tee mpich_configure.log
-#./configure --with-pmi=pmix --with-pmix=$install_path --with-pm=hydra --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-hwloc="$install_path" 2>&1 | tee mpich_configure.log
+   # The device has a large impact on performance that is hardware dependent.  Experimentation is in order.
+
+   # configure selects the device
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   # <10% slower than with ch3:nemesis on normal run
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" 
+
+   # good on the eigenvalue solve when excessive slots are speccified
+   # but 50% slower on small cases
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:sock
+
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:nemesis
+
+   # not supported
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:nemsis
+
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   # faster than OpenMPI for a small case
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ucx
+
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   # <10% slower than OpenMPI for a small case
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ofi
+
+
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: mpich failed to configure"
       exit 1
@@ -1952,9 +1974,7 @@ cd "$install_path/bin"
    if [ -f orterun.bin ]; then
       HAS_ORTERUNBIN=1
    fi
-
 cd "$scripts_dir"
-
 
 if [ "$with_OpenParEM" = "1" ]; then
    wrap_executable builder $HAS_ORTERUN
@@ -1966,7 +1986,27 @@ if [ "$with_OpenParEM" = "1" ]; then
    wrap_executable simplify3D $HAS_ORTERUN
 fi
 
-if [ "$with_openmpi" = "1" ]; then 
+
+# find which MPI library is being used
+HAS_OPENMPI=0
+HAS_MPICH=0
+which mpirun > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+   output=$(mpirun --version 2>/dev/null)
+
+   echo "$output" | grep -qi "Open MPI"
+   if [ $? -eq 0 ]; then
+      HAS_OPENMPI=1
+   fi
+
+   echo "$output" | grep -qi "MPICH"
+   if [ $? -eq 0 ]; then
+      HAS_MPICH=1
+   fi
+fi
+
+# wrapping for OpenMPI
+if [ "$HAS_OPENMPI" = "1" ]; then 
    if [ "$HAS_ORTERUN" = "1" ]; then
       if [ "$HAS_ORTERUNBIN" = "0" ]; then
          wrap_executable orterun $HAS_ORTERUN
@@ -1995,10 +2035,6 @@ if [ "$with_openmpi" = "1" ]; then
       cd "$scripts_dir"
    fi
 fi
-
-#if [ "$with_mpich" = "1" ]; then
-#   # TBD
-#fi
 
 # finish up with elapsed time
 end_time="$(date -u +%s)"

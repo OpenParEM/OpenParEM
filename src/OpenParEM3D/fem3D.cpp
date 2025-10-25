@@ -512,7 +512,7 @@ void fem3D::build_e_re_e_im ()
    }
 }
 
-
+//xxx
 /* avoid sending global vector to all ranks
 // x uses a local distribution on A (which is destroyed before here)
 // e_re and e_im must use a local distribution on fespace_ND
@@ -675,6 +675,7 @@ void fem3D::build_e_re_e_im ()
 }
 */
 
+//xxx
 /* original - very slow in MPICH
 // x uses a local distribution on A (which is destroyed before here)
 // e_re and e_im must use a local distribution on fespace_ND
@@ -1015,6 +1016,7 @@ void fem3D::build_h_re_h_im (Vec *hdofs)
    }
 }
 
+//xxx
 /* original with poor MPICH performance
 // see notes for build_e_re_e_im
 void fem3D::build_h_re_h_im (Vec *hdofs)
@@ -1455,64 +1457,71 @@ void vecToHypreParVector (Vec *v, HypreParVector *Re_hpv, HypreParVector *Im_hpv
          int count=0;
          MPI_Recv(&count,1,MPI_INT,i,300,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
+         int offset=0;
+         MPI_Recv(&offset,1,MPI_INT,i,301,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+         double *pack=(double *)malloc(2*count*sizeof(double));
+         MPI_Recv(pack,2*count,MPI_DOUBLE,i,302,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
          int j=0;
          while (j < count) {
-            int location=0;
-            double transfer_real=0;
-            double transfer_imag=0;
-            MPI_Recv(&location,1,MPI_INT,i,301,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            MPI_Recv(&transfer_real,1,MPI_DOUBLE,i,302,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            MPI_Recv(&transfer_imag,1,MPI_DOUBLE,i,303,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-            Re_global_v[location]=transfer_real;
-            Im_global_v[location]=transfer_imag;
-
+            Re_global_v[offset+j]=pack[j];
+            Im_global_v[offset+j]=pack[count+j];
             j++;
          }
+
+         if (pack) free(pack);
+
          i++;
       }
    } else {
       int count=high-low;
       MPI_Send(&count,1,MPI_INT,0,300,PETSC_COMM_WORLD);
 
+      int offset=low;
+      MPI_Send(&offset,1,MPI_INT,0,301,PETSC_COMM_WORLD);
+
+      double *pack=(double *)malloc(2*count*sizeof(double));
       int i=low;
       while (i < high) {
-         int location=i;
-         double transfer_real=real(xvals[i-low]);
-         double transfer_imag=imag(xvals[i-low]);
-         MPI_Send(&location,1,MPI_INT,0,301,PETSC_COMM_WORLD);
-         MPI_Send(&transfer_real,1,MPI_DOUBLE,0,302,PETSC_COMM_WORLD);
-         MPI_Send(&transfer_imag,1,MPI_DOUBLE,0,303,PETSC_COMM_WORLD);
+         pack[i-low]=real(xvals[i-low]);
+         pack[count+i-low]=imag(xvals[i-low]);
          i++;
       }
+      MPI_Send(pack,2*count,MPI_DOUBLE,0,302,PETSC_COMM_WORLD);
+      if (pack) free(pack);
    }
 
    // send to other ranks
    if (rank == 0) {
-      int i=1;
-      while (i < size) {
-         int j=0;
-         while (j < v_size) {
-            double transfer_real=Re_global_v.Elem(j);
-            double transfer_imag=Im_global_v.Elem(j);
-            MPI_Send(&transfer_real,1,MPI_DOUBLE,i,304,PETSC_COMM_WORLD);
-            MPI_Send(&transfer_imag,1,MPI_DOUBLE,i,305,PETSC_COMM_WORLD);
-            j++;
-         }
-         i++;
-      }
-   } else {
+
+      double *pack=(double *)malloc(2*v_size*sizeof(double));
       int i=0;
       while (i < v_size) {
-         double transfer_real=0;
-         double transfer_imag=0;
-         MPI_Recv(&transfer_real,1,MPI_DOUBLE,0,304,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-         MPI_Recv(&transfer_imag,1,MPI_DOUBLE,0,305,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-         Re_global_v[i]=transfer_real;
-         Im_global_v[i]=transfer_imag;
+         pack[i]=Re_global_v.Elem(i);
+         pack[i+v_size]=Im_global_v.Elem(i);
          i++;
       }
+
+      i=1;
+      while (i < size) {
+         MPI_Send(pack,2*v_size,MPI_DOUBLE,i,303,PETSC_COMM_WORLD);
+         i++;
+      }
+
+      if (pack) free(pack);
+   } else {
+      double *pack=(double *)malloc(2*v_size*sizeof(double));
+      MPI_Recv(pack,2*v_size,MPI_DOUBLE,0,303,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+      int i=0;
+      while (i < v_size) {
+         Re_global_v[i]=pack[i];
+         Im_global_v[i]=pack[v_size+i];
+         i++;
+      }
+
+      if (pack) free(pack);
    }
 
    // transfer to the HypreParVectors
