@@ -657,7 +657,16 @@ if [ "$with_mpich" = "1" ]; then
    with_prrte=0
 fi
 
-# do not compile things that are only needed for the GUI
+# GUI options
+
+if [ "$with_gui" = "1" ]; then
+   with_freetype=1
+   with_tcl=1
+   with_tk=1
+   with_occt=1
+   with_gmsh=1
+fi
+
 if [ "$with_gui" = "0" ]; then
    with_freetype=0
    with_tcl=0
