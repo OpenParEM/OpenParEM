@@ -118,19 +118,20 @@ private slots:
 
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
 
-    void showItems ();
-    void hideItems ();
+    void showDrawingItems ();
+    void hideDrawingItems ();
     void selectItems ();
-    void unselectItems ();
-    void deleteItems ();
+    void unselectDrawingItems ();
+    void deleteDrawingItems ();
+    void showMeshItems ();
+    void hideMeshItems ();
+    void setMeshForeground ();
     void showDisplayShape (CustomTreeWidgetItem *);
     void showPortShape (CustomTreeWidgetItem *);
     void hideDisplayShape (CustomTreeWidgetItem *);
     void hidePortShape (CustomTreeWidgetItem *);
     void selectDisplayShape (CustomTreeWidgetItem *);
     void unselectDisplayShape (CustomTreeWidgetItem *);
-    void showMeshEntitiesItem ();
-    void hideMeshEntitiesItem ();
 
     void assignMaterial ();
 

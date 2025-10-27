@@ -79,7 +79,7 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
 
     // mesh
     hasMesh=false;
-    meshVisibility=false;
+    //meshVisibility=false;
 
     // create an orientation cube for the display
     viewCube=new AIS_ViewCube();
@@ -239,6 +239,8 @@ bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const
 
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
+    std::cout << "CustomOpenGLWidget::mousePressEvent" << std::endl; std::cout.flush();
+
     QOpenGLWidget::mousePressEvent(event);
     if (view.IsNull()) return;
 
@@ -281,11 +283,12 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
+    std::cout << "CustomOpenGLWidget::mouseReleaseEvent" << std::endl; std::cout.flush();
+
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
 
     QPointF pos=event->position();
-    std::cout << "CustomOpenGLWidget::mouseReleaseEvent: x=" << pos.x() << "  y=" << pos.y() << std::endl; std::cout.flush();
 
     // pass the mouse release from Qt to OCCT
     const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
@@ -322,8 +325,11 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         updateViewer();
 
     } else if (event->button() == Qt::RightButton) {
+        std::cout << "CustomOpenGLWidget::mouseReleaseEvent Qt::RightButton" << std::endl; std::cout.flush();
         if (drawingTracker->hasSelectedItems()) {
+            std::cout << "CustomOpenGLWidget::mouseReleaseEvent after drawingTracker->hasSelectedItems()" << std::endl; std::cout.flush();
             contextMenu->exec(QCursor::pos());
+            std::cout << "CustomOpenGLWidget::mouseReleaseEvent after contextMenu->exec(QCursor::pos())" << std::endl; std::cout.flush();
         }
     }
 }

@@ -51,7 +51,6 @@ public:
     void set_portItemTree (CustomTreeWidgetItem *portItemTree_) {portItemTree=portItemTree_;}
     void set_boundaryItemTree (CustomTreeWidgetItem *boundaryItemTree_) {boundaryItemTree=boundaryItemTree_;}
     void set_meshItemTree (CustomTreeWidgetItem *meshItemTree_) {meshItemTree=meshItemTree_;}
-//    void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
     void set_contextMenu (QMenu *contextMenu_) {contextMenu=contextMenu_;}
 
     void updateViewer ();
@@ -76,127 +75,110 @@ public:
     bool set_gridPlane ();
 
     void reshowItems () {
+        std::cout << "CustomOpenGLWidget::reshowItems" << std::endl; std::cout.flush();
         drawingTracker->reshowVisibleItems();
     }
 
     void showItem (CustomTreeWidgetItem *item)
     {
+        std::cout << "CustomOpenGLWidget::showItem" << std::endl; std::cout.flush();
         drawingTracker->showItem(item);
     }
 
-    bool isDrawingValidShow ()
+    bool isValidShow ()
     {
+        std::cout << "CustomOpenGLWidget::isValidShow" << std::endl; std::cout.flush();
         return drawingTracker->isValidShow();
     }
 
-    bool isDrawingValidHide ()
+    bool isValidHide ()
     {
+        std::cout << "CustomOpenGLWidget::isValidHide" << std::endl; std::cout.flush();
         return drawingTracker->isValidHide();
     }
 
     void hideItem (CustomTreeWidgetItem *item)
     {
+        std::cout << "CustomOpenGLWidget::hideItem" << std::endl; std::cout.flush();
         drawingTracker->hideItem(item);
     }
 
     void hideAllItems () {
+        std::cout << "CustomOpenGLWidget::hideAllItems" << std::endl; std::cout.flush();
         drawingTracker->hideAllItems();
     }
 
     void hideItems () {
+        std::cout << "CustomOpenGLWidget::hideItems" << std::endl; std::cout.flush();
         drawingTracker->hideItems();
     }
 
     void selectItem (CustomTreeWidgetItem *item)
     {
+        std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
         drawingTracker->selectItem(item);
     }
 
     bool hasDrawingSelectedItems ()
     {
-        return drawingTracker->hasSelectedItems();
+        std::cout << "CustomOpenGLWidget::hasDrawingSelectedItems" << std::endl; std::cout.flush();
+        bool retval=drawingTracker->hasSelectedItems();
+        std::cout << "place x" << std::endl; std::cout.flush();
+        return retval;
     }
 
     void unselectItem (CustomTreeWidgetItem *item)
     {
+        std::cout << "CustomOpenGLWidget::unselectItem" << std::endl; std::cout.flush();
         drawingTracker->unselectItem(item);
     }
 
     void unselectAllItems () {
+        std::cout << "CustomOpenGLWidget::unselectAllItems" << std::endl; std::cout.flush();
         drawingTracker->unselectAllItems();
     }
 
     void deleteItem (CustomTreeWidgetItem *item) {
+        std::cout << "CustomOpenGLWidget::deleteItem" << std::endl; std::cout.flush();
         drawingTracker->deleteItem(item);
     }
 
-
     void insertItemToMap (Handle(AIS_Shape) shape, CustomTreeWidgetItem *item)
     {
+        std::cout << "CustomOpenGLWidget::insertItemToMap" << std::endl; std::cout.flush();
         drawingTracker->insertItemToMap(shape,item);
     }
 
     void displayShape (Handle(AIS_Shape) shape, int displayMode, int selectionMode)
     {
+        std::cout << "CustomOpenGLWidget::displayShape" << std::endl; std::cout.flush();
         viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
     }
 
     bool isDrawingValidDelete ()
     {
+        std::cout << "CustomOpenGLWidget::isDrawingValidDelete" << std::endl; std::cout.flush();
         return drawingTracker->isValidDelete();
     }
 
     long unsigned int trackerDrawingCount ()
     {
+        std::cout << "CustomOpenGLWidget::trackerDrawingCount" << std::endl; std::cout.flush();
         return drawingTracker->get_drawingCount();
     }
 
-    /*
-    void redisplayShape(Handle(AIS_Shape) shape, int displayMode, int selectionMode)
-    {
-        viewerContext->Erase(shape,Standard_False);
-        viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
-    }
-
-    void selectShape (Handle(AIS_Shape) shape) {
-        if (!viewerContext->IsDisplayed(shape)) return;
-        if (viewerContext->IsSelected(shape)) return;
-        viewerContext->AddOrRemoveSelected(shape,Standard_False);
-    }
-
-    void unselectShape (Handle(AIS_Shape) shape) {
-        if (!viewerContext->IsDisplayed(shape)) return;
-        if (!viewerContext->IsSelected(shape)) return;
-        viewerContext->AddOrRemoveSelected(shape,Standard_False);
-    }
-*/
     void hideShape (Handle(AIS_Shape) shape) {
+        std::cout << "CustomOpenGLWidget::hideShape" << std::endl; std::cout.flush();
         if (!viewerContext->IsDisplayed(shape)) return;
         if (viewerContext->IsSelected(shape)) viewerContext->AddOrRemoveSelected(shape,Standard_True);
         viewerContext->Erase(shape,Standard_False);
     }
 
     void deleteShape (Handle(AIS_Shape) shape) {
+        std::cout << "CustomOpenGLWidget::deleteShape" << std::endl; std::cout.flush();
         viewerContext->Remove(shape,Standard_True);
         shape.Nullify();
     }
-
-/*
-    void hideAll () {
-        viewerContext->EraseAll(Standard_True);
-        viewerContext->UpdateCurrentViewer();
-    }
-
-    void showAll () {
-        viewerContext->DisplayAll(Standard_True);
-        viewerContext->UpdateCurrentViewer();
-    }
-
-    void unselectAll () {
-        viewerContext->ClearSelected(Standard_True);
-        viewerContext->UpdateCurrentViewer();
-    }
-*/
 
     void setSelectionShape () {viewerContext->Activate(0);}
     void setSelectionVertex () {viewerContext->Activate(1);}
@@ -206,29 +188,16 @@ public:
     void setSelectionShell () {viewerContext->Activate(5);}
     void setSelectionSolid () {viewerContext->Activate(6);}
 
-//    bool isDisplayed (Handle(AIS_Shape) shape) {return viewerContext->IsDisplayed(shape);}
-
-//    void unselectTreeItems (CustomTreeWidgetItem *);
-
     void getSelected (std::vector<Handle(AIS_InteractiveObject)> *);
     Handle(AIS_InteractiveObject) getLastSelected ();
-//    void showItemsSelected ();
 
     void selectRectangle ();
     void endSelectRectangle ();
 
-//    long unsigned int get_shownItemListSize() {return shownItemList.size();}
-//    long unsigned int get_selectedItemListSize() {return selectedItemList.size();}
-
     void reset () {
+        std::cout << "CustomOpenGLWidget::reset" << std::endl; std::cout.flush();
         drawingTracker->reset();
-        //portTracker->reset();
-        //boundaryTracker->reset();
-        //meshTracker->reset();
     }
-
-    void set_meshVisibility (bool value) {meshVisibility=value;}
-    bool get_meshVisibility () {return meshVisibility;}
 
     void set_hasMesh (bool value) {hasMesh=value;}
     bool get_hasMesh () {return hasMesh;}
@@ -253,7 +222,6 @@ private:
 
     ItemTracker *drawingTracker;
     bool hasMesh;
-    bool meshVisibility;
 
     QMenu *contextMenu;
 
