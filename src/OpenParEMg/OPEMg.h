@@ -213,7 +213,7 @@ private:
     QMenu *drawingContextMenu;
 
     MPI_Comm *MPI_PORT_COMM;
-    MPI_Request request;
+    MPI_Request *request;
     int signal;
     std::vector<int> pidList;   // for killing spawned OpenParEM3D
     QTimer *timer;

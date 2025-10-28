@@ -58,6 +58,7 @@ public:
                 while (i < item->childCount()) {
                     CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
                     showItem(child);
+                    unselectItem(child);
                     i++;
                 }
             } else {
@@ -340,9 +341,6 @@ public:
 
         if (!item->is_mesh()) {
             if (item->is_root()) return;
-            if (item->is_drawing()) drawingCount--;
-            if (item->is_port()) portCount--;
-            if (item->is_boundary()) boundaryCount--;
             DeleteItem(item);
             delete item;
         }
@@ -375,9 +373,6 @@ public:
         if (shape.IsNull()) return;
 
         if (!item->is_mesh()) {
-            if (item->is_drawing()) drawingCount++;
-            if (item->is_port()) portCount++;
-            if (item->is_boundary()) boundaryCount++;
             shapeToItemMap.insert({shape,item});
         }
     }
@@ -391,13 +386,6 @@ public:
         visibleItems.clear();
         selectedItems.clear();
         shapeToItemMap.clear();
-    }
-
-    long unsigned int get_drawingCount ()
-    {
-        std::cout << "ItemTracker::get_drawingCount" << std::endl; std::cout.flush();
-
-        return drawingCount;
     }
 
 private:
@@ -453,11 +441,6 @@ private:
     std::vector<CustomTreeWidgetItem *> visibleItems;
     std::vector<CustomTreeWidgetItem *> selectedItems;
     std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> shapeToItemMap;
-
-    long unsigned int drawingCount=0;
-    long unsigned int portCount=0;
-    long unsigned int boundaryCount=0;
-    long unsigned int meshCount=0;
 };
 
 #endif // ITEMTRACKING_H

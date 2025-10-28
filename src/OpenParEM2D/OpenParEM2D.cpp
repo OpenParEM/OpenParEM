@@ -97,8 +97,7 @@ void signalHandler (int signum)
    } else {
       MPI_Barrier(parent);
       int retval=1;
-//      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
-MPI_Send(&retval,1,MPI_INT,rank,100000,parent);
+      MPI_Send(&retval,1,MPI_INT,rank,100000,parent);
       MPI_Comm_free(&parent);
    }
 
@@ -900,13 +899,12 @@ int main(int argc, char *argv[])
 
    if (parent != MPI_COMM_NULL) {
       PetscSynchronizedFlush(parent,PETSC_STDOUT);
-//      MPI_Barrier(parent);
       int retval=0;
-//      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
-MPI_Send(&retval,1,MPI_INT,rank,100000,parent);
+      MPI_Send(&retval,1,MPI_INT,rank,100000,parent);
 
       if (rank == 0) {
          MPI_Wait(&request,MPI_STATUS_IGNORE);
+         MPI_Request_free(&request);
       }
 
       MPI_Comm_disconnect(&parent);

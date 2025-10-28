@@ -93,16 +93,17 @@ void signalHandler (int signum)
       pidList.clear();
    }
 
-   if (parent != MPI_COMM_NULL) {
+   cout.flush();
+   if (parent == MPI_COMM_NULL) {
+      if (rank == 0) cout << "OpenParEM3D Job Aborted" << endl;
+   } else {
+      MPI_Barrier(parent);
       int retval=1;
-      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
+      MPI_Send(&retval,1,MPI_INT,rank,100000,parent);
       MPI_Comm_free(&parent);
    }
 
    remove_lock_file(lockfile);
-
-   cout.flush();
-   if (rank == 0) cout << "OpenParEM3D Job Aborted" << endl;
 
    MPI_Barrier(PETSC_COMM_WORLD);
    PetscFinalize();
@@ -792,19 +793,33 @@ int main(int argc, char *argv[])
 
    chrono::steady_clock::time_point job_end_time=chrono::steady_clock::now();
    resultDatabase.set_solve_time(elapsed_time(job_start_time,job_end_time));
-   resultDatabase.save(&projData);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",resultDatabase.get_solve_time());
 
+   resultDatabase.save(&projData);
    free_project (&projData);
    show_memory (projData.debug_show_memory, "");
 
+   PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+   MPI_Barrier(PETSC_COMM_WORLD);
+
    remove_lock_file(lockfile);
 
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",resultDatabase.get_solve_time());
-
    if (parent != MPI_COMM_NULL) {
-      int retval=0;
-      MPI_Send(&retval,1,MPI_INT,0,100000,parent);
-      MPI_Comm_free(&parent);
+
+      if (rank == 0) {
+         // send signal that the simulation is finished
+         int signal;
+         MPI_Send(&signal,1,MPI_INT,0,310000,parent);
+
+         // send status signal
+         int retval=0;
+         MPI_Send(&retval,1,MPI_INT,0,100000,parent);
+         MPI_Wait(&request,MPI_STATUS_IGNORE);
+
+         MPI_Request_free(&request);
+      }
+
+      MPI_Comm_disconnect(&parent);
    }
 
    MPI_Barrier(PETSC_COMM_WORLD);

@@ -161,12 +161,6 @@ public:
         return drawingTracker->isValidDelete();
     }
 
-    long unsigned int trackerDrawingCount ()
-    {
-        std::cout << "CustomOpenGLWidget::trackerDrawingCount" << std::endl; std::cout.flush();
-        return drawingTracker->get_drawingCount();
-    }
-
     void hideShape (Handle(AIS_Shape) shape) {
         std::cout << "CustomOpenGLWidget::hideShape" << std::endl; std::cout.flush();
         if (!viewerContext->IsDisplayed(shape)) return;

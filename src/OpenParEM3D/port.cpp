@@ -5319,10 +5319,6 @@ bool Port::solve(string *directory, std::vector<int> *pidList)
    int *error_codes=(int *)malloc(size*sizeof(int));
 
    // define the working directory for OpenParEM2D
-   //std::string workingDir;
-   //workingDir.append(projectPath.c_str());
-   //workingDir.append("/");
-   //workingDir.append(projDirectory.str().c_str());
    std::string workingDir=projDirectory.str().c_str();
 
    // launch the jobs from rank 0
@@ -5374,10 +5370,8 @@ bool Port::solve(string *directory, std::vector<int> *pidList)
       }
    }
 
-//yyy
    // wait for the 2D simulations to finish
    PetscSynchronizedFlush(MPI_PORT_COMM,PETSC_STDOUT);
-//   MPI_Barrier(MPI_PORT_COMM);
    int flag=0;
    while (!flag) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -5386,26 +5380,7 @@ bool Port::solve(string *directory, std::vector<int> *pidList)
 
    // get the status of the 2D simulations 
    int fail2D=0;
-MPI_Recv(&fail2D,1,MPI_INT,rank,100000,MPI_PORT_COMM,MPI_STATUS_IGNORE);
-
-//   if (rank == 0) {
-//       int i=0;
-//       while (i < size) {
-//           int status;
-//           MPI_Recv(&status,1,MPI_INT,i,100000,MPI_PORT_COMM,MPI_STATUS_IGNORE);
-//           if (status) fail2D=1;
-//           i++;
-//       }
-
-//       // notify the other ranks
-//       i=1;
-//       while (i < size) {
-//           MPI_Send(&fail2D,1,MPI_INT,i,300002,PETSC_COMM_WORLD);
-//           i++;
-//       }
-//   } else {
-//       MPI_Recv(&fail2D,1,MPI_INT,0,300002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-//   }
+   MPI_Recv(&fail2D,1,MPI_INT,rank,100000,MPI_PORT_COMM,MPI_STATUS_IGNORE);
 
    if (fail2D) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3087: OpenParEM2D error in execution for Port \"%s\".\n",get_name().c_str());

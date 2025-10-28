@@ -54,6 +54,7 @@
 #include <QSlider>
 #include <QList>
 #include <QTreeWidgetItem>
+#include <thread>
 
 //#include "petscsys.h"
 #include "MeshOptions.h"
@@ -76,6 +77,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->setupUi(this);
 
     MPI_PORT_COMM=nullptr;
+    request=nullptr;
 
     /////////////////////////////////////////////////////////////////////////////
     // main window setup
@@ -238,7 +240,8 @@ OpenParEMg::~OpenParEMg ()
     if (unselectAction) delete unselectAction;
     if (deleteAction) delete deleteAction;
     if (timer) delete timer;
-    if (MPI_PORT_COMM) delete MPI_PORT_COMM;
+    if (MPI_PORT_COMM) MPI_Comm_free(MPI_PORT_COMM);
+    if (request) MPI_Request_free(request);
     gmsh::finalize();
     PetscFinalize();
     delete ui;
@@ -297,7 +300,6 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         showAction->setEnabled(ui->drawingWindow->isValidShow());
         hideAction->setEnabled(ui->drawingWindow->isValidHide());
         unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-        std::cout << "place a" << std::endl; std::cout.flush();
         deleteAction->setEnabled(ui->drawingWindow->isDrawingValidDelete());
 
         assignMaterialAction->setEnabled(false);
@@ -343,7 +345,6 @@ void OpenParEMg::showDrawingItems ()
     showAction->setEnabled(ui->drawingWindow->isValidShow());
     hideAction->setEnabled(ui->drawingWindow->isValidHide());
     unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    std::cout << "place b" << std::endl; std::cout.flush();
     deleteAction->setEnabled(ui->drawingWindow->isDrawingValidDelete());
     ui->drawingWindow->updateViewer();
 }
@@ -356,7 +357,6 @@ void OpenParEMg::hideDrawingItems ()
     showAction->setEnabled(ui->drawingWindow->isValidShow());
     hideAction->setEnabled(ui->drawingWindow->isValidHide());
     unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    std::cout << "place c" << std::endl; std::cout.flush();
     deleteAction->setEnabled(ui->drawingWindow->isDrawingValidDelete());
     ui->drawingWindow->updateViewer();
 }
@@ -375,7 +375,6 @@ void OpenParEMg::selectItems()
     showAction->setEnabled(ui->drawingWindow->isValidShow());
     hideAction->setEnabled(ui->drawingWindow->isValidHide());
     unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    std::cout << "place d" << std::endl; std::cout.flush();
     deleteAction->setEnabled(ui->drawingWindow->isDrawingValidDelete());
     ui->drawingWindow->updateViewer();
 }
@@ -394,7 +393,6 @@ void OpenParEMg::unselectDrawingItems()
     showAction->setEnabled(ui->drawingWindow->isValidShow());
     hideAction->setEnabled(ui->drawingWindow->isValidHide());
     unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    std::cout << "place e" << std::endl; std::cout.flush();
     deleteAction->setEnabled(ui->drawingWindow->isDrawingValidDelete());
     ui->drawingWindow->updateViewer();
 }
@@ -417,7 +415,6 @@ void OpenParEMg::deleteDrawingItems()
     showAction->setEnabled(ui->drawingWindow->isValidShow());
     hideAction->setEnabled(ui->drawingWindow->isValidHide());
     unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    std::cout << "place f" << std::endl; std::cout.flush();
     deleteAction->setEnabled(ui->drawingWindow->isDrawingValidDelete());
 
     ui->drawingWindow->updateViewer();
@@ -1798,7 +1795,6 @@ void OpenParEMg::on_actionDeleteMesh_triggered ()
 {
     deleteMesh();
     ui->actionMeshLoad->setEnabled(true);
-    if (ui->drawingWindow->trackerDrawingCount() > 0) ui->actionGenerate->setEnabled(true);
 }
 
 void OpenParEMg::on_allWireframe_triggered ()
@@ -1876,7 +1872,7 @@ void OpenParEMg::on_actionRun_triggered ()
 
     // run OpenParEM3D
 
-    int size=2;  // ToDo: pull this from an option panel
+    int slotCount=8;  // ToDo: pull this from an option panel
 
     char *project=(char *)malloc((projectFile.toLatin1().toStdString().length()+1)*sizeof(char));
     int i=0;
@@ -1890,21 +1886,25 @@ void OpenParEMg::on_actionRun_triggered ()
     argv[0]=project;
     argv[1]=nullptr;
 
-    int *error_codes=(int *)malloc(size*sizeof(int));
+    int *error_codes=(int *)malloc(slotCount*sizeof(int));
 
     // launch the job
+    //MPI_Info info;
+    //MPI_Info_create(&info);
+    //MPI_Info_set(info, "--oversubscribe", "true"); // ToDo: pull this from an option panel
+
     MPI_Errhandler errorHandler;
     MPI_Comm_create_errhandler(eh3D,&errorHandler);
     MPI_Comm_set_errhandler(PETSC_COMM_WORLD,errorHandler);
 
-    if (MPI_PORT_COMM) delete MPI_PORT_COMM;
+    if (MPI_PORT_COMM) MPI_Comm_free(MPI_PORT_COMM);
     MPI_PORT_COMM=new MPI_Comm();
-    MPI_Comm_spawn ("OpenParEM3D",argv,size,MPI_INFO_NULL,0,PETSC_COMM_WORLD,MPI_PORT_COMM,error_codes);
+    MPI_Comm_spawn ("OpenParEM3D",argv,slotCount,MPI_INFO_NULL,0,PETSC_COMM_WORLD,MPI_PORT_COMM,error_codes);
 
     // check that all processes spawned
     bool fail=false;
     i=0;
-    while (i < size) {
+    while (i < slotCount) {
         if (error_codes[i] == MPI_ERR_SPAWN) {
             fail=true;
             break;
@@ -1916,10 +1916,11 @@ void OpenParEMg::on_actionRun_triggered ()
         mb.critical(nullptr, "Error","Failed to launch OpenParEM3D.");
     }
 
+
     // get the pids
     pidList.clear();
     i=0;
-    while (i < size) {
+    while (i < slotCount) {
         int pid;
         MPI_Recv(&pid,1,MPI_INT,i,10000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
         pidList.push_back(pid);
@@ -1927,8 +1928,9 @@ void OpenParEMg::on_actionRun_triggered ()
     }
 
     timer->start(500);
-    MPI_Irecv(&signal,1,MPI_INT,0,100000,*MPI_PORT_COMM,&request);
-    //MPI_Comm_disconnect(MPI_PORT_COMM);
+    if (request) MPI_Request_free(request);
+    request=new MPI_Request();
+    MPI_Irecv(&signal,1,MPI_INT,0,310000,*MPI_PORT_COMM,request);
 
     ui->actionOptions->setEnabled(false);
     ui->actionRun->setEnabled(false);
@@ -1955,16 +1957,35 @@ void OpenParEMg::on_actionStop_triggered ()
 void OpenParEMg::checkFinish ()
 {
     //std::cout << "OpenParEMg::checkFinish" << std::endl; std::cout.flush();
-    int test;
-    MPI_Test(&request,&test,MPI_STATUS_IGNORE);
 
-    if (test) {
-        std::cout << "   finished" << std::endl; std::cout.flush();
+    // test for the signal that OpenParEM3D is finished
+    int finished;
+    MPI_Test(request,&finished,MPI_STATUS_IGNORE);
+
+    if (finished) {
         timer->stop();
         pidList.clear();
-        //MPI_Comm_free(MPI_PORT_COMM);  //MPI_Comm_disconnect also doesn't clear the resources
-        delete MPI_PORT_COMM;
+
+        // get the status of the 3D simulations
+        int fail3D=0;
+        MPI_Recv(&fail3D,1,MPI_INT,0,100000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
+
+        if (fail3D) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3087: OpenParEM3D error in execution.\n");
+            //fail=true;
+        }
+
+        // unblock OpenParEM3D
+        int signal;
+        MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);
+
+        MPI_Comm_disconnect(MPI_PORT_COMM);
+
+        MPI_Comm_free(MPI_PORT_COMM);
         MPI_PORT_COMM=nullptr;
+
+        MPI_Request_free(request);
+        request=nullptr;
 
         ui->actionOptions->setEnabled(true);
         ui->actionRun->setEnabled(true);
@@ -1975,15 +1996,23 @@ void OpenParEMg::checkFinish ()
 
 void OpenParEMg::on_actionAbort_triggered ()
 {
+    std::cout << "OpenParEMg::on_actionAbort_triggered:  pidList.size()=" << pidList.size() << std::endl;  std::cout.flush();
     int i=0;
     while (i < pidList.size()) {
-        //std::string command="kill -9 ";
-        std::string command="kill ";
+        std::string command="kill -9 ";
+        //std::string command="kill ";
         command.append(std::to_string(pidList[i]));
+        std::cout << command << std::endl; std::cout.flush();
         system(command.c_str());
         i++;
     }
     pidList.clear();
+
+    //MPI_Comm_free(MPI_PORT_COMM);
+    //MPI_PORT_COMM=nullptr;
+
+    //MPI_Request_free(request);
+    //request=nullptr;
 
     ui->actionOptions->setEnabled(true);
     ui->actionRun->setEnabled(true);
