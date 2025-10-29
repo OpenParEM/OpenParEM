@@ -52,5 +52,7 @@ void matrixCopy (lapack_complex_double *, lapack_complex_double *, lapack_int);
 int matrixInverse(lapack_complex_double *, lapack_int);
 void matrixMultiply(lapack_complex_double *, lapack_complex_double *, lapack_int);
 
+void remove_lock_file (const char *);
+
 #endif
 

@@ -77,6 +77,10 @@ std::filesystem::path currentPath;
 
 void signalHandler (int signum)
 {
+if (MPI_COMM_WORLD == MPI_COMM_NULL) {
+cout << "MPI_COMM_WORLD == MPI_COMM_NULL" << endl;
+}
+
    if (PETSC_COMM_WORLD == MPI_COMM_NULL) {
       cout.flush();
       cout << "OpenParEM2D Job Aborted" << endl;
@@ -93,17 +97,18 @@ void signalHandler (int signum)
 
    cout.flush();
    if (parent == MPI_COMM_NULL) {
-      if (rank == 0) cout << "OpenParEM2D Job Aborted" << endl;
+      if (rank == 0) cout << endl << "OpenParEM2D Job Aborted" << endl;
    } else {
-      MPI_Barrier(parent);
+      // not used by OpenParEM
+      PetscSynchronizedFlush(parent,PETSC_STDOUT);
       int retval=1;
       MPI_Send(&retval,1,MPI_INT,rank,100000,parent);
-      MPI_Comm_free(&parent);
+      MPI_Comm_disconnect(&parent);
    }
 
    remove_lock_file (lockfile);
 
-   MPI_Barrier(PETSC_COMM_WORLD);
+   //MPI_Barrier(PETSC_COMM_WORLD);
    PetscFinalize();
    exit(0); // 1
 }
@@ -389,19 +394,15 @@ int main(int argc, char *argv[])
 
    // Initialize Petsc and MPI
    SlepcInitializeNoArguments();
+
    PetscMPIInt size,rank;
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   MPI_Barrier(PETSC_COMM_WORLD);
-
-   // send pid to the parent, if it exists
    MPI_Comm parent;
    MPI_Comm_get_parent (&parent);
-   if (parent != MPI_COMM_NULL) {
-      int pid=getpid();
-      MPI_Send(&pid,1,MPI_INT,0,200001,parent);
-   }
+
+   MPI_Barrier(PETSC_COMM_WORLD);
 
    // look for a stop signal
    MPI_Request request;

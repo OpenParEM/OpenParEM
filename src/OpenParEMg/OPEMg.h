@@ -189,6 +189,8 @@ private slots:
 
     void on_actionSaveAs_triggered();
 
+    void on_actionAbort_and_Exit_triggered();
+
 private:
     Ui::OpenParEMg *ui;
     QString projectFile;
@@ -215,7 +217,6 @@ private:
     MPI_Comm *MPI_PORT_COMM;
     MPI_Request *request;
     int signal;
-    std::vector<int> pidList;   // for killing spawned OpenParEM3D
     QTimer *timer;
 
     QAction *showAction;

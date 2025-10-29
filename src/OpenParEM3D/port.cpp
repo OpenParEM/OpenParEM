@@ -23,6 +23,8 @@
 #include <sstream>
 #include <filesystem>
 #include <thread>
+#include <csignal>
+#include <atomic>
 
 #include "port.hpp"
 #include "fem3D.hpp"
@@ -5293,7 +5295,7 @@ void eh (MPI_Comm *comm, int *err, ...)
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3085: Failed to launch OpenParEM2D.\n");
 }
 
-bool Port::solve(string *directory, std::vector<int> *pidList)
+bool Port::solve(string *directory)
 {
    PetscMPIInt size,rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -5345,18 +5347,6 @@ bool Port::solve(string *directory, std::vector<int> *pidList)
    if (fail) {
        prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3086: OpenParEM2D failed to launch for \"%s\"\n",project);
        return true;
-   }
-
-   // get the pids
-   pidList->clear();
-   if (rank == 0) {
-       int i=0;
-       while (i < size) {
-           int pid;
-           MPI_Recv(&pid,1,MPI_INT,i,200001,MPI_PORT_COMM,MPI_STATUS_IGNORE);
-           pidList->push_back(pid);
-           i++;
-       }
    }
 
    // send workingDir
@@ -7483,7 +7473,7 @@ void BoundaryDatabase::extract2Dmesh(ParMesh *pmesh, vector<ParSubMesh> *parSubM
 }
 
 bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSubMesh> *parSubMeshesPort, double frequency, MeshMaterialList *meshMaterials,
-                                   struct projectData *projData, GammaDatabase *gammaDatabase, std::vector<int> *pidList)
+                                   struct projectData *projData, GammaDatabase *gammaDatabase)
 {
    bool fail=false;
    PetscMPIInt rank;
@@ -7502,17 +7492,13 @@ bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSub
 
    long unsigned int i=0;
    while (i < portList.size()) {
-//xxx
-//MPI_Barrier(PETSC_COMM_WORLD);
-//std::cout.flush();
-//MPI_Barrier(PETSC_COMM_WORLD);
 
       //prefix(); PetscPrintf(PETSC_COMM_WORLD,"         ------------------------------------------------------------------------------------------------------------------------------------\n");
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"         Port \"%s\" ...\n",portList[i]->get_name().c_str());
       //prefix(); PetscPrintf(PETSC_COMM_WORLD,"         ------------------------------------------------------------------------------------------------------------------------------------\n");
 
       // run the 2D simulation
-      if (portList[i]->solve(&tempDirectory,pidList)) fail=true;
+      if (portList[i]->solve(&tempDirectory)) fail=true;
 
       // verify that the lock file is removed
       stringstream ssLock;
@@ -7527,13 +7513,6 @@ bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSub
             break;
          }
       }
-
-      // clear the list of pids since these jobs are no longer running
-      pidList->clear();
-
-//xxx
-//MPI_Barrier(PETSC_COMM_WORLD);
-//std::cout.flush();
 
       i++;
    }
@@ -8112,7 +8091,7 @@ void BoundaryDatabase::buildGrids (fem3D *fem)
 }
 
 bool BoundaryDatabase::solve2Dports (ParMesh *pmesh, vector<ParSubMesh> *parSubMeshesPort, struct projectData *projData,
-                                     double frequency, MeshMaterialList *meshMaterials, GammaDatabase *gammaDatabase, vector<int> *pidList)
+                                     double frequency, MeshMaterialList *meshMaterials, GammaDatabase *gammaDatabase)
 {
    bool fail=false;
    PetscMPIInt rank;
@@ -8144,7 +8123,7 @@ bool BoundaryDatabase::solve2Dports (ParMesh *pmesh, vector<ParSubMesh> *parSubM
    if (rank == 0 && createPortDirectories()) fail=true;
    if (fail) return fail;
 
-   if (solvePorts(projData->mesh_order,pmesh,parSubMeshesPort,frequency,meshMaterials,projData,gammaDatabase,pidList)) fail=true;
+   if (solvePorts(projData->mesh_order,pmesh,parSubMeshesPort,frequency,meshMaterials,projData,gammaDatabase)) fail=true;
    if (fail) return fail;
 
    build2Dgrids();

@@ -1323,6 +1323,7 @@ bool fem3D::solve(BoundaryDatabase *boundaryDatabase, MaterialDatabase *material
    VecDestroy(&Xdofs);
    PetscFree(PortDof); PortDof=nullptr;
    PetscFree(PEC); PEC=nullptr;
+
    build_e_re_e_im();
    buildEgrids(boundaryDatabase);
 

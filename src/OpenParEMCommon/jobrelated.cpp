@@ -118,7 +118,7 @@ char* create_lock_file (const char *baseName)
 }
 
 // not 100% safe
-void remove_lock_file (const char *lockfile)
+extern "C" void remove_lock_file (const char *lockfile)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);

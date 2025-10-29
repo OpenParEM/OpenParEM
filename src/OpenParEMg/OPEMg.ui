@@ -153,6 +153,7 @@
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionAbort"/>
+    <addaction name="actionAbort_and_Exit"/>
    </widget>
    <widget class="QMenu" name="menuDraw">
     <property name="title">
@@ -397,6 +398,11 @@
   <action name="actionSave">
    <property name="text">
     <string>Save</string>
+   </property>
+  </action>
+  <action name="actionAbort_and_Exit">
+   <property name="text">
+    <string>Abort and Exit</string>
    </property>
   </action>
  </widget>

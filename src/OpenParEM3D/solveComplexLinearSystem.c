@@ -21,6 +21,8 @@
 #include "solveComplexLinearSystem.h"
 
 double current_residual;
+MPI_Request stopRequest,abortRequest;
+char *lockfile;
 
 void showReason (KSPConvergedReason reason) {
    if (reason < 0) {prefix(); PetscPrintf(PETSC_COMM_WORLD," NOT CONVERGED: ");}
@@ -48,6 +50,77 @@ void showReason (KSPConvergedReason reason) {
 
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"\n");
 }
+
+void checkForAbort ()
+{
+   int abortExit=0;
+
+   PetscMPIInt size,rank;
+   MPI_Comm_size(PETSC_COMM_WORLD, &size);
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+   MPI_Comm parent;
+   MPI_Comm_get_parent (&parent);
+
+   if (parent != MPI_COMM_NULL) {
+      if (rank == 0) {
+         // look for a non-blocking message to stop
+         int test;
+         MPI_Test(&abortRequest,&test,MPI_STATUS_IGNORE);
+
+         // send a blocking message to the other ranks
+         int i=1;
+         while (i < size) {
+             MPI_Send(&test,1,MPI_INT,i,300002,PETSC_COMM_WORLD);
+            i++;
+         }
+         if (test) abortExit=1;
+      } else {
+         int test;
+         MPI_Recv(&test,1,MPI_INT,0,300002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+         if (test) abortExit=1;
+      }
+
+      if (abortExit) {
+         remove_lock_file(lockfile);
+
+         if (rank == 0) {
+            // send signal that the simulation is finished
+            int signal;
+            MPI_Send(&signal,1,MPI_INT,0,310000,parent);
+
+            // send status signal
+            int retval=1;
+            MPI_Send(&retval,1,MPI_INT,0,320000,parent);
+
+            MPI_Wait(&stopRequest,MPI_STATUS_IGNORE);
+
+            MPI_Request_free(&abortRequest);
+            MPI_Request_free(&stopRequest);
+         }
+
+         //MPI_Comm_disconnect(&parent);
+
+         MPI_Barrier(PETSC_COMM_WORLD);
+         PetscFinalize();
+
+         exit (0);
+      }
+   }
+
+   return;
+}
+
+
+// Custom convergence routine to enable early exit after after the current iteration
+PetscErrorCode OPEMKSPConverged(KSP ksp, PetscInt it, PetscReal rnorm, KSPConvergedReason *reason, void *ctx)
+{
+    PetscErrorCode ierr;
+    ierr=KSPConvergedDefault(ksp,it,rnorm,reason,ctx);
+    checkForAbort();
+    return ierr;
+}
+
 
 PetscErrorCode monitorEM3D(KSP ksp, PetscInt its, PetscReal residual, void *vf)
 {
@@ -133,6 +206,7 @@ PetscErrorCode solveComplexLinearSystem (const char *directory, struct projectDa
    i=0;
    while (i < 5) {
 
+      // KSP setup
       ierr=KSPCreate(PETSC_COMM_WORLD, &ksp); if (ierr) return 12;
       ierr=KSPSetType(ksp,KSPGMRES); if (ierr) return 13;
       ierr=KSPSetOperators(ksp,*A,*A); if (ierr) return 14;
@@ -140,6 +214,12 @@ PetscErrorCode solveComplexLinearSystem (const char *directory, struct projectDa
       ierr=PCFactorSetShiftType(pc,MAT_SHIFT_NONZERO); if (ierr) return 16;
       ierr=KSPSetFromOptions(ksp); if (ierr) return 17;
 
+      // set a custom convergence test to enable early exit
+      void *default_conv_ctx = NULL;
+      ierr = KSPConvergedDefaultCreate(&default_conv_ctx); CHKERRQ(ierr);
+      ierr = KSPSetConvergenceTest(ksp,OPEMKSPConverged,default_conv_ctx,KSPConvergedDefaultDestroy); if (ierr) return 18;
+
+      // set tolerances
       maxits=projData->solution_iteration_limit;       // PETSc default = 1e4
       rtol=projData->solution_3D_tolerance;            // PETSc default = 1e-5
       //atol=projData->solution_3D_tolerance;          // PETSC default = 1e-50

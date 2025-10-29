@@ -60,55 +60,13 @@ extern "C" char* get_prefix_text ();
 extern "C" void set_prefix_text (char *);
 
 // globals to work with the signal handler
-vector<int> pidList;
-char *lockfile;
+extern "C" char *lockfile;
 std::filesystem::path currentPath;
 
-void signalHandler (int signum)
-{
-   if (PETSC_COMM_WORLD == MPI_COMM_NULL) {
-      cout.flush();
-      cout << "OpenParEM3D Job Aborted" << endl;
-      exit(0);
-   }
-
-   PetscMPIInt rank;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-   MPI_Comm parent;
-   MPI_Comm_get_parent (&parent);
-
-   std::filesystem::current_path(currentPath);
-
-   // kill any OpenParEM2D jobs that may be running
-   if (rank == 0) {
-      int i=0;
-      while (i < pidList.size()) {
-         //std::string command="kill -9 ";
-         std::string command="kill ";
-         command.append(std::to_string(pidList[i]));
-         system(command.c_str());
-         i++;
-      }
-      pidList.clear();
-   }
-
-   cout.flush();
-   if (parent == MPI_COMM_NULL) {
-      if (rank == 0) cout << "OpenParEM3D Job Aborted" << endl;
-   } else {
-      MPI_Barrier(parent);
-      int retval=1;
-      MPI_Send(&retval,1,MPI_INT,rank,100000,parent);
-      MPI_Comm_free(&parent);
-   }
-
-   remove_lock_file(lockfile);
-
-   MPI_Barrier(PETSC_COMM_WORLD);
-   PetscFinalize();
-   exit(0); // 1
-}
+// globals to enable early exit from PETSc solvers
+extern "C" MPI_Request abortRequest;
+extern "C" MPI_Request stopRequest;
+extern "C" void checkForAbort ();
 
 double edgeLength (double *a, double *b)
 {
@@ -279,32 +237,30 @@ int main(int argc, char *argv[])
    vector<DifferentialPair *> aggregateList;
    bool gracefulExit=false;
 
-   signal(SIGINT,signalHandler);
-   signal(SIGTERM,signalHandler);
-
    currentPath=std::filesystem::current_path();
 
    // Initialize Petsc and MPI
+
    PetscInitializeNoArguments();
+
    PetscMPIInt size,rank;
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   MPI_Barrier(PETSC_COMM_WORLD);
-
-   // send pid to the parent, if it exists
    MPI_Comm parent;
    MPI_Comm_get_parent (&parent);
-   if (parent != MPI_COMM_NULL) {
-      int pid=getpid();
-      MPI_Send(&pid,1,MPI_INT,0,10000,parent);
-   }
+
+   MPI_Barrier(PETSC_COMM_WORLD);
 
    // look for a stop signal
-   MPI_Request request;
    int signal;
    if (parent != MPI_COMM_NULL && rank == 0) { 
-      MPI_Irecv(&signal,1,MPI_INT,0,300000,parent,&request);
+      MPI_Irecv(&signal,1,MPI_INT,0,300000,parent,&stopRequest);
+   }
+
+   // look for an abort signal
+   if (parent != MPI_COMM_NULL && rank == 0) {
+      MPI_Irecv(&signal,1,MPI_INT,0,300001,parent,&abortRequest);
    }
 
    prefix_text=(char *)malloc(256*sizeof(char));
@@ -338,6 +294,7 @@ int main(int argc, char *argv[])
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Setting up ...\n");
 
    // project
+   checkForAbort();
    load_project_file(projFile,&defaultData,&projData,lockfile,job_start_time);
    projData.version_major=version_major;
    projData.version_minor=version_minor;
@@ -352,6 +309,7 @@ int main(int argc, char *argv[])
    if (projData.debug_show_materials) {materialDatabase.print("   ");}
 
    // mesh
+   checkForAbort();
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Loading mesh and assigning materials ...\n");
    if (!projData.materials_check_limits) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Skipping limit checks on material values\n");}
    if (meshMaterials.load(projData.mesh_file,3)) exit_job_on_error (job_start_time,lockfile,true);
@@ -364,6 +322,7 @@ int main(int argc, char *argv[])
 
    // boundaries
 
+   checkForAbort();
    if (boundaryDatabase.load(projData.port_definition_file,projData.solution_check_closed_loop)) exit_job_on_error (job_start_time,lockfile,true);
    if (boundaryDatabase.checkSportNumbering()) exit_job_on_error (job_start_time,lockfile,true);
    boundaryDatabase.assignAttributes(&mesh);
@@ -396,6 +355,7 @@ int main(int argc, char *argv[])
    if (boundaryDatabase.check_scale(&mesh,projData.mesh_order)) exit_job_on_error (job_start_time,lockfile,true);
 
    // boundary and mesh linkage
+   checkForAbort();
    if (boundaryDatabase.createDefaultBoundary(&projData,&mesh,&materialDatabase,&boundaryDatabase)) exit_job_on_error (job_start_time,lockfile,true);
    if (boundaryDatabase.markMeshBoundaries (&mesh)) exit_job_on_error (job_start_time,lockfile,true);
    if (projData.debug_show_port_definitions) boundaryDatabase.print();
@@ -421,6 +381,7 @@ int main(int argc, char *argv[])
    show_memory (projData.debug_show_memory,"");
 
    // set up the frequency plan
+   checkForAbort();
    if (frequencyPlan.assemble(projData.refinement_frequency,projData.inputFrequencyPlansCount,projData.inputFrequencyPlans))
        exit_job_on_error (job_start_time,lockfile,true);
    if (projData.debug_show_frequency_plan) frequencyPlan.print();
@@ -439,6 +400,7 @@ int main(int argc, char *argv[])
    int meshSize=0;
    while ((frequencyPlanPoint=frequencyPlan.get_frequency(projData.refinement_frequency,&frequency,&refineMesh,&restartMesh,&meshSize))) {
 
+      checkForAbort();
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"*******************************************************************************************************************************************************\n");
       prefix(); PetscPrintf(PETSC_COMM_WORLD," Frequency: %g\n",frequency);
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"*******************************************************************************************************************************************************\n");
@@ -466,6 +428,7 @@ int main(int argc, char *argv[])
 
       // create frequency-dependent material constants for integration across the finite-element space
 
+      checkForAbort();
       int j=0;
       while (j < pmesh->attributes.Max()) {
          Material *useMaterial=materialDatabase.get(meshMaterials.get_name(meshMaterials.get_index(j)));
@@ -515,6 +478,7 @@ int main(int argc, char *argv[])
       bool iterate=true;
       while (iterate) {
 
+         checkForAbort();
          iterate=refineMesh;
  
          if (iterate) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Iteration %d ...\n",iteration+1);}
@@ -535,14 +499,16 @@ int main(int argc, char *argv[])
                                                 global_shortestPerWavelength,global_longestPerWavelength);
 
          // solve the 2D ports
+         checkForAbort();
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"      solving 2D ports ...\n");
-         if (boundaryDatabase.solve2Dports(pmesh,&parSubMeshesPort,&projData,frequency,&meshMaterials,&gammaDatabase,&pidList)) {
+         if (boundaryDatabase.solve2Dports(pmesh,&parSubMeshesPort,&projData,frequency,&meshMaterials,&gammaDatabase)) {
             exit_job_on_error (job_start_time,lockfile,true);
          }
 
          // save the propagation constant to use as an initial guess in OpenParEM2D
          boundaryDatabase.populateGamma(frequency,&gammaDatabase);
 
+         checkForAbort();
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"      building finite element spaces ...\n");
          fem3D *fem=new fem3D();
          fem->set_data(&pmesh,&projData,frequency);
@@ -569,6 +535,7 @@ int main(int argc, char *argv[])
          resultDatabase.set_SportCount(SportCount);
          while (drivingSet <= SportCount) {
 
+            checkForAbort();
             chrono::steady_clock::time_point solve_start_time=chrono::steady_clock::now();
 
             stringstream setname;
@@ -586,6 +553,7 @@ int main(int argc, char *argv[])
             boundaryDatabase.transfer_3Dsolution_3Dgrids_to_2Dgrids(fem);
             boundaryDatabase.save2DSolutionParaView(&parSubMeshesPort,&projData,frequency,drivingSet,false);
 
+            checkForAbort();
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"         post-processing ...\n");
             boundaryDatabase.calculateSplits();
             complex<double> acceptedPower=0;
@@ -598,6 +566,7 @@ int main(int argc, char *argv[])
             result->set_solve_time(elapsed_time(solve_start_time,solve_end_time));
 
             if (iterate) {
+               checkForAbort();
                chrono::steady_clock::time_point mesh_error_start_time=chrono::steady_clock::now();
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"         calculating mesh errors ...\n");
                double maxMeshError;
@@ -612,6 +581,7 @@ int main(int argc, char *argv[])
             if (saveFieldsHeader) {fem->saveFieldValuesHeader(&projData); saveFieldsHeader=false;}
             fem->saveFieldValues(&projData,pmesh,iteration,drivingSet);
 
+            checkForAbort();
             chrono::steady_clock::time_point radiation_start_time=chrono::steady_clock::now();
             if (projData.inputAntennaPatternsCount > 0) {
                result->set_hasRadiation(true);
@@ -627,6 +597,7 @@ int main(int argc, char *argv[])
          }
 
          // calculate S-parameters
+         checkForAbort();
          if(boundaryDatabase.calculateS(result)) {
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"            ERROR3189: failed to calculate S-parameters.\n");
             exit_job_on_error (job_start_time,lockfile,true);
@@ -638,6 +609,7 @@ int main(int argc, char *argv[])
          }
 
          // S-parameter renormalization
+         checkForAbort();
          if (projData.reference_impedance > 0) {
             PetscPrintf (PETSC_COMM_WORLD,"         renormalizing S-parameters ...\n");
             if (boundaryDatabase.has_Ti() && boundaryDatabase.has_Tv()) {
@@ -661,6 +633,7 @@ int main(int argc, char *argv[])
          }
 
          if (iterate) {
+            checkForAbort();
             chrono::steady_clock::time_point refine_start_time=chrono::steady_clock::now();
 
             // mark as having iterations
@@ -691,6 +664,7 @@ int main(int argc, char *argv[])
 
             // refine
             if (iterate) {
+               checkForAbort();
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"         refining mesh ...\n");
                fem->refineMesh();
 
@@ -704,16 +678,19 @@ int main(int argc, char *argv[])
             resultDatabase.set_refine_time(elapsed_time(refine_start_time,refine_end_time),frequency,iteration+1);
          }
 
+         checkForAbort();
          resultDatabase.save(&projData);
          resultDatabase.saveFormatted(&projData);
          resultDatabase.saveCSV (&projData,&boundaryDatabase,&aggregateList,true);
          resultDatabase.saveTouchstone (&projData,&boundaryDatabase,&aggregateList);
 
          // calculate antenna metrics
+         checkForAbort();
          patternDatabase.calculateIsotropicGain(frequency,iteration);
          patternDatabase.calculateDirectivity(frequency,iteration);
          patternDatabase.calculateRadiationEfficiency(frequency,iteration);
 
+         checkForAbort();
          patternDatabase.saveCSV(&projData,resultDatabase.get_unique_frequencies(),SportCount,true);
          patternDatabase.saveParaView(&projData,frequency,iteration);
          patternDatabase.save(&projData);
@@ -733,18 +710,18 @@ int main(int argc, char *argv[])
             if (rank == 0) {
                // look for a non-blocking message to stop
                int test;
-               MPI_Test(&request,&test,MPI_STATUS_IGNORE); 
+               MPI_Test(&stopRequest,&test,MPI_STATUS_IGNORE); 
 
                // send a blocking message to the other ranks
                int i=1;
                while (i < size) {
-                  MPI_Send(&test,1,MPI_INT,i,300001,PETSC_COMM_WORLD);
+                  MPI_Send(&test,1,MPI_INT,i,300003,PETSC_COMM_WORLD);
                   i++;
                }
                if (test) gracefulExit=true;
             } else {
                int test;
-               MPI_Recv(&test,1,MPI_INT,0,300001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+               MPI_Recv(&test,1,MPI_INT,0,300003,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
                if (test) gracefulExit=true;  
             }
          }
@@ -760,6 +737,7 @@ int main(int argc, char *argv[])
    }
 
    // save the results as test cases
+   checkForAbort();
    if (projData.test_create_cases) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"Generating test cases ...\n");
       int casenumber=0;
@@ -772,6 +750,7 @@ int main(int argc, char *argv[])
    }
 
    // print convergence status
+   checkForAbort();
    if (resultDatabase.hasRefinement()) {
       if (resultDatabase.isAllConverged()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"Converged\n");}
       else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"NOT CONVERGED\n");}
@@ -788,6 +767,7 @@ int main(int argc, char *argv[])
       }
    }
 
+   checkForAbort();
    write_attributes (baseName,pmesh);
    delete pmesh;
 
@@ -813,10 +793,14 @@ int main(int argc, char *argv[])
 
          // send status signal
          int retval=0;
-         MPI_Send(&retval,1,MPI_INT,0,100000,parent);
-         MPI_Wait(&request,MPI_STATUS_IGNORE);
+         MPI_Send(&retval,1,MPI_INT,0,320000,parent);
 
-         MPI_Request_free(&request);
+         // GUI must unblock these two signals
+         MPI_Wait(&stopRequest,MPI_STATUS_IGNORE);
+         MPI_Wait(&abortRequest,MPI_STATUS_IGNORE);
+
+         MPI_Request_free(&stopRequest);
+         MPI_Request_free(&abortRequest);
       }
 
       MPI_Comm_disconnect(&parent);

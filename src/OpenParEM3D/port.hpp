@@ -26,6 +26,7 @@
 #include <fstream>
 #include <string>
 #include <unistd.h>
+#include <atomic>
 #include "mfem.hpp"
 #include "project.h"
 #include "path.hpp"
@@ -640,7 +641,7 @@ class Port
       void print();
       void printSolution (std::string);
       void printPaths(std::vector<Path *> *);
-      bool solve (std::string *, std::vector<int> *);
+      bool solve (std::string *);
       bool loadSolution (std::string *,double);
       bool loadSizes_tz (std::string *);
       bool loadTiTv (std::string *);
@@ -746,7 +747,7 @@ class BoundaryDatabase
       void saveModeFiles (struct projectData *);
       Boundary* get_matchBoundary (double, double, double, double, double, double);
       bool createPortDirectories ();
-      bool solvePorts (int, mfem::ParMesh *, std::vector<mfem::ParSubMesh> *, double, MeshMaterialList *, struct projectData *, GammaDatabase *, std::vector<int> *);
+      bool solvePorts (int, mfem::ParMesh *, std::vector<mfem::ParSubMesh> *, double, MeshMaterialList *, struct projectData *, GammaDatabase *);
       bool loadPortSolutions (double);
       void populateGamma (double, GammaDatabase *);
       void printPortSolutions ();
@@ -783,7 +784,7 @@ class BoundaryDatabase
       void save3DParaView (mfem::ParMesh *, struct projectData *, double, bool);
       void save2DSolutionParaView (std::vector<mfem::ParSubMesh> *, struct projectData *, double, int, bool);
       void save2DModalParaView (std::vector<mfem::ParSubMesh> *, struct projectData *, double, bool);
-      bool solve2Dports (mfem::ParMesh *, std::vector<mfem::ParSubMesh> *, struct projectData *, double, MeshMaterialList *, GammaDatabase *, std::vector<int> *);
+      bool solve2Dports (mfem::ParMesh *, std::vector<mfem::ParSubMesh> *, struct projectData *, double, MeshMaterialList *, GammaDatabase *);
       void resetElementNumbers ();
       bool snapToMeshBoundary (mfem::Mesh *);
       PetscErrorCode build_M (Mat *, std::vector<DifferentialPair *> *, BoundaryDatabase *);

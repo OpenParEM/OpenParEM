@@ -21,6 +21,7 @@
 #include "OPEMg.h"
 #include "ui_OPEMg.h"
 
+#include <csignal>
 #include <quadmath.h>
 #include <iostream>
 #include <filesystem>
@@ -109,6 +110,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->actionRun->setEnabled(false);
     ui->actionStop->setEnabled(false);
     ui->actionAbort->setEnabled(false);
+    ui->actionAbort_and_Exit->setEnabled(false);
 
     /////////////////////////////////////////////////////////////////////////////
     // drawing window
@@ -171,6 +173,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->actionDeleteMesh->setEnabled(false);
     ui->actionStop->setEnabled(false);
     ui->actionAbort->setEnabled(false);
+    ui->actionAbort_and_Exit->setEnabled(false);
 
     /////////////////////////////////////////////////////////////////////////////
     // context menu for drawingWindow
@@ -1663,6 +1666,7 @@ void OpenParEMg::deleteMesh ()
     ui->actionRun->setEnabled(false);
     ui->actionStop->setEnabled(false);
     ui->actionAbort->setEnabled(false);
+    ui->actionAbort_and_Exit->setEnabled(false);
 }
 
 void OpenParEMg::on_actionGenerate_triggered ()
@@ -1916,17 +1920,6 @@ void OpenParEMg::on_actionRun_triggered ()
         mb.critical(nullptr, "Error","Failed to launch OpenParEM3D.");
     }
 
-
-    // get the pids
-    pidList.clear();
-    i=0;
-    while (i < slotCount) {
-        int pid;
-        MPI_Recv(&pid,1,MPI_INT,i,10000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
-        pidList.push_back(pid);
-        i++;
-    }
-
     timer->start(500);
     if (request) MPI_Request_free(request);
     request=new MPI_Request();
@@ -1936,6 +1929,7 @@ void OpenParEMg::on_actionRun_triggered ()
     ui->actionRun->setEnabled(false);
     ui->actionStop->setEnabled(true);
     ui->actionAbort->setEnabled(true);
+    ui->actionAbort_and_Exit->setEnabled(true);
 
     // clean up
 
@@ -1951,6 +1945,7 @@ void OpenParEMg::on_actionStop_triggered ()
 {
     ui->actionStop->setEnabled(false);
     ui->actionAbort->setEnabled(true);
+    ui->actionAbort_and_Exit->setEnabled(true);
     MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);
 }
 
@@ -1964,20 +1959,21 @@ void OpenParEMg::checkFinish ()
 
     if (finished) {
         timer->stop();
-        pidList.clear();
 
         // get the status of the 3D simulations
         int fail3D=0;
-        MPI_Recv(&fail3D,1,MPI_INT,0,100000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
+        MPI_Recv(&fail3D,1,MPI_INT,0,320000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
 
         if (fail3D) {
-            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3087: OpenParEM3D error in execution.\n");
-            //fail=true;
+            QMessageBox mb;
+            mb.critical(nullptr, "Error", "OpenParEM3D failed to properly run.");
+            mb.setFixedSize(500, 200);
         }
 
         // unblock OpenParEM3D
         int signal;
         MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);
+        MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);
 
         MPI_Comm_disconnect(MPI_PORT_COMM);
 
@@ -1991,33 +1987,53 @@ void OpenParEMg::checkFinish ()
         ui->actionRun->setEnabled(true);
         ui->actionStop->setEnabled(false);
         ui->actionAbort->setEnabled(false);
+        ui->actionAbort_and_Exit->setEnabled(false);
     }
 }
 
 void OpenParEMg::on_actionAbort_triggered ()
 {
-    std::cout << "OpenParEMg::on_actionAbort_triggered:  pidList.size()=" << pidList.size() << std::endl;  std::cout.flush();
-    int i=0;
-    while (i < pidList.size()) {
-        std::string command="kill -9 ";
-        //std::string command="kill ";
-        command.append(std::to_string(pidList[i]));
-        std::cout << command << std::endl; std::cout.flush();
-        system(command.c_str());
-        i++;
-    }
-    pidList.clear();
+    //std::cout << "OpenParEMg::on_actionAbort_triggered:" << std::endl;  std::cout.flush();
 
-    //MPI_Comm_free(MPI_PORT_COMM);
-    //MPI_PORT_COMM=nullptr;
+    timer->stop();
 
-    //MPI_Request_free(request);
-    //request=nullptr;
+    int signal=1;
+    MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);
+
+    // get the status of the 3D simulations
+    int fail3D=0;
+    MPI_Recv(&fail3D,1,MPI_INT,0,320000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
+
+    // unblock OpenParEM3D
+    signal;
+    MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);
+
+    //MPI_Comm_disconnect(MPI_PORT_COMM);
+
+    MPI_Comm_free(MPI_PORT_COMM);
+    MPI_PORT_COMM=nullptr;
+
+    MPI_Request_free(request);
+    request=nullptr;
+
+    prefix(); PetscPrintf(PETSC_COMM_WORLD,"OpenParEM3D Job Aborted.\n");
 
     ui->actionOptions->setEnabled(true);
     ui->actionRun->setEnabled(true);
     ui->actionStop->setEnabled(false);
     ui->actionAbort->setEnabled(false);
+    ui->actionAbort_and_Exit->setEnabled(false);
+}
+
+void OpenParEMg::on_actionAbort_and_Exit_triggered()
+{
+    if (projectFileChanged) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this,"OpenParEMg","Are you sure you want to exit?",QMessageBox::Yes|QMessageBox::No);
+        if (reply != QMessageBox::Yes) return;
+    }
+    prefix(); PetscPrintf(PETSC_COMM_WORLD,"OpenParEM3D Job Aborted.\n");
+    QApplication::quit();
 }
 
 void OpenParEMg::on_actionShow_triggered()
@@ -2051,9 +2067,4 @@ void OpenParEMg::on_actionSelect_with_Box_triggered()
 {
     ui->drawingWindow->selectRectangle();
 }
-
-
-
-
-
 
