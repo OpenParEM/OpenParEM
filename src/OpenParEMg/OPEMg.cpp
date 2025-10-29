@@ -175,6 +175,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->actionAbort->setEnabled(false);
     ui->actionAbort_and_Exit->setEnabled(false);
 
+    ui->menuRun->setToolTipsVisible(true);
+
     /////////////////////////////////////////////////////////////////////////////
     // context menu for drawingWindow
     /////////////////////////////////////////////////////////////////////////////
@@ -1876,7 +1878,7 @@ void OpenParEMg::on_actionRun_triggered ()
 
     // run OpenParEM3D
 
-    int slotCount=8;  // ToDo: pull this from an option panel
+    int slotCount=12;  // ToDo: pull this from an option panel
 
     char *project=(char *)malloc((projectFile.toLatin1().toStdString().length()+1)*sizeof(char));
     int i=0;
@@ -1891,11 +1893,6 @@ void OpenParEMg::on_actionRun_triggered ()
     argv[1]=nullptr;
 
     int *error_codes=(int *)malloc(slotCount*sizeof(int));
-
-    // launch the job
-    //MPI_Info info;
-    //MPI_Info_create(&info);
-    //MPI_Info_set(info, "--oversubscribe", "true"); // ToDo: pull this from an option panel
 
     MPI_Errhandler errorHandler;
     MPI_Comm_create_errhandler(eh3D,&errorHandler);
@@ -1971,9 +1968,8 @@ void OpenParEMg::checkFinish ()
         }
 
         // unblock OpenParEM3D
-        int signal;
-        MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);
-        MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);
+        MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);  // stop
+        MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);  // abort
 
         MPI_Comm_disconnect(MPI_PORT_COMM);
 

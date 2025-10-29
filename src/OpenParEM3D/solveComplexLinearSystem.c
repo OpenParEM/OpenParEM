@@ -64,7 +64,7 @@ void checkForAbort ()
 
    if (parent != MPI_COMM_NULL) {
       if (rank == 0) {
-         // look for a non-blocking message to stop
+         // look for a non-blocking message to abort
          int test;
          MPI_Test(&abortRequest,&test,MPI_STATUS_IGNORE);
 

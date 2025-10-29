@@ -253,14 +253,15 @@ int main(int argc, char *argv[])
    MPI_Barrier(PETSC_COMM_WORLD);
 
    // look for a stop signal
-   int signal;
+   int stopSignal;
    if (parent != MPI_COMM_NULL && rank == 0) { 
-      MPI_Irecv(&signal,1,MPI_INT,0,300000,parent,&stopRequest);
+      MPI_Irecv(&stopSignal,1,MPI_INT,0,300000,parent,&stopRequest);
    }
 
    // look for an abort signal
+   int abortSignal;
    if (parent != MPI_COMM_NULL && rank == 0) {
-      MPI_Irecv(&signal,1,MPI_INT,0,300001,parent,&abortRequest);
+      MPI_Irecv(&abortSignal,1,MPI_INT,0,300001,parent,&abortRequest);
    }
 
    prefix_text=(char *)malloc(256*sizeof(char));

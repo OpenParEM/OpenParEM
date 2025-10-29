@@ -341,15 +341,24 @@
    <property name="text">
     <string>Run</string>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Run OpenParEM3D.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
   </action>
   <action name="actionStop">
    <property name="text">
     <string>Stop</string>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop OpenParEM3D after the completion of the current S-parameter calculation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
   </action>
   <action name="actionAbort">
    <property name="text">
     <string>Abort</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop OpenParEM3D at the next available stopping point.  Results consistency are not not guaranteed.  GUI continues running.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="importSTEP">
@@ -403,6 +412,9 @@
   <action name="actionAbort_and_Exit">
    <property name="text">
     <string>Abort and Exit</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Abort OpenParEM3D and exit the GUI.  Results consistency are not guaranteed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
  </widget>
