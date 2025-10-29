@@ -2033,6 +2033,15 @@ void OpenParEMg::on_actionAbort_and_Exit_triggered()
         if (reply != QMessageBox::Yes) return;
     }
     prefix(); PetscPrintf(PETSC_COMM_WORLD,"OpenParEM3D Job Aborted.\n");
+
+    std::string lockfile=".";
+    lockfile.append(projData.project_name);
+    lockfile.append(".lock");
+
+    if (std::filesystem::exists(lockfile)) {
+        remove(lockfile.c_str());
+    }
+
     QApplication::quit();
 }
 
