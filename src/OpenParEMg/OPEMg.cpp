@@ -81,6 +81,12 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     request=nullptr;
 
     /////////////////////////////////////////////////////////////////////////////
+    // lockouts
+    /////////////////////////////////////////////////////////////////////////////
+
+    resetLockouts();
+
+    /////////////////////////////////////////////////////////////////////////////
     // main window setup
     /////////////////////////////////////////////////////////////////////////////
 
@@ -96,21 +102,25 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->actionShape->setChecked(true);
     currentSelectionAction=ui->actionShape;
 
-    ui->actionSave->setEnabled(false);
-    ui->actionSaveAs->setEnabled(false);
+    // ui->actionSave->setEnabled(getActionSaveSetup());
+    // ui->actionSaveAs->setEnabled(getActionSaveSetup());
 
-    ui->meshOptions->setEnabled(false);
-    ui->simulateOptions->setEnabled(false);
-    ui->actionFrequency_Plan->setEnabled(false);
-    ui->actionRefinement->setEnabled(false);
+    // ui->actionMeshOptions->setEnabled(false);
+    // ui->actionSimulateOptions->setEnabled(false);
+    // ui->actionFrequencyPlan->setEnabled(false);
+    // ui->actionRefinement->setEnabled(false);
 
-    ui->allWireframe->setChecked(true);
+    // ui->actionWireframe->setChecked(true);
 
-    ui->actionOptions->setEnabled(false);
-    ui->actionRun->setEnabled(false);
-    ui->actionStop->setEnabled(false);
-    ui->actionAbort->setEnabled(false);
-    ui->actionAbort_and_Exit->setEnabled(false);
+    // bool enabled;
+    // QString tip;
+    // getActionRunSetup(&enabled,&tip);
+    // ui->actionRun->setEnabled(enabled);
+    // ui->actionRun->setToolTip(tip);
+
+    // ui->actionStop->setEnabled(false);
+    // ui->actionAbort->setEnabled(false);
+    // ui->actionAbortAndExit->setEnabled(false);
 
     /////////////////////////////////////////////////////////////////////////////
     // drawing window
@@ -167,13 +177,14 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     previousClickedItem=nullptr;
 
     // menu initial settings
-    ui->actionGenerate->setEnabled(false);
-    ui->actionMeshSave->setEnabled(false);
-    ui->actionMeshSaveAs->setEnabled(false);
-    ui->actionDeleteMesh->setEnabled(false);
-    ui->actionStop->setEnabled(false);
-    ui->actionAbort->setEnabled(false);
-    ui->actionAbort_and_Exit->setEnabled(false);
+
+    // ui->actionMeshGenerate->setEnabled(getActionMeshGenerateSetup());
+    // ui->actionMeshSave->setEnabled(false);
+    // ui->actionMeshSaveAs->setEnabled(false);
+    // ui->actionMeshDelete->setEnabled(false);
+    // ui->actionStop->setEnabled(false);
+    // ui->actionAbort->setEnabled(false);
+    // ui->actionAbortAndExit->setEnabled(false);
 
     ui->menuRun->setToolTipsVisible(true);
 
@@ -222,18 +233,10 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     connect(timer,&QTimer::timeout,this,&OpenParEMg::checkFinish);
 
     /////////////////////////////////////////////////////////////////////////////
-    // lockouts
-    /////////////////////////////////////////////////////////////////////////////
-
-    projectFileLoaded=false;
-    projectFileChanged=false;
-    meshFileLoaded=false;
-    meshFileChanged=false;
-
-    /////////////////////////////////////////////////////////////////////////////
 
     ui->drawingItemTree->show();
     ui->drawingWindow->show();
+    setMenus();
 
     PetscInitializeNoArguments();
 }
@@ -275,6 +278,214 @@ OpenParEMg::~OpenParEMg ()
 //     }
 //     return true;
 // }
+
+/*
+void OpenParEMg::getActionRunSetup (bool *enabled, QString *tip)
+{
+    *enabled=false;
+    if (projectFileLoaded) {
+        if (projectFileChanged) {
+            *tip="Project is modified. Save before running.";
+        } else {
+            if (meshFileLoaded) {
+                if (meshFileChanged) {
+                    *tip="Mesh is modified. Save before running.";
+                } else {
+                    *tip="Run OpenParEM3D.";
+                    *enabled=true;
+                }
+            } else {
+                *tip="No mesh defined.";
+            }
+        }
+    } else {
+        *tip="No project to run.";
+    }
+}
+*/
+
+void OpenParEMg::setMenus ()
+{
+    if (projectFileLoaded) {
+        ui->actionNew->setEnabled(false);
+        ui->actionOpen->setEnabled(false);
+        ui->actionSave->setEnabled(true);
+        ui->actionSaveAs->setEnabled(true);
+        ui->actionClose->setEnabled(true);
+        ui->actionExit->setEnabled(true);
+        ui->actionSelectMaterialsDatabase->setEnabled(true);
+        ui->actionMeshOptions->setEnabled(true);
+        ui->actionMeshLoad->setEnabled(true);
+        ui->actionMeshSave->setEnabled(false);
+        ui->actionMeshSaveAs->setEnabled(false);
+        ui->actionMeshDelete->setEnabled(false);
+        ui->actionFrequencyPlan->setEnabled(true);
+        //ui->actionRefinement->setEnabled(true);
+        if (strcmp(projData.refinement_frequency,"none") == 0) ui->actionRefinement->setEnabled(false);
+        else ui->actionRefinement->setEnabled(true);
+        ui->actionSimulateOptions->setEnabled(true);
+        ui->actionRun->setEnabled(false);
+        ui->actionRun->setToolTip("Project does not have a mesh.");
+        ui->actionStop->setEnabled(false);
+        ui->actionAbort->setEnabled(false);
+        ui->actionAbortAndExit->setEnabled(false);
+        ui->actionMaterialsEditor->setEnabled(true);
+        ui->actionLicense->setEnabled(true);
+
+        if (brepFileLoaded || stepFileLoaded) {
+            ui->actionImportBrep->setEnabled(false);
+            ui->actionImportStep->setEnabled(false);
+            ui->actionExportStep->setEnabled(true);
+
+            ui->actionFitSelected->setEnabled(true);
+            ui->actionFitAll->setEnabled(true);
+            ui->actionMenuSelection->setEnabled(true);
+            ui->actionSelectWithBox->setEnabled(true);
+            ui->actionUnselectAll->setEnabled(true);
+            ui->actionHideAll->setEnabled(true);
+            ui->actionWireframe->setEnabled(true);
+
+            ui->actionMeshGenerate->setEnabled(true);
+        } else {
+            ui->actionImportBrep->setEnabled(true);
+            ui->actionImportStep->setEnabled(true);
+            ui->actionExportStep->setEnabled(false);
+
+            ui->actionFitSelected->setEnabled(false);
+            ui->actionFitAll->setEnabled(false);
+            ui->actionMenuSelection->setEnabled(false);
+            ui->actionSelectWithBox->setEnabled(false);
+            ui->actionUnselectAll->setEnabled(false);
+            ui->actionHideAll->setEnabled(false);
+            ui->actionWireframe->setEnabled(false);
+
+            ui->actionMeshGenerate->setEnabled(false);
+        }
+
+        if (meshFileLoaded) {
+            ui->actionFitAll->setEnabled(true);
+            ui->actionMenuSelection->setEnabled(true);
+            ui->actionWireframe->setEnabled(true);
+            ui->actionMeshGenerate->setEnabled(false);
+            ui->actionMeshLoad->setEnabled(false);
+            ui->actionMeshSave->setEnabled(true);
+            ui->actionMeshSaveAs->setEnabled(true);
+            ui->actionMeshDelete->setEnabled(true);
+
+            // start run block
+            ui->actionRun->setEnabled(true);
+            ui->actionRun->setToolTip("Run OpenParEM3D.");
+            if (simulationRunning) {
+                ui->actionRun->setEnabled(false);
+                ui->actionRun->setToolTip("OpenParEM3D is running.");
+                ui->actionStop->setEnabled(true);
+                ui->actionAbort->setEnabled(true);
+                ui->actionAbortAndExit->setEnabled(true);
+            }
+            if (simulationStopping) {
+                ui->actionRun->setEnabled(false);
+                ui->actionRun->setToolTip("OpenParEM3D is stopping.");
+                ui->actionStop->setEnabled(false);
+                ui->actionAbort->setEnabled(true);
+                ui->actionAbortAndExit->setEnabled(true);
+            }
+            if (simulationAborting) {
+                ui->actionRun->setEnabled(false);
+                ui->actionRun->setToolTip("OpenParEM3D is aborting.");
+                ui->actionStop->setEnabled(false);
+                ui->actionAbort->setEnabled(false);
+                ui->actionAbortAndExit->setEnabled(true);
+            }
+            // end run block
+        }
+
+        if (drawingPlaneShown) {
+            ui->actionDrawingPlaneShow->setEnabled(false);
+            ui->actionDrawingPlaneHide->setEnabled(true);
+            ui->actionDrawingPlaneSnapToGrid->setEnabled(true);
+
+            if (brepFileLoaded || stepFileLoaded) {
+                if (ui->drawingWindow->hasOneFaceSelected()) {
+                    ui->actionDrawingPlaneSetToFace->setEnabled(true);
+                }
+            } else {
+                ui->actionDrawingPlaneSetToFace->setEnabled(false);
+            }
+
+        } else {
+            ui->actionDrawingPlaneShow->setEnabled(true);
+            ui->actionDrawingPlaneHide->setEnabled(false);
+            ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
+            ui->actionDrawingPlaneSetToFace->setEnabled(false);
+        }
+
+    } else {
+        ui->actionNew->setEnabled(true);
+        ui->actionOpen->setEnabled(true);
+        ui->actionSave->setEnabled(false);
+        ui->actionSaveAs->setEnabled(false);
+        ui->actionClose->setEnabled(false);
+        ui->actionExit->setEnabled(true);
+        ui->actionImportBrep->setEnabled(false);
+        ui->actionImportStep->setEnabled(false);
+        ui->actionExportStep->setEnabled(false);
+
+        ui->actionFitSelected->setEnabled(false);
+        ui->actionFitAll->setEnabled(false);
+        ui->actionMenuSelection->setEnabled(false);
+        ui->actionSelectWithBox->setEnabled(false);
+        ui->actionUnselectAll->setEnabled(false);
+        ui->actionHideAll->setEnabled(false);
+        ui->actionWireframe->setEnabled(false);
+
+        ui->actionDrawingPlaneShow->setEnabled(false);
+        ui->actionDrawingPlaneHide->setEnabled(false);
+        ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
+        ui->actionDrawingPlaneSetToFace->setEnabled(false);
+
+        ui->actionSelectMaterialsDatabase->setEnabled(false);
+
+        ui->actionMeshOptions->setEnabled(false);
+        ui->actionMeshGenerate->setEnabled(false);
+        ui->actionMeshLoad->setEnabled(false);
+        ui->actionMeshSave->setEnabled(false);
+        ui->actionMeshSaveAs->setEnabled(false);
+        ui->actionMeshDelete->setEnabled(false);
+
+        ui->actionFrequencyPlan->setEnabled(false);
+        ui->actionRefinement->setEnabled(false);
+        ui->actionSimulateOptions->setEnabled(false);
+
+        ui->actionRun->setEnabled(false);
+        ui->actionRun->setToolTip("Project not loaded.");
+        ui->actionStop->setEnabled(false);
+        ui->actionAbort->setEnabled(false);
+        ui->actionAbortAndExit->setEnabled(false);
+
+        ui->actionMaterialsEditor->setEnabled(true);
+        ui->actionLicense->setEnabled(true);
+    }
+
+    if (simulationRunning) {
+        ui->actionNew->setEnabled(false);
+        ui->actionOpen->setEnabled(false);
+        ui->actionSave->setEnabled(false);
+        ui->actionSaveAs->setEnabled(false);
+        ui->actionClose->setEnabled(false);
+        ui->actionExit->setEnabled(false);
+        ui->actionImportBrep->setEnabled(false);
+        ui->actionImportStep->setEnabled(false);
+        ui->actionExportStep->setEnabled(false);
+        ui->actionSelectMaterialsDatabase->setEnabled(false);
+        ui->actionMeshOptions->setEnabled(false);
+        ui->actionMeshLoad->setEnabled(false);
+        ui->actionMeshSave->setEnabled(false);
+        ui->actionMeshSaveAs->setEnabled(false);
+        ui->actionMeshDelete->setEnabled(false);
+        ui->actionSimulateOptions->setEnabled(false);
+        ui->actionFrequencyPlan->setEnabled(false);
+    }
+}
 
 void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
 {
@@ -540,6 +751,9 @@ void OpenParEMg::set_displayMode (CustomTreeWidgetItem *item, int displayMode)
 
 void OpenParEMg::setPhysicalGroups ()
 {
+//xxx
+// causing crashes when more than one material is assigned to a group number
+
     int i=0;
     while (i < projData.physicalGroupMaterialCount) {
         std::vector<int> physicalGroupList;
@@ -556,6 +770,15 @@ void OpenParEMg::setPhysicalGroups ()
 
 void OpenParEMg::assignMaterial ()
 {
+    //xxx
+    // Cannot assign material to existing mesh
+    if (meshFileLoaded) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this,"OpenParEMg","Materials cannot be assigned to an existing mesh.  Do you want to delete the mesh?",QMessageBox::Yes|QMessageBox::No);
+        if (reply != QMessageBox::Yes) return;
+        deleteMesh();
+    }
+
     MaterialSelection *materialSelection=new MaterialSelection();
     materialSelection->set_materialDatabase(materialDatabase);
     materialSelection->set_selectedMaterial(&selectedMaterial);
@@ -570,7 +793,7 @@ void OpenParEMg::assignMaterial ()
         char *material=byteArray.data();
         add_physicalGroupMaterial(&projData,-1,clickedItem->get_dimTag().first,clickedItem->get_dimTag().second,material);
         projectFileChanged=true;
-
+        setMenus();
     }
 }
 
@@ -608,7 +831,7 @@ void OpenParEMg::dumpDrawingEntities ()
     }
 }
 
-void OpenParEMg::on_fileOpen_triggered ()
+void OpenParEMg::on_actionOpen_triggered ()
 {
     QString testProjectFile=QFileDialog::getOpenFileName(this,tr("Open Project"), "", tr("Project Files (*.proj);;All Files (*)"),
                                                          nullptr,QFileDialog::DontUseNativeDialog);
@@ -617,7 +840,7 @@ void OpenParEMg::on_fileOpen_triggered ()
     if (testProjectFile.isNull()) return;
 
     // reset as new
-    on_fileNew_triggered ();
+    on_actionNew_triggered ();
     projectFile=testProjectFile;
 
     // break up the full path
@@ -625,14 +848,17 @@ void OpenParEMg::on_fileOpen_triggered ()
     absolutePath=fileInfo.absolutePath();
     QString projectName=fileInfo.fileName();
 
+    QDir::setCurrent(absolutePath);
+    projectFile=projectName;
+
+    QString currentPath;
+    currentPath=QDir::currentPath();
+
     // load the file
     if (QFile::exists(projectFile)) {
 
-        QString currentPath;
-        currentPath=QDir::currentPath();
-
-        QDir::setCurrent(absolutePath);
-        projectFile=projectName;
+        //QDir::setCurrent(absolutePath);
+        //projectFile=projectName;
 
         if (load_project_file (projectName.toLatin1().toStdString().c_str(),&projData,"   ")) {
             projectFile="";
@@ -657,15 +883,6 @@ void OpenParEMg::on_fileOpen_triggered ()
         }
         exit(1); */
 
-        // set GUI options
-
-        ui->meshOptions->setEnabled(true);
-        ui->simulateOptions->setEnabled(true);
-        ui->actionFrequency_Plan->setEnabled(true);
-
-        if (strcmp(projData.refinement_frequency,"none") == 0) ui->actionRefinement->setEnabled(false);
-        else ui->actionRefinement->setEnabled(true);
-
         // load materials
         if (materialDatabase->load_materials(projData.materials_global_path,projData.materials_global_name,
                                              projData.materials_local_path,projData.materials_local_name,
@@ -687,8 +904,6 @@ void OpenParEMg::on_fileOpen_triggered ()
                 QMessageBox mb;
                 mb.critical(nullptr, "Error",message);
                 mb.setFixedSize(500, 200);
-            } else {
-                ui->actionGenerate->setEnabled(true);
             }
         }
 
@@ -709,26 +924,41 @@ void OpenParEMg::on_fileOpen_triggered ()
         ui->drawingWindow->updateViewer();
 
         projectFileLoaded=true;
-
+        projectFileChanged=false;
     } else {
         // should not occur
         QMessageBox mb;
         mb.critical(nullptr, "Error", "The requested project file does not exist.");
         mb.setFixedSize(500, 200);
     }
+    setMenus();
 }
 
-void OpenParEMg::on_fileNew_triggered ()
+void OpenParEMg::resetLockouts ()
 {
-    // reset project data
+    projectFileLoaded=false;
+    projectFileChanged=false;
+    meshFileLoaded=false;
+    meshFileChanged=false;
+    brepFileLoaded=false;
+    stepFileLoaded=false;
+    drawingPlaneShown=false;
+    simulationRunning=false;
+    simulationStopping=false;
+    simulationAborting=false;
+    setMenus();
+}
+
+void OpenParEMg::resetProject ()
+{
+    if (!projectFileLoaded) return;
 
     projectFile="";
 
     free_project(&defaultData);
     free_project(&projData);
 
-    init_project (&defaultData);
-    init_project (&projData);
+    //deleteMesh();
 
     // reset material database
     if (materialDatabase) delete materialDatabase;
@@ -737,19 +967,6 @@ void OpenParEMg::on_fileNew_triggered ()
     // reset boundary database
     if (boundaryDatabase) delete boundaryDatabase;
     boundaryDatabase=new BoundaryDatabase();
-
-    // reset GUI options
-
-    ui->meshOptions->setEnabled(true);
-    ui->actionGenerate->setEnabled(false);
-    ui->actionMeshSave->setEnabled(false);
-    ui->actionMeshSaveAs->setEnabled(false);
-    ui->actionDeleteMesh->setEnabled(false);
-    ui->simulateOptions->setEnabled(true);
-    ui->actionFrequency_Plan->setEnabled(true);
-
-    if (strcmp(projData.refinement_frequency,"none") == 0) ui->actionRefinement->setEnabled(false);
-    else ui->actionRefinement->setEnabled(true);
 
     // reset drawing window
 
@@ -765,23 +982,48 @@ void OpenParEMg::on_fileNew_triggered ()
     //reset the tracking
     ui->drawingWindow->reset();
 
-    // menu options
-    ui->importBrep->setEnabled(true);
-    ui->importSTEP->setEnabled(true);
+    clickedItem=nullptr;
+    previousClickedItem=nullptr;
+    currentSelectionAction=nullptr;
 
-    projectFileLoaded=true;
-    projectFileChanged=false;
+    resetLockouts();
+
+    setMenus();
 }
 
-void OpenParEMg::on_meshOptions_triggered ()
+void OpenParEMg::on_actionNew_triggered ()
+{
+    resetProject();
+    init_project (&defaultData);
+    init_project (&projData);
+    projectFileLoaded=true;
+    setMenus();
+}
+
+void OpenParEMg::on_actionClose_triggered()
+{
+    if (projectFileChanged) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this,"OpenParEMg","Save changes?",QMessageBox::Yes|QMessageBox::No);
+        if (reply == QMessageBox::Yes) {
+            on_actionSave_triggered();
+        }
+
+    }
+    resetProject();
+    setMenus();
+}
+
+void OpenParEMg::on_actionMeshOptions_triggered ()
 {
     MeshDialog *meshDialog=new MeshDialog();
     meshDialog->set_projData(&projData);
     meshDialog->exec();
     delete meshDialog;
+    setMenus();
 }
 
-void OpenParEMg::on_simulateOptions_triggered ()
+void OpenParEMg::on_actionSimulateOptions_triggered ()
 {
     SimOptions *simOptions=new SimOptions();
     simOptions->set_projData(&projData);
@@ -790,10 +1032,8 @@ void OpenParEMg::on_simulateOptions_triggered ()
 
     if (projData.modified) {
         projectFileChanged=true;
-        ui->actionRun->setEnabled(false);
-        ui->actionSave->setEnabled(true);
-        ui->actionSaveAs->setEnabled(true);
     }
+    setMenus();
 }
 
 void OpenParEMg::on_actionLicense_triggered ()
@@ -801,9 +1041,10 @@ void OpenParEMg::on_actionLicense_triggered ()
     License *license=new License();
     license->exec();
     delete license;
+    setMenus();
 }
 
-void OpenParEMg::on_actionFrequency_Plan_triggered ()
+void OpenParEMg::on_actionFrequencyPlan_triggered ()
 {
     FrequencyPlanG *frequencyPlan=new FrequencyPlanG();
     frequencyPlan->set_projData(&projData);
@@ -812,25 +1053,35 @@ void OpenParEMg::on_actionFrequency_Plan_triggered ()
 
     if (strcmp(projData.refinement_frequency,"none") == 0) ui->actionRefinement->setEnabled(false);
     else ui->actionRefinement->setEnabled(true);
+
+    setMenus();
 }
 
 void OpenParEMg::on_actionSave_triggered ()
 {
-    if (QFile::exists(projectFile)) {
-        if (save_project (projectFile.toStdString().c_str(),&projData,&defaultData,"")) {
-            QString message="Error in saving the project file.";
-            QMessageBox mb;
-            mb.critical(nullptr, "Error",message);
-            mb.setFixedSize(500, 200);
+    // project
+    if (projectFileLoaded) {
+        if (QFile::exists(projectFile)) {
+            if (save_project (projectFile.toStdString().c_str(),&projData,&defaultData,"")) {
+                QString message="Error in saving the project file.";
+                QMessageBox mb;
+                mb.critical(nullptr, "Error",message);
+                mb.setFixedSize(500, 200);
+            }
+            projData.modified=0;
+            projectFileChanged=false;
+        } else {
+            on_actionSaveAs_triggered();
         }
-        projectFileChanged=false;
-        if (projectFileLoaded && meshFileLoaded && !meshFileChanged) ui->actionRun->setEnabled(true);
-
-        ui->actionSave->setEnabled(false);
-        ui->actionSave->setEnabled(false);
-    } else {
-        on_actionSaveAs_triggered();
     }
+
+    // mesh
+    if (meshFileLoaded) {
+        on_actionMeshSave_triggered();
+        meshFileChanged=false;
+    }
+
+    setMenus();
 }
 
 void OpenParEMg::on_actionSaveAs_triggered()
@@ -849,12 +1100,11 @@ void OpenParEMg::on_actionSaveAs_triggered()
         QFileInfo fileInfo(filePath);
         projectFile=fileInfo.fileName();
 
+        projData.modified=0;
         projectFileChanged=false;
-        if (projectFileLoaded && meshFileLoaded && !meshFileChanged) ui->actionRun->setEnabled(true);
-
-        ui->actionSave->setEnabled(false);
-        ui->actionSave->setEnabled(false);
     }
+
+    setMenus();
 }
 
 void OpenParEMg::on_actionRefinement_triggered ()
@@ -863,13 +1113,15 @@ void OpenParEMg::on_actionRefinement_triggered ()
     refinement->set_projData(&projData);
     refinement->exec();
     delete refinement;
+    setMenus();
 }
 
-void OpenParEMg::on_actionMaterials_Editor_triggered ()
+void OpenParEMg::on_actionMaterialsEditor_triggered ()
 {
     Materials *localMaterials=new Materials();
     localMaterials->exec();
     delete localMaterials;
+    setMenus();
 }
 
 void ListChildren (const TopoDS_Shape& theShape)
@@ -1050,47 +1302,40 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
 
 bool OpenParEMg::loadBrepFile (QString filePath)
 {
+    bool retval=false;
     if (filePath.isEmpty()) {
-        return true;
+        retval=true;
     } else {
-
         QFileInfo fileInfo(filePath);
-        //QString base=fileInfo.baseName();
-
         TopoDS_Shape s;
         BRep_Builder b;
-        if (!BRepTools::Read(s,filePath.toStdString().c_str(),b)) return true;
-
-        addShape(s,nullptr,true);
-
-        ui->actionGenerate->setEnabled(true);
+        if (BRepTools::Read(s,filePath.toStdString().c_str(),b)) {
+            addShape(s,nullptr,true);
+            brepFileLoaded=true;
+            projectFileChanged=true;
+        } else retval=true;
     }
-    return false;
+    setMenus();
+    return retval;
 }
 
 bool OpenParEMg::loadStepFile (QString filePath)
 {
-    if (!filePath.isEmpty()) {
+    bool retval=false;
+    if (filePath.isEmpty()) {
+        retval=true;
+    } else {
         STEPControl_Reader reader;
         IFSelect_ReturnStatus status=reader.ReadFile(filePath.toStdString().c_str());
         if (status == IFSelect_RetDone) {
             reader.TransferRoots();
             TopoDS_Shape s=reader.OneShape();
             addShape(s,nullptr,true);
-
-            // seems equivalent
-            // int shapeCount=reader.NbShapes();
-            // int i=0;
-            // while (i < reader.NbShapes()) {
-            //     TopoDS_Shape s=reader.Shape(i+1);
-            //     addShape(s,nullptr,true);
-            //     i++;
-            // }
-
-            return false;
-        }
+            stepFileLoaded=true;
+            projectFileChanged=true;
+        } else retval=true;
     }
-    return true;
+    return retval;
 }
 
 bool OpenParEMg::saveStepFile (QString filePath, std::vector<Handle(AIS_InteractiveObject)> *selectedList)
@@ -1116,8 +1361,6 @@ bool OpenParEMg::saveStepFile (QString filePath, std::vector<Handle(AIS_Interact
         writer.Transfer(compound,STEPControl_ManifoldSolidBrep,Standard_True);
 
         IFSelect_ReturnStatus status=writer.Write(filePath.toStdString().c_str());
-        //xxx
-        std::cout << "   IFSelect_ReturnStatus=" << status << std::endl; std::cout.flush();
         if (status == IFSelect_RetDone) {
             return false;
         }
@@ -1125,7 +1368,7 @@ bool OpenParEMg::saveStepFile (QString filePath, std::vector<Handle(AIS_Interact
     return true;
 }
 
-void OpenParEMg::on_importBrep_triggered ()
+void OpenParEMg::on_actionImportBrep_triggered ()
 {
     QString filePath=QFileDialog::getOpenFileName(this, tr("Open BREP File"), "", tr("BREP Files (*.brep)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
@@ -1149,19 +1392,15 @@ void OpenParEMg::on_importBrep_triggered ()
             i++;
         }
         projData.gui_brep_file[i]='\0';
-        projData.modified=1;
-
         projectFileChanged=true;
-
-        ui->actionSave->setEnabled(false);
-        ui->actionSave->setEnabled(false);
     }
 
     ui->drawingWindow->fitAll();
     ui->drawingWindow->updateViewer();
+    setMenus();
 }
 
-void OpenParEMg::on_importSTEP_triggered()
+void OpenParEMg::on_actionImportStep_triggered()
 {
     QString filePath = QFileDialog::getOpenFileName(this, tr("Open STEP File"), "", tr("STEP Files (*.step *.stp)"),
                                                     nullptr,QFileDialog::DontUseNativeDialog);
@@ -1179,15 +1418,10 @@ void OpenParEMg::on_importSTEP_triggered()
     ui->drawingWindow->updateViewer();
 
     projectFileChanged=true;
-
-    ui->actionGenerate->setEnabled(true);
-
-    ui->actionSave->setEnabled(false);
-    ui->actionSave->setEnabled(false);
+    setMenus();
 }
 
-//xxx
-void OpenParEMg::on_exportSTEP_triggered()
+void OpenParEMg::on_actionExportStep_triggered()
 {
     std::vector<Handle(AIS_InteractiveObject)> selectedList;
     ui->drawingWindow->getSelected (&selectedList);
@@ -1210,6 +1444,7 @@ void OpenParEMg::on_exportSTEP_triggered()
         mb.critical(nullptr, "Error",message);
         mb.setFixedSize(500, 200);
     }
+    setMenus();
 }
 
 void OpenParEMg::on_actionExit_triggered ()
@@ -1222,11 +1457,12 @@ void OpenParEMg::on_actionExit_triggered ()
     QApplication::quit();
 }
 
-void OpenParEMg::on_actionSelect_Database_triggered ()
+void OpenParEMg::on_actionSelectMaterialsDatabase_triggered ()
 {
     SelectMaterialsDatabase *selectMaterialsDatabase=new SelectMaterialsDatabase(&projData,&absolutePath);
     selectMaterialsDatabase->exec();
     delete selectMaterialsDatabase;
+    setMenus();
 }
 
 void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int column)
@@ -1288,13 +1524,13 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::on_actionFit_Selected_triggered ()
+void OpenParEMg::on_actionFitSelected_triggered ()
 {
     ui->drawingWindow->fitSelected();
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::on_actionFit_All_triggered ()
+void OpenParEMg::on_actionFitAll_triggered ()
 {
     ui->drawingWindow->fitAll();
     ui->drawingWindow->updateViewer();
@@ -1425,19 +1661,21 @@ void OpenParEMg::keyReleaseEvent (QKeyEvent *event)
     QWidget::keyReleaseEvent(event);
 }
 
-void OpenParEMg::on_actionHide_All_triggered ()
+void OpenParEMg::on_actionHideAll_triggered ()
 {
     ui->drawingWindow->unselectAllItems();
     ui->drawingWindow->hideAllItems();
     clickedItem=nullptr;
     previousClickedItem=nullptr;
     ui->drawingWindow->updateViewer();
+    setMenus();
 }
 
-void OpenParEMg::on_actionUnselect_All_triggered ()
+void OpenParEMg::on_actionUnselectAll_triggered ()
 {
     ui->drawingWindow->unselectAllItems();
     ui->drawingWindow->updateViewer();
+    setMenus();
 }
 
 void OpenParEMg::drawMesh()
@@ -1634,6 +1872,7 @@ void OpenParEMg::drawMesh()
     //ui->drawingWindow->set_meshVisibility(true);
     ui->drawingWindow->fitAll();
     ui->drawingWindow->updateViewer();
+    setMenus();
 }
 
 void OpenParEMg::deleteMesh ()
@@ -1661,19 +1900,26 @@ void OpenParEMg::deleteMesh ()
     setMeshForeground();
     ui->actionMeshSave->setEnabled(false);
     ui->actionMeshSaveAs->setEnabled(false);
-    ui->actionDeleteMesh->setEnabled(false);
+    ui->actionMeshDelete->setEnabled(false);
 
     meshFileLoaded=false;
     meshFileChanged=false;
-    ui->actionRun->setEnabled(false);
-    ui->actionStop->setEnabled(false);
-    ui->actionAbort->setEnabled(false);
-    ui->actionAbort_and_Exit->setEnabled(false);
+    setMenus();
 }
 
-void OpenParEMg::on_actionGenerate_triggered ()
+void OpenParEMg::on_actionMeshGenerate_triggered ()
 {
-    deleteMesh();
+    if (meshFileLoaded) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this,"OpenParEMg","Delete the existing mesh?",QMessageBox::Yes|QMessageBox::No);
+        if (reply != QMessageBox::Yes) return;
+
+        deleteMesh();
+        projData.mesh_file[0]='\0';
+        projectFileChanged=true;
+        meshFileLoaded=false;
+        meshFileChanged=true;
+    }
 
     // generate mesh
     TopoDS_Shape shape=drawing.get_AIS_Shape()->Shape();
@@ -1681,20 +1927,14 @@ void OpenParEMg::on_actionGenerate_triggered ()
     gmsh::model::occ::synchronize();
     gmsh::model::mesh::generate();
     meshFileLoaded=true;
-    if (projectFileLoaded && !projectFileChanged) ui->actionRun->setEnabled(true);
 
     drawMesh();
 
     // set the physical groups with material names
     setPhysicalGroups();
 
-    // set menus
     setMeshForeground();
-    ui->actionMeshSave->setEnabled(true);
-    ui->actionMeshSaveAs->setEnabled(true);
-    ui->actionDeleteMesh->setEnabled(true);
-    ui->actionGenerate->setEnabled(false);
-    ui->actionMeshLoad->setEnabled(false);
+    setMenus();
 }
 
 void OpenParEMg::loadMeshFile (QString meshfile)
@@ -1705,7 +1945,6 @@ void OpenParEMg::loadMeshFile (QString meshfile)
         deleteMesh();
         gmsh::open(meshfile.toStdString());
         meshFileLoaded=true;
-        if (projectFileLoaded && !projectFileChanged) ui->actionRun->setEnabled(true);
 
         drawMesh();
 
@@ -1724,7 +1963,7 @@ void OpenParEMg::loadMeshFile (QString meshfile)
 
         ui->actionMeshSave->setEnabled(true);
         ui->actionMeshSaveAs->setEnabled(true);
-        ui->actionDeleteMesh->setEnabled(true);
+        ui->actionMeshDelete->setEnabled(true);
         ui->actionMeshLoad->setEnabled(false);
 
         projectFileChanged=true;
@@ -1747,6 +1986,7 @@ void OpenParEMg::loadMeshFile (QString meshfile)
             projData.mesh_file[0]='\0';
         }
     }
+    setMenus();
 }
 
 void OpenParEMg::on_actionMeshLoad_triggered ()
@@ -1759,6 +1999,7 @@ void OpenParEMg::on_actionMeshLoad_triggered ()
     if (meshfile.isNull()) return;
 
     loadMeshFile(meshfile);
+    setMenus();
 }
 
 void OpenParEMg::on_actionMeshSave_triggered ()
@@ -1767,10 +2008,10 @@ void OpenParEMg::on_actionMeshSave_triggered ()
         gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
         gmsh::write(projData.mesh_file);
         meshFileChanged=false;
-        if (projectFileLoaded && !projectFileChanged) ui->actionRun->setEnabled(true);
     } else {
         on_actionMeshSaveAs_triggered();
     }
+    setMenus();
 }
 
 void OpenParEMg::on_actionMeshSaveAs_triggered ()
@@ -1784,7 +2025,6 @@ void OpenParEMg::on_actionMeshSaveAs_triggered ()
     gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
     gmsh::write(testMeshFile.toStdString());
     meshFileChanged=false;
-    if (projectFileLoaded && !projectFileChanged) ui->actionRun->setEnabled(true);
 
     // save the filename in projData
     if (projData.mesh_file) free(projData.mesh_file);
@@ -1795,17 +2035,18 @@ void OpenParEMg::on_actionMeshSaveAs_triggered ()
         i++;
     }
     projData.mesh_file[i]='\0';
+    setMenus();
 }
 
-void OpenParEMg::on_actionDeleteMesh_triggered ()
+void OpenParEMg::on_actionMeshDelete_triggered ()
 {
     deleteMesh();
-    ui->actionMeshLoad->setEnabled(true);
+    setMenus();
 }
 
-void OpenParEMg::on_allWireframe_triggered ()
+void OpenParEMg::on_actionWireframe_triggered ()
 {
-    if (ui->allWireframe->isChecked() == true) {
+    if (ui->actionWireframe->isChecked() == true) {
         set_displayMode(&drawing,0);
         set_displayMode(&port,0);
         set_displayMode(&boundary,0);
@@ -1828,6 +2069,11 @@ void eh3D(MPI_Comm *comm, int *err, ...)
 void OpenParEMg::on_actionRun_triggered ()
 {
     // check for an existing lock file
+
+    std::cout << "absolutePath=" << absolutePath.toStdString() << std::endl; std::cout.flush();
+    QString currentPath;
+    currentPath=QDir::currentPath();
+    std::cout << "currentPath=" << currentPath.toStdString() << std::endl; std::cout.flush();
 
     std::string lockfile=".";
     lockfile.append(projData.project_name);
@@ -1878,8 +2124,6 @@ void OpenParEMg::on_actionRun_triggered ()
 
     // run OpenParEM3D
 
-    int slotCount=12;  // ToDo: pull this from an option panel
-
     char *project=(char *)malloc((projectFile.toLatin1().toStdString().length()+1)*sizeof(char));
     int i=0;
     while (i < projectFile.toLatin1().toStdString().length()) {
@@ -1892,7 +2136,7 @@ void OpenParEMg::on_actionRun_triggered ()
     argv[0]=project;
     argv[1]=nullptr;
 
-    int *error_codes=(int *)malloc(slotCount*sizeof(int));
+    int *error_codes=(int *)malloc(projData.gui_slot_count*sizeof(int));
 
     MPI_Errhandler errorHandler;
     MPI_Comm_create_errhandler(eh3D,&errorHandler);
@@ -1900,12 +2144,13 @@ void OpenParEMg::on_actionRun_triggered ()
 
     if (MPI_PORT_COMM) MPI_Comm_free(MPI_PORT_COMM);
     MPI_PORT_COMM=new MPI_Comm();
-    MPI_Comm_spawn ("OpenParEM3D",argv,slotCount,MPI_INFO_NULL,0,PETSC_COMM_WORLD,MPI_PORT_COMM,error_codes);
+
+    MPI_Comm_spawn ("OpenParEM3D",argv,projData.gui_slot_count,MPI_INFO_NULL,0,PETSC_COMM_WORLD,MPI_PORT_COMM,error_codes);
 
     // check that all processes spawned
     bool fail=false;
     i=0;
-    while (i < slotCount) {
+    while (i < projData.gui_slot_count) {
         if (error_codes[i] == MPI_ERR_SPAWN) {
             fail=true;
             break;
@@ -1915,18 +2160,17 @@ void OpenParEMg::on_actionRun_triggered ()
     if (fail) {
         QMessageBox mb;
         mb.critical(nullptr, "Error","Failed to launch OpenParEM3D.");
+    } else {
+
+        simulationRunning=true;
+        setMenus();
+
+        timer->start(500);
+
+        if (request) MPI_Request_free(request);
+        request=new MPI_Request();
+        MPI_Irecv(&signal,1,MPI_INT,0,310000,*MPI_PORT_COMM,request);
     }
-
-    timer->start(500);
-    if (request) MPI_Request_free(request);
-    request=new MPI_Request();
-    MPI_Irecv(&signal,1,MPI_INT,0,310000,*MPI_PORT_COMM,request);
-
-    ui->actionOptions->setEnabled(false);
-    ui->actionRun->setEnabled(false);
-    ui->actionStop->setEnabled(true);
-    ui->actionAbort->setEnabled(true);
-    ui->actionAbort_and_Exit->setEnabled(true);
 
     // clean up
 
@@ -1940,10 +2184,9 @@ void OpenParEMg::on_actionRun_triggered ()
 
 void OpenParEMg::on_actionStop_triggered ()
 {
-    ui->actionStop->setEnabled(false);
-    ui->actionAbort->setEnabled(true);
-    ui->actionAbort_and_Exit->setEnabled(true);
     MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);
+    simulationStopping=true;
+    setMenus();
 }
 
 void OpenParEMg::checkFinish ()
@@ -1955,23 +2198,29 @@ void OpenParEMg::checkFinish ()
     MPI_Test(request,&finished,MPI_STATUS_IGNORE);
 
     if (finished) {
+        bool isAbort=simulationAborting;
+        simulationRunning=false;
+        simulationStopping=false;
+        simulationAborting=false;
+        setMenus();
+
         timer->stop();
 
         // get the status of the 3D simulations
         int fail3D=0;
         MPI_Recv(&fail3D,1,MPI_INT,0,320000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
 
-        if (fail3D) {
+        if (fail3D & !isAbort) {
             QMessageBox mb;
-            mb.critical(nullptr, "Error", "OpenParEM3D failed to properly run.");
+            mb.critical(nullptr, "Error", "OpenParEM3D failed to properly run. Check the logged output for messages.");
             mb.setFixedSize(500, 200);
         }
 
         // unblock OpenParEM3D
         MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);  // stop
-        MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);  // abort
+        if (!isAbort) MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);  // abort
 
-        MPI_Comm_disconnect(MPI_PORT_COMM);
+        if (!isAbort) MPI_Comm_disconnect(MPI_PORT_COMM);
 
         MPI_Comm_free(MPI_PORT_COMM);
         MPI_PORT_COMM=nullptr;
@@ -1979,11 +2228,9 @@ void OpenParEMg::checkFinish ()
         MPI_Request_free(request);
         request=nullptr;
 
-        ui->actionOptions->setEnabled(true);
-        ui->actionRun->setEnabled(true);
-        ui->actionStop->setEnabled(false);
-        ui->actionAbort->setEnabled(false);
-        ui->actionAbort_and_Exit->setEnabled(false);
+        if (isAbort) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"OpenParEM3D Job Aborted.\n");
+        }
     }
 }
 
@@ -1991,11 +2238,16 @@ void OpenParEMg::on_actionAbort_triggered ()
 {
     //std::cout << "OpenParEMg::on_actionAbort_triggered:" << std::endl;  std::cout.flush();
 
-    timer->stop();
+    simulationStopping=false;
+    simulationAborting=true;
+    setMenus();
+
+    //timer->stop();
 
     int signal=1;
     MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);
 
+    /*
     // get the status of the 3D simulations
     int fail3D=0;
     MPI_Recv(&fail3D,1,MPI_INT,0,320000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
@@ -2013,15 +2265,10 @@ void OpenParEMg::on_actionAbort_triggered ()
     request=nullptr;
 
     prefix(); PetscPrintf(PETSC_COMM_WORLD,"OpenParEM3D Job Aborted.\n");
-
-    ui->actionOptions->setEnabled(true);
-    ui->actionRun->setEnabled(true);
-    ui->actionStop->setEnabled(false);
-    ui->actionAbort->setEnabled(false);
-    ui->actionAbort_and_Exit->setEnabled(false);
+*/
 }
 
-void OpenParEMg::on_actionAbort_and_Exit_triggered()
+void OpenParEMg::on_actionAbortAndExit_triggered()
 {
     if (projectFileChanged) {
         QMessageBox::StandardButton reply;
@@ -2041,35 +2288,45 @@ void OpenParEMg::on_actionAbort_and_Exit_triggered()
     QApplication::quit();
 }
 
-void OpenParEMg::on_actionShow_triggered()
+void OpenParEMg::on_actionDrawingPlaneShow_triggered()
 {
+    drawingPlaneShown=true;
     ui->drawingWindow->showGrid();
     ui->drawingWindow->updateViewer();
+    setMenus();
 }
 
-void OpenParEMg::on_actionHide_triggered()
+void OpenParEMg::on_actionDrawingPlaneHide_triggered()
 {
+    drawingPlaneShown=false;
     ui->drawingWindow->hideGrid();
     ui->drawingWindow->updateViewer();
+    setMenus();
 }
 
-void OpenParEMg::on_actionSnap_To_Grid_triggered()
+void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered()
 {
-    if (ui->actionSnap_To_Grid->isChecked()) {
+    if (ui->actionDrawingPlaneSnapToGrid->isChecked()) {
         ui->drawingWindow->set_snapToGrid(true);
     } else {
         ui->drawingWindow->set_snapToGrid(false);
     }
+    setMenus();
 }
 
-void OpenParEMg::on_actionSet_To_Face_triggered()
+void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered()
 {
     ui->drawingWindow->set_gridPlane();
     ui->drawingWindow->updateViewer();
+    setMenus();
 }
 
-void OpenParEMg::on_actionSelect_with_Box_triggered()
+void OpenParEMg::on_actionSelectWithBox_triggered()
 {
     ui->drawingWindow->selectRectangle();
+    setMenus();
 }
+
+
+
 

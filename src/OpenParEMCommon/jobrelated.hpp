@@ -35,7 +35,7 @@ using namespace std;
 
 extern "C" void prefix ();
 
-void exit_job_on_error (chrono::steady_clock::time_point, const char *, bool);
+void exit_job_on_error (chrono::steady_clock::time_point, const char *, bool, int);
 char* create_lock_file (const char *);
 extern "C" void remove_lock_file (const char *);
 void delete_file (const char *, string, string);

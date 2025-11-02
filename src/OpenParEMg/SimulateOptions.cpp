@@ -29,7 +29,7 @@ SimOptions::SimOptions(QWidget *parent)
     , ui(new Ui::SimOptions)
 {
     ui->setupUi(this);
-    this->setFixedSize(518,463);
+    this->setFixedSize(518,503);
 }
 
 SimOptions::~SimOptions()
@@ -46,6 +46,7 @@ void SimOptions::set_projData (struct projectData *a)
     referenceImpedance=projData->reference_impedance;
     frequencyUnit=projData->touchstone_frequency_unit;
     touchstoneFormat=projData->touchstone_format;
+    slotCount=projData->gui_slot_count;
     temperature=projData->solution_temperature;
     tolerance2D=projData->solution_2D_tolerance;
     tolerance3D=projData->solution_3D_tolerance;
@@ -114,6 +115,7 @@ void SimOptions::set_projData (struct projectData *a)
     if (strcmp(projData->touchstone_format,"RI") == 0) index=2;
     ui->touchstoneFormat->setCurrentIndex(index);
 
+    ui->slotCount->setValue(slotCount);
     ui->temperature->setValue(temperature);
 
     ui->tolerance2D->setText(QString::number(projData->solution_2D_tolerance,'g'));
@@ -258,6 +260,12 @@ void SimOptions::on_simulateOptionOk_clicked()
             i++;
         }
         projData->touchstone_format[i]='\0';
+        projData->modified=1;
+    }
+
+    // slot count
+    if (projData->gui_slot_count != slotCount) {
+        projData->gui_slot_count=slotCount;
         projData->modified=1;
     }
 
@@ -459,6 +467,11 @@ void SimOptions::on_normalizeSparam_checkStateChanged(const Qt::CheckState &arg1
     ui->simulateOptionOk->setEnabled(true);
 }
 
+void SimOptions::on_slotCount_valueChanged(int arg1)
+{
+    slotCount=arg1;
+    ui->simulateOptionOk->setEnabled(true);
+}
 
 void SimOptions::on_touchstoneFormat_activated (int index)
 {
@@ -613,7 +626,6 @@ void SimOptions::on_showImpedanceDetails_checkStateChanged(const Qt::CheckState 
     else showImpedanceDetails=0;
     ui->simulateOptionOk->setEnabled(true);
 }
-
 
 void SimOptions::on_showPortDefinitions_checkStateChanged(const Qt::CheckState &arg1)
 {

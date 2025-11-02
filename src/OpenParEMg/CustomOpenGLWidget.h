@@ -188,6 +188,8 @@ public:
     void selectRectangle ();
     void endSelectRectangle ();
 
+    bool hasOneFaceSelected () {return drawingTracker->hasOneFaceSelected();}
+
     void reset () {
         std::cout << "CustomOpenGLWidget::reset" << std::endl; std::cout.flush();
         drawingTracker->reset();

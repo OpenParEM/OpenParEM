@@ -74,6 +74,8 @@ private slots:
     void on_showDetailedCases_checkStateChanged (const Qt::CheckState &arg1);
     void on_levelComboBox_currentIndexChanged (int);
 
+    void on_slotCount_valueChanged(int arg1);
+
 private:
     Ui::SimOptions *ui;
     bool cancelClose;
@@ -81,6 +83,7 @@ private:
     double referenceImpedance;
     QString frequencyUnit;
     QString touchstoneFormat;
+    int slotCount;
     double temperature;
     double tolerance2D;
     double tolerance3D;

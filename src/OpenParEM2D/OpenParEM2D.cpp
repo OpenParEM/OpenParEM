@@ -294,7 +294,7 @@ void load_project_file (const char *projFile, struct projectData *defaultData, s
 
    if (load_project_file (projFile,projData,"   ")) {
       if (projData->debug_show_project) {print_project (projData,defaultData,"      ");}
-      exit_job_on_error (job_start_time,lockfile,true);
+      exit_job_on_error (job_start_time,lockfile,true,2);
    }
    if (projData->debug_show_project) {print_project (projData,defaultData,"      ");}
 }
@@ -337,7 +337,7 @@ char* create_temp_directory (struct projectData *projData, chrono::steady_clock:
 
    MPI_Bcast(&is_created,1,MPI_INT,0,PETSC_COMM_WORLD);
    if (! is_created) {
-         exit_job_on_error (job_start_time,lockfile,true);
+         exit_job_on_error (job_start_time,lockfile,true,2);
    }
 
    return tempdir;
@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
       if (workingDir) {
          if (chdir(workingDir) != 0) {
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2277: Failed to change to the working directory \"%s\".\n",workingDir);
-            exit_job_on_error (job_start_time,lockfile,true);
+            exit_job_on_error (job_start_time,lockfile,true,2);
          }
          free(workingDir);
       }
@@ -456,6 +456,7 @@ int main(int argc, char *argv[])
    appCtx.job_start_time=job_start_time;
    appCtx.lockfile=lockfile;
    appCtx.prefix_text=strdup(get_prefix_text());
+   appCtx.tool=2; // for OpenParEM2D
 
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Setting up ...\n");
 
@@ -466,19 +467,19 @@ int main(int argc, char *argv[])
    projData.version_patch=version_patch;
    delete_stale_files(baseName);
    char *tempdir=create_temp_directory(&projData,job_start_time,lockfile);
-   if (projData.output_show_license) {print_license(); exit_job_on_error (job_start_time,lockfile,true);}
+   if (projData.output_show_license) {print_license(); exit_job_on_error (job_start_time,lockfile,true,2);}
    show_memory (projData.debug_show_memory, "   "); 
 
    // materials
    if (materialDatabase.load_materials(projData.materials_global_path,projData.materials_global_name,
                                        projData.materials_local_path,projData.materials_local_name,
-                                       projData.materials_check_limits)) exit_job_on_error (job_start_time,lockfile,true);
+                                       projData.materials_check_limits)) exit_job_on_error (job_start_time,lockfile,true,2);
    if (projData.debug_show_materials) {materialDatabase.print("   ");}
 
    show_memory (projData.debug_show_memory, "   ");
 
    // get the boundary database indicating impedance integration paths and boundary conditions
-   if (boundaryDatabase.load(projData.mode_definition_file,projData.solution_check_closed_loop)) exit_job_on_error (job_start_time,lockfile,true);
+   if (boundaryDatabase.load(projData.mode_definition_file,projData.solution_check_closed_loop)) exit_job_on_error (job_start_time,lockfile,true,2);
    if (projData.debug_show_mode_definitions) boundaryDatabase.print();
 
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Loading mesh and assigning materials ...\n");
@@ -487,7 +488,7 @@ int main(int argc, char *argv[])
    }
 
    // get the mapping from the region number to the material name
-   if (meshMaterials.load(projData.mesh_file,2)) exit_job_on_error (job_start_time,lockfile,true);
+   if (meshMaterials.load(projData.mesh_file,2)) exit_job_on_error (job_start_time,lockfile,true,2);
    //meshMaterials.print();
 
    // load the mesh - either serial or parallel 
@@ -495,15 +496,15 @@ int main(int argc, char *argv[])
    Mesh *mesh=nullptr;
    ParMesh *pmesh=nullptr;
    MeshMaterialList *p=&meshMaterials;
-   if (load_mesh (&projData,&mesh,&pmesh,&p,&dim)) exit_job_on_error (job_start_time,lockfile,true);
-   if (! (dim == 2)) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2211: Mesh must be 2-dimensional.\n"); exit_job_on_error (job_start_time,lockfile,true);}
+   if (load_mesh (&projData,&mesh,&pmesh,&p,&dim)) exit_job_on_error (job_start_time,lockfile,true,2);
+   if (! (dim == 2)) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2211: Mesh must be 2-dimensional.\n"); exit_job_on_error (job_start_time,lockfile,true,2);}
 
    // check field points paths for scale
    if (check_field_points (projFile,mesh,pmesh,projData.mesh_order,2,
                            projData.field_points_count,projData.field_points_x,projData.field_points_y,nullptr)) {
-      exit_job_on_error (job_start_time,lockfile,true);
+      exit_job_on_error (job_start_time,lockfile,true,2);
    }
-   if (boundaryDatabase.check_scale(mesh,pmesh,projData.mesh_order)) exit_job_on_error (job_start_time,lockfile,true);
+   if (boundaryDatabase.check_scale(mesh,pmesh,projData.mesh_order)) exit_job_on_error (job_start_time,lockfile,true,2);
 
    // mark the boundaries
    boundaryDatabase.mark_boundaries (mesh,pmesh,&borderDatabase);
@@ -535,7 +536,7 @@ int main(int argc, char *argv[])
    //   prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2212: Mesh file \"%s\" does not include the correct number of regions for material definitions.\n",projData.mesh_file);
    //   prefix(); PetscPrintf(PETSC_COMM_WORLD,"       The $PhysicalNames block should have %d entries, but %d were found.\n",
    //                                        attributes_max+1,meshMaterials.size()+1);
-   //   exit_job_on_error (job_start_time,lockfile,true);
+   //   exit_job_on_error (job_start_time,lockfile,true,2);
    //}
 
    // create space for alpha and beta solutions, clear, and set initial value (if available)
@@ -550,7 +551,7 @@ int main(int argc, char *argv[])
 
    // set up the frequency plan
    if (frequencyPlan.assemble(projData.refinement_frequency,projData.inputFrequencyPlansCount,projData.inputFrequencyPlans))
-        exit_job_on_error (job_start_time,lockfile,true);
+        exit_job_on_error (job_start_time,lockfile,true,2);
    if (projData.debug_show_frequency_plan) frequencyPlan.print();
    double lastFrequency=0;  // for scaling the initial guess
 
@@ -591,7 +592,7 @@ int main(int argc, char *argv[])
 
       if (!pmesh) {
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2213: Setup is inconsistent leading to undefined internal mesh definition.\n");
-         exit_job_on_error (job_start_time,lockfile,true);
+         exit_job_on_error (job_start_time,lockfile,true,2);
       }
 
       int j=0;
@@ -603,14 +604,14 @@ int main(int argc, char *argv[])
 
             // permittivity
             complex<double> e=useMaterial->get_eps(projData.solution_temperature,frequency,materialDatabase.get_tol(),materialDatabase.get_indent());
-            if (e == complex<double>(-DBL_MAX,0)) exit_job_on_error (job_start_time,lockfile,true);
+            if (e == complex<double>(-DBL_MAX,0)) exit_job_on_error (job_start_time,lockfile,true,2);
 
             ko2RePermittivity[j]=ko2*real(e)/eps0;
             ko2ImPermittivity[j]=ko2*imag(e)/eps0;
 
             // permeability
             double mu=useMaterial->get_mu(projData.solution_temperature,frequency,materialDatabase.get_tol(),materialDatabase.get_indent());
-            if (mu == -DBL_MAX) exit_job_on_error (job_start_time,lockfile,true);
+            if (mu == -DBL_MAX) exit_job_on_error (job_start_time,lockfile,true,2);
 
             InvPermeability[j]=1.0/(mu/(4e-7*M_PI));    // 1/relative permeability
             InvOmegaMu[j]=1.0/(2*M_PI*frequency*mu);    // 1/(w*permeability)
@@ -621,7 +622,7 @@ int main(int argc, char *argv[])
          } else {
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2214: Material \"%s\" for region %d is not present in the material database.\n",
                                          meshMaterials.get_name(j).c_str(),j+1);
-            exit_job_on_error (job_start_time,lockfile,true);
+            exit_job_on_error (job_start_time,lockfile,true,2);
          }
 
          j++;
@@ -754,12 +755,12 @@ int main(int argc, char *argv[])
             // process the eigenvalue solutions
             fem->set_t_size();
             fem->set_z_size();
-            if (fem->buildFields(alphaList,betaList)) exit_job_on_error (job_start_time,lockfile,true);
+            if (fem->buildFields(alphaList,betaList)) exit_job_on_error (job_start_time,lockfile,true,2);
             fem->sort();
             fem->calculateVandI(&boundaryDatabase,&borderDatabase);
-            if (fem->calculateModalVandI()) exit_job_on_error (job_start_time,lockfile,true);
+            if (fem->calculateModalVandI()) exit_job_on_error (job_start_time,lockfile,true,2);
             fem->calculateImpedance(&boundaryDatabase,&borderDatabase);
-            if (fem->calculatePerturbationalLoss(&boundaryDatabase,&borderDatabase,&materialDatabase)) exit_job_on_error (job_start_time,lockfile,true);
+            if (fem->calculatePerturbationalLoss(&boundaryDatabase,&borderDatabase,&materialDatabase)) exit_job_on_error (job_start_time,lockfile,true,2);
             fem->calculateFieldPoints(&fieldPointDatabase);
             fem->saveTiTv();
             fem->saveParaView();
@@ -777,7 +778,7 @@ int main(int argc, char *argv[])
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"           - reduce solution.tolerance\n");
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"           - decrease mesh.order\b");
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"           - apply uniform mesh refinement by setting mesh.uniform_refinement.count\n");
-               exit_job_on_error (job_start_time,lockfile,true);
+               exit_job_on_error (job_start_time,lockfile,true,2);
             }
 
             // print a summary to the console

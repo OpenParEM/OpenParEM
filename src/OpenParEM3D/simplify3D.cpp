@@ -54,7 +54,7 @@ int main (int argc, char *argv[])
 
    init_project (&projData);
    if (load_project_file (projFile, &projData, "")) {
-      cout << "ERROR2274: Failed to load project file \"" << projFile << "\" for reading." << endl;
+      cout << "ERROR3245: Failed to load project file \"" << projFile << "\" for reading." << endl;
       exit(1);
    }
    print_project (&projData,&defaultData,"");

@@ -246,10 +246,7 @@ public:
         std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();
 
         if (!item) return;
-
-        if (!item->is_mesh()) {
-            item->setSelected(Standard_True);
-        }
+        if (item->is_mesh()) return;
 
         item->setSelected(Standard_True);
         selectedItems.push_back(item);
@@ -264,6 +261,18 @@ public:
             return true;
         }
         std::cout << "place 2" << std::endl; std::cout.flush();
+        return false;
+    }
+
+    bool hasOneFaceSelected ()
+    {
+        if (selectedItems.size() == 1) {
+            Handle(AIS_Shape) shape=selectedItems[0]->get_AIS_Shape();
+            if (!shape.IsNull()) {
+                TopAbs_ShapeEnum shapeType=shape->Shape().ShapeType();
+                if (shapeType == TopAbs_FACE) return true;
+            }
+        }
         return false;
     }
 
@@ -308,12 +317,10 @@ public:
         std::cout << "ItemTracker::unselectItem" << std::endl; std::cout.flush();
 
         if (!unselectItem) return;
+        if (unselectItem->is_mesh()) return;
 
-        // unselect in drawing if not a mesh
-        if (!unselectItem->is_mesh()) {
-            UnselectShape(unselectItem->get_AIS_Shape());
-        }
 
+        UnselectShape(unselectItem->get_AIS_Shape());
         unselectItem->setSelected(Standard_False);
 
         // remove from the list of selected items

@@ -20,9 +20,11 @@
 
 #include "solveComplexLinearSystem.h"
 
-double current_residual;
-MPI_Request stopRequest,abortRequest;
+// globals for handling abortRequest
+MPI_Request abortRequest,stopRequest;
 char *lockfile;
+
+double current_residual;
 
 void showReason (KSPConvergedReason reason) {
    if (reason < 0) {prefix(); PetscPrintf(PETSC_COMM_WORLD," NOT CONVERGED: ");}
@@ -111,6 +113,39 @@ void checkForAbort ()
    return;
 }
 
+int checkForStop ()
+{
+   int gracefulExit=0;
+
+   PetscMPIInt size,rank;
+   MPI_Comm_size(PETSC_COMM_WORLD, &size);
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+   MPI_Comm parent;
+   MPI_Comm_get_parent (&parent);
+
+   if (parent != MPI_COMM_NULL) {
+      if (rank == 0) {
+         // look for a non-blocking message to stop
+         int test;
+         MPI_Test(&stopRequest,&test,MPI_STATUS_IGNORE);
+
+         // send a blocking message to the other ranks
+         int i=1;
+         while (i < size) {
+            MPI_Send(&test,1,MPI_INT,i,300003,PETSC_COMM_WORLD);
+            i++;
+         }
+         if (test) gracefulExit=1;
+      } else {
+         int test;
+         MPI_Recv(&test,1,MPI_INT,0,300003,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+         if (test) gracefulExit=1;
+      }
+   }
+
+   return gracefulExit;
+}
 
 // Custom convergence routine to enable early exit after after the current iteration
 PetscErrorCode OPEMKSPConverged(KSP ksp, PetscInt it, PetscReal rnorm, KSPConvergedReason *reason, void *ctx)

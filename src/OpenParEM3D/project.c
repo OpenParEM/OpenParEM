@@ -703,6 +703,7 @@ void init_project (struct projectData *data) {
    data->debug_refine_preconditioner=1;
 
    data->gui_brep_file=allocCopyString("");
+   data->gui_slot_count=5;
 
    data->physicalGroupMaterialAllocated=5;
    data->physicalGroupMaterialCount=0;
@@ -1046,6 +1047,9 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0; if (defaultData && strcmp(data->gui_brep_file,defaultData->gui_brep_file) == 0) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.brep.file %s\n",indent,comment[matched],data->gui_brep_file);
 
+   matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
+
    // no default field points, so print all
    i=0;
    while (i < data->physicalGroupMaterialCount) {
@@ -1345,6 +1349,9 @@ int save_project (const char *filename, struct projectData *data, struct project
 
     matched=0; if (defaultData && strcmp(data->gui_brep_file,defaultData->gui_brep_file) == 0) matched=1;
     fprintf(fptr,"%s%sgui.brep.file %s\n",indent,comment[matched],data->gui_brep_file);
+
+    matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
+    fprintf(fptr,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
 
     // no default field points, so print all
     i=0;
@@ -2794,6 +2801,19 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                    } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
+               else if (strcmp(keyword,"gui.slot.count") == 0) {
+                  value=strtok(NULL," ");
+                  if (is_int(value)) {
+                     data->gui_slot_count=atoi(value);
+                     value=strtok(NULL," ");
+                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                     if (data->gui_slot_count < 1) {
+                        ierr=1;
+                        prefix(); printf("%s%sERROR3246: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                     }
+                  } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
                else if (strcmp(keyword,"gui.physical.group") == 0) {
                    if (commaCount == 2) {
                        value=strtok(NULL," ,");
@@ -3102,6 +3122,8 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send (&length,1,MPI_INT,i,1000089,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->gui_brep_file,length,MPI_CHAR,i,1000090,PETSC_COMM_WORLD);
 
+         ierr=MPI_Send(&(data->gui_slot_count),1,MPI_INT,i,1000121,PETSC_COMM_WORLD);
+
          ierr=MPI_Send(&(data->physicalGroupMaterialCount),1,MPI_INT,i,1000115,PETSC_COMM_WORLD);
          j=0;
          while (j < data->physicalGroupMaterialCount) {
@@ -3340,6 +3362,8 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       data->gui_brep_file=(char *) malloc((length+1)*sizeof(char));
       ierr=MPI_Recv(data->gui_brep_file,length,MPI_CHAR,0,1000090,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       data->gui_brep_file[length]='\0';
+
+      ierr=MPI_Recv(&(data->gui_slot_count),1,MPI_INT,0,1000121,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
       ierr=MPI_Recv(&physicalGroupMaterialCount,1,MPI_INT,0,1000115,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       j=0;

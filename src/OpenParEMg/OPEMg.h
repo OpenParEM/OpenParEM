@@ -101,20 +101,58 @@ public:
     void setPhysicalGroups ();
 
 private slots:
-    void on_fileOpen_triggered ();
-    void on_fileNew_triggered ();
-    void on_meshOptions_triggered ();
-    void on_simulateOptions_triggered ();
-    void on_actionLicense_triggered ();
-    void on_actionFrequency_Plan_triggered ();
+    // File
+    void on_actionNew_triggered ();
+    void on_actionOpen_triggered ();
     void on_actionSave_triggered ();
-    void on_actionRefinement_triggered ();
-    void on_actionMaterials_Editor_triggered ();
-    void on_importBrep_triggered ();
-    void on_importSTEP_triggered();
-    void on_exportSTEP_triggered();
+    void on_actionSaveAs_triggered();
+    void on_actionClose_triggered();
+    void on_actionImportBrep_triggered ();
+    void on_actionImportStep_triggered();
+    void on_actionExportStep_triggered();
     void on_actionExit_triggered ();
-    void on_actionSelect_Database_triggered ();
+
+    // View
+    void on_actionFitSelected_triggered ();
+    void on_actionFitAll_triggered ();
+    void on_actionSelectWithBox_triggered();
+    void on_actionUnselectAll_triggered ();   // note similar functionality in CustomOpenGLWidget
+    void on_actionHideAll_triggered ();
+    void on_actionWireframe_triggered();
+
+    // Drawing
+    void on_actionDrawingPlaneShow_triggered();
+    void on_actionDrawingPlaneHide_triggered();
+    void on_actionDrawingPlaneSnapToGrid_triggered();
+    void on_actionDrawingPlaneSetToFace_triggered();
+
+    // Materials
+    void on_actionSelectMaterialsDatabase_triggered ();
+
+    // Mesh
+    void on_actionMeshOptions_triggered ();
+    void on_actionMeshGenerate_triggered ();
+    void on_actionMeshLoad_triggered ();
+    void on_actionMeshSave_triggered ();
+    void on_actionMeshSaveAs_triggered ();
+    void on_actionMeshDelete_triggered ();
+
+    // Simulation Setup
+    void on_actionFrequencyPlan_triggered ();
+    void on_actionRefinement_triggered ();
+    void on_actionSimulateOptions_triggered ();
+
+    // Run
+    void on_actionRun_triggered ();
+    void on_actionStop_triggered();
+    void on_actionAbort_triggered();
+    void on_actionAbortAndExit_triggered();
+
+    // Tools
+    void on_actionMaterialsEditor_triggered ();
+
+    // Help
+    void on_actionLicense_triggered ();
 
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
 
@@ -137,9 +175,6 @@ private slots:
 
     void itemTreeContextMenu_triggered (const QPoint& pnt);
 
-    void on_actionFit_Selected_triggered ();
-    void on_actionFit_All_triggered ();
-
     void on_actionShape_triggered ();
     void on_actionVertex_triggered ();
     void on_actionEdge_triggered ();
@@ -152,46 +187,19 @@ private slots:
     void keyPressEvent (QKeyEvent *) override;
     void keyReleaseEvent (QKeyEvent *) override;
 
-    void on_actionHide_All_triggered ();
+
     void set_displayMode (CustomTreeWidgetItem *, int);
     void set_selectionMode (CustomTreeWidgetItem *, int);
 
-    void on_actionUnselect_All_triggered ();   // note similar functionality in CustomOpenGLWidget
-    void on_actionGenerate_triggered ();
-    void on_actionMeshSave_triggered ();
-
-    void on_actionDeleteMesh_triggered();
-
-    void on_allWireframe_triggered();
-
     void loadMeshFile (QString);
-    void on_actionMeshLoad_triggered ();
-
-    void on_actionRun_triggered ();
-
-    void on_actionStop_triggered();
-
     void checkFinish ();
 
-    void on_actionAbort_triggered();
-
-    void on_actionShow_triggered();
-
-    void on_actionHide_triggered();
-
-    void on_actionSnap_To_Grid_triggered();
-
-    void on_actionSet_To_Face_triggered();
-
-    void on_actionSelect_with_Box_triggered();
-
-    void on_actionMeshSaveAs_triggered();
-
-    void on_actionSaveAs_triggered();
-
-    void on_actionAbort_and_Exit_triggered();
-
 private:
+    void setMenus ();
+    void resetLockouts ();
+    void resetProject ();
+    //void getActionRunSetup (bool *, QString *);
+
     Ui::OpenParEMg *ui;
     QString projectFile;
     struct projectData projData,defaultData;
@@ -237,6 +245,12 @@ private:
     bool projectFileChanged;
     bool meshFileLoaded;
     bool meshFileChanged;
+    bool brepFileLoaded;
+    bool stepFileLoaded;
+    bool drawingPlaneShown;
+    bool simulationRunning;
+    bool simulationStopping;
+    bool simulationAborting;
 
 };
 

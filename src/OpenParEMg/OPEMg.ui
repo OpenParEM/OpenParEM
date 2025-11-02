@@ -65,19 +65,20 @@
      <property name="title">
       <string>Import</string>
      </property>
-     <addaction name="importBrep"/>
-     <addaction name="importSTEP"/>
+     <addaction name="actionImportBrep"/>
+     <addaction name="actionImportStep"/>
     </widget>
     <widget class="QMenu" name="menuExport">
      <property name="title">
       <string>Export</string>
      </property>
-     <addaction name="exportSTEP"/>
+     <addaction name="actionExportStep"/>
     </widget>
-    <addaction name="fileNew"/>
-    <addaction name="fileOpen"/>
+    <addaction name="actionNew"/>
+    <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
     <addaction name="actionSaveAs"/>
+    <addaction name="actionClose"/>
     <addaction name="menuImport"/>
     <addaction name="menuExport"/>
     <addaction name="actionExit"/>
@@ -86,20 +87,20 @@
     <property name="title">
      <string>Mesh</string>
     </property>
-    <addaction name="meshOptions"/>
-    <addaction name="actionGenerate"/>
+    <addaction name="actionMeshOptions"/>
+    <addaction name="actionMeshGenerate"/>
     <addaction name="actionMeshLoad"/>
     <addaction name="actionMeshSave"/>
     <addaction name="actionMeshSaveAs"/>
-    <addaction name="actionDeleteMesh"/>
+    <addaction name="actionMeshDelete"/>
    </widget>
    <widget class="QMenu" name="menuSimulate">
     <property name="title">
      <string>Simulation Setup</string>
     </property>
-    <addaction name="actionFrequency_Plan"/>
+    <addaction name="actionSimulateOptions"/>
+    <addaction name="actionFrequencyPlan"/>
     <addaction name="actionRefinement"/>
-    <addaction name="simulateOptions"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -113,19 +114,19 @@
      <string>Tools</string>
     </property>
     <addaction name="separator"/>
-    <addaction name="actionMaterials_Editor"/>
+    <addaction name="actionMaterialsEditor"/>
    </widget>
    <widget class="QMenu" name="menuMaterials">
     <property name="title">
      <string>Materials</string>
     </property>
-    <addaction name="actionSelect_Database"/>
+    <addaction name="actionSelectMaterialsDatabase"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
      <string>View</string>
     </property>
-    <widget class="QMenu" name="menuSelection">
+    <widget class="QMenu" name="actionMenuSelection">
      <property name="title">
       <string>Selection ...</string>
      </property>
@@ -137,23 +138,22 @@
      <addaction name="actionShell"/>
      <addaction name="actionSolid"/>
     </widget>
-    <addaction name="actionFit_Selected"/>
-    <addaction name="actionFit_All"/>
-    <addaction name="menuSelection"/>
-    <addaction name="actionSelect_with_Box"/>
-    <addaction name="actionUnselect_All"/>
-    <addaction name="actionHide_All"/>
-    <addaction name="allWireframe"/>
+    <addaction name="actionFitSelected"/>
+    <addaction name="actionFitAll"/>
+    <addaction name="actionMenuSelection"/>
+    <addaction name="actionSelectWithBox"/>
+    <addaction name="actionUnselectAll"/>
+    <addaction name="actionHideAll"/>
+    <addaction name="actionWireframe"/>
    </widget>
    <widget class="QMenu" name="menuRun">
     <property name="title">
      <string>Run</string>
     </property>
-    <addaction name="actionOptions"/>
     <addaction name="actionRun"/>
     <addaction name="actionStop"/>
     <addaction name="actionAbort"/>
-    <addaction name="actionAbort_and_Exit"/>
+    <addaction name="actionAbortAndExit"/>
    </widget>
    <widget class="QMenu" name="menuDraw">
     <property name="title">
@@ -163,10 +163,10 @@
      <property name="title">
       <string>Drawing Plane</string>
      </property>
-     <addaction name="actionShow"/>
-     <addaction name="actionHide"/>
-     <addaction name="actionSnap_To_Grid"/>
-     <addaction name="actionSet_To_Face"/>
+     <addaction name="actionDrawingPlaneShow"/>
+     <addaction name="actionDrawingPlaneHide"/>
+     <addaction name="actionDrawingPlaneSnapToGrid"/>
+     <addaction name="actionDrawingPlaneSetToFace"/>
     </widget>
     <addaction name="menuDrawing_Plane"/>
    </widget>
@@ -181,22 +181,22 @@
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="fileOpen">
+  <action name="actionOpen">
    <property name="text">
     <string>Open ...</string>
    </property>
   </action>
-  <action name="fileNew">
+  <action name="actionNew">
    <property name="text">
     <string>New</string>
    </property>
   </action>
-  <action name="meshOptions">
+  <action name="actionMeshOptions">
    <property name="text">
     <string>Options ...</string>
    </property>
   </action>
-  <action name="simulateOptions">
+  <action name="actionSimulateOptions">
    <property name="text">
     <string>Options ...</string>
    </property>
@@ -211,7 +211,7 @@
     <string>License</string>
    </property>
   </action>
-  <action name="actionFrequency_Plan">
+  <action name="actionFrequencyPlan">
    <property name="text">
     <string>Frequency Plan ...</string>
    </property>
@@ -226,12 +226,12 @@
     <string>Refinement ...</string>
    </property>
   </action>
-  <action name="actionMaterials_Editor">
+  <action name="actionMaterialsEditor">
    <property name="text">
     <string>Materials Editor ...</string>
    </property>
   </action>
-  <action name="importBrep">
+  <action name="actionImportBrep">
    <property name="text">
     <string>Brep ...</string>
    </property>
@@ -241,17 +241,17 @@
     <string>Exit</string>
    </property>
   </action>
-  <action name="actionSelect_Database">
+  <action name="actionSelectMaterialsDatabase">
    <property name="text">
     <string>Select Database ...</string>
    </property>
   </action>
-  <action name="actionFit_Selected">
+  <action name="actionFitSelected">
    <property name="text">
     <string>Fit Selected</string>
    </property>
   </action>
-  <action name="actionFit_All">
+  <action name="actionFitAll">
    <property name="text">
     <string>Fit All</string>
    </property>
@@ -294,19 +294,22 @@
     <string>Wire</string>
    </property>
   </action>
-  <action name="actionHide_All">
+  <action name="actionHideAll">
    <property name="text">
     <string>Hide All</string>
    </property>
   </action>
-  <action name="actionUnselect_All">
+  <action name="actionUnselectAll">
    <property name="text">
     <string>Unselect All</string>
    </property>
   </action>
-  <action name="actionGenerate">
+  <action name="actionMeshGenerate">
    <property name="text">
     <string>Generate</string>
+   </property>
+   <property name="toolTip">
+    <string>Generate Mesh</string>
    </property>
   </action>
   <action name="actionMeshSave">
@@ -314,12 +317,12 @@
     <string>Save</string>
    </property>
   </action>
-  <action name="actionDeleteMesh">
+  <action name="actionMeshDelete">
    <property name="text">
     <string>Delete</string>
    </property>
   </action>
-  <action name="allWireframe">
+  <action name="actionWireframe">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -332,17 +335,12 @@
     <string>Load ...</string>
    </property>
   </action>
-  <action name="actionOptions">
-   <property name="text">
-    <string>Options ...</string>
-   </property>
-  </action>
   <action name="actionRun">
    <property name="text">
     <string>Run</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Run OpenParEM3D.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>Run</string>
    </property>
   </action>
   <action name="actionStop">
@@ -361,22 +359,22 @@
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop OpenParEM3D at the next available stopping point.  Results consistency are not not guaranteed.  GUI continues running.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
-  <action name="importSTEP">
+  <action name="actionImportStep">
    <property name="text">
     <string>STEP ...</string>
    </property>
   </action>
-  <action name="actionShow">
+  <action name="actionDrawingPlaneShow">
    <property name="text">
     <string>Show</string>
    </property>
   </action>
-  <action name="actionHide">
+  <action name="actionDrawingPlaneHide">
    <property name="text">
     <string>Hide</string>
    </property>
   </action>
-  <action name="actionSnap_To_Grid">
+  <action name="actionDrawingPlaneSnapToGrid">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -384,17 +382,17 @@
     <string>Snap To Grid</string>
    </property>
   </action>
-  <action name="actionSet_To_Face">
+  <action name="actionDrawingPlaneSetToFace">
    <property name="text">
     <string>Set To Face</string>
    </property>
   </action>
-  <action name="exportSTEP">
+  <action name="actionExportStep">
    <property name="text">
     <string>STEP ...</string>
    </property>
   </action>
-  <action name="actionSelect_with_Box">
+  <action name="actionSelectWithBox">
    <property name="text">
     <string>Select with Box</string>
    </property>
@@ -409,12 +407,17 @@
     <string>Save</string>
    </property>
   </action>
-  <action name="actionAbort_and_Exit">
+  <action name="actionAbortAndExit">
    <property name="text">
     <string>Abort and Exit</string>
    </property>
    <property name="toolTip">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Abort OpenParEM3D and exit the GUI.  Results consistency are not guaranteed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="actionClose">
+   <property name="text">
+    <string>Close</string>
    </property>
   </action>
  </widget>
