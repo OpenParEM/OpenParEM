@@ -155,7 +155,6 @@ void isOpenParEM2Dreachable ()
    MPI_Barrier(PETSC_COMM_WORLD);
 }
 
-//xxx
 void signalFinished ()
 {
    PetscMPIInt rank;
@@ -265,6 +264,7 @@ int main(int argc, char *argv[])
    vector<DifferentialPair *> aggregateList;
    int gracefulExit=0;
 
+   chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
    currentPath=std::filesystem::current_path();
 
    // Initialize Petsc and MPI
@@ -280,8 +280,6 @@ int main(int argc, char *argv[])
 
    MPI_Barrier(PETSC_COMM_WORLD);
 
-//xxx
-system("pwd");
    // look for a stop signal
    int stopSignal;
    if (parent != MPI_COMM_NULL && rank == 0) { 
@@ -298,11 +296,27 @@ system("pwd");
    snprintf(prefix_text,256,"%s","");
    set_prefix_text(prefix_text);
 
+   // get the working directory
+   if (parent != MPI_COMM_NULL) {
+      int length;
+      MPI_Recv(&length,1,MPI_INT,0,10,parent,MPI_STATUS_IGNORE);
+
+      char *workingDir=(char *)malloc((length+1)*sizeof(char));
+      MPI_Recv(workingDir,length,MPI_CHAR,0,11,parent,MPI_STATUS_IGNORE);
+      workingDir[length]='\0';
+
+      if (workingDir) {
+         if (chdir(workingDir) != 0) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2277: Failed to change to the working directory \"%s\".\n",workingDir);
+            exit_job_on_error (job_start_time,lockfile,true,2);
+         }
+         free(workingDir);
+      }
+   }
+
    // trap PETSc errors to enable graceful exit, primarily for out-of-memory errors
    struct applicationContext appCtx;
    PetscPushErrorHandler(errorHandler,(struct applicationContext *) &appCtx);
-
-   chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
 
    // parse inputs
    int retVal=1;

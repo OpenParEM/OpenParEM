@@ -5301,13 +5301,15 @@ bool Port::solve(string *directory)
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
 
-   // project directory
-   stringstream projDirectory;
-   projDirectory << *directory << "/S" << get_name();
-
-   // current path
+   // current directory
    std::filesystem::path currentPath=std::filesystem::current_path();
-   std::string projectPath=currentPath.string();
+   std::string workingDir=currentPath.string();
+
+   // OpenParEM2D directory
+   workingDir.append("/");
+   workingDir.append(*directory);
+   workingDir.append("/S");
+   workingDir.append(get_name());
 
    // argv
    char *argv[2];
@@ -5319,9 +5321,6 @@ bool Port::solve(string *directory)
    argv[1]=nullptr;
 
    int *error_codes=(int *)malloc(size*sizeof(int));
-
-   // define the working directory for OpenParEM2D
-   std::string workingDir=projDirectory.str().c_str();
 
    // launch the jobs from rank 0
    MPI_Errhandler errorHandler;

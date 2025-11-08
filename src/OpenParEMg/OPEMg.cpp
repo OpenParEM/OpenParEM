@@ -2167,6 +2167,21 @@ void OpenParEMg::on_actionRun_triggered ()
 
         timer->start(500);
 
+        std::cout << "place 1" << std::endl; std::cout.flush();
+        // send current path
+        std::filesystem::path currentPath=std::filesystem::current_path();
+        std::string projectPath=currentPath.string();
+        std::cout << "sending projectPath=" << projectPath << std::endl; std::cout.flush();
+        int length=projectPath.length();
+        int i=0;
+        while (i < projData.gui_slot_count) {
+            MPI_Send(&length,1,MPI_INT,i,10,*MPI_PORT_COMM);
+            MPI_Send(projectPath.c_str(),length,MPI_CHAR,i,11,*MPI_PORT_COMM);
+            i++;
+        }
+        std::cout << "place 2" << std::endl; std::cout.flush();
+
+        // set up for OpenParEM3D to signal completion
         if (request) MPI_Request_free(request);
         request=new MPI_Request();
         MPI_Irecv(&signal,1,MPI_INT,0,310000,*MPI_PORT_COMM,request);
