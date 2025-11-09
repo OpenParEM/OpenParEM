@@ -37,12 +37,13 @@ class MeshDialog : public QDialog
 public:
     explicit MeshDialog (QWidget *parent = nullptr);
     void set_projData (struct projectData *);
+    bool set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
     ~MeshDialog();
 
 private slots:
     void on_meshOrderSpinBox_valueChanged (int);
     void on_meshSaveRefined_checkStateChanged (const Qt::CheckState &arg1);
-    void on_meshRefinementFraction_textChanged(const QString &arg1);
+    void on_meshRefinementFraction_textChanged (const QString &arg1);
     void on_meshQualityLimit_textChanged (const QString &arg1);
     void on_meshOptionOk_clicked ();
     void on_meshOptionCancel_clicked ();
@@ -54,6 +55,7 @@ private:
     int meshSaveRefined;
     double meshRefinementFraction;
     double meshQualityLimit;
+    bool simulationRunning;
 };
 
 #endif // MESHOPTIONS_H

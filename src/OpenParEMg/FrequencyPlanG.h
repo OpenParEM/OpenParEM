@@ -43,6 +43,7 @@ public:
     explicit FrequencyPlanG (QWidget *parent = nullptr);
     void set_projData (struct projectData *);
     void get_projData ();
+    void set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
     ~FrequencyPlanG ();
 
 private slots:
@@ -76,6 +77,7 @@ private:
     int scrollBarOffset;
     int elasticColWidth;
     int elasticColAdj;
+    bool simulationRunning;
 };
 
 #endif // FREQUENCYPLANG_H

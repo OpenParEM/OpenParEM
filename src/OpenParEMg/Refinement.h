@@ -37,30 +37,24 @@ class OPEMg_Refinement : public QDialog
 public:
     explicit OPEMg_Refinement(QWidget *parent = nullptr);
     void set_projData (struct projectData *);
+    void set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
     ~OPEMg_Refinement();
 
 private slots:
-
-    void on_requiredPasses_textChanged(const QString &arg1);
-
-    void on_refinementVariable_activated(int index);
-
-    void on_refineOk_clicked();
-
-    void on_refineCancel_clicked();
-
-    void on_relativeTol_returnPressed();
-
-    void on_absoluteTol_returnPressed();
-
-    void on_refineMin_valueChanged(int arg1);
-
-    void on_refineMax_valueChanged(int arg1);
+    void on_requiredPasses_textChanged (const QString &arg1);
+    void on_refinementVariable_activated (int);
+    void on_refineOk_clicked ();
+    void on_refineCancel_clicked ();
+    void on_relativeTol_returnPressed ();
+    void on_absoluteTol_returnPressed ();
+    void on_refineMin_valueChanged (int);
+    void on_refineMax_valueChanged (int);
 
 private:
     Ui::OPEMg_Refinement *ui;
     struct projectData *projData;
     QDoubleValidator toleranceValidator;
+    bool simulationRunning;
 };
 
 #endif // REFINEMENT_H

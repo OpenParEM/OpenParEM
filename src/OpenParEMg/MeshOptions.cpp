@@ -54,6 +54,14 @@ void MeshDialog::set_projData (struct projectData *a)
     ui->meshRefinementFraction->setValue(meshRefinementFraction);
     ui->meshQualityLimit->setValue(meshQualityLimit);
 
+    if (simulationRunning) {
+        ui->meshOrderSpinBox->setEnabled(false);
+        ui->meshFileLineEdit->setEnabled(false);
+        ui->meshSaveRefined->setEnabled(false);
+        ui->meshRefinementFraction->setEnabled(false);
+        ui->meshQualityLimit->setEnabled(false);
+    }
+
     ui->meshOptionOk->setEnabled(false);
 }
 

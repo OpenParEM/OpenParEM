@@ -77,6 +77,15 @@ void OPEMg_Refinement::set_projData(struct projectData *a)
         ui->absoluteTol->setEnabled(true);
     }
 
+    if (simulationRunning) {
+        ui->refineMin->setEnabled(false);
+        ui->refineMax->setEnabled(false);
+        ui->requiredPasses->setEnabled(false);
+        ui->refinementVariable->setEnabled(false);
+        ui->relativeTol->setEnabled(false);
+        ui->absoluteTol->setEnabled(false);
+    }
+
     ui->refineOk->setEnabled(false);
 }
 

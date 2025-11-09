@@ -38,6 +38,7 @@ class SimOptions : public QDialog
 public:
     explicit SimOptions(QWidget *parent = nullptr);
     void set_projData (struct projectData *);
+    void set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
     ~SimOptions();
 
 private slots:
@@ -72,7 +73,7 @@ private slots:
     void on_preconditioner_activated (int);
     void on_createTestCases_checkStateChanged (const Qt::CheckState &arg1);
     void on_showDetailedCases_checkStateChanged (const Qt::CheckState &arg1);
-    void on_levelComboBox_currentIndexChanged (int);
+    void on_initialGuess_currentIndexChanged (int);
 
     void on_slotCount_valueChanged(int arg1);
 
@@ -111,6 +112,8 @@ private:
     int preconditioner;
     int createTestCases;
     int showDetailedCases;
+
+    bool simulationRunning;
 };
 
 #endif // SIMULATEOPTIONS_H

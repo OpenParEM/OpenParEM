@@ -331,6 +331,15 @@ void FrequencyPlanG::set_projData (struct projectData *a)
         ui->frequencyTable->setColumnHidden(5,true);
     }
 
+    std::cout << "setting frequency plan simulationRunning" << std::endl; std::cout.flush();
+    if (simulationRunning) {
+        ui->AMR->setEnabled(false);
+        ui->adaptiveFrequencies->setEnabled(false);
+        ui->frequencyAdd->setEnabled(false);
+        ui->frequencyDelete->setEnabled(false);
+        ui->frequencyTable->setEnabled(false);
+    }
+
     ui->frequencyPlanGOk->setEnabled(false);
 }
 
@@ -788,6 +797,7 @@ void FrequencyPlanG::on_AMR_checkStateChanged (const Qt::CheckState &arg1)
     if (ui->frequencyTable->rowCount() == 0) return;
 
     int currentRow=ui->frequencyTable->currentRow();
+    if (currentRow < 0) currentRow=0;
     QLineEdit *currentRowWidget=(QLineEdit *) ui->frequencyTable->cellWidget(currentRow,7);
 
     ui->frequencyTable->scrollToBottom();  // trick to refresh the vertical header so that

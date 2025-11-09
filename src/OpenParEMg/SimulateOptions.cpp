@@ -76,6 +76,7 @@ void SimOptions::set_projData (struct projectData *a)
 
     // fill the panel with data
 
+    ui->normalizeLabel->setEnabled(true);
     ui->referenceImpedance->setValue(referenceImpedance);
     if (referenceImpedance == 0) {
         ui->referenceImpedance->setEnabled(false);
@@ -85,14 +86,21 @@ void SimOptions::set_projData (struct projectData *a)
         ui->touchstoneFormat->setEnabled(false);
         ui->touchstoneFormatLabel->setEnabled(false);
         ui->normalizeSparam->setCheckState(Qt::Unchecked);
+        if (simulationRunning) {
+            ui->normalizeSparam->setEnabled(false);
+        }
     } else {
-        ui->referenceImpedance->setEnabled(true);
+        bool enabled=true;
+        if (simulationRunning) enabled=false;
+
+        ui->referenceImpedance->setEnabled(enabled);
         ui->referenceImpedanceLabel->setEnabled(true);
-        ui->frequencyUnit->setEnabled(true);
+        ui->frequencyUnit->setEnabled(enabled);
         ui->frequencyUnitLabel->setEnabled(true);
-        ui->touchstoneFormat->setEnabled(true);
+        ui->touchstoneFormat->setEnabled(enabled);
         ui->touchstoneFormatLabel->setEnabled(true);
         ui->normalizeSparam->setCheckState(Qt::Checked);
+        ui->normalizeSparam->setEnabled(enabled);
     }
 
     ui->frequencyUnit->addItem("Hz");
@@ -127,12 +135,12 @@ void SimOptions::set_projData (struct projectData *a)
 
     ui->iterationLimit->setValue(iterationLimit);
 
-    ui->levelComboBox->addItem("none");
-    ui->levelComboBox->addItem("prior solution");
-    ui->levelComboBox->addItem("prior solution with order ramping");
-    ui->levelComboBox->addItem("order ramping");
-    ui->levelComboBox->setCurrentIndex(projData->solution_initial_guess_level);
-    ui->levelComboBox->setFixedWidth(150);
+    ui->initialGuess->addItem("none");
+    ui->initialGuess->addItem("prior solution");
+    ui->initialGuess->addItem("prior solution with order ramping");
+    ui->initialGuess->addItem("order ramping");
+    ui->initialGuess->setCurrentIndex(projData->solution_initial_guess_level);
+    ui->initialGuess->setFixedWidth(150);
 
     if (checkHomogeneous) ui->checkHomogeneous->setCheckState(Qt::Checked);
     else ui->checkHomogeneous->setCheckState(Qt::Unchecked);
@@ -212,6 +220,40 @@ void SimOptions::set_projData (struct projectData *a)
 
     if (showDetailedCases) ui->showDetailedCases->setCheckState(Qt::Checked);
     else ui->showDetailedCases->setCheckState(Qt::Unchecked);
+
+    if (simulationRunning) {
+        ui->slotCount->setEnabled(false);
+        ui->temperature->setEnabled(false);
+        ui->tolerance2D->setEnabled(false);
+        ui->tolerance3D->setEnabled(false);
+        ui->iterationLimit->setEnabled(false);
+        ui->initialGuess->setEnabled(false);
+        ui->checkHomogeneous->setEnabled(false);
+        ui->modesBuffer->setEnabled(false);
+        ui->checkClosedLoop->setEnabled(false);
+        ui->accurateResidual->setEnabled(false);
+        ui->shiftInvert->setEnabled(false);
+        ui->shiftFactor->setEnabled(false);
+        ui->saveFields->setEnabled(false);
+        ui->calculatePoynting->setEnabled(false);
+        ui->solverIterations->setEnabled(false);
+        ui->meshRefinement->setEnabled(false);
+        ui->showLicense->setEnabled(false);
+        ui->postProcessing->setEnabled(false);
+        ui->createTestCases->setEnabled(false);
+        ui->showDetailedCases->setEnabled(false);
+        ui->showProjectFile->setEnabled(false);
+        ui->showFrequencyPlan->setEnabled(false);
+        ui->showImpedanceDetails->setEnabled(false);
+        ui->showPortDefinitions->setEnabled(false);
+        ui->showMaterials->setEnabled(false);
+        ui->showMemoryUsage->setEnabled(false);
+        ui->savePortFields->setEnabled(false);
+        ui->keepTempFiles->setEnabled(false);
+        ui->skipMixedModeConversion->setEnabled(false);
+        ui->skipForcedReciprocity->setEnabled(false);
+        ui->preconditioner->setEnabled(false);
+    }
 
     // Disable the Ok button until changes are made
     ui->simulateOptionOk->setEnabled(false);
@@ -706,7 +748,7 @@ void SimOptions::on_showDetailedCases_checkStateChanged(const Qt::CheckState &ar
     ui->simulateOptionOk->setEnabled(true);
 }
 
-void SimOptions::on_levelComboBox_currentIndexChanged(int index)
+void SimOptions::on_initialGuess_currentIndexChanged(int index)
 {
     initialGuessLevel=index;
 }

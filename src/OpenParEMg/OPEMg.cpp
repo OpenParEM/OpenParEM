@@ -476,14 +476,14 @@ void OpenParEMg::setMenus ()
         ui->actionImportBrep->setEnabled(false);
         ui->actionImportStep->setEnabled(false);
         ui->actionExportStep->setEnabled(false);
-        ui->actionSelectMaterialsDatabase->setEnabled(false);
-        ui->actionMeshOptions->setEnabled(false);
+        ui->actionSelectMaterialsDatabase->setEnabled(true);
+        ui->actionMeshOptions->setEnabled(true);
         ui->actionMeshLoad->setEnabled(false);
         ui->actionMeshSave->setEnabled(false);
         ui->actionMeshSaveAs->setEnabled(false);
         ui->actionMeshDelete->setEnabled(false);
-        ui->actionSimulateOptions->setEnabled(false);
-        ui->actionFrequencyPlan->setEnabled(false);
+        ui->actionSimulateOptions->setEnabled(true);
+        ui->actionFrequencyPlan->setEnabled(true);
     }
 }
 
@@ -1017,6 +1017,7 @@ void OpenParEMg::on_actionClose_triggered()
 void OpenParEMg::on_actionMeshOptions_triggered ()
 {
     MeshDialog *meshDialog=new MeshDialog();
+    meshDialog->set_simulationRunning(simulationRunning);
     meshDialog->set_projData(&projData);
     meshDialog->exec();
     delete meshDialog;
@@ -1026,6 +1027,7 @@ void OpenParEMg::on_actionMeshOptions_triggered ()
 void OpenParEMg::on_actionSimulateOptions_triggered ()
 {
     SimOptions *simOptions=new SimOptions();
+    simOptions->set_simulationRunning(simulationRunning);
     simOptions->set_projData(&projData);
     simOptions->exec();
     delete simOptions;
@@ -1047,6 +1049,7 @@ void OpenParEMg::on_actionLicense_triggered ()
 void OpenParEMg::on_actionFrequencyPlan_triggered ()
 {
     FrequencyPlanG *frequencyPlan=new FrequencyPlanG();
+    frequencyPlan->set_simulationRunning(simulationRunning);
     frequencyPlan->set_projData(&projData);
     frequencyPlan->exec();
     delete frequencyPlan;
@@ -1110,6 +1113,7 @@ void OpenParEMg::on_actionSaveAs_triggered()
 void OpenParEMg::on_actionRefinement_triggered ()
 {
     OPEMg_Refinement *refinement=new OPEMg_Refinement();
+    refinement->set_simulationRunning(simulationRunning);
     refinement->set_projData(&projData);
     refinement->exec();
     delete refinement;
@@ -1459,7 +1463,10 @@ void OpenParEMg::on_actionExit_triggered ()
 
 void OpenParEMg::on_actionSelectMaterialsDatabase_triggered ()
 {
-    SelectMaterialsDatabase *selectMaterialsDatabase=new SelectMaterialsDatabase(&projData,&absolutePath);
+    SelectMaterialsDatabase *selectMaterialsDatabase=new SelectMaterialsDatabase();
+    selectMaterialsDatabase->set_simulationRunning(simulationRunning);
+    selectMaterialsDatabase->set_projData(&projData);
+    selectMaterialsDatabase->set_absolutePath(&absolutePath);
     selectMaterialsDatabase->exec();
     delete selectMaterialsDatabase;
     setMenus();
@@ -2167,7 +2174,6 @@ void OpenParEMg::on_actionRun_triggered ()
 
         timer->start(500);
 
-        std::cout << "place 1" << std::endl; std::cout.flush();
         // send current path
         std::filesystem::path currentPath=std::filesystem::current_path();
         std::string projectPath=currentPath.string();
@@ -2179,7 +2185,6 @@ void OpenParEMg::on_actionRun_triggered ()
             MPI_Send(projectPath.c_str(),length,MPI_CHAR,i,11,*MPI_PORT_COMM);
             i++;
         }
-        std::cout << "place 2" << std::endl; std::cout.flush();
 
         // set up for OpenParEM3D to signal completion
         if (request) MPI_Request_free(request);

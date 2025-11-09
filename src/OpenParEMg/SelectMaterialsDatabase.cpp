@@ -25,13 +25,11 @@
 #include <QFileDialog>
 #include "OpenParEMmaterials.hpp"
 
-SelectMaterialsDatabase::SelectMaterialsDatabase (struct projectData *projData_, QString *absolutePath_, QWidget *parent)
+SelectMaterialsDatabase::SelectMaterialsDatabase (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::SelectMaterialsDatabase)
 {
     ui->setupUi(this);
-    projData=projData_;
-    absolutePath=absolutePath_;
 
     globalPath=nullptr;
     globalFilename=nullptr;
@@ -41,7 +39,17 @@ SelectMaterialsDatabase::SelectMaterialsDatabase (struct projectData *projData_,
     globalIsValid=false;
     localIsValid=false;
 
-    // pre-fill
+    ui->OkButton->setEnabled(false);
+}
+
+SelectMaterialsDatabase::~SelectMaterialsDatabase ()
+{
+    delete ui;
+}
+
+void SelectMaterialsDatabase::set_projData (struct projectData *a)
+{
+    projData=a;
 
     ui->globalFile->setChecked(false);
     ui->globalMaterialFile->setEnabled(false);
@@ -73,12 +81,14 @@ SelectMaterialsDatabase::SelectMaterialsDatabase (struct projectData *projData_,
         emit ui->localMaterialFile->returnPressed();
     }
 
-    ui->OkButton->setEnabled(false);
-}
-
-SelectMaterialsDatabase::~SelectMaterialsDatabase ()
-{
-    delete ui;
+    if (simulationRunning) {
+        ui->globalFile->setEnabled(false);
+        ui->globalMaterialFile->setEnabled(false);
+        ui->selectGlobal->setEnabled(false);
+        ui->localFile->setEnabled(false);
+        ui->localMaterialFile->setEnabled(false);
+        ui->selectLocal->setEnabled(false);
+    }
 }
 
 void SelectMaterialsDatabase::on_selectLocal_clicked ()

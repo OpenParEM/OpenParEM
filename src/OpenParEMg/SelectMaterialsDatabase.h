@@ -34,7 +34,10 @@ class SelectMaterialsDatabase : public QDialog
     Q_OBJECT
 
 public:
-    explicit SelectMaterialsDatabase (struct projectData *, QString *, QWidget *parent = nullptr);
+    explicit SelectMaterialsDatabase (QWidget *parent = nullptr);
+    void set_absolutePath (QString *absolutePath_) {absolutePath=absolutePath_;}
+    void set_projData (struct projectData *);
+    void set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
     ~SelectMaterialsDatabase();
 
 private slots:
@@ -55,6 +58,7 @@ private:
     char *localPath, *localFilename;
     bool globalIsValid;
     bool localIsValid;
+    bool simulationRunning;
 };
 
 #endif // SELECTMATERIALSDATABASE_H

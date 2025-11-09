@@ -29,7 +29,7 @@
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -84,7 +84,7 @@
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item alignment="Qt::AlignmentFlag::AlignVCenter">
-         <widget class="QLabel" name="label_4">
+         <widget class="QLabel" name="normalizeLabel">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Normalize the S-parameters to the reference impedance.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
@@ -719,7 +719,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="levelComboBox">
+          <widget class="QComboBox" name="initialGuess">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
