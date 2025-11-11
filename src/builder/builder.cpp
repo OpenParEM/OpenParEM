@@ -1799,7 +1799,7 @@ bool write_OpenParEM2D_proj_text (string indent, string name, int mode_count, st
       proj << "project.save.fields               true" << endl;
       proj << endl;
       proj << "mesh.file                         " << name << ".msh" << endl;
-      proj << "mesh.order                        4" << endl;
+      proj << "fem.order                         4" << endl;
       proj << endl;
       if (impedance_calculation.compare("modal") == 0) {
          proj << "mode.definition.file              " << name << "_modes.txt" << endl;
@@ -1872,7 +1872,7 @@ bool write_OpenParEM3D_proj_text (string indent, string name, keywordPair *defau
       proj << "mesh.file                         " << name << ".msh" << endl;
       proj << "//mesh.quality.limit                1e6" << endl;
       proj << "//mesh.refinement.fraction          0.025" << endl;
-      proj << "mesh.order                        4" << endl;
+      proj << "fem.order                         4" << endl;
       proj << "port.definition.file              " << name << "_ports.txt" << endl;
       proj << "materials.global.path             " << endl;
       proj << "materials.global.name             " << endl;

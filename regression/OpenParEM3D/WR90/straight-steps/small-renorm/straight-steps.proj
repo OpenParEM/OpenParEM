@@ -3,9 +3,8 @@
 project.save.fields            false
 
 mesh.file                      straight-steps.msh
-
-mesh.order                     5
 mesh.quality.limit             100
+fem.order                      5
 
 port.definition.file           straight-steps_ports.txt
 

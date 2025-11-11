@@ -3,8 +3,8 @@
 project.save.fields               false
 
 mesh.file                         ../partially_filled_waveguide.msh
-mesh.order                        6
 mesh.uniform_refinement.count     0
+fem.order                         6
 
 mode.definition.file                    
 

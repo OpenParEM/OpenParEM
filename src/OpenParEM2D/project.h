@@ -57,10 +57,11 @@ struct projectData {
    int project_save_fields;
 
    char *mesh_file;
-   int mesh_order;
    int mesh_uniform_refinement_count;
    double mesh_refinement_fraction;
    int mesh_enable_refine;
+
+   int fem_order;
 
    char *mode_definition_file;
 

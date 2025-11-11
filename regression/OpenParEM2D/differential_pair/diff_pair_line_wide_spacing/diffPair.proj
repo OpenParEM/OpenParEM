@@ -11,8 +11,8 @@
 
 project.save.fields               false
 mesh.file                         diffPair.msh
-mesh.order                        3
 mesh.refinement.fraction          0.01
+fem.order                         3
 mode.definition.file              diffPair_lines.txt
 materials.global.path             ../../
 materials.global.name             global_materials.txt

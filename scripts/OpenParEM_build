@@ -1889,7 +1889,7 @@ if [ "$with_mfem" = "1" ]; then
       ENABLE_SHARED=YES
    fi
 
-   make parallel -j "$jobs" MFEM_USE_METIS_5=YES HYPRE_DIR=$install_path SHARED=$ENABLE_SHARED STATIC=$ENABLE_STATIC
+   make parallel -j "$jobs" MFEM_USE_METIS_5=YES MFEM_USE_EXCEPTIONS=YES HYPRE_DIR=$install_path SHARED=$ENABLE_SHARED STATIC=$ENABLE_STATIC
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: mfem failed to make"
       exit 1

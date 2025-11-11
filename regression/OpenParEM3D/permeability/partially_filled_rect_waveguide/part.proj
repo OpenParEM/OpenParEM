@@ -7,8 +7,9 @@ project.save.fields            false
 
 mesh.file                      partially_filled_waveguide.msh
 
-mesh.order                     6
 mesh.quality.limit             1000
+
+fem.order                      6
 
 port.definition.file           partially_filled_waveguide_ports.txt
 

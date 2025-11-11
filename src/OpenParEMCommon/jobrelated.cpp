@@ -26,7 +26,12 @@ void exit_job_on_error (chrono::steady_clock::time_point job_start_time, const c
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job Complete\n");
+   MPI_Comm parent;
+   MPI_Comm_get_parent (&parent);
+
+   bool show_messages=true;
+   if (tool == 2 && parent != MPI_COMM_NULL) show_messages=false;
+   if (show_messages) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job Complete\n");}
 
    // remove the lock - not 100% safe
    if (rank == 0 && removeLock) {
@@ -37,18 +42,10 @@ void exit_job_on_error (chrono::steady_clock::time_point job_start_time, const c
 
    chrono::steady_clock::time_point job_end_time=chrono::steady_clock::now();
    chrono::duration<double> elapsed = job_end_time - job_start_time;
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",elapsed.count());
+   if (show_messages) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",elapsed.count());}
 
    // send tags to complete requests
-   MPI_Comm parent;
-   MPI_Comm_get_parent (&parent);
    if (parent != MPI_COMM_NULL) {
-//      int retval=1;
-//      if (tool == 2) MPI_Send(&retval,1,MPI_INT,0,200000,parent);   // for OpenParEM2D
-//      if (tool == 3) {
-//         MPI_Send(&retval,1,MPI_INT,0,300000,parent);  // for OpenParEM3D
-//         MPI_Send(&retval,1,MPI_INT,0,300001,parent);  // for OpenParEM3D
-//      }
       MPI_Comm_free(&parent);
    }
 

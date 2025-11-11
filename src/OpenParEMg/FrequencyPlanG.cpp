@@ -78,7 +78,7 @@ FrequencyPlanG::FrequencyPlanG (QWidget *parent)
     ui->frequencyTable->setEnabled(true);
     ui->frequencyPlanGOk->setEnabled(false);
     ui->frequencyDelete->setEnabled(false);
-    ui->AMR->setEnabled(false);
+    ui->AMR->setEnabled(true);
     ui->adaptiveFrequenciesLabel->setEnabled(false);
     ui->adaptiveFrequencies->setEnabled(false);
 }
@@ -104,17 +104,13 @@ void FrequencyPlanG::set_projData (struct projectData *a)
     int adaptiveIndex=-1;
     if (strcmp(projData->refinement_frequency,"none") == 0) {
         ui->AMR->setCheckState(Qt::Unchecked);
-        if (projData->inputFrequencyPlansCount > 0) {
-            ui->adaptiveFrequenciesLabel->setEnabled(true);
-            ui->adaptiveFrequencies->setEnabled(true);
-        }
+        ui->adaptiveFrequenciesLabel->setEnabled(false);
+        ui->adaptiveFrequencies->setEnabled(false);
         enableRefineColumn=false;
     } else {
         ui->AMR->setCheckState(Qt::Checked);
-        if (projData->inputFrequencyPlansCount > 0) {
-            ui->adaptiveFrequenciesLabel->setEnabled(true);
-            ui->adaptiveFrequencies->setEnabled(true);
-        }
+        ui->adaptiveFrequenciesLabel->setEnabled(true);
+        ui->adaptiveFrequencies->setEnabled(true);
 
         if (strcmp(projData->refinement_frequency,"plan") == 0) {
             ui->adaptiveFrequencies->setCurrentIndex(0);
@@ -297,9 +293,6 @@ void FrequencyPlanG::set_projData (struct projectData *a)
         }
 
         ui->frequencyDelete->setEnabled(true);
-        ui->AMR->setEnabled(true);
-        ui->adaptiveFrequenciesLabel->setEnabled(true);
-        ui->adaptiveFrequencies->setEnabled(true);
 
         i++;
     }
@@ -331,7 +324,6 @@ void FrequencyPlanG::set_projData (struct projectData *a)
         ui->frequencyTable->setColumnHidden(5,true);
     }
 
-    std::cout << "setting frequency plan simulationRunning" << std::endl; std::cout.flush();
     if (simulationRunning) {
         ui->AMR->setEnabled(false);
         ui->adaptiveFrequencies->setEnabled(false);
@@ -441,6 +433,7 @@ void FrequencyPlanG::on_frequencyAdd_clicked ()
 
     ui->frequencyTable->selectRow(currentRow);
     ui->frequencyDelete->setEnabled(true);
+    projData->modified=1;
     ui->frequencyPlanGOk->setEnabled(true);
     ui->AMR->setEnabled(true);
     ui->adaptiveFrequenciesLabel->setEnabled(true);
@@ -485,6 +478,8 @@ void FrequencyPlanG::on_frequencyDelete_clicked ()
         ui->adaptiveFrequenciesLabel->setEnabled(false);
         ui->adaptiveFrequencies->setEnabled(false);
     }
+
+    projData->modified=1;
     ui->frequencyPlanGOk->setEnabled(true);
 }
 
@@ -655,6 +650,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
 
+            projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
         }
 
@@ -681,6 +677,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
 
+            projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
         }
     }
@@ -702,6 +699,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
             pointsPerDecade->setStyleSheet(enabledBackground);
             pointsPerDecade->setEnabled(true);
 
+            projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
         }
 
@@ -733,6 +731,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
             pointsPerDecade->setStyleSheet(enabledBackground);
             pointsPerDecade->setEnabled(true);
 
+            projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
         }
     }
@@ -759,6 +758,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
 
+            projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
         }
 
@@ -781,6 +781,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
             pointsPerDecade->setStyleSheet(disabledBackground);
             pointsPerDecade->setEnabled(false);
 
+            projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
         }
 
@@ -832,6 +833,7 @@ void FrequencyPlanG::on_AMR_checkStateChanged (const Qt::CheckState &arg1)
         i++;
     }
 
+    projData->modified=1;
     ui->frequencyPlanGOk->setEnabled(true);
 }
 
@@ -841,6 +843,7 @@ void FrequencyPlanG::on_adaptiveFrequencies_activated (int newIndex)
     if (ui->frequencyTable->rowCount() == 0) return;
 
     int currentRow=ui->frequencyTable->currentRow();
+    if (currentRow < 0) currentRow=0;
     QLineEdit *currentRowWidget=(QLineEdit *) ui->frequencyTable->cellWidget(currentRow,7);
     int currentIndex=currentRowWidget->text().toInt();
 
@@ -883,23 +886,34 @@ void FrequencyPlanG::on_adaptiveFrequencies_activated (int newIndex)
     }
 
     currentRowWidget->setText(QString::number(newIndex));
+    projData->modified=1;
     ui->frequencyPlanGOk->setEnabled(true);
 }
 
 void FrequencyPlanG::refine_checkStateChanged ()
 {
+    projData->modified=1;
     ui->frequencyDelete->setEnabled(true);
     ui->frequencyPlanGOk->setEnabled(true);
 }
 
 void FrequencyPlanG::frequency_textChanged ()
 {
+    projData->modified=1;
     ui->frequencyDelete->setEnabled(true);
     ui->frequencyPlanGOk->setEnabled(true);
 }
 
 bool FrequencyPlanG::check_inputs ()
 {
+    // must have at least one frequency row
+    if (ui->frequencyTable->rowCount() == 0) {
+        QMessageBox mb;
+        mb.critical(nullptr, "Error", "Must have at least one frequency row.");
+        mb.setFixedSize(500, 200);
+        return true;
+    }
+
     // must have a refine box checked for plan refinement_frequency
     if (ui->AMR->isChecked() && ui->adaptiveFrequencies->currentIndex() == 0) {
         bool found=false;

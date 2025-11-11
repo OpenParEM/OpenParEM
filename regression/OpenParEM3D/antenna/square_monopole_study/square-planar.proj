@@ -4,10 +4,9 @@ project.save.fields            false
 
 mesh.file                      square-planar.msh
 mesh.save.refined              false
-
-mesh.order                     2
 mesh.quality.limit             1e6
 mesh.refinement.fraction       0.0025
+fem.order                      2
 
 port.definition.file           square_planar_ports.txt
 

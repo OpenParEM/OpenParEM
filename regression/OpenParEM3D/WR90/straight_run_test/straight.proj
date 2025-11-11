@@ -6,7 +6,7 @@ project.save.fields            false
 
 mesh.file                      straight.msh
 
-mesh.order                     6
+fem.order                      6
 
 port.definition.file           straight_ports.txt
 

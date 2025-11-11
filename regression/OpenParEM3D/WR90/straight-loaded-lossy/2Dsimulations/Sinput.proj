@@ -3,10 +3,10 @@
 project.save.fields                      false
 
 mesh.file                                Sinput_mesh2D.msh
-mesh.order                               7
 mesh.refinement.fraction                 0.025
 mesh.uniform_refinement.count            1
 mesh.enable.refine                       0
+fem.order                                7
 
 mode.definition.file                     Sinput_lines.txt
 materials.global.path                    ../../../../OpenParEM2D/

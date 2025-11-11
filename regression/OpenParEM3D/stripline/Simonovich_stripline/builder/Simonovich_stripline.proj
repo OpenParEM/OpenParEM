@@ -6,7 +6,7 @@ project.save.fields               true
 mesh.file                         Simonovich_stripline.msh
 //mesh.quality.limit                1e6
 //mesh.refinement.fraction          0.025
-mesh.order                        4
+fem.order                         4
 port.definition.file              Simonovich_stripline_ports.txt
 materials.global.path             
 materials.global.name             

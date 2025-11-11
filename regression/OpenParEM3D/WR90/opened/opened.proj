@@ -4,7 +4,7 @@ project.save.fields            false
 
 mesh.file                      opened.msh
 
-mesh.order                     6
+fem.order                      6
 
 port.definition.file           opened_ports.txt
 

@@ -4,9 +4,8 @@ project.save.fields            false
 
 mesh.file                      straight.msh
 mesh.save.refined              true
-
-mesh.order                     1
 mesh.quality.limit             1e9
+fem.order                      1
 
 port.definition.file           straight_ports.txt
 

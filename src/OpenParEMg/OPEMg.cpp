@@ -102,26 +102,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->actionShape->setChecked(true);
     currentSelectionAction=ui->actionShape;
 
-    // ui->actionSave->setEnabled(getActionSaveSetup());
-    // ui->actionSaveAs->setEnabled(getActionSaveSetup());
-
-    // ui->actionMeshOptions->setEnabled(false);
-    // ui->actionSimulateOptions->setEnabled(false);
-    // ui->actionFrequencyPlan->setEnabled(false);
-    // ui->actionRefinement->setEnabled(false);
-
-    // ui->actionWireframe->setChecked(true);
-
-    // bool enabled;
-    // QString tip;
-    // getActionRunSetup(&enabled,&tip);
-    // ui->actionRun->setEnabled(enabled);
-    // ui->actionRun->setToolTip(tip);
-
-    // ui->actionStop->setEnabled(false);
-    // ui->actionAbort->setEnabled(false);
-    // ui->actionAbortAndExit->setEnabled(false);
-
     /////////////////////////////////////////////////////////////////////////////
     // drawing window
     /////////////////////////////////////////////////////////////////////////////
@@ -176,16 +156,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     clickedItem=nullptr;
     previousClickedItem=nullptr;
 
-    // menu initial settings
-
-    // ui->actionMeshGenerate->setEnabled(getActionMeshGenerateSetup());
-    // ui->actionMeshSave->setEnabled(false);
-    // ui->actionMeshSaveAs->setEnabled(false);
-    // ui->actionMeshDelete->setEnabled(false);
-    // ui->actionStop->setEnabled(false);
-    // ui->actionAbort->setEnabled(false);
-    // ui->actionAbortAndExit->setEnabled(false);
-
     ui->menuRun->setToolTipsVisible(true);
 
     /////////////////////////////////////////////////////////////////////////////
@@ -221,6 +191,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     /////////////////////////////////////////////////////////////////////////////
 
     gmsh::initialize();
+    gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
     pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
 
     setMeshForeground();
@@ -255,61 +226,15 @@ OpenParEMg::~OpenParEMg ()
     delete ui;
 }
 
-// bool OpenParEMg::menuAllHidden (CustomTreeWidgetItem *item)
-// {
-//     int i=0;
-//     while (i < item->childCount()) {
-//         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-//         if (child->foreground(0) == Qt::black) return false;
-//         if (!menuAllHidden(child)) return false;
-//         i++;
-//     }
-//     return true;
-// }
-
-// bool OpenParEMg::menuAllShown(CustomTreeWidgetItem *item)
-// {
-//     int i=0;
-//     while (i < item->childCount()) {
-//         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-//         if (child->foreground(0) == Qt::gray) return false;
-//         if (!menuAllShown(child)) return false;
-//         i++;
-//     }
-//     return true;
-// }
-
-/*
-void OpenParEMg::getActionRunSetup (bool *enabled, QString *tip)
-{
-    *enabled=false;
-    if (projectFileLoaded) {
-        if (projectFileChanged) {
-            *tip="Project is modified. Save before running.";
-        } else {
-            if (meshFileLoaded) {
-                if (meshFileChanged) {
-                    *tip="Mesh is modified. Save before running.";
-                } else {
-                    *tip="Run OpenParEM3D.";
-                    *enabled=true;
-                }
-            } else {
-                *tip="No mesh defined.";
-            }
-        }
-    } else {
-        *tip="No project to run.";
-    }
-}
-*/
-
 void OpenParEMg::setMenus ()
 {
+    //printLockouts();
+
     if (projectFileLoaded) {
         ui->actionNew->setEnabled(false);
         ui->actionOpen->setEnabled(false);
-        ui->actionSave->setEnabled(true);
+        if (projectFileChanged) ui->actionSave->setEnabled(true);
+        else ui->actionSave->setEnabled(false);
         ui->actionSaveAs->setEnabled(true);
         ui->actionClose->setEnabled(true);
         ui->actionExit->setEnabled(true);
@@ -368,7 +293,7 @@ void OpenParEMg::setMenus ()
             ui->actionWireframe->setEnabled(true);
             ui->actionMeshGenerate->setEnabled(false);
             ui->actionMeshLoad->setEnabled(false);
-            ui->actionMeshSave->setEnabled(true);
+            ui->actionMeshSave->setEnabled(false);
             ui->actionMeshSaveAs->setEnabled(true);
             ui->actionMeshDelete->setEnabled(true);
 
@@ -484,6 +409,14 @@ void OpenParEMg::setMenus ()
         ui->actionMeshDelete->setEnabled(false);
         ui->actionSimulateOptions->setEnabled(true);
         ui->actionFrequencyPlan->setEnabled(true);
+    }
+
+    if (projectFileChanged) {
+        ui->actionRun->setEnabled(false);
+    }
+
+    if (meshFileChanged) {
+        ui->actionRun->setEnabled(false);
     }
 }
 
@@ -751,9 +684,6 @@ void OpenParEMg::set_displayMode (CustomTreeWidgetItem *item, int displayMode)
 
 void OpenParEMg::setPhysicalGroups ()
 {
-//xxx
-// causing crashes when more than one material is assigned to a group number
-
     int i=0;
     while (i < projData.physicalGroupMaterialCount) {
         std::vector<int> physicalGroupList;
@@ -763,20 +693,20 @@ void OpenParEMg::setPhysicalGroups ()
                   << "  tag=" << projData.physicalGroupMaterials[i].tag
                   << "  materialName=" << projData.physicalGroupMaterials[i].materialName << std::endl; std::cout.flush();
         gmsh::model::addPhysicalGroup(projData.physicalGroupMaterials[i].dim,physicalGroupList,-1,projData.physicalGroupMaterials[i].materialName);
-        meshFileChanged=true;
         i++;
     }
 }
 
 void OpenParEMg::assignMaterial ()
 {
-    //xxx
     // Cannot assign material to existing mesh
     if (meshFileLoaded) {
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this,"OpenParEMg","Materials cannot be assigned to an existing mesh.  Do you want to delete the mesh?",QMessageBox::Yes|QMessageBox::No);
         if (reply != QMessageBox::Yes) return;
         deleteMesh();
+        meshFileChanged=false;
+        meshFileLoaded=false;
     }
 
     MaterialSelection *materialSelection=new MaterialSelection();
@@ -868,6 +798,8 @@ void OpenParEMg::on_actionOpen_triggered ()
             mb.critical(nullptr, "Error", "Unable to load the requested project file.");
             mb.setFixedSize(500, 200);
 
+            on_actionClose_triggered();
+
             return;
         }
 
@@ -888,7 +820,7 @@ void OpenParEMg::on_actionOpen_triggered ()
                                              projData.materials_local_path,projData.materials_local_name,
                                              projData.materials_check_limits)) {
             QMessageBox mb;
-            mb.critical(nullptr, "Error", "Unable to load the specified materials files.  Use Tools->Materials Editor to select a materials database.");
+            mb.critical(nullptr, "Error", "Unable to load the specified materials files.");
             mb.setFixedSize(500, 200);
         }
 
@@ -923,6 +855,7 @@ void OpenParEMg::on_actionOpen_triggered ()
         ui->drawingWindow->fitAll();
         ui->drawingWindow->updateViewer();
 
+        projData.modified=0;
         projectFileLoaded=true;
         projectFileChanged=false;
     } else {
@@ -949,16 +882,32 @@ void OpenParEMg::resetLockouts ()
     setMenus();
 }
 
+void OpenParEMg::printLockouts ()
+{
+    std::cout << "Lockouts:" << std::endl
+              << "   projectFileLoaded=" << projectFileLoaded << std::endl
+              << "   projectFileChanged=" << projectFileChanged << std::endl
+              << "   meshFileLoaded=" << meshFileLoaded << std::endl
+              << "   meshFileChanged=" << meshFileChanged << std::endl
+              << "   brepFileLoaded=" << brepFileLoaded << std::endl
+              << "   stepFileLoaded=" << stepFileLoaded << std::endl
+              << "   drawingPlaneShown=" << drawingPlaneShown << std::endl
+              << "   simulationRunning=" << simulationRunning << std::endl
+              << "   simulationStopping=" << simulationStopping << std::endl
+              << "   simulationAborting=" << simulationAborting << std::endl;
+}
+
 void OpenParEMg::resetProject ()
 {
     if (!projectFileLoaded) return;
 
+    // project file
     projectFile="";
-
     free_project(&defaultData);
     free_project(&projData);
 
-    //deleteMesh();
+    // mesh
+    deleteMesh();
 
     // reset material database
     if (materialDatabase) delete materialDatabase;
@@ -996,19 +945,17 @@ void OpenParEMg::on_actionNew_triggered ()
     resetProject();
     init_project (&defaultData);
     init_project (&projData);
+    projData.modified=0;
     projectFileLoaded=true;
     setMenus();
 }
 
 void OpenParEMg::on_actionClose_triggered()
 {
-    if (projectFileChanged) {
+    if (projectFileChanged || meshFileChanged) {
         QMessageBox::StandardButton reply;
-        reply = QMessageBox::question(this,"OpenParEMg","Save changes?",QMessageBox::Yes|QMessageBox::No);
-        if (reply == QMessageBox::Yes) {
-            on_actionSave_triggered();
-        }
-
+        reply = QMessageBox::question(this,"OpenParEMg","There are unsaved changes.  Do you want to close anyway?",QMessageBox::Yes|QMessageBox::No);
+        if (reply == QMessageBox::No) return;
     }
     resetProject();
     setMenus();
@@ -1021,6 +968,10 @@ void OpenParEMg::on_actionMeshOptions_triggered ()
     meshDialog->set_projData(&projData);
     meshDialog->exec();
     delete meshDialog;
+
+    if (projData.modified) {
+        projectFileChanged=true;
+    }
     setMenus();
 }
 
@@ -1057,6 +1008,9 @@ void OpenParEMg::on_actionFrequencyPlan_triggered ()
     if (strcmp(projData.refinement_frequency,"none") == 0) ui->actionRefinement->setEnabled(false);
     else ui->actionRefinement->setEnabled(true);
 
+    if (projData.modified) {
+        projectFileChanged=true;
+    }
     setMenus();
 }
 
@@ -1082,12 +1036,25 @@ void OpenParEMg::on_actionSave_triggered ()
     if (meshFileLoaded) {
         on_actionMeshSave_triggered();
         meshFileChanged=false;
+    } else {
+        if (QFile::exists(projData.mesh_file)) {
+            QMessageBox::StandardButton reply;
+            reply = QMessageBox::question(this,"OpenParEMg","A mesh file exists.  Do you want to delete it?",QMessageBox::Yes|QMessageBox::No);
+            if (reply == QMessageBox::Yes) {
+                if (!QFile::remove(projData.mesh_file)) {
+                    QString message="Error in deleting the mesh file.";
+                    QMessageBox mb;
+                    mb.critical(nullptr, "Error",message);
+                    mb.setFixedSize(500, 200);
+                }
+            }
+        }
     }
 
     setMenus();
 }
 
-void OpenParEMg::on_actionSaveAs_triggered()
+void OpenParEMg::on_actionSaveAs_triggered ()
 {
     QString filePath=QFileDialog::getSaveFileName(this, tr("Open Project File"), absolutePath, tr("Project Files (*.proj)","All Files (*)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
@@ -1107,6 +1074,25 @@ void OpenParEMg::on_actionSaveAs_triggered()
         projectFileChanged=false;
     }
 
+    // mesh
+    if (meshFileLoaded) {
+        on_actionMeshSave_triggered();
+        meshFileChanged=false;
+    } else {
+        if (QFile::exists(projData.mesh_file)) {
+            QMessageBox::StandardButton reply;
+            reply = QMessageBox::question(this,"OpenParEMg","A mesh file exists.  Do you want to delete it?",QMessageBox::Yes|QMessageBox::No);
+            if (reply == QMessageBox::Yes) {
+                if (!QFile::remove(projData.mesh_file)) {
+                    QString message="Error in deleting the mesh file.";
+                    QMessageBox mb;
+                    mb.critical(nullptr, "Error",message);
+                    mb.setFixedSize(500, 200);
+                }
+            }
+        }
+    }
+
     setMenus();
 }
 
@@ -1117,6 +1103,10 @@ void OpenParEMg::on_actionRefinement_triggered ()
     refinement->set_projData(&projData);
     refinement->exec();
     delete refinement;
+
+    if (projData.modified) {
+        projectFileChanged=true;
+    }
     setMenus();
 }
 
@@ -1125,6 +1115,10 @@ void OpenParEMg::on_actionMaterialsEditor_triggered ()
     Materials *localMaterials=new Materials();
     localMaterials->exec();
     delete localMaterials;
+
+    if (projData.modified) {
+        projectFileChanged=true;
+    }
     setMenus();
 }
 
@@ -1283,6 +1277,7 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
     }
 
     // properties for the CustomTreeWidgetItem
+    //std::cout << "checking to add physical group name to item list" << std::endl; std::cout.flush();
     newItem->set_dimTag(dimTag);
     if (name.compare("SOLID") == 0) {
         int i=0;
@@ -1453,10 +1448,10 @@ void OpenParEMg::on_actionExportStep_triggered()
 
 void OpenParEMg::on_actionExit_triggered ()
 {
-    if (projectFileChanged) {
+    if (projectFileChanged || meshFileChanged) {
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this,"OpenParEMg","There are unsaved changes.  Do you want to exit anyway?",QMessageBox::Yes|QMessageBox::No);
-        if (reply != QMessageBox::Yes) return;
+        if (reply == QMessageBox::No) return;
     }
     QApplication::quit();
 }
@@ -1467,8 +1462,15 @@ void OpenParEMg::on_actionSelectMaterialsDatabase_triggered ()
     selectMaterialsDatabase->set_simulationRunning(simulationRunning);
     selectMaterialsDatabase->set_projData(&projData);
     selectMaterialsDatabase->set_absolutePath(&absolutePath);
+    selectMaterialsDatabase->set_materialDatabase(materialDatabase);
     selectMaterialsDatabase->exec();
     delete selectMaterialsDatabase;
+
+    std::cout << "on_actionSelectMaterialsDatabase_triggered: projData->materials_check_limits=" << projData.materials_check_limits << std::endl; std::cout.flush();
+
+    if (projData.modified) {
+        projectFileChanged=true;
+    }
     setMenus();
 }
 
@@ -1867,16 +1869,8 @@ void OpenParEMg::drawMesh()
         e++;
     }
 
-    // display the shapes
-    //mesh.setSelected(true);
-    //clickedItem=&mesh;
-    //showMeshEntitiesItem();
-    //clickedItem=nullptr;
-    //mesh.setSelected(false);
-
     // update menus
     ui->drawingWindow->set_hasMesh(true);
-    //ui->drawingWindow->set_meshVisibility(true);
     ui->drawingWindow->fitAll();
     ui->drawingWindow->updateViewer();
     setMenus();
@@ -1885,6 +1879,8 @@ void OpenParEMg::drawMesh()
 void OpenParEMg::deleteMesh ()
 {
     std::cout << "OpenParEMg::deleteMesh" << std::endl; std::cout.flush();
+
+    if (!meshFileLoaded) return;
 
     int i=0;
     while (i < mesh.childCount()) {
@@ -1899,19 +1895,12 @@ void OpenParEMg::deleteMesh ()
     }
 
     ui->drawingWindow->set_hasMesh(false);
-    //ui->drawingWindow->set_meshVisibility(false);
     ui->drawingWindow->updateViewer();
     mesh.deleteChildren(&mesh);
     drawingEntities.clear();
     gmsh::clear();
+    pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
     setMeshForeground();
-    ui->actionMeshSave->setEnabled(false);
-    ui->actionMeshSaveAs->setEnabled(false);
-    ui->actionMeshDelete->setEnabled(false);
-
-    meshFileLoaded=false;
-    meshFileChanged=false;
-    setMenus();
 }
 
 void OpenParEMg::on_actionMeshGenerate_triggered ()
@@ -1922,10 +1911,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         if (reply != QMessageBox::Yes) return;
 
         deleteMesh();
-        projData.mesh_file[0]='\0';
-        projectFileChanged=true;
-        meshFileLoaded=false;
-        meshFileChanged=true;
     }
 
     // generate mesh
@@ -1933,12 +1918,21 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     gmsh::model::occ::importShapesNativePointer((void *) &shape,drawingEntities,false);
     gmsh::model::occ::synchronize();
     gmsh::model::mesh::generate();
+
     meshFileLoaded=true;
+    meshFileChanged=true;
+    projectFileChanged=true;
 
     drawMesh();
 
     // set the physical groups with material names
     setPhysicalGroups();
+
+    // gmsh::merge("phys_groups.msh");
+    // gmsh::model::mesh::removeDuplicateNodes();     // ineffective
+    // gmsh::model::mesh::removeDuplicateElements();  // ineffective
+    // gmsh::model::mesh::optimize();                 // ineffective
+    // gmsh::model::mesh::recombine();                // small improvement
 
     setMeshForeground();
     setMenus();
@@ -1948,57 +1942,51 @@ void OpenParEMg::loadMeshFile (QString meshfile)
 {
     if (QFile::exists(meshfile)) {
 
+        if (meshFileLoaded) {
+            QMessageBox::StandardButton reply;
+            reply = QMessageBox::question(this,"OpenParEMg","Delete the existing mesh?",QMessageBox::Yes|QMessageBox::No);
+            if (reply != QMessageBox::Yes) return;
+
+            deleteMesh();
+        }
+
         // load and display
-        deleteMesh();
+        //gmsh::model::remove();
         gmsh::open(meshfile.toStdString());
+
         meshFileLoaded=true;
+        meshFileChanged=false;
 
         drawMesh();
 
-        // save the file name
-        if (projData.mesh_file) free(projData.mesh_file);
-        projData.mesh_file=(char *)malloc((meshfile.length()+1)*sizeof(char));
-        int i=0;
-        while (i < meshfile.length()) {
-            projData.mesh_file[i]=meshfile.data()[i].toLatin1();
-            i++;
-        }
-        projData.mesh_file[i]='\0';
-
-        // set the physical groups with material names
-        setPhysicalGroups();
-
-        ui->actionMeshSave->setEnabled(true);
-        ui->actionMeshSaveAs->setEnabled(true);
-        ui->actionMeshDelete->setEnabled(true);
-        ui->actionMeshLoad->setEnabled(false);
-
-        projectFileChanged=true;
-    } else {
-
-        // alert the user
-        QMessageBox mb;
-        QString message="Error in loading the specified mesh file \"";
-        message.append(meshfile);
-        message.append("\".");
-        mb.critical(nullptr, "Error",message);
-        mb.setFixedSize(500, 200);
-
-        // null out the file name
-        if (strlen(projData.mesh_file) > 0) {
-            projData.mesh_file[0]='\0';
-        } else {
+        // save the file name if different
+        if (meshfile.compare(projData.mesh_file) != 0) {
             if (projData.mesh_file) free(projData.mesh_file);
-            projData.mesh_file=(char*)malloc(sizeof(char));
-            projData.mesh_file[0]='\0';
+            projData.mesh_file=(char *)malloc((meshfile.length()+1)*sizeof(char));
+            int i=0;
+            while (i < meshfile.length()) {
+                projData.mesh_file[i]=meshfile.data()[i].toLatin1();
+                i++;
+            }
+            projData.mesh_file[i]='\0';
+            projectFileChanged=true;
         }
+
+    } else {
+        // if (meshfile.compare("") != 0) {
+        //     QMessageBox mb;
+        //     QString message="Error in loading the specified mesh file \"";
+        //     message.append(meshfile);
+        //     message.append("\".");
+        //     mb.critical(nullptr, "Error",message);
+        //     mb.setFixedSize(500, 200);
+        // }
     }
     setMenus();
 }
 
 void OpenParEMg::on_actionMeshLoad_triggered ()
 {
-    //QString meshfile=get_meshfileName();
     QString meshfile=QFileDialog::getOpenFileName(this,tr("Open Mesh"), "", tr("Mesh Files (*.msh);;All Files (*)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
 
@@ -2011,8 +1999,7 @@ void OpenParEMg::on_actionMeshLoad_triggered ()
 
 void OpenParEMg::on_actionMeshSave_triggered ()
 {
-    if (QFile::exists(projData.mesh_file)) {
-        gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
+    if (strcmp(projData.mesh_file,"") != 0) {
         gmsh::write(projData.mesh_file);
         meshFileChanged=false;
     } else {
@@ -2028,26 +2015,31 @@ void OpenParEMg::on_actionMeshSaveAs_triggered ()
                                                         nullptr,QFileDialog::DontUseNativeDialog);
     if (testMeshFile.isNull()) return;
 
-    // write in version 2.2
-    gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
     gmsh::write(testMeshFile.toStdString());
     meshFileChanged=false;
 
     // save the filename in projData
-    if (projData.mesh_file) free(projData.mesh_file);
-    projData.mesh_file=(char *) malloc((testMeshFile.size()+1)*sizeof(char));
-    int i=0;
-    while (i < testMeshFile.size()) {
-        projData.mesh_file[i]=testMeshFile.data()[i].toLatin1();
-        i++;
+    if (testMeshFile.compare(projData.mesh_file) != 0) {
+        if (projData.mesh_file) free(projData.mesh_file);
+        projData.mesh_file=(char *) malloc((testMeshFile.size()+1)*sizeof(char));
+        int i=0;
+        while (i < testMeshFile.size()) {
+            projData.mesh_file[i]=testMeshFile.data()[i].toLatin1();
+            i++;
+        }
+        projData.mesh_file[i]='\0';
+        projectFileChanged=true;
     }
-    projData.mesh_file[i]='\0';
+
     setMenus();
 }
 
 void OpenParEMg::on_actionMeshDelete_triggered ()
 {
     deleteMesh();
+    meshFileChanged=false;
+    meshFileLoaded=false;
+    projectFileChanged=true;
     setMenus();
 }
 

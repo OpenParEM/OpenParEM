@@ -64,16 +64,16 @@ void fem3D::set_data (ParMesh **pmesh_, struct projectData *projData_, double fr
 
 void fem3D::build_fe_spaces ()
 {
-   fec_ND=new ND_FECollection(projData->mesh_order,(*pmesh)->Dimension());
+   fec_ND=new ND_FECollection(projData->fem_order,(*pmesh)->Dimension());
    fespace_ND=new ParFiniteElementSpace(*pmesh,fec_ND);
 
-   fec_RT=new RT_FECollection(projData->mesh_order,(*pmesh)->Dimension());
+   fec_RT=new RT_FECollection(projData->fem_order,(*pmesh)->Dimension());
    fespace_RT=new ParFiniteElementSpace(*pmesh,fec_RT);
 
-   fec_H1=new H1_FECollection(projData->mesh_order,(*pmesh)->Dimension());
+   fec_H1=new H1_FECollection(projData->fem_order,(*pmesh)->Dimension());
    fespace_H1=new ParFiniteElementSpace(*pmesh,fec_H1);
 
-   fec_L2=new L2_FECollection(projData->mesh_order,(*pmesh)->Dimension(),BasisType::GaussLobatto);
+   fec_L2=new L2_FECollection(projData->fem_order,(*pmesh)->Dimension(),BasisType::GaussLobatto);
    fespace_L2=new ParFiniteElementSpace(*pmesh,fec_L2);
 }
 
@@ -120,7 +120,13 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
                                             true,drivingSet,solution_check_homogeneous,indent)) return true;
    pmblfReA->Assemble();
    pmblfReA->Finalize();
-   HypreParMatrix *ReA=pmblfReA->ParallelAssemble();
+   HypreParMatrix *ReA;
+   try {
+      ReA=pmblfReA->ParallelAssemble();
+   } catch (const std::exception& e) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3009: Out of memory in assembling finite-element matrix.\n");
+      return true;
+   }
 
    long unsigned int i=0;
    while (i < borderAttributeList.size()) {
@@ -142,7 +148,6 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
    ReC2ConstList.clear();
    ImC2ConstList.clear();
 
-
    delete pmblfReA;
    hypre_getSparseWidth((hypre_ParCSRMatrix *) *ReA,&sparseWidth);
    if (hypre_ParCSRMatrixToMat((hypre_ParCSRMatrix *) *ReA, &A, sparseWidth, 1, 0, 0)) return true;
@@ -159,7 +164,13 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
                                              borderAttributeList,ZconstList,false);
    pmblfImA->Assemble(); 
    pmblfImA->Finalize();
-   HypreParMatrix *ImA=pmblfImA->ParallelAssemble();
+   HypreParMatrix *ImA;
+   try {
+      ImA=pmblfImA->ParallelAssemble();
+   } catch (const std::exception& e) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3009: Out of memory in assembling finite-element matrix.\n");
+      return true;
+   }
 
    i=0;
    while (i < borderAttributeList.size()) {
@@ -1744,10 +1755,10 @@ bool fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
 
    CurlCurlIntegrator flux_integrator(*Inv_mur);
 
-   RT_FECollection flux_fec(projData->mesh_order-1, (*pmesh)->SpaceDimension());
+   RT_FECollection flux_fec(projData->fem_order-1, (*pmesh)->SpaceDimension());
    ParFiniteElementSpace flux_fes(*pmesh, &flux_fec);
 
-   ND_FECollection smooth_flux_fec(projData->mesh_order,(*pmesh)->Dimension());
+   ND_FECollection smooth_flux_fec(projData->fem_order,(*pmesh)->Dimension());
    ParFiniteElementSpace smooth_flux_fes(*pmesh, &smooth_flux_fec);
 
    double solution_tolerance=1e-12;
@@ -2539,7 +2550,7 @@ void fem3D::calculateRadiationCurrents (BoundaryDatabase *boundaryDatabase)
 
    // mesh limits
    Vector lowerLeft,upperRight;
-   (*pmesh)->GetBoundingBox(lowerLeft,upperRight,max(projData->mesh_order,1));
+   (*pmesh)->GetBoundingBox(lowerLeft,upperRight,max(projData->fem_order,1));
 
    // find a center
    Vector center(3);
@@ -2556,7 +2567,7 @@ void fem3D::calculateRadiationPatterns (int Sport, complex<double> acceptedPower
 {
    // mesh limits
    Vector lowerLeft,upperRight;
-   (*pmesh)->GetBoundingBox(lowerLeft,upperRight,max(projData->mesh_order,1));
+   (*pmesh)->GetBoundingBox(lowerLeft,upperRight,max(projData->fem_order,1));
 
    // find a center
    Vector center(3);

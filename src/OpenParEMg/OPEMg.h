@@ -197,6 +197,7 @@ private slots:
 private:
     void setMenus ();
     void resetLockouts ();
+    void printLockouts ();
     void resetProject ();
     //void getActionRunSetup (bool *, QString *);
 

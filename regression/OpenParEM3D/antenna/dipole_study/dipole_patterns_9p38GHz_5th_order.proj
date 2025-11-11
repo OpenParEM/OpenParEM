@@ -5,9 +5,8 @@ project.save.fields            false
 mesh.file                      refined_dipole.msh // dipole.msh
 mesh.refinement.fraction       0.001
 mesh.save.refined              false // true
-
-mesh.order                     5
 mesh.quality.limit             1e6
+fem.order                      5
 
 port.definition.file           dipole_ports.txt
 

@@ -122,7 +122,7 @@ All aspects of the execution of OpenParEM3D are controlled by the project contro
    #OpenParEM3Dproject 1.0
    project.save.fields            false
    mesh.file                      straight.msh
-   mesh.order                     6
+   fem.order                      6
    port.definition.file           straight_ports.txt
    materials.global.path          ../../../../OpenParEM2D/regression/
    materials.global.name          global_materials.txt
@@ -802,7 +802,7 @@ $ cd rectangular_waveguide
   project.save.fields            true
   mesh.file                      rectangular_waveguide.msh
   mesh.quality.limit             100
-  mesh.order                     4
+  fem.order                      4
   port.definition.file           rectangular_waveguide_ports.txt
   materials.global.path          ./
   materials.global.name          global_materials.txt
@@ -1019,7 +1019,7 @@ project.save.fields            true
 mesh.file                      microstrip_step.msh
 mesh.refinement.limit          0.001
 mesh.quality.limit             1000
-mesh.order                     3
+fem.order                      3
 port.definition.file           microstrip_step_ports.txt
 materials.global.path          ./
 materials.global.name          //global_materials.txt
@@ -1211,7 +1211,7 @@ mesh.file                      monopole_antenna.msh
 mesh.refinement.fraction       0.001
 mesh.quality.limit             1e4
 mesh.save.refined              true
-mesh.order                     4
+fem.order                      4
 port.definition.file           monopole_antenna_ports.txt
 materials.global.path          ./
 materials.global.name          //global_materials.txt
@@ -1259,7 +1259,7 @@ mesh.file                      refined_monopole_antenna.msh // monopole_antenna.
 mesh.refinement.fraction       0.001
 mesh.quality.limit             1e4
 mesh.save.refined              false // true
-mesh.order                     4
+fem.order                      4
 port.definition.file           monopole_antenna_ports.txt
 materials.global.path          ./
 materials.global.name          //global_materials.txt
@@ -1385,7 +1385,7 @@ For non-driven ports, an absorbing boundary condition is applied to absorb energ
 
 \subsection{Finite Element Order}
 
-The finite element order is set with the keyword/value pair \texttt{mesh.order N} in the project control file.  \texttt{N} can be any integer and sets the order of the polynomial approximating the field in each finite element.  All elements in a mesh have the same element order.
+The finite element order is set with the keyword/value pair \texttt{fem.order N} in the project control file.  \texttt{N} can be any integer and sets the order of the polynomial approximating the field in each finite element.  All elements in a mesh have the same element order.
 
 Higher values for \texttt{N} have potential advantages due to the polynomial accommodating larger field variations within any given element.  The advantages of higher order include:
 \begin{itemize}
@@ -1623,10 +1623,11 @@ OpenParEM3D is controlled by a text file consisting of keyword/value pairs.  The
     project.calculate.poynting   & bool   & false & Calculate the Poynting vector (power flow) \\
     project.save.fields          & bool   & false & Save the vector field results for viewing with ParaView \\
     mesh.file                    & string &       & File name of the mesh file \\
-    mesh.order                   & int    & 1     & Order of the finite elements \\
+    mesh.order                   & int    & 1     & Deprecated for fem.order \\
     mesh.save.refined            & bool   & false & Save the mesh for re-use in a later run \\
     mesh.refinement.fraction     & double & 0.005 & Maximum fraction of the mesh to refine at each iteration \\
     mesh.quality.limit           & double & 20    & Limit above which a fatal error is triggered. Typically has to be set higher \\
+    fem.order                    & int    & 1     & Order of the finite elements \\
     port.definition.file         & string &       & File name for the boundary condition/port definition file \\
     materials.global.path        & string & ../   & Path to a global materials file serving as a library.  Can also be blank or ./ for the local directory \\
     materials.global.name        & string & global\_materials & File name for the global materials file \\

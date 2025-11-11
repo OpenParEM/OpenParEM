@@ -15,9 +15,9 @@
 project.save.fields                false
 
 mesh.file                          Lee_microstrip.msh
-mesh.order                         4 
 mesh.uniform_refinement.count      0
 mesh.refinement.fraction           0.01
+fem.order                          4
 
 mode.definition.file               Lee_microstrip_modes_omit_current.txt
 

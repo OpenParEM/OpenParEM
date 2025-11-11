@@ -578,7 +578,26 @@ int check_antennaPatterns (struct projectData *projData, const char* indent)
 }
 
 void add_physicalGroupMaterial (struct projectData *data, int lineNumber, int dim, int tag, char *materialName)
-{   int i;
+{
+    int i;
+
+    // see if this is a renaming of an existing group
+    i=0;
+    while (i < data->physicalGroupMaterialCount) {
+       if (data->physicalGroupMaterials[i].dim == dim &&
+           data->physicalGroupMaterials[i].tag == tag) {
+
+          if (data->physicalGroupMaterials[i].materialName) {
+             free(data->physicalGroupMaterials[i].materialName);
+             data->physicalGroupMaterials[i].materialName=NULL;
+          }
+          data->physicalGroupMaterials[i].materialName=allocCopyString(materialName);
+
+          data->modified=1;
+          return;
+       }
+       i++;
+    }
 
     // allocate more groups, if needed
     if (data->physicalGroupMaterialCount == data->physicalGroupMaterialAllocated) {
@@ -614,11 +633,12 @@ void init_project (struct projectData *data) {
    data->project_save_fields=0;
 
    data->mesh_file=allocCopyString("");
-   data->mesh_order=1;
    data->mesh_save_refined=0;
    data->mesh_2D_refinement_fraction=0.025;
    data->mesh_3D_refinement_fraction=0.005;
    data->mesh_quality_limit=20;
+
+   data->fem_order=1;
 
    data->port_definition_file=allocCopyString("");
 
@@ -805,9 +825,6 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0; if (defaultData && strcmp(data->mesh_file,defaultData->mesh_file) == 0) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.file %s\n",indent,comment[matched],data->mesh_file);
 
-   matched=0; if (defaultData && data->mesh_order == defaultData->mesh_order) matched=1;
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.order %d\n",indent,comment[matched],data->mesh_order);
-
    matched=0;  if (defaultData && data->mesh_save_refined == defaultData->mesh_save_refined) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.save.refined %s\n",indent,comment[matched],logic[data->mesh_save_refined]);
 
@@ -816,6 +833,9 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
 
    matched=0; if (defaultData && double_compare(data->mesh_quality_limit,defaultData->mesh_quality_limit,1e-14)) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.quality.limit %.15g\n",indent,comment[matched],data->mesh_quality_limit);
+
+   matched=0; if (defaultData && data->fem_order == defaultData->fem_order) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sfem.order %d\n",indent,comment[matched],data->fem_order);
 
    matched=0; if (defaultData && strcmp(data->port_definition_file,defaultData->port_definition_file) == 0) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sport.definition.file %s\n",indent,comment[matched],data->port_definition_file);
@@ -1050,7 +1070,7 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
 
-   // no default field points, so print all
+   // no default material groups, so print all
    i=0;
    while (i < data->physicalGroupMaterialCount) {
        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.physical.group %d,%d,%s\n",indent,indent,
@@ -1108,9 +1128,6 @@ int save_project (const char *filename, struct projectData *data, struct project
     matched=0; if (defaultData && strcmp(data->mesh_file,defaultData->mesh_file) == 0) matched=1;
     fprintf(fptr,"%s%smesh.file %s\n",indent,comment[matched],data->mesh_file);
 
-    matched=0; if (defaultData && data->mesh_order == defaultData->mesh_order) matched=1;
-    fprintf(fptr,"%s%smesh.order %d\n",indent,comment[matched],data->mesh_order);
-
     matched=0;  if (defaultData && data->mesh_save_refined == defaultData->mesh_save_refined) matched=1;
     fprintf(fptr,"%s%smesh.save.refined %s\n",indent,comment[matched],logic[data->mesh_save_refined]);
 
@@ -1119,6 +1136,9 @@ int save_project (const char *filename, struct projectData *data, struct project
 
     matched=0; if (defaultData && double_compare(data->mesh_quality_limit,defaultData->mesh_quality_limit,1e-14)) matched=1;
     fprintf(fptr,"%s%smesh.quality.limit %.15g\n",indent,comment[matched],data->mesh_quality_limit);
+
+    matched=0; if (defaultData && data->fem_order == defaultData->fem_order) matched=1;
+    fprintf(fptr,"%s%sfem.order %d\n",indent,comment[matched],data->fem_order);
 
     matched=0; if (defaultData && strcmp(data->port_definition_file,defaultData->port_definition_file) == 0) matched=1;
     fprintf(fptr,"%s%sport.definition.file %s\n",indent,comment[matched],data->port_definition_file);
@@ -1353,7 +1373,7 @@ int save_project (const char *filename, struct projectData *data, struct project
     matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
     fprintf(fptr,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
 
-    // no default field points, so print all
+    // no default material groups, so print all
     i=0;
     while (i < data->physicalGroupMaterialCount) {
         fprintf(fptr,"%s%sgui.physical.group %d,%d,%s\n",indent,indent,
@@ -1725,17 +1745,18 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                else if (strcmp(keyword,"mesh.order") == 0) {
                   value=strtok(NULL," ");
                   if (is_int(value)) {
-                     data->mesh_order=atoi(value);
+                     data->fem_order=atoi(value);
                      value=strtok(NULL," ");
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
-                     if (data->mesh_order < 1) {
+                     if (data->fem_order < 1) {
                         ierr=1;
                         prefix(); printf("%s%sERROR3136: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
                      }
-                     if (data->mesh_order > 20) {
+                     if (data->fem_order > 20) {
                         ierr=1;
                         prefix(); printf("%s%sERROR3137: Value must be <= 20 at line %d.\n",indent,indent,lineCount);
                      }
+                     prefix(); printf("%s%sINFO: Keyword \"mesh.order\" is deprecated for \"fem.order\" at line %d.\n",indent,indent,lineCount);
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
@@ -1777,6 +1798,23 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      }
                      if (data->mesh_quality_limit > 1) {
                         prefix(); printf("%s%sWarning: Value at line %d is large.\n",indent,indent,lineCount);
+                     }
+                  } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"fem.order") == 0) {
+                  value=strtok(NULL," ");
+                  if (is_int(value)) {
+                     data->fem_order=atoi(value);
+                     value=strtok(NULL," ");
+                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                     if (data->fem_order < 1) {
+                        ierr=1;
+                        prefix(); printf("%s%sERROR3249: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                     }
+                     if (data->fem_order > 20) {
+                        ierr=1;
+                        prefix(); printf("%s%sERROR3250: Value must be <= 20 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -2936,7 +2974,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       }
 
       // avoid using invalid field dofs as initial guesses when using order ramping
-      if (!data->solution_shift_invert && data->solution_initial_guess_level > 1 && data->mesh_order > 1) {
+      if (!data->solution_shift_invert && data->solution_initial_guess_level > 1 && data->fem_order > 1) {
          prefix(); printf("%s%sERROR3244: Invalid combination of keyword values for solution.shift.invert and solution.initial.guess.level",
                                                  indent,indent);
          ierr=1;
@@ -2965,7 +3003,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send (&length,1,MPI_INT,i,1000003,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->mesh_file,length,MPI_CHAR,i,1000004,PETSC_COMM_WORLD);
 
-         ierr=MPI_Send(&(data->mesh_order),1,MPI_INT,i,1000005,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->fem_order),1,MPI_INT,i,1000005,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_save_refined),1,MPI_INT,i,1000083,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_2D_refinement_fraction),1,MPI_DOUBLE,i,1000008,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_3D_refinement_fraction),1,MPI_DOUBLE,i,1000009,PETSC_COMM_WORLD);
@@ -3162,7 +3200,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(data->mesh_file,length,MPI_CHAR,0,1000004,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       data->mesh_file[length]='\0';
 
-      ierr=MPI_Recv(&(data->mesh_order),1,MPI_INT,0,1000005,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->fem_order),1,MPI_INT,0,1000005,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_save_refined),1,MPI_INT,0,1000083,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_2D_refinement_fraction),1,MPI_DOUBLE,0,1000008,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_3D_refinement_fraction),1,MPI_DOUBLE,0,1000009,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);

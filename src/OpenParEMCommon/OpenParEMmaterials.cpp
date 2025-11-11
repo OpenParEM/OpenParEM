@@ -1463,7 +1463,7 @@ bool MaterialDatabase::findMaterialBlocks()
 }
 
 // return true on fail
-bool MaterialDatabase::load(const char *path, const char *filename, bool checkInputs)
+bool MaterialDatabase::load (const char *path, const char *filename, bool checkInputs)
 {
    // assemble the full path name
    char *fullPathName=(char *)malloc((strlen(path)+strlen(filename)+1)*sizeof(char));

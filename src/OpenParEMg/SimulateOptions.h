@@ -77,6 +77,8 @@ private slots:
 
     void on_slotCount_valueChanged(int arg1);
 
+    void on_femOrder_valueChanged(int arg1);
+
 private:
     Ui::SimOptions *ui;
     bool cancelClose;
@@ -85,6 +87,7 @@ private:
     QString frequencyUnit;
     QString touchstoneFormat;
     int slotCount;
+    int femOrder;
     double temperature;
     double tolerance2D;
     double tolerance3D;

@@ -3,8 +3,8 @@
 project.save.fields               false
 
 mesh.file                         ../WR90_waveguide.msh
-mesh.order                        1
 mesh.uniform_refinement.count     4
+fem.order                         1
 
 mode.definition.file              ../WR90_waveguide_modes_no_Zs.txt
 

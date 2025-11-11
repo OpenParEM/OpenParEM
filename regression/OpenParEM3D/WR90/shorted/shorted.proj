@@ -4,7 +4,7 @@ project.save.fields            false
 
 mesh.file                      shorted.msh
 
-mesh.order                     6
+fem.order                      6
 
 port.definition.file           shorted_ports.txt
 

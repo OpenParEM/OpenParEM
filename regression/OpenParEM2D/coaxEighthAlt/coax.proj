@@ -7,8 +7,8 @@
 project.save.fields               false
 
 mesh.file                         coax.msh
-mesh.order                        2
 mesh.uniform_refinement.count     0
+fem.order                         2
 
 mode.definition.file              coax_modes.txt
 

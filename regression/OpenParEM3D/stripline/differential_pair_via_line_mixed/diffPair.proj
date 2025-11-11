@@ -8,7 +8,7 @@ project.save.fields               false
 mesh.file                         diffPair.msh
 mesh.quality.limit                1e6
 mesh.refinement.fraction          0.001
-mesh.order                        2
+fem.order                         2
 port.definition.file              diffPair_ports.txt
 materials.global.path             ../../../OpenParEM2D/
 materials.global.name             global_materials.txt

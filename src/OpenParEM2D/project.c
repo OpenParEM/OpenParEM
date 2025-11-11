@@ -477,10 +477,11 @@ void init_project (struct projectData *data) {
    data->project_save_fields=0;
 
    data->mesh_file=strdup("");
-   data->mesh_order=1;
    data->mesh_uniform_refinement_count=0;
    data->mesh_refinement_fraction=0.025;
    data->mesh_enable_refine=1;
+
+   data->fem_order=1;
 
    data->mode_definition_file=strdup("");
 
@@ -587,9 +588,6 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0; if (defaultData && strcmp(data->mesh_file,defaultData->mesh_file) == 0) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.file %s\n",indent,comment[matched],data->mesh_file);
 
-   matched=0; if (defaultData && data->mesh_order == defaultData->mesh_order) matched=1;
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.order %d\n",indent,comment[matched],data->mesh_order);
-
    matched=0; if (defaultData && data->mesh_uniform_refinement_count == defaultData->mesh_uniform_refinement_count) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.uniform_refinement.count %d\n",indent,comment[matched],data->mesh_uniform_refinement_count);
 
@@ -598,6 +596,9 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
 
    matched=0;  if (defaultData && data->mesh_enable_refine == defaultData->mesh_enable_refine) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.enable.refine %s\n",indent,comment[matched],logic[data->mesh_enable_refine]);
+
+   matched=0; if (defaultData && data->fem_order == defaultData->fem_order) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sfem.order %d\n",indent,comment[matched],data->fem_order);
 
    matched=0; if (defaultData && strcmp(data->mode_definition_file,defaultData->mode_definition_file) == 0) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smode.definition.file %s\n",indent,comment[matched],data->mode_definition_file);
@@ -947,17 +948,18 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                else if (strcmp(keyword,"mesh.order") == 0) {
                   value=strtok(NULL," ");
                   if (is_int(value)) {
-                     data->mesh_order=atoi(value);
+                     data->fem_order=atoi(value);
                      value=strtok(NULL," ");
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
-                     if (data->mesh_order < 1) {
+                     if (data->fem_order < 1) {
                         ierr=1;
                         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2233: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
                      }
-                     if (data->mesh_order > 20) {
+                     if (data->fem_order > 20) {
                         ierr=1;
                         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2234: Value must be <= 20 at line %d.\n",indent,indent,lineCount);
                      }
+                     prefix(); PetscPrintf (PETSC_COMM_WORLD,"%s%sINFO: Keyword \"mesh.order\" is deprecated for \"fem.order\" at line %d.\n",indent,indent,lineCount);
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
@@ -997,6 +999,23 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      data->mesh_enable_refine=get_bool(value);
                      value=strtok(NULL," ");
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                  } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"fem.order") == 0) {
+                  value=strtok(NULL," ");
+                  if (is_int(value)) {
+                     data->fem_order=atoi(value);
+                     value=strtok(NULL," ");
+                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                     if (data->fem_order < 1) {
+                        ierr=1;
+                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2233: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                     }
+                     if (data->fem_order > 20) {
+                        ierr=1;
+                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2234: Value must be <= 20 at line %d.\n",indent,indent,lineCount);
+                     }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
@@ -1711,7 +1730,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send (&length,1,MPI_INT,i,1000002,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->mesh_file,length,MPI_CHAR,i,1000003,PETSC_COMM_WORLD);
 
-         ierr=MPI_Send(&(data->mesh_order),1,MPI_INT,i,1000004,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->fem_order),1,MPI_INT,i,1000004,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_uniform_refinement_count),1,MPI_INT,i,1000005,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_refinement_fraction),1,MPI_DOUBLE,i,1000007,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_enable_refine),1,MPI_INT,i,1000008,PETSC_COMM_WORLD);
@@ -1832,7 +1851,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(data->mesh_file,length,MPI_CHAR,0,1000003,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       data->mesh_file[length]='\0';
 
-      ierr=MPI_Recv(&(data->mesh_order),1,MPI_INT,0,1000004,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->fem_order),1,MPI_INT,0,1000004,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_uniform_refinement_count),1,MPI_INT,0,1000005,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_refinement_fraction),1,MPI_DOUBLE,0,1000007,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_enable_refine),1,MPI_INT,0,1000008,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);

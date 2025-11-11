@@ -25,6 +25,7 @@
 #include <thread>
 #include <csignal>
 #include <atomic>
+#include <filesystem>
 
 #include "port.hpp"
 #include "fem3D.hpp"
@@ -1095,7 +1096,7 @@ bool Boundary::calculateRadiationCurrents (ParMesh *pmesh, struct projectData *p
    ParSubMesh parSubMeshRadiation=ParSubMesh::CreateFromBoundary(*pmesh,border_attributes);
 
    // create finite elements for the mesh
-   ND_FECollection fec2D_ND(projData->mesh_order,parSubMeshRadiation.Dimension());
+   ND_FECollection fec2D_ND(projData->fem_order,parSubMeshRadiation.Dimension());
    ParFiniteElementSpace fes2D_ND(&parSubMeshRadiation,&fec2D_ND);
 
    // create 2D grids
@@ -1124,7 +1125,7 @@ bool Boundary::calculateRadiationCurrents (ParMesh *pmesh, struct projectData *p
 
    // calculate J
 
-   RT_FECollection fec2D_RT(projData->mesh_order,parSubMeshRadiation.Dimension());
+   RT_FECollection fec2D_RT(projData->fem_order,parSubMeshRadiation.Dimension());
    ParFiniteElementSpace fes2D_RT(&parSubMeshRadiation,&fec2D_RT);
 
    ParGridFunction gridReJ=ParGridFunction(&fes2D_RT);
@@ -4851,6 +4852,9 @@ void Port::save2Dsetup (struct projectData *projData, string *directory, double 
    stringstream filename;
    filename << *directory << "/S" << get_name() << "/S" << get_name() << ".proj";
 
+   std::filesystem::path global_p(projData->materials_global_path);
+   std::filesystem::path local_p(projData->materials_local_path);
+
    ofstream out;
    out.open(filename.str().c_str(),ofstream::out);
 
@@ -4858,15 +4862,28 @@ void Port::save2Dsetup (struct projectData *projData, string *directory, double 
       out << "#OpenParEM2Dproject 1.0" << endl << endl;
       out << "project.save.fields                      true" << endl << endl;            // must save fields, so override the proj file
       out << "mesh.file                                " << meshFilename << endl;
-      out << "mesh.order                               " << projData->mesh_order << endl;
       out << "mesh.refinement.fraction                 " << projData->mesh_2D_refinement_fraction << endl;
       out << "mesh.uniform_refinement.count            " << "0" << endl;
       out << "mesh.enable.refine                       " << "0" << endl << endl; 
-      out << "mode.definition.file                     " << modesFilename << endl;
-      out << "materials.global.path                    " << "../../" << projData->materials_global_path << endl;
+      out << "fem.order                                " << projData->fem_order << endl << endl;
+      out << "mode.definition.file                     " << modesFilename << endl << endl;
+
+      if (global_p.is_relative()) {
+         out << "materials.global.path                    " << "../../" << projData->materials_global_path << endl;
+      }
+      if (global_p.is_absolute()) {
+         out << "materials.global.path                    " << projData->materials_global_path << endl;
+      }
       out << "materials.global.name                    " << projData->materials_global_name << endl;
-      out << "materials.local.path                     " << "../../" << projData->materials_local_path << endl;
-      out << "materials.local.name                     " << projData->materials_local_name << endl;
+
+      if (local_p.is_relative()) {
+         out << "materials.local.path                    " << "../../" << projData->materials_local_path << endl;
+      }
+      if (local_p.is_absolute()) {
+         out << "materials.local.path                    " << projData->materials_local_path << endl;
+      }
+      out << "materials.local.name                    " << projData->materials_local_name << endl;
+
       out << "materials.check.limits                   " << projData->materials_check_limits << endl << endl;
       // do not independently refine the ports
       // The refinement variables are included in case the user wants to use refinement when running OpenParEM2D manually.
@@ -7471,7 +7488,7 @@ void BoundaryDatabase::extract2Dmesh(ParMesh *pmesh, vector<ParSubMesh> *parSubM
    }
 }
 
-bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSubMesh> *parSubMeshesPort, double frequency, MeshMaterialList *meshMaterials,
+bool BoundaryDatabase::solvePorts (int fem_order, ParMesh *pmesh, vector<ParSubMesh> *parSubMeshesPort, double frequency, MeshMaterialList *meshMaterials,
                                    struct projectData *projData, GammaDatabase *gammaDatabase)
 {
    bool fail=false;
@@ -7481,7 +7498,7 @@ bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSub
    chrono::steady_clock::time_point current;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   if (create2Dmeshes(mesh_order,pmesh,parSubMeshesPort)) {fail=true; return fail;}
+   if (create2Dmeshes(fem_order,pmesh,parSubMeshesPort)) {fail=true; return fail;}
 
    savePortMeshes(meshMaterials,parSubMeshesPort);
    if (rank == 0) {
@@ -8122,7 +8139,7 @@ bool BoundaryDatabase::solve2Dports (ParMesh *pmesh, vector<ParSubMesh> *parSubM
    if (rank == 0 && createPortDirectories()) fail=true;
    if (fail) return fail;
 
-   if (solvePorts(projData->mesh_order,pmesh,parSubMeshesPort,frequency,meshMaterials,projData,gammaDatabase)) fail=true;
+   if (solvePorts(projData->fem_order,pmesh,parSubMeshesPort,frequency,meshMaterials,projData,gammaDatabase)) fail=true;
    if (fail) return fail;
 
    build2Dgrids();

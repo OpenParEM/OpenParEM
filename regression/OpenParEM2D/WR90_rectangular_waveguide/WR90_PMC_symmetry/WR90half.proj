@@ -3,8 +3,8 @@
 project.save.fields               false
 
 mesh.file                         WR90_waveguide_half.msh
-mesh.order                        4
 mesh.uniform_refinement.count     1
+fem.order                         4
 
 mode.definition.file              WR90_waveguide_modes_half.txt
 

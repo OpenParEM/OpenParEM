@@ -4,7 +4,7 @@ project.save.fields            false
 
 mesh.file                      dielectric-loading.msh
 
-mesh.order                     2
+fem.order                      2
 
 port.definition.file           dielectric-loading_ports.txt
 

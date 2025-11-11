@@ -6,7 +6,7 @@ mesh.file                      filter.msh
 mesh.refinement.fraction       0.0025
 mesh.quality.limit             1e6
 
-mesh.order                     5
+fem.order                      5
 
 port.definition.file           filter_ports.txt
 

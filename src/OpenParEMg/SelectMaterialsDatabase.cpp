@@ -23,7 +23,6 @@
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QFileDialog>
-#include "OpenParEMmaterials.hpp"
 
 SelectMaterialsDatabase::SelectMaterialsDatabase (QWidget *parent)
     : QDialog(parent)
@@ -39,11 +38,18 @@ SelectMaterialsDatabase::SelectMaterialsDatabase (QWidget *parent)
     globalIsValid=false;
     localIsValid=false;
 
+    checkLimits=1;
+
     ui->OkButton->setEnabled(false);
 }
 
 SelectMaterialsDatabase::~SelectMaterialsDatabase ()
 {
+    if (globalPath) free(globalPath);
+    if (globalFilename) free(globalFilename);
+    if (localPath) free(localPath);
+    if (localFilename) free(localFilename);
+
     delete ui;
 }
 
@@ -81,6 +87,9 @@ void SelectMaterialsDatabase::set_projData (struct projectData *a)
         emit ui->localMaterialFile->returnPressed();
     }
 
+    checkLimits=projData->materials_check_limits;
+    ui->checkLimits->setChecked(checkLimits);
+
     if (simulationRunning) {
         ui->globalFile->setEnabled(false);
         ui->globalMaterialFile->setEnabled(false);
@@ -88,6 +97,7 @@ void SelectMaterialsDatabase::set_projData (struct projectData *a)
         ui->localFile->setEnabled(false);
         ui->localMaterialFile->setEnabled(false);
         ui->selectLocal->setEnabled(false);
+        ui->checkLimits->setEnabled(false);
     }
 }
 
@@ -121,22 +131,66 @@ void SelectMaterialsDatabase::on_selectGlobal_clicked ()
 
 void SelectMaterialsDatabase::on_OkButton_clicked ()
 {
-    if (! globalPath) {globalPath=(char *)malloc(sizeof(char)); globalPath[0]='\0';}
+    // match the defaults from project.c
+    if (! globalPath) {globalPath=(char *)malloc(3*sizeof(char)); sprintf(globalPath,"%s","./");}
     if (! globalFilename) {globalFilename=(char *)malloc(sizeof(char)); globalFilename[0]='\0';}
-    if (! localPath) {localPath=(char *)malloc(sizeof(char)); localPath[0]='\0';}
+    if (! localPath) {localPath=(char *)malloc(3*sizeof(char)); sprintf(localPath,"%s","./");}
     if (! localFilename) {localFilename=(char *)malloc(sizeof(char)); localFilename[0]='\0';}
 
-    if (projData->materials_global_path) free(projData->materials_global_path);
-    projData->materials_global_path=globalPath;
+    // global path
+    if (strcmp(projData->materials_global_path,globalPath) != 0) {
+        free(projData->materials_global_path);
+        projData->materials_global_path=(char *)malloc((strlen(globalPath)+1)*sizeof(char));
+        sprintf(projData->materials_global_path,"%s",globalPath);
+        projData->modified=1;
+    }
 
-    if (projData->materials_global_name) free(projData->materials_global_name);
-    projData->materials_global_name=globalFilename;
+    // global name
+    if (strcmp(projData->materials_global_name,globalFilename) != 0) {
+        free(projData->materials_global_name);
+        projData->materials_global_name=(char *)malloc((strlen(globalFilename)+1)*sizeof(char));
+        sprintf(projData->materials_global_name,"%s",globalFilename);
+        projData->modified=1;
+    }
 
-    if (projData->materials_local_path) free(projData->materials_local_path);
-    projData->materials_local_path=localPath;
+    // local path
+    if (strcmp(projData->materials_local_path,localPath) != 0) {
+        free(projData->materials_local_path);
+        projData->materials_local_path=(char *)malloc((strlen(localPath)+1)*sizeof(char));
+        sprintf(projData->materials_local_path,"%s",localPath);
+        projData->modified=1;
+    }
 
-    if (projData->materials_local_name) free(projData->materials_local_name);
-    projData->materials_local_name=localFilename;
+    // local name
+    if (strcmp(projData->materials_local_name,localFilename) != 0) {
+        free(projData->materials_local_name);
+        projData->materials_local_name=(char *)malloc((strlen(localFilename)+1)*sizeof(char));
+        sprintf(projData->materials_local_name,"%s",localFilename);
+        projData->modified=1;
+    }
+
+    // check limits
+    if (projData->materials_check_limits != checkLimits) {
+        projData->materials_check_limits=checkLimits;
+        projData->modified=1;
+    }
+
+    // ToDo: default boundary condition material
+
+    if (projData->modified) {
+
+        // reset material database
+        materialDatabase->clear();
+
+        // load materials - should always work since the files were test-loaded
+        if (materialDatabase->load_materials(projData->materials_global_path,projData->materials_global_name,
+                                             projData->materials_local_path,projData->materials_local_name,
+                                             projData->materials_check_limits)) {
+            QMessageBox mb;
+            mb.critical(nullptr, "Error", "Unable to load the specified materials files.");
+            mb.setFixedSize(500, 200);
+        }
+    }
 
     close();
 }
@@ -186,7 +240,7 @@ void SelectMaterialsDatabase::on_localFile_stateChanged (int arg1)
 
 void SelectMaterialsDatabase::on_globalMaterialFile_returnPressed ()
 {
-    MaterialDatabase materialDatabase;
+    MaterialDatabase testMaterialDatabase;
 
     if (globalPath) {free(globalPath); globalPath=nullptr;}
     if (globalFilename) {free(globalFilename); globalFilename=nullptr;}
@@ -216,7 +270,7 @@ void SelectMaterialsDatabase::on_globalMaterialFile_returnPressed ()
         globalFilename[i]='\0';
 
         // test load to ensure that the file is valid
-        if (materialDatabase.load_materials(nullstring,nullstring,globalPath,globalFilename,false)) {
+        if (testMaterialDatabase.load_materials(nullstring,nullstring,globalPath,globalFilename,false)) {
             QMessageBox mb;
             mb.critical(nullptr, "Error", "Failed to load global materials file.");
             mb.setFixedSize(500, 200);
@@ -227,12 +281,12 @@ void SelectMaterialsDatabase::on_globalMaterialFile_returnPressed ()
     }
 
     ui->OkButton->setEnabled(false);
-    if (globalIsValid && localIsValid) ui->OkButton->setEnabled(true);
+    if (globalIsValid) ui->OkButton->setEnabled(true);
 }
 
 void SelectMaterialsDatabase::on_localMaterialFile_returnPressed ()
 {
-    MaterialDatabase materialDatabase;
+    MaterialDatabase testMaterialDatabase;
 
     if (localPath) {free(localPath); localPath=nullptr;}
     if (localFilename) {free(localFilename); localFilename=nullptr;}
@@ -263,7 +317,7 @@ void SelectMaterialsDatabase::on_localMaterialFile_returnPressed ()
         localFilename[i]='\0';
 
         // test load to ensure that the file is valid
-        if (materialDatabase.load_materials(nullstring,nullstring,localPath,localFilename,false)) {
+        if (testMaterialDatabase.load_materials(nullstring,nullstring,localPath,localFilename,false)) {
             QMessageBox mb;
             mb.critical(nullptr, "Error", "Failed to load local materials file.");
             mb.setFixedSize(500, 200);
@@ -274,5 +328,14 @@ void SelectMaterialsDatabase::on_localMaterialFile_returnPressed ()
     }
 
     ui->OkButton->setEnabled(false);
-    if (globalIsValid && localIsValid) ui->OkButton->setEnabled(true);
+    if (localIsValid) ui->OkButton->setEnabled(true);
 }
+
+void SelectMaterialsDatabase::on_checkLimits_stateChanged (int arg1)
+{
+    checkLimits=0;
+    if (arg1) checkLimits=1;
+    std::cout << "checkLimits=" << checkLimits << std::endl; std::cout.flush();
+    ui->OkButton->setEnabled(true);
+}
+

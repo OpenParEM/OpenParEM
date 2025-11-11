@@ -65,11 +65,12 @@ struct projectData {
    int project_save_fields;
 
    char *mesh_file;
-   int mesh_order;
    int mesh_save_refined;
    double mesh_2D_refinement_fraction;
    double mesh_3D_refinement_fraction;
    double mesh_quality_limit;
+
+   int fem_order;
 
    char *port_definition_file;
 

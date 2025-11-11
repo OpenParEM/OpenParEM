@@ -200,8 +200,6 @@ PetscErrorCode hypre_ParCSRMatrixToMat (hypre_ParCSRMatrix *a, Mat *A, PetscInt 
          ierr=MatMPIAIJSetPreallocation(*A,sparseWidth,NULL,sparseWidth,NULL); if (ierr) return ierr;
       }
 
-      // ToDo: running out of memory fails here with a non-graceful exit
-      //       Figure out how to turn an out-of-memory error into a graceful exit.
       ierr=MatZeroEntries(*A); if (ierr) return ierr;
    }
 

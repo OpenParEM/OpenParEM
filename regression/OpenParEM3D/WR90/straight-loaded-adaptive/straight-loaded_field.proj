@@ -3,9 +3,9 @@
 project.save.fields            false
 
 mesh.file                      straight-loaded.msh
-
-mesh.order                     3
 mesh.quality.limit             1e6
+
+fem.order                      3
 
 port.definition.file           straight-loaded_ports.txt
 

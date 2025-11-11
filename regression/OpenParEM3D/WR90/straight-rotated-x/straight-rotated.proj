@@ -4,7 +4,7 @@ project.save.fields            false
 
 mesh.file                      straight-rotated.msh
 
-mesh.order                     6
+fem.order                      6
 
 port.definition.file           straight_rotated_ports.txt
 

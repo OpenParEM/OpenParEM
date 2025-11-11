@@ -178,7 +178,7 @@ All aspects of the execution of OpenParEM2D are controlled by the project contro
    #OpenParEM2Dproject 1.0
    project.save.fields               false
    mesh.file                         coax.msh
-   mesh.order                        2
+   fem.order                         2
    mode.definition.file              coax_modes.txt
    materials.global.path             ../
    materials.global.name             global_materials.txt
@@ -467,7 +467,7 @@ $ cd rectangular_waveguide
   #OpenParEM2Dproject 1.0
   project.save.fields            true
   mesh.file                      rectangular_waveguide.msh
-  mesh.order                     3
+  fem.order                      3
   mode.definition.file           rectangular_waveguide_modes.txt
   materials.global.path          ./
   materials.global.name          global_materials.txt
@@ -638,7 +638,7 @@ $ cd coaxial_waveguide
   #OpenParEM2Dproject 1.0
   project.save.fields            true
   mesh.file                      coaxial_waveguide.msh
-  mesh.order                     3
+  fem.order                      3
   mode.definition.file           coaxial_waveguide_modes.txt
   materials.global.path          ./
   materials.global.name          //global_materials.txt
@@ -806,7 +806,7 @@ The coupled microstrip pair from Fig.~8 in \cite{Olyslager} is set up with line 
   #OpenParEM2Dproject 1.0
   project.save.fields            true
   mesh.file                      coupled_microstrip.msh
-  mesh.order                     4
+  fem.order                      4
   mesh.refinement.fraction       0.01
   mode.definition.file           coupled_microstrip_modes.txt
   materials.global.path          ./
@@ -935,7 +935,7 @@ Impedance calculations are a post-processing step, so the field solution is the 
 
 \subsection{Finite Element Order}
 
-The finite element order is set with the keyword/value pair \texttt{mesh.order N} in the project control file.  \texttt{N} can be any integer and sets the order of the polynomial approximating the field in each finite element.  All elements in a mesh have the same element order.
+The finite element order is set with the keyword/value pair \texttt{fem.order N} in the project control file.  \texttt{N} can be any integer and sets the order of the polynomial approximating the field in each finite element.  All elements in a mesh have the same element order.
 
 Higher values for \texttt{N} have potential advantages due to the polynomial accommodating larger field variations within any given element.  The advantages of higher order include:
 \begin{itemize}
@@ -1059,10 +1059,11 @@ OpenParEM2D is controlled by a text file consisting of keyword/value pairs.  The
     \endhead
     project.save.fields          & bool   & false & Save the vector field results for viewing with ParaView \\
     mesh.file                    & string &       & File name of the mesh file \\
-    mesh.order                   & int    & 1     & Order of the finite elements \\
+    mesh.order                   & int    & 1     & Deprecated for fem.order \\
     mesh.uniform\_refinement.count & int   & 0     & Number of times the mesh is uniformly refined before starting the simulation \\
     mesh.refinement.fraction     & double & 0.025 & Maximum fraction of the mesh to refine at each iteration \\
     mesh.enable.refine           & bool   & true  & Prevents re-ordering of DOFs when loading meshes.  Used by OpenParEM3D, and otherwise, no effect.  \\
+    fem.order                    & int    & 1     & Order of the finite elements \\
     mode.definition.file         & string &       & File name for the boundary condition/mode file \\
     materials.global.path        & string & ../   & Path to a global materials file serving as a library.  Can also be blank or ./ for the local directory \\
     materials.global.name        & string & global\_materials & File name for the global materials file \\

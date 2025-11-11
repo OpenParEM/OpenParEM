@@ -4,7 +4,7 @@
 
 project.save.fields               true
 mesh.file                         WR90.msh
-mesh.order                        4
+fem.order                         4
 mode.definition.file              WR90_modes.txt
 materials.global.path             ../../../../
 materials.global.name             global_materials.txt

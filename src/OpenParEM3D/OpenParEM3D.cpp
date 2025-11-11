@@ -247,6 +247,24 @@ bool saveSerialMesh (struct projectData *projData, MeshMaterialList *meshMateria
    return false;
 }
 
+PetscErrorCode petscErrorHandler(MPI_Comm comm, int line, const char *file, const char *func,
+                                 PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx)
+{
+    // out of memory
+    if (n == 55) {
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3252: Out of memory. %s bytes.\n",mess);
+    }
+
+    // details for potential future enhancement
+    //fprintf(stderr, "A PETSc Error occurred in function %s at line %d in file %s\n", func, line, file);
+    //fprintf(stderr, "Error code: %d, Message: %s\n", n, mess);
+
+    // optional call to the default PETSc error handler
+    //PetscTraceBackErrorHandler(comm, line, file, func, n, p, mess, ctx);
+
+    return 1;
+}
+
 int main(int argc, char *argv[])
 {
    double eps0=8.8541878176e-12;
@@ -307,7 +325,8 @@ int main(int argc, char *argv[])
 
       if (workingDir) {
          if (chdir(workingDir) != 0) {
-            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2277: Failed to change to the working directory \"%s\".\n",workingDir);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3248: Failed to change to the working directory \"%s\".\n",workingDir);
+            signalFinished();
             exit_job_on_error (job_start_time,lockfile,true,2);
          }
          free(workingDir);
@@ -316,7 +335,10 @@ int main(int argc, char *argv[])
 
    // trap PETSc errors to enable graceful exit, primarily for out-of-memory errors
    struct applicationContext appCtx;
-   PetscPushErrorHandler(errorHandler,(struct applicationContext *) &appCtx);
+   PetscErrorCode ierr = PetscPushErrorHandler(petscErrorHandler, NULL); CHKERRQ(ierr);
+
+   // MFEM error handling supporting try/catch
+   mfem::ErrorAction(mfem::MFEM_ERROR_THROW);
 
    // parse inputs
    int retVal=1;
@@ -362,6 +384,7 @@ int main(int argc, char *argv[])
    if (projData.debug_show_materials) {materialDatabase.print("   ");}
 
    // mesh
+
    checkForAbort();
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Loading mesh and assigning materials ...\n");
    if (!projData.materials_check_limits) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Skipping limit checks on material values\n");}
@@ -370,7 +393,27 @@ int main(int argc, char *argv[])
       exit_job_on_error (job_start_time,lockfile,true,3);
    }
    //meshMaterials.print();
-   Mesh mesh(projData.mesh_file, 1, 1);
+
+   Mesh mesh;
+   std::ifstream inputFile(projData.mesh_file);
+   if (inputFile.is_open()) {
+      try {
+         mesh.Load(inputFile,1,1);
+      } catch (const std::exception& e) {
+         inputFile.close();
+         PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+         MPI_Barrier(PETSC_COMM_WORLD);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3247: Failed to load the mesh.\n");
+         signalFinished();
+         exit_job_on_error (job_start_time,lockfile,true,3);
+      }
+      inputFile.close();
+   } else {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3251: Failed to open the mesh file for reading.\n");
+      signalFinished();
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
+
    //   mesh.ScaleElements(0.001);    // hard coded for now to convert from mm to m.  - ToDo - Generalize, but ScaleElements may be broken.
    int dim=mesh.Dimension();
    if (! (dim == 3)) {
@@ -424,12 +467,12 @@ int main(int argc, char *argv[])
 
    // scale checks for basic error detection
    ParMesh *pmesh=nullptr;
-   if (check_field_points (projFile,&mesh,pmesh,projData.mesh_order,3,
+   if (check_field_points (projFile,&mesh,pmesh,projData.fem_order,3,
                            projData.field_points_count,projData.field_points_x,projData.field_points_y,projData.field_points_z)) {
       signalFinished(); 
       exit_job_on_error (job_start_time,lockfile,true,3);
    }
-   if (boundaryDatabase.check_scale(&mesh,projData.mesh_order)) {
+   if (boundaryDatabase.check_scale(&mesh,projData.fem_order)) {
       signalFinished(); 
       exit_job_on_error (job_start_time,lockfile,true,3);
    }

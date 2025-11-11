@@ -3,9 +3,8 @@
 project.save.fields            false
 
 mesh.file                      shorted-step.msh
-
-mesh.order                     3
 mesh.quality.limit             100
+fem.order                      3
 
 port.definition.file           shorted-step_ports.txt
 

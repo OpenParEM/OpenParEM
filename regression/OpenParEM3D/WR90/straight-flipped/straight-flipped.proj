@@ -4,7 +4,7 @@ project.save.fields            false
 
 mesh.file                      straight-flipped.msh
 
-mesh.order                     6
+fem.order                      6
 
 port.definition.file           straight-flipped_ports.txt
 

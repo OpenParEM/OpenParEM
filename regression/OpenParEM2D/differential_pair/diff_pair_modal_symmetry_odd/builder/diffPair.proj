@@ -5,7 +5,7 @@
 project.save.fields               true
 
 mesh.file                         diffPair.msh
-mesh.order                        4
+fem.order                         4
 
 mode.definition.file              diffPair_lines.txt
 

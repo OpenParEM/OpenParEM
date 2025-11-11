@@ -24,17 +24,18 @@
 #include <QDialog>
 #include <unistd.h>
 #include "project.h"
+#include "OpenParEMmaterials.hpp"
 
 namespace Ui {
 class SelectMaterialsDatabase;
 }
 
-class SelectMaterialsDatabase : public QDialog
-{
+class SelectMaterialsDatabase : public QDialog{
     Q_OBJECT
 
 public:
     explicit SelectMaterialsDatabase (QWidget *parent = nullptr);
+    void set_materialDatabase (MaterialDatabase *materialDatabase_) {materialDatabase=materialDatabase_;}
     void set_absolutePath (QString *absolutePath_) {absolutePath=absolutePath_;}
     void set_projData (struct projectData *);
     void set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
@@ -49,15 +50,18 @@ private slots:
     void on_localFile_stateChanged (int);
     void on_globalMaterialFile_returnPressed ();
     void on_localMaterialFile_returnPressed ();
+    void on_checkLimits_stateChanged (int);
 
 private:
     Ui::SelectMaterialsDatabase *ui;
     struct projectData *projData;
+    MaterialDatabase *materialDatabase;
     QString *absolutePath;
     char *globalPath, *globalFilename;
     char *localPath, *localFilename;
     bool globalIsValid;
     bool localIsValid;
+    int checkLimits;
     bool simulationRunning;
 };
 

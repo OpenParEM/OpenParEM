@@ -40,22 +40,25 @@ void MeshDialog::set_projData (struct projectData *a)
     projData=a;
 
     // Save projData to local variables to enable a cancel operation with no changes
-    meshOrder=projData->mesh_order;
     meshFile=projData->mesh_file;
     meshSaveRefined=projData->mesh_save_refined;
     meshRefinementFraction=projData->mesh_3D_refinement_fraction;
     meshQualityLimit=projData->mesh_quality_limit;
 
     // fill the panel with data
-    ui->meshOrderSpinBox->setValue(meshOrder);
+
     ui->meshFileLineEdit->setText(meshFile);
+
     if (meshSaveRefined) ui->meshSaveRefined->setCheckState(Qt::Checked);
     else ui->meshSaveRefined->setCheckState(Qt::Unchecked);
+
     ui->meshRefinementFraction->setValue(meshRefinementFraction);
+    if (strcmp(projData->refinement_frequency,"none") == 0) {
+        ui->meshRefinementFraction->setEnabled(false);
+    }
     ui->meshQualityLimit->setValue(meshQualityLimit);
 
     if (simulationRunning) {
-        ui->meshOrderSpinBox->setEnabled(false);
         ui->meshFileLineEdit->setEnabled(false);
         ui->meshSaveRefined->setEnabled(false);
         ui->meshRefinementFraction->setEnabled(false);
@@ -65,34 +68,30 @@ void MeshDialog::set_projData (struct projectData *a)
     ui->meshOptionOk->setEnabled(false);
 }
 
-void MeshDialog::on_meshOrderSpinBox_valueChanged (int arg1)
-{
-    meshOrder=arg1;
-    ui->meshOptionOk->setEnabled(true);
-}
-
 void MeshDialog::on_meshSaveRefined_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == 0) meshSaveRefined=0;
     else meshSaveRefined=1;
+    projData->modified=1;
     ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshRefinementFraction_textChanged (const QString &arg1)
 {
     meshRefinementFraction=arg1.toDouble();
+    projData->modified=1;
     ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshQualityLimit_textChanged (const QString &arg1)
 {
     meshQualityLimit=arg1.toDouble();
+    projData->modified=1;
     ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshOptionOk_clicked ()
 {
-    projData->mesh_order=meshOrder;
     projData->mesh_save_refined=meshSaveRefined;
     projData->mesh_3D_refinement_fraction=meshRefinementFraction;
     projData->mesh_quality_limit=meshQualityLimit;

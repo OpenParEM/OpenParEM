@@ -4,7 +4,7 @@ project.save.fields            false
 
 mesh.file                      T-Junction.msh
 
-mesh.order                     4
+fem.order                      4
 
 port.definition.file           T-Junction_ports.txt
 

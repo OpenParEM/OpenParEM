@@ -17,7 +17,7 @@ public:
     // show
 
     void reshowVisibleItems () {
-        std::cout << "ItemTracker::reshowVisibleItems" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::reshowVisibleItems" << std::endl; std::cout.flush();
 
         long unsigned int i=0;
         while (i < visibleItems.size()) {
@@ -39,7 +39,7 @@ public:
 
     void showShape (Handle(AIS_Shape) shape)
     {
-        std::cout << "ItemTracker::showShape" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::showShape" << std::endl; std::cout.flush();
 
         CustomTreeWidgetItem *item=shapeToItemMap[shape];
         if (item) showItem(item);
@@ -47,7 +47,7 @@ public:
 
     void showItem (CustomTreeWidgetItem *item)
     {
-        std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();
 
         if (!item) return;
 
@@ -81,8 +81,8 @@ public:
 
     bool isValidShow ()
     {
-        std::cout << "ItemTracker::isValidShow" << std::endl; std::cout.flush();
-        std::cout << "ItemTracker::isValidShow  selectedItems.size()=" << selectedItems.size() << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::isValidShow" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::isValidShow  selectedItems.size()=" << selectedItems.size() << std::endl; std::cout.flush();
 
         long unsigned int i=0;
         while (i < selectedItems.size()) {
@@ -113,7 +113,7 @@ public:
 
     void hideShape (Handle(AIS_Shape) shape)
     {
-        std::cout << "ItemTracker::hideShape" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::hideShape" << std::endl; std::cout.flush();
 
         CustomTreeWidgetItem *item=shapeToItemMap[shape];
         hideItem(item);
@@ -121,7 +121,7 @@ public:
 
     void hideItem (CustomTreeWidgetItem *item)
     {
-        std::cout << "ItemTracker::hideItem" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::hideItem" << std::endl; std::cout.flush();
 
         if (!item) return;
 
@@ -160,8 +160,8 @@ public:
     // hide only selected items
     void hideItems ()
     {
-        std::cout << "ItemTracker::hideItems" << std::endl; std::cout.flush();
-        std::cout << "ItemTracker::hideItems  visibleItems.size()=" << visibleItems.size() << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::hideItems" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::hideItems  visibleItems.size()=" << visibleItems.size() << std::endl; std::cout.flush();
 
         int i=0;
         while (i < visibleItems.size()) {
@@ -179,7 +179,7 @@ public:
     // hide all items whether selected or not
     void hideAllItems ()
     {
-        std::cout << "ItemTracker::hideAllItems" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::hideAllItems" << std::endl; std::cout.flush();
 
         // hide all items in the list of visible items
         long unsigned int i=0;
@@ -204,7 +204,7 @@ public:
 
     bool isValidHide ()
     {
-        std::cout << "ItemTracker::isValidHide" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::isValidHide" << std::endl; std::cout.flush();
 
         long unsigned int i=0;
         while (i < selectedItems.size()) {
@@ -235,7 +235,7 @@ public:
 
     void selectShape (Handle(AIS_Shape) shape)
     {
-        std::cout << "ItemTracker::selectShape" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::selectShape" << std::endl; std::cout.flush();
 
         CustomTreeWidgetItem *item=shapeToItemMap[shape];
         if (item) selectItem(item);
@@ -243,7 +243,7 @@ public:
 
     void selectItem (CustomTreeWidgetItem *item)
     {
-        std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();
 
         if (!item) return;
         if (item->is_mesh()) return;
@@ -254,13 +254,9 @@ public:
 
     bool hasSelectedItems ()
     {
-        std::cout << "ItemTracker::hasSelectedItems" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::hasSelectedItems" << std::endl; std::cout.flush();
 
-        if (selectedItems.size() > 0) {
-            std::cout << "place 1" << std::endl; std::cout.flush();
-            return true;
-        }
-        std::cout << "place 2" << std::endl; std::cout.flush();
+        if (selectedItems.size() > 0) return true;
         return false;
     }
 
@@ -281,7 +277,7 @@ public:
 
     void unselectAllItems ()
     {
-        std::cout << "ItemTracker::unselectAllItems" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::unselectAllItems" << std::endl; std::cout.flush();
 
         // unselect all items from the list of selected items
         long unsigned int i=0;
@@ -306,7 +302,7 @@ public:
 
     void unselectShape (Handle(AIS_Shape) shape)
     {
-        std::cout << "ItemTracker::unselectShape" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::unselectShape" << std::endl; std::cout.flush();
 
         CustomTreeWidgetItem *item=shapeToItemMap[shape];
         if (item) unselectItem(item);
@@ -314,7 +310,7 @@ public:
 
     void unselectItem (CustomTreeWidgetItem *unselectItem)
     {
-        std::cout << "ItemTracker::unselectItem" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::unselectItem" << std::endl; std::cout.flush();
 
         if (!unselectItem) return;
         if (unselectItem->is_mesh()) return;
@@ -342,7 +338,7 @@ public:
 
     void deleteItem (CustomTreeWidgetItem *item)
     {
-        std::cout << "ItemTracker::deleteItem" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::deleteItem" << std::endl; std::cout.flush();
 
         if (!item) return;
 
@@ -355,7 +351,7 @@ public:
 
     bool isValidDelete ()
     {
-        std::cout << "ItemTracker::isValidDelete" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::isValidDelete" << std::endl; std::cout.flush();
 
         long unsigned int i=0;
         while (i < selectedItems.size()) {
@@ -374,7 +370,7 @@ public:
 
     void insertItemToMap (Handle(AIS_Shape) shape, CustomTreeWidgetItem *item)
     {
-        std::cout << "ItemTracker::insertItemToMap" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::insertItemToMap" << std::endl; std::cout.flush();
 
         if (!item) return;
         if (shape.IsNull()) return;
@@ -388,7 +384,7 @@ public:
 
     void reset ()
     {
-        std::cout << "ItemTracker::reset" << std::endl; std::cout.flush();
+        //std::cout << "ItemTracker::reset" << std::endl; std::cout.flush();
 
         visibleItems.clear();
         selectedItems.clear();

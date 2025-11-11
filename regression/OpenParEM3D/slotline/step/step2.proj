@@ -4,9 +4,8 @@ project.save.fields            false
 
 mesh.file                      step2.msh
 mesh.quality.limit             300
-
-mesh.order                     3
 mesh.refinement.fraction       0.0035 // 0.005 default
+fem.order                      3
 
 port.definition.file           step2_ports.txt
 

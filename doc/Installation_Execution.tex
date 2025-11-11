@@ -234,12 +234,12 @@ This is a useful script for finding keywords used in setup files.  The format is
 When executed, the script recursively searches all files ending with ".proj" that either has the search term or does not.  For example, to list the finite element order used in all projects in the directory tree, execute
 
 \begin{verbatim}
-   $ proj_search has mesh.order
+   $ proj_search has fem.order
 \end{verbatim}
 
 \noindent The output can be further processed using grep.  To continue the example, to find all projects that use a mesh order of 6, then execute
 \begin{verbatim}
-   $ proj_search has mesh.order | grep 6
+   $ proj_search has fem.order | grep 6
 \end{verbatim}
 
 \subsection{builder}

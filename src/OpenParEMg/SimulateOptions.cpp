@@ -47,6 +47,7 @@ void SimOptions::set_projData (struct projectData *a)
     frequencyUnit=projData->touchstone_frequency_unit;
     touchstoneFormat=projData->touchstone_format;
     slotCount=projData->gui_slot_count;
+    femOrder=projData->fem_order;
     temperature=projData->solution_temperature;
     tolerance2D=projData->solution_2D_tolerance;
     tolerance3D=projData->solution_3D_tolerance;
@@ -124,6 +125,7 @@ void SimOptions::set_projData (struct projectData *a)
     ui->touchstoneFormat->setCurrentIndex(index);
 
     ui->slotCount->setValue(slotCount);
+    ui->femOrder->setValue(femOrder);
     ui->temperature->setValue(temperature);
 
     ui->tolerance2D->setText(QString::number(projData->solution_2D_tolerance,'g'));
@@ -223,6 +225,7 @@ void SimOptions::set_projData (struct projectData *a)
 
     if (simulationRunning) {
         ui->slotCount->setEnabled(false);
+        ui->femOrder->setEnabled(false);
         ui->temperature->setEnabled(false);
         ui->tolerance2D->setEnabled(false);
         ui->tolerance3D->setEnabled(false);
@@ -308,6 +311,12 @@ void SimOptions::on_simulateOptionOk_clicked()
     // slot count
     if (projData->gui_slot_count != slotCount) {
         projData->gui_slot_count=slotCount;
+        projData->modified=1;
+    }
+
+    // femOrder
+    if (projData->fem_order != femOrder) {
+        projData->fem_order=femOrder;
         projData->modified=1;
     }
 
@@ -751,5 +760,12 @@ void SimOptions::on_showDetailedCases_checkStateChanged(const Qt::CheckState &ar
 void SimOptions::on_initialGuess_currentIndexChanged(int index)
 {
     initialGuessLevel=index;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+void SimOptions::on_femOrder_valueChanged(int arg1)
+{
+    femOrder=arg1;
+    ui->simulateOptionOk->setEnabled(true);
 }
 
