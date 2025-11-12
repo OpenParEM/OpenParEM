@@ -75,6 +75,21 @@ public:
         }
     }
 
+    void print () {
+        std::cout << "CustomTreeWidgetItem:" << std::endl;
+        if (shape.IsNull()) std::cout << "   shape=null" << std::endl;
+        else std::cout << "   shape type=" << shape->Type() << std::endl;
+        std::cout << "   root=" << root << std::endl;
+        if (is_drawing()) std::cout << "   type=drawing" << std::endl;
+        if (is_port()) std::cout << "   type=port" << std::endl;
+        if (is_boundary()) std::cout << "   type=boundary" << std::endl;
+        if (is_mesh()) std::cout << "   type=mesh" << std::endl;
+        std::cout << "   dimTag.first=" << dimTag.first << std::endl
+                  << "   dimTag.second=" << dimTag.second << std::endl
+                  << "   displayMode=" << displayMode << std::endl
+                  << "   selectionMode=" << selectionMode << std::endl;
+    }
+
     void reset () {
         deleteChildren(this);
         set_AIS_Shape(nullptr);

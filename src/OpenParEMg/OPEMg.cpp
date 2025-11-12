@@ -103,6 +103,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->actionShape->setChecked(true);
     currentSelectionAction=ui->actionShape;
 
+    ui->actionWireframe->setChecked(true);
+
     /////////////////////////////////////////////////////////////////////////////
     // drawing window
     /////////////////////////////////////////////////////////////////////////////
@@ -159,6 +161,11 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     ui->menuRun->setToolTipsVisible(true);
 
+    drawing.setForeground(0,Qt::gray);
+    setRootForeground(&port);
+    setRootForeground(&boundary);
+    setRootForeground(&mesh);
+
     /////////////////////////////////////////////////////////////////////////////
     // context menu for drawingWindow
     /////////////////////////////////////////////////////////////////////////////
@@ -194,8 +201,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     gmsh::initialize();
     gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
     pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
-
-    setMeshForeground();
 
     /////////////////////////////////////////////////////////////////////////////
     // timer or checking when OpenParEM3D finishes
@@ -439,6 +444,9 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
     if (!clickedItem) return;
     if (!clickedItem->isSelected()) return;
 
+    //xxx
+    clickedItem->print();
+
     QMenu menu(this);
 
     if (clickedItem->is_drawing()) {
@@ -471,6 +479,21 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         menu.addAction(unselectAction);
         menu.addAction(deleteAction);
         menu.addAction(assignMaterialAction);
+    }
+
+    if (clickedItem->is_port()) {
+
+        showAction=new QAction("Show",this);
+        hideAction=new QAction("Hide",this);
+
+        connect(showAction, &QAction::triggered, this, &OpenParEMg::showPortItems);
+        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePortItems);
+
+        showAction->setEnabled(ui->drawingWindow->isValidShow());
+        hideAction->setEnabled(ui->drawingWindow->isValidHide());
+
+        menu.addAction(showAction);
+        menu.addAction(hideAction);
     }
 
     if (clickedItem->is_mesh()) {
@@ -518,6 +541,106 @@ void OpenParEMg::hideDrawingItems ()
     hideAction->setEnabled(ui->drawingWindow->isValidHide());
     unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
     deleteAction->setEnabled(ui->drawingWindow->isDrawingValidDelete());
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::showPortItems ()
+{
+    std::cout << "OpenParEMg::showPortItems" << std::endl; std::cout.flush();
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_port()) {
+            if (item->is_root()) {
+                int i=0;
+                while (i < item->childCount()) {
+                    CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                    ui->drawingWindow->showItem(child);
+                    child->setForeground(0,Qt::black);
+                    i++;
+                }
+            } else {
+                ui->drawingWindow->showItem(item);
+            }
+            item->setForeground(0,Qt::black);
+        }
+        i++;
+    }
+
+    setRootForeground(&port);
+    showAction->setEnabled(ui->drawingWindow->isValidShow());
+    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::hidePortItems ()
+{
+    std::cout << "OpenParEMg::hidePortItems" << std::endl; std::cout.flush();
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_port()) {
+            if (item->is_root()) {
+                int i=0;
+                while (i < item->childCount()) {
+                    CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                    ui->drawingWindow->hideItem(child);
+                    child->setForeground(0,Qt::gray);
+                    i++;
+                }
+            } else {
+                ui->drawingWindow->hideItem(item);
+            }
+            item->setForeground(0,Qt::gray);
+        }
+        i++;
+    }
+
+    setRootForeground(&port);
+    showAction->setEnabled(ui->drawingWindow->isValidShow());
+    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::showMeshItems ()
+{
+    std::cout << "OpenParEMg::showMeshItems" << std::endl; std::cout.flush();
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        ui->drawingWindow->showItem(item);
+        i++;
+    }
+
+    setRootForeground(&mesh);
+    showAction->setEnabled(ui->drawingWindow->isValidShow());
+    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::hideMeshItems ()
+{
+    std::cout << "OpenParEMg::hideMeshItems" << std::endl; std::cout.flush();
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        ui->drawingWindow->hideItem(item);
+        i++;
+    }
+
+    setRootForeground(&mesh);
+    showAction->setEnabled(ui->drawingWindow->isValidShow());
+    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+
     ui->drawingWindow->updateViewer();
 }
 
@@ -580,55 +703,18 @@ void OpenParEMg::deleteDrawingItems()
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::showMeshItems ()
-{
-    std::cout << "OpenParEMg::showMeshItems" << std::endl; std::cout.flush();
-
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    int i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        ui->drawingWindow->showItem(item);
-        i++;
-    }
-
-    setMeshForeground();
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    ui->drawingWindow->updateViewer();
-}
-
-void OpenParEMg::hideMeshItems ()
-{
-    std::cout << "OpenParEMg::hideMeshItems" << std::endl; std::cout.flush();
-
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    int i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        ui->drawingWindow->hideItem(item);
-        i++;
-    }
-
-    setMeshForeground();
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-
-    ui->drawingWindow->updateViewer();
-}
-
-void OpenParEMg::setMeshForeground ()
+void OpenParEMg::setRootForeground (CustomTreeWidgetItem * rootItem)
 {
     int blackCount=0;
     int i=0;
-    while (i < mesh.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) mesh.child(i);
+    while (i < rootItem->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) rootItem->child(i);
         if (child->foreground(0) == Qt::black) blackCount++;
         i++;
     }
 
-    mesh.setForeground(0,Qt::gray);
-    if (blackCount > 0) mesh.setForeground(0,Qt::black);
+    rootItem->setForeground(0,Qt::gray);
+    if (blackCount > 0) rootItem->setForeground(0,Qt::black);
 }
 
 void OpenParEMg::showDisplayShape (CustomTreeWidgetItem *item)
@@ -875,6 +961,10 @@ void OpenParEMg::on_actionOpen_triggered ()
         mb.critical(nullptr, "Error", "The requested project file does not exist.");
         mb.setFixedSize(500, 200);
     }
+
+    setRootForeground(&port);
+    setRootForeground(&boundary);
+    setRootForeground(&mesh);
     setMenus();
 }
 
@@ -1694,6 +1784,9 @@ void OpenParEMg::on_actionHideAll_triggered ()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
     ui->drawingWindow->updateViewer();
+    setRootForeground(&port);
+    setRootForeground(&boundary);
+    setRootForeground(&mesh);
     setMenus();
 }
 
@@ -1709,7 +1802,7 @@ void OpenParEMg::drawMesh()
     std::cout << "OpenParEMg::drawMesh" << std::endl; std::cout.flush();
 
     // clear the mesh tree items
-    mesh.deleteChildren(&mesh);
+    //mesh.deleteChildren(&mesh);
 
     // get all nodes
     std::vector<std::size_t> nodeTags;
@@ -1755,6 +1848,7 @@ void OpenParEMg::drawMesh()
                 i+=1;
                 count++;
             }
+            verticesItem->setSelected(false);
             ui->drawingWindow->showItem(verticesItem);
             ui->drawingWindow->unselectItem(verticesItem);
             std::cout << "   element type 15: vertices: n=" << count << std::endl; std::cout.flush();
@@ -1780,6 +1874,7 @@ void OpenParEMg::drawMesh()
                 i+=2;
                 count++;
             }
+            edgesItem->setSelected(false);
             ui->drawingWindow->showItem(edgesItem);
             ui->drawingWindow->unselectItem(edgesItem);
             std::cout << "   element type 1: edges: n=" << count << std::endl; std::cout.flush();
@@ -1822,8 +1917,10 @@ void OpenParEMg::drawMesh()
                 i+=3;
                 count++;
             }
+            wiresItem->setSelected(false);
             ui->drawingWindow->showItem(wiresItem);
             ui->drawingWindow->unselectItem(wiresItem);
+            trianglesItem->setSelected(false);
             ui->drawingWindow->showItem(trianglesItem);
             ui->drawingWindow->unselectItem(trianglesItem);
             std::cout << "   element type 2: triangles: n=" << count << std::endl; std::cout.flush();
@@ -1877,6 +1974,7 @@ void OpenParEMg::drawMesh()
                 i+=4;
                 count++;
             }
+            tetrahedronsItem->setSelected(false);
             ui->drawingWindow->showItem(tetrahedronsItem);
             ui->drawingWindow->unselectItem(tetrahedronsItem);
 
@@ -1887,7 +1985,7 @@ void OpenParEMg::drawMesh()
     }
 
     // update menus
-    ui->drawingWindow->set_hasMesh(true);
+    //ui->drawingWindow->set_hasMesh(true);
     ui->drawingWindow->fitAll();
     ui->drawingWindow->updateViewer();
     setMenus();
@@ -1902,6 +2000,13 @@ void OpenParEMg::deleteMesh ()
     int i=0;
     while (i < mesh.childCount()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *) mesh.child(i);
+
+        //xxx
+        // remove from tracker
+        ui->drawingWindow->hideItem(item);
+        ui->drawingWindow->unselectItem(item);
+
+        // remove drawing shapes
         std::vector<Handle(AIS_Shape)> *meshEntities=item->get_meshEntities();
         long unsigned int j=0;
         while (j < meshEntities->size()) {
@@ -1911,13 +2016,13 @@ void OpenParEMg::deleteMesh ()
         i++;
     }
 
-    ui->drawingWindow->set_hasMesh(false);
+    //ui->drawingWindow->set_hasMesh(false);
     ui->drawingWindow->updateViewer();
     mesh.deleteChildren(&mesh);
     drawingEntities.clear();
     gmsh::clear();
     pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
-    setMeshForeground();
+    setRootForeground(&mesh);
 }
 
 void OpenParEMg::on_actionMeshGenerate_triggered ()
@@ -1950,7 +2055,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     // gmsh::model::mesh::optimize();                 // ineffective
     // gmsh::model::mesh::recombine();                // small improvement
 
-    setMeshForeground();
+    setRootForeground(&mesh);
     setMenus();
 }
 

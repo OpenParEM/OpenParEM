@@ -115,7 +115,7 @@ public:
 
     void selectItem (CustomTreeWidgetItem *item)
     {
-        //std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
+        std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
         drawingTracker->selectItem(item);
     }
 
@@ -195,8 +195,8 @@ public:
         drawingTracker->reset();
     }
 
-    void set_hasMesh (bool value) {hasMesh=value;}
-    bool get_hasMesh () {return hasMesh;}
+    //void set_hasMesh (bool value) {hasMesh=value;}
+    //bool get_hasMesh () {return hasMesh;}
 
 protected:
     void initializeGL () override;
@@ -217,7 +217,7 @@ private:
     CustomTreeWidgetItem *meshItemTree;
 
     ItemTracker *drawingTracker;
-    bool hasMesh;
+    //bool hasMesh;
 
     QMenu *contextMenu;
 

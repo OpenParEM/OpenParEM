@@ -78,7 +78,7 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     drawingTracker=new ItemTracker(viewerContext);
 
     // mesh
-    hasMesh=false;
+    //hasMesh=false;
     //meshVisibility=false;
 
     // create an orientation cube for the display
