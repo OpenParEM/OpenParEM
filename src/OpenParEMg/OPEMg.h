@@ -152,10 +152,12 @@ private slots:
     void on_actionMaterialsEditor_triggered ();
 
     // Help
+    void on_actionAbout_triggered ();
     void on_actionLicense_triggered ();
 
-    void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
+    // Functionality
 
+    void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
     void showDrawingItems ();
     void hideDrawingItems ();
     void selectItems ();
@@ -186,7 +188,6 @@ private slots:
     bool eventFilter (QObject *, QEvent *) override;
     void keyPressEvent (QKeyEvent *) override;
     void keyReleaseEvent (QKeyEvent *) override;
-
 
     void set_displayMode (CustomTreeWidgetItem *, int);
     void set_selectionMode (CustomTreeWidgetItem *, int);

@@ -256,8 +256,8 @@ PetscErrorCode petscErrorHandler(MPI_Comm comm, int line, const char *file, cons
     }
 
     // details for potential future enhancement
-    //fprintf(stderr, "A PETSc Error occurred in function %s at line %d in file %s\n", func, line, file);
-    //fprintf(stderr, "Error code: %d, Message: %s\n", n, mess);
+    fprintf(stderr, "A PETSc Error occurred in function %s at line %d in file %s\n", func, line, file);
+    fprintf(stderr, "Error code: %d, Message: %s\n", n, mess);
 
     // optional call to the default PETSc error handler
     //PetscTraceBackErrorHandler(comm, line, file, func, n, p, mess, ctx);
@@ -764,9 +764,10 @@ int main(int argc, char *argv[])
                // If single-ended, then this operation does a renormalization identical to the method in ResultDatabase::renormalize called below.
                // If modal, then this operation converts modal S-parameters to single-ended S-parameters.
                fem->build_Mc_Ms(projData.reference_impedance,&boundaryDatabase,&aggregateList,0);
-               if (result->SparameterConversion(&boundaryDatabase,fem->get_Mc(),fem->get_Ms(),fem->get_SportZoList()))
+               if (result->SparameterConversion(&boundaryDatabase,fem->get_Mc(),fem->get_Ms(),fem->get_SportZoList())) {
                   signalFinished(); 
                   exit_job_on_error (job_start_time,lockfile,true,3);
+               }
             } else {
                // Performs renormalization without doing any recombinations of ports.
                if (result->renormalize(projData.reference_impedance)) cout << "ASSERT: renomalization failed." << endl;
@@ -776,9 +777,10 @@ int main(int argc, char *argv[])
             if (aggregateList.size() > 0 && !projData.debug_skip_mixed_conversion) {
                PetscPrintf (PETSC_COMM_WORLD,"         mixed-mode conversion on S-parameters ...\n");
                fem->build_Mc_Ms(projData.reference_impedance,&boundaryDatabase,&aggregateList,1);
-               if (result->SparameterConversion(&boundaryDatabase,fem->get_Mc(),fem->get_Ms(),fem->get_SportZoList()))
+               if (result->SparameterConversion(&boundaryDatabase,fem->get_Mc(),fem->get_Ms(),fem->get_SportZoList())) {
                   signalFinished(); 
                   exit_job_on_error (job_start_time,lockfile,true,3);
+               }
             }
          }
 

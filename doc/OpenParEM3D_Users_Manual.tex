@@ -563,10 +563,6 @@ OpenParEM3D uses a lock file while running to prevent data collisions from attem
 
 The goal is that OpenParEM3D always detects problems and exits gracefully with an error message with the lock file removed.  Any other exit style is an issue that needs to be fixed with improved error checking.  There are two known areas where OpenParEM3D does not detect an error and can leave the lock file in place.
 
-\subsubsection{Out of Memory}
-
-For a large project that runs out of memory, OpenParEM3D will exit with cryptic messages from the MPI system without mentioning the memory issue and without removing the lock file.  This typically occurs at the stage of \texttt{solving E field in 3D volume ...} or \texttt{solving H field in 3D volume ...}, so an unexplained exit at this stage is most likely caused by running out of memory.  The lock file must be removed before re-starting the simulation.
-
 \subsubsection{Very Small Problems}
 
 For very small problems, setting \verb+N+ too large can cause OpenParEM3D to hang at the function call within the MFEM library that sets up the finite element problem.  The problem is that there is not enough data to spread among the number of requested processors.  There is currently not a way for OpenParEM3D to check and report when \verb+N+ is too large.  If OpenParEM3D hangs at the step \texttt{building finite element spaces ...}, then the remedy is to kill the job and restart with a smaller \verb+N+.

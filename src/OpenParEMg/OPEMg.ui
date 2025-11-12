@@ -106,7 +106,7 @@
     <property name="title">
      <string>Help</string>
     </property>
-    <addaction name="actionHelp"/>
+    <addaction name="actionAbout"/>
     <addaction name="actionLicense"/>
    </widget>
    <widget class="QMenu" name="menuTools">
@@ -201,14 +201,14 @@
     <string>Options ...</string>
    </property>
   </action>
-  <action name="actionHelp">
+  <action name="actionAbout">
    <property name="text">
-    <string>About OpenParEMg ...</string>
+    <string>About ...</string>
    </property>
   </action>
   <action name="actionLicense">
    <property name="text">
-    <string>License</string>
+    <string>License ...</string>
    </property>
   </action>
   <action name="actionFrequencyPlan">

@@ -60,6 +60,7 @@
 //#include "petscsys.h"
 #include "MeshOptions.h"
 #include "SimulateOptions.h"
+#include "about.h"
 #include "license.h"
 #include "FrequencyPlanG.h"
 #include "Refinement.h"
@@ -233,8 +234,8 @@ void OpenParEMg::setMenus ()
     if (projectFileLoaded) {
         ui->actionNew->setEnabled(false);
         ui->actionOpen->setEnabled(false);
+        ui->actionSave->setEnabled(false);
         if (projectFileChanged) ui->actionSave->setEnabled(true);
-        else ui->actionSave->setEnabled(false);
         ui->actionSaveAs->setEnabled(true);
         ui->actionClose->setEnabled(true);
         ui->actionExit->setEnabled(true);
@@ -255,6 +256,7 @@ void OpenParEMg::setMenus ()
         ui->actionAbort->setEnabled(false);
         ui->actionAbortAndExit->setEnabled(false);
         ui->actionMaterialsEditor->setEnabled(true);
+        ui->actionAbout->setEnabled(true);
         ui->actionLicense->setEnabled(true);
 
         if (brepFileLoaded || stepFileLoaded) {
@@ -294,6 +296,7 @@ void OpenParEMg::setMenus ()
             ui->actionMeshGenerate->setEnabled(false);
             ui->actionMeshLoad->setEnabled(false);
             ui->actionMeshSave->setEnabled(false);
+            if (meshFileChanged) ui->actionMeshSave->setEnabled(true);
             ui->actionMeshSaveAs->setEnabled(true);
             ui->actionMeshDelete->setEnabled(true);
 
@@ -321,7 +324,22 @@ void OpenParEMg::setMenus ()
                 ui->actionAbort->setEnabled(false);
                 ui->actionAbortAndExit->setEnabled(true);
             }
+            if (meshFileChanged) {
+                ui->actionRun->setEnabled(false);
+                ui->actionRun->setToolTip("Run OpenParEM3D.");
+                ui->actionStop->setEnabled(false);
+                ui->actionAbort->setEnabled(false);
+                ui->actionAbortAndExit->setEnabled(false);
+            }
             // end run block
+        }
+
+        if (projectFileChanged) {
+            ui->actionRun->setEnabled(false);
+            ui->actionRun->setToolTip("OpenParEM3D is running.");
+            ui->actionStop->setEnabled(false);
+            ui->actionAbort->setEnabled(false);
+            ui->actionAbortAndExit->setEnabled(false);
         }
 
         if (drawingPlaneShown) {
@@ -388,6 +406,7 @@ void OpenParEMg::setMenus ()
         ui->actionAbortAndExit->setEnabled(false);
 
         ui->actionMaterialsEditor->setEnabled(true);
+        ui->actionAbout->setEnabled(true);
         ui->actionLicense->setEnabled(true);
     }
 
@@ -409,14 +428,6 @@ void OpenParEMg::setMenus ()
         ui->actionMeshDelete->setEnabled(false);
         ui->actionSimulateOptions->setEnabled(true);
         ui->actionFrequencyPlan->setEnabled(true);
-    }
-
-    if (projectFileChanged) {
-        ui->actionRun->setEnabled(false);
-    }
-
-    if (meshFileChanged) {
-        ui->actionRun->setEnabled(false);
     }
 }
 
@@ -989,12 +1000,18 @@ void OpenParEMg::on_actionSimulateOptions_triggered ()
     setMenus();
 }
 
+void OpenParEMg::on_actionAbout_triggered ()
+{
+    About *about=new About();
+    about->exec();
+    delete about;
+}
+
 void OpenParEMg::on_actionLicense_triggered ()
 {
     License *license=new License();
     license->exec();
     delete license;
-    setMenus();
 }
 
 void OpenParEMg::on_actionFrequencyPlan_triggered ()
@@ -1921,7 +1938,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
     meshFileLoaded=true;
     meshFileChanged=true;
-    projectFileChanged=true;
 
     drawMesh();
 
@@ -2039,7 +2055,6 @@ void OpenParEMg::on_actionMeshDelete_triggered ()
     deleteMesh();
     meshFileChanged=false;
     meshFileLoaded=false;
-    projectFileChanged=true;
     setMenus();
 }
 
@@ -2326,19 +2341,16 @@ void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered()
     setMenus();
 }
 
-void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered()
+void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
     ui->drawingWindow->set_gridPlane();
     ui->drawingWindow->updateViewer();
     setMenus();
 }
 
-void OpenParEMg::on_actionSelectWithBox_triggered()
+void OpenParEMg::on_actionSelectWithBox_triggered ()
 {
     ui->drawingWindow->selectRectangle();
     setMenus();
 }
-
-
-
 

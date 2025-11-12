@@ -40,6 +40,8 @@ OpenParEM3D
 ./WR90/shorted-adaptive/shorted.proj 12
 ./WR90/shorted-adaptive/shorted_field.proj 12
 
+# Comment out high slot counts for MPICH
+
 #./WR90/shorted/shorted.proj 24
 ./WR90/shorted/shorted.proj 1
 #./WR90/shorted/shorted.proj 23
