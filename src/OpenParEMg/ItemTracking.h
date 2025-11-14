@@ -14,10 +14,16 @@ public:
 
     ~ItemTracker() {}
 
+    bool showTracking=true;
+    bool hideTracking=true;
+    bool selectTracking=true;
+    bool unselectTracking=true;
+    bool deleteTracking=true;
+
     // show
 
     void reshowVisibleItems () {
-        //std::cout << "ItemTracker::reshowVisibleItems" << std::endl; std::cout.flush();
+        if (showTracking) {std::cout << "ItemTracker::reshowVisibleItems" << std::endl; std::cout.flush();}
 
         long unsigned int i=0;
         while (i < visibleItems.size()) {
@@ -41,7 +47,7 @@ public:
 
     void showShape (Handle(AIS_Shape) shape)
     {
-        //std::cout << "ItemTracker::showShape" << std::endl; std::cout.flush();
+        if (showTracking) {std::cout << "ItemTracker::showShape" << std::endl; std::cout.flush();}
 
         CustomTreeWidgetItem *item=shapeToItemMap[shape];
         showItem(item);
@@ -49,7 +55,7 @@ public:
 
     void showItem (CustomTreeWidgetItem *item)
     {
-        std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();
+        if (showTracking) {std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();}
 
         // show item
         if (item->is_mesh()) {
@@ -90,8 +96,7 @@ public:
 
     bool isValidShow ()
     {
-        //std::cout << "ItemTracker::isValidShow" << std::endl; std::cout.flush();
-        //std::cout << "ItemTracker::isValidShow  selectedItems.size()=" << selectedItems.size() << std::endl; std::cout.flush();
+        if (showTracking) {std::cout << "ItemTracker::isValidShow" << std::endl; std::cout.flush();}
 
         long unsigned int i=0;
         while (i < selectedItems.size()) {
@@ -120,7 +125,7 @@ public:
 
     void hideShape (Handle(AIS_Shape) shape)
     {
-        //std::cout << "ItemTracker::hideShape" << std::endl; std::cout.flush();
+        if (hideTracking) {std::cout << "ItemTracker::hideShape" << std::endl; std::cout.flush();}
 
         CustomTreeWidgetItem *item=shapeToItemMap[shape];
         hideItem(item);
@@ -128,7 +133,7 @@ public:
 
     void hideItem (CustomTreeWidgetItem *item)
     {
-        std::cout << "ItemTracker::hideItem" << std::endl; std::cout.flush();
+        if (hideTracking) {std::cout << "ItemTracker::hideItem" << std::endl; std::cout.flush();}
 
         // hide item
         if (item->is_mesh()) {
@@ -178,7 +183,7 @@ public:
     // hide only selected items
     void hideItems ()
     {
-        //std::cout << "ItemTracker::hideItems" << std::endl; std::cout.flush();
+        if (hideTracking) {std::cout << "ItemTracker::hideItems" << std::endl; std::cout.flush();}
 
         int i=0;
         while (i < selectedItems.size()) {
@@ -197,7 +202,7 @@ public:
     // hide all items whether selected or not
     void hideAllItems ()
     {
-        //std::cout << "ItemTracker::hideAllItems" << std::endl; std::cout.flush();
+        if (hideTracking) {std::cout << "ItemTracker::hideAllItems" << std::endl; std::cout.flush();}
 
         // hide all items in the list of visible items
         long unsigned int i=0;
@@ -225,7 +230,7 @@ public:
 
     bool isValidHide ()
     {
-        //std::cout << "ItemTracker::isValidHide" << std::endl; std::cout.flush();
+        if (hideTracking) {std::cout << "ItemTracker::isValidHide" << std::endl; std::cout.flush();}
 
         long unsigned int i=0;
         while (i < selectedItems.size()) {
@@ -254,7 +259,7 @@ public:
 
     void selectShape (Handle(AIS_Shape) shape)
     {
-        //std::cout << "ItemTracker::selectShape" << std::endl; std::cout.flush();
+        if (selectTracking) {std::cout << "ItemTracker::selectShape" << std::endl; std::cout.flush();}
 
         CustomTreeWidgetItem *item=shapeToItemMap[shape];
         if (item) selectItem(item);  // mesh shapes are not in the map, so need to check for valid item
@@ -262,15 +267,27 @@ public:
 
     void selectItem (CustomTreeWidgetItem *item)
     {
-        std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();
+        if (selectTracking) {std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();}
 
         item->setSelected(Standard_True);
         selectedItems.push_back(item);
     }
 
-    bool hasSelectedItems ()
+    bool hasSelectedItems (int type)
     {
-        //std::cout << "ItemTracker::hasSelectedItems" << std::endl; std::cout.flush();
+        if (selectTracking) {std::cout << "ItemTracker::hasSelectedItems" << std::endl; std::cout.flush();}
+
+        int i=0;
+        while (i < selectedItems.size()) {
+            if (selectedItems[i]->get_type() == type) return true;
+            i++;
+        }
+        return false;
+    }
+
+    bool hasAnySelectedItems ()
+    {
+        if (selectTracking) {std::cout << "ItemTracker::hasAnySelectedItems" << std::endl; std::cout.flush();}
 
         if (selectedItems.size() > 0) return true;
         return false;
@@ -278,6 +295,8 @@ public:
 
     bool hasOneFaceSelected ()
     {
+        if (selectTracking) {std::cout << "ItemTracker::hasOneFaceSelected" << std::endl; std::cout.flush();}
+
         if (selectedItems.size() == 1) {
             Handle(AIS_Shape) shape=selectedItems[0]->get_AIS_Shape();
             if (!shape.IsNull()) {
@@ -293,7 +312,7 @@ public:
 
     void unselectAllItems ()
     {
-        //std::cout << "ItemTracker::unselectAllItems" << std::endl; std::cout.flush();
+        if (unselectTracking) {std::cout << "ItemTracker::unselectAllItems" << std::endl; std::cout.flush();}
 
         // unselect all items from the list of selected items
         long unsigned int i=0;
@@ -320,7 +339,7 @@ public:
 
     void unselectShape (Handle(AIS_Shape) shape)
     {
-        //std::cout << "ItemTracker::unselectShape" << std::endl; std::cout.flush();
+        if (unselectTracking) {std::cout << "ItemTracker::unselectShape" << std::endl; std::cout.flush();}
 
         CustomTreeWidgetItem *item=shapeToItemMap[shape];
         unselectItem(item);
@@ -328,7 +347,7 @@ public:
 
     void unselectItem (CustomTreeWidgetItem *unselectItem)
     {
-        //std::cout << "ItemTracker::unselectItem" << std::endl; std::cout.flush();
+        if (unselectTracking) {std::cout << "ItemTracker::unselectItem" << std::endl; std::cout.flush();}
 
         if (!unselectItem) return;
 
@@ -352,7 +371,7 @@ public:
 
     void deleteItem (CustomTreeWidgetItem *item)
     {
-        //std::cout << "ItemTracker::deleteItem" << std::endl; std::cout.flush();
+        if (deleteTracking) {std::cout << "ItemTracker::deleteItem" << std::endl; std::cout.flush();}
 
         if (!item->is_mesh()) {
             if (item->is_root()) return;
@@ -363,7 +382,7 @@ public:
 
     bool isValidDelete ()
     {
-        //std::cout << "ItemTracker::isValidDelete" << std::endl; std::cout.flush();
+        if (deleteTracking) {std::cout << "ItemTracker::isValidDelete" << std::endl; std::cout.flush();}
 
         long unsigned int i=0;
         while (i < selectedItems.size()) {

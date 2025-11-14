@@ -20,11 +20,17 @@
 
 #include "fem2D.hpp"
 
-void saveMat (ParBilinearForm &blf, string name, string directory, char *uniquifier, bool transpose) {
+bool saveMat (ParBilinearForm &blf, string name, string directory, char *uniquifier, bool transpose) {
    stringstream ss;
    ss << directory << "/" << name << "." << uniquifier;
 
-   HypreParMatrix *mat=blf.ParallelAssemble();
+   HypreParMatrix *mat;
+   try {
+      mat=blf.ParallelAssemble();
+   } catch (const std::exception& e) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2009: Out of memory in assembling finite-element matrix.\n"); 
+      return true;
+   }
    if (transpose) {
       HypreParMatrix *matT=mat->Transpose();
       delete mat;
@@ -32,13 +38,20 @@ void saveMat (ParBilinearForm &blf, string name, string directory, char *uniquif
    }
    mat->Print(ss.str().c_str());
    delete mat;
+   return false;
 }
 
-void saveMat (ParMixedBilinearForm &blf, string name, string directory, char *uniquifier, bool transpose) {
+bool saveMat (ParMixedBilinearForm &blf, string name, string directory, char *uniquifier, bool transpose) {
    stringstream ss;
    ss << directory << "/" << name << "." << uniquifier;
 
-   HypreParMatrix *mat=blf.ParallelAssemble();
+   HypreParMatrix *mat;
+   try {
+      mat=blf.ParallelAssemble();
+   } catch (const std::exception& e) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2009: Out of memory in assembling finite-element matrix.\n");
+      return true;
+   }
    if (transpose) {
       HypreParMatrix *matT=mat->Transpose();
       delete mat;
@@ -46,6 +59,7 @@ void saveMat (ParMixedBilinearForm &blf, string name, string directory, char *un
    }
    mat->Print(ss.str().c_str());
    delete mat;
+   return false;
 }
 
 int GetGlobalNE (ParMesh *pmesh)
@@ -2174,7 +2188,8 @@ ModeDatabase::~ModeDatabase()
 fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double frequency_, int iteration_,
              PWConstCoefficient *ko2Re_e, PWConstCoefficient *ko2Im_e, PWConstCoefficient *Inv_mu, // for E-field
              PWConstCoefficient *w_mu,                                                             // for H-field
-             string temporaryDirectory_) 
+             string temporaryDirectory_,
+             bool *error) 
 {
    projData=projData_;
    pmesh=pmesh_;
@@ -2228,7 +2243,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Tt_mur.AddDomainIntegrator(new VectorFEMassIntegrator (*Inv_mu));
    Tt_mur.Assemble();
    Tt_mur.Finalize();
-   saveMat (Tt_mur,"Tt_mur_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Tt_mur,"Tt_mur_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // instance with ko^2*Re(er)
 
@@ -2236,7 +2251,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Tt_eps_re.AddDomainIntegrator(new VectorFEMassIntegrator (*ko2Re_e));
    Tt_eps_re.Assemble();
    Tt_eps_re.Finalize();
-   saveMat (Tt_eps_re,"Tt_eps_re_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Tt_eps_re,"Tt_eps_re_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // instance with ko^2*Im(er)
 
@@ -2244,7 +2259,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Tt_eps_im.AddDomainIntegrator(new VectorFEMassIntegrator (*ko2Im_e));
    Tt_eps_im.Assemble();
    Tt_eps_im.Finalize();
-   saveMat (Tt_eps_im,"Tt_eps_im_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Tt_eps_im,"Tt_eps_im_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // G
 
@@ -2252,7 +2267,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    G.AddDomainIntegrator(new MixedVectorGradientIntegrator(*Inv_mu));
    G.Assemble();
    G.Finalize();
-   saveMat (G,"G_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (G,"G_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // GT - transpose of G
 
@@ -2261,7 +2276,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    GT.AddDomainIntegrator(new MixedVectorGradientIntegrator(*Inv_mu));
    GT.Assemble();
    GT.Finalize();
-   saveMat (GT,"GT_mat",temporaryDirectory,projData->project_name,true);
+   if (saveMat (GT,"GT_mat",temporaryDirectory,projData->project_name,true)) {*error=true; return;}
 
    // Sz
 
@@ -2269,7 +2284,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Sz.AddDomainIntegrator(new DiffusionIntegrator (*Inv_mu));
    Sz.Assemble();
    Sz.Finalize();
-   saveMat (Sz,"Sz_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Sz,"Sz_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // Tz
 
@@ -2279,7 +2294,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Tz_eps_re.AddDomainIntegrator(new MassIntegrator (*ko2Re_e));
    Tz_eps_re.Assemble();
    Tz_eps_re.Finalize();
-   saveMat (Tz_eps_re,"Tz_eps_re_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Tz_eps_re,"Tz_eps_re_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // instance with ko^2*Im(er)
 
@@ -2287,7 +2302,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Tz_eps_im.AddDomainIntegrator(new MassIntegrator (*ko2Im_e));
    Tz_eps_im.Assemble();
    Tz_eps_im.Finalize();
-   saveMat (Tz_eps_im,"Tz_eps_im_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Tz_eps_im,"Tz_eps_im_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // St
 
@@ -2295,7 +2310,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    St.AddDomainIntegrator(new CurlCurlIntegrator (*Inv_mu));
    St.Assemble();
    St.Finalize();
-   saveMat (St,"St_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (St,"St_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    //*****************************************************************************************************
    // matrices for the solution of the H-field
@@ -2307,7 +2322,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Mt.AddDomainIntegrator(new VectorFEMassIntegrator(*w_mu));
    Mt.Assemble();
    Mt.Finalize();
-   saveMat (Mt,"Mt_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Mt,"Mt_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // for cross product with zHat
    DenseMatrix *m=new DenseMatrix(2,2);
@@ -2322,7 +2337,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Cz.AddDomainIntegrator(new MixedVectorGradientIntegrator(*mmat));
    Cz.Assemble();
    Cz.Finalize();
-   saveMat (Cz,"Cz_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Cz,"Cz_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // Zt
 
@@ -2330,7 +2345,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Zt.AddDomainIntegrator(new VectorFEMassIntegrator(*mmat));
    Zt.Assemble();
    Zt.Finalize();
-   saveMat (Zt,"Zt_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Zt,"Zt_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // clean up for zHat x vector
    delete mmat;
@@ -2342,7 +2357,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Mz.AddDomainIntegrator(new MassIntegrator(*w_mu));
    Mz.Assemble();
    Mz.Finalize();
-   saveMat (Mz,"Mz_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Mz,"Mz_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // Ct
 
@@ -2350,7 +2365,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Ct.AddDomainIntegrator(new MixedScalarCurlIntegrator());
    Ct.Assemble();
    Ct.Finalize();
-   saveMat (Ct,"Ct_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Ct,"Ct_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
 }
 

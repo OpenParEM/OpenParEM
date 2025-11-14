@@ -250,14 +250,17 @@ bool saveSerialMesh (struct projectData *projData, MeshMaterialList *meshMateria
 PetscErrorCode petscErrorHandler(MPI_Comm comm, int line, const char *file, const char *func,
                                  PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx)
 {
+    // 55 PETSc out of memory
+    // 76 MUMPS out of memory
+
     // out of memory
-    if (n == 55) {
+    if (n == 55 || n == 76) {
        prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3252: Out of memory. %s bytes.\n",mess);
     }
 
     // details for potential future enhancement
-    fprintf(stderr, "A PETSc Error occurred in function %s at line %d in file %s\n", func, line, file);
-    fprintf(stderr, "Error code: %d, Message: %s\n", n, mess);
+    //fprintf(stderr, "A PETSc Error occurred in function %s at line %d in file %s\n", func, line, file);
+    //fprintf(stderr, "Error code: %d, Message: %s\n", n, mess);
 
     // optional call to the default PETSc error handler
     //PetscTraceBackErrorHandler(comm, line, file, func, n, p, mess, ctx);

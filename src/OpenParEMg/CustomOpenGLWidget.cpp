@@ -326,10 +326,8 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     } else if (event->button() == Qt::RightButton) {
         std::cout << "CustomOpenGLWidget::mouseReleaseEvent Qt::RightButton" << std::endl; std::cout.flush();
-        if (drawingTracker->hasSelectedItems()) {
-            std::cout << "CustomOpenGLWidget::mouseReleaseEvent after drawingTracker->hasSelectedItems()" << std::endl; std::cout.flush();
+        if (drawingTracker->hasAnySelectedItems()) {
             contextMenu->exec(QCursor::pos());
-            std::cout << "CustomOpenGLWidget::mouseReleaseEvent after contextMenu->exec(QCursor::pos())" << std::endl; std::cout.flush();
         }
     }
 }

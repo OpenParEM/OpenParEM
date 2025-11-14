@@ -119,12 +119,34 @@ public:
         drawingTracker->selectItem(item);
     }
 
+    bool hasSelectedItems (int type)
+    {
+        //std::cout << "CustomOpenGLWidget::hasSelectedItems" << std::endl; std::cout.flush();
+        return drawingTracker->hasSelectedItems(type);
+    }
+
     bool hasDrawingSelectedItems ()
     {
         //std::cout << "CustomOpenGLWidget::hasDrawingSelectedItems" << std::endl; std::cout.flush();
-        bool retval=drawingTracker->hasSelectedItems();
-        //std::cout << "place x" << std::endl; std::cout.flush();
-        return retval;
+        return drawingTracker->hasSelectedItems(0);
+    }
+
+    bool hasPortSelectedItems ()
+    {
+        //std::cout << "CustomOpenGLWidget::hasPortSelectedItems" << std::endl; std::cout.flush();
+        return drawingTracker->hasSelectedItems(1);
+    }
+
+    bool hasBoundarySelectedItems ()
+    {
+        //std::cout << "CustomOpenGLWidget::hasBoundarySelectedItems" << std::endl; std::cout.flush();
+        return drawingTracker->hasSelectedItems(2);
+    }
+
+    bool hasAnySelectedItems ()
+    {
+        //std::cout << "CustomOpenGLWidget::hasAnySelectedItems" << std::endl; std::cout.flush();
+        return drawingTracker->hasAnySelectedItems();
     }
 
     void unselectItem (CustomTreeWidgetItem *item)
@@ -155,9 +177,9 @@ public:
         viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
     }
 
-    bool isDrawingValidDelete ()
+    bool isValidDelete ()
     {
-        //std::cout << "CustomOpenGLWidget::isDrawingValidDelete" << std::endl; std::cout.flush();
+        //std::cout << "CustomOpenGLWidget::isValidDelete" << std::endl; std::cout.flush();
         return drawingTracker->isValidDelete();
     }
 

@@ -258,7 +258,7 @@ class fem2D {
 
    public:
       fem2D (struct projectData *, ParMesh *, int, double, int, 
-             PWConstCoefficient *, PWConstCoefficient *, PWConstCoefficient *, PWConstCoefficient *, string);
+             PWConstCoefficient *, PWConstCoefficient *, PWConstCoefficient *, PWConstCoefficient *, string, bool *);
       ~fem2D();
       struct projectData * get_projectData () {return projData;}
       void set_t_size () {t_size=fespace_ND->GlobalTrueVSize();}

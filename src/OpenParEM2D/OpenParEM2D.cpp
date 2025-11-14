@@ -58,7 +58,7 @@ int version_major=2;
 int version_minor=1;
 int version_patch=0;
 
-extern "C" int eigensolve (struct projectData *, int, double, int, int, PetscInt *, int, PetscInt *, double **, double **, int *, PetscMPIInt);
+extern "C" int eigensolve (struct projectData *, int, double, int, int, PetscInt *, int, PetscInt *, double **, double **, int *);
 extern "C" void init_project (struct projectData *);
 extern "C" int load_project_file(const char*, projectData*, const char*);
 extern "C" void print_project (struct projectData *, struct projectData *, const char *indent);
@@ -71,48 +71,10 @@ extern "C" void prefix ();
 extern "C" char* get_prefix_text ();
 extern "C" void set_prefix_text (char *);
 
-// globals to work with the signal handler
+// globals to work with signal handlers
 char *lockfile;
 std::filesystem::path currentPath;
 MPI_Request request;    // to align with how things are done in OpenParEM3D
-
-void signalHandler (int signum)
-{
-if (MPI_COMM_WORLD == MPI_COMM_NULL) {
-cout << "MPI_COMM_WORLD == MPI_COMM_NULL" << endl;
-}
-
-   if (PETSC_COMM_WORLD == MPI_COMM_NULL) {
-      cout.flush();
-      cout << "OpenParEM2D Job Aborted" << endl;
-      exit(0);
-   }
-
-   PetscMPIInt rank;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-   MPI_Comm parent;
-   MPI_Comm_get_parent (&parent);
-
-   std::filesystem::current_path(currentPath);
-
-   cout.flush();
-   if (parent == MPI_COMM_NULL) {
-      if (rank == 0) cout << endl << "OpenParEM2D Job Aborted" << endl;
-   } else {
-      // not used by OpenParEM
-      PetscSynchronizedFlush(parent,PETSC_STDOUT);
-      int retval=1;
-      MPI_Send(&retval,1,MPI_INT,rank,100000,parent);
-      MPI_Comm_disconnect(&parent);
-   }
-
-   remove_lock_file (lockfile);
-
-   //MPI_Barrier(PETSC_COMM_WORLD);
-   PetscFinalize();
-   exit(0); // 1
-}
 
 void help () {
    PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM2D [-h] filename\n");
@@ -395,6 +357,28 @@ void resetLists (double **alphaList, double **betaList, int size, double initial
    }
 }
 
+PetscErrorCode petscErrorHandler (MPI_Comm comm, int line, const char *file, const char *func,
+                                  PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx)
+{
+    // 55 PETSc out of memory
+    // 76 MUMPS out of memory
+
+    // out of memory
+    if (n == 55 || n == 76) {
+       //prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2252: Out of memory. %s bytes.\n",mess);
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2252: Out of memory.\n");
+    }
+
+    // details for potential future enhancement
+    //fprintf(stderr, "A PETSc Error occurred in function %s at line %d in file %s\n", func, line, file);
+    //fprintf(stderr, "Error code: %d, Message: %s\n", n, mess);
+
+    // optional call to the default PETSc error handler
+    //PetscTraceBackErrorHandler(comm, line, file, func, n, p, mess, ctx);
+
+    return 1;
+}
+
 int main(int argc, char *argv[])
 {
    double eps0=8.8541878176e-12;
@@ -411,9 +395,6 @@ int main(int argc, char *argv[])
    MeshMaterialList meshMaterials;
    MaterialDatabase localMaterialDatabase;
    MaterialDatabase materialDatabase;
-
-   signal(SIGINT,signalHandler);
-   signal(SIGTERM,signalHandler);
 
    chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
 
@@ -464,7 +445,10 @@ int main(int argc, char *argv[])
 
    // trap PETSc errors to enable graceful exit, primarily for out-of-memory errors
    struct applicationContext appCtx;
-   PetscPushErrorHandler(errorHandler,(struct applicationContext *) &appCtx);
+   PetscPushErrorHandler(petscErrorHandler, NULL);
+
+   // MFEM error handling supporting try/catch
+   mfem::ErrorAction(mfem::MFEM_ERROR_THROW);
 
    // parse inputs
    int retVal=1;
@@ -763,56 +747,81 @@ int main(int argc, char *argv[])
             while (order < projData.fem_order) {
 
                // create the finite element spaces and matrices on the parallel mesh
-               fem2D *fem=new fem2D(&projData,pmesh,order,frequency,iteration,&ko2Re_e,&ko2Im_e,&Inv_mu,&w_mu,tempdir);
+               bool error=false;
+               fem2D *fem=new fem2D(&projData,pmesh,order,frequency,iteration,&ko2Re_e,&ko2Im_e,&Inv_mu,&w_mu,tempdir,&error);
+               if (error) {
+                  signalFinished();
+                  exit_job_on_error (job_start_time,lockfile,true,2);
+               }
 
                // solve the eigenvalue problem, Ax=kBx
                int matrixSize=-1;
                PetscInt *ess_tdof_ND=fem->get_ess_tdof_ND(&boundaryDatabase,&borderDatabase);
                PetscInt *ess_tdof_H1=fem->get_ess_tdof_H1(&boundaryDatabase,&borderDatabase);
-               if (projData.debug_skip_solve || eigensolve (&projData,use_initial_guess,frequency,order,
-                                                            fem->get_ess_tdof_size_ND(),ess_tdof_ND,
-                                                            fem->get_ess_tdof_size_H1(),ess_tdof_H1,
-                                                            &alphaList,&betaList,&matrixSize,rank) != 0)
-               {
-                  delete fem;
-                  if (ess_tdof_ND) {PetscFree(ess_tdof_ND); ess_tdof_ND=nullptr;}
-                  if (ess_tdof_H1) {PetscFree(ess_tdof_H1); ess_tdof_H1=nullptr;}
 
+ 
+               if (projData.debug_skip_solve) {
                   use_initial_guess=0;
                   listSize=projData.solution_active_mode_count;
                   clearLists(&alphaList,&betaList,listSize);
                   break;
                } else {
-                  delete fem;
-                  if (ess_tdof_ND) {PetscFree(ess_tdof_ND); ess_tdof_ND=nullptr;}
-                  if (ess_tdof_H1) {PetscFree(ess_tdof_H1); ess_tdof_H1=nullptr;}
+                  gracefulExit=eigensolve (&projData,use_initial_guess,frequency,order,
+                                           fem->get_ess_tdof_size_ND(),ess_tdof_ND,
+                                           fem->get_ess_tdof_size_H1(),ess_tdof_H1,
+                                           &alphaList,&betaList,&matrixSize);
+                  if (gracefulExit) {  // failed to run
+                     signalFinished();
+                     exit_job_on_error (job_start_time,lockfile,true,2);
+                     //use_initial_guess=0;
+                     //listSize=projData.solution_active_mode_count;
+                     //clearLists(&alphaList,&betaList,listSize);
+                     //break;
+                  } else {
+                     use_initial_guess=1;  // solution is available
+                     listSize=projData.solution_active_mode_count;
+                     if (listSize > 0) betaList[0]*=initialGuessFactor;
+                  }
 
-                  listSize=projData.solution_active_mode_count;
-                  use_initial_guess=1;  // solution is available
-                  if (listSize > 0) betaList[0]*=initialGuessFactor;
                }
 
+               delete fem;
+               if (ess_tdof_ND) {PetscFree(ess_tdof_ND); ess_tdof_ND=nullptr;}
+               if (ess_tdof_H1) {PetscFree(ess_tdof_H1); ess_tdof_H1=nullptr;}
+
+               if (gracefulExit) break;
                order++;
             }
          }
-
+         if (gracefulExit) break;
 
          // create the finite element spaces and matrices on the parallel mesh
-         fem2D *fem=new fem2D(&projData,pmesh,projData.fem_order,frequency,iteration,&ko2Re_e,&ko2Im_e,&Inv_mu,&w_mu,tempdir);
+         bool error=false;
+         fem2D *fem=new fem2D(&projData,pmesh,projData.fem_order,frequency,iteration,&ko2Re_e,&ko2Im_e,&Inv_mu,&w_mu,tempdir,&error);
+         if (error) {
+            signalFinished();
+            exit_job_on_error (job_start_time,lockfile,true,2);
+         }
          //fem->dumpDof2DData();
 
          // solve the eigenvalue problem, Ax=kBx
          int matrixSize=-1;
          PetscInt *ess_tdof_ND=fem->get_ess_tdof_ND(&boundaryDatabase,&borderDatabase);
          PetscInt *ess_tdof_H1=fem->get_ess_tdof_H1(&boundaryDatabase,&borderDatabase);
-         if (projData.debug_skip_solve || eigensolve (&projData,use_initial_guess,frequency,projData.fem_order,
-                                                      fem->get_ess_tdof_size_ND(),ess_tdof_ND,
-                                                      fem->get_ess_tdof_size_H1(),ess_tdof_H1,
-                                                      &alphaList,&betaList,&matrixSize,rank) != 0) 
-         {
-            // failed or canceled - stop iterating
+
+
+         if (projData.debug_skip_solve) {
             iterate=false;
          } else {
+            gracefulExit=eigensolve (&projData,use_initial_guess,frequency,projData.fem_order,
+                                     fem->get_ess_tdof_size_ND(),ess_tdof_ND,
+                                     fem->get_ess_tdof_size_H1(),ess_tdof_H1,
+                                     &alphaList,&betaList,&matrixSize);
+            if (gracefulExit) {
+               //break;
+               signalFinished();
+               exit_job_on_error (job_start_time,lockfile,true,2);
+            }
 
             // process the eigenvalue solutions
             fem->set_t_size();
@@ -890,9 +899,6 @@ int main(int argc, char *argv[])
 
          // save the results to a results csv file
          if (rank == 0) resultDatabase.save(&projData,baseName);
-
-//         // initial guess
-//         if (projData.solution_use_initial_guess) use_initial_guess=1;
 
          delete fem;
          ++iteration;

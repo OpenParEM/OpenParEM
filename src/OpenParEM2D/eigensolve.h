@@ -33,7 +33,7 @@ int loadDataLine (FILE *, struct dataTriplet *, int);
 int loadDataFileStats (const char *, char *, char *, PetscInt *, PetscInt *, PetscInt *);
 int loadDataFile (const char *, char *, char *, Mat *, PetscInt, PetscInt, int, int, double, PetscMPIInt);
 int Hsetup (struct projectData *, Mat *, Mat *, Mat *, Mat *, Mat *, PetscMPIInt);
-int Hsolve (struct projectData *, Mat *, Mat *, Mat *, Mat *, Mat *, PetscInt, PetscInt, Vec *, PetscScalar *, Vec *, PetscMPIInt);
+int Hsolve (struct projectData *, Mat *, Mat *, Mat *, Mat *, Mat *, PetscInt, PetscInt, Vec *, PetscScalar *, Vec *);
 
 #endif
 

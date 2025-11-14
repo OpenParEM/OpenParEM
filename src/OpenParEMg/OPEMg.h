@@ -167,6 +167,8 @@ private slots:
     void selectItems ();
     void unselectDrawingItems ();
     void deleteDrawingItems ();
+    void unselectPortItems ();
+    void deletePortItems ();
     void setRootForeground (CustomTreeWidgetItem *);
     void showDisplayShape (CustomTreeWidgetItem *);
     void showPortShape (CustomTreeWidgetItem *);

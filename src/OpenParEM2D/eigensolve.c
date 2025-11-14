@@ -55,7 +55,7 @@ double* Readdof (char *resultsDir, char *type, int mode, size_t *count) {
          allocated=512;
          dof=(double *)malloc(allocated*sizeof(double));
          if (dof == NULL) {
-            if(line) {free(line); line=NULL;}
+            if (line) {free(line); line=NULL;}
             if (filename) {free(filename); filename=NULL;}
             return NULL;
          }
@@ -69,7 +69,7 @@ double* Readdof (char *resultsDir, char *type, int mode, size_t *count) {
                if (*count == allocated) {
                   allocated+=blockSize;
                   dof=(double *)realloc(dof,allocated*sizeof(double));
-                  if (dof == NULL) {if(line) free(line); line=NULL; return NULL;}
+                  if (dof == NULL) {if (line) free(line); line=NULL; return NULL;}
                }
                dof[*count]=atof(line);
                (*count)++;
@@ -142,8 +142,8 @@ int loadDataLine (FILE *fp, struct dataTriplet *loadedData, int skip) {
     if (fp == NULL) return 2;
 
     read = getline (&line,&len,fp);
-    if (read == -1) {if(line) free(line); line=NULL; return 1;}
-    if (skip) {if(line) free(line); line=NULL; return 0;}
+    if (read == -1) {if (line) free(line); line=NULL; return 1;}
+    if (skip) {if (line) free(line); line=NULL; return 0;}
 
     line=removeNewLineChar(line);
 
@@ -160,9 +160,9 @@ int loadDataLine (FILE *fp, struct dataTriplet *loadedData, int skip) {
           // value
           token=strtok(NULL," ");
           if (token != NULL) loadedData->value=atof(token);
-          else {if(line) free(line); line=NULL; return 3;}
-       } else {if(line) free(line); line=NULL; return 3;}
-    } else {if(line) free(line); line=NULL; return 3;}
+          else {if (line) free(line); line=NULL; return 3;}
+       } else {if (line) free(line); line=NULL; return 3;}
+    } else {if (line) free(line); line=NULL; return 3;}
 
     if (line) {free(line); line=NULL;}
     return 0;
@@ -282,8 +282,8 @@ int loadDataFile (const char *type, char *resultsDir, char *project, Mat *data, 
                   if (location == 0) v[0]=PetscCMPLX(loadedData.value*sign,0);      // load in real part
                   else v[0]=PetscCMPLX(0,loadedData.value*sign);                    // load in imaginary part
 
-                  if (transpose == 0) {ierr=MatSetValues(*data,one,idxm,one,idxn,v,ADD_VALUES); CHKERRQ(ierr);}   // no transpose
-                  else {ierr=MatSetValues(*data,one,idxn,one,idxm,v,ADD_VALUES); CHKERRQ(ierr);}                  // transpose
+                  if (transpose == 0) {if (MatSetValues(*data,one,idxm,one,idxn,v,ADD_VALUES)) return 1;}   // no transpose
+                  else {if (MatSetValues(*data,one,idxn,one,idxm,v,ADD_VALUES)) return 1;}                  // transpose
                }
             }
          } else if (retval == 1) {  // no data read, eof
@@ -314,21 +314,21 @@ PetscErrorCode saveFields(char *resultsDir, Vec *Efield, Vec *Hfield, int mode)
 
    // save Efield to a file
    sprintf(filename,"%sEfield_mode_%d.dat",resultsDir,mode+1);
-   ierr=PetscViewerASCIIOpen(PETSC_COMM_WORLD,filename,&viewer); CHKERRQ(ierr);
-   ierr=PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
-   ierr=VecView(*Efield,viewer); CHKERRQ(ierr);
-   ierr=PetscViewerPopFormat(viewer); CHKERRQ(ierr);
-   ierr=PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+   if (PetscViewerASCIIOpen(PETSC_COMM_WORLD,filename,&viewer)) return 1;
+   if (PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_MATLAB)) return 1;
+   if (VecView(*Efield,viewer)) return 1;
+   if (PetscViewerPopFormat(viewer)) return 1;
+   if (PetscViewerDestroy(&viewer)) return 1;
 
    // save Hfield to a file
    sprintf(filename,"%sHfield_mode_%d.dat",resultsDir,mode+1);
-   ierr=PetscViewerASCIIOpen(PETSC_COMM_WORLD,filename,&viewer); CHKERRQ(ierr);
-   ierr=PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
-   ierr=VecView(*Hfield,viewer); CHKERRQ(ierr);
-   ierr=PetscViewerPopFormat(viewer); CHKERRQ(ierr);
-   ierr=PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+   if (PetscViewerASCIIOpen(PETSC_COMM_WORLD,filename,&viewer)) return 1;
+   if (PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_MATLAB)) return 1;
+   if (VecView(*Hfield,viewer)) return 1;
+   if (PetscViewerPopFormat(viewer)) return 1;
+   if (PetscViewerDestroy(&viewer)) return 1;
 
-   return ierr;
+   return 0;
 }
 
 // Post-process the eigenvalue solution for the eigenpairs and save.
@@ -343,7 +343,6 @@ int postProcess (struct projectData *projData, char *resultsDir, EPS *eps, doubl
    PetscScalar *gamma2s;
    Vec Efield,*Efields,Hfield;
    Mat Mt,Cz,Zt,Mz,Ct;
-   int fail=0;
 
    int keep,nullEigenvalueCount;
 
@@ -351,23 +350,22 @@ int postProcess (struct projectData *projData, char *resultsDir, EPS *eps, doubl
 
    // get eigenvalues and eigenvectors
    // nconv is the number of successfully solved eigenpairs
-   ierr=EPSGetConverged(*eps,&nconv); CHKERRQ(ierr);
+   if (EPSGetConverged(*eps,&nconv)) return 1;
 
    // stop if there are no solved modes
    if (nconv <= 0) {
       projData->solution_active_mode_count=0;
-      fail=1;
-      return fail;
+      return 1;
    }
 
    // space for eigenvalues
-   ierr=PetscMalloc(nconv*sizeof(PetscScalar),&gamma2s); CHKERRQ(ierr);
+   if (PetscMalloc(nconv*sizeof(PetscScalar),&gamma2s)) return 1;
 
    // space for eigenvectors
-   VecCreate(PETSC_COMM_WORLD,&Efield);
-   VecSetType(Efield,VECSTANDARD);
-   VecSetSizes(Efield,PETSC_DECIDE,EtSize+EzSize);
-   ierr=VecDuplicateVecs(Efield,nconv,&Efields); CHKERRQ(ierr);
+   if (VecCreate(PETSC_COMM_WORLD,&Efield)) return 1;
+   if (VecSetType(Efield,VECSTANDARD)) return 1;
+   if (VecSetSizes(Efield,PETSC_DECIDE,EtSize+EzSize)) return 1;
+   if (VecDuplicateVecs(Efield,nconv,&Efields)) return 1;
 
    // get the eigenpairs then keep only the ones with non-null eigenvectors
 
@@ -375,10 +373,10 @@ int postProcess (struct projectData *projData, char *resultsDir, EPS *eps, doubl
    i=0; j=0;
    while (i < nconv) {
 
-      ierr=EPSGetEigenpair(*eps,i,&gamma2,NULL,Efield,NULL); CHKERRQ(ierr);  // eigenpair
+      if (EPSGetEigenpair(*eps,i,&gamma2,NULL,Efield,NULL)) return 1;  // eigenpair
 
-      ierr=VecAssemblyBegin(Efield); CHKERRQ(ierr);
-      ierr=VecAssemblyEnd(Efield); CHKERRQ(ierr);
+      if (VecAssemblyBegin(Efield)) return 1;
+      if (VecAssemblyEnd(Efield)) return 1;
 
       // save the non-nullspace eigenpairs
       if (cabs(gamma2) > ko*ko*solution_null_threshold) {
@@ -386,14 +384,14 @@ int postProcess (struct projectData *projData, char *resultsDir, EPS *eps, doubl
          // check to see if this is the same solution as the prior solution
          keep=1;
          if (j > 0) {
-            ierr=VecDot(Efield,Efield,&norm_Efield); CHKERRQ(ierr);
-            ierr=VecDot(Efields[j-1],Efields[j-1],&norm_Efields); CHKERRQ(ierr);
+            if (VecDot(Efield,Efield,&norm_Efield)) return 1;
+            if (VecDot(Efields[j-1],Efields[j-1],&norm_Efields)) return 1;
 
             norm_max=norm_Efield;
             if (cabs(norm_Efields) > cabs(norm_max)) norm_max=norm_Efields;
             norm_max=sqrt(norm_max);
 
-            ierr=VecDot(Efield,Efields[j-1],&dotProduct); CHKERRQ(ierr);
+            if (VecDot(Efield,Efields[j-1],&dotProduct)) return 1;
 
             if (dotProduct != 0) {
                if (cabs((norm_max-dotProduct)/dotProduct) < 0.00001) keep=0;
@@ -401,9 +399,9 @@ int postProcess (struct projectData *projData, char *resultsDir, EPS *eps, doubl
          }
 
          if (keep) {
-            ierr=VecCopy(Efield,Efields[j]); CHKERRQ(ierr);
-            ierr=VecAssemblyBegin(Efields[j]); CHKERRQ(ierr);  // probably not needed
-            ierr=VecAssemblyEnd(Efields[j]); CHKERRQ(ierr);    // probably not needed
+            if (VecCopy(Efield,Efields[j])) return 1;
+            if (VecAssemblyBegin(Efields[j])) return 1;  // probably not needed
+            if (VecAssemblyEnd(Efields[j])) return 1;    // probably not needed
 
             gamma2s[j]=gamma2;
             j++;
@@ -415,33 +413,33 @@ int postProcess (struct projectData *projData, char *resultsDir, EPS *eps, doubl
       i++;
    }
 
-   EPSDestroy(eps);
+   if (EPSDestroy(eps)) return 1;
 
    projData->solution_active_mode_count=j;
    if (projData->solution_active_mode_count > projData->solution_modes) projData->solution_active_mode_count=projData->solution_modes;
 
    // print out status on the number of eigenpairs
 
-   if (nullEigenvalueCount > 0) {prefix(); ierr=PetscPrintf (PETSC_COMM_WORLD,"         null space eigenvalue count: %d\n",nullEigenvalueCount); CHKERRQ(ierr);}
+   if (nullEigenvalueCount > 0) {prefix(); if (PetscPrintf (PETSC_COMM_WORLD,"         null space eigenvalue count: %d\n",nullEigenvalueCount)) return 1;}
 
    if (projData->solution_active_mode_count < projData->solution_modes) {
       if (projData->solution_active_mode_count == 0) {
-         prefix(); ierr=PetscPrintf (PETSC_COMM_WORLD,
+         prefix(); if (PetscPrintf (PETSC_COMM_WORLD,
             "         INFO: None the requested %d modes were found.\n",
-            projData->solution_modes); CHKERRQ(ierr);
+            projData->solution_modes)) return 1;
       } else if (projData->solution_active_mode_count == 1) {
-         prefix(); ierr=PetscPrintf (PETSC_COMM_WORLD,
+         prefix(); if (PetscPrintf (PETSC_COMM_WORLD,
             "         INFO: Only %d mode of the requested %d were found.\n",
-            projData->solution_active_mode_count,projData->solution_modes); CHKERRQ(ierr);
+            projData->solution_active_mode_count,projData->solution_modes)) return 1;
       } else {
-         prefix(); ierr=PetscPrintf (PETSC_COMM_WORLD,
+         prefix(); if (PetscPrintf (PETSC_COMM_WORLD,
             "         INFO: Only %d modes of the requested %d were found.\n",
-            projData->solution_active_mode_count,projData->solution_modes); CHKERRQ(ierr);
+            projData->solution_active_mode_count,projData->solution_modes)) return 1;
       }
    }
 
-   // jump to end if there are no non-null solutions to work with
-   if (projData->solution_active_mode_count <= 0) {fail=1; goto EXIT;}
+   // return if there are no non-null solutions to work with
+   if (projData->solution_active_mode_count <= 0) return 1;
 
    // move the eigenvalues to arrays to pass out - avoid complex since this is going to c++
    // alphaList and betaList need to be freed elsewhere
@@ -492,7 +490,7 @@ int postProcess (struct projectData *projData, char *resultsDir, EPS *eps, doubl
 
       // Scale the Et part of the eigenvector result to get the true electric field value.
 
-      ierr=VecGetOwnershipRange(Efields[i],&low,&high); CHKERRQ(ierr);
+      if (VecGetOwnershipRange(Efields[i],&low,&high)) return 1;
 
       // count the number of values to update
       index=0;
@@ -506,8 +504,8 @@ int postProcess (struct projectData *projData, char *resultsDir, EPS *eps, doubl
       indexCount=index;
 
       // allocate space for indices and values
-      ierr=PetscMalloc(indexCount*sizeof(PetscInt),&ivals); CHKERRQ(ierr);
-      ierr=PetscMalloc(indexCount*sizeof(PetscScalar),&vals); CHKERRQ(ierr);
+      if (PetscMalloc(indexCount*sizeof(PetscInt),&ivals)) return 1;
+      if (PetscMalloc(indexCount*sizeof(PetscScalar),&vals)) return 1;
 
       // set the indices
       index=0;
@@ -521,7 +519,7 @@ int postProcess (struct projectData *projData, char *resultsDir, EPS *eps, doubl
       }
 
       // get the values
-      ierr=VecGetValues(Efields[i],indexCount,ivals,vals); CHKERRQ(ierr);
+      if (VecGetValues(Efields[i],indexCount,ivals,vals)) return 1;
 
       // scale the values
       j=0;
@@ -531,41 +529,39 @@ int postProcess (struct projectData *projData, char *resultsDir, EPS *eps, doubl
       }
 
       // put the values back
-      ierr=VecSetValues(Efields[i],indexCount,ivals,vals,INSERT_VALUES); CHKERRQ(ierr);
+      if (VecSetValues(Efields[i],indexCount,ivals,vals,INSERT_VALUES)) return 1;
 
-      ierr=VecAssemblyBegin(Efields[i]); CHKERRQ(ierr);
-      ierr=VecAssemblyEnd(Efields[i]); CHKERRQ(ierr);
+      if (VecAssemblyBegin(Efields[i])) return 1;
+      if (VecAssemblyEnd(Efields[i])) return 1;
 
       // clean up
       if (ivals) {PetscFree(ivals); ivals=NULL;}
       if (vals) {PetscFree(vals); vals=NULL;}
 
       // solve for H
-      Hsolve (projData, &Mt, &Cz, &Zt, &Mz, &Ct, EtSize, EzSize, &Efields[i], &gamma, &Hfield, rank); 
+      Hsolve (projData, &Mt, &Cz, &Zt, &Mz, &Ct, EtSize, EzSize, &Efields[i], &gamma, &Hfield); 
 
       // save E and H
       saveFields(resultsDir,&Efields[i],&Hfield,i);
 
       // allocated in Hsolve with VecConcatenate
-      ierr=VecDestroy(&Hfield); CHKERRQ(ierr);
+      if (VecDestroy(&Hfield)) return 1;
 
       i++;
    }
 
-   if (Mt) {ierr=MatDestroy(&Mt); CHKERRQ(ierr);}
-   if (Cz) {ierr=MatDestroy(&Cz); CHKERRQ(ierr);}
-   if (Zt) {ierr=MatDestroy(&Zt); CHKERRQ(ierr);}
-   if (Mz) {ierr=MatDestroy(&Mz); CHKERRQ(ierr);}
-   if (Ct) {ierr=MatDestroy(&Ct); CHKERRQ(ierr);}
-
-   EXIT:
+   if (Mt) {if (MatDestroy(&Mt)) return 1;}
+   if (Cz) {if (MatDestroy(&Cz)) return 1;}
+   if (Zt) {if (MatDestroy(&Zt)) return 1;}
+   if (Mz) {if (MatDestroy(&Mz)) return 1;}
+   if (Ct) {if (MatDestroy(&Ct)) return 1;}
 
    // clean up
-   ierr=VecDestroy(&Efield); CHKERRQ(ierr);
-   if (Efields) {ierr=VecDestroyVecs(nconv,&Efields); CHKERRQ(ierr);}
-   if (gamma2s) {ierr=PetscFree(gamma2s); CHKERRQ(ierr);}
+   if (VecDestroy(&Efield)) return 1;
+   if (Efields) {if (VecDestroyVecs(nconv,&Efields)) return 1;}
+   if (gamma2s) {if (PetscFree(gamma2s)) return 1;}
 
-   return fail;
+   return 0;
 }
 
 PetscErrorCode monitorEM2D(EPS eps,PetscInt its,PetscInt nconv,PetscScalar *eigr,PetscScalar *eigi,PetscReal *errest,PetscInt nest,void *vf)
@@ -628,7 +624,7 @@ PetscErrorCode monitorEM2D(EPS eps,PetscInt its,PetscInt nconv,PetscScalar *eigr
 
 int eigensolve (struct projectData *projData, int use_initial_guess, double frequency, int order,
                 int ess_tdof_size_Et, PetscInt *Et_ess_tdof, int ess_tdof_size_Ez, PetscInt *Ez_ess_tdof, 
-                double **alphaList, double **betaList, int *matrixSize, PetscMPIInt rank)
+                double **alphaList, double **betaList, int *matrixSize)
 {
    PetscInt nz;
    PetscInt globalSize,ioffset,joffset;
@@ -656,7 +652,10 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
    Vec initial_guess;
    PetscInt initial_guess_count;
    PetscInt *TtTz_locations;
-   int fail=0;
+   PetscMPIInt rank,size;
+
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+   MPI_Comm_size(PETSC_COMM_WORLD, &size);
 
    pi=4.*atan(1.);
 
@@ -669,7 +668,9 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
    sprintf(resultsDir,"temp_%s/",projData->project_name);  // align this with OpenParEM2D.cpp, Hsolve.c, and Fields::saveFields
 
    // run through some files to get counts for allocating matrices
+   int fail=0;
    if (rank == 0) {
+
       if (loadDataFileStats("Tt_mur_mat",resultsDir,projData->project_name,&TtHeight,&TtWidth,&TtSparseWidth) != 0) {
          prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2118: Failed to scan \"Tt_mur_mat\".\n");
          fail=1;
@@ -690,35 +691,38 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
          prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2122: Failed to scan \"Sz_mat\".\n");
          fail=1;
       }
-      if (fail) goto EXIT;
+
+      int i=1;
+      while (i < size) {
+         MPI_Send(&fail,1,MPI_INT,i,1,PETSC_COMM_WORLD);
+         i++;
+      }
+   } else {
+      MPI_Recv(&fail,1,MPI_INT,0,1,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
    }
+   if (fail) return 1;
 
-   if (MPI_Bcast(&TtHeight,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
-   if (MPI_Bcast(&TtWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
-   if (MPI_Bcast(&TtSparseWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
+   if (MPI_Bcast(&TtHeight,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
+   if (MPI_Bcast(&TtWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
+   if (MPI_Bcast(&TtSparseWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
 
-   if (MPI_Bcast(&GHeight,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
-   if (MPI_Bcast(&GWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
-   if (MPI_Bcast(&GSparseWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
+   if (MPI_Bcast(&GHeight,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
+   if (MPI_Bcast(&GWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
+   if (MPI_Bcast(&GSparseWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
 
-   if (MPI_Bcast(&GTHeight,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
-   if (MPI_Bcast(&GTWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
-   if (MPI_Bcast(&GTSparseWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
+   if (MPI_Bcast(&GTHeight,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
+   if (MPI_Bcast(&GTWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
+   if (MPI_Bcast(&GTSparseWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
 
-   if (MPI_Bcast(&TzHeight,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
-   if (MPI_Bcast(&TzWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
-   if (MPI_Bcast(&TzSparseWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
+   if (MPI_Bcast(&TzHeight,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
+   if (MPI_Bcast(&TzWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
+   if (MPI_Bcast(&TzSparseWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
 
-   if (MPI_Bcast(&SzHeight,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
-   if (MPI_Bcast(&SzWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
-   if (MPI_Bcast(&SzSparseWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) fail=1;
+   if (MPI_Bcast(&SzHeight,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
+   if (MPI_Bcast(&SzWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
+   if (MPI_Bcast(&SzSparseWidth,1,MPI_LONG,0,PETSC_COMM_WORLD)) return 1;
 
-   if (MPI_Barrier(PETSC_COMM_WORLD)) fail=1;
-
-   if (fail) {
-      prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2123: Failed to broadcast matrix sizes.\n");
-      goto EXIT;
-   }
+   if (MPI_Barrier(PETSC_COMM_WORLD)) return 1;
 
    //printf ("rank %d: TtHeight=%zu  TtWidth=%zu  TtSparseWidth=%zu\n",rank,TtHeight,TtWidth,TtSparseWidth);
    //printf ("rank %d: GHeight=%zu  GWidth=%zu  GSparseWidth=%zu\n",rank,GHeight,GWidth,GSparseWidth);
@@ -729,7 +733,7 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
    *matrixSize=TtHeight+TzHeight;
 
    // build a location array for later operations [just a vector indexed 0,1,2,...]
-   ierr=PetscMalloc((TtHeight+TzHeight)*sizeof(PetscInt),&TtTz_locations); CHKERRQ(ierr);
+   if (PetscMalloc((TtHeight+TzHeight)*sizeof(PetscInt),&TtTz_locations)) return 1;
    i=0;
    while (i < TtHeight+TzHeight) {
       TtTz_locations[i]=i;
@@ -753,78 +757,76 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
 
    // A 
    // matrix type is "mpiaij" - A matrix type to be used for parallel sparse matrices. 
-   ierr=MatCreate(PETSC_COMM_WORLD,&A); CHKERRQ(ierr);
-   ierr=MatSetType(A,MATAIJ); CHKERRQ(ierr);
-   ierr=MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,globalSize,globalSize); CHKERRQ(ierr);
+   if (MatCreate(PETSC_COMM_WORLD,&A)) return 1;
+   if (MatSetType(A,MATAIJ)) return 1;
+   if (MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,globalSize,globalSize)) return 1;
    nz=TtSparseWidth;
-   ierr=MatSeqAIJSetPreallocation(A,nz,NULL); CHKERRQ(ierr);
-   ierr=MatMPIAIJSetPreallocation(A,nz,NULL,nz,NULL); CHKERRQ(ierr);
-   ierr=MatZeroEntries(A); CHKERRQ(ierr);
+   if (MatSeqAIJSetPreallocation(A,nz,NULL)) return 1;
+   if (MatMPIAIJSetPreallocation(A,nz,NULL,nz,NULL)) return 1;
+   if (MatZeroEntries(A)) return 1;
 
    // B
-   ierr=MatCreate(PETSC_COMM_WORLD,&B); CHKERRQ(ierr);
-   ierr=MatSetType(B,MATAIJ); CHKERRQ(ierr);
-   ierr=MatSetSizes(B,PETSC_DECIDE,PETSC_DECIDE,globalSize,globalSize); CHKERRQ(ierr);
+   if (MatCreate(PETSC_COMM_WORLD,&B)) return 1;
+   if (MatSetType(B,MATAIJ)) return 1;
+   if (MatSetSizes(B,PETSC_DECIDE,PETSC_DECIDE,globalSize,globalSize)) return 1;
    nz=GTSparseWidth+TzSparseWidth;
-   ierr=MatSeqAIJSetPreallocation(B,nz,NULL); CHKERRQ(ierr);
-   ierr=MatMPIAIJSetPreallocation(B,nz,NULL,nz,NULL); CHKERRQ(ierr);
-   ierr=MatZeroEntries(B); CHKERRQ(ierr);
+   if (MatSeqAIJSetPreallocation(B,nz,NULL)) return 1;
+   if (MatMPIAIJSetPreallocation(B,nz,NULL,nz,NULL)) return 1;
+   if (MatZeroEntries(B)) return 1;
 
    // populate the matrices
 
    // Tt_mur
    ioffset=0; joffset=0; location=0; transpose=0; sign=0;
    iTt_mur=loadDataFile ("Tt_mur_mat",resultsDir,projData->project_name,&B,ioffset,joffset,location,transpose,sign,rank);
-   if (iTt_mur) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2124: Failed to load \"Tt_mur_mat\" data file.\n"); fail=1;}
+   if (iTt_mur) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2124: Failed to load \"Tt_mur_mat\" data file.\n"); return 1;}
 
    // Tt_eps_re
    sign=1;
    iTt_eps_re=loadDataFile ("Tt_eps_re_mat",resultsDir,projData->project_name,&A,ioffset,joffset,location,transpose,sign,rank);
-   if (iTt_eps_re) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2125: Failed to load \"Tt_eps_re_mat\" data file.\n"); fail=1;}
+   if (iTt_eps_re) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2125: Failed to load \"Tt_eps_re_mat\" data file.\n"); return 1;}
 
    // Tt_eps_im
    location=1;
    iTt_eps_im=loadDataFile ("Tt_eps_im_mat",resultsDir,projData->project_name,&A,ioffset,joffset,location,transpose,sign,rank);
-   if (iTt_eps_im) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2126: Failed to load \"Tt_eps_im_mat\" data file.\n"); fail=1;}
+   if (iTt_eps_im) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2126: Failed to load \"Tt_eps_im_mat\" data file.\n"); return 1;}
 
    // G
    ioffset=0; joffset=TtHeight; location=0; transpose=0; sign=0;
    iG=loadDataFile ("G_mat",resultsDir,projData->project_name,&B,ioffset,joffset,location,transpose,sign,rank);  
-   if (iG) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2127: Failed to load \"G_mat\" data file.\n"); fail=1;}
+   if (iG) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2127: Failed to load \"G_mat\" data file.\n"); return 1;}
 
    // GT
    ioffset=TtHeight; joffset=0; location=0; transpose=0; sign=0;
    iGT=loadDataFile ("GT_mat",resultsDir,projData->project_name,&B,ioffset,joffset,location,transpose,sign,rank);        
-   if (iGT) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2128: Failed to load \"GT_mat\" data file.\n"); fail=1;}
+   if (iGT) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2128: Failed to load \"GT_mat\" data file.\n"); return 1;}
 
    // Sz
    ioffset=TtHeight; joffset=TtHeight; location=0; transpose=0; sign=0;
    iSz=loadDataFile ("Sz_mat",resultsDir,projData->project_name,&B,ioffset,joffset,location,transpose,sign,rank);
-   if (iSz) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2129: Failed to load \"Sz_mat\" data file.\n"); fail=1;}
+   if (iSz) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2129: Failed to load \"Sz_mat\" data file.\n"); return 1;}
 
    // Tz
    ioffset=TtHeight; joffset=TtHeight; location=0; transpose=0; sign=1;
    iTz_re=loadDataFile ("Tz_eps_re_mat",resultsDir,projData->project_name,&B,ioffset,joffset,location,transpose,sign,rank);
-   if (iTz_re) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2130: Failed to load \"Tz_re_mat\" data file.\n"); fail=1;}
+   if (iTz_re) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2130: Failed to load \"Tz_re_mat\" data file.\n"); return 1;}
 
    location=1;
    iTz_im=loadDataFile ("Tz_eps_im_mat",resultsDir,projData->project_name,&B,ioffset,joffset,location,transpose,sign,rank);
-   if (iTz_im) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2131: Failed to load \"Tz_im_mat\" data file.\n"); fail=1;}
+   if (iTz_im) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2131: Failed to load \"Tz_im_mat\" data file.\n"); return 1;}
 
    // St
    ioffset=0; joffset=0; location=0; transpose=0; sign=0;
    iSt=loadDataFile ("St_mat",resultsDir,projData->project_name,&A,ioffset,joffset,location,transpose,sign,rank);
-   if (iSt) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2132: Failed to load \"St_mat\" data file.\n"); fail=1;}
-
-   if (fail) goto EXIT;
+   if (iSt) {prefix(); PetscPrintf (PETSC_COMM_WORLD,"ERROR2132: Failed to load \"St_mat\" data file.\n"); return 1;}
 
    // finalize the matrices by assembling
 
-   ierr=MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-   ierr=MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+   if (MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY)) return 1;
+   if (MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY)) return 1;
 
-   ierr=MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-   ierr=MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+   if (MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY)) return 1;
+   if (MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY)) return 1;
 
    ko=2*pi*frequency*sqrt(4e-7*pi*8.8541878176e-12);
 
@@ -838,30 +840,30 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
    }
 
    // A - Et only - The matrix is not populated for Ez, so just need to do the part for Et.
-   ierr=MatZeroRowsColumns(A,ess_tdof_size_Et,Et_ess_tdof,0.0,NULL,NULL); CHKERRQ(ierr);
+   if (MatZeroRowsColumns(A,ess_tdof_size_Et,Et_ess_tdof,0.0,NULL,NULL)) return 1;
 
    // B - Et and Ez - The matrix is fully populated, so let the subroutine call place the constant on the diagonal.
-   ierr=MatZeroRowsColumns(B,ess_tdof_size_Et,Et_ess_tdof,1/(ko*ko),NULL,NULL); CHKERRQ(ierr);
-   ierr=MatZeroRowsColumns(B,ess_tdof_size_Ez,Ez_ess_tdof,1/(ko*ko),NULL,NULL); CHKERRQ(ierr);
+   if (MatZeroRowsColumns(B,ess_tdof_size_Et,Et_ess_tdof,1/(ko*ko),NULL,NULL)) return 1;
+   if (MatZeroRowsColumns(B,ess_tdof_size_Ez,Ez_ess_tdof,1/(ko*ko),NULL,NULL)) return 1;
 
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"         solving the eigenvalue problem ...\n");
 
-   ierr=EPSCreate(PETSC_COMM_WORLD,&eps); CHKERRQ(ierr);
-   ierr=EPSSetOperators(eps,A,B); CHKERRQ(ierr);
+   if (EPSCreate(PETSC_COMM_WORLD,&eps)) return 1;
+   if (EPSSetOperators(eps,A,B)) return 1;
 
-   ierr=EPSSetWhichEigenpairs(eps,EPS_SMALLEST_REAL); CHKERRQ(ierr);
+   if (EPSSetWhichEigenpairs(eps,EPS_SMALLEST_REAL)) return 1;
    if (projData->solution_accurate_residual) {
-      ierr=EPSSetTrueResidual(eps,PETSC_TRUE); CHKERRQ(ierr);  // slower per iteration, but fewer iterations
-                                                               // can prevent convergence in some problems
+      if (EPSSetTrueResidual(eps,PETSC_TRUE)) return 1;  // slower per iteration, but fewer iterations
+                                                         // can prevent convergence in some problems
    }
    //EPSSetProblemType(eps,EPS_GNHEP);   // the default, so this setting does not change anything
 
    tol=projData->solution_tolerance;
    maxit=projData->solution_iteration_limit;
-   ierr=EPSSetTolerances(eps,tol,maxit); CHKERRQ(ierr);
+   if (EPSSetTolerances(eps,tol,maxit)) return 1;
 
    nev=projData->solution_modes+projData->solution_modes_buffer; // number of eigenvalues to calculate
-   ierr=EPSSetDimensions(eps,nev,PETSC_DEFAULT,PETSC_DEFAULT); CHKERRQ(ierr);
+   if (EPSSetDimensions(eps,nev,PETSC_DEFAULT,PETSC_DEFAULT)) return 1;
    //if (nnull > 0) EPSSetDeflationSpace(eps,nnull,V);
 
    if (projData->solution_shift_invert && use_initial_guess) {
@@ -880,11 +882,11 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
       monitorTarget=sqrt(projData->solution_shift_factor)*target;  
 
       // set a target and use shift-and-invert to reduce the number of iterations by a huge factor
-      ierr=EPSGetST(eps,&st); CHKERRQ(ierr);
-      ierr=EPSSetWhichEigenpairs(eps,EPS_TARGET_REAL); CHKERRQ(ierr);  // overrides previous setting
-      ierr=EPSSetTarget(eps,target*target); CHKERRQ(ierr);
-      ierr=STSetType(st,STSINVERT); CHKERRQ(ierr);
-      ierr=STSetShift(st,target*target*projData->solution_shift_factor); CHKERRQ(ierr);
+      if (EPSGetST(eps,&st)) return 1;
+      if (EPSSetWhichEigenpairs(eps,EPS_TARGET_REAL)) return 1;  // overrides previous setting
+      if (EPSSetTarget(eps,target*target)) return 1;
+      if (STSetType(st,STSINVERT)) return 1;
+      if (STSetShift(st,target*target*projData->solution_shift_factor)) return 1;
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"            using initial guess for the dominant eigenvalue\n");
    }
 
@@ -892,10 +894,10 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
    if (! projData->solution_shift_invert && use_initial_guess) {
       initial_guess_count=0;
 
-      VecCreate(PETSC_COMM_WORLD,&initial_guess);
-      VecSetType(initial_guess,VECSTANDARD);
-      VecSetSizes(initial_guess,PETSC_DECIDE,TtHeight+TzHeight);
-      VecSet(initial_guess,0);
+      if (VecCreate(PETSC_COMM_WORLD,&initial_guess)) return 1;
+      if (VecSetType(initial_guess,VECSTANDARD)) return 1;
+      if (VecSetSizes(initial_guess,PETSC_DECIDE,TtHeight+TzHeight)) return 1;
+      if (VecSet(initial_guess,0)) return 1;
 
       // loop through the modes
       i=0;
@@ -910,7 +912,7 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
          if (Et_re_dof != NULL && Et_im_dof != NULL && Ez_re_dof != NULL && Ez_im_dof != NULL) {
 
             // combine the dof data into PetscScalar (complex)
-            ierr=PetscMalloc((TtHeight+TzHeight)*sizeof(PetscScalar),&dof); CHKERRQ(ierr);
+            if (PetscMalloc((TtHeight+TzHeight)*sizeof(PetscScalar),&dof)) return 1;
 
             // reverse the scaling to get back to the scaled Et from the math
             gamma=(*alphaList)[i]+PETSC_i*(*betaList)[i];
@@ -929,8 +931,8 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
             // put it into a Vec
             // sum across the initial guesses from all modes - tip from the SLEPc manual
             // This does not work with with shift-and-invert: Can produce failed runs, run-to-run variability, and sensitivity to solution.tolerance.
-            if (i == 0) {ierr=VecSetValues(initial_guess,TtHeight+TzHeight,TtTz_locations,dof,INSERT_VALUES); CHKERRQ(ierr);}
-            else {ierr=VecSetValues(initial_guess,TtHeight+TzHeight,TtTz_locations,dof,ADD_VALUES); CHKERRQ(ierr);}
+            if (i == 0) {if (VecSetValues(initial_guess,TtHeight+TzHeight,TtTz_locations,dof,INSERT_VALUES)) return 1;}
+            else {if (VecSetValues(initial_guess,TtHeight+TzHeight,TtTz_locations,dof,ADD_VALUES)) return 1;}
 
             PetscFree(dof);
             initial_guess_count++;
@@ -944,17 +946,17 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
          i++;
       }
 
-      VecAssemblyBegin(initial_guess);
-      VecAssemblyEnd(initial_guess);
+      if (VecAssemblyBegin(initial_guess)) return 1;
+      if (VecAssemblyEnd(initial_guess)) return 1;
 
       // set the initial guess
       if (initial_guess_count > 0) {
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"            using initial guess for eigenvectors\n");
-         ierr=EPSSetInitialSpace(eps,1,&initial_guess); CHKERRQ(ierr);
+         if (EPSSetInitialSpace(eps,1,&initial_guess)) return 1;
       }
 
       // clean up
-      VecDestroy(&initial_guess);
+      if (VecDestroy(&initial_guess)) return 1;
    }
 
    if (projData->output_show_iterations) {
@@ -962,7 +964,7 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"            iteration   # converged      alpha, dB/m           beta/ko             error\n");
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"            ----------------------------------------------------------------------------\n");
 
-      ierr=EPSMonitorSet(eps,monitorEM2D,NULL,NULL);
+      if (EPSMonitorSet(eps,monitorEM2D,NULL,NULL)) return 1;
       koMonitor=ko;
       modesMonitor=nev;
       errorMonitor=1e300;
@@ -974,13 +976,13 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
    //MatView(B,PETSC_VIEWER_STDOUT_WORLD);
 
    //EPSSetType(eps,EPSKRYLOVSCHUR);   // This is the default for SLEPc, so setting this has no effect
-   ierr=EPSSolve(eps); CHKERRQ(ierr);
+   if (EPSSolve(eps)) return 1;
 
    if (projData->output_show_iterations) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"            ----------------------------------------------------------------------------\n");}
 
    // show results stats
 
-   EPSGetIterationNumber(eps,&its);
+   if (EPSGetIterationNumber(eps,&its)) return 1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"            number of iterations: %ld\n",its);
 
    //EPSGetType(eps,&type);
@@ -993,25 +995,22 @@ int eigensolve (struct projectData *projData, int use_initial_guess, double freq
       if (projData->solution_accurate_residual) {
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"                   Try setting solution.accurate.residual to false.\n");
       }
-      fail=1;
-      goto EXIT;
+      return 1;
    }
 
-   MatDestroy(&A);
-   MatDestroy(&B);
+   if (MatDestroy(&A)) return 1;
+   if (MatDestroy(&B)) return 1;
 
-   if (postProcess(projData,resultsDir,&eps,ko,alphaList,betaList,TtHeight,TzHeight,rank)) fail=1;
+   if (postProcess(projData,resultsDir,&eps,ko,alphaList,betaList,TtHeight,TzHeight,rank)) return 1;
 
-   EXIT:
-
-   ierr=PetscFree(TtTz_locations); CHKERRQ(ierr);
+   if (PetscFree(TtTz_locations)) return 1;
 
    //STDestroy(&st);   // destroyed by EPSDestroy
    //EPSDestroy(&eps); // destroyed in postProcess
 
    free(resultsDir);
 
-   return fail;
+   return 0;
 }
 
 

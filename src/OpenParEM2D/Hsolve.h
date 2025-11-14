@@ -26,8 +26,6 @@
 #include "project.h"
 #include "triplet.h"
 
-//int Hsetup (struct projectData *, Mat *, Mat *, Mat *, Mat *, Mat *, PetscMPIInt);
-//int Hsolve (struct projectData *, Mat *, Mat *, Mat *, Mat *, Mat *, PetscInt, PetscInt, Vec *, PetscScalar *, Vec *, PetscMPIInt);
 PetscErrorCode printMatInfo (const char *, Mat *);
 void convergence (struct projectData *, KSPConvergedReason);
 int loadDataFileStats (const char *, char *, char *, PetscInt *, PetscInt *, PetscInt *);
