@@ -30,13 +30,9 @@ public:
             CustomTreeWidgetItem *item=visibleItems[i];
             if (item->is_mesh()) {
                 long unsigned int j=0;
-                while (j < item->get_meshEntitiesSize()){
+                while (j < item->get_meshEntitiesSize()) {
                     DisplayShape(item->get_meshEntity(j),item->get_displayMode(),item->get_selectionMode());
                     j++;
-                }
-            } else if (item->is_port() || item->is_boundary()) {
-                if (!item->is_root()) {
-                    DisplayShape(item->get_AIS_Shape(),item->get_displayMode(), item->get_selectionMode());
                 }
             } else {
                 DisplayShape(item->get_AIS_Shape(),item->get_displayMode(), item->get_selectionMode());
@@ -49,6 +45,7 @@ public:
     {
         if (showTracking) {std::cout << "ItemTracker::showShape" << std::endl; std::cout.flush();}
 
+        if (shape.IsNull()) return;
         CustomTreeWidgetItem *item=shapeToItemMap[shape];
         showItem(item);
     }
@@ -58,8 +55,15 @@ public:
         if (showTracking) {std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();}
 
         // show item
-        if (item->is_mesh()) {
+        if (item->is_drawing()) {
+            DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            std::cout << "set foreground to black 1" << std::endl;
+            item->setForeground(0,Qt::black);
+            visibleItems.push_back(item);
+        } else if (item->is_mesh()) {
             if (item->is_root()) {
+                item->setForeground(0,Qt::black);
+                visibleItems.push_back(item);
                 int i=0;
                 while (i < item->childCount()) {
                     CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
@@ -67,31 +71,27 @@ public:
                     i++;
                 }
             } else {
+                item->setForeground(0,Qt::black);
+                visibleItems.push_back(item);
                 long unsigned int i=0;
                 while (i < item->get_meshEntitiesSize()){
-                    DisplayShape(item->get_meshEntity(i),item->get_displayMode(), item->get_selectionMode());
+                    DisplayShape(item->get_meshEntity(i),item->get_displayMode(),item->get_selectionMode());
                     i++;
                 }
-            }
-        } else if (item->is_port() || item->is_boundary()) {
-            if (item->is_root()) {
-                int i=0;
-                while (i < item->childCount()) {
-                    CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
-                    showItem(child);
-                    i++;
-                }
-            } else {
-                DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
             }
         } else {
-            DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            if (!item->get_AIS_Shape().IsNull()) {
+                DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+                item->setForeground(0,Qt::black);
+                visibleItems.push_back(item);
+            }
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                showItem(child);
+                i++;
+            }
         }
-
-        item->setForeground(0,Qt::black);
-
-        // save to the list of visible items
-        visibleItems.push_back(item);
     }
 
     bool isValidShow ()
@@ -101,22 +101,23 @@ public:
         long unsigned int i=0;
         while (i < selectedItems.size()) {
             CustomTreeWidgetItem *item=selectedItems[i];
-            if (item->is_mesh() || item->is_port() || item->is_boundary()) {
-                if (item->is_root()) {
-                    int i=0;
-                    while (i < item->childCount()) {
-                        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
-                        if (child->foreground(0) == Qt::gray) return true;
-                        i++;
-                    }
-                } else {
-                    if (item->foreground(0) == Qt::gray) return true;
+
+            // item
+            if (item->isValidShow()) return true;
+
+            // children
+            if (!item->is_drawing()) {  // skip drawing for speed
+                int j=0;
+                while (j < item->childCount()) {
+                    CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                    if (child->isValidShow()) return true;
+                    j++;
                 }
-            } else {
-                if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) return true;
             }
+
             i++;
         }
+
         return false;
     }
 
@@ -127,6 +128,7 @@ public:
     {
         if (hideTracking) {std::cout << "ItemTracker::hideShape" << std::endl; std::cout.flush();}
 
+        if (shape.IsNull()) return;
         CustomTreeWidgetItem *item=shapeToItemMap[shape];
         hideItem(item);
     }
@@ -135,9 +137,15 @@ public:
     {
         if (hideTracking) {std::cout << "ItemTracker::hideItem" << std::endl; std::cout.flush();}
 
-        // hide item
-        if (item->is_mesh()) {
+        if (item->is_drawing()) {
+            EraseShape(item->get_AIS_Shape());
+            std::cout << "set foreground to gray 1" << std::endl;
+            item->setForeground(0,Qt::gray);
+            removeVisibleItem(item);
+        } else if (item->is_mesh()) {
             if (item->is_root()) {
+                item->setForeground(0,Qt::gray);
+                removeVisibleItem(item);
                 int i=0;
                 while (i < item->childCount()) {
                     CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
@@ -145,38 +153,27 @@ public:
                     i++;
                 }
             } else {
+                item->setForeground(0,Qt::gray);
+                removeVisibleItem(item);
                 long unsigned int i=0;
                 while (i < item->get_meshEntitiesSize()){
                     EraseShape(item->get_meshEntity(i));
                     i++;
                 }
             }
-        } else if (item->is_port() || item->is_boundary()) {
-            if (item->is_root()) {
-                int i=0;
-                while (i < item->childCount()) {
-                    CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
-                    hideItem(child);
-                    i++;
-                }
-            } else {
+        } else {
+            if (!item->get_AIS_Shape().IsNull()) {
                 EraseShape(item->get_AIS_Shape());
                 item->setForeground(0,Qt::gray);
+                removeVisibleItem(item);
             }
-        } else {
-            // drawing item
-            EraseShape(item->get_AIS_Shape());
-        }
-        item->setForeground(0,Qt::gray);
 
-        // remove from the list of visible items
-        long unsigned int i=0;
-        while (i < visibleItems.size()) {
-            if (visibleItems[i] == item) {
-                visibleItems.erase(visibleItems.begin()+i);
-                break;
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                hideItem(child);
+                i++;
             }
-            i++;
         }
     }
 
@@ -187,16 +184,11 @@ public:
 
         int i=0;
         while (i < selectedItems.size()) {
-            CustomTreeWidgetItem *item=selectedItems[i];
-            hideItem(item);
+            hideItem(selectedItems[i]);
             i++;
         }
 
-        i=0;
-        while (i < selectedItems.size()) {
-            CustomTreeWidgetItem *item=selectedItems[i];
-            unselectItem(item);
-        }
+        selectedItems.clear();
     }
 
     // hide all items whether selected or not
@@ -204,27 +196,10 @@ public:
     {
         if (hideTracking) {std::cout << "ItemTracker::hideAllItems" << std::endl; std::cout.flush();}
 
-        // hide all items in the list of visible items
-        long unsigned int i=0;
-        while (i < visibleItems.size()) {
-            CustomTreeWidgetItem *item=visibleItems[i];
-            if (item->is_mesh()) {
-                long unsigned int j=0;
-                while (j < item->get_meshEntitiesSize()){
-                    EraseShape(item->get_meshEntity(j));
-                    j++;
-                }
-            } else if (item->is_port() || item->is_boundary()) {
-                if (!item->is_root()) {
-                    EraseShape(item->get_AIS_Shape());
-                }
-            } else {
-                EraseShape(item->get_AIS_Shape());
-            }
-            item->setForeground(0,Qt::gray);
-            i++;
+        while (visibleItems.size()) {
+            hideItem(visibleItems[0]);
         }
-        visibleItems.clear();
+
         selectedItems.clear();
     }
 
@@ -235,20 +210,20 @@ public:
         long unsigned int i=0;
         while (i < selectedItems.size()) {
             CustomTreeWidgetItem *item=selectedItems[i];
-            if (item->is_mesh() || item->is_port() || item->is_boundary()) {
-                if (item->is_root()) {
-                    int i=0;
-                    while (i < item->childCount()) {
-                        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
-                        if (child->foreground(0) == Qt::black) return true;
-                        i++;
-                    }
-                } else {
-                    if (item->foreground(0) == Qt::black) return true;
+
+            // item
+            if (item->isValidHide()) return true;
+
+            // children
+            if (!item->is_drawing()) {   // skip drawing for speed
+                int j=0;
+                while (j < item->childCount()) {
+                    CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                    if (child->isValidHide()) return true;
+                    j++;
                 }
-            } else {
-                if (viewerContext->IsDisplayed(item->get_AIS_Shape())) return true;
             }
+
             i++;
         }
         return false;
@@ -282,6 +257,14 @@ public:
             if (selectedItems[i]->get_type() == type) return true;
             i++;
         }
+        return false;
+    }
+
+    bool hasOneSelectedItem ()
+    {
+        if (selectTracking) {std::cout << "ItemTracker::hasOneSelectedItem" << std::endl; std::cout.flush();}
+
+        if (selectedItems.size() == 1) return true;
         return false;
     }
 
@@ -328,6 +311,8 @@ public:
                 if (!item->is_root()) {
                     UnselectShape(item->get_AIS_Shape());
                 }
+            } else if (item->is_sport()) {
+                // nothing to do
             } else {
                 UnselectShape(item->get_AIS_Shape());
             }
@@ -373,11 +358,13 @@ public:
     {
         if (deleteTracking) {std::cout << "ItemTracker::deleteItem" << std::endl; std::cout.flush();}
 
-        if (!item->is_mesh()) {
-            if (item->is_root()) return;
-            DeleteItem(item);
-            delete item;
-        }
+        if (item->is_mesh()) return;
+        if (item->is_sport()) return;
+
+        if (item->is_root()) return;
+
+        DeleteItem(item);
+        delete item;
     }
 
     bool isValidDelete ()
@@ -393,6 +380,8 @@ public:
                 if (!item->is_root()) {
                     if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) return false;
                 }
+            } else if (item->is_sport()) {
+                // nothing to do
             } else {
                 // drawing
                 if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) return false;
@@ -409,10 +398,10 @@ public:
         //std::cout << "ItemTracker::insertItemToMap" << std::endl; std::cout.flush();
 
         if (shape.IsNull()) return;
+        if (item->is_mesh()) return;
+        if (item->is_sport()) return;
 
-        if (!item->is_mesh()) {
-            shapeToItemMap.insert({shape,item});
-        }
+        shapeToItemMap.insert({shape,item});
     }
 
     // reset
@@ -469,6 +458,19 @@ private:
         while (i < item->childCount()) {
             CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
             DeleteItem(child);
+            i++;
+        }
+    }
+
+    // remove from the list of visible items
+    void removeVisibleItem (CustomTreeWidgetItem *item)
+    {
+        long unsigned int i=0;
+        while (i < visibleItems.size()) {
+            if (visibleItems[i] == item) {
+                visibleItems.erase(visibleItems.begin()+i);
+                return;
+            }
             i++;
         }
     }

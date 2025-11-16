@@ -37,6 +37,7 @@
 #include <Qt>
 #include <QComboBox>
 #include <QPushButton>
+#include <QSpinBox>
 #include "CustomAIS_Shape.h"
 #include "CustomLineEdit.h"
 #include "CustomComboBox.h"
@@ -3853,6 +3854,42 @@ void Mode::reset()
    weight.clear();
 }
 
+#ifdef HAS_GUI
+
+void Mode::draw (QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemName)
+{
+    // S port
+    CustomTreeWidgetItem *itemMode=new CustomTreeWidgetItem(0);
+    itemMode->setText(0,"S Port");
+    itemMode->set_type(4);
+    itemName->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
+    itemMode->setToolTip(0,"Mode on the port.");
+    itemName->addChild(itemMode);
+
+    // Sport number
+
+    CustomTreeWidgetItem *itemSport=new CustomTreeWidgetItem(0);
+    itemSport->set_type(7);
+    itemSport->setToolTip(0,"S-parameter port number.");
+    itemMode->addChild(itemSport);
+
+    QSpinBox *sport=new QSpinBox();
+    sport->setMinimum(1);
+    sport->setValue(get_Sport());
+    drawingItemTree->setItemWidget(itemSport,0,sport);
+
+    // net
+    if (net_is_loaded()) {
+        CustomTreeWidgetItem *itemNet=new CustomTreeWidgetItem(0);
+        itemNet->setText(0,get_net().c_str());
+        itemNet->set_type(8);
+        itemNet->setToolTip(0,"Net name.");
+        itemNet->setFlags(itemName->flags() | Qt::ItemIsEditable);
+        itemMode->addChild(itemNet);
+    }
+}
+#endif
+
 Mode::~Mode()
 {
    long unsigned int i=0;
@@ -6498,28 +6535,27 @@ void comboTextChanged (QString text, Boundary *boundary)
 
 void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, CustomTreeWidgetItem *portWidgetItem)
 {
+    // port outline
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
     drawingWindow->displayShape(drawingShape,portWidgetItem->get_displayMode(),portWidgetItem->get_selectionMode());
     drawingWindow->updateViewer();
 
     // name
-    QString textName=QString::fromStdString(get_name());
+
     CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
     itemName->set_AIS_Shape(drawingShape);
-    itemName->setText(0,textName);
+    itemName->setText(0,get_name().c_str());
     itemName->set_type(1);
     itemName->setForeground(0,Qt::black);
-    itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
+    itemName->setFlags(itemName->flags() | Qt::ItemIsEditable | Qt::ItemIsSelectable);
     portWidgetItem->addChild(itemName);
     drawingWindow->insertItemToMap(drawingShape,itemName);
     drawingWindow->showItem(itemName);
-    drawingWindow->unselectItem(itemName);
 
     // impedance definition
 
-    QString textImpedanceDefinition=QString::fromStdString(impedance_definition.get_value());
     CustomTreeWidgetItem *itemImpedanceDefinition=new CustomTreeWidgetItem(0);
-    itemImpedanceDefinition->setText(0,textImpedanceDefinition);
+    itemImpedanceDefinition->set_type(5);
     itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() | Qt::ItemIsEditable);
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
     itemName->addChild(itemImpedanceDefinition);
@@ -6540,9 +6576,8 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
 
     // impedance calculation
 
-    QString textImpedanceCalculation=QString::fromStdString(impedance_calculation.get_value());
     CustomTreeWidgetItem *itemImpedanceCalculation=new CustomTreeWidgetItem(0);
-    itemImpedanceCalculation->setText(0,textImpedanceCalculation);
+    itemImpedanceCalculation->set_type(6);
     itemImpedanceCalculation->setFlags(itemImpedanceCalculation->flags() | Qt::ItemIsEditable);
     itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
     itemName->addChild(itemImpedanceCalculation);
@@ -6558,6 +6593,13 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
     drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
 
     QObject::connect(comboZcalc, &CustomComboBox::CustomCurrentIndexChanged, &comboIndexChanged);
+
+    // modes
+    long unsigned int i=0;
+    while (i < modeList.size()) {
+        modeList[i]->draw(drawingItemTree,itemName);
+        i++;
+    }
 }
 
 #endif

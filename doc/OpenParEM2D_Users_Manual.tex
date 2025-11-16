@@ -357,7 +357,7 @@ OpenParEM2D uses a lock file to prevent data collisions from accidentally runnin
    $ ls -a
 \end{Verbatim}
 
-The goal is that OpenParEM2D always detects problems and exits gracefully with an error message with the lock file removed.  Any other exit style is an issue that needs to be fixed with improved error checking, with one exception.  For a large project that runs out of memory, OpenParEM2D will exit with cryptic messages from the MPI system without mentioning the memory issue and without removing the lock file.
+The goal is that OpenParEM2D always detects problems and exits gracefully with an error message with the lock file removed.  Any other exit style is an issue that needs to be fixed with improved error checking, with one exception.
 
 When a job is running, progress is shown by extensive data sent to the terminal.  This output should be redirected to a file if the simulation progress is to be logged.
 

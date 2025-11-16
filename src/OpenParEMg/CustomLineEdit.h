@@ -24,19 +24,31 @@
 #include <QLineEdit>
 #include <QFocusEvent>
 #include <QDebug>
-#include <iostream>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 
 class CustomLineEdit : public QLineEdit {
     Q_OBJECT
 
 public:
-    CustomLineEdit(QWidget *parent = nullptr) : QLineEdit(parent) {}
+    CustomLineEdit(QWidget *parent = nullptr) : QLineEdit(parent) {
+        //rx.setPattern("[A-Za-z0-9]*");         // alphanumeric
+        rx.setPattern("^[A-Za-z0-9_\\[\\]]*$");  // alphanumeric plus _,[, and ]
+        rxValidator.setRegularExpression(rx);
+    }
+
+    void set_rxValidator() {setValidator(&rxValidator);}
 
 protected:
-    void focusOutEvent(QFocusEvent *event) override {
+    void focusOutEvent(QFocusEvent *event) override
+    {
         if (QLineEdit::isModified()) QLineEdit::returnPressed();
         QLineEdit::focusOutEvent(event);
     }
+
+private:
+    QRegularExpression rx;
+    QRegularExpressionValidator rxValidator;
 };
 
 #endif // CUSTOMLINEEDIT_H

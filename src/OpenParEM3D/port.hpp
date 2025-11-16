@@ -485,6 +485,9 @@ class Mode
       void snapToMeshBoundary (std::vector<Path *> *, mfem::Mesh *);
       void populateGamma (double, GammaDatabase *);
       void reset ();
+#ifdef HAS_GUI
+      void draw (QTreeWidget *, CustomTreeWidgetItem *);
+#endif
 };
 
 class PortAttribute
@@ -690,7 +693,6 @@ class Port
       bool has_mode (Mode *, long unsigned int *);
 #ifdef HAS_GUI
       void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
-      //void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
 #endif
 };
 
@@ -806,7 +808,6 @@ class BoundaryDatabase
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *);
 #ifdef HAS_GUI
       void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
-      //void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *);
 #endif
 };
 

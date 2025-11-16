@@ -30,7 +30,6 @@ class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
 
 public:
     CustomTreeWidgetItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type) {
-        shape=nullptr;
         root=false;         // default to non-root item
         type=0;
         set_dimTag(-1,-1);  // invalid initialization
@@ -41,13 +40,29 @@ public:
     void set_root (bool root_) {root=root_;}
     bool is_root () {return root;}
 
-    void set_type (int type_) {type=type_;}
+    void set_type (int type_) {
+        type=type_;
+        forShowHide=false;
+        if (is_drawing()) forShowHide=true;
+        if (is_port()) forShowHide=true;
+        if (is_boundary()) forShowHide=true;
+        if (is_mesh()) forShowHide=true;
+    }
     int get_type () {return type;}
 
     bool is_drawing () {if (type == 0) return true; return false;}
     bool is_port () {if (type == 1) return true; return false;}
     bool is_boundary () {if (type == 2) return true; return false;}
     bool is_mesh () {if (type == 3) return true; return false;}
+    bool is_sport () {if (type == 4) return true; return false;}
+    bool is_impedanceDefinition () {if (type == 5) return true; return false;}
+    bool is_impedanceCalculation () {if (type == 6) return true; return false;}
+    bool is_sportNumber () {if (type == 7) return true; return false;}
+    bool is_sportNet () {if (type == 8) return true; return false;}
+    bool is_voltage () {if (type == 9) return true; return false;}
+    bool is_voltageScale () {if (type == 10) return true; return false;}
+    bool is_current () {if (type == 11) return true; return false;}
+    bool is_currentScale () {if (type == 12) return true; return false;}
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
     Handle(AIS_Shape) get_AIS_Shape () {return shape;}
@@ -75,15 +90,39 @@ public:
         }
     }
 
+    bool isValidShow ()
+    {
+        if (!forShowHide) return false;
+        if (foreground(0) == Qt::gray) return true;
+        return false;
+    }
+
+    bool isValidHide ()
+    {
+        if (!forShowHide) return false;
+        if (foreground(0) == Qt::black) return true;
+        return false;
+    }
+
     void print () {
         std::cout << "CustomTreeWidgetItem:" << std::endl;
         if (shape.IsNull()) std::cout << "   shape=null" << std::endl;
         else std::cout << "   shape type=" << shape->Type() << std::endl;
         std::cout << "   root=" << root << std::endl;
+        std::cout << "   forShowHide=" << forShowHide << std::endl;
         if (is_drawing()) std::cout << "   type=drawing" << std::endl;
         if (is_port()) std::cout << "   type=port" << std::endl;
         if (is_boundary()) std::cout << "   type=boundary" << std::endl;
         if (is_mesh()) std::cout << "   type=mesh" << std::endl;
+        if (is_sport()) std::cout << "   type=sport" << std::endl;
+        if (is_impedanceDefinition()) std::cout << "   type=impedanceDefinition" << std::endl;
+        if (is_impedanceCalculation()) std::cout << "   type=impedanceCalculation" << std::endl;
+        if (is_sportNumber()) std::cout << "   type=sportNumber" << std::endl;
+        if (is_sportNet()) std::cout << "   type=sportNet" << std::endl;
+        if (is_voltage()) std::cout << "   type=voltage" << std::endl;
+        if (is_voltageScale()) std::cout << "   type=voltageScale" << std::endl;
+        if (is_current()) std::cout << "   type=current" << std::endl;
+        if (is_currentScale()) std::cout << "   type=currentScale" << std::endl;
         std::cout << "   dimTag.first=" << dimTag.first << std::endl
                   << "   dimTag.second=" << dimTag.second << std::endl
                   << "   displayMode=" << displayMode << std::endl
@@ -103,11 +142,16 @@ private slots:
 private:
     Handle(AIS_Shape) shape;                       // for drawing
     int displayMode;                               //    0 - wireframe, 1 - shaded
-    int selectionMode;                             //    0 - shape, 1 - vertex, ...                              //
+    int selectionMode;                             //    0 - shape, 1 - vertex, ...
     std::vector<Handle(AIS_Shape)> meshEntities;   // for mesh
     std::pair<int,int> dimTag;                     //
     bool root;                                     // false - not a root item, true - is a root item
-    int type;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh
+    bool forShowHide;                              // false - does not participate in item tree show/hide operations; true - does participate
+    int type;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh,
+                                                   // 4 - Sport, 5 - impedance definition, 6 - impedance calculation
+                                                   // 7 - Sport number, 8 - Sport net,
+                                                   // 9 - voltage, 10 - voltage scale,
+                                                   // 11 - current, 12 - current scale
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

@@ -30,6 +30,7 @@
 
 #include "AIS_Shape.hxx"
 
+#include "CustomLineEdit.h"
 #include "project.h"
 #include "OpenParEMmaterials.hpp"
 #include "port.hpp"
@@ -164,10 +165,15 @@ private slots:
     void hidePortItems ();
     void showMeshItems ();
     void hideMeshItems ();
+    void addSportNet ();
+    void renameSportNet ();
+    void deleteSportNet ();
+    void rename_returnPressed ();
     void selectItems ();
     void unselectDrawingItems ();
     void deleteDrawingItems ();
     void unselectPortItems ();
+    void renamePortItems ();
     void deletePortItems ();
     void setRootForeground (CustomTreeWidgetItem *);
     void showDisplayShape (CustomTreeWidgetItem *);
@@ -180,6 +186,7 @@ private slots:
     void assignMaterial ();
 
     void itemTreeContextMenu_triggered (const QPoint& pnt);
+    void drawingWindowContextMenu_triggered (const QPoint& pnt);
 
     void on_actionShape_triggered ();
     void on_actionVertex_triggered ();
@@ -238,6 +245,8 @@ private:
     QAction *unselectAction;
     QAction *deleteAction;
     QAction *assignMaterialAction;
+    QAction *addNetAction;
+    QAction *renameAction;
 
     // gmsh
     gmsh::vectorpair drawingEntities;
@@ -249,6 +258,8 @@ private:
     // lockouts
     bool projectFileLoaded;
     bool projectFileChanged;
+    bool boundaryDatabaseLoaded;
+    bool boundaryDatabaseChanged;
     bool meshFileLoaded;
     bool meshFileChanged;
     bool brepFileLoaded;
@@ -257,6 +268,11 @@ private:
     bool simulationRunning;
     bool simulationStopping;
     bool simulationAborting;
+
+    // rename
+    QString originalText;
+    CustomLineEdit *renameEdit;
+    CustomTreeWidgetItem *renameItem;
 
 };
 
