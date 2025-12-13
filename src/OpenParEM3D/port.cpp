@@ -24,7 +24,7 @@
 #include <filesystem>
 #include <thread>
 #include <csignal>
-#include <atomic>
+//#include <atomic>
 #include <filesystem>
 
 #include "port.hpp"
@@ -1485,7 +1485,7 @@ bool Boundary::snapToMeshBoundary (vector<Path *> *pathList, Mesh *mesh, string 
 //xxx
 #ifdef HAS_GUI
 
-void Boundary::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+void Boundary::draw (struct projectData *projData, vector<Path *> *pathList, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
                      CustomTreeWidgetItem *boundaryWidgetItem, MaterialDatabase *materialDatabase)
 {
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
@@ -2353,6 +2353,62 @@ void IntegrationPath::output (ofstream *out, vector<Path *> *pathList, Path *rot
    if (isModal) *out << "EndMode" << endl;
    else         *out << "EndLine" << endl << endl;
 }
+
+#ifdef HAS_GUI
+
+//xxx
+void IntegrationPath::draw (vector<Path *> *pathList, CustomOpenGLWidget *drawingWindow,
+                            QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemMode)
+{
+
+    // type
+    CustomTreeWidgetItem *itemType=new CustomTreeWidgetItem(0);
+    if (is_voltage()) {
+        itemType->setText(0,"voltage");
+        itemType->set_type(10);
+    }
+    if (is_current()) {
+        itemType->setText(0,"current");
+        itemType->set_type(11);
+    }
+    itemType->setFlags(itemMode->flags() & ~Qt::ItemIsEditable);
+    itemType->setToolTip(0,"Type of integration path.");
+    itemMode->addChild(itemType);
+
+    // path
+
+    long unsigned int i=0;
+    while (i < pathIndexList.size()) {
+
+        // outline
+        Path *path=(*pathList)[pathIndexList[i]];
+        Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (path->create_TopoDS_Wire());
+        drawingWindow->updateViewer();
+
+        // tree item
+        CustomTreeWidgetItem *itemSegment=new CustomTreeWidgetItem(0);
+        itemSegment->set_AIS_Shape(drawingShape);
+        itemSegment->setText(0,pathNameList[i]->get_value().c_str());
+        itemSegment->set_type(12);
+        itemSegment->setForeground(0,Qt::black);
+        itemSegment->setFlags(itemType->flags() & ~Qt::ItemIsEditable);
+        itemSegment->setToolTip(0,"Path segment for integration.");
+        itemType->addChild(itemSegment);
+        drawingWindow->insertItemToMap(drawingShape,itemSegment);
+        drawingWindow->showItem(itemSegment);
+
+        i++;
+    }
+
+    // scale
+    CustomTreeWidgetItem *itemScale=new CustomTreeWidgetItem(0);
+    itemScale->setText(0,"scale");
+    itemScale->set_type(11);
+    itemScale->setFlags(itemMode->flags() & ~Qt::ItemIsEditable);
+    itemScale->setToolTip(0,"Scale factor for the integration path.");
+    itemType->addChild(itemScale);
+}
+#endif
 
 IntegrationPath::~IntegrationPath ()
 {
@@ -3856,7 +3912,7 @@ void Mode::reset()
 
 #ifdef HAS_GUI
 
-void Mode::draw (QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemName)
+void Mode::draw (vector<Path *> *pathList, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemName)
 {
     // S port
     CustomTreeWidgetItem *itemMode=new CustomTreeWidgetItem(0);
@@ -3886,6 +3942,13 @@ void Mode::draw (QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemName)
         itemNet->setToolTip(0,"Net name.");
         itemNet->setFlags(itemName->flags() | Qt::ItemIsEditable);
         itemMode->addChild(itemNet);
+    }
+
+    // integration paths
+    long unsigned int i=0;
+    while (i < integrationPathList.size()) {
+        integrationPathList[i]->draw(pathList,drawingWindow,drawingItemTree,itemMode);
+        i++;
     }
 }
 #endif
@@ -6533,7 +6596,8 @@ void comboTextChanged (QString text, Boundary *boundary)
     if (boundary) boundary->set_material(text.toStdString());
 }
 
-void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, CustomTreeWidgetItem *portWidgetItem)
+void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomOpenGLWidget *drawingWindow,
+                 QTreeWidget *drawingItemTree, CustomTreeWidgetItem *portWidgetItem)
 {
     // port outline
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
@@ -6597,7 +6661,7 @@ void Port::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow
     // modes
     long unsigned int i=0;
     while (i < modeList.size()) {
-        modeList[i]->draw(drawingItemTree,itemName);
+        modeList[i]->draw(pathList,drawingWindow,drawingItemTree,itemName);
         i++;
     }
 }
@@ -8691,14 +8755,14 @@ void BoundaryDatabase::draw (struct projectData *projData, CustomOpenGLWidget *d
     // ports
     long unsigned int i=0;
     while (i < portList.size()) {
-        portList[i]->draw(projData,drawingWindow,drawingItemTree,portTreeItem);
+        portList[i]->draw(projData,&pathList,drawingWindow,drawingItemTree,portTreeItem);
         i++;
     }
 
     // boundaries
     i=0;
     while (i < boundaryList.size()) {
-        boundaryList[i]->draw(projData,drawingWindow,drawingItemTree,boundaryTreeItem,materialDatabase);
+        boundaryList[i]->draw(projData,&pathList,drawingWindow,drawingItemTree,boundaryTreeItem,materialDatabase);
         i++;
     }
 }

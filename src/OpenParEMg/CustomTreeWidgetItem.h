@@ -60,9 +60,9 @@ public:
     bool is_sportNumber () {if (type == 7) return true; return false;}
     bool is_sportNet () {if (type == 8) return true; return false;}
     bool is_voltage () {if (type == 9) return true; return false;}
-    bool is_voltageScale () {if (type == 10) return true; return false;}
-    bool is_current () {if (type == 11) return true; return false;}
-    bool is_currentScale () {if (type == 12) return true; return false;}
+    bool is_current () {if (type == 10) return true; return false;}
+    bool is_scale () {if (type == 11) return true; return false;}
+    bool is_integrationPathSegment () {if (type == 12) return true; return false;}
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
     Handle(AIS_Shape) get_AIS_Shape () {return shape;}
@@ -120,9 +120,9 @@ public:
         if (is_sportNumber()) std::cout << "   type=sportNumber" << std::endl;
         if (is_sportNet()) std::cout << "   type=sportNet" << std::endl;
         if (is_voltage()) std::cout << "   type=voltage" << std::endl;
-        if (is_voltageScale()) std::cout << "   type=voltageScale" << std::endl;
         if (is_current()) std::cout << "   type=current" << std::endl;
-        if (is_currentScale()) std::cout << "   type=currentScale" << std::endl;
+        if (is_scale()) std::cout << "   type=scale" << std::endl;
+        if (is_integrationPathSegment()) std::cout << "   type=integrationPathSegment" << std::endl;
         std::cout << "   dimTag.first=" << dimTag.first << std::endl
                   << "   dimTag.second=" << dimTag.second << std::endl
                   << "   displayMode=" << displayMode << std::endl
@@ -150,8 +150,9 @@ private:
     int type;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh,
                                                    // 4 - Sport, 5 - impedance definition, 6 - impedance calculation
                                                    // 7 - Sport number, 8 - Sport net,
-                                                   // 9 - voltage, 10 - voltage scale,
-                                                   // 11 - current, 12 - current scale
+                                                   // 9 - voltage, 10 - current
+                                                   // 11 - scale
+                                                   // 12 - integration path segment
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

@@ -203,7 +203,7 @@ class Boundary
       void print();
       bool snapToMeshBoundary (std::vector<Path *> *, mfem::Mesh *, std::string);
 #ifdef HAS_GUI
-      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, MaterialDatabase *);
+      void draw (struct projectData *, std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, MaterialDatabase *);
       void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
 #endif
 };
@@ -294,6 +294,9 @@ class IntegrationPath
       std::complex<double> get_integratedValue () {return integratedValue;}
       void set_integratedValue (std::complex<double> integratedValue_) {integratedValue=integratedValue_;}
       void output (std::ofstream *, std::vector<Path *> *, Path *, bool, bool, int);
+#ifdef HAS_GUI
+      void draw (std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
+#endif
 };
 
 class FieldSet
@@ -396,18 +399,18 @@ class Mode
    private:
       int startLine;
       int endLine;
-      keywordPair Sport;                              // integer value for the S-parameter port number
-      keywordPair net;                                // net name
+      keywordPair Sport;                                   // integer value for the S-parameter port number
+      keywordPair net;                                     // net name
       std::vector<IntegrationPath *> integrationPathList;  // voltage or current or both
       FieldSet fields;
-      int modeNumber2D;                               // mode number used for the 2D solution
+      int modeNumber2D;                                    // mode number used for the 2D solution
       std::string calculation;                             // modal | line - for output formatting
       
       // for S-parameter calculation
-      std::vector<std::complex<double>> Cp;                     // C plus for direction split with a unique value for each driving set
-      std::vector<std::complex<double>> Cm;                     // C minus for direction split with a unique value for each driving set
-      std::vector<std::complex<double>> weight;                 // weight for each driving set
-      bool net_is_updated=false;                      // flag to prevent updating net names more than once
+      std::vector<std::complex<double>> Cp;                // C plus for direction split with a unique value for each driving set
+      std::vector<std::complex<double>> Cm;                // C minus for direction split with a unique value for each driving set
+      std::vector<std::complex<double>> weight;            // weight for each driving set
+      bool net_is_updated=false;                           // flag to prevent updating net names more than once
 
    public:
       Mode(int,int,std::string);
@@ -486,7 +489,7 @@ class Mode
       void populateGamma (double, GammaDatabase *);
       void reset ();
 #ifdef HAS_GUI
-      void draw (QTreeWidget *, CustomTreeWidgetItem *);
+      void draw (std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -692,7 +695,7 @@ class Port
       void buildAggregateModeList (std::vector<Mode *> *);
       bool has_mode (Mode *, long unsigned int *);
 #ifdef HAS_GUI
-      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
+      void draw (struct projectData *, std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
 #endif
 };
 

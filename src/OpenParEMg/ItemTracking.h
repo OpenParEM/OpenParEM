@@ -137,6 +137,8 @@ public:
     {
         if (hideTracking) {std::cout << "ItemTracker::hideItem" << std::endl; std::cout.flush();}
 
+        item->print();
+
         if (item->is_drawing()) {
             EraseShape(item->get_AIS_Shape());
             std::cout << "set foreground to gray 1" << std::endl;
@@ -161,12 +163,26 @@ public:
                     i++;
                 }
             }
-        } else {
-            if (!item->get_AIS_Shape().IsNull()) {
-                EraseShape(item->get_AIS_Shape());
-                item->setForeground(0,Qt::gray);
-                removeVisibleItem(item);
+        } else if (item->is_sport()) {
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                hideItem(child);
+                i++;
             }
+        } else if (item->is_voltage() || item->is_current()) {
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                hideItem(child);
+                i++;
+            }
+        } else if (item->is_scale()) {
+            // nothing to do
+        } else {
+            if (!item->get_AIS_Shape().IsNull()) EraseShape(item->get_AIS_Shape());
+            item->setForeground(0,Qt::gray);
+            removeVisibleItem(item);
 
             int i=0;
             while (i < item->childCount()) {

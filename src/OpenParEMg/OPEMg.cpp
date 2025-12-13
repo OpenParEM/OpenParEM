@@ -55,7 +55,7 @@
 #include <QSlider>
 #include <QList>
 #include <QTreeWidgetItem>
-#include <thread>
+//#include <thread>
 
 //#include "petscsys.h"
 #include "MeshOptions.h"
@@ -71,7 +71,7 @@
 #include "CustomTreeWidgetItem.h"
 #include "MaterialSelection.h"
 #include "mpi.h"
-#include "RectangleSelector.h"
+//#include "RectangleSelector.h"
 
 OpenParEMg::OpenParEMg (QWidget *parent)
     : QMainWindow(parent)
@@ -1928,6 +1928,11 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
         }
     } else {
         ui->drawingWindow->unselectAllItems();
+
+        CustomTreeWidgetItem *clickedItemKeep=clickedItem;
+        clearTreeSelection();
+        clickedItem=clickedItemKeep;
+
         ui->drawingWindow->selectItem(clickedItem);
         previousClickedItem=clickedItem;
     }
@@ -2030,6 +2035,17 @@ void OpenParEMg::on_actionSolid_triggered()
     ui->drawingWindow->reshowItems();
 }
 
+void OpenParEMg::clearTreeSelection ()
+{
+    std::cout << "OpenParEMg::clearTreeSelection" << std::endl; std::cout.flush();
+    ui->drawingItemTree->clearSelection();
+    ui->drawingItemTree->setCurrentItem(nullptr);
+    ui->drawingWindow->unselectAllItems();
+    clickedItem=nullptr;
+    previousClickedItem=nullptr;
+    ui->drawingWindow->updateViewer();
+}
+
 // click on background in the item tree to clear the selection
 bool OpenParEMg::eventFilter(QObject *obj, QEvent *event)
 {
@@ -2037,13 +2053,7 @@ bool OpenParEMg::eventFilter(QObject *obj, QEvent *event)
         if (event->type() == QEvent::MouseButtonPress) {
             QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
             if (ui->drawingItemTree->indexAt(mouseEvent->pos()).isValid() == false) {
-                ui->drawingItemTree->clearSelection();
-                ui->drawingItemTree->setCurrentItem(nullptr);
-                ui->drawingWindow->unselectAllItems();
-                clickedItem=nullptr;
-                previousClickedItem=nullptr;
-                ui->drawingWindow->updateViewer();
-                std::cout << "clear tree click" << std::endl; std::cout.flush();
+                clearTreeSelection();
             }
             return false;
         }
@@ -2075,9 +2085,7 @@ void OpenParEMg::on_actionHideAll_triggered ()
 {
     ui->drawingWindow->unselectAllItems();
     ui->drawingWindow->hideAllItems();
-    clickedItem=nullptr;
-    previousClickedItem=nullptr;
-    ui->drawingWindow->updateViewer();
+    clearTreeSelection();
     setRootForeground(&port);
     setRootForeground(&boundary);
     setRootForeground(&mesh);
@@ -2088,6 +2096,7 @@ void OpenParEMg::on_actionUnselectAll_triggered ()
 {
     ui->drawingWindow->unselectAllItems();
     ui->drawingWindow->updateViewer();
+    clearTreeSelection();
     setMenus();
 }
 

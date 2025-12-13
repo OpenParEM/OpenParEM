@@ -97,6 +97,8 @@ public:
     void drawMesh ();
     void deleteMesh ();
 
+    void clearTreeSelection ();
+
     void dumpDrawingEntities ();
     void shapeCount (TopoDS_Shape, int *);
     void setPhysicalGroups ();
