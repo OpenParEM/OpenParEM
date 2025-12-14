@@ -73,6 +73,7 @@ qt_add_executable(OpenParEMg
     RectangleSelector.h
     ItemTracking.h
     about.h about.cpp about.ui
+    CustomSpinBox.h
 
 )
 

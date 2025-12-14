@@ -268,6 +268,10 @@ class IntegrationPath
       std::vector<bool> reverseList;
       std::vector<OPEMIntegrationPointList *> pointsList;
       std::complex<double> integratedValue;
+
+#if HAS_GUI
+      QDoubleValidator doubleValidator;
+#endif
    public:
       IntegrationPath (int, int);
       ~IntegrationPath ();
@@ -295,7 +299,7 @@ class IntegrationPath
       void set_integratedValue (std::complex<double> integratedValue_) {integratedValue=integratedValue_;}
       void output (std::ofstream *, std::vector<Path *> *, Path *, bool, bool, int);
 #ifdef HAS_GUI
-      void draw (std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
+      void draw (std::vector<Path *> *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -489,7 +493,7 @@ class Mode
       void populateGamma (double, GammaDatabase *);
       void reset ();
 #ifdef HAS_GUI
-      void draw (std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
+      void draw (std::vector<Path *> *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
 #endif
 };
 

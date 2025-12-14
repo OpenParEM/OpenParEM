@@ -47,6 +47,10 @@ public:
         if (is_port()) forShowHide=true;
         if (is_boundary()) forShowHide=true;
         if (is_mesh()) forShowHide=true;
+        if (is_sport()) forShowHide=true;
+        if (is_voltage()) forShowHide=true;
+        if (is_current()) forShowHide=true;
+        if (is_integrationPathSegment()) forShowHide=true;
     }
     int get_type () {return type;}
 
@@ -62,10 +66,15 @@ public:
     bool is_voltage () {if (type == 9) return true; return false;}
     bool is_current () {if (type == 10) return true; return false;}
     bool is_scale () {if (type == 11) return true; return false;}
-    bool is_integrationPathSegment () {if (type == 12) return true; return false;}
+    bool is_scaleValue () {if (type == 12) return true; return false;}
+    bool is_integrationPathSegment () {if (type == 13) return true; return false;}
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
     Handle(AIS_Shape) get_AIS_Shape () {return shape;}
+
+    void push_arrowHead (Handle(AIS_Shape) arrowHead) {arrowHeads.push_back(arrowHead);}
+    long unsigned int get_arrowHeads_size () {return arrowHeads.size();}
+    Handle(AIS_Shape) get_arrowHead (long unsigned int i) {return arrowHeads[i];}
 
     void set_dimTag (int dim, int tag) {dimTag.first=dim; dimTag.second=tag;}
     void set_dimTag (std::pair<int,int> dimTag_) {dimTag=dimTag_;}
@@ -141,6 +150,7 @@ private slots:
 
 private:
     Handle(AIS_Shape) shape;                       // for drawing
+    std::vector<Handle(AIS_Shape)> arrowHeads;     // used integration lines
     int displayMode;                               //    0 - wireframe, 1 - shaded
     int selectionMode;                             //    0 - shape, 1 - vertex, ...
     std::vector<Handle(AIS_Shape)> meshEntities;   // for mesh
@@ -151,8 +161,8 @@ private:
                                                    // 4 - Sport, 5 - impedance definition, 6 - impedance calculation
                                                    // 7 - Sport number, 8 - Sport net,
                                                    // 9 - voltage, 10 - current
-                                                   // 11 - scale
-                                                   // 12 - integration path segment
+                                                   // 11 - scale, 12 - scale value
+                                                   // 13 - integration path segment
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

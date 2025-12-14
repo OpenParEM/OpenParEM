@@ -35,12 +35,29 @@ public:
     CustomComboBox(QWidget *parent = nullptr) : QComboBox(parent) {
         connect(this, &QComboBox::currentIndexChanged,this, &CustomComboBox::handleCurrentIndexChanged);
         connect(this, &QComboBox::currentTextChanged,this, &CustomComboBox::handleCurrentTextChanged);
+        setFocusPolicy(Qt::ClickFocus);
+        drawingTracker=nullptr;
     }
+
     void set_port (Port *port_) {port=port_;}
     void set_boundary (Boundary *boundary_) {boundary=boundary_;}
     void set_type (int type_) {type=type_;}
     void set_itemMaterial (CustomTreeWidgetItem *itemMaterial_) {itemMaterial=itemMaterial_;}
     void set_itemWaveImpedance (CustomTreeWidgetItem *itemWaveImpedance_) {itemWaveImpedance=itemWaveImpedance_;}
+    void set_itemTracker (ItemTracker *drawingTracker_) {drawingTracker=drawingTracker_;}
+
+protected:
+    void focusInEvent(QFocusEvent *event) override
+    {
+        if (drawingTracker) drawingTracker->unselectAllItems();
+        QComboBox::focusInEvent(event);
+    }
+
+    void wheelEvent(QWheelEvent *event) override
+    {
+        // ignore wheel events
+        event->ignore();
+    }
 
 signals:
     void CustomCurrentIndexChanged (int index, Port *port, Boundary *boundary, int type, CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance);
@@ -62,6 +79,7 @@ private:
                // 2 - Boundary: boundary type
     CustomTreeWidgetItem *itemMaterial;
     CustomTreeWidgetItem *itemWaveImpedance;
+    ItemTracker *drawingTracker;
 };
 
 

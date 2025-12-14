@@ -21,11 +21,13 @@
 #ifndef CUSTOMLINEEDIT_H
 #define CUSTOMLINEEDIT_H
 
+#include "ItemTracking.h"
 #include <QLineEdit>
 #include <QFocusEvent>
 #include <QDebug>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
+#include <iostream>
 
 class CustomLineEdit : public QLineEdit {
     Q_OBJECT
@@ -35,11 +37,19 @@ public:
         //rx.setPattern("[A-Za-z0-9]*");         // alphanumeric
         rx.setPattern("^[A-Za-z0-9_\\[\\]]*$");  // alphanumeric plus _,[, and ]
         rxValidator.setRegularExpression(rx);
+        drawingTracker=nullptr;
     }
 
     void set_rxValidator() {setValidator(&rxValidator);}
+    void set_itemTracker (ItemTracker *drawingTracker_) {drawingTracker=drawingTracker_;}
 
 protected:
+    void focusInEvent(QFocusEvent *event) override
+    {
+        if (drawingTracker) drawingTracker->unselectAllItems();
+        QLineEdit::focusInEvent(event);
+    }
+
     void focusOutEvent(QFocusEvent *event) override
     {
         if (QLineEdit::isModified()) QLineEdit::returnPressed();
@@ -49,6 +59,7 @@ protected:
 private:
     QRegularExpression rx;
     QRegularExpressionValidator rxValidator;
+    ItemTracker *drawingTracker;
 };
 
 #endif // CUSTOMLINEEDIT_H

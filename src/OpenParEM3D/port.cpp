@@ -31,13 +31,13 @@
 #include "fem3D.hpp"
 #include "results.hpp"
 #include "petscsys.h"
+#include "CustomSpinBox.h"
 
 
 #ifdef HAS_GUI
 #include <Qt>
 #include <QComboBox>
 #include <QPushButton>
-#include <QSpinBox>
 #include "CustomAIS_Shape.h"
 #include "CustomLineEdit.h"
 #include "CustomComboBox.h"
@@ -1619,6 +1619,9 @@ IntegrationPath::IntegrationPath (int startLine_, int endLine_)
 
    // defaults
    scale.set_dbl_value(1);
+#if HAS_GUI
+   doubleValidator.setBottom(0);
+#endif
 }
 
 bool IntegrationPath::load(string *indent, inputFile *inputs)
@@ -2357,19 +2360,18 @@ void IntegrationPath::output (ofstream *out, vector<Path *> *pathList, Path *rot
 #ifdef HAS_GUI
 
 //xxx
-void IntegrationPath::draw (vector<Path *> *pathList, CustomOpenGLWidget *drawingWindow,
+void IntegrationPath::draw (vector<Path *> *pathList, struct point *normal, CustomOpenGLWidget *drawingWindow,
                             QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemMode)
 {
-
     // type
     CustomTreeWidgetItem *itemType=new CustomTreeWidgetItem(0);
     if (is_voltage()) {
         itemType->setText(0,"voltage");
-        itemType->set_type(10);
+        itemType->set_type(9);
     }
     if (is_current()) {
         itemType->setText(0,"current");
-        itemType->set_type(11);
+        itemType->set_type(10);
     }
     itemType->setFlags(itemMode->flags() & ~Qt::ItemIsEditable);
     itemType->setToolTip(0,"Type of integration path.");
@@ -2385,11 +2387,16 @@ void IntegrationPath::draw (vector<Path *> *pathList, CustomOpenGLWidget *drawin
         Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (path->create_TopoDS_Wire());
         drawingWindow->updateViewer();
 
+        // signed name
+        QString name="+";
+        if (reverseList[i]) name="-";
+        name.append(pathNameList[i]->get_value().c_str());
+
         // tree item
         CustomTreeWidgetItem *itemSegment=new CustomTreeWidgetItem(0);
         itemSegment->set_AIS_Shape(drawingShape);
-        itemSegment->setText(0,pathNameList[i]->get_value().c_str());
-        itemSegment->set_type(12);
+        itemSegment->setText(0,name);
+        itemSegment->set_type(13);
         itemSegment->setForeground(0,Qt::black);
         itemSegment->setFlags(itemType->flags() & ~Qt::ItemIsEditable);
         itemSegment->setToolTip(0,"Path segment for integration.");
@@ -2397,16 +2404,113 @@ void IntegrationPath::draw (vector<Path *> *pathList, CustomOpenGLWidget *drawin
         drawingWindow->insertItemToMap(drawingShape,itemSegment);
         drawingWindow->showItem(itemSegment);
 
+        // arrow heads
+
+        // shortest segment
+        double shortestLength=DBL_MAX;
+        long unsigned int j=0;
+        while (j < path->get_points_size()) {
+            keywordPair *from=path->get_point(j);
+            keywordPair *to=nullptr;
+
+            if (j < path->get_points_size()-1) {
+                to=path->get_point(j+1);
+            } else {
+                if (path->is_closed()) to=path->get_point(0);
+            }
+
+            if (to) {
+                double length=point_magnitude(point_subtraction(from->get_point_value(),to->get_point_value()));
+                if (length > 0 && length < shortestLength) shortestLength=length;
+            }
+            j++;
+        }
+
+        // make arrows
+
+        j=0;
+        while (j < path->get_points_size()) {
+            keywordPair *from=path->get_point(j);
+            keywordPair *to=nullptr;
+
+            if (j < path->get_points_size()-1) {
+                to=path->get_point(j+1);
+            } else {
+                if (path->is_closed()) to=path->get_point(0);
+            }
+
+            if (to) {
+                struct point shifted_segment=point_subtraction(to->get_point_value(),from->get_point_value());
+                struct point shifted_normal=point_subtraction(*normal,from->get_point_value());
+                struct point arrowOffset=point_scale(shortestLength/10,point_normalize(point_cross_product(shifted_segment,shifted_normal)));
+
+                struct point center=point_midpoint(from->get_point_value(),to->get_point_value());
+                struct point centerOffset=point_scale(shortestLength/20,point_normalize(point_subtraction(center,from->get_point_value())));
+
+                keywordPair *tip=new keywordPair();
+                tip->set_point_value(point_addition(center,centerOffset));
+
+                keywordPair *p1=new keywordPair ();
+                p1->set_point_value(point_subtraction(point_subtraction(center,centerOffset),arrowOffset));
+
+                keywordPair *p2=new keywordPair ();
+                p2->set_point_value(point_addition(point_subtraction(center,centerOffset),arrowOffset));
+
+                Path arrowHead(0,0);
+                arrowHead.set_closed(false);
+                arrowHead.push_point(p1);
+                arrowHead.push_point(tip);
+                arrowHead.push_point(p2);
+
+                Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (arrowHead.create_TopoDS_Wire());
+                drawingWindow->displayShape(drawingShape,itemSegment->get_displayMode(),itemSegment->get_selectionMode());
+                drawingWindow->updateViewer();
+                itemSegment->push_arrowHead(drawingShape);
+                drawingWindow->insertItemToMap(drawingShape,itemSegment);
+            }
+
+            j++;
+        }
         i++;
     }
 
     // scale
+
     CustomTreeWidgetItem *itemScale=new CustomTreeWidgetItem(0);
     itemScale->setText(0,"scale");
     itemScale->set_type(11);
     itemScale->setFlags(itemMode->flags() & ~Qt::ItemIsEditable);
     itemScale->setToolTip(0,"Scale factor for the integration path.");
     itemType->addChild(itemScale);
+
+    QString enabledBackground="background: rgb(255,255,255);";
+    //QString disabledBackground="background: rgb(240,240,240);";
+
+    // CustomTreeWidgetItem *itemSport=new CustomTreeWidgetItem(0);
+    // itemSport->set_type(7);
+    // itemSport->setToolTip(0,"S-parameter port number.");
+    // itemMode->addChild(itemSport);
+
+    // CustomSpinBox *sport=new CustomSpinBox();
+    // sport->setMinimum(1);
+    // sport->setValue(get_Sport());
+    // drawingItemTree->setItemWidget(itemSport,0,sport);
+
+
+    CustomTreeWidgetItem *itemScaleValue=new CustomTreeWidgetItem(0);
+    itemScaleValue->set_type(12);
+    itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
+    itemScale->addChild(itemScaleValue);
+
+    CustomLineEdit *scaleEdit=new CustomLineEdit();
+    scaleEdit->setText(QString::number(get_scale(),'g'));
+    scaleEdit->set_itemTracker(drawingWindow->get_itemTracker());
+    //scaleEdit->setAlignment(Qt::AlignLeft);
+    //scaleEdit->setStyleSheet(enabledBackground);
+    scaleEdit->setValidator(&doubleValidator);
+    drawingItemTree->setItemWidget(itemScaleValue,0,scaleEdit);
+
+    //xxx
 }
 #endif
 
@@ -3912,7 +4016,7 @@ void Mode::reset()
 
 #ifdef HAS_GUI
 
-void Mode::draw (vector<Path *> *pathList, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemName)
+void Mode::draw (vector<Path *> *pathList, struct point *normal, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemName)
 {
     // S port
     CustomTreeWidgetItem *itemMode=new CustomTreeWidgetItem(0);
@@ -3927,9 +4031,11 @@ void Mode::draw (vector<Path *> *pathList, CustomOpenGLWidget *drawingWindow, QT
     CustomTreeWidgetItem *itemSport=new CustomTreeWidgetItem(0);
     itemSport->set_type(7);
     itemSport->setToolTip(0,"S-parameter port number.");
+    itemSport->setFlags(itemName->flags() & ~Qt::ItemIsSelectable);
     itemMode->addChild(itemSport);
 
-    QSpinBox *sport=new QSpinBox();
+    CustomSpinBox *sport=new CustomSpinBox();
+    sport->set_itemTracker(drawingWindow->get_itemTracker());
     sport->setMinimum(1);
     sport->setValue(get_Sport());
     drawingItemTree->setItemWidget(itemSport,0,sport);
@@ -3947,7 +4053,7 @@ void Mode::draw (vector<Path *> *pathList, CustomOpenGLWidget *drawingWindow, QT
     // integration paths
     long unsigned int i=0;
     while (i < integrationPathList.size()) {
-        integrationPathList[i]->draw(pathList,drawingWindow,drawingItemTree,itemMode);
+        integrationPathList[i]->draw(pathList,normal,drawingWindow,drawingItemTree,itemMode);
         i++;
     }
 }
@@ -6612,6 +6718,7 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
     itemName->set_type(1);
     itemName->setForeground(0,Qt::black);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable | Qt::ItemIsSelectable);
+    itemName->setToolTip(0,"Port name.");
     portWidgetItem->addChild(itemName);
     drawingWindow->insertItemToMap(drawingShape,itemName);
     drawingWindow->showItem(itemName);
@@ -6620,11 +6727,12 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
 
     CustomTreeWidgetItem *itemImpedanceDefinition=new CustomTreeWidgetItem(0);
     itemImpedanceDefinition->set_type(5);
-    itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() | Qt::ItemIsEditable);
+    itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
     itemName->addChild(itemImpedanceDefinition);
 
     CustomComboBox *comboZdef=new CustomComboBox();
+    comboZdef->set_itemTracker(drawingWindow->get_itemTracker());
     comboZdef->addItem("VI");
     comboZdef->addItem("PV");
     comboZdef->addItem("PI");
@@ -6642,11 +6750,12 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
 
     CustomTreeWidgetItem *itemImpedanceCalculation=new CustomTreeWidgetItem(0);
     itemImpedanceCalculation->set_type(6);
-    itemImpedanceCalculation->setFlags(itemImpedanceCalculation->flags() | Qt::ItemIsEditable);
+    itemImpedanceCalculation->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
     itemName->addChild(itemImpedanceCalculation);
 
     CustomComboBox *comboZcalc=new CustomComboBox();
+    comboZcalc->set_itemTracker(drawingWindow->get_itemTracker());
     comboZcalc->addItem("line");
     comboZcalc->addItem("modal");
     comboZcalc->set_port(this);
@@ -6659,9 +6768,10 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
     QObject::connect(comboZcalc, &CustomComboBox::CustomCurrentIndexChanged, &comboIndexChanged);
 
     // modes
+    struct point outline_normal=outline->get_normal();
     long unsigned int i=0;
     while (i < modeList.size()) {
-        modeList[i]->draw(pathList,drawingWindow,drawingItemTree,itemName);
+        modeList[i]->draw(pathList,&outline_normal,drawingWindow,drawingItemTree,itemName);
         i++;
     }
 }

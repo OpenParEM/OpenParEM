@@ -79,12 +79,23 @@ public:
                     i++;
                 }
             }
+        } else if (item->is_integrationPathSegment()) {
+            DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            item->setForeground(0,Qt::black);
+            visibleItems.push_back(item);
+
+            long unsigned int i=0;
+            while (i < item->get_arrowHeads_size()) {
+                viewerContext->Display(item->get_arrowHead(i),item->get_displayMode(),item->get_selectionMode(),Standard_False);
+                i++;
+            }
         } else {
             if (!item->get_AIS_Shape().IsNull()) {
                 DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
-                item->setForeground(0,Qt::black);
-                visibleItems.push_back(item);
             }
+            item->setForeground(0,Qt::black);
+            visibleItems.push_back(item);
+
             int i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
@@ -121,6 +132,59 @@ public:
         return false;
     }
 
+    bool isVIValidShow ()
+    {
+        if (showTracking) {std::cout << "ItemTracker::isVIValidShow" << std::endl; std::cout.flush();}
+
+        long unsigned int i=0;
+        while (i < selectedItems.size()) {
+            CustomTreeWidgetItem *item=selectedItems[i];
+
+            int j=0;
+            while (j < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                if (child->is_integrationPathSegment()) {
+                    if (child->isValidShow()) return true;
+                }
+                j++;
+            }
+
+            i++;
+        }
+
+        return false;
+    }
+
+    bool isSportValidShow ()
+    {
+        if (showTracking) {std::cout << "ItemTracker::isSportValidShow" << std::endl; std::cout.flush();}
+
+        long unsigned int i=0;
+        while (i < selectedItems.size()) {
+            CustomTreeWidgetItem *item=selectedItems[i];
+
+            int j=0;
+            while (j < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                if (child->is_voltage() || child->is_current()) {
+                    int k=0;
+                    while (k < child->childCount()) {
+                        CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *) child->child(k);
+                        if (grandChild->is_integrationPathSegment()) {
+                            if (grandChild->isValidShow()) return true;
+                        }
+                        k++;
+                    }
+
+                }
+                j++;
+            }
+
+            i++;
+        }
+
+        return false;
+    }
 
     // hide
 
@@ -163,7 +227,10 @@ public:
                     i++;
                 }
             }
+
         } else if (item->is_sport()) {
+            item->setForeground(0,Qt::gray);
+
             int i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
@@ -171,10 +238,22 @@ public:
                 i++;
             }
         } else if (item->is_voltage() || item->is_current()) {
+            item->setForeground(0,Qt::gray);
+
             int i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
                 hideItem(child);
+                i++;
+            }
+        } else if (item->is_integrationPathSegment()) {
+            if (!item->get_AIS_Shape().IsNull()) EraseShape(item->get_AIS_Shape());
+            item->setForeground(0,Qt::gray);
+            removeVisibleItem(item);
+
+            long unsigned int i=0;
+            while (i < item->get_arrowHeads_size()) {
+                viewerContext->Erase(item->get_arrowHead(i),Standard_False);
                 i++;
             }
         } else if (item->is_scale()) {
@@ -245,6 +324,57 @@ public:
         return false;
     }
 
+    bool isVIValidHide ()
+    {
+        if (hideTracking) {std::cout << "ItemTracker::isVIValidHide" << std::endl; std::cout.flush();}
+
+        long unsigned int i=0;
+        while (i < selectedItems.size()) {
+            CustomTreeWidgetItem *item=selectedItems[i];
+
+            int j=0;
+            while (j < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                if (child->is_integrationPathSegment()) {
+                    if (child->isValidHide()) return true;
+                }
+                j++;
+            }
+
+            i++;
+        }
+        return false;
+    }
+
+    bool isSportValidHide ()
+    {
+        if (hideTracking) {std::cout << "ItemTracker::isSportValidHide" << std::endl; std::cout.flush();}
+
+        long unsigned int i=0;
+        while (i < selectedItems.size()) {
+            CustomTreeWidgetItem *item=selectedItems[i];
+
+            int j=0;
+            while (j < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+
+                if (child->is_voltage() || child->is_current()) {
+                    int k=0;
+                    while (k < child->childCount()) {
+                        CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *) child->child(k);
+                        if (grandChild->is_integrationPathSegment()) {
+                            if (grandChild->isValidHide()) return true;
+                        }
+                        k++;
+                    }
+                }
+                j++;
+            }
+
+            i++;
+        }
+        return false;
+    }
 
     // select
 
@@ -260,8 +390,20 @@ public:
     {
         if (selectTracking) {std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();}
 
+        SelectShape(item->get_AIS_Shape());
         item->setSelected(Standard_True);
         selectedItems.push_back(item);
+
+        std::cout << "place 1" << std::endl; std::cout.flush();
+        if (item->is_integrationPathSegment()) {
+            std::cout << "place 2" << std::endl; std::cout.flush();
+            int i=0;
+            while (i < item->get_arrowHeads_size()) {
+                std::cout << "place 3" << std::endl; std::cout.flush();
+                SelectShape(item->get_arrowHead(i));
+                i++;
+            }
+        }
     }
 
     bool hasSelectedItems (int type)

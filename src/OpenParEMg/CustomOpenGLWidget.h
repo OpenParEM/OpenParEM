@@ -88,15 +88,37 @@ public:
     bool isValidShow ()
     {
         std::cout << "CustomOpenGLWidget::isValidShow" << std::endl; std::cout.flush();
-        bool retval=drawingTracker->isValidShow();
-        std::cout << "CustomOpenGLWidget::isValidShow return retval=" << retval << std::endl; std::cout.flush();
-        return retval;
+        return drawingTracker->isValidShow();
+    }
+
+    bool isSportValidShow ()
+    {
+        std::cout << "CustomOpenGLWidget::isSportValidShow" << std::endl; std::cout.flush();
+        return drawingTracker->isSportValidShow();
+    }
+
+    bool isVIValidShow ()
+    {
+        std::cout << "CustomOpenGLWidget::isVIValidShow" << std::endl; std::cout.flush();
+        return drawingTracker->isVIValidShow();
     }
 
     bool isValidHide ()
     {
         std::cout << "CustomOpenGLWidget::isValidHide" << std::endl; std::cout.flush();
         return drawingTracker->isValidHide();
+    }
+
+    bool isVIValidHide ()
+    {
+        std::cout << "CustomOpenGLWidget::isVIValidHide" << std::endl; std::cout.flush();
+        return drawingTracker->isVIValidHide();
+    }
+
+    bool isSportValidHide ()
+    {
+        std::cout << "CustomOpenGLWidget::isSportValidHide" << std::endl; std::cout.flush();
+        return drawingTracker->isSportValidHide();
     }
 
     void hideItem (CustomTreeWidgetItem *item)
@@ -214,6 +236,8 @@ public:
 
     void getSelected (std::vector<Handle(AIS_InteractiveObject)> *);
     Handle(AIS_InteractiveObject) getLastSelected ();
+
+    ItemTracker* get_itemTracker () {return drawingTracker;}
 
     void selectRectangle ();
     void endSelectRectangle ();

@@ -161,6 +161,10 @@ private slots:
     // Functionality
 
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
+    void expand (CustomTreeWidgetItem *);
+    void collapse (CustomTreeWidgetItem *);
+    void expandAllItems ();
+    void collapseAllItems ();
     void showDrawingItems ();
     void hideDrawingItems ();
     void showPortItems ();
@@ -177,6 +181,12 @@ private slots:
     void unselectPortItems ();
     void renamePortItems ();
     void deletePortItems ();
+    void showSportItems ();
+    void hideSportItems ();
+    void showVIItems ();
+    void hideVIItems ();
+    void showIntegrationPathItems ();
+    void hideIntegrationPathItems ();
     void setRootForeground (CustomTreeWidgetItem *);
     void showDisplayShape (CustomTreeWidgetItem *);
     void showPortShape (CustomTreeWidgetItem *);
@@ -249,6 +259,8 @@ private:
     QAction *assignMaterialAction;
     QAction *addNetAction;
     QAction *renameAction;
+    QAction *expandAllAction;
+    QAction *collapseAllAction;
 
     // gmsh
     gmsh::vectorpair drawingEntities;
