@@ -91,10 +91,10 @@ public:
         return drawingTracker->isValidShow();
     }
 
-    bool isSportValidShow ()
+    bool isNetValidShow ()
     {
-        std::cout << "CustomOpenGLWidget::isSportValidShow" << std::endl; std::cout.flush();
-        return drawingTracker->isSportValidShow();
+        std::cout << "CustomOpenGLWidget::isNetValidShow" << std::endl; std::cout.flush();
+        return drawingTracker->isNetValidShow();
     }
 
     bool isVIValidShow ()
@@ -115,10 +115,10 @@ public:
         return drawingTracker->isVIValidHide();
     }
 
-    bool isSportValidHide ()
+    bool isNetValidHide ()
     {
-        std::cout << "CustomOpenGLWidget::isSportValidHide" << std::endl; std::cout.flush();
-        return drawingTracker->isSportValidHide();
+        std::cout << "CustomOpenGLWidget::isNetValidHide" << std::endl; std::cout.flush();
+        return drawingTracker->isNetValidHide();
     }
 
     void hideItem (CustomTreeWidgetItem *item)
@@ -132,10 +132,10 @@ public:
         drawingTracker->hideAllItems();
     }
 
-    void hideItems () {
-        std::cout << "CustomOpenGLWidget::hideItems" << std::endl; std::cout.flush();
-        drawingTracker->hideItems();
-    }
+    // void hideItems () {
+    //     std::cout << "CustomOpenGLWidget::hideItems" << std::endl; std::cout.flush();
+    //     drawingTracker->hideItems();
+    // }
 
     void selectItem (CustomTreeWidgetItem *item)
     {
@@ -207,18 +207,24 @@ public:
         viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
     }
 
+    void hideShape (Handle(AIS_Shape) shape)
+    {
+        std::cout << "CustomOpenGLWidget::hideShape" << std::endl; std::cout.flush();
+        viewerContext->Erase(shape,Standard_False);
+    }
+
     bool isValidDelete ()
     {
         std::cout << "CustomOpenGLWidget::isValidDelete" << std::endl; std::cout.flush();
         return drawingTracker->isValidDelete();
     }
 
-    void hideShape (Handle(AIS_Shape) shape) {
-        std::cout << "CustomOpenGLWidget::hideShape" << std::endl; std::cout.flush();
-        if (!viewerContext->IsDisplayed(shape)) return;
-        if (viewerContext->IsSelected(shape)) viewerContext->AddOrRemoveSelected(shape,Standard_True);
-        viewerContext->Erase(shape,Standard_False);
-    }
+    // void hideShape (Handle(AIS_Shape) shape) {
+    //     std::cout << "CustomOpenGLWidget::hideShape" << std::endl; std::cout.flush();
+    //     if (!viewerContext->IsDisplayed(shape)) return;
+    //     if (viewerContext->IsSelected(shape)) viewerContext->AddOrRemoveSelected(shape,Standard_True);
+    //     viewerContext->Erase(shape,Standard_False);
+    // }
 
     void deleteShape (Handle(AIS_Shape) shape) {
         std::cout << "CustomOpenGLWidget::deleteShape" << std::endl; std::cout.flush();

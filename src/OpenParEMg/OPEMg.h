@@ -171,7 +171,7 @@ private slots:
     void hidePortItems ();
     void showMeshItems ();
     void hideMeshItems ();
-    void addSportNet ();
+    //void addSportNet ();
     void renameSportNet ();
     void deleteSportNet ();
     void rename_returnPressed ();
@@ -181,19 +181,19 @@ private slots:
     void unselectPortItems ();
     void renamePortItems ();
     void deletePortItems ();
-    void showSportItems ();
-    void hideSportItems ();
+    void showNetItems ();
+    void hideNetItems ();
     void showVIItems ();
     void hideVIItems ();
     void showIntegrationPathItems ();
     void hideIntegrationPathItems ();
     void setRootForeground (CustomTreeWidgetItem *);
-    void showDisplayShape (CustomTreeWidgetItem *);
-    void showPortShape (CustomTreeWidgetItem *);
-    void hideDisplayShape (CustomTreeWidgetItem *);
-    void hidePortShape (CustomTreeWidgetItem *);
-    void selectDisplayShape (CustomTreeWidgetItem *);
-    void unselectDisplayShape (CustomTreeWidgetItem *);
+    //void showDisplayShape (CustomTreeWidgetItem *);
+    //void showPortShape (CustomTreeWidgetItem *);
+    //void hideDisplayShape (CustomTreeWidgetItem *);
+    //void hidePortShape (CustomTreeWidgetItem *);
+    //void selectDisplayShape (CustomTreeWidgetItem *);
+    //void unselectDisplayShape (CustomTreeWidgetItem *);
 
     void assignMaterial ();
 

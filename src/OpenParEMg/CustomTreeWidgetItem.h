@@ -47,9 +47,6 @@ public:
         if (is_port()) forShowHide=true;
         if (is_boundary()) forShowHide=true;
         if (is_mesh()) forShowHide=true;
-        if (is_sport()) forShowHide=true;
-        if (is_voltage()) forShowHide=true;
-        if (is_current()) forShowHide=true;
         if (is_integrationPathSegment()) forShowHide=true;
     }
     int get_type () {return type;}
@@ -66,7 +63,7 @@ public:
     bool is_voltage () {if (type == 9) return true; return false;}
     bool is_current () {if (type == 10) return true; return false;}
     bool is_scale () {if (type == 11) return true; return false;}
-    bool is_scaleValue () {if (type == 12) return true; return false;}
+    //bool is_scaleValue () {if (type == 12) return true; return false;}
     bool is_integrationPathSegment () {if (type == 13) return true; return false;}
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}

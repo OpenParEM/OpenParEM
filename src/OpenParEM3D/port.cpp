@@ -2479,23 +2479,12 @@ void IntegrationPath::draw (vector<Path *> *pathList, struct point *normal, Cust
     CustomTreeWidgetItem *itemScale=new CustomTreeWidgetItem(0);
     itemScale->setText(0,"scale");
     itemScale->set_type(11);
-    itemScale->setFlags(itemMode->flags() & ~Qt::ItemIsEditable);
+    itemScale->setFlags(itemMode->flags() & ~Qt::ItemIsSelectable);
     itemScale->setToolTip(0,"Scale factor for the integration path.");
     itemType->addChild(itemScale);
 
-    QString enabledBackground="background: rgb(255,255,255);";
+    //QString enabledBackground="background: rgb(255,255,255);";
     //QString disabledBackground="background: rgb(240,240,240);";
-
-    // CustomTreeWidgetItem *itemSport=new CustomTreeWidgetItem(0);
-    // itemSport->set_type(7);
-    // itemSport->setToolTip(0,"S-parameter port number.");
-    // itemMode->addChild(itemSport);
-
-    // CustomSpinBox *sport=new CustomSpinBox();
-    // sport->setMinimum(1);
-    // sport->setValue(get_Sport());
-    // drawingItemTree->setItemWidget(itemSport,0,sport);
-
 
     CustomTreeWidgetItem *itemScaleValue=new CustomTreeWidgetItem(0);
     itemScaleValue->set_type(12);
@@ -4016,44 +4005,51 @@ void Mode::reset()
 
 #ifdef HAS_GUI
 
-void Mode::draw (vector<Path *> *pathList, struct point *normal, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemName)
+void Mode::draw (vector<Path *> *pathList, struct point *normal, CustomOpenGLWidget *drawingWindow,
+                 QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemName)
 {
+    // net
+
+    QString netname;
+    if (net_is_loaded()) netname=QString::fromStdString(get_net());
+    else {
+        netname="net";
+        netname.append(QString::number(get_Sport()));
+    }
+
+    CustomTreeWidgetItem *itemNet=new CustomTreeWidgetItem(0);
+    itemNet->setText(0,netname);
+    itemNet->set_type(8);
+    itemNet->setToolTip(0,"Mode and its net name.");
+    itemNet->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
+    itemName->addChild(itemNet);
+
     // S port
-    CustomTreeWidgetItem *itemMode=new CustomTreeWidgetItem(0);
-    itemMode->setText(0,"S Port");
-    itemMode->set_type(4);
-    itemName->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
-    itemMode->setToolTip(0,"Mode on the port.");
-    itemName->addChild(itemMode);
+    CustomTreeWidgetItem *itemSport=new CustomTreeWidgetItem(0);
+    itemSport->setText(0,"S Port");
+    itemSport->set_type(4);
+    itemSport->setFlags(itemName->flags() & ~Qt::ItemIsSelectable);
+    itemSport->setToolTip(0,"S-port number for the mode.");
+    itemNet->addChild(itemSport);
 
     // Sport number
 
-    CustomTreeWidgetItem *itemSport=new CustomTreeWidgetItem(0);
-    itemSport->set_type(7);
-    itemSport->setToolTip(0,"S-parameter port number.");
-    itemSport->setFlags(itemName->flags() & ~Qt::ItemIsSelectable);
-    itemMode->addChild(itemSport);
+    CustomTreeWidgetItem *itemSportValue=new CustomTreeWidgetItem(0);
+    itemSportValue->set_type(7);
+    itemSportValue->setToolTip(0,"S-parameter port number.");
+    itemSportValue->setFlags(itemName->flags() & ~Qt::ItemIsSelectable);
+    itemSport->addChild(itemSportValue);
 
     CustomSpinBox *sport=new CustomSpinBox();
     sport->set_itemTracker(drawingWindow->get_itemTracker());
     sport->setMinimum(1);
     sport->setValue(get_Sport());
-    drawingItemTree->setItemWidget(itemSport,0,sport);
-
-    // net
-    if (net_is_loaded()) {
-        CustomTreeWidgetItem *itemNet=new CustomTreeWidgetItem(0);
-        itemNet->setText(0,get_net().c_str());
-        itemNet->set_type(8);
-        itemNet->setToolTip(0,"Net name.");
-        itemNet->setFlags(itemName->flags() | Qt::ItemIsEditable);
-        itemMode->addChild(itemNet);
-    }
+    drawingItemTree->setItemWidget(itemSportValue,0,sport);
 
     // integration paths
     long unsigned int i=0;
     while (i < integrationPathList.size()) {
-        integrationPathList[i]->draw(pathList,normal,drawingWindow,drawingItemTree,itemMode);
+        integrationPathList[i]->draw(pathList,normal,drawingWindow,drawingItemTree,itemNet);
         i++;
     }
 }
@@ -6717,7 +6713,7 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
     itemName->setText(0,get_name().c_str());
     itemName->set_type(1);
     itemName->setForeground(0,Qt::black);
-    itemName->setFlags(itemName->flags() | Qt::ItemIsEditable | Qt::ItemIsSelectable);
+    itemName->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
     itemName->setToolTip(0,"Port name.");
     portWidgetItem->addChild(itemName);
     drawingWindow->insertItemToMap(drawingShape,itemName);

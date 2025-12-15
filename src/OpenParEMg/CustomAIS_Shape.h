@@ -29,10 +29,10 @@ class CustomAIS_Shape : public AIS_Shape
 {
 public:
     CustomAIS_Shape (const TopoDS_Shape &aShape) : AIS_Shape(aShape) {}
-    void set_name (QString name_) {name=name_;}
-    QString get_name () {return name;}
+    // void set_name (QString name_) {name=name_;}
+    // QString get_name () {return name;}
 private:
-    QString name;
+    //QString name;
 };
 
 #endif // CUSTOMAIS_SHAPE_H
