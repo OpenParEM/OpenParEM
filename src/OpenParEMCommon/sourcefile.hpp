@@ -43,6 +43,7 @@ class SourceFile {
       std::string get_name () {return name.get_value();}
       bool check (std::string *);
       void print ();
+      void save (std::ofstream *);
 };
 
 #endif

@@ -143,6 +143,7 @@
     <addaction name="actionMenuSelection"/>
     <addaction name="actionSelectWithBox"/>
     <addaction name="actionUnselectAll"/>
+    <addaction name="actionShowAll"/>
     <addaction name="actionHideAll"/>
     <addaction name="actionWireframe"/>
    </widget>
@@ -418,6 +419,11 @@
   <action name="actionClose">
    <property name="text">
     <string>Close</string>
+   </property>
+  </action>
+  <action name="actionShowAll">
+   <property name="text">
+    <string>Show All</string>
    </property>
   </action>
  </widget>

@@ -106,10 +106,24 @@ SourceFile* SourceFile::clone ()
    return sc;
 }
 
-void SourceFile::print () {
+void SourceFile::print ()
+{
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"File\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   name=%s\n",name.get_value().c_str());
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"EndFile\n");
    return;
+}
+
+void SourceFile::save (std::ofstream *out)
+{
+    PetscMPIInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank != 0) return;
+
+    *out << "   File" << std::endl;
+    *out << "      name=" << name.get_value() << std::endl;
+    *out << "   EndFile" << std::endl;
+    return;
 }
 

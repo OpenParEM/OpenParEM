@@ -201,6 +201,7 @@ class Boundary
       void collectRadiationCurrents (std::vector<Current *> *);
       void deleteRadiationCurrents ();
       void print();
+      void save (std::ofstream *);
       bool snapToMeshBoundary (std::vector<Path *> *, mfem::Mesh *, std::string);
 #ifdef HAS_GUI
       void draw (struct projectData *, std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, MaterialDatabase *);
@@ -290,7 +291,8 @@ class IntegrationPath
       bool assignPathIndices (std::vector<Path *> *);
       void snapToMeshBoundary (std::vector<Path *> *, mfem::Mesh *);
       void resetElementNumbers ();
-      void print(std::string);
+      void print (std::string);
+      void save (std::ofstream *);
       bool is_enclosedByPath (std::vector<Path *> *, Path *);
       void calculateLineIntegral (mfem::ParMesh *, mfem::ParGridFunction *, mfem::ParGridFunction *);
       bool is_voltage() {if (type.get_value().compare("voltage") == 0) return true; return false;}
@@ -458,7 +460,8 @@ class Mode
       bool checkBoundingBox (mfem::Vector *, mfem::Vector *, std::string *, double, std::vector<Path *> *);
       bool assignPathIndices(std::vector<Path *> *);
       bool is_enclosedByPath (std::vector<Path *> *, Path *, long unsigned int *);
-      void print(std::string);
+      void print (std::string);
+      void save (std::ofstream *);
       void output (std::ofstream *, std::vector<Path *> *, Path *, bool);
       bool loadSolution (std::string *, std::string, size_t, size_t);
       bool scaleSolution ();
@@ -532,6 +535,7 @@ class DifferentialPair
       bool check(std::string *);
       bool load (std::string *, inputFile *);
       void print (std::string);
+      void save (std::ofstream *out);
 };
 
 
@@ -648,7 +652,8 @@ class Port
       bool createDirectory(std::string *);
       void set2DModeNumbers();
       int get_last_attribute ();
-      void print();
+      void print ();
+      void save (std::ofstream *);
       void printSolution (std::string);
       void printPaths(std::vector<Path *> *);
       bool solve (std::string *);
@@ -719,6 +724,8 @@ class BoundaryDatabase
       std::string version_value="1.0";
       std::string drivingSetName="";
       std::vector<Current *> radiationCurrents;     //  Aggregated list from Boundary and copied across ranks
+
+      bool modified=false;
    public:
       ~BoundaryDatabase();
       void set_tempDirectory(std::string tempDirectory_) {tempDirectory=tempDirectory_;}
@@ -744,6 +751,7 @@ class BoundaryDatabase
       bool alignRadiationNormals ();
       void subdivide_paths ();
       void print ();
+      void save (std::ofstream *);
       bool is_line ();
       bool is_modal ();
       bool is_mixed_mode ();
@@ -813,6 +821,7 @@ class BoundaryDatabase
       void deleteRadiationCurrents ();
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *, long unsigned int, long unsigned int);
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *);
+      void deletePort (std::string);
 #ifdef HAS_GUI
       void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
 #endif

@@ -127,6 +127,7 @@ class Path {
       Path* clone ();
       void calculateBoundingBox ();
       void print (std::string);
+      void save (std::ofstream *);
       bool output (std::ofstream *, int);
       bool snapToPoint (struct point);
       bool snapToMeshBoundary (mfem::Mesh *);

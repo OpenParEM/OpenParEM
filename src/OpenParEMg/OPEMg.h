@@ -22,13 +22,10 @@
 #define OPEMG_H
 
 #include <Standard_Handle.hxx>
-#include <unordered_map>
 
 #include <QMainWindow>
 #include <QStyledItemDelegate>
 #include <QTimer>
-
-#include "AIS_Shape.hxx"
 
 #include "CustomLineEdit.h"
 #include "project.h"
@@ -120,6 +117,7 @@ private slots:
     void on_actionFitAll_triggered ();
     void on_actionSelectWithBox_triggered();
     void on_actionUnselectAll_triggered ();   // note similar functionality in CustomOpenGLWidget
+    void on_actionShowAll_triggered();
     void on_actionHideAll_triggered ();
     void on_actionWireframe_triggered();
 
@@ -165,21 +163,34 @@ private slots:
     void collapse (CustomTreeWidgetItem *);
     void expandAllItems ();
     void collapseAllItems ();
+    void showRootDrawingItems ();
     void showDrawingItems ();
+    void hideRootDrawingItems ();
     void hideDrawingItems ();
+    void showRootPortItems ();
     void showPortItems ();
+    void hideRootPortItems ();
     void hidePortItems ();
+    void showRootMeshItems ();
     void showMeshItems ();
+    bool rootMeshValidShow ();
+    void hideRootMeshItems ();
     void hideMeshItems ();
+    bool rootMeshValidHide ();
     //void addSportNet ();
     void renameSportNet ();
     void deleteSportNet ();
     void rename_returnPressed ();
-    void selectItems ();
+    //void selectItems ();
+    void unselectRootDrawingItems ();
     void unselectDrawingItems ();
+    void deleteRootDrawingItems ();
     void deleteDrawingItems ();
+    void unselectRootPortItems ();
     void unselectPortItems ();
     void renamePortItems ();
+    void deletePortItem (CustomTreeWidgetItem *);
+    void deleteRootPortItems ();
     void deletePortItems ();
     void showNetItems ();
     void hideNetItems ();
@@ -187,7 +198,6 @@ private slots:
     void hideVIItems ();
     void showIntegrationPathItems ();
     void hideIntegrationPathItems ();
-    void setRootForeground (CustomTreeWidgetItem *);
     //void showDisplayShape (CustomTreeWidgetItem *);
     //void showPortShape (CustomTreeWidgetItem *);
     //void hideDisplayShape (CustomTreeWidgetItem *);

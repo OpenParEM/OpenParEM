@@ -55,38 +55,46 @@ public:
         if (showTracking) {std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();}
 
         // show item
-        if (item->is_drawing()) {
+        if (item->is_rootDrawing()) {
             DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
-        } else if (item->is_mesh()) {
-            if (item->is_root()) {
-                int i=0;
-                while (i < item->childCount()) {
-                    CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
-                    showItem(child);
-                    i++;
-                }
-            } else {
-                item->setForeground(0,Qt::black);
-                visibleItems.push_back(item);
-                long unsigned int i=0;
-                while (i < item->get_meshEntitiesSize()){
-                    DisplayShape(item->get_meshEntity(i),item->get_displayMode(),item->get_selectionMode());
-                    i++;
-                }
+        } else if (item->is_drawing()) {
+            DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            item->setForeground(0,Qt::black);
+            visibleItems.push_back(item);
+        } else if (item->is_rootPort()) {
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                showItem(child);
+                i++;
             }
         } else if (item->is_port()) {
-            if (!item->is_root()) {
-                DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
-                item->setForeground(0,Qt::black);
-                visibleItems.push_back(item);
-            }
+            DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            item->setForeground(0,Qt::black);
+            visibleItems.push_back(item);
 
             int i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
                 showItem(child);
+                i++;
+            }
+        // ToDo: boundary
+        } else if (item->is_rootMesh()) {
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                showItem(child);
+                i++;
+            }
+        } else if (item->is_mesh()) {
+            item->setForeground(0,Qt::black);
+            visibleItems.push_back(item);
+            long unsigned int i=0;
+            while (i < item->get_meshEntitiesSize()){
+                DisplayShape(item->get_meshEntity(i),item->get_displayMode(),item->get_selectionMode());
                 i++;
             }
         } else if (item->is_sportNet()) {
@@ -227,38 +235,46 @@ public:
     {
         if (hideTracking) {std::cout << "ItemTracker::hideItem" << std::endl; std::cout.flush();}
 
-        if (item->is_drawing()) {
+        if (item->is_rootDrawing()) {
             EraseShape(item->get_AIS_Shape());
             item->setForeground(0,Qt::gray);
             removeVisibleItem(item);
-        } else if (item->is_mesh()) {
-            if (item->is_root()) {
-                int i=0;
-                while (i < item->childCount()) {
-                    CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
-                    hideItem(child);
-                    i++;
-                }
-            } else {
-                item->setForeground(0,Qt::gray);
-                removeVisibleItem(item);
-                long unsigned int i=0;
-                while (i < item->get_meshEntitiesSize()){
-                    EraseShape(item->get_meshEntity(i));
-                    i++;
-                }
+        } else if (item->is_drawing()) {
+            EraseShape(item->get_AIS_Shape());
+            item->setForeground(0,Qt::gray);
+            removeVisibleItem(item);
+        } else if (item->is_rootPort()) {
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                hideItem(child);
+                i++;
             }
         } else if (item->is_port()) {
-            if (!item->is_root()) {
-                EraseShape(item->get_AIS_Shape());
-                item->setForeground(0,Qt::gray);
-                removeVisibleItem(item);
-            }
+            EraseShape(item->get_AIS_Shape());
+            item->setForeground(0,Qt::gray);
+            removeVisibleItem(item);
 
             int i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
                 hideItem(child);
+                i++;
+            }
+        // ToDo: boundary
+        } else if (item->is_rootMesh()) {
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                hideItem(child);
+                i++;
+            }
+        } else if (item->is_mesh()) {
+            item->setForeground(0,Qt::gray);
+            removeVisibleItem(item);
+            long unsigned int i=0;
+            while (i < item->get_meshEntitiesSize()){
+                EraseShape(item->get_meshEntity(i));
                 i++;
             }
         } else if (item->is_sportNet()) {
@@ -496,9 +512,7 @@ public:
                     j++;
                 }
             } else if (item->is_port() || item->is_boundary()) {
-                if (!item->is_root()) {
-                    UnselectShape(item->get_AIS_Shape());
-                }
+                UnselectShape(item->get_AIS_Shape());
             } else if (item->is_sport()) {
                 // nothing to do
             } else {
@@ -546,10 +560,10 @@ public:
     {
         if (deleteTracking) {std::cout << "ItemTracker::deleteItem" << std::endl; std::cout.flush();}
 
-        if (item->is_mesh()) return;
-        if (item->is_sport()) return;
+        // if (item->is_mesh()) return;
+        // if (item->is_sport()) return;
 
-        if (item->is_root()) return;
+        // if (item->is_root()) return;
 
         DeleteItem(item);
         delete item;
@@ -565,9 +579,7 @@ public:
             if (item->is_mesh()) {
                 // nothing to do
             } else if (item->is_port() || item->is_boundary()) {
-                if (!item->is_root()) {
-                    if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) return false;
-                }
+                if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) return false;
             } else if (item->is_sport()) {
                 // nothing to do
             } else {

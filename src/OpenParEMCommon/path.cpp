@@ -648,6 +648,29 @@ void Path::print (std::string indent)
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndPath\n",indent.c_str());
 }
 
+void Path::save (std::ofstream *out)
+{
+    PetscMPIInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank != 0) return;
+
+    int dim=0;
+    *out << "   Path" << std::endl;
+    *out << "      name=" << get_name() << std::endl;
+    long unsigned int i=0;
+    while (i < points.size()) {
+        struct point p=points[i]->get_point_value();
+        if (p.dim == 2) {dim=2; *out << "      point=(" << p.x << "," << p.y << ")" << std::endl;}
+        if (get_point_dim(i) == 3) {dim=3; *out << "      point=(" << p.x << "," << p.y << "," << p.z << ")" << std::endl;}
+        i++;
+    }
+    if (closed.get_bool_value()) {*out << "      closed=true" << std::endl;}
+    else {*out << "      closed=false" << std::endl;}
+
+    *out << "   EndPath" << std::endl;
+}
+
 bool Path::output (std::ofstream *out, int force_dim)
 {
    if (hasOutput) return false;

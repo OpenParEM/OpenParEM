@@ -30,15 +30,11 @@ class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
 
 public:
     CustomTreeWidgetItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type) {
-        root=false;         // default to non-root item
         type=0;
         set_dimTag(-1,-1);  // invalid initialization
         displayMode=0;      // 0 - wireframe, 1 - shaded
         selectionMode=0;
     }
-
-    void set_root (bool root_) {root=root_;}
-    bool is_root () {return root;}
 
     void set_type (int type_) {
         type=type_;
@@ -48,6 +44,10 @@ public:
         if (is_boundary()) forShowHide=true;
         if (is_mesh()) forShowHide=true;
         if (is_integrationPathSegment()) forShowHide=true;
+        if (is_rootDrawing()) forShowHide=true;
+        if (is_rootPort()) forShowHide=true;
+        if (is_rootBoundary()) forShowHide=true;
+        if (is_rootMesh()) forShowHide=true;
     }
     int get_type () {return type;}
 
@@ -65,6 +65,10 @@ public:
     bool is_scale () {if (type == 11) return true; return false;}
     //bool is_scaleValue () {if (type == 12) return true; return false;}
     bool is_integrationPathSegment () {if (type == 13) return true; return false;}
+    bool is_rootDrawing () {if (type == 100) return true; return false;}
+    bool is_rootPort () {if (type == 101) return true; return false;}
+    bool is_rootBoundary () {if (type == 102) return true; return false;}
+    bool is_rootMesh () {if (type == 103) return true; return false;}
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
     Handle(AIS_Shape) get_AIS_Shape () {return shape;}
@@ -114,7 +118,6 @@ public:
         std::cout << "CustomTreeWidgetItem:" << std::endl;
         if (shape.IsNull()) std::cout << "   shape=null" << std::endl;
         else std::cout << "   shape type=" << shape->Type() << std::endl;
-        std::cout << "   root=" << root << std::endl;
         std::cout << "   forShowHide=" << forShowHide << std::endl;
         if (is_drawing()) std::cout << "   type=drawing" << std::endl;
         if (is_port()) std::cout << "   type=port" << std::endl;
@@ -152,7 +155,6 @@ private:
     int selectionMode;                             //    0 - shape, 1 - vertex, ...
     std::vector<Handle(AIS_Shape)> meshEntities;   // for mesh
     std::pair<int,int> dimTag;                     //
-    bool root;                                     // false - not a root item, true - is a root item
     bool forShowHide;                              // false - does not participate in item tree show/hide operations; true - does participate
     int type;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh,
                                                    // 4 - Sport, 5 - impedance definition, 6 - impedance calculation
@@ -160,6 +162,10 @@ private:
                                                    // 9 - voltage, 10 - current
                                                    // 11 - scale, 12 - scale value
                                                    // 13 - integration path segment
+                                                   // 100 - root drawing item
+                                                   // 101 - root port item
+                                                   // 102 - root boundary item
+                                                   // 103 - root mesh item
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

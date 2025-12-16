@@ -779,7 +779,7 @@ bool Boundary::is_radiation()
    return false;
 }
 
-void Boundary::print()
+void Boundary::print ()
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Boundary\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   name=%s\n",get_name().c_str());
@@ -805,6 +805,33 @@ void Boundary::print()
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"EndBoundary\n");
 
    return;
+}
+
+void Boundary::save (ofstream *out)
+{
+    PetscMPIInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank != 0) return;
+
+    *out << "   Boundary" << endl;
+    *out << "      name=" << get_name() << endl;
+    *out << "      type=" << get_type() << endl;
+    if (is_surface_impedance() && type.is_loaded()) {*out << "      material=" << get_material() << endl;}
+    if (is_radiation()) {*out << "      wave_impedance=" << get_wave_impedance() << endl;}
+    long unsigned int i=0;
+    while (i < pathNameList.size()) {
+        if (i == 0) {
+            if (reverseList[i]) {*out << "      path=-" << pathNameList[i]->get_value() << endl;}
+            else {*out << "      path=" << pathNameList[i]->get_value() << endl;}
+        } else {
+            if (reverseList[i]) {*out << "      path-=" << pathNameList[i]->get_value() << endl;}
+            else {*out << "      path+=" << pathNameList[i]->get_value() << endl;}
+        }
+        i++;
+    }
+
+    *out << "   EndBoundary" << endl;
 }
 
 bool Boundary::inBlock (int lineNumber)
@@ -2290,7 +2317,7 @@ void IntegrationPath::resetElementNumbers ()
    }
 }
 
-void IntegrationPath::print(string indent)
+void IntegrationPath::print (string indent)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sIntegrationPath %p\n",indent.c_str(),this);
 
@@ -2318,6 +2345,32 @@ void IntegrationPath::print(string indent)
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndIntegrationPath\n",indent.c_str());
 
    return;
+}
+
+void IntegrationPath::save (ofstream *out)
+{
+    PetscMPIInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank != 0) return;
+
+    *out << "   IntegrationPath" << endl;
+    *out << "      type=" << get_type() << endl;
+    if (!double_compare(get_scale(),1,1e-14)) {*out << "      scale=" << get_scale() << endl;}
+
+    long unsigned int i=0;
+    while (i < pathNameList.size()) {
+        if (i == 0) {
+            if (reverseList[i]) {*out << "      path=-" << pathNameList[i]->get_value() << endl;}
+            else {*out << "      path=" << pathNameList[i]->get_value() << endl;}
+        } else {
+            if (reverseList[i]) {*out << "   path-=" << pathNameList[i]->get_value() << endl;}
+            else {*out << "      path+=" << pathNameList[i]->get_value() << endl;}
+        }
+        i++;
+    }
+
+    *out << "   EndIntegrationPath" << endl;
 }
 
 void IntegrationPath::output (ofstream *out, vector<Path *> *pathList, Path *rotatedPath, bool spin180degrees, bool isModal, int modeNumber2D)
@@ -3496,7 +3549,7 @@ bool Mode::align_current_paths (string *indent, vector<Path *> *pathList, bool c
    return fail;
 }
 
-void Mode::print(string indent)
+void Mode::print (string indent)
 {
    if (is_modal()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sMode %p\n",indent.c_str(),this);}
    if (is_line()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sLine %p\n",indent.c_str(),this);}
@@ -3534,6 +3587,29 @@ void Mode::print(string indent)
    if (is_line()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndLine\n",indent.c_str());}
 
    return;
+}
+
+void Mode::save (std::ofstream *out)
+{
+    PetscMPIInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank != 0) return;
+
+    if (is_modal()) {*out << "   Mode" << endl;}
+    if (is_line()) {*out << "   Line" << endl;}
+
+    *out << "      Sport=" << get_Sport() << endl;
+    if (net_is_loaded()) {*out << "      net=" << get_net() << endl;}
+
+    long unsigned int i=0;
+    while (i < integrationPathList.size()) {
+        integrationPathList[i]->save(out);
+        i++;
+    }
+
+    if (is_modal()) {*out << "   EndMode" << endl;}
+    if (is_line()) {*out << "   EndLine" << endl;}
 }
 
 void printMatlabComplex(double re, double im)
@@ -4169,13 +4245,27 @@ bool DifferentialPair::check(string *indent)
    return fail;
 }
 
-void DifferentialPair::print(string indent)
+void DifferentialPair::print (string indent)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sDifferentialPair\n",indent.c_str());
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   Sport_P=%d\n",indent.c_str(),Sport_P.get_int_value());
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   Sport_N=%d\n",indent.c_str(),Sport_N.get_int_value());
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndDifferentialPair\n",indent.c_str());
    return;
+}
+
+void DifferentialPair::save (ofstream *out)
+{
+    PetscMPIInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank != 0) return;
+
+    *out << "   DifferentialPair" << endl;
+    *out << "      Sport_P=" << Sport_P.get_int_value() << endl;
+    *out << "      Sport_N=" << Sport_N.get_int_value() << endl;
+    *out << "   EndDifferentialPair" << endl;
+    return;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -4881,6 +4971,47 @@ void Port::print ()
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"EndPort\n");
 
    return;
+}
+
+void Port::save (std::ofstream *out)
+{
+    PetscMPIInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank != 0) return;
+
+    *out << "Port" << endl;
+    *out << "   name=" << get_name() << endl;
+    long unsigned int i=0;
+    while (i < pathNameList.size()) {
+        if (i == 0) {
+            if (reverseList[i]) {*out << "   path=-" << pathNameList[i]->get_value() << endl;}
+            else {*out << "   path=" << pathNameList[i]->get_value() << endl;}
+        } else {
+            if (reverseList[i]) {*out << "   path-=" << pathNameList[i]->get_value() << endl;}
+            else {*out << "   path+=" << pathNameList[i]->get_value() << endl;}
+        }
+        i++;
+    }
+
+    *out << "   impedance_definition=" << impedance_definition.get_value() << endl;
+    *out << "   impedance_calculation=" << impedance_calculation.get_value() << endl;
+
+    i=0;
+    while (i < modeList.size()) {
+        modeList[i]->save(out);
+        i++;
+    }
+
+    i=0;
+    while (i < differentialPairList.size()) {
+        differentialPairList[i]->save(out);
+        i++;
+    }
+
+    *out << "EndPort" << endl;
+
+    return;
 }
 
 void Port::printPaths (vector<Path *> *pathList)
@@ -7045,6 +7176,40 @@ void BoundaryDatabase::print ()
    }
 }
 
+void BoundaryDatabase::save (std::ofstream *out)
+{
+    PetscMPIInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank != 0) return;
+
+    *out << version_name << " " << version_value << endl;
+
+    long unsigned int i=0;
+    while (i < sourceFileList.size()) {
+        sourceFileList[i]->save(out);
+        i++;
+    }
+
+    i=0;
+    while (i < pathList.size()) {
+        pathList[i]->save(out);
+        i++;
+    }
+
+    i=0;
+    while (i < boundaryList.size()) {
+        boundaryList[i]->save(out);
+        i++;
+    }
+
+    i=0;
+    while (i < portList.size()) {
+        portList[i]->save(out);
+        i++;
+    }
+}
+
 bool BoundaryDatabase::inBlocks (int lineNumber)
 {
    long unsigned int i=0;
@@ -8852,6 +9017,20 @@ void BoundaryDatabase::calculateFarField (double r, Vector center, double radiat
          j++;
       }
    }
+}
+
+void BoundaryDatabase::deletePort (string name)
+{
+    long unsigned int i=0;
+    while (i < portList.size()) {
+        if (portList[i]->get_name().compare(name) == 0) {
+            delete portList[i];
+            portList.erase(portList.begin()+i);
+            modified=true;
+            break;
+        }
+        i++;
+    }
 }
 
 #ifdef HAS_GUI
