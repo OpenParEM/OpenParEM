@@ -19,6 +19,10 @@
   <property name="windowTitle">
    <string>OpenParEMg</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>:/images/images/logo.png</normaloff>:/images/images/logo.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="1">
@@ -183,11 +187,17 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionOpen">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentOpen"/>
+   </property>
    <property name="text">
     <string>Open ...</string>
    </property>
   </action>
   <action name="actionNew">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentNew"/>
+   </property>
    <property name="text">
     <string>New</string>
    </property>
@@ -203,11 +213,17 @@
    </property>
   </action>
   <action name="actionAbout">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::HelpAbout"/>
+   </property>
    <property name="text">
     <string>About ...</string>
    </property>
   </action>
   <action name="actionLicense">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::HelpFaq"/>
+   </property>
    <property name="text">
     <string>License ...</string>
    </property>
@@ -218,6 +234,9 @@
    </property>
   </action>
   <action name="actionSaveAs">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSaveAs"/>
+   </property>
    <property name="text">
     <string>Save As ...</string>
    </property>
@@ -238,6 +257,9 @@
    </property>
   </action>
   <action name="actionExit">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ApplicationExit"/>
+   </property>
    <property name="text">
     <string>Exit</string>
    </property>
@@ -248,6 +270,9 @@
    </property>
   </action>
   <action name="actionFitSelected">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::AddressBookNew"/>
+   </property>
    <property name="text">
     <string>Fit Selected</string>
    </property>
@@ -306,6 +331,9 @@
    </property>
   </action>
   <action name="actionMeshGenerate">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::MediaPlaybackStart"/>
+   </property>
    <property name="text">
     <string>Generate</string>
    </property>
@@ -314,11 +342,17 @@
    </property>
   </action>
   <action name="actionMeshSave">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSave"/>
+   </property>
    <property name="text">
     <string>Save</string>
    </property>
   </action>
   <action name="actionMeshDelete">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditDelete"/>
+   </property>
    <property name="text">
     <string>Delete</string>
    </property>
@@ -337,6 +371,9 @@
    </property>
   </action>
   <action name="actionRun">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::MediaPlaybackStart"/>
+   </property>
    <property name="text">
     <string>Run</string>
    </property>
@@ -345,6 +382,9 @@
    </property>
   </action>
   <action name="actionStop">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::MediaPlaybackStop"/>
+   </property>
    <property name="text">
     <string>Stop</string>
    </property>
@@ -353,6 +393,9 @@
    </property>
   </action>
   <action name="actionAbort">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ProcessStop"/>
+   </property>
    <property name="text">
     <string>Abort</string>
    </property>
@@ -399,16 +442,25 @@
    </property>
   </action>
   <action name="actionMeshSaveAs">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSaveAs"/>
+   </property>
    <property name="text">
     <string>Save As ...</string>
    </property>
   </action>
   <action name="actionSave">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSave"/>
+   </property>
    <property name="text">
     <string>Save</string>
    </property>
   </action>
   <action name="actionAbortAndExit">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ProcessStop"/>
+   </property>
    <property name="text">
     <string>Abort and Exit</string>
    </property>

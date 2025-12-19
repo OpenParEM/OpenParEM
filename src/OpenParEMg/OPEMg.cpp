@@ -37,7 +37,7 @@
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
 
-
+#include <QIcon>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QDir>
@@ -82,6 +82,9 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     MPI_PORT_COMM=nullptr;
     request=nullptr;
 
+    // load an icon for the window
+    setWindowIcon(QIcon(":/images/images/logo2.svg"));
+
     /////////////////////////////////////////////////////////////////////////////
     // lockouts
     /////////////////////////////////////////////////////////////////////////////
@@ -122,6 +125,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     assignMaterialAction=nullptr;
     addNetAction=nullptr;
     renameAction=nullptr;
+    createPortAction=nullptr;
 
     /////////////////////////////////////////////////////////////////////////////
     // item selection tree
@@ -214,6 +218,7 @@ OpenParEMg::~OpenParEMg ()
     if (renameAction) delete renameAction;
     if (expandAllAction) delete expandAllAction;
     if (collapseAllAction) delete collapseAllAction;
+    if (createPortAction) delete createPortAction;
 
     if (timer) delete timer;
     if (MPI_PORT_COMM) MPI_Comm_free(MPI_PORT_COMM);
@@ -239,6 +244,9 @@ void OpenParEMg::setMenus ()
         ui->actionClose->setEnabled(true);
         ui->actionExit->setEnabled(true);
         ui->actionSelectMaterialsDatabase->setEnabled(true);
+        ui->actionUnselectAll->setEnabled(true);
+        ui->actionShowAll->setEnabled(true);
+        ui->actionHideAll->setEnabled(true);
         ui->actionMeshOptions->setEnabled(true);
         ui->actionMeshLoad->setEnabled(true);
         ui->actionMeshSave->setEnabled(false);
@@ -267,8 +275,6 @@ void OpenParEMg::setMenus ()
             ui->actionFitAll->setEnabled(true);
             ui->actionMenuSelection->setEnabled(true);
             ui->actionSelectWithBox->setEnabled(true);
-            ui->actionUnselectAll->setEnabled(true);
-            ui->actionHideAll->setEnabled(true);
             ui->actionWireframe->setEnabled(true);
 
             ui->actionMeshGenerate->setEnabled(true);
@@ -377,9 +383,9 @@ void OpenParEMg::setMenus ()
         ui->actionMenuSelection->setEnabled(false);
         ui->actionSelectWithBox->setEnabled(false);
         ui->actionUnselectAll->setEnabled(false);
+        ui->actionShowAll->setEnabled(false);
         ui->actionHideAll->setEnabled(false);
         ui->actionWireframe->setEnabled(false);
-
         ui->actionDrawingPlaneShow->setEnabled(false);
         ui->actionDrawingPlaneHide->setEnabled(false);
         ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
@@ -523,6 +529,8 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         unselectAction=new QAction("Unselect",this);
         deleteAction=new QAction("Delete",this);
         assignMaterialAction=new QAction("Assign Material");
+        createPortAction=new QAction("Create Port");
+        createPortAction->setToolTip("Copy the selected face and create a port.");
 
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
@@ -530,6 +538,7 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
         connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
         connect(assignMaterialAction, &QAction::triggered, this, &OpenParEMg::assignMaterial);
+        connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
 
         showAction->setEnabled(ui->drawingWindow->isValidShow());
         hideAction->setEnabled(ui->drawingWindow->isValidHide());
@@ -545,6 +554,10 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         menu.addAction(unselectAction);
         menu.addAction(deleteAction);
         menu.addAction(assignMaterialAction);
+        menu.addAction(createPortAction);
+
+        createPortAction->setEnabled(false);
+        if (ui->drawingWindow->hasOneFaceSelected()) {createPortAction->setEnabled(true);}
     }
 
     if (clickedItem->is_rootPort()) {
@@ -740,6 +753,7 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
     if (deleteAction) {delete deleteAction; deleteAction=nullptr;}
     if (assignMaterialAction) {delete assignMaterialAction; assignMaterialAction=nullptr;}
     if (addNetAction) {delete addNetAction; addNetAction=nullptr;}
+    if (createPortAction) {delete createPortAction; createPortAction=nullptr;}
 }
 
 void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
@@ -752,17 +766,24 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
     hideAction=new QAction("Hide",this);
     unselectAction=new QAction("Unselect",this);
     deleteAction=new QAction("Delete",this);
+    createPortAction=new QAction("Create Port");
+    createPortAction->setToolTip("Copy the selected face and create a port.");
 
     connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
     connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
     connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
     connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
+    connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
 
     QMenu menu(this);
     menu.addAction(showAction);
     menu.addAction(hideAction);
     menu.addAction(unselectAction);
     menu.addAction(deleteAction);
+    menu.addAction(createPortAction);
+
+    createPortAction->setEnabled(false);
+    if (ui->drawingWindow->hasOneFaceSelected()) {createPortAction->setEnabled(true);}
 
     menu.exec(ui->drawingWindow->mapToGlobal(pnt));
 
@@ -770,9 +791,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
     if (hideAction) {delete hideAction; hideAction=nullptr;}
     if (unselectAction) {delete unselectAction; unselectAction=nullptr;}
     if (deleteAction) {delete deleteAction; deleteAction=nullptr;}
-    if (assignMaterialAction) {delete assignMaterialAction; assignMaterialAction=nullptr;}
-    if (addNetAction) {delete addNetAction; addNetAction=nullptr;}
-    if (renameAction) {delete renameAction; renameAction=nullptr;}
+    if (createPortAction) {delete createPortAction; createPortAction=nullptr;}
 }
 
 void OpenParEMg::showRootDrawingItems ()
@@ -921,12 +940,9 @@ void OpenParEMg::hideRootPortItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        std::cout << "place 1" << std::endl; std::cout.flush();
         if (item->is_rootPort()) {
-            std::cout << "place 2" << std::endl; std::cout.flush();
             int j=0;
             while (j < item->childCount()) {
-                std::cout << "place 3" << std::endl; std::cout.flush();
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
                 ui->drawingWindow->hideItem(child);
                 j++;
@@ -1591,6 +1607,91 @@ void OpenParEMg::hideIntegrationPathItems ()
     ui->drawingWindow->updateViewer();
 }
 
+void OpenParEMg::createPort ()
+{
+    std::cout << "OpenParEMg::createPort" << std::endl; std::cout.flush();
+
+    // next available s-port number
+    int sport=boundaryDatabase->get_SportCount()+1;
+
+    // default port name
+
+    std::string portName="port";
+    portName.append(std::to_string(sport));
+
+    int i=1;
+    while (boundaryDatabase->portNameExists(portName)) {
+        std::string testName=portName;
+        testName.append("_").append(std::to_string(i));
+        if (boundaryDatabase->portNameExists(testName)) {i++;}
+        else {portName=testName; break;}
+    }
+
+    // default path name
+
+    std::string pathName="port";
+    pathName.append(std::to_string(sport));
+
+    i=1;
+    while (boundaryDatabase->pathNameExists(pathName)) {
+        std::string testName=pathName;
+        testName.append("_").append(std::to_string(i));
+        if (boundaryDatabase->pathNameExists(testName)) {i++;}
+        else {pathName=testName; break;}
+    }
+
+    // path name placed in a keywordPair
+    keywordPair *kwPathName=new keywordPair();
+    kwPathName->set_keyword("path");
+    kwPathName->set_value(pathName);
+    kwPathName->set_lineNumber(0);
+    kwPathName->set_loaded(true);
+
+    // path
+
+    Path *path=new Path(0,0);
+    path->set_name(pathName);
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    std::cout << "selectedItems.count()=" << selectedItems.count() << std::endl;
+    i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        path->addPoints(item->get_AIS_Shape(),true,true);
+        i++;
+    }
+
+    boundaryDatabase->push_path(path);
+
+    // port
+
+    Port *newPort=new Port(0,0);
+    newPort->set_name(portName);
+
+    // path info
+
+    newPort->push_path(kwPathName,boundaryDatabase->get_pathList_size()-1,false);
+    newPort->set_outline(path);
+
+    // impedance
+    if (boundaryDatabase->get_portList_size() == 0) {
+       newPort->set_impedance_definition("PV");
+       newPort->set_impedance_calculation("line");
+    } else {
+        newPort->set_impedance_definition(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_definition());
+        newPort->set_impedance_calculation(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_calculation());
+    }
+
+    // add to boundary database
+    boundaryDatabase->push_port(newPort);
+    boundaryDatabaseChanged=true;
+
+    // draw it
+    boundaryDatabase->draw_port(newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&port,&boundary,materialDatabase);
+
+    setMenus();
+}
+
 // void OpenParEMg::showDisplayShape (CustomTreeWidgetItem *item)
 // {
 //     std::cout << "OpenParEMg::showDisplayShape" << std::endl; std::cout.flush();
@@ -1817,6 +1918,7 @@ void OpenParEMg::on_actionOpen_triggered ()
             mb.setFixedSize(500, 200);
         } else {
             //boundaryDatabase->set_drawingToItemMap(&drawingToItemMap);
+            boundaryDatabaseLoaded=true;
             boundaryDatabase->draw(&projData,ui->drawingWindow,ui->drawingItemTree,&port,&boundary,materialDatabase);
         }
 
@@ -2014,6 +2116,16 @@ void OpenParEMg::on_actionSave_triggered ()
             projectFileChanged=false;
         } else {
             on_actionSaveAs_triggered();
+        }
+    }
+
+    // ports and boundaries
+    if (boundaryDatabaseLoaded) {
+        if (saveBoundaryDatabase()) {
+            QString message="Error in saving the boundary database.";
+            QMessageBox mb;
+            mb.critical(nullptr, "Error",message);
+            mb.setFixedSize(500, 200);
         }
     }
 
@@ -2348,6 +2460,22 @@ bool OpenParEMg::saveStepFile (QString filePath, std::vector<Handle(AIS_Interact
         if (status == IFSelect_RetDone) {
             return false;
         }
+    }
+    return true;
+}
+
+bool OpenParEMg::saveBoundaryDatabase ()
+{
+    if (!boundaryDatabase) return true;
+    QString filename=absolutePath.append("/").append(projData.port_definition_file);
+    std::cout << "OpenParEMg::saveBoundaryDatabase: filename=" << filename.toStdString() << std::endl; std::cout.flush();
+    std::ofstream outputFile(filename.toStdString());
+    if (outputFile.is_open()) {
+        std::cout << "OpenParEMg::saveBoundaryDatabase:saving" << std::endl; std::cout.flush();
+        boundaryDatabase->save(&outputFile);
+        boundaryDatabaseChanged=false;
+        outputFile.close();
+        return false;
     }
     return true;
 }

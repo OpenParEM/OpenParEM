@@ -8,7 +8,7 @@ set(CMAKE_C_STANDARD 11)
 
 add_compile_options (-DHAS_GUI -DHAS_MPI)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Svg)
 find_package(OpenGL REQUIRED) #except QOpenGLWidget, which is handled separately below (include and lib)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} /opt/Qt/6.9.0/gcc_64/include/QtOpenGLWidgets /home/briany/OpenParEM/src/OpenParEM3D /home/briany/OpenParEM/include /home/briany/OpenParEM/lib /home/briany/OpenParEM/src/OpenParEMCommon /home/briany/OpenParEM/include/opencascade /usr/lib/gcc/x86_64-linux-gnu/9/include /usr/include/GL)
@@ -74,7 +74,7 @@ qt_add_executable(OpenParEMg
     ItemTracking.h
     about.h about.cpp about.ui
     CustomSpinBox.h
-
+    logo.qrc
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)
@@ -120,6 +120,7 @@ target_link_libraries(OpenParEMg
     PRIVATE
         Qt::Core
         Qt::Widgets
+        Qt6::Svg
         ${OpenCASCADE_LIBS}
         ${PETSC_LIBS}
         ${MPI_LIBS}
@@ -141,6 +142,9 @@ target_link_libraries(OpenParEMg
 )
 
 include(GNUInstallDirs)
+
+qt_add_resources(app_resources logo.qrc)
+target_sources(OpenParEMg PRIVATE ${app_resources})
 
 install(TARGETS OpenParEMg
     BUNDLE  DESTINATION .

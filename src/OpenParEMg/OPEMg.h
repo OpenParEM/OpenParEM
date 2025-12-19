@@ -87,6 +87,7 @@ public:
     bool loadBrepFile (QString);
     bool loadStepFile (QString);
     bool saveStepFile (QString, std::vector<Handle(AIS_InteractiveObject)> *);
+    bool saveBoundaryDatabase ();
     //bool menuAllHidden (CustomTreeWidgetItem *);
     //bool menuAllShown (CustomTreeWidgetItem *);
     //void meshShowEntities ();
@@ -225,6 +226,8 @@ private slots:
     void set_displayMode (CustomTreeWidgetItem *, int);
     void set_selectionMode (CustomTreeWidgetItem *, int);
 
+    void createPort ();
+
     void loadMeshFile (QString);
     void checkFinish ();
 
@@ -271,6 +274,7 @@ private:
     QAction *renameAction;
     QAction *expandAllAction;
     QAction *collapseAllAction;
+    QAction *createPortAction;
 
     // gmsh
     gmsh::vectorpair drawingEntities;

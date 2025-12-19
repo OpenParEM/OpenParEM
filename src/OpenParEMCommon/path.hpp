@@ -34,6 +34,8 @@
 #include "prefix.h"
 
 #ifdef HAS_GUI
+#include <AIS_Shape.hxx>
+#include <BRep_Tool.hxx>
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <gp_Pnt.hxx>
 #include <TopoDS_Wire.hxx>
@@ -97,7 +99,7 @@ class Path {
       bool compare (long unsigned int i, keywordPair test_point);
       void set_closed (bool value) {closed.set_bool_value(value); closed.set_loaded(true);}
       bool is_closed () {return closed.get_bool_value();}
-      void set_name (std::string name_) {name.set_value(name_); name.set_loaded(true);}
+      void set_name (std::string name_) {name.set_value(name_); name.set_keyword("name"); name.set_lineNumber(0); name.set_loaded(true);}
       void set_hasOutput () {hasOutput=true;}
       void unset_hasOutput () {hasOutput=false;}
       keywordPair* get_startPoint () {return points[0];}
@@ -137,6 +139,7 @@ class Path {
       struct point getInsidePoint ();
 #ifdef HAS_GUI
       TopoDS_Wire create_TopoDS_Wire ();
+      void addPoints (Handle(AIS_Shape) shape, bool, bool);
 #endif
 };
 

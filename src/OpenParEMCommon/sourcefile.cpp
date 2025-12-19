@@ -111,7 +111,6 @@ void SourceFile::print ()
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"File\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   name=%s\n",name.get_value().c_str());
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"EndFile\n");
-   return;
 }
 
 void SourceFile::save (std::ofstream *out)
@@ -121,9 +120,9 @@ void SourceFile::save (std::ofstream *out)
 
     if (rank != 0) return;
 
-    *out << "   File" << std::endl;
-    *out << "      name=" << name.get_value() << std::endl;
-    *out << "   EndFile" << std::endl;
-    return;
+    *out << "File" << std::endl;
+    *out << "   name=" << name.get_value() << std::endl;
+    *out << "EndFile" << std::endl;
+    *out << std::endl;
 }
 

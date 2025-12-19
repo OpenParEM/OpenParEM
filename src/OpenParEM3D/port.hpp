@@ -178,7 +178,7 @@ class Boundary
       std::string get_pathName (long unsigned int i) {return pathNameList[i]->get_value();}
       int get_pathName_lineNumber (long unsigned int i) {return pathNameList[i]->get_lineNumber();}
       bool get_reverse (long unsigned int i) {return reverseList[i];}
-      long unsigned int get_path_size () {return pathIndexList.size();}
+      long unsigned int get_pathIndexList_size () {return pathIndexList.size();}
       long unsigned int get_path (long unsigned int i) {return pathIndexList[i];}
       void push (long unsigned int a) {pathIndexList.push_back(a);}
       bool is_surface_impedance ();
@@ -601,11 +601,17 @@ class Port
       int get_startLine () {return startLine;}
       int get_endLine () {return endLine;}
       std::string get_name () {return name.get_value();}
+      void set_name (std::string name_) {name.set_value(name_); name.set_keyword("name"); name.set_lineNumber(0); name.set_loaded(true);}
       int get_name_lineNumber () {return name.get_lineNumber();}
       std::string get_impedance_definition () {return impedance_definition.get_value();}
       std::string get_impedance_calculation () {return impedance_calculation.get_value();}
       void set_impedance_definition (std::string value) {impedance_definition.set_value(value);}
       void set_impedance_calculation (std::string value) {impedance_calculation.set_value(value);}
+      void push_path (keywordPair *name, long unsigned int index, bool reverse) {
+          pathNameList.push_back(name);
+          pathIndexList.push_back(index);
+          reverseList.push_back(reverse);
+      }
       long unsigned int get_modeCount ();
       int get_SportCount ();
       int get_minSportCount ();
@@ -614,6 +620,7 @@ class Port
       int get_last_attribute (int);
       int get_adjacent_element_attribute (int);
       Path* get_outline () {return outline;}
+      void set_outline (Path *outline_) {outline=outline_;}
       Path* get_rotated_outline () {return rotated_outline;}
       int get_pathIndex (int i) {return pathIndexList[i];}
       void push_portAttribute (PortAttribute *portAttribute) {attributeList.push_back(portAttribute);};
@@ -748,6 +755,8 @@ class BoundaryDatabase
       bool checkSportNumbering ();
       bool check_scale (mfem::Mesh *, int);
       bool check_overlaps ();
+      bool portNameExists (std::string);
+      bool pathNameExists (std::string);
       bool alignRadiationNormals ();
       void subdivide_paths ();
       void print ();
@@ -758,6 +767,8 @@ class BoundaryDatabase
       bool create2Dmeshes (int, mfem::ParMesh *, std::vector<mfem::ParSubMesh> *);
       std::vector<Path *> get_pathList () {return pathList;}
       Path* get_path (long unsigned int i) {return pathList[i];}
+      void push_path (Path *path) {pathList.push_back(path);}
+      long unsigned int get_pathList_size () {return pathList.size();}
       int getLastAttribute ();
       void savePortMeshes (MeshMaterialList *, std::vector<mfem::ParSubMesh> *);
       void save2Dsetups (struct projectData *, double, GammaDatabase *);
@@ -809,6 +820,7 @@ class BoundaryDatabase
       bool buildAggregateModeList (std::vector<Mode *> *);
       long unsigned int get_portList_size () {return portList.size();}
       Port* get_port (long unsigned int i) {return portList[i];}
+      void push_port (Port *port) {portList.push_back(port);}
       bool get_port_from_mode (Mode *, Port **, long unsigned int *);
       void reset();
       bool has_Ti ();
@@ -824,6 +836,7 @@ class BoundaryDatabase
       void deletePort (std::string);
 #ifdef HAS_GUI
       void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
+      void draw_port (Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
 #endif
 };
 

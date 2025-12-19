@@ -31,10 +31,9 @@
 #include "fem3D.hpp"
 #include "results.hpp"
 #include "petscsys.h"
-#include "CustomSpinBox.h"
-
 
 #ifdef HAS_GUI
+#include "../OpenParEMg/CustomSpinBox.h"
 #include <Qt>
 #include <QComboBox>
 #include <QPushButton>
@@ -2354,23 +2353,23 @@ void IntegrationPath::save (ofstream *out)
 
     if (rank != 0) return;
 
-    *out << "   IntegrationPath" << endl;
-    *out << "      type=" << get_type() << endl;
-    if (!double_compare(get_scale(),1,1e-14)) {*out << "      scale=" << get_scale() << endl;}
+    *out << "      IntegrationPath" << endl;
+    *out << "         type=" << get_type() << endl;
+    if (!double_compare(get_scale(),1,1e-14)) {*out << "         scale=" << get_scale() << endl;}
 
     long unsigned int i=0;
     while (i < pathNameList.size()) {
         if (i == 0) {
-            if (reverseList[i]) {*out << "      path=-" << pathNameList[i]->get_value() << endl;}
-            else {*out << "      path=" << pathNameList[i]->get_value() << endl;}
+            if (reverseList[i]) {*out << "         path=-" << pathNameList[i]->get_value() << endl;}
+            else {*out << "         path=" << pathNameList[i]->get_value() << endl;}
         } else {
-            if (reverseList[i]) {*out << "   path-=" << pathNameList[i]->get_value() << endl;}
-            else {*out << "      path+=" << pathNameList[i]->get_value() << endl;}
+            if (reverseList[i]) {*out << "         path-=" << pathNameList[i]->get_value() << endl;}
+            else {*out << "         path+=" << pathNameList[i]->get_value() << endl;}
         }
         i++;
     }
 
-    *out << "   EndIntegrationPath" << endl;
+    *out << "      EndIntegrationPath" << endl;
 }
 
 void IntegrationPath::output (ofstream *out, vector<Path *> *pathList, Path *rotatedPath, bool spin180degrees, bool isModal, int modeNumber2D)
@@ -4888,8 +4887,14 @@ void Port::print ()
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Port\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   name=%s\n",get_name().c_str());
+
+   //xxx
+   std::cout << "pathNameList.size()=" << pathNameList.size() << endl;
+
    long unsigned int i=0;
    while (i < pathNameList.size()) {
+      //xxx
+       std::cout << "  pathNameList[i]=" << pathNameList[i] << std::endl; std::cout.flush();
       if (i == 0) {
          if (reverseList[i]) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path=-%s\n",pathNameList[i]->get_value().c_str());}
          else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path=%s\n",pathNameList[i]->get_value().c_str());}
@@ -6832,11 +6837,15 @@ void comboTextChanged (QString text, Boundary *boundary)
 void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomOpenGLWidget *drawingWindow,
                  QTreeWidget *drawingItemTree, CustomTreeWidgetItem *portWidgetItem)
 {
+    std::cout << "place a" << std::endl; std::cout.flush();
     // port outline
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
+    std::cout << "place a1" << std::endl; std::cout.flush();
     drawingWindow->displayShape(drawingShape,portWidgetItem->get_displayMode(),portWidgetItem->get_selectionMode());
+    std::cout << "place a2" << std::endl; std::cout.flush();
     drawingWindow->updateViewer();
 
+    std::cout << "place b" << std::endl; std::cout.flush();
     // name
 
     CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
@@ -6850,6 +6859,7 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
     drawingWindow->insertItemToMap(drawingShape,itemName);
     drawingWindow->showItem(itemName);
 
+    std::cout << "place c" << std::endl; std::cout.flush();
     // impedance definition
 
     CustomTreeWidgetItem *itemImpedanceDefinition=new CustomTreeWidgetItem(0);
@@ -6873,6 +6883,7 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
 
     QObject::connect(comboZdef, &CustomComboBox::CustomCurrentIndexChanged, &comboIndexChanged);
 
+    std::cout << "place d" << std::endl; std::cout.flush();
     // impedance calculation
 
     CustomTreeWidgetItem *itemImpedanceCalculation=new CustomTreeWidgetItem(0);
@@ -6892,6 +6903,7 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
     if (is_modal()) comboZcalc->setCurrentIndex(1);
     drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
 
+    std::cout << "place e" << std::endl; std::cout.flush();
     QObject::connect(comboZcalc, &CustomComboBox::CustomCurrentIndexChanged, &comboIndexChanged);
 
     // modes
@@ -6901,6 +6913,7 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
         modeList[i]->draw(pathList,&outline_normal,drawingWindow,drawingItemTree,itemName);
         i++;
     }
+    std::cout << "place f" << std::endl; std::cout.flush();
 }
 
 #endif
@@ -7184,6 +7197,7 @@ void BoundaryDatabase::save (std::ofstream *out)
     if (rank != 0) return;
 
     *out << version_name << " " << version_value << endl;
+    *out << endl;
 
     long unsigned int i=0;
     while (i < sourceFileList.size()) {
@@ -7479,6 +7493,26 @@ bool BoundaryDatabase::check_overlaps ()
    }
 
    return fail;
+}
+
+bool BoundaryDatabase::portNameExists (string name)
+{
+    long unsigned int i=0;
+    while (i < portList.size()) {
+        if (portList[i]->get_name().compare(name) == 0) return true;
+        i++;
+    }
+    return false;
+}
+
+bool BoundaryDatabase::pathNameExists (string name)
+{
+    long unsigned int i=0;
+    while (i < pathList.size()) {
+        if (pathList[i]->get_name().compare(name) == 0) return true;
+        i++;
+    }
+    return false;
 }
 
 // flip normals to point outward for radiation boundaries
@@ -9050,6 +9084,13 @@ void BoundaryDatabase::draw (struct projectData *projData, CustomOpenGLWidget *d
         boundaryList[i]->draw(projData,&pathList,drawingWindow,drawingItemTree,boundaryTreeItem,materialDatabase);
         i++;
     }
+}
+
+// assumes that the port is in the boundary database
+void BoundaryDatabase::draw_port (Port *port, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+                                  CustomTreeWidgetItem *portTreeItem, CustomTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
+{
+    port->draw(projData,&pathList,drawingWindow,drawingItemTree,portTreeItem);
 }
 
 // void BoundaryDatabase::set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap)

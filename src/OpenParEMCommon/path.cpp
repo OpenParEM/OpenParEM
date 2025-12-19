@@ -20,6 +20,18 @@
 
 #include "path.hpp"
 
+#ifdef HAS_GUI
+#include <AIS_Shape.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Face.hxx>
+#include <TopTools_IndexedMapOfShape.hxx>
+#include <TopExp.hxx>
+#include <BRepTools.hxx>
+#include <BRepTools_WireExplorer.hxx>
+
+#endif
+
 // angle between lines ptc,pt1 and ptc,pt2 (always positive)
 double angle_between_two_lines (struct point ptc, struct point pt1, struct point pt2)
 {
@@ -656,19 +668,21 @@ void Path::save (std::ofstream *out)
     if (rank != 0) return;
 
     int dim=0;
-    *out << "   Path" << std::endl;
-    *out << "      name=" << get_name() << std::endl;
+    *out << "Path" << std::endl;
+    *out << "   name=" << get_name() << std::endl;
+    *out << std::setprecision(15);
     long unsigned int i=0;
     while (i < points.size()) {
         struct point p=points[i]->get_point_value();
-        if (p.dim == 2) {dim=2; *out << "      point=(" << p.x << "," << p.y << ")" << std::endl;}
-        if (get_point_dim(i) == 3) {dim=3; *out << "      point=(" << p.x << "," << p.y << "," << p.z << ")" << std::endl;}
+        if (p.dim == 2) {*out << "   point=(" << p.x << "," << p.y << ")" << std::endl;}
+        if (get_point_dim(i) == 3) {*out << "   point=(" << p.x << "," << p.y << "," << p.z << ")" << std::endl;}
         i++;
     }
-    if (closed.get_bool_value()) {*out << "      closed=true" << std::endl;}
-    else {*out << "      closed=false" << std::endl;}
+    if (closed.get_bool_value()) {*out << "   closed=true" << std::endl;}
+    else {*out << "   closed=false" << std::endl;}
 
-    *out << "   EndPath" << std::endl;
+    *out << "EndPath" << std::endl;
+    *out << std::endl;
 }
 
 bool Path::output (std::ofstream *out, int force_dim)
@@ -2007,6 +2021,7 @@ struct point Path::getInsidePoint ()
 }
 
 #ifdef HAS_GUI
+
 TopoDS_Wire Path::create_TopoDS_Wire ()
 {
     BRepBuilderAPI_MakePolygon polygon;
@@ -2021,6 +2036,123 @@ TopoDS_Wire Path::create_TopoDS_Wire ()
     if (get_closed()) polygon.Close();
 
     return polygon.Wire();
+}
+
+// create a path from a face
+// should only be called if shape has just one face
+/*
+void Path::addPoints (Handle(AIS_Shape) shape, bool setClosed, bool calcNormal)
+{
+    TopExp_Explorer faceExplorer(shape->Shape(),TopAbs_FACE);
+    while (faceExplorer.More()) {
+        std::cout << "Processing Face" << std::endl; std::cout.flush();
+        const TopoDS_Shape& subShape=faceExplorer.Current();
+        TopoDS_Face face=TopoDS::Face(subShape);
+
+        TopExp_Explorer vertexExplorer(face,TopAbs_VERTEX);
+        while (vertexExplorer.More())
+        {
+            //xxx
+            std::cout << "    Processing vertex" << std::endl; std::cout.flush();
+            TopoDS_Vertex vertex=TopoDS::Vertex(vertexExplorer.Current());
+            gp_Pnt pnt=BRep_Tool::Pnt(vertex);
+
+            keywordPair *point=new keywordPair();
+            point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
+
+            points.push_back(point);
+
+            vertexExplorer.Next();
+        }
+
+        set_closed(setClosed);
+        if (calcNormal) calculateNormal();
+
+        faceExplorer.Next();  // should not be a second face
+    }
+}
+*/
+
+// create a path from a face
+// should only be called if shape has just one face
+/*
+void Path::addPoints (Handle(AIS_Shape) shape, bool setClosed, bool calcNormal)
+{
+    TopExp_Explorer faceExplorer(shape->Shape(),TopAbs_FACE);
+    while (faceExplorer.More()) {
+        const TopoDS_Shape& subShape=faceExplorer.Current();
+        TopoDS_Face face=TopoDS::Face(subShape);
+
+        TopTools_IndexedMapOfShape vertices;
+        TopExp::MapShapes(face,TopAbs_VERTEX,vertices);
+
+        int i=0;
+        while (i < vertices.Extent())
+        {
+            TopoDS_Vertex vertex=TopoDS::Vertex(vertices(i+1));  // 1 based
+            gp_Pnt pnt=BRep_Tool::Pnt(vertex);
+
+            keywordPair *point=new keywordPair();
+            point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
+
+            points.push_back(point);
+
+            i++;
+        }
+
+        set_closed(setClosed);
+        if (calcNormal) calculateNormal();
+
+        faceExplorer.Next();  // should not be a second face
+    }
+}
+*/
+
+// create a path from a face
+// should only be called if shape has just one face
+// May reverse the direction of the normal.
+void Path::addPoints (Handle(AIS_Shape) shape, bool setClosed, bool calcNormal)
+{
+    TopExp_Explorer faceExplorer(shape->Shape(),TopAbs_FACE);
+    while (faceExplorer.More()) {
+        const TopoDS_Shape& subShape=faceExplorer.Current();
+        TopoDS_Face face=TopoDS::Face(subShape);
+
+        TopTools_MapOfShape seen;
+        std::vector<TopoDS_Vertex> orderedVertices;
+
+        TopoDS_Wire outerWire=BRepTools::OuterWire(face);
+        BRepTools_WireExplorer wireExplorer(outerWire,face);
+
+        while (wireExplorer.More()) {
+            TopoDS_Vertex vertex=wireExplorer.CurrentVertex();
+
+            // avoid duplicates from shared edges / seam edges
+            if (!seen.Contains(vertex)) {
+                seen.Add(vertex);
+                orderedVertices.push_back(vertex);
+            }
+
+            wireExplorer.Next();
+        }
+
+        long unsigned int i=0;
+        while (i < orderedVertices.size()) {
+            gp_Pnt pnt=BRep_Tool::Pnt(orderedVertices[i]);
+
+            keywordPair *point=new keywordPair();
+            point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
+
+            points.push_back(point);
+
+            i++;
+        }
+
+        set_closed(setClosed);
+        if (calcNormal) calculateNormal();
+
+        faceExplorer.Next();  // should not be a second face
+    }
 }
 #endif
 
