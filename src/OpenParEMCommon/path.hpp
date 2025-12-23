@@ -23,15 +23,10 @@
 
 #include "mfem.hpp"
 #include <fstream>
-#include <iostream>
-#include <sstream>
 #include <string>
-#include <limits>
 #include <quadmath.h>
-#include "petscsys.h"
 #include "keywordPair.hpp"
 #include "misc.hpp"
-#include "prefix.h"
 
 #ifdef HAS_GUI
 #include <AIS_Shape.hxx>
@@ -39,6 +34,8 @@
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <gp_Pnt.hxx>
 #include <TopoDS_Wire.hxx>
+#include "CustomOpenGLWidget.h"
+#include "CustomTreeWidgetItem.h"
 #endif
 
 struct point point_copy (struct point);
@@ -74,6 +71,9 @@ class Path {
       double ymax,ymin;
       double zmax,zmin;
       bool hasOutput;
+      #ifdef HAS_GUI
+      CustomTreeWidgetItem *item;
+      #endif
    public:
       Path (int, int);
       ~Path ();
@@ -138,6 +138,9 @@ class Path {
       bool lineIntersects (struct point, struct point);
       struct point getInsidePoint ();
 #ifdef HAS_GUI
+      //void set_item (CustomTreeWidgetItem *item_) {item=item_;}
+      void create_item (CustomOpenGLWidget *, CustomTreeWidgetItem *);
+      //CustomTreeWidgetItem* get_item () {return item;}
       TopoDS_Wire create_TopoDS_Wire ();
       void addPoints (Handle(AIS_Shape) shape, bool, bool);
 #endif

@@ -117,13 +117,14 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->drawingWindow->set_portItemTree(&port);
     ui->drawingWindow->set_boundaryItemTree(&boundary);
     ui->drawingWindow->set_meshItemTree(&mesh);
+    ui->drawingWindow->set_pathItemTree(&path);
 
     showAction=nullptr;
     hideAction=nullptr;
     unselectAction=nullptr;
     deleteAction=nullptr;
     assignMaterialAction=nullptr;
-    addNetAction=nullptr;
+    insertAction=nullptr;
     renameAction=nullptr;
     createPortAction=nullptr;
 
@@ -135,19 +136,30 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     port.set_type(101);
     boundary.set_type(102);
     mesh.set_type(103);
+    path.set_type(104);
 
     ui->drawingItemTree->setHeaderHidden(true);
 
-    // four base list items: drawing, port, boundary, and mesh
+    // five base list items: drawing, path, port, boundary, and mesh
+
     drawing.setText(0,"Drawing");
     ui->drawingItemTree->addTopLevelItem(&drawing);
+
+    path.setText(0,"Path");
+    ui->drawingItemTree->addTopLevelItem(&path);
+    path.setForeground(0,Qt::black);
+
     port.setText(0,"Port");
     ui->drawingItemTree->addTopLevelItem(&port);
+    port.setForeground(0,Qt::black);
+
     boundary.setText(0,"Boundary");
     ui->drawingItemTree->addTopLevelItem(&boundary);
+    boundary.setForeground(0,Qt::black);
+
     mesh.setText(0,"Mesh");
-    mesh.setForeground(0,Qt::black);
     ui->drawingItemTree->addTopLevelItem(&mesh);
+    mesh.setForeground(0,Qt::black);
 
     // context menu
     ui->drawingItemTree->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -214,7 +226,7 @@ OpenParEMg::~OpenParEMg ()
     if (unselectAction) delete unselectAction;
     if (deleteAction) delete deleteAction;
     if (assignMaterialAction) delete assignMaterialAction;
-    if (addNetAction) delete addNetAction;
+    if (insertAction) delete insertAction;
     if (renameAction) delete renameAction;
     if (expandAllAction) delete expandAllAction;
     if (collapseAllAction) delete collapseAllAction;
@@ -501,7 +513,6 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
 
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showRootDrawingItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideRootDrawingItems);
-        //connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectItems);
         connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectRootDrawingItems);
         connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteRootDrawingItems);
         connect(assignMaterialAction, &QAction::triggered, this, &OpenParEMg::assignMaterial);
@@ -516,7 +527,6 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
 
         menu.addAction(showAction);
         menu.addAction(hideAction);
-        //menu.addAction(selectAction);
         menu.addAction(unselectAction);
         menu.addAction(deleteAction);
         menu.addAction(assignMaterialAction);
@@ -560,6 +570,42 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         if (ui->drawingWindow->hasOneFaceSelected()) {createPortAction->setEnabled(true);}
     }
 
+    if (clickedItem->is_rootPath()) {
+
+        showAction=new QAction("Show",this);
+        hideAction=new QAction("Hide",this);
+        expandAllAction=new QAction("Expand All",this);
+        collapseAllAction=new QAction("Collapse All",this);
+
+        connect(showAction, &QAction::triggered, this, &OpenParEMg::showRootPathItems);
+        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideRootPathItems);
+        connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
+        connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
+
+        showAction->setEnabled(rootPathValidShow());
+        hideAction->setEnabled(rootPathValidHide());
+
+        menu.addAction(showAction);
+        menu.addAction(hideAction);
+        menu.addAction(expandAllAction);
+        menu.addAction(collapseAllAction);
+    }
+
+    if (clickedItem->is_path()) {
+
+        showAction=new QAction("Show",this);
+        hideAction=new QAction("Hide",this);
+
+        connect(showAction, &QAction::triggered, this, &OpenParEMg::showPathItems);
+        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePathItems);
+
+        showAction->setEnabled(ui->drawingWindow->isValidShow());
+        hideAction->setEnabled(ui->drawingWindow->isValidHide());
+
+        menu.addAction(showAction);
+        menu.addAction(hideAction);
+    }
+
     if (clickedItem->is_rootPort()) {
 
         showAction=new QAction("Show",this);
@@ -586,6 +632,7 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         showAction=new QAction("Show",this);
         hideAction=new QAction("Hide",this);
         unselectAction=new QAction("Unselect",this);
+        insertAction=new QAction("Insert Mode",this);
         renameAction=new QAction("Rename",this);
         deleteAction=new QAction("Delete",this);
         expandAllAction=new QAction("Expand All",this);
@@ -594,6 +641,7 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showPortItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePortItems);
         connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectPortItems);
+        connect(insertAction, &QAction::triggered, this, &OpenParEMg::insertModeItems);
         connect(renameAction, &QAction::triggered, this, &OpenParEMg::renamePortItems);
         connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deletePortItems);
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
@@ -604,13 +652,16 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         unselectAction->setEnabled(ui->drawingWindow->hasPortSelectedItems());
 
         renameAction->setEnabled(false);
-        if (ui->drawingWindow->hasOneSelectedItem()) renameAction->setEnabled(true);
+        if (ui->drawingWindow->hasOneSelectedItem()) {
+            renameAction->setEnabled(true);
+        }
 
         deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
         menu.addAction(showAction);
         menu.addAction(hideAction);
         menu.addAction(unselectAction);
+        menu.addAction(insertAction);
         menu.addAction(renameAction);
         menu.addAction(deleteAction);
         menu.addAction(expandAllAction);
@@ -655,18 +706,21 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         menu.addAction(hideAction);
     }
 
-    if (clickedItem->is_sport()) {
+    if (clickedItem->is_sportLabel()) {
+        deleteAction=new QAction("Delete",this);
         expandAllAction=new QAction("Expand All",this);
         collapseAllAction=new QAction("Collapse All",this);
 
+        connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteSportItems);
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
+        menu.addAction(deleteAction);
         menu.addAction(expandAllAction);
         menu.addAction(collapseAllAction);
     }
 
-    if (clickedItem->is_sportNet()) {
+    if (clickedItem->is_sport()) {
 
         showAction=new QAction("Show",this);
         hideAction=new QAction("Hide",this);
@@ -752,7 +806,7 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
     if (unselectAction) {delete unselectAction; unselectAction=nullptr;}
     if (deleteAction) {delete deleteAction; deleteAction=nullptr;}
     if (assignMaterialAction) {delete assignMaterialAction; assignMaterialAction=nullptr;}
-    if (addNetAction) {delete addNetAction; addNetAction=nullptr;}
+    if (insertAction) {delete insertAction; insertAction=nullptr;}
     if (createPortAction) {delete createPortAction; createPortAction=nullptr;}
 }
 
@@ -828,6 +882,9 @@ void OpenParEMg::showDrawingItems ()
         if (item->is_drawing()) {
             ui->drawingWindow->showItem(item);
         }
+        if (item->is_port()) {
+            ui->drawingWindow->showItem(item);
+        }
         i++;
     }
 
@@ -874,6 +931,9 @@ void OpenParEMg::hideDrawingItems ()
         if (item->is_drawing()) {
             ui->drawingWindow->hideItem(item);
         }
+        if (item->is_path()) {
+            ui->drawingWindow->hideItem(item);
+        }
         i++;
     }
 
@@ -885,6 +945,165 @@ void OpenParEMg::hideDrawingItems ()
 
     ui->drawingWindow->updateViewer();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void OpenParEMg::showRootPathItems ()
+{
+    std::cout << "OpenParEMg::showRootPathItems" << std::endl; std::cout.flush();
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_rootPath()) {
+            int j=0;
+            while (j < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                ui->drawingWindow->showItem(child);
+                child->setForeground(0,Qt::black);
+                j++;
+            }
+        }
+        i++;
+    }
+
+    showAction->setEnabled(ui->drawingWindow->isValidShow());
+    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+
+    ui->drawingWindow->updateViewer();
+}
+
+bool OpenParEMg::rootPathValidShow ()
+{
+    int i=0;
+    while (i < path.childCount()) {
+        std::cout << "OpenParEMg::rootPathValidShow" << std::endl; std::cout.flush();
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) path.child(i);
+        if (child->foreground(0) == Qt::gray) return true;
+        i++;
+    }
+    return false;
+}
+
+void OpenParEMg::hideRootPathItems ()
+{
+    std::cout << "OpenParEMg::hideRootPathItems" << std::endl; std::cout.flush();
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_rootPath()) {
+            int j=0;
+            while (j < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                ui->drawingWindow->hideItem(child);
+                child->setForeground(0,Qt::gray);
+                j++;
+            }
+        }
+        i++;
+    }
+
+    showAction->setEnabled(ui->drawingWindow->isValidShow());
+    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::showPathItems ()
+{
+    std::cout << "OpenParEMg::showPathItems" << std::endl; std::cout.flush();
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_path()) {
+            ui->drawingWindow->showItem(item);
+        }
+        i++;
+    }
+
+    showAction->setEnabled(ui->drawingWindow->isValidShow());
+    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+
+    ui->drawingWindow->updateViewer();
+}
+
+bool OpenParEMg::rootPathValidHide ()
+{
+    int i=0;
+    while (i < path.childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) path.child(i);
+        std::cout << "OpenParEMg::rootPathValidHide" << std::endl; std::cout.flush();
+        if (child->foreground(0) == Qt::black) return true;
+        i++;
+    }
+    return false;
+}
+
+void OpenParEMg::hidePathItems ()
+{
+    std::cout << "OpenParEMg::hidePathItems" << std::endl; std::cout.flush();
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_path()) {
+            ui->drawingWindow->hideItem(item);
+        }
+        i++;
+    }
+
+    showAction->setEnabled(ui->drawingWindow->isValidShow());
+    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+
+    ui->drawingWindow->updateViewer();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void OpenParEMg::showRootPortItems ()
 {
@@ -1099,7 +1318,7 @@ void OpenParEMg::renameSportNet ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_sportNet()) {
+        if (item->is_sport()) {
             CustomLineEdit *net=new CustomLineEdit();
             net->setText(item->text(0));
             originalText=item->text(0);
@@ -1124,7 +1343,7 @@ void OpenParEMg::deleteSportNet ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_sportNet()) {
+        if (item->is_sport()) {
             ui->drawingWindow->deleteItem(item);
             boundaryDatabaseChanged=true;
         }
@@ -1299,6 +1518,34 @@ void OpenParEMg::unselectRootPortItems()
     ui->drawingWindow->updateViewer();
 }
 
+void OpenParEMg::insertModeItems ()
+{
+    std::cout << "OpenParEMg::unselectModeItem" << std::endl; std::cout.flush();
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_port()) {
+            Port *port=boundaryDatabase->get_port(item->text(0).toStdString());
+
+            Mode *newMode=new Mode(0,0,port->get_impedance_calculation());
+            std::string net="net";
+            net.append(std::to_string(boundaryDatabase->get_SportCount()+1));
+            newMode->set_net(net);
+            newMode->set_Sport(boundaryDatabase->get_SportCount()+1);
+            port->push_mode(newMode);
+
+            mfem::Vector normal=port->get_normal();
+            struct point norm; norm.x=normal(0); norm.y=normal(1); norm.z=normal(2); norm.dim=3;
+            newMode->draw(boundaryDatabase->get_pathList_ptr(),&norm,ui->drawingWindow,ui->drawingItemTree,&path,item);
+
+            setMenus();
+        }
+        i++;
+    }
+}
+
 void OpenParEMg::unselectPortItems()
 {
     std::cout << "OpenParEMg::unselectPortItems" << std::endl; std::cout.flush();
@@ -1357,7 +1604,7 @@ void OpenParEMg::deletePortItem (CustomTreeWidgetItem * item)
     int i=0;
     while (i < item->childCount()) {
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
-        if (child->is_sportNet()) {
+        if (child->is_sport()) {
             int j=0;
             while (j < child->childCount()) {
                 CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *) child->child(j);
@@ -1438,6 +1685,66 @@ void OpenParEMg::deletePortItems ()
     ui->drawingWindow->updateViewer();
 }
 
+void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *sportItem)
+{
+    std::cout << "OpenParEMg::deleteSportItem" << std::endl; std::cout.flush();
+
+    // port
+    CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)sportItem->QTreeWidgetItem::parent();
+    Port *port=boundaryDatabase->get_port(parentItem->text(0).toStdString());
+
+    // remove from the port
+    port->deleteMode(sportItem->text(0).toStdString());
+
+    // remove the integration paths
+    int i=0;
+    while (i < sportItem->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) sportItem->child(i);
+        if (child->is_sport()) {
+            int j=0;
+            while (j < child->childCount()) {
+                CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *) child->child(j);
+                if (grandChild->is_voltage() || grandChild->is_current()) {
+                    int k=0;
+                    while (k < grandChild->childCount()) {
+                        CustomTreeWidgetItem *greatGrandChild=(CustomTreeWidgetItem *) grandChild->child(k);
+                        if (greatGrandChild->is_integrationPathSegment()) {
+                            ui->drawingWindow->deleteItem(greatGrandChild);
+                        }
+                        k++;
+                    }
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+
+    boundaryDatabaseChanged=true;
+    setMenus();
+}
+
+//xxx
+void OpenParEMg::deleteSportItems ()
+{
+    std::cout << "OpenParEMg::deleteSportItems" << std::endl; std::cout.flush();
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_sportLabel()) {
+            deleteSportItem(item);
+        }
+        i++;
+    }
+
+    clickedItem=nullptr;
+    previousClickedItem=nullptr;
+
+    ui->drawingWindow->updateViewer();
+}
+
 void OpenParEMg::showNetItems ()
 {
     std::cout << "OpenParEMg::showNetItems" << std::endl; std::cout.flush();
@@ -1446,7 +1753,7 @@ void OpenParEMg::showNetItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_sportNet()) {
+        if (item->is_sport()) {
             ui->drawingWindow->showItem(item);
 
             int j=0;
@@ -1507,12 +1814,6 @@ void OpenParEMg::showIntegrationPathItems ()
         if (item->is_integrationPathSegment()) {
             ui->drawingWindow->showItem(item);
             item->setForeground(0,Qt::black);
-
-            long unsigned int j=0;
-            while (j < item->get_arrowHeads_size()) {
-                ui->drawingWindow->displayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
-                j++;
-            }
         }
         i++;
     }
@@ -1531,7 +1832,7 @@ void OpenParEMg::hideNetItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_sportNet()) {
+        if (item->is_sport()) {
             int j=0;
             while (j < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
@@ -1591,12 +1892,6 @@ void OpenParEMg::hideIntegrationPathItems ()
         if (item->is_integrationPathSegment()) {
             ui->drawingWindow->hideItem(item);
             item->setForeground(0,Qt::gray);
-
-            long unsigned int j=0;
-            while (j < item->get_arrowHeads_size()) {
-                ui->drawingWindow->hideShape(item->get_AIS_Shape());
-                j++;
-            }
         }
         i++;
     }
@@ -1649,19 +1944,19 @@ void OpenParEMg::createPort ()
 
     // path
 
-    Path *path=new Path(0,0);
-    path->set_name(pathName);
+    Path *newPath=new Path(0,0);
+    newPath->set_name(pathName);
 
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     std::cout << "selectedItems.count()=" << selectedItems.count() << std::endl;
     i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        path->addPoints(item->get_AIS_Shape(),true,true);
+        newPath->addPoints(item->get_AIS_Shape(),true,true);
         i++;
     }
 
-    boundaryDatabase->push_path(path);
+    boundaryDatabase->push_path(newPath);
 
     // port
 
@@ -1671,23 +1966,29 @@ void OpenParEMg::createPort ()
     // path info
 
     newPort->push_path(kwPathName,boundaryDatabase->get_pathList_size()-1,false);
-    newPort->set_outline(path);
+    newPort->set_outline(newPath);
 
     // impedance
     if (boundaryDatabase->get_portList_size() == 0) {
-       newPort->set_impedance_definition("PV");
-       newPort->set_impedance_calculation("line");
+        newPort->set_impedance_definition("PV");
+        newPort->set_impedance_calculation("line");
     } else {
         newPort->set_impedance_definition(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_definition());
         newPort->set_impedance_calculation(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_calculation());
     }
+
+    // must have at least one mode per port - default to sensible assumptions
+    Mode *newMode=new Mode(0,0,newPort->get_impedance_calculation());
+    newMode->set_net(portName);
+    newMode->set_Sport(sport);
+    newPort->push_mode(newMode);
 
     // add to boundary database
     boundaryDatabase->push_port(newPort);
     boundaryDatabaseChanged=true;
 
     // draw it
-    boundaryDatabase->draw_port(newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&port,&boundary,materialDatabase);
+    boundaryDatabase->draw_port(newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
 
     setMenus();
 }
@@ -1919,7 +2220,7 @@ void OpenParEMg::on_actionOpen_triggered ()
         } else {
             //boundaryDatabase->set_drawingToItemMap(&drawingToItemMap);
             boundaryDatabaseLoaded=true;
-            boundaryDatabase->draw(&projData,ui->drawingWindow,ui->drawingItemTree,&port,&boundary,materialDatabase);
+            boundaryDatabase->draw(&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
         }
 
         // load mesh, if any, and draw
@@ -2005,6 +2306,7 @@ void OpenParEMg::resetProject ()
 
     // reset selection tree
     drawing.reset();
+    path.reset();
     port.reset();
     boundary.reset();
     mesh.reset();
@@ -2797,6 +3099,7 @@ void OpenParEMg::on_actionShowAll_triggered()
 {
     ui->drawingWindow->unselectAllItems();
     ui->drawingWindow->showItem(&drawing);
+    ui->drawingWindow->showItem(&path);
     ui->drawingWindow->showItem(&port);
     ui->drawingWindow->showItem(&boundary);
     ui->drawingWindow->showItem(&mesh);
@@ -2862,7 +3165,7 @@ void OpenParEMg::drawMesh()
             CustomTreeWidgetItem *verticesItem=new CustomTreeWidgetItem(0);
             verticesItem->setText(0,"Vertices");
             verticesItem->set_type(3);
-            verticesItem->setForeground(0,Qt::black);
+            verticesItem->setForeground(0,Qt::gray);
             mesh.insertChild(0,verticesItem);
 
             int count=0;
@@ -2887,7 +3190,7 @@ void OpenParEMg::drawMesh()
             CustomTreeWidgetItem *edgesItem=new CustomTreeWidgetItem(0);
             edgesItem->setText(0,"Edges");
             edgesItem->set_type(3);
-            edgesItem->setForeground(0,Qt::black);
+            edgesItem->setForeground(0,Qt::gray);
             mesh.addChild(edgesItem);
 
             int count=0;
@@ -2913,13 +3216,13 @@ void OpenParEMg::drawMesh()
             CustomTreeWidgetItem *wiresItem=new CustomTreeWidgetItem(0);
             wiresItem->setText(0,"Wires");
             wiresItem->set_type(3);
-            wiresItem->setForeground(0,Qt::black);
+            wiresItem->setForeground(0,Qt::gray);
             mesh.addChild(wiresItem);
 
             CustomTreeWidgetItem *trianglesItem=new CustomTreeWidgetItem(0);
             trianglesItem->setText(0,"Triangles");
             trianglesItem->set_type(3);
-            trianglesItem->setForeground(0,Qt::black);
+            trianglesItem->setForeground(0,Qt::gray);
             mesh.addChild(trianglesItem);
 
             int count=0;
@@ -2959,7 +3262,7 @@ void OpenParEMg::drawMesh()
             CustomTreeWidgetItem *tetrahedronsItem=new CustomTreeWidgetItem(0);
             tetrahedronsItem->setText(0,"Tetrahedrons");
             tetrahedronsItem->set_type(3);
-            tetrahedronsItem->setForeground(0,Qt::black);
+            tetrahedronsItem->setForeground(0,Qt::gray);
             mesh.addChild(tetrahedronsItem);
 
             int count=0;

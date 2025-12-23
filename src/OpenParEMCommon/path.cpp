@@ -22,6 +22,7 @@
 
 #ifdef HAS_GUI
 #include <AIS_Shape.hxx>
+#include "CustomAIS_Shape.h"
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Face.hxx>
@@ -29,7 +30,7 @@
 #include <TopExp.hxx>
 #include <BRepTools.hxx>
 #include <BRepTools_WireExplorer.hxx>
-
+#include "CustomOpenGLWidget.h"
 #endif
 
 // angle between lines ptc,pt1 and ptc,pt2 (always positive)
@@ -589,6 +590,10 @@ Path::Path(int startLine_, int endLine_)
    normal.dim=3; normal.x=-2; normal.y=-2; normal.z=-2;
 
    hasOutput=false;
+
+#if HAS_GUI
+   item=nullptr;
+#endif
 }
 
 struct point Path::get_point_value (long unsigned int i)
@@ -2040,76 +2045,6 @@ TopoDS_Wire Path::create_TopoDS_Wire ()
 
 // create a path from a face
 // should only be called if shape has just one face
-/*
-void Path::addPoints (Handle(AIS_Shape) shape, bool setClosed, bool calcNormal)
-{
-    TopExp_Explorer faceExplorer(shape->Shape(),TopAbs_FACE);
-    while (faceExplorer.More()) {
-        std::cout << "Processing Face" << std::endl; std::cout.flush();
-        const TopoDS_Shape& subShape=faceExplorer.Current();
-        TopoDS_Face face=TopoDS::Face(subShape);
-
-        TopExp_Explorer vertexExplorer(face,TopAbs_VERTEX);
-        while (vertexExplorer.More())
-        {
-            //xxx
-            std::cout << "    Processing vertex" << std::endl; std::cout.flush();
-            TopoDS_Vertex vertex=TopoDS::Vertex(vertexExplorer.Current());
-            gp_Pnt pnt=BRep_Tool::Pnt(vertex);
-
-            keywordPair *point=new keywordPair();
-            point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
-
-            points.push_back(point);
-
-            vertexExplorer.Next();
-        }
-
-        set_closed(setClosed);
-        if (calcNormal) calculateNormal();
-
-        faceExplorer.Next();  // should not be a second face
-    }
-}
-*/
-
-// create a path from a face
-// should only be called if shape has just one face
-/*
-void Path::addPoints (Handle(AIS_Shape) shape, bool setClosed, bool calcNormal)
-{
-    TopExp_Explorer faceExplorer(shape->Shape(),TopAbs_FACE);
-    while (faceExplorer.More()) {
-        const TopoDS_Shape& subShape=faceExplorer.Current();
-        TopoDS_Face face=TopoDS::Face(subShape);
-
-        TopTools_IndexedMapOfShape vertices;
-        TopExp::MapShapes(face,TopAbs_VERTEX,vertices);
-
-        int i=0;
-        while (i < vertices.Extent())
-        {
-            TopoDS_Vertex vertex=TopoDS::Vertex(vertices(i+1));  // 1 based
-            gp_Pnt pnt=BRep_Tool::Pnt(vertex);
-
-            keywordPair *point=new keywordPair();
-            point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
-
-            points.push_back(point);
-
-            i++;
-        }
-
-        set_closed(setClosed);
-        if (calcNormal) calculateNormal();
-
-        faceExplorer.Next();  // should not be a second face
-    }
-}
-*/
-
-// create a path from a face
-// should only be called if shape has just one face
 // May reverse the direction of the normal.
 void Path::addPoints (Handle(AIS_Shape) shape, bool setClosed, bool calcNormal)
 {
@@ -2154,6 +2089,98 @@ void Path::addPoints (Handle(AIS_Shape) shape, bool setClosed, bool calcNormal)
         faceExplorer.Next();  // should not be a second face
     }
 }
+
+//xxx
+
+void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
+{
+    std::cout << "Path::create_item" << std::endl; std::cout.flush();
+
+    CustomTreeWidgetItem *item=new CustomTreeWidgetItem(0);
+    item->set_type(4);
+    item->set_OPEMobject(this);
+    item->setText(0,QString::fromStdString(get_name()));
+    item->set_displayMode(0);
+    item->set_selectionMode(0);
+    item->setForeground(0,Qt::black);
+
+    Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (create_TopoDS_Wire());
+    drawingWindow->displayShape(drawingShape,item->get_displayMode(),item->get_selectionMode());
+    item->set_AIS_Shape(drawingShape);
+    drawingWindow->insertItemToMap(drawingShape,item);
+
+    // arrow heads
+
+    // shortest segment
+    double shortestLength=DBL_MAX;
+    long unsigned int i=0;
+    while (i < points.size()) {
+        keywordPair *from=points[i];
+        keywordPair *to=nullptr;
+
+        if (i < points.size()-1) {
+            to=points[i+1];
+        } else {
+            if (is_closed()) to=points[0];
+        }
+
+        if (to) {
+            double length=point_magnitude(point_subtraction(from->get_point_value(),to->get_point_value()));
+            if (length > 0 && length < shortestLength) shortestLength=length;
+        }
+        i++;
+    }
+
+    // make arrows
+
+    i=0;
+    while (i < points.size()) {
+        keywordPair *from=points[i];
+        keywordPair *to=nullptr;
+
+        if (i < points.size()-1) {
+            to=points[i+1];
+        } else {
+            if (is_closed()) to=points[0];
+        }
+
+        if (to) {
+            struct point shifted_segment=point_subtraction(to->get_point_value(),from->get_point_value());
+            struct point shifted_normal=point_subtraction(normal,from->get_point_value());
+            struct point arrowOffset=point_scale(shortestLength/10,point_normalize(point_cross_product(shifted_segment,shifted_normal)));
+
+            struct point center=point_midpoint(from->get_point_value(),to->get_point_value());
+            struct point centerOffset=point_scale(shortestLength/20,point_normalize(point_subtraction(center,from->get_point_value())));
+
+            keywordPair *tip=new keywordPair();
+            tip->set_point_value(point_addition(center,centerOffset));
+
+            keywordPair *p1=new keywordPair ();
+            p1->set_point_value(point_subtraction(point_subtraction(center,centerOffset),arrowOffset));
+
+            keywordPair *p2=new keywordPair ();
+            p2->set_point_value(point_addition(point_subtraction(center,centerOffset),arrowOffset));
+
+            Path arrowHead(0,0);
+            arrowHead.set_closed(false);
+            arrowHead.push_point(p1);
+            arrowHead.push_point(tip);
+            arrowHead.push_point(p2);
+
+            Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (arrowHead.create_TopoDS_Wire());
+            drawingWindow->displayShape(drawingShape,item->get_displayMode(),item->get_selectionMode());
+            item->push_arrowHead(drawingShape);
+            drawingWindow->insertItemToMap(drawingShape,item);
+        }
+        i++;
+    }
+
+    drawingWindow->hideItem(item);
+    parentItem->addChild(item);
+
+    drawingWindow->updateViewer();
+}
+
 #endif
 
 Path::~Path ()

@@ -34,7 +34,15 @@ public:
         set_dimTag(-1,-1);  // invalid initialization
         displayMode=0;      // 0 - wireframe, 1 - shaded
         selectionMode=0;
+        OPEMobject=nullptr;
     }
+
+    void set_OPEMobject (void *pointer) {OPEMobject=pointer;}
+    void* get_OPEMojbect () {return OPEMobject;}
+
+    long unsigned int linkedItems_size () {return linkedItems.size();}
+    void push_linkedItem (CustomTreeWidgetItem *linkedItem) {linkedItems.push_back(linkedItem);}
+    CustomTreeWidgetItem* get_linkedItem (long unsigned int i) {return linkedItems[i];}
 
     void set_type (int type_) {
         type=type_;
@@ -43,6 +51,7 @@ public:
         if (is_port()) forShowHide=true;
         if (is_boundary()) forShowHide=true;
         if (is_mesh()) forShowHide=true;
+        if (is_path()) forShowHide=true;
         if (is_integrationPathSegment()) forShowHide=true;
         if (is_rootDrawing()) forShowHide=true;
         if (is_rootPort()) forShowHide=true;
@@ -55,20 +64,22 @@ public:
     bool is_port () {if (type == 1) return true; return false;}
     bool is_boundary () {if (type == 2) return true; return false;}
     bool is_mesh () {if (type == 3) return true; return false;}
-    bool is_sport () {if (type == 4) return true; return false;}
-    bool is_impedanceDefinition () {if (type == 5) return true; return false;}
-    bool is_impedanceCalculation () {if (type == 6) return true; return false;}
-    bool is_sportNumber () {if (type == 7) return true; return false;}
-    bool is_sportNet () {if (type == 8) return true; return false;}
-    bool is_voltage () {if (type == 9) return true; return false;}
-    bool is_current () {if (type == 10) return true; return false;}
-    bool is_scale () {if (type == 11) return true; return false;}
-    //bool is_scaleValue () {if (type == 12) return true; return false;}
-    bool is_integrationPathSegment () {if (type == 13) return true; return false;}
+    bool is_path () {if (type == 4) return true; return false;}
+    bool is_sport () {if (type == 5) return true; return false;}
+    bool is_impedanceDefinition () {if (type == 6) return true; return false;}
+    bool is_impedanceCalculation () {if (type == 7) return true; return false;}
+    bool is_sportLabel () {if (type == 8) return true; return false;}
+    bool is_sportNumber () {if (type == 9) return true; return false;}
+    bool is_voltage () {if (type == 10) return true; return false;}
+    bool is_current () {if (type == 11) return true; return false;}
+    bool is_scale () {if (type == 12) return true; return false;}
+    bool is_scaleValue () {if (type == 13) return true; return false;}
+    bool is_integrationPathSegment () {if (type == 14) return true; return false;}
     bool is_rootDrawing () {if (type == 100) return true; return false;}
     bool is_rootPort () {if (type == 101) return true; return false;}
     bool is_rootBoundary () {if (type == 102) return true; return false;}
     bool is_rootMesh () {if (type == 103) return true; return false;}
+    bool is_rootPath () {if (type == 104) return true; return false;}
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
     Handle(AIS_Shape) get_AIS_Shape () {return shape;}
@@ -119,15 +130,22 @@ public:
         if (shape.IsNull()) std::cout << "   shape=null" << std::endl;
         else std::cout << "   shape type=" << shape->Type() << std::endl;
         std::cout << "   forShowHide=" << forShowHide << std::endl;
+        std::cout << "   OPEMobject=" << OPEMobject << std::endl;
+        if (is_rootDrawing()) std::cout << "   type=rootDrawing" << std::endl;
+        if (is_rootPort()) std::cout << "   type=rootPort" << std::endl;
+        if (is_rootBoundary()) std::cout << "   type=rootBoundary" << std::endl;
+        if (is_rootMesh()) std::cout << "   type=rootMesh" << std::endl;
+        if (is_rootPath()) std::cout << "   type=rootPath" << std::endl;
         if (is_drawing()) std::cout << "   type=drawing" << std::endl;
         if (is_port()) std::cout << "   type=port" << std::endl;
         if (is_boundary()) std::cout << "   type=boundary" << std::endl;
         if (is_mesh()) std::cout << "   type=mesh" << std::endl;
-        if (is_sport()) std::cout << "   type=sport" << std::endl;
+        if (is_path()) std::cout << "   type=path" << std::endl;
+        if (is_sportLabel()) std::cout << "   type=sport" << std::endl;
         if (is_impedanceDefinition()) std::cout << "   type=impedanceDefinition" << std::endl;
         if (is_impedanceCalculation()) std::cout << "   type=impedanceCalculation" << std::endl;
         if (is_sportNumber()) std::cout << "   type=sportNumber" << std::endl;
-        if (is_sportNet()) std::cout << "   type=sportNet" << std::endl;
+        if (is_sport()) std::cout << "   type=sportNet" << std::endl;
         if (is_voltage()) std::cout << "   type=voltage" << std::endl;
         if (is_current()) std::cout << "   type=current" << std::endl;
         if (is_scale()) std::cout << "   type=scale" << std::endl;
@@ -143,29 +161,37 @@ public:
         set_AIS_Shape(nullptr);
         setForeground(0,Qt::black);
         setExpanded(Standard_False);
+        arrowHeads.clear();
         meshEntities.clear();
+        OPEMobject=nullptr;
+        linkedItems.clear();
     }
 
 private slots:
 
 private:
-    Handle(AIS_Shape) shape;                       // for drawing
-    std::vector<Handle(AIS_Shape)> arrowHeads;     // used integration lines
-    int displayMode;                               //    0 - wireframe, 1 - shaded
-    int selectionMode;                             //    0 - shape, 1 - vertex, ...
-    std::vector<Handle(AIS_Shape)> meshEntities;   // for mesh
-    std::pair<int,int> dimTag;                     //
-    bool forShowHide;                              // false - does not participate in item tree show/hide operations; true - does participate
-    int type;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh,
-                                                   // 4 - Sport, 5 - impedance definition, 6 - impedance calculation
-                                                   // 7 - Sport number, 8 - Sport net,
-                                                   // 9 - voltage, 10 - current
-                                                   // 11 - scale, 12 - scale value
-                                                   // 13 - integration path segment
-                                                   // 100 - root drawing item
-                                                   // 101 - root port item
-                                                   // 102 - root boundary item
-                                                   // 103 - root mesh item
+    Handle(AIS_Shape) shape;                           // for drawing
+    std::vector<Handle(AIS_Shape)> arrowHeads;         // used integration lines
+    int displayMode;                                   //    0 - wireframe, 1 - shaded
+    int selectionMode;                                 //    0 - shape, 1 - vertex, ...
+    std::vector<Handle(AIS_Shape)> meshEntities;       // for mesh
+    std::pair<int,int> dimTag;                         //
+    bool forShowHide;                                  // false - does not participate in item tree show/hide operations; true - does participate
+    int type;                                          // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh, 4 - path
+                                                       // 5 - Sport (net), 6 - impedance definition, 7 - impedance calculation
+                                                       // 8 - Sport label, 9 - Sport number,
+                                                       // 10 - voltage, 11 - current
+                                                       // 12 - scale, 13 - scale value
+                                                       // 14 - integration path segment
+                                                       // 100 - root drawing item
+                                                       // 101 - root port item
+                                                       // 102 - root boundary item
+                                                       // 103 - root mesh item
+                                                       // 104 - root path item
+    void *OPEMobject;                                  // a pointer to an item in the boundary database
+                                                       // *path, *mode, *boundary, etc
+                                                       // cast to the correct object type
+    std::vector<CustomTreeWidgetItem *> linkedItems;   // link to path items, if any
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

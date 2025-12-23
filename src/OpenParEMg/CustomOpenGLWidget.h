@@ -51,6 +51,7 @@ public:
     void set_portItemTree (CustomTreeWidgetItem *portItemTree_) {portItemTree=portItemTree_;}
     void set_boundaryItemTree (CustomTreeWidgetItem *boundaryItemTree_) {boundaryItemTree=boundaryItemTree_;}
     void set_meshItemTree (CustomTreeWidgetItem *meshItemTree_) {meshItemTree=meshItemTree_;}
+    void set_pathItemTree (CustomTreeWidgetItem *pathItemTree_) {pathItemTree=pathItemTree_;}
     void set_contextMenu (QMenu *contextMenu_) {contextMenu=contextMenu_;}
 
     void updateViewer ();
@@ -272,6 +273,7 @@ private:
     CustomTreeWidgetItem *portItemTree;
     CustomTreeWidgetItem *boundaryItemTree;
     CustomTreeWidgetItem *meshItemTree;
+    CustomTreeWidgetItem *pathItemTree;
 
     ItemTracker *drawingTracker;
 

@@ -26,7 +26,6 @@
 #include <fstream>
 #include <string>
 #include <unistd.h>
-#include <atomic>
 #include "mfem.hpp"
 #include "project.h"
 #include "path.hpp"
@@ -139,9 +138,10 @@ class Boundary
       int attribute=-1;                              // attribute assigned to the mesh indicating this boundary
       bool assignedToMesh=false;                     // keeps track of whether the boundary was successfully assigned to the mesh
       bool is_default;
-      std::vector<Current *> radiationCurrents; // currents for radiation boundaries
+      std::vector<Current *> radiationCurrents;      // currents for radiation boundaries
 
 #if HAS_GUI
+    CustomTreeWidgetItem *item;
     QDoubleValidator doubleValidator;
     std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap=nullptr;
 #endif
@@ -204,6 +204,8 @@ class Boundary
       void save (std::ofstream *);
       bool snapToMeshBoundary (std::vector<Path *> *, mfem::Mesh *, std::string);
 #ifdef HAS_GUI
+      void set_item (CustomTreeWidgetItem *item_) {item=item_;}
+      CustomTreeWidgetItem* get_item () {return item;}
       void draw (struct projectData *, std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, MaterialDatabase *);
       void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
 #endif
@@ -271,6 +273,7 @@ class IntegrationPath
       std::complex<double> integratedValue;
 
 #if HAS_GUI
+      CustomTreeWidgetItem *item;
       QDoubleValidator doubleValidator;
 #endif
    public:
@@ -301,7 +304,9 @@ class IntegrationPath
       void set_integratedValue (std::complex<double> integratedValue_) {integratedValue=integratedValue_;}
       void output (std::ofstream *, std::vector<Path *> *, Path *, bool, bool, int);
 #ifdef HAS_GUI
-      void draw (std::vector<Path *> *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
+      void set_item (CustomTreeWidgetItem *item_) {item=item_;}
+      CustomTreeWidgetItem* get_item () {return item;}
+      void draw (std::vector<Path *> *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -417,7 +422,9 @@ class Mode
       std::vector<std::complex<double>> Cm;                // C minus for direction split with a unique value for each driving set
       std::vector<std::complex<double>> weight;            // weight for each driving set
       bool net_is_updated=false;                           // flag to prevent updating net names more than once
-
+#if HAS_GUI
+      CustomTreeWidgetItem *item;
+#endif
    public:
       Mode(int,int,std::string);
       ~Mode();
@@ -427,6 +434,7 @@ class Mode
       void set_net (std::string name) {net.set_value(name); net.set_loaded(true);}
       bool net_is_loaded () {return net.is_loaded();}
       int get_Sport() {return Sport.get_int_value();}
+      void set_Sport (int Sport_) {Sport.set_int_value(Sport_); Sport.set_loaded(true);}
       int get_Sport_lineNumber() {return Sport.get_lineNumber();}
       std::string get_type (long unsigned int i) {return integrationPathList[i]->get_type();}
       double get_alpha() {return fields.get_alpha();}
@@ -496,7 +504,9 @@ class Mode
       void populateGamma (double, GammaDatabase *);
       void reset ();
 #ifdef HAS_GUI
-      void draw (std::vector<Path *> *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
+      void set_item (CustomTreeWidgetItem *item_) {item=item_;}
+      CustomTreeWidgetItem* get_item () {return item;}
+      void draw (std::vector<Path *> *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -524,6 +534,9 @@ class DifferentialPair
       int endLine;
       keywordPair Sport_P;
       keywordPair Sport_N;
+#if HAS_GUI
+      CustomTreeWidgetItem *item;
+#endif
    public:
       DifferentialPair (int, int);
       bool is_loaded ();
@@ -536,6 +549,10 @@ class DifferentialPair
       bool load (std::string *, inputFile *);
       void print (std::string);
       void save (std::ofstream *out);
+#if HAS_GUI
+      void set_item (CustomTreeWidgetItem *item_) {item=item_;}
+      CustomTreeWidgetItem* get_item () {return item;}
+#endif
 };
 
 
@@ -592,6 +609,7 @@ class Port
       mfem::ParGridFunction *grid2DsolutionImHz=nullptr;
 
 #ifdef HAS_GUI
+      CustomTreeWidgetItem *item;
       //std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap=nullptr;
 #endif
 
@@ -634,6 +652,7 @@ class Port
       bool inBlock (int);
       bool inModeBlocks (int);
       bool findModeBlocks (inputFile *);
+      void push_mode (Mode *mode) {modeList.push_back(mode);}
       bool inDifferentialPairBlocks (int);
       bool findLineBlocks (inputFile *);
       bool findDifferentialPairBlocks (inputFile *);
@@ -710,8 +729,11 @@ class Port
       void aggregateDifferentialPairList (std::vector<DifferentialPair *> *);
       void buildAggregateModeList (std::vector<Mode *> *);
       bool has_mode (Mode *, long unsigned int *);
+      void deleteMode (std::string);
 #ifdef HAS_GUI
-      void draw (struct projectData *, std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *);
+      void set_item (CustomTreeWidgetItem *item_) {item=item_;}
+      CustomTreeWidgetItem* get_item () {return item;}
+      void draw (struct projectData *, std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -766,6 +788,7 @@ class BoundaryDatabase
       bool is_mixed_mode ();
       bool create2Dmeshes (int, mfem::ParMesh *, std::vector<mfem::ParSubMesh> *);
       std::vector<Path *> get_pathList () {return pathList;}
+      std::vector<Path *>* get_pathList_ptr () {return &pathList;}
       Path* get_path (long unsigned int i) {return pathList[i];}
       void push_path (Path *path) {pathList.push_back(path);}
       long unsigned int get_pathList_size () {return pathList.size();}
@@ -826,6 +849,7 @@ class BoundaryDatabase
       bool has_Ti ();
       bool has_Tv ();
       Port* get_port (Mode *);
+      Port* get_port (std::string);
       bool hasRadiationBoundary ();
       bool calculateRadiationCurrents (mfem::ParMesh *, struct projectData *, mfem::Vector, double, double,
                                        mfem::ParGridFunction *, mfem::ParGridFunction *, mfem::ParGridFunction *, mfem::ParGridFunction *);
@@ -835,8 +859,8 @@ class BoundaryDatabase
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *);
       void deletePort (std::string);
 #ifdef HAS_GUI
-      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
-      void draw_port (Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
+      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
+      void draw_port (Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
 #endif
 };
 

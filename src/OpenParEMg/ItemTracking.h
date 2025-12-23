@@ -54,6 +54,13 @@ public:
     {
         if (showTracking) {std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();}
 
+        if (item == nullptr) {
+            std::cout << "ASSERT: ItemTracking::showItem passed a null pointer." << std::endl; std::cout.flush();
+            return;
+        }
+
+        if (item->foreground(0) == Qt::black) return;
+
         // show item
         if (item->is_rootDrawing()) {
             DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
@@ -63,6 +70,31 @@ public:
             DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
+        } else if (item->is_rootPath()) {
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                showItem(child);
+                i++;
+            }
+        } else if (item->is_path()) {
+            DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            item->setForeground(0,Qt::black);
+            visibleItems.push_back(item);
+
+            long unsigned int i=0;
+            while (i < item->get_arrowHeads_size()) {
+                DisplayShape(item->get_arrowHead(i),item->get_displayMode(),item->get_selectionMode());
+                i++;
+            }
+
+            i=0;
+            while (i < item->linkedItems_size()) {
+                CustomTreeWidgetItem *linkedItem=item->get_linkedItem(i);
+                showItem(linkedItem);
+                visibleItems.push_back(linkedItem);
+                i++;
+            }
         } else if (item->is_rootPort()) {
             int i=0;
             while (i < item->childCount()) {
@@ -97,14 +129,14 @@ public:
                 DisplayShape(item->get_meshEntity(i),item->get_displayMode(),item->get_selectionMode());
                 i++;
             }
-        } else if (item->is_sportNet()) {
+        } else if (item->is_sport()) {
             int i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
                 showItem(child);
                 i++;
             }
-        } else if (item->is_sport()) {
+        } else if (item->is_sportLabel()) {
             // nothing to do
         } else if (item->is_voltage() || item->is_current()) {
             int i=0;
@@ -114,15 +146,14 @@ public:
                 i++;
             }
         } else if (item->is_integrationPathSegment()) {
-            DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
-            item->setForeground(0,Qt::black);
-            visibleItems.push_back(item);
-
             long unsigned int i=0;
-            while (i < item->get_arrowHeads_size()) {
-                viewerContext->Display(item->get_arrowHead(i),item->get_displayMode(),item->get_selectionMode(),Standard_False);
+            while (i < item->linkedItems_size()) {
+                CustomTreeWidgetItem *linkedItem=item->get_linkedItem(i);
+                showItem(linkedItem);
+                visibleItems.push_back(linkedItem);
                 i++;
             }
+            item->setForeground(0,Qt::black);
         } else if (item->is_scale()) {
             // nothing to do
         } else if (item->is_impedanceDefinition()) {
@@ -235,6 +266,13 @@ public:
     {
         if (hideTracking) {std::cout << "ItemTracker::hideItem" << std::endl; std::cout.flush();}
 
+        if (item == nullptr) {
+            std::cout << "ASSERT: ItemTracking::hideItem passed a null pointer." << std::endl; std::cout.flush();
+            return;
+        }
+
+        if (item->foreground(0) == Qt::gray) return;
+
         if (item->is_rootDrawing()) {
             EraseShape(item->get_AIS_Shape());
             item->setForeground(0,Qt::gray);
@@ -243,6 +281,29 @@ public:
             EraseShape(item->get_AIS_Shape());
             item->setForeground(0,Qt::gray);
             removeVisibleItem(item);
+        } else if (item->is_rootPath()) {
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                hideItem(child);
+                i++;
+            }
+        } else if (item->is_path()) {
+            EraseShape(item->get_AIS_Shape());
+            item->setForeground(0,Qt::gray);
+            removeVisibleItem(item);
+
+            long unsigned int i=0;
+            while (i < item->get_arrowHeads_size()) {
+                EraseShape(item->get_arrowHead(i));
+                i++;
+            }
+
+            i=0;
+            while (i < item->linkedItems_size()) {
+                hideItem(item->get_linkedItem(i));
+                i++;
+            }
         } else if (item->is_rootPort()) {
             int i=0;
             while (i < item->childCount()) {
@@ -277,14 +338,14 @@ public:
                 EraseShape(item->get_meshEntity(i));
                 i++;
             }
-        } else if (item->is_sportNet()) {
+        } else if (item->is_sport()) {
             int i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
                 hideItem(child);
                 i++;
             }
-        } else if (item->is_sport()) {
+        } else if (item->is_sportLabel()) {
             // nothing to do
         } else if (item->is_voltage() || item->is_current()) {
             int i=0;
@@ -294,15 +355,12 @@ public:
                 i++;
             }
         } else if (item->is_integrationPathSegment()) {
-            if (!item->get_AIS_Shape().IsNull()) EraseShape(item->get_AIS_Shape());
-            item->setForeground(0,Qt::gray);
-            removeVisibleItem(item);
-
             long unsigned int i=0;
-            while (i < item->get_arrowHeads_size()) {
-                viewerContext->Erase(item->get_arrowHead(i),Standard_False);
+            while (i < item->linkedItems_size()) {
+                hideItem(item->get_linkedItem(i));
                 i++;
             }
+            item->setForeground(0,Qt::gray);
         } else if (item->is_scale()) {
             // nothing to do
         } else if (item->is_impedanceDefinition()) {
@@ -437,18 +495,24 @@ public:
     {
         if (selectTracking) {std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();}
 
-        SelectShape(item->get_AIS_Shape());
+        if (item->isSelected()) return;
+
+        if (!item->get_AIS_Shape().IsNull()) {
+            SelectShape(item->get_AIS_Shape());
+        }
         item->setSelected(Standard_True);
         selectedItems.push_back(item);
 
-        if (item->is_integrationPathSegment()) {
-            std::cout << "place 2" << std::endl; std::cout.flush();
-            int i=0;
-            while (i < item->get_arrowHeads_size()) {
-                std::cout << "place 3" << std::endl; std::cout.flush();
-                SelectShape(item->get_arrowHead(i));
-                i++;
-            }
+        int i=0;
+        while (i < item->get_arrowHeads_size()) {
+            SelectShape(item->get_arrowHead(i));
+            i++;
+        }
+
+        long unsigned int j=0;
+        while (j < item->linkedItems_size()) {
+            selectItem(item->get_linkedItem(j));
+            j++;
         }
     }
 
@@ -511,12 +575,16 @@ public:
                     UnselectShape(item->get_meshEntity(j));
                     j++;
                 }
-            } else if (item->is_port() || item->is_boundary()) {
-                UnselectShape(item->get_AIS_Shape());
-            } else if (item->is_sport()) {
+            } else if (item->is_sportLabel()) {
                 // nothing to do
             } else {
                 UnselectShape(item->get_AIS_Shape());
+
+                long unsigned int i=0;
+                while (i < item->get_arrowHeads_size()) {
+                    UnselectShape(item->get_arrowHead(i));
+                    i++;
+                }
             }
             item->setSelected(Standard_False);
             i++;
@@ -541,8 +609,14 @@ public:
         UnselectShape(unselectItem->get_AIS_Shape());
         unselectItem->setSelected(Standard_False);
 
-        // remove from the list of selected items
         long unsigned int i=0;
+        while (i <  unselectItem->get_arrowHeads_size()) {
+            UnselectShape(unselectItem->get_arrowHead(i));
+            i++;
+        }
+
+        // remove from the list of selected items
+        i=0;
         while (i < selectedItems.size()) {
             CustomTreeWidgetItem *item=selectedItems[i];
             if (item == unselectItem) {
@@ -580,7 +654,7 @@ public:
                 // nothing to do
             } else if (item->is_port() || item->is_boundary()) {
                 if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) return false;
-            } else if (item->is_sport()) {
+            } else if (item->is_sportLabel()) {
                 // nothing to do
             } else {
                 // drawing
@@ -599,7 +673,7 @@ public:
 
         if (shape.IsNull()) return;
         if (item->is_mesh()) return;
-        if (item->is_sport()) return;
+        if (item->is_sportLabel()) return;
 
         shapeToItemMap.insert({shape,item});
     }

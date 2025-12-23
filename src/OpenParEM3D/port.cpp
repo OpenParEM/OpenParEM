@@ -1646,6 +1646,7 @@ IntegrationPath::IntegrationPath (int startLine_, int endLine_)
    // defaults
    scale.set_dbl_value(1);
 #if HAS_GUI
+   item=nullptr;
    doubleValidator.setBottom(0);
 #endif
 }
@@ -2341,6 +2342,7 @@ void IntegrationPath::print (string indent)
       i++;
    }
 
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   item=%p\n",indent.c_str(),item);
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndIntegrationPath\n",indent.c_str());
 
    return;
@@ -2413,17 +2415,17 @@ void IntegrationPath::output (ofstream *out, vector<Path *> *pathList, Path *rot
 
 //xxx
 void IntegrationPath::draw (vector<Path *> *pathList, struct point *normal, CustomOpenGLWidget *drawingWindow,
-                            QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemMode)
+                            QTreeWidget *drawingItemTree, CustomTreeWidgetItem *pathItemTree, CustomTreeWidgetItem *itemMode)
 {
     // type
     CustomTreeWidgetItem *itemType=new CustomTreeWidgetItem(0);
     if (is_voltage()) {
         itemType->setText(0,"voltage");
-        itemType->set_type(9);
+        itemType->set_type(10);
     }
     if (is_current()) {
         itemType->setText(0,"current");
-        itemType->set_type(10);
+        itemType->set_type(11);
     }
     itemType->setFlags(itemMode->flags() & ~Qt::ItemIsEditable);
     itemType->setToolTip(0,"Type of integration path.");
@@ -2434,11 +2436,6 @@ void IntegrationPath::draw (vector<Path *> *pathList, struct point *normal, Cust
     long unsigned int i=0;
     while (i < pathIndexList.size()) {
 
-        // outline
-        Path *path=(*pathList)[pathIndexList[i]];
-        Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (path->create_TopoDS_Wire());
-        drawingWindow->updateViewer();
-
         // signed name
         QString name="+";
         if (reverseList[i]) name="-";
@@ -2446,83 +2443,34 @@ void IntegrationPath::draw (vector<Path *> *pathList, struct point *normal, Cust
 
         // tree item
         CustomTreeWidgetItem *itemSegment=new CustomTreeWidgetItem(0);
-        itemSegment->set_AIS_Shape(drawingShape);
+        //itemSegment->set_AIS_Shape(drawingShape);
         itemSegment->setText(0,name);
-        itemSegment->set_type(13);
-        itemSegment->setForeground(0,Qt::black);
+        itemSegment->set_type(14);
+        itemSegment->setForeground(0,Qt::gray);
         itemSegment->setFlags(itemType->flags() & ~Qt::ItemIsEditable);
         itemSegment->setToolTip(0,"Path segment for integration.");
+
+        // attach path
+        Path *path=(*pathList)[pathIndexList[i]];
+        itemSegment->set_OPEMobject((void *)path);
+
+        // attach item
+        int j=0;
+        while (j < pathItemTree->childCount()) {
+            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) pathItemTree->child(j);
+            //xxx
+            std::cout << "  child->get_OPEMojbect()=" << child->get_OPEMojbect() << "  path=" << path << std::endl; std::cout.flush();
+            if (child->get_OPEMojbect() == path) {
+                std::cout << "    match" << std::endl;  std::cout.flush();
+                itemSegment->push_linkedItem(child);
+                child->push_linkedItem(itemSegment);
+            }
+            j++;
+        }
+
         itemType->addChild(itemSegment);
-        drawingWindow->insertItemToMap(drawingShape,itemSegment);
         drawingWindow->showItem(itemSegment);
 
-        // arrow heads
-
-        // shortest segment
-        double shortestLength=DBL_MAX;
-        long unsigned int j=0;
-        while (j < path->get_points_size()) {
-            keywordPair *from=path->get_point(j);
-            keywordPair *to=nullptr;
-
-            if (j < path->get_points_size()-1) {
-                to=path->get_point(j+1);
-            } else {
-                if (path->is_closed()) to=path->get_point(0);
-            }
-
-            if (to) {
-                double length=point_magnitude(point_subtraction(from->get_point_value(),to->get_point_value()));
-                if (length > 0 && length < shortestLength) shortestLength=length;
-            }
-            j++;
-        }
-
-        // make arrows
-
-        j=0;
-        while (j < path->get_points_size()) {
-            keywordPair *from=path->get_point(j);
-            keywordPair *to=nullptr;
-
-            if (j < path->get_points_size()-1) {
-                to=path->get_point(j+1);
-            } else {
-                if (path->is_closed()) to=path->get_point(0);
-            }
-
-            if (to) {
-                struct point shifted_segment=point_subtraction(to->get_point_value(),from->get_point_value());
-                struct point shifted_normal=point_subtraction(*normal,from->get_point_value());
-                struct point arrowOffset=point_scale(shortestLength/10,point_normalize(point_cross_product(shifted_segment,shifted_normal)));
-
-                struct point center=point_midpoint(from->get_point_value(),to->get_point_value());
-                struct point centerOffset=point_scale(shortestLength/20,point_normalize(point_subtraction(center,from->get_point_value())));
-
-                keywordPair *tip=new keywordPair();
-                tip->set_point_value(point_addition(center,centerOffset));
-
-                keywordPair *p1=new keywordPair ();
-                p1->set_point_value(point_subtraction(point_subtraction(center,centerOffset),arrowOffset));
-
-                keywordPair *p2=new keywordPair ();
-                p2->set_point_value(point_addition(point_subtraction(center,centerOffset),arrowOffset));
-
-                Path arrowHead(0,0);
-                arrowHead.set_closed(false);
-                arrowHead.push_point(p1);
-                arrowHead.push_point(tip);
-                arrowHead.push_point(p2);
-
-                Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (arrowHead.create_TopoDS_Wire());
-                drawingWindow->displayShape(drawingShape,itemSegment->get_displayMode(),itemSegment->get_selectionMode());
-                drawingWindow->updateViewer();
-                itemSegment->push_arrowHead(drawingShape);
-                drawingWindow->insertItemToMap(drawingShape,itemSegment);
-            }
-
-            j++;
-        }
         i++;
     }
 
@@ -2530,7 +2478,7 @@ void IntegrationPath::draw (vector<Path *> *pathList, struct point *normal, Cust
 
     CustomTreeWidgetItem *itemScale=new CustomTreeWidgetItem(0);
     itemScale->setText(0,"scale");
-    itemScale->set_type(11);
+    itemScale->set_type(12);
     itemScale->setFlags(itemMode->flags() & ~Qt::ItemIsSelectable);
     itemScale->setToolTip(0,"Scale factor for the integration path.");
     itemType->addChild(itemScale);
@@ -2539,7 +2487,7 @@ void IntegrationPath::draw (vector<Path *> *pathList, struct point *normal, Cust
     //QString disabledBackground="background: rgb(240,240,240);";
 
     CustomTreeWidgetItem *itemScaleValue=new CustomTreeWidgetItem(0);
-    itemScaleValue->set_type(12);
+    itemScaleValue->set_type(13);
     itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
     itemScale->addChild(itemScaleValue);
 
@@ -4081,7 +4029,7 @@ void Mode::reset()
 #ifdef HAS_GUI
 
 void Mode::draw (vector<Path *> *pathList, struct point *normal, CustomOpenGLWidget *drawingWindow,
-                 QTreeWidget *drawingItemTree, CustomTreeWidgetItem *itemName)
+                 QTreeWidget *drawingItemTree, CustomTreeWidgetItem *pathItemTree, CustomTreeWidgetItem *itemName)
 {
     // net
 
@@ -4094,7 +4042,7 @@ void Mode::draw (vector<Path *> *pathList, struct point *normal, CustomOpenGLWid
 
     CustomTreeWidgetItem *itemNet=new CustomTreeWidgetItem(0);
     itemNet->setText(0,netname);
-    itemNet->set_type(8);
+    itemNet->set_type(5);
     itemNet->setToolTip(0,"Mode and its net name.");
     itemNet->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
     itemName->addChild(itemNet);
@@ -4102,7 +4050,7 @@ void Mode::draw (vector<Path *> *pathList, struct point *normal, CustomOpenGLWid
     // S port
     CustomTreeWidgetItem *itemSport=new CustomTreeWidgetItem(0);
     itemSport->setText(0,"S Port");
-    itemSport->set_type(4);
+    itemSport->set_type(8);
     itemSport->setFlags(itemName->flags() & ~Qt::ItemIsSelectable);
     itemSport->setToolTip(0,"S-port number for the mode.");
     itemNet->addChild(itemSport);
@@ -4110,7 +4058,7 @@ void Mode::draw (vector<Path *> *pathList, struct point *normal, CustomOpenGLWid
     // Sport number
 
     CustomTreeWidgetItem *itemSportValue=new CustomTreeWidgetItem(0);
-    itemSportValue->set_type(7);
+    itemSportValue->set_type(9);
     itemSportValue->setToolTip(0,"S-parameter port number.");
     itemSportValue->setFlags(itemName->flags() & ~Qt::ItemIsSelectable);
     itemSport->addChild(itemSportValue);
@@ -4124,7 +4072,7 @@ void Mode::draw (vector<Path *> *pathList, struct point *normal, CustomOpenGLWid
     // integration paths
     long unsigned int i=0;
     while (i < integrationPathList.size()) {
-        integrationPathList[i]->draw(pathList,normal,drawingWindow,drawingItemTree,itemNet);
+        integrationPathList[i]->draw(pathList,normal,drawingWindow,drawingItemTree, pathItemTree, itemNet);
         i++;
     }
 }
@@ -6783,6 +6731,17 @@ bool Port::has_mode (Mode *mode, long unsigned int *index)
    return false;
 }
 
+void Port::deleteMode (std::string net)
+{
+    long unsigned int i=0;
+    while (i < modeList.size()) {
+        if (modeList[i]->get_net().compare(net) == 0) {
+            delete modeList[i];
+            modeList.erase(modeList.begin(),modeList.begin()+i);
+        }
+        i++;
+    }
+}
 
 //xxx
 #ifdef HAS_GUI
@@ -6835,17 +6794,14 @@ void comboTextChanged (QString text, Boundary *boundary)
 }
 
 void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomOpenGLWidget *drawingWindow,
-                 QTreeWidget *drawingItemTree, CustomTreeWidgetItem *portWidgetItem)
+                 QTreeWidget *drawingItemTree, CustomTreeWidgetItem *pathWidgetItem, CustomTreeWidgetItem *portWidgetItem)
 {
-    std::cout << "place a" << std::endl; std::cout.flush();
     // port outline
+
     Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (outline->create_TopoDS_Wire());
-    std::cout << "place a1" << std::endl; std::cout.flush();
     drawingWindow->displayShape(drawingShape,portWidgetItem->get_displayMode(),portWidgetItem->get_selectionMode());
-    std::cout << "place a2" << std::endl; std::cout.flush();
     drawingWindow->updateViewer();
 
-    std::cout << "place b" << std::endl; std::cout.flush();
     // name
 
     CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
@@ -6863,7 +6819,7 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
     // impedance definition
 
     CustomTreeWidgetItem *itemImpedanceDefinition=new CustomTreeWidgetItem(0);
-    itemImpedanceDefinition->set_type(5);
+    itemImpedanceDefinition->set_type(6);
     itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
     itemName->addChild(itemImpedanceDefinition);
@@ -6887,7 +6843,7 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
     // impedance calculation
 
     CustomTreeWidgetItem *itemImpedanceCalculation=new CustomTreeWidgetItem(0);
-    itemImpedanceCalculation->set_type(6);
+    itemImpedanceCalculation->set_type(7);
     itemImpedanceCalculation->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
     itemName->addChild(itemImpedanceCalculation);
@@ -6910,7 +6866,7 @@ void Port::draw (struct projectData *projData, vector<Path *> *pathList, CustomO
     struct point outline_normal=outline->get_normal();
     long unsigned int i=0;
     while (i < modeList.size()) {
-        modeList[i]->draw(pathList,&outline_normal,drawingWindow,drawingItemTree,itemName);
+        modeList[i]->draw(pathList,&outline_normal,drawingWindow,drawingItemTree,pathWidgetItem,itemName);
         i++;
     }
     std::cout << "place f" << std::endl; std::cout.flush();
@@ -8759,6 +8715,16 @@ Port* BoundaryDatabase::get_port (Mode *mode)
    return port;
 }
 
+Port* BoundaryDatabase::get_port (std::string portName)
+{
+   long unsigned int i=0;
+   while (i < portList.size()) {
+      if (portList[i]->get_name().compare(portName) == 0) return portList[i];
+      i++;
+   }
+   return nullptr;
+}
+
 bool BoundaryDatabase::hasRadiationBoundary ()
 {
    long unsigned int i=0;
@@ -9069,12 +9035,20 @@ void BoundaryDatabase::deletePort (string name)
 
 #ifdef HAS_GUI
 void BoundaryDatabase::draw (struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                             CustomTreeWidgetItem *portTreeItem, CustomTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
+                             CustomTreeWidgetItem *pathTreeItem, CustomTreeWidgetItem *portTreeItem, CustomTreeWidgetItem *boundaryTreeItem,
+                             MaterialDatabase *materialDatabase)
 {
-    // ports
+    // paths
     long unsigned int i=0;
+    while (i < pathList.size()) {
+        pathList[i]->create_item(drawingWindow,pathTreeItem);
+        i++;
+    }
+
+    // ports
+    i=0;
     while (i < portList.size()) {
-        portList[i]->draw(projData,&pathList,drawingWindow,drawingItemTree,portTreeItem);
+        portList[i]->draw(projData,&pathList,drawingWindow,drawingItemTree,pathTreeItem,portTreeItem);
         i++;
     }
 
@@ -9088,9 +9062,9 @@ void BoundaryDatabase::draw (struct projectData *projData, CustomOpenGLWidget *d
 
 // assumes that the port is in the boundary database
 void BoundaryDatabase::draw_port (Port *port, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                                  CustomTreeWidgetItem *portTreeItem, CustomTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
+                                  CustomTreeWidgetItem *pathTreeItem, CustomTreeWidgetItem *portTreeItem, CustomTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
 {
-    port->draw(projData,&pathList,drawingWindow,drawingItemTree,portTreeItem);
+    port->draw(projData,&pathList,drawingWindow,drawingItemTree,pathTreeItem,portTreeItem);
 }
 
 // void BoundaryDatabase::set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap)

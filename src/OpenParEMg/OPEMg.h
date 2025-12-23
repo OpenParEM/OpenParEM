@@ -168,6 +168,12 @@ private slots:
     void showDrawingItems ();
     void hideRootDrawingItems ();
     void hideDrawingItems ();
+    void showRootPathItems ();
+    void showPathItems ();
+    bool rootPathValidShow ();
+    void hideRootPathItems ();
+    void hidePathItems ();
+    bool rootPathValidHide ();
     void showRootPortItems ();
     void showPortItems ();
     void hideRootPortItems ();
@@ -187,12 +193,15 @@ private slots:
     void unselectDrawingItems ();
     void deleteRootDrawingItems ();
     void deleteDrawingItems ();
+    void insertModeItems ();
     void unselectRootPortItems ();
     void unselectPortItems ();
     void renamePortItems ();
     void deletePortItem (CustomTreeWidgetItem *);
     void deleteRootPortItems ();
     void deletePortItems ();
+    void deleteSportItem (CustomTreeWidgetItem *);
+    void deleteSportItems ();
     void showNetItems ();
     void hideNetItems ();
     void showVIItems ();
@@ -249,6 +258,7 @@ private:
     QString absolutePath;
 
     CustomTreeWidgetItem drawing;
+    CustomTreeWidgetItem path;
     CustomTreeWidgetItem port;
     CustomTreeWidgetItem boundary;
     CustomTreeWidgetItem mesh;
@@ -270,7 +280,7 @@ private:
     QAction *unselectAction;
     QAction *deleteAction;
     QAction *assignMaterialAction;
-    QAction *addNetAction;
+    QAction *insertAction;
     QAction *renameAction;
     QAction *expandAllAction;
     QAction *collapseAllAction;
