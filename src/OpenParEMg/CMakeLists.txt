@@ -75,6 +75,7 @@ qt_add_executable(OpenParEMg
     about.h about.cpp about.ui
     CustomSpinBox.h
     logo.qrc
+    Relay.h Relay.cpp
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)

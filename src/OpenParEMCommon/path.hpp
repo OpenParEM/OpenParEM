@@ -71,6 +71,7 @@ class Path {
       double ymax,ymin;
       double zmax,zmin;
       bool hasOutput;
+      bool modified;
       #ifdef HAS_GUI
       CustomTreeWidgetItem *item;
       #endif
@@ -102,6 +103,7 @@ class Path {
       void set_name (std::string name_) {name.set_value(name_); name.set_keyword("name"); name.set_lineNumber(0); name.set_loaded(true);}
       void set_hasOutput () {hasOutput=true;}
       void unset_hasOutput () {hasOutput=false;}
+      bool is_modified () {return modified;}
       keywordPair* get_startPoint () {return points[0];}
       keywordPair* get_endPoint () {if (closed.get_bool_value()) return points[0]; return points[points.size()-1];}
       long unsigned int is_segmentOnLine (struct point, struct point);

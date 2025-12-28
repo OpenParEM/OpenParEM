@@ -27,6 +27,7 @@
 #include <QStyledItemDelegate>
 #include <QTimer>
 
+#include "Relay.h"
 #include "CustomLineEdit.h"
 #include "project.h"
 #include "OpenParEMmaterials.hpp"
@@ -95,6 +96,7 @@ public:
     void drawMesh ();
     void deleteMesh ();
 
+    int treeSelectionCount ();
     void clearTreeSelection ();
 
     void dumpDrawingEntities ();
@@ -240,8 +242,11 @@ private slots:
     void loadMeshFile (QString);
     void checkFinish ();
 
-private:
+public slots:
     void setMenus ();
+
+private:
+    //void setMenus ();
     void resetLockouts ();
     void printLockouts ();
     void resetProject ();
@@ -311,6 +316,9 @@ private:
     QString originalText;
     CustomLineEdit *renameEdit;
     CustomTreeWidgetItem *renameItem;
+
+    // relay
+    Relay *relay;
 
 };
 

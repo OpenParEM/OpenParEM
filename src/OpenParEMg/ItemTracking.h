@@ -59,14 +59,14 @@ public:
             return;
         }
 
-        if (item->foreground(0) == Qt::black) return;
-
         // show item
         if (item->is_rootDrawing()) {
+            if (item->foreground(0) == Qt::black) return;
             DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
         } else if (item->is_drawing()) {
+            if (item->foreground(0) == Qt::black) return;
             DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
@@ -78,6 +78,8 @@ public:
                 i++;
             }
         } else if (item->is_path()) {
+            if (item->foreground(0) == Qt::black) return;
+
             DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
@@ -92,7 +94,6 @@ public:
             while (i < item->linkedItems_size()) {
                 CustomTreeWidgetItem *linkedItem=item->get_linkedItem(i);
                 showItem(linkedItem);
-                visibleItems.push_back(linkedItem);
                 i++;
             }
         } else if (item->is_rootPort()) {
@@ -103,11 +104,18 @@ public:
                 i++;
             }
         } else if (item->is_port()) {
-            DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            if (item->foreground(0) == Qt::black) return;
+
             item->setForeground(0,Qt::black);
-            visibleItems.push_back(item);
 
             int i=0;
+            while (i < item->linkedItems_size()) {
+                CustomTreeWidgetItem *linkedItem=item->get_linkedItem(i);
+                showItem(linkedItem);
+                i++;
+            }
+
+            i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
                 showItem(child);
@@ -122,6 +130,7 @@ public:
                 i++;
             }
         } else if (item->is_mesh()) {
+            if (item->foreground(0) == Qt::black) return;
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
             long unsigned int i=0;
@@ -150,7 +159,6 @@ public:
             while (i < item->linkedItems_size()) {
                 CustomTreeWidgetItem *linkedItem=item->get_linkedItem(i);
                 showItem(linkedItem);
-                visibleItems.push_back(linkedItem);
                 i++;
             }
             item->setForeground(0,Qt::black);
@@ -296,6 +304,7 @@ public:
             long unsigned int i=0;
             while (i < item->get_arrowHeads_size()) {
                 EraseShape(item->get_arrowHead(i));
+                removeVisibleItem(item);
                 i++;
             }
 
@@ -312,11 +321,17 @@ public:
                 i++;
             }
         } else if (item->is_port()) {
-            EraseShape(item->get_AIS_Shape());
             item->setForeground(0,Qt::gray);
             removeVisibleItem(item);
 
             int i=0;
+            while (i < item->linkedItems_size()) {
+                CustomTreeWidgetItem *linkedItem=item->get_linkedItem(i);
+                hideItem(linkedItem);
+                i++;
+            }
+
+            i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
                 hideItem(child);
@@ -361,6 +376,7 @@ public:
                 i++;
             }
             item->setForeground(0,Qt::gray);
+            removeVisibleItem(item);
         } else if (item->is_scale()) {
             // nothing to do
         } else if (item->is_impedanceDefinition()) {
@@ -393,8 +409,14 @@ public:
     {
         if (hideTracking) {std::cout << "ItemTracker::hideAllItems" << std::endl; std::cout.flush();}
 
+        int itemCount=visibleItems.size();
         while (visibleItems.size()) {
             hideItem(visibleItems[0]);
+            if (itemCount == visibleItems.size()) {
+                std::cout << "ASSERT: ItemTracking::hideAllItems failed with " << visibleItems.size() << " items remaining." << std::endl; std::cout.flush();
+                break;
+            }
+            itemCount=visibleItems.size();
         }
 
         selectedItems.clear();

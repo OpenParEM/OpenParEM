@@ -22,25 +22,28 @@
 #define CUSTOMCOMBOBOX_H
 
 #include <QComboBox>
+#include "OPEMg.h"
 #include "port.hpp"
 #include "CustomTreeWidgetItem.h"
 
-void comboIndexChanged (int, Port *, Boundary *, int, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
-void comboTextChanged (QString value, Boundary *);
+void comboIndexChanged (int, Port *, Boundary *, BoundaryDatabase *, int, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+void comboTextChanged (QString value, Boundary *, BoundaryDatabase *);
 
 class CustomComboBox : public QComboBox {
     Q_OBJECT
 
 public:
     CustomComboBox(QWidget *parent = nullptr) : QComboBox(parent) {
-        connect(this, &QComboBox::currentIndexChanged,this, &CustomComboBox::handleCurrentIndexChanged);
-        connect(this, &QComboBox::currentTextChanged,this, &CustomComboBox::handleCurrentTextChanged);
+        connect(this, &QComboBox::currentIndexChanged, this, &CustomComboBox::handleCurrentIndexChanged);
+        connect(this, &QComboBox::currentTextChanged, this, &CustomComboBox::handleCurrentTextChanged);
+        //connect(this, &QComboBox::currentIndexChanged, parent, &OpenParEMg::setMenus);
         setFocusPolicy(Qt::ClickFocus);
         drawingTracker=nullptr;
     }
 
     void set_port (Port *port_) {port=port_;}
     void set_boundary (Boundary *boundary_) {boundary=boundary_;}
+    void set_boundaryDatabase (BoundaryDatabase *boundaryDatabase_) {boundaryDatabase=boundaryDatabase_;}
     void set_type (int type_) {type=type_;}
     void set_itemMaterial (CustomTreeWidgetItem *itemMaterial_) {itemMaterial=itemMaterial_;}
     void set_itemWaveImpedance (CustomTreeWidgetItem *itemWaveImpedance_) {itemWaveImpedance=itemWaveImpedance_;}
@@ -60,15 +63,17 @@ protected:
     }
 
 signals:
-    void CustomCurrentIndexChanged (int index, Port *port, Boundary *boundary, int type, CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance);
-    void CustomCurrentTextChanged (QString text, Boundary *boundary);
+    //void CustomCurrentIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatabase *, int type, CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance);
+    //void CustomCurrentTextChanged (QString text, Boundary *boundary, BoundaryDatabase *);
+    void CustomCurrentIndexChanged (int, Port *, Boundary *, BoundaryDatabase *, int, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+    void CustomCurrentTextChanged (QString, Boundary *, BoundaryDatabase *);
 
 private slots:
     void handleCurrentIndexChanged (int index) {
-        emit CustomCurrentIndexChanged(index,port,boundary,type,itemMaterial,itemWaveImpedance);
+        emit CustomCurrentIndexChanged(index,port,boundary,boundaryDatabase,type,itemMaterial,itemWaveImpedance);
     }
     void handleCurrentTextChanged (QString text) {
-        emit CustomCurrentTextChanged(text,boundary);
+        emit CustomCurrentTextChanged(text,boundary,boundaryDatabase);
     }
 
 private:
@@ -80,6 +85,7 @@ private:
     CustomTreeWidgetItem *itemMaterial;
     CustomTreeWidgetItem *itemWaveImpedance;
     ItemTracker *drawingTracker;
+    BoundaryDatabase *boundaryDatabase;  // for setting the modified flag
 };
 
 

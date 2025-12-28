@@ -211,6 +211,13 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     boundaryDatabaseChanged=false;
 
     /////////////////////////////////////////////////////////////////////////////
+    // relay for receiving signals from controls
+    /////////////////////////////////////////////////////////////////////////////
+
+    relay=new Relay();
+    connect(relay,&Relay::triggered,this,&OpenParEMg::setMenus);
+
+    /////////////////////////////////////////////////////////////////////////////
 
     ui->drawingItemTree->show();
     ui->drawingWindow->show();
@@ -243,6 +250,10 @@ OpenParEMg::~OpenParEMg ()
 void OpenParEMg::setMenus ()
 {
     std::cout << "OpenParEMg::setMenus" << std::endl; std::cout.flush();
+
+    // boundaryDatabaseChanged is modified on the fly and in BoundaryDatabase methods, so update for both
+    if (boundaryDatabaseLoaded && !boundaryDatabaseChanged) boundaryDatabaseChanged=boundaryDatabase->is_modified();
+    if (boundaryDatabaseLoaded) {std::cout << "boundaryDatabase->is_modified()=" << boundaryDatabase->is_modified() << std::endl; std::cout.flush();}
 
     printLockouts();
 
@@ -652,9 +663,8 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         unselectAction->setEnabled(ui->drawingWindow->hasPortSelectedItems());
 
         renameAction->setEnabled(false);
-        if (ui->drawingWindow->hasOneSelectedItem()) {
-            renameAction->setEnabled(true);
-        }
+        std::cout << "treeSelectionCount()=" << treeSelectionCount() << std::endl; std::cout.flush();
+        if (treeSelectionCount() == 1 || treeSelectionCount() == 2) renameAction->setEnabled(true);
 
         deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
@@ -735,7 +745,7 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
         renameAction->setEnabled(false);
-        if (ui->drawingWindow->hasOneSelectedItem()) renameAction->setEnabled(true);
+        if (treeSelectionCount() == 1) renameAction->setEnabled(true);
 
         showAction->setEnabled(ui->drawingWindow->isNetValidShow());
         hideAction->setEnabled(ui->drawingWindow->isNetValidHide());
@@ -1538,7 +1548,7 @@ void OpenParEMg::insertModeItems ()
 
             mfem::Vector normal=port->get_normal();
             struct point norm; norm.x=normal(0); norm.y=normal(1); norm.z=normal(2); norm.dim=3;
-            newMode->draw(boundaryDatabase->get_pathList_ptr(),&norm,ui->drawingWindow,ui->drawingItemTree,&path,item);
+            newMode->draw(relay,boundaryDatabase,&norm,ui->drawingWindow,ui->drawingItemTree,&path,item);
 
             setMenus();
         }
@@ -1948,7 +1958,6 @@ void OpenParEMg::createPort ()
     newPath->set_name(pathName);
 
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    std::cout << "selectedItems.count()=" << selectedItems.count() << std::endl;
     i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
@@ -1957,16 +1966,17 @@ void OpenParEMg::createPort ()
     }
 
     boundaryDatabase->push_path(newPath);
+    newPath->create_item(ui->drawingWindow,&path);
 
     // port
 
     Port *newPort=new Port(0,0);
     newPort->set_name(portName);
+    newPort->set_outline(newPath);
 
     // path info
 
     newPort->push_path(kwPathName,boundaryDatabase->get_pathList_size()-1,false);
-    newPort->set_outline(newPath);
 
     // impedance
     if (boundaryDatabase->get_portList_size() == 0) {
@@ -1988,7 +1998,7 @@ void OpenParEMg::createPort ()
     boundaryDatabaseChanged=true;
 
     // draw it
-    boundaryDatabase->draw_port(newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+    boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
 
     setMenus();
 }
@@ -2220,7 +2230,7 @@ void OpenParEMg::on_actionOpen_triggered ()
         } else {
             //boundaryDatabase->set_drawingToItemMap(&drawingToItemMap);
             boundaryDatabaseLoaded=true;
-            boundaryDatabase->draw(&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+            boundaryDatabase->draw(relay,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
         }
 
         // load mesh, if any, and draw
@@ -2236,6 +2246,13 @@ void OpenParEMg::on_actionOpen_triggered ()
         // should not occur
         QMessageBox mb;
         mb.critical(nullptr, "Error", "The requested project file does not exist.");
+        mb.setFixedSize(500, 200);
+    }
+
+    // ensure the ports and boundaries are only defined by single paths.  This is a restriction for a safer GUI.
+    if (boundaryDatabase->has_complex_path()) {
+        QMessageBox mb;
+        mb.critical(nullptr, "Warning", "One or more ports or boundaries have a definition using more than one path.");
         mb.setFixedSize(500, 200);
     }
 
@@ -3047,6 +3064,12 @@ void OpenParEMg::on_actionSolid_triggered()
     set_selectionMode(&port,6);
     set_selectionMode(&boundary,6);
     ui->drawingWindow->reshowItems();
+}
+
+int OpenParEMg::treeSelectionCount ()
+{
+    QList<QTreeWidgetItem*> selected_items_list=ui->drawingItemTree->selectedItems();
+    return selected_items_list.count();
 }
 
 void OpenParEMg::clearTreeSelection ()

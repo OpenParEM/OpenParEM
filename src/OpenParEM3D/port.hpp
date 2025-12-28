@@ -40,6 +40,7 @@
 #include <QTreeWidget>
 #include "CustomOpenGLWidget.h"
 #include "CustomTreeWidgetItem.h"
+#include "Relay.h"
 #endif
 
 #define lapack_int int
@@ -139,6 +140,7 @@ class Boundary
       bool assignedToMesh=false;                     // keeps track of whether the boundary was successfully assigned to the mesh
       bool is_default;
       std::vector<Current *> radiationCurrents;      // currents for radiation boundaries
+      bool modified;
 
 #if HAS_GUI
     CustomTreeWidgetItem *item;
@@ -158,6 +160,8 @@ class Boundary
       int get_endLine () {return endLine;}
       bool is_default_boundary () {return is_default;}
       void set_default_boundary () {is_default=true;}
+      bool is_modified () {return modified;}
+      void set_modified () {modified=true;}
       std::string get_name () {return name.get_value();}
       int get_attribute () {return attribute;}
       int get_pathIndex (int i) {return pathIndexList[i];}
@@ -191,6 +195,7 @@ class Boundary
       bool merge (std::vector<Path *> *);
       bool is_point_inside (double, double, double);
       bool is_triangleInside (mfem::DenseMatrix *);
+      bool has_complex_path ();
       bool is_overlapPath (std::vector<Path *> *, Path *);
       Boundary* get_matchBoundary (double, double, double, double, double, double);
       void addImpedanceIntegrator (double, double, mfem::ParMesh *, mfem::ParBilinearForm *,
@@ -206,7 +211,7 @@ class Boundary
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
-      void draw (struct projectData *, std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, MaterialDatabase *);
+      void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, MaterialDatabase *);
       void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
 #endif
 };
@@ -271,6 +276,7 @@ class IntegrationPath
       std::vector<bool> reverseList;
       std::vector<OPEMIntegrationPointList *> pointsList;
       std::complex<double> integratedValue;
+      bool modified;
 
 #if HAS_GUI
       CustomTreeWidgetItem *item;
@@ -279,6 +285,7 @@ class IntegrationPath
    public:
       IntegrationPath (int, int);
       ~IntegrationPath ();
+      bool is_modified ();
       int get_startLine () {return startLine;}
       int get_endLine () {return endLine;}
       std::string get_type () {return type.get_value();}
@@ -306,7 +313,7 @@ class IntegrationPath
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
-      void draw (std::vector<Path *> *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+      void draw (Relay *, BoundaryDatabase *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -422,12 +429,14 @@ class Mode
       std::vector<std::complex<double>> Cm;                // C minus for direction split with a unique value for each driving set
       std::vector<std::complex<double>> weight;            // weight for each driving set
       bool net_is_updated=false;                           // flag to prevent updating net names more than once
+      bool modified;
 #if HAS_GUI
       CustomTreeWidgetItem *item;
 #endif
    public:
       Mode(int,int,std::string);
       ~Mode();
+      bool is_modified ();
       int get_startLine() {return startLine;}
       int get_endLine() {return endLine;}
       std::string get_net() {return net.get_value();}
@@ -506,7 +515,7 @@ class Mode
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
-      void draw (std::vector<Path *> *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+      void draw (Relay *, BoundaryDatabase *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -534,12 +543,14 @@ class DifferentialPair
       int endLine;
       keywordPair Sport_P;
       keywordPair Sport_N;
+      bool modified;
 #if HAS_GUI
       CustomTreeWidgetItem *item;
 #endif
    public:
       DifferentialPair (int, int);
       bool is_loaded ();
+      bool is_modified () {return modified;}
       int get_startLine() {return startLine;}
       int get_endLine() {return endLine;}
       int get_Sport_P () {return Sport_P.get_int_value();}
@@ -598,6 +609,8 @@ class Port
       mfem::Array<int> *ess_tdof_list=nullptr;           // on 3D mesh and space
       HYPRE_BigInt *offset;
 
+      bool modified;
+
       // grid functions to hold the 3D solutions on the 2D ports
       mfem::ParGridFunction *grid2DsolutionReEt=nullptr;
       mfem::ParGridFunction *grid2DsolutionImEt=nullptr;
@@ -618,6 +631,8 @@ class Port
       ~Port();
       int get_startLine () {return startLine;}
       int get_endLine () {return endLine;}
+      bool is_modified ();
+      void set_modified () {modified=true;}
       std::string get_name () {return name.get_value();}
       void set_name (std::string name_) {name.set_value(name_); name.set_keyword("name"); name.set_lineNumber(0); name.set_loaded(true);}
       int get_name_lineNumber () {return name.get_lineNumber();}
@@ -637,7 +652,7 @@ class Port
       int get_attribute (int);
       int get_last_attribute (int);
       int get_adjacent_element_attribute (int);
-      Path* get_outline () {return outline;}
+      //Path* get_outline () {return outline;}
       void set_outline (Path *outline_) {outline=outline_;}
       Path* get_rotated_outline () {return rotated_outline;}
       int get_pathIndex (int i) {return pathIndexList[i];}
@@ -672,6 +687,7 @@ class Port
       void save2Dsetup(struct projectData *, std::string *, double, Gamma *);
       void saveModeFile (struct projectData *, std::vector<Path *> *, BoundaryDatabase *);
       void set_filenames();
+      bool has_complex_path ();
       bool is_overlapPath (Path *);
       mfem::Vector& get_normal() {return normal;}
       mfem::Vector get_rotated_normal() {return rotated_normal;}
@@ -733,7 +749,7 @@ class Port
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
-      void draw (struct projectData *, std::vector<Path *> *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+      void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -757,6 +773,8 @@ class BoundaryDatabase
       bool modified=false;
    public:
       ~BoundaryDatabase();
+      bool is_modified ();
+      void set_modified () {modified=true;}
       void set_tempDirectory(std::string tempDirectory_) {tempDirectory=tempDirectory_;}
       std::string get_tempDirectory() {return tempDirectory;}
       void set_drivingSetName (std::string drivingSetName_) {drivingSetName=drivingSetName_;}
@@ -777,6 +795,7 @@ class BoundaryDatabase
       bool checkSportNumbering ();
       bool check_scale (mfem::Mesh *, int);
       bool check_overlaps ();
+      bool has_complex_path ();
       bool portNameExists (std::string);
       bool pathNameExists (std::string);
       bool alignRadiationNormals ();
@@ -859,8 +878,8 @@ class BoundaryDatabase
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *);
       void deletePort (std::string);
 #ifdef HAS_GUI
-      void draw (struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
-      void draw_port (Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
+      void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
+      void draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
 #endif
 };
 
