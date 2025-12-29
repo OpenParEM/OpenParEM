@@ -284,6 +284,7 @@ class IntegrationPath
 #endif
    public:
       IntegrationPath (int, int);
+      IntegrationPath (std::vector<Path *> *, std::vector<Path *> *, std::string);
       ~IntegrationPath ();
       bool is_modified ();
       void set_modified () {modified=true;}
@@ -472,6 +473,7 @@ class Mode
       bool is_line() {if (calculation.compare("line") == 0) return true; return false;}
       bool inIntegrationPathBlocks (int);
       bool findIntegrationPathBlocks(inputFile *);
+      IntegrationPath* addIntegrationPath (std::vector<Path *> *, std::vector<Path *> *, std::string);
       bool load(std::string *, inputFile *);
       void flip2DmodalSign () {fields.flip2DmodalSign();}
       bool inModeBlock (int);
@@ -554,6 +556,7 @@ class DifferentialPair
       DifferentialPair (int, int);
       bool is_loaded ();
       bool is_modified () {return modified;}
+      void set_modified () {modified=true;}
       int get_startLine() {return startLine;}
       int get_endLine() {return endLine;}
       int get_Sport_P () {return Sport_P.get_int_value();}
@@ -639,6 +642,7 @@ class Port
       std::string get_name () {return name.get_value();}
       void set_name (std::string name_) {name.set_value(name_); name.set_keyword("name"); name.set_lineNumber(0); name.set_loaded(true);}
       int get_name_lineNumber () {return name.get_lineNumber();}
+      bool netNameExists (std::string);
       std::string get_impedance_definition () {return impedance_definition.get_value();}
       std::string get_impedance_calculation () {return impedance_calculation.get_value();}
       void set_impedance_definition (std::string value) {impedance_definition.set_value(value);}
@@ -800,6 +804,7 @@ class BoundaryDatabase
       bool check_overlaps ();
       bool has_complex_path ();
       bool portNameExists (std::string);
+      bool netNameExists (std::string);
       bool pathNameExists (std::string);
       bool alignRadiationNormals ();
       void subdivide_paths ();

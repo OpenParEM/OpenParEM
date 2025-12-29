@@ -1671,6 +1671,73 @@ IntegrationPath::IntegrationPath (int startLine_, int endLine_)
 #endif
 }
 
+IntegrationPath::IntegrationPath (vector<Path *> *pathList, vector<Path *> *pathsToAdd, string type_)
+{
+   startLine=0;
+   endLine=0;
+
+   // type
+   type.push_alias("type");
+   type.set_value(type_);
+   type.set_loaded(true);
+   type.set_positive_required(false);
+   type.set_non_negative_required(false);
+   type.set_lowerLimit(0);
+   type.set_upperLimit(0);
+   type.set_checkLimits(false);
+
+   // scale
+   scale.push_alias("scale");
+   scale.set_loaded(false);
+   scale.set_positive_required(true);
+   scale.set_non_negative_required(false);
+   scale.set_lowerLimit(1e-3);
+   scale.set_upperLimit(1e3);
+   scale.set_checkLimits(true);
+
+   // defaults
+   scale.set_dbl_value(1);
+
+   // data
+
+   long unsigned int i=0;
+   while (i < pathsToAdd->size()) {
+
+       // path name
+       keywordPair *path=new keywordPair();
+       path->push_alias("path");
+       path->set_value((*pathsToAdd)[i]->get_name());
+       path->set_positive_required(false);
+       path->set_non_negative_required(false);
+       path->set_lowerLimit(0);
+       path->set_upperLimit(0);
+       path->set_checkLimits(false);
+       path->set_loaded(true);
+       pathNameList.push_back(path);
+
+       // path index in the path database
+       long unsigned int j=0;
+       while (j < pathList->size()) {
+           if ((*pathsToAdd)[i] == (*pathList)[j]) {
+              pathIndexList.push_back(j);
+           }
+           j++;
+       }
+
+       // reverse list - user can manually correct, if needed
+       reverseList.push_back(false);
+
+       i++;
+   }
+
+   modified=true;
+
+#if HAS_GUI
+   item=nullptr;
+   doubleValidator.setBottom(0);
+#endif
+}
+
 bool IntegrationPath::is_modified ()
 {
     if (modified) return true;
@@ -2525,7 +2592,6 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, st
     scaleEdit->setValidator(&doubleValidator);
     drawingItemTree->setItemWidget(itemScaleValue,0,scaleEdit);
 
-    //xxx
     QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,&textValueChanged);
     QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,relay,&Relay::triggered);
 
@@ -3348,6 +3414,15 @@ bool Mode::findIntegrationPathBlocks(inputFile *inputs)
       start_lineNumber=inputs->get_next_lineNumber(block_stop);
    }
    return fail;
+}
+
+//xxx
+IntegrationPath* Mode::addIntegrationPath (vector<Path *> *pathList, vector<Path *> *pathsToAdd, string type)
+{
+    IntegrationPath *integrationPath=new IntegrationPath(pathList,pathsToAdd,type);
+    integrationPathList.push_back(integrationPath);
+    modified=true;
+    return integrationPath;
 }
 
 bool Mode::load(string *indent, inputFile *inputs)
@@ -4354,6 +4429,16 @@ bool Port::is_modified ()
     return false;
 }
 
+bool Port::netNameExists (string netName)
+{
+    long unsigned int i=0;
+    while (i < modeList.size()) {
+        if (modeList[i]->get_net().compare(netName) == 0) return true;
+        i++;
+    }
+    return false;
+}
+
 bool Port::load (string *indent, inputFile *inputs)
 {
    bool fail=false;
@@ -5042,6 +5127,7 @@ void Port::save (std::ofstream *out)
     }
 
     *out << "EndPort" << endl;
+    *out << std::endl;
 
     return;
 }
@@ -7045,27 +7131,23 @@ bool BoundaryDatabase::is_modified ()
 {
     if (modified) return true;
 
-    std::cout << "place 1" << std::endl; std::cout.flush();
     long unsigned int i=0;
     while (i < pathList.size()) {
         if (pathList[i]->is_modified()) return true;
         i++;
     }
 
-    std::cout << "place 2" << std::endl; std::cout.flush();
     i=0;
     while (i < boundaryList.size()) {
         if (boundaryList[i]->is_modified()) return true;
         i++;
     }
 
-    std::cout << "place 3" << std::endl; std::cout.flush();
     i=0;
     while (i < portList.size()) {
         if (portList[i]->is_modified()) return true;
         i++;
     }
-    std::cout << "place 4" << std::endl; std::cout.flush();
 
     return false;
 }
@@ -7619,6 +7701,16 @@ bool BoundaryDatabase::portNameExists (string name)
     long unsigned int i=0;
     while (i < portList.size()) {
         if (portList[i]->get_name().compare(name) == 0) return true;
+        i++;
+    }
+    return false;
+}
+
+bool BoundaryDatabase::netNameExists (string name)
+{
+    long unsigned int i=0;
+    while (i < portList.size()) {
+        if (portList[i]->netNameExists(name)) return true;
         i++;
     }
     return false;

@@ -97,6 +97,7 @@ public:
     void deleteMesh ();
 
     int treeSelectionCount ();
+    bool hasSelectedPaths ();
     void clearTreeSelection ();
 
     void dumpDrawingEntities ();
@@ -190,6 +191,12 @@ private slots:
     void renameSportNet ();
     void deleteSportNet ();
     void rename_returnPressed ();
+    bool hasOneSelectedSport ();
+    bool hasVoltage ();
+    bool hasCurrent ();
+    void insertPath (int);
+    void insertVoltagePath ();
+    void insertCurrentPath ();
     //void selectItems ();
     void unselectRootDrawingItems ();
     void unselectDrawingItems ();
@@ -284,8 +291,10 @@ private:
     QAction *hideAction;
     QAction *unselectAction;
     QAction *deleteAction;
-    QAction *assignMaterialAction;
+    QAction *assignAction;
     QAction *insertAction;
+    QAction *insertActionV;
+    QAction *insertActionI;
     QAction *renameAction;
     QAction *expandAllAction;
     QAction *collapseAllAction;

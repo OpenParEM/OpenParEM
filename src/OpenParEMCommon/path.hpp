@@ -104,6 +104,7 @@ class Path {
       void set_hasOutput () {hasOutput=true;}
       void unset_hasOutput () {hasOutput=false;}
       bool is_modified () {return modified;}
+      void set_modified () {modified=true;}
       keywordPair* get_startPoint () {return points[0];}
       keywordPair* get_endPoint () {if (closed.get_bool_value()) return points[0]; return points[points.size()-1];}
       long unsigned int is_segmentOnLine (struct point, struct point);

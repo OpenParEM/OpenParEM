@@ -671,6 +671,7 @@ void Path::save (std::ofstream *out)
     PetscMPIInt rank;
     MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
+    modified=false;
     if (rank != 0) return;
 
     int dim=0;
