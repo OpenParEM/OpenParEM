@@ -286,10 +286,12 @@ class IntegrationPath
       IntegrationPath (int, int);
       ~IntegrationPath ();
       bool is_modified ();
+      void set_modified () {modified=true;}
       int get_startLine () {return startLine;}
       int get_endLine () {return endLine;}
       std::string get_type () {return type.get_value();}
       double get_scale () {return scale.get_dbl_value();}
+      void set_scale (double scale_) {scale.set_dbl_value(scale_); scale.set_loaded(true);}
       std::vector<long unsigned int>* get_pathIndexList () {return &pathIndexList;}
       std::vector<OPEMIntegrationPointList *>* get_pointsList () {return &pointsList;}
       std::vector<bool>* get_reverseList () {return &reverseList;}
@@ -437,6 +439,7 @@ class Mode
       Mode(int,int,std::string);
       ~Mode();
       bool is_modified ();
+      void set_modified () {modified=true;}
       int get_startLine() {return startLine;}
       int get_endLine() {return endLine;}
       std::string get_net() {return net.get_value();}

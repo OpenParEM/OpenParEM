@@ -1519,7 +1519,6 @@ bool Boundary::snapToMeshBoundary (vector<Path *> *pathList, Mesh *mesh, string 
    return false;
 }
 
-//xxx
 #ifdef HAS_GUI
 
 void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
@@ -1534,10 +1533,10 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     itemName->setForeground(0,Qt::gray);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     boundaryWidgetItem->addChild(itemName);
+    itemName->set_OPEMobject(this);
 
-    // attach path - assumes there is only one path, which is checked when loading the database
+    // link paths -  assumes there is only one path, which is checked when loading the database
     Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
-    itemName->set_OPEMobject((void *)path);
 
     // attach item
     int j=0;
@@ -1573,7 +1572,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     if (is_radiation()) comboType->setCurrentIndex(3);
     drawingItemTree->setItemWidget(itemType,0,comboType);
 
-    QObject::connect(comboType, &CustomComboBox::CustomCurrentIndexChanged, &comboIndexChanged);
+    QObject::connect(comboType, &CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::triggered);
 
     // boundary type dependent data
@@ -2441,7 +2440,6 @@ void IntegrationPath::output (ofstream *out, vector<Path *> *pathList, Path *rot
 
 #ifdef HAS_GUI
 
-//xxx
 void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, struct point *normal, CustomOpenGLWidget *drawingWindow,
                             QTreeWidget *drawingItemTree, CustomTreeWidgetItem *pathItemTree, CustomTreeWidgetItem *itemMode)
 {
@@ -2479,7 +2477,6 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, st
         itemSegment->setToolTip(0,"Path segment for integration.");
 
         // attach path
-        //Path *path=(*pathList)[pathIndexList[i]];
         Path *path=boundaryDatabase->get_pathList()[pathIndexList[i]];
         itemSegment->set_OPEMobject((void *)path);
 
@@ -2506,7 +2503,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, st
     CustomTreeWidgetItem *itemScale=new CustomTreeWidgetItem(0);
     itemScale->setText(0,"scale");
     itemScale->set_type(12);
-    itemScale->setFlags(itemMode->flags() & ~Qt::ItemIsSelectable);
+    itemScale->setFlags(itemMode->flags() & ~Qt::ItemIsEditable);
     itemScale->setToolTip(0,"Scale factor for the integration path.");
     itemType->addChild(itemScale);
 
@@ -2521,10 +2518,17 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, st
     CustomLineEdit *scaleEdit=new CustomLineEdit();
     scaleEdit->setText(QString::number(get_scale(),'g'));
     scaleEdit->set_itemTracker(drawingWindow->get_itemTracker());
+    scaleEdit->set_integrationPath(this);
+    scaleEdit->set_boundaryDatabase(boundaryDatabase);
     //scaleEdit->setAlignment(Qt::AlignLeft);
     //scaleEdit->setStyleSheet(enabledBackground);
     scaleEdit->setValidator(&doubleValidator);
     drawingItemTree->setItemWidget(itemScaleValue,0,scaleEdit);
+
+    //xxx
+    QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,&textValueChanged);
+    QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,relay,&Relay::triggered);
+
 }
 #endif
 
@@ -4086,12 +4090,13 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, struct point 
     itemNet->setToolTip(0,"Mode and its net name.");
     itemNet->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
     itemName->addChild(itemNet);
+    itemNet->set_OPEMobject(this);
 
     // S port
     CustomTreeWidgetItem *itemSport=new CustomTreeWidgetItem(0);
     itemSport->setText(0,"S Port");
     itemSport->set_type(8);
-    itemSport->setFlags(itemName->flags() & ~Qt::ItemIsSelectable);
+    itemSport->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
     itemSport->setToolTip(0,"S-port number for the mode.");
     itemNet->addChild(itemSport);
 
@@ -4103,11 +4108,17 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, struct point 
     itemSportValue->setFlags(itemName->flags() & ~Qt::ItemIsSelectable);
     itemSport->addChild(itemSportValue);
 
-    CustomSpinBox *sport=new CustomSpinBox();
-    sport->set_itemTracker(drawingWindow->get_itemTracker());
-    sport->setMinimum(1);
-    sport->setValue(get_Sport());
-    drawingItemTree->setItemWidget(itemSportValue,0,sport);
+    CustomSpinBox *sportNumber=new CustomSpinBox();
+    sportNumber->set_itemTracker(drawingWindow->get_itemTracker());
+    sportNumber->set_mode(this);
+    sportNumber->set_boundaryDatabase(boundaryDatabase);
+    sportNumber->setMinimum(1);
+    sportNumber->setValue(get_Sport());
+    drawingItemTree->setItemWidget(itemSportValue,0,sportNumber);
+
+    //xxx
+    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
+    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,relay,&Relay::triggered);
 
     // integration paths
     long unsigned int i=0;
@@ -4908,13 +4919,8 @@ void Port::print ()
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Port\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   name=%s\n",get_name().c_str());
 
-   //xxx
-   std::cout << "pathNameList.size()=" << pathNameList.size() << endl;
-
    long unsigned int i=0;
    while (i < pathNameList.size()) {
-      //xxx
-       std::cout << "  pathNameList[i]=" << pathNameList[i] << std::endl; std::cout.flush();
       if (i == 0) {
          if (reverseList[i]) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path=-%s\n",pathNameList[i]->get_value().c_str());}
          else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path=%s\n",pathNameList[i]->get_value().c_str());}
@@ -6816,7 +6822,6 @@ void Port::deleteMode (std::string net)
     }
 }
 
-//xxx
 #ifdef HAS_GUI
 void comboIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatabase *boundaryDatabase, int type, CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance) {
 
@@ -6825,10 +6830,8 @@ void comboIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatab
         if (index == 0) port->set_impedance_definition("VI");
         if (index == 1) port->set_impedance_definition("PV");
         if (index == 2) port->set_impedance_definition("PI");
-        std::cout << "impedance definition modified" << std::endl; std::cout.flush();
         port->set_modified();
         boundaryDatabase->set_modified();
-        std::cout << ">>>>>>>>>>>>>>>>>>> comboIndexChanged" << std::endl; std::cout.flush();
     }
 
     // Port: impedance calculation
@@ -6877,6 +6880,26 @@ void comboTextChanged (QString text, Boundary *boundary, BoundaryDatabase *bound
     }
 }
 
+void spinValueChanged (int value, Mode *mode, BoundaryDatabase *boundaryDatabase)
+{
+    if (mode) {
+        mode->set_Sport(value);
+        mode->set_modified();
+        boundaryDatabase->set_modified();
+    }
+}
+
+void textValueChanged (QString text, IntegrationPath *integrationPath, BoundaryDatabase *boundaryDatabase)
+{
+    std::cout << "textValueChanged" << std::endl; std::cout.flush();
+    if (integrationPath) {
+        std::cout << "   has integrationPath" << std::endl; std::cout.flush();
+        integrationPath->set_scale(text.toDouble());
+        integrationPath->set_modified();
+        boundaryDatabase->set_modified();
+    }
+}
+
 void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
                  QTreeWidget *drawingItemTree, CustomTreeWidgetItem *pathWidgetItem, CustomTreeWidgetItem *portWidgetItem)
 {
@@ -6889,10 +6912,10 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     itemName->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
     itemName->setToolTip(0,"Port name.");
     portWidgetItem->addChild(itemName);
+    itemName->set_OPEMobject(this);
 
-    // attach path - assumes there is only one path, which is checked when loading the database
+    // link paths -  assumes there is only one path, which is checked when loading the database
     Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
-    itemName->set_OPEMobject((void *)path);
 
     // attach item
     int j=0;

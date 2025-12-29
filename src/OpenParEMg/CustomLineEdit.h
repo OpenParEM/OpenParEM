@@ -22,26 +22,32 @@
 #define CUSTOMLINEEDIT_H
 
 #include "ItemTracking.h"
+#include "port.hpp"
 #include <QLineEdit>
 #include <QFocusEvent>
 #include <QDebug>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
-#include <iostream>
+
+void textValueChanged (QString, IntegrationPath *, BoundaryDatabase *);
 
 class CustomLineEdit : public QLineEdit {
     Q_OBJECT
 
 public:
     CustomLineEdit(QWidget *parent = nullptr) : QLineEdit(parent) {
-        //rx.setPattern("[A-Za-z0-9]*");         // alphanumeric
+        connect(this,&QLineEdit::textChanged,this,&CustomLineEdit::handleCustomTextChanged);
         rx.setPattern("^[A-Za-z0-9_\\[\\]]*$");  // alphanumeric plus _,[, and ]
         rxValidator.setRegularExpression(rx);
         drawingTracker=nullptr;
+        integrationPath=nullptr;
+        boundaryDatabase=nullptr;
     }
 
     void set_rxValidator() {setValidator(&rxValidator);}
     void set_itemTracker (ItemTracker *drawingTracker_) {drawingTracker=drawingTracker_;}
+    void set_integrationPath (IntegrationPath *integrationPath_) {integrationPath=integrationPath_;}
+    void set_boundaryDatabase (BoundaryDatabase *boundaryDatabase_) {boundaryDatabase=boundaryDatabase_;}
 
 protected:
     void focusInEvent(QFocusEvent *event) override
@@ -56,10 +62,20 @@ protected:
         QLineEdit::focusOutEvent(event);
     }
 
+signals:
+    void CustomTextChanged (QString text, IntegrationPath *, BoundaryDatabase *);
+
+private slots:
+    void handleCustomTextChanged (QString text) {
+        emit CustomTextChanged(text,integrationPath,boundaryDatabase);
+    }
+
 private:
     QRegularExpression rx;
     QRegularExpressionValidator rxValidator;
     ItemTracker *drawingTracker;
+    IntegrationPath *integrationPath;
+    BoundaryDatabase *boundaryDatabase;
 };
 
 #endif // CUSTOMLINEEDIT_H

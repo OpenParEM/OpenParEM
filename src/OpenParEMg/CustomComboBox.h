@@ -22,7 +22,6 @@
 #define CUSTOMCOMBOBOX_H
 
 #include <QComboBox>
-#include "OPEMg.h"
 #include "port.hpp"
 #include "CustomTreeWidgetItem.h"
 
@@ -34,11 +33,15 @@ class CustomComboBox : public QComboBox {
 
 public:
     CustomComboBox(QWidget *parent = nullptr) : QComboBox(parent) {
-        connect(this, &QComboBox::currentIndexChanged, this, &CustomComboBox::handleCurrentIndexChanged);
-        connect(this, &QComboBox::currentTextChanged, this, &CustomComboBox::handleCurrentTextChanged);
-        //connect(this, &QComboBox::currentIndexChanged, parent, &OpenParEMg::setMenus);
+        connect(this,&QComboBox::currentIndexChanged,this,&CustomComboBox::handleCurrentIndexChanged);
+        connect(this,&QComboBox::currentTextChanged,this,&CustomComboBox::handleCurrentTextChanged);
         setFocusPolicy(Qt::ClickFocus);
+        port=nullptr;
+        boundary=nullptr;
+        itemMaterial=nullptr;
+        itemWaveImpedance=nullptr;
         drawingTracker=nullptr;
+        boundaryDatabase=nullptr;
     }
 
     void set_port (Port *port_) {port=port_;}
@@ -63,8 +66,6 @@ protected:
     }
 
 signals:
-    //void CustomCurrentIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatabase *, int type, CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance);
-    //void CustomCurrentTextChanged (QString text, Boundary *boundary, BoundaryDatabase *);
     void CustomCurrentIndexChanged (int, Port *, Boundary *, BoundaryDatabase *, int, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void CustomCurrentTextChanged (QString, Boundary *, BoundaryDatabase *);
 

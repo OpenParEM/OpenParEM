@@ -717,15 +717,12 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
     }
 
     if (clickedItem->is_sportLabel()) {
-        deleteAction=new QAction("Delete",this);
         expandAllAction=new QAction("Expand All",this);
         collapseAllAction=new QAction("Collapse All",this);
 
-        connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteSportItems);
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        menu.addAction(deleteAction);
         menu.addAction(expandAllAction);
         menu.addAction(collapseAllAction);
     }
@@ -807,6 +804,17 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         menu.addAction(hideAction);
         //menu.addAction(unselectAction);
         //menu.addAction(deleteAction);
+    }
+
+    if (clickedItem->is_scale()) {
+        expandAllAction=new QAction("Expand All",this);
+        collapseAllAction=new QAction("Collapse All",this);
+
+        connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
+        connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
+
+        menu.addAction(expandAllAction);
+        menu.addAction(collapseAllAction);
     }
 
     menu.exec(ui->drawingItemTree->mapToGlobal(pnt));
@@ -1341,8 +1349,6 @@ void OpenParEMg::renameSportNet ()
         }
         i++;
     }
-
-    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::deleteSportNet ()
@@ -1369,7 +1375,28 @@ void OpenParEMg::rename_returnPressed ()
 
     // new text
     QString net=renameEdit->text();
-    if (originalText.compare(net) != 0) boundaryDatabaseChanged=true;
+    if (originalText.compare(net) != 0) {
+        if (renameItem->is_port()) {
+            std::cout << "renaming port" << std::endl; std::cout.flush();
+            Port *port=(Port *)renameItem->get_OPEMojbect();
+            if (port) {
+                port->set_name(net.toStdString());
+                port->set_modified();
+                boundaryDatabase->set_modified();
+                boundaryDatabaseChanged=true;
+            }
+        }
+
+        if (renameItem->is_sport()) {
+            Mode *mode=(Mode *)renameItem->get_OPEMojbect();
+            if (mode) {
+                mode->set_net(net.toStdString());
+                mode->set_modified();
+                boundaryDatabase->set_modified();
+                boundaryDatabaseChanged=true;
+            }
+        }
+    }
 
     // replace
     ui->drawingItemTree->removeItemWidget(renameItem,0);
@@ -1381,6 +1408,7 @@ void OpenParEMg::rename_returnPressed ()
     renameItem->setExpanded(true);
     if (!isExpanded) renameItem->setExpanded(false);
 
+    setMenus();
     ui->drawingWindow->updateViewer();
 }
 
@@ -1600,6 +1628,7 @@ void OpenParEMg::renamePortItems ()
         i++;
     }
 
+    setMenus();
     ui->drawingWindow->updateViewer();
 }
 
@@ -1662,12 +1691,13 @@ void OpenParEMg::deleteRootPortItems ()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
+    // deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
-    ui->drawingWindow->updateViewer();
+    // setMenus();
+    // ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::deletePortItems ()
@@ -1687,12 +1717,14 @@ void OpenParEMg::deletePortItems ()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
+    // deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
-    ui->drawingWindow->updateViewer();
+    // boundaryDatabaseChanged=true;
+    // setMenus();
+    // ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *sportItem)
@@ -1732,6 +1764,7 @@ void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *sportItem)
 
     boundaryDatabaseChanged=true;
     setMenus();
+    ui->drawingWindow->updateViewer();
 }
 
 //xxx
@@ -1752,7 +1785,7 @@ void OpenParEMg::deleteSportItems ()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
 
-    ui->drawingWindow->updateViewer();
+    // ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::showNetItems ()
