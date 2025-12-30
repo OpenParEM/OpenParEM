@@ -22,6 +22,7 @@
 #include <Geom_Plane.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Face.hxx>
+#include <TopoDS_Vertex.hxx>
 #include <glx.h>
 #include "OcctQtTools.h"
 
@@ -106,6 +107,10 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     viewer->SetGridEcho(Standard_False);
 
     rectSelect=nullptr;
+
+    ignoreLeftMouseRelease=false;
+    drawLine=false;
+    firstPointSelected=false;
 }
 
 CustomOpenGLWidget::~CustomOpenGLWidget ()
@@ -262,6 +267,38 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
         std::cout << "                                   : X=" << pointOnPlane.X() << "  Y=" << pointOnPlane.Y() << "  Z=" << pointOnPlane.Z() << std::endl; std::cout.flush();
     }
 
+    //xxx
+    std::cout << "drawLine=" << drawLine << std::endl; std::cout.flush();
+    Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
+
+    if (drawLine && !owner.IsNull()) {
+
+        Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
+        if (!brepOwner.IsNull()) {
+            const TopoDS_Shape& shape = brepOwner->Shape();
+            TopoDS_Vertex vertex=TopoDS::Vertex(shape);
+            if (shape.ShapeType() == TopAbs_VERTEX) {
+                ignoreLeftMouseRelease=true;
+
+                if (firstPointSelected) {
+                    std::cout << "second point selected" << std::endl; std::cout.flush();
+                    secondPoint = BRep_Tool::Pnt(vertex);
+                    drawLine=false;
+                    firstPointSelected=false;
+                    viewerContext->ClearDetected(Standard_True);
+
+                    std::cout << "line: (" << firstPoint.X() << "," << firstPoint.Y() << "," << firstPoint.Z() << ") - "
+                              <<        "(" << secondPoint.X() << "," << secondPoint.Y() << "," << secondPoint.Z() << ")"
+                              << std::endl; std::cout.flush();
+                } else {
+                    std::cout << "first point selected" << std::endl; std::cout.flush();
+                    firstPoint = BRep_Tool::Pnt(vertex);
+                    firstPointSelected=true;
+                }
+            }
+        }
+    }
+
     // pass the mouse press from Qt to OCCT
     bool passClick=true;
     if (event->button() == Qt::RightButton && hasAnySelectedItems()) passClick=false;  // a popup menu will appear
@@ -291,30 +328,33 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     // process mouse buttons
     if (event->button() == Qt::LeftButton) {
 
-        bool hasModifier=false;
-        if (event->button() == Qt::LeftButton) {
-            AIS_SelectionScheme scheme;
+        if (!ignoreLeftMouseRelease) {
+            ignoreLeftMouseRelease=false;
 
-            if (event->modifiers() & Qt::ControlModifier) {
-                hasModifier=true;
-                scheme = AIS_SelectionScheme_Add;
-            } else {
-                scheme = AIS_SelectionScheme_Replace;
+            bool hasModifier=false;
+            if (event->button() == Qt::LeftButton) {
+                AIS_SelectionScheme scheme;
+
+                if (event->modifiers() & Qt::ControlModifier) {
+                    hasModifier=true;
+                    scheme = AIS_SelectionScheme_Add;
+                } else {
+                    scheme = AIS_SelectionScheme_Replace;
+                }
+
+                viewerContext->SelectDetected(scheme);
             }
 
-            viewerContext->SelectDetected(scheme);
+            Handle(AIS_InteractiveObject) anIO=getLastSelected();
+
+            if (anIO.IsNull()) {
+                drawingTracker->unselectAllItems();
+            } else {
+                Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
+                if (!hasModifier) drawingTracker->unselectAllItems();
+                drawingTracker->selectShape(shape);
+            }
         }
-
-        Handle(AIS_InteractiveObject) anIO=getLastSelected();
-
-        if (anIO.IsNull()) {
-            drawingTracker->unselectAllItems();
-        } else {
-            Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
-            if (!hasModifier) drawingTracker->unselectAllItems();
-            drawingTracker->selectShape(shape);
-        }
-
         updateViewer();
 
     } else if (event->button() == Qt::RightButton) {

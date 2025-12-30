@@ -174,6 +174,7 @@
      <addaction name="actionDrawingPlaneSetToFace"/>
     </widget>
     <addaction name="menuDrawing_Plane"/>
+    <addaction name="actionDrawLine"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -476,6 +477,14 @@
   <action name="actionShowAll">
    <property name="text">
     <string>Show All</string>
+   </property>
+  </action>
+  <action name="actionDrawLine">
+   <property name="text">
+    <string>line</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw a line between two points.</string>
    </property>
   </action>
  </widget>

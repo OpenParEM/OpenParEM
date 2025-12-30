@@ -75,6 +75,8 @@ public:
     }
     bool set_gridPlane ();
 
+    void set_drawLine (bool drawLine_) {drawLine=drawLine_;}
+
     void reshowItems () {
         std::cout << "CustomOpenGLWidget::reshowItems" << std::endl; std::cout.flush();
         drawingTracker->reshowVisibleItems();
@@ -256,6 +258,8 @@ public:
         drawingTracker->reset();
     }
 
+    void selectOnVertex () {viewerContext->Deactivate(); viewerContext->Activate(1);}
+
 protected:
     void initializeGL () override;
     void paintGL () override;
@@ -286,6 +290,15 @@ private:
     bool snapToGrid;
 
     RectangleSelector *rectSelect;
+
+    // for all drawing
+    bool ignoreLeftMouseRelease;
+
+    // for lines
+    bool drawLine;
+    bool firstPointSelected;
+    gp_Pnt firstPoint;
+    gp_Pnt secondPoint;
 };
 
 #endif // CUSTOMOPENGLWIDGET_H

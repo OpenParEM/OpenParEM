@@ -752,7 +752,6 @@ void OpenParEMg::itemTreeContextMenu_triggered(const QPoint& pnt)
         renameAction->setEnabled(false);
         if (treeSelectionCount() == 1) renameAction->setEnabled(true);
 
-        //xxx
         insertActionV->setEnabled(false);
         insertActionI->setEnabled(false);
         if (hasOneSelectedSport() && hasSelectedPaths()) {
@@ -982,33 +981,6 @@ void OpenParEMg::hideDrawingItems ()
     ui->drawingWindow->updateViewer();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void OpenParEMg::showRootPathItems ()
 {
     std::cout << "OpenParEMg::showRootPathItems" << std::endl; std::cout.flush();
@@ -1124,22 +1096,6 @@ void OpenParEMg::hidePathItems ()
 
     ui->drawingWindow->updateViewer();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 void OpenParEMg::showRootPortItems ()
 {
@@ -1442,7 +1398,6 @@ bool OpenParEMg::hasCurrent ()
     return false;
 }
 
-//xxx
 void OpenParEMg::insertPath (int type)
 {
     std::cout << "OpenParEMg::insertPath" << std::endl; std::cout.flush();
@@ -3233,6 +3188,8 @@ void OpenParEMg::on_actionFitAll_triggered ()
 
 void OpenParEMg::on_actionShape_triggered()
 {
+    std::cout << "OpenParEMg::on_actionShape_triggered" << std::endl; std::cout.flush();
+
     currentSelectionAction->setCheckable(false);
     currentSelectionAction=ui->actionShape;
     currentSelectionAction->setCheckable(true);
@@ -3245,6 +3202,10 @@ void OpenParEMg::on_actionShape_triggered()
 
 void OpenParEMg::on_actionVertex_triggered()
 {
+    //xxx
+    std::cout << "OpenParEMg::on_actionVertex_triggered" << std::endl; std::cout.flush();
+    ui->drawingWindow->selectOnVertex();
+
     currentSelectionAction->setCheckable(false);
     currentSelectionAction=ui->actionVertex;
     currentSelectionAction->setCheckable(true);
@@ -3257,6 +3218,8 @@ void OpenParEMg::on_actionVertex_triggered()
 
 void OpenParEMg::on_actionEdge_triggered()
 {
+    std::cout << "OpenParEMg::on_actionEdge_triggered" << std::endl; std::cout.flush();
+
     currentSelectionAction->setCheckable(false);
     currentSelectionAction=ui->actionEdge;
     currentSelectionAction->setCheckable(true);
@@ -3269,6 +3232,8 @@ void OpenParEMg::on_actionEdge_triggered()
 
 void OpenParEMg::on_actionWire_triggered()
 {
+    std::cout << "OpenParEMg::on_actionWire_triggered" << std::endl; std::cout.flush();
+
     currentSelectionAction->setCheckable(false);
     currentSelectionAction=ui->actionWire;
     currentSelectionAction->setCheckable(true);
@@ -3281,6 +3246,8 @@ void OpenParEMg::on_actionWire_triggered()
 
 void OpenParEMg::on_actionFace_triggered()
 {
+    std::cout << "OpenParEMg::on_actionFace_triggered" << std::endl; std::cout.flush();
+
     currentSelectionAction->setCheckable(false);
     currentSelectionAction=ui->actionFace;
     currentSelectionAction->setCheckable(true);
@@ -3293,6 +3260,8 @@ void OpenParEMg::on_actionFace_triggered()
 
 void OpenParEMg::on_actionShell_triggered()
 {
+    std::cout << "OpenParEMg::on_actionShell_triggered" << std::endl; std::cout.flush();
+
     currentSelectionAction->setCheckable(false);
     currentSelectionAction=ui->actionShell;
     currentSelectionAction->setCheckable(true);
@@ -3305,6 +3274,8 @@ void OpenParEMg::on_actionShell_triggered()
 
 void OpenParEMg::on_actionSolid_triggered()
 {
+    std::cout << "OpenParEMg::on_actionSolid_triggered" << std::endl; std::cout.flush();
+
     currentSelectionAction->setCheckable(false);
     currentSelectionAction=ui->actionSolid;
     currentSelectionAction->setCheckable(true);
@@ -4072,3 +4043,10 @@ void OpenParEMg::on_actionSelectWithBox_triggered ()
     ui->drawingWindow->selectRectangle();
     setMenus();
 }
+
+void OpenParEMg::on_actionDrawLine_triggered()
+{
+    ui->drawingWindow->unselectAllItems();
+    ui->drawingWindow->set_drawLine(true);
+}
+

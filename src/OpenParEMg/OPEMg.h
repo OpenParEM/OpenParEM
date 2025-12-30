@@ -249,6 +249,8 @@ private slots:
     void loadMeshFile (QString);
     void checkFinish ();
 
+    void on_actionDrawLine_triggered();
+
 public slots:
     void setMenus ();
 
