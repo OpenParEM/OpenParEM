@@ -11,7 +11,8 @@ public:
     explicit Relay (QObject *parent = nullptr);
 
 signals:
-    void triggered ();
+    void setMenus ();
+    void drawLineFinished ();
 };
 
 #endif // RELAY_H

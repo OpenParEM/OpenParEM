@@ -1573,7 +1573,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     drawingItemTree->setItemWidget(itemType,0,comboType);
 
     QObject::connect(comboType, &CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
-    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::triggered);
+    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::setMenus);
 
     // boundary type dependent data
 
@@ -1597,7 +1597,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     drawingItemTree->setItemWidget(itemMaterial,0,comboMaterial);
 
     QObject::connect(comboMaterial, &CustomComboBox::CustomCurrentTextChanged, &comboTextChanged);
-    QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::triggered);
+    QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::setMenus);
 
     // wave impedance
 
@@ -2593,7 +2593,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, st
     drawingItemTree->setItemWidget(itemScaleValue,0,scaleEdit);
 
     QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,&textValueChanged);
-    QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,relay,&Relay::triggered);
+    QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,relay,&Relay::setMenus);
 
 }
 #endif
@@ -4193,7 +4193,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, struct point 
 
     //xxx
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
-    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,relay,&Relay::triggered);
+    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,relay,&Relay::setMenus);
 
     // integration paths
     long unsigned int i=0;
@@ -7038,7 +7038,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     drawingItemTree->setItemWidget(itemImpedanceDefinition,0,comboZdef);
 
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
-    QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::triggered);
+    QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::setMenus);
 
     // impedance calculation
 
@@ -7061,7 +7061,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
 
     QObject::connect(comboZcalc, &CustomComboBox::CustomCurrentIndexChanged, &comboIndexChanged);
-    QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::triggered);
+    QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::setMenus);
 
     // modes
     struct point outline_normal=outline->get_normal();

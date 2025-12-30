@@ -28,6 +28,7 @@
 #include "CustomTreeWidgetItem.h"
 #include "RectangleSelector.h"
 #include "ItemTracking.h"
+#include "Relay.h"
 
 #include "OpenGl_GraphicDriver.hxx"
 #include <Aspect_DisplayConnection.hxx>
@@ -53,6 +54,7 @@ public:
     void set_meshItemTree (CustomTreeWidgetItem *meshItemTree_) {meshItemTree=meshItemTree_;}
     void set_pathItemTree (CustomTreeWidgetItem *pathItemTree_) {pathItemTree=pathItemTree_;}
     void set_contextMenu (QMenu *contextMenu_) {contextMenu=contextMenu_;}
+    void set_relay (Relay *relay_) {relay=relay_;}
 
     void updateViewer ();
     void clearDrawing ();
@@ -293,6 +295,7 @@ private:
 
     // for all drawing
     bool ignoreLeftMouseRelease;
+    Relay *relay;
 
     // for lines
     bool drawLine;

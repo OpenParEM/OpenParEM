@@ -249,7 +249,8 @@ private slots:
     void loadMeshFile (QString);
     void checkFinish ();
 
-    void on_actionDrawLine_triggered();
+    void on_actionDrawLine_triggered ();
+    void drawLineFinished ();
 
 public slots:
     void setMenus ();
@@ -330,6 +331,9 @@ private:
 
     // relay
     Relay *relay;
+
+    // drawing
+    bool isActiveDrawing;
 
 };
 

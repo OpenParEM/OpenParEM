@@ -19,8 +19,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "CustomOpenGLWidget.h"
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeVertex.hxx>
 #include <Geom_Plane.hxx>
 #include <TopoDS.hxx>
+#include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Vertex.hxx>
 #include <glx.h>
@@ -242,6 +245,20 @@ bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const
     return true;
 }
 
+Handle(AIS_Shape) CreateAISLineFromVertices(const gp_Pnt& p1, const gp_Pnt& p2)
+{
+    TopoDS_Vertex v1=BRepBuilderAPI_MakeVertex(p1);
+    TopoDS_Vertex v2=BRepBuilderAPI_MakeVertex(p2);
+
+    BRepBuilderAPI_MakeEdge makeEdge(v1, v2);
+    TopoDS_Edge anEdge = makeEdge.Edge();
+
+    if (!makeEdge.IsDone()) return nullptr;
+    Handle(AIS_Shape) anAisShape = new AIS_Shape(anEdge);
+
+    return anAisShape;
+}
+
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
     std::cout << "CustomOpenGLWidget::mousePressEvent" << std::endl; std::cout.flush();
@@ -286,6 +303,14 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
                     drawLine=false;
                     firstPointSelected=false;
                     viewerContext->ClearDetected(Standard_True);
+
+                    Handle(AIS_Shape) newLine=CreateAISLineFromVertices(firstPoint,secondPoint);
+
+                    if (!newLine.IsNull()) {
+                        viewerContext->Display(newLine, Standard_True);
+                    }
+
+                    emit relay->drawLineFinished();
 
                     std::cout << "line: (" << firstPoint.X() << "," << firstPoint.Y() << "," << firstPoint.Z() << ") - "
                               <<        "(" << secondPoint.X() << "," << secondPoint.Y() << "," << secondPoint.Z() << ")"
