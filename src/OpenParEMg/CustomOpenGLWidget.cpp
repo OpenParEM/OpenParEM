@@ -91,6 +91,7 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     viewCube->SetFixedAnimationLoop(false);
     viewCube->SetAutoStartAnimation(true);
     viewCube->TransformPersistence()->SetOffset2d(Graphic3d_Vec2i(100, 150));
+    viewCube->SetDuration(0.0);  // snaps to face views
 
     // viewer
     view=viewer->CreateView();
@@ -112,6 +113,7 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     rectSelect=nullptr;
 
     ignoreLeftMouseRelease=false;
+    isPath=false;
     drawLine=false;
     firstPointSelected=false;
 }
@@ -206,21 +208,30 @@ void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
     if (view.IsNull()) return;
 
     // define hot keys for specific functionality
-    /*
     const Aspect_VKey aKey=OcctQtTools::qtKey2VKey(event->key());
     switch (aKey)
     {
         case Aspect_VKey_Escape: {
-            //QApplication::exit();
-            return;
+
+            // line
+
+            if (!lineShape.IsNull()) {viewerContext->Remove(lineShape,Standard_True); lineShape.Nullify();}
+
+            drawLine=false;
+            firstPointSelected=false;
+
+            viewerContext->ClearDetected(Standard_True);
+            viewerContext->ClearSelected(Standard_True);
+            emit relay->cancelDraw();
         }
-        case Aspect_VKey_F: {
-            view->FitAll(0.01, false);
-            update();
-            return;
-        }
+
+        // case Aspect_VKey_F: {
+        //     view->FitAll(0.01, false);
+        //     update();
+        //     return;
+        // }
     }
-*/
+
     QOpenGLWidget::keyPressEvent(event);
 }
 
@@ -245,18 +256,19 @@ bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const
     return true;
 }
 
-Handle(AIS_Shape) CreateAISLineFromVertices(const gp_Pnt& p1, const gp_Pnt& p2)
+Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
 {
+    std::cout << "CreateAISLineFromVertices" << std::endl; std::cout.flush();
     TopoDS_Vertex v1=BRepBuilderAPI_MakeVertex(p1);
     TopoDS_Vertex v2=BRepBuilderAPI_MakeVertex(p2);
 
     BRepBuilderAPI_MakeEdge makeEdge(v1, v2);
-    TopoDS_Edge anEdge = makeEdge.Edge();
+    TopoDS_Edge edge=makeEdge.Edge();
 
     if (!makeEdge.IsDone()) return nullptr;
-    Handle(AIS_Shape) anAisShape = new AIS_Shape(anEdge);
+    Handle(AIS_Shape) shape=new AIS_Shape(edge);
 
-    return anAisShape;
+    return shape;
 }
 
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
@@ -270,55 +282,62 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     QPointF pos=event->position();
     std::cout << "CustomOpenGLWidget::mousePressEvent: x=" << pos.x() << "  y=" << pos.y() << std::endl; std::cout.flush();
 
-    //Standard_Real X,Y,Z;
-    //view->Convert(pos.x(),pos.y(),X,Y,Z);
-    //std::cout << "                                   : X=" << X << "  Y=" << Y << "  Z=" << Z << std::endl; std::cout.flush();
-
     if (viewer->IsGridActive() && snapToGrid) {
         Standard_Real X,Y,Z;
         view->ConvertToGrid(pos.x(),pos.y(),X,Y,Z);
         std::cout << "                                   : X=" << X << "  Y=" << Y << "  Z=" << Z << std::endl; std::cout.flush();
     } else {
         gp_Pnt pointOnPlane;
-        PixelToPointOnPlane (pos.x(),pos.y(),pointOnPlane);
-        std::cout << "                                   : X=" << pointOnPlane.X() << "  Y=" << pointOnPlane.Y() << "  Z=" << pointOnPlane.Z() << std::endl; std::cout.flush();
+        // ToDo: next line causes crash when the view is exactly on an axis
+        //PixelToPointOnPlane (pos.x(),pos.y(),pointOnPlane);
+        //std::cout << "                                   : X=" << pointOnPlane.X() << "  Y=" << pointOnPlane.Y() << "  Z=" << pointOnPlane.Z() << std::endl; std::cout.flush();
     }
 
     //xxx
-    std::cout << "drawLine=" << drawLine << std::endl; std::cout.flush();
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
 
+    // line
     if (drawLine && !owner.IsNull()) {
-
         Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
         if (!brepOwner.IsNull()) {
-            const TopoDS_Shape& shape = brepOwner->Shape();
-            TopoDS_Vertex vertex=TopoDS::Vertex(shape);
-            if (shape.ShapeType() == TopAbs_VERTEX) {
-                ignoreLeftMouseRelease=true;
+            TopoDS_Shape shape = brepOwner->Shape();
+            if (!shape.IsNull()) {
+                if (shape.ShapeType() == TopAbs_VERTEX) {
+                    TopoDS_Vertex vertex=TopoDS::Vertex(shape);
+                    if (!vertex.IsNull()) {
+                        ignoreLeftMouseRelease=true;
 
-                if (firstPointSelected) {
-                    std::cout << "second point selected" << std::endl; std::cout.flush();
-                    secondPoint = BRep_Tool::Pnt(vertex);
-                    drawLine=false;
-                    firstPointSelected=false;
-                    viewerContext->ClearDetected(Standard_True);
+                        if (firstPointSelected) {
+                            secondPoint = BRep_Tool::Pnt(vertex);
 
-                    Handle(AIS_Shape) newLine=CreateAISLineFromVertices(firstPoint,secondPoint);
+                            if (!secondPoint.IsEqual(firstPoint,Precision::Confusion())) {
+                                drawLine=false;
+                                firstPointSelected=false;
+                                viewerContext->ClearDetected(Standard_True);
+                                //viewerContext->ClearSelected(Standard_True);
 
-                    if (!newLine.IsNull()) {
-                        viewerContext->Display(newLine, Standard_True);
+                                if (!lineShape.IsNull()) {
+                                    viewerContext->Remove(lineShape,Standard_True);
+                                    lineShape.Nullify();
+                                }
+
+                                Handle(AIS_Shape) newLineShape=CreateAISLineFromVertices(firstPoint,secondPoint);
+                                if (!newLineShape.IsNull()) {
+                                    viewerContext->Activate(newLineShape);
+                                    viewerContext->Display(newLineShape,Standard_True);
+                                }
+
+                                emit relay->drawLineFinished(newLineShape);
+
+                                std::cout << "line: (" << firstPoint.X() << "," << firstPoint.Y() << "," << firstPoint.Z() << ") - "
+                                          <<        "(" << secondPoint.X() << "," << secondPoint.Y() << "," << secondPoint.Z() << ")"
+                                          << std::endl; std::cout.flush();
+                            }
+                        } else {
+                            firstPoint = BRep_Tool::Pnt(vertex);
+                            firstPointSelected=true;
+                        }
                     }
-
-                    emit relay->drawLineFinished();
-
-                    std::cout << "line: (" << firstPoint.X() << "," << firstPoint.Y() << "," << firstPoint.Z() << ") - "
-                              <<        "(" << secondPoint.X() << "," << secondPoint.Y() << "," << secondPoint.Z() << ")"
-                              << std::endl; std::cout.flush();
-                } else {
-                    std::cout << "first point selected" << std::endl; std::cout.flush();
-                    firstPoint = BRep_Tool::Pnt(vertex);
-                    firstPointSelected=true;
                 }
             }
         }
@@ -336,8 +355,6 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
-    std::cout << "CustomOpenGLWidget::mouseReleaseEvent" << std::endl; std::cout.flush();
-
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
 
@@ -420,6 +437,22 @@ void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
 {
     QOpenGLWidget::mouseMoveEvent(event);
     if (view.IsNull()) return;
+
+    // line rubberband
+    if (drawLine && firstPointSelected) {
+
+        Standard_Real x,y,z;
+        view->Convert(event->pos().x(),event->pos().y(),x,y,z);
+        secondPoint.SetCoord(x,y,z);
+
+        if (!secondPoint.IsEqual(firstPoint,Precision::Confusion())) {
+            if (!lineShape.IsNull()) {viewerContext->Remove(lineShape,Standard_True); lineShape.Nullify();}
+            lineShape=CreateAISLineFromVertices(firstPoint,secondPoint);
+            if (!lineShape.IsNull()) {
+                viewerContext->Display(lineShape,0,-1,Standard_True);
+            }
+        }
+    }
 
     // pass the mouse position from Qt to OCCT
     const Graphic3d_Vec2i position(event->pos().x(),event->pos().y());

@@ -1003,7 +1003,7 @@ Path* Path::clone()
    newPath->zmax=zmax;
    newPath->zmin=zmin;
    newPath->hasNormal=hasNormal;
-   newPath->normal=point_copy(normal);;
+   newPath->normal=point_copy(normal);
 
    long unsigned int i=0;
    while (i < points.size()) {
@@ -2027,6 +2027,13 @@ struct point Path::getInsidePoint ()
    return error_point;
 }
 
+void Path::assignPathNormal (struct point normal_)
+{
+    if (hasNormal) return;
+    normal=point_copy(normal_);
+    hasNormal=true;
+}
+
 #ifdef HAS_GUI
 
 TopoDS_Wire Path::create_TopoDS_Wire ()
@@ -2048,7 +2055,7 @@ TopoDS_Wire Path::create_TopoDS_Wire ()
 // create a path from a face
 // should only be called if shape has just one face
 // May reverse the direction of the normal.
-void Path::addPoints (Handle(AIS_Shape) shape, bool setClosed, bool calcNormal)
+void Path::addFacePoints (Handle(AIS_Shape) shape, bool setClosed, bool calcNormal)
 {
     TopExp_Explorer faceExplorer(shape->Shape(),TopAbs_FACE);
     while (faceExplorer.More()) {
@@ -2092,12 +2099,34 @@ void Path::addPoints (Handle(AIS_Shape) shape, bool setClosed, bool calcNormal)
     }
 }
 
+// create a path from a wire
+// should only be called if shape has just one wire
+void Path::addWirePoints (Handle(AIS_Shape) shape)
+{
+    TopExp_Explorer explorer(shape->Shape(),TopAbs_VERTEX);
+    while (explorer.More()) {
+        const TopoDS_Shape& currentShape=explorer.Current();
+        const TopoDS_Vertex& vertex=TopoDS::Vertex(currentShape);
+
+        gp_Pnt pnt=BRep_Tool::Pnt(vertex);
+        keywordPair *point=new keywordPair();
+        point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
+        points.push_back(point);
+
+        explorer.Next();
+    }
+}
+
 //xxx
 
 void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
 {
-    std::cout << "Path::create_item" << std::endl; std::cout.flush();
+    Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (create_TopoDS_Wire());
+    create_item(drawingWindow,parentItem,drawingShape,false);
+}
 
+void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem, Handle(AIS_Shape) drawingShape, bool show)
+{
     CustomTreeWidgetItem *item=new CustomTreeWidgetItem(0);
     item->set_type(4);
     item->set_OPEMobject(this);
@@ -2106,7 +2135,7 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
     item->set_selectionMode(0);
     item->setForeground(0,Qt::black);
 
-    Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (create_TopoDS_Wire());
+    //Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (create_TopoDS_Wire());
     drawingWindow->displayShape(drawingShape,item->get_displayMode(),item->get_selectionMode());
     item->set_AIS_Shape(drawingShape);
     drawingWindow->insertItemToMap(drawingShape,item);
@@ -2178,6 +2207,7 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
     }
 
     drawingWindow->hideItem(item);
+    if (show) drawingWindow->showItem(item);
     parentItem->addChild(item);
 
     drawingWindow->updateViewer();

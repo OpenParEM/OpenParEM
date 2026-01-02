@@ -2505,9 +2505,18 @@ void IntegrationPath::output (ofstream *out, vector<Path *> *pathList, Path *rot
    else         *out << "EndLine" << endl << endl;
 }
 
+void IntegrationPath::assignPathNormals (struct point normal, std::vector<Path *> *pathList)
+{
+    long unsigned int i=0;
+    while (i < pathIndexList.size()) {
+        (*pathList)[pathIndexList[i]]->assignPathNormal(normal);
+        i++;
+    }
+}
+
 #ifdef HAS_GUI
 
-void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, struct point *normal, CustomOpenGLWidget *drawingWindow,
+void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
                             QTreeWidget *drawingItemTree, CustomTreeWidgetItem *pathItemTree, CustomTreeWidgetItem *itemMode)
 {
     // type
@@ -4145,9 +4154,18 @@ void Mode::reset()
    weight.clear();
 }
 
+void Mode::assignPathNormals (struct point normal, std::vector<Path *> *pathList)
+{
+    long unsigned int i=0;
+    while (i < integrationPathList.size()) {
+       integrationPathList[i]->assignPathNormals(normal,pathList);
+       i++;
+    }
+}
+
 #ifdef HAS_GUI
 
-void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, struct point *normal, CustomOpenGLWidget *drawingWindow,
+void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
                  QTreeWidget *drawingItemTree, CustomTreeWidgetItem *pathItemTree, CustomTreeWidgetItem *itemName)
 {
     // net
@@ -4198,7 +4216,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, struct point 
     // integration paths
     long unsigned int i=0;
     while (i < integrationPathList.size()) {
-        integrationPathList[i]->draw(relay,boundaryDatabase,normal,drawingWindow,drawingItemTree, pathItemTree, itemNet);
+        integrationPathList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree, pathItemTree, itemNet);
         i++;
     }
 }
@@ -6908,6 +6926,15 @@ void Port::deleteMode (std::string net)
     }
 }
 
+void Port::assignPathNormals (std::vector<Path *> *pathList)
+{
+    long unsigned int i=0;
+    while (i < modeList.size()) {
+        modeList[i]->assignPathNormals(outline->get_normal(),pathList);
+        i++;
+    }
+}
+
 #ifdef HAS_GUI
 void comboIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatabase *boundaryDatabase, int type, CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance) {
 
@@ -7067,7 +7094,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     struct point outline_normal=outline->get_normal();
     long unsigned int i=0;
     while (i < modeList.size()) {
-        modeList[i]->draw(relay,boundaryDatabase,&outline_normal,drawingWindow,drawingItemTree,pathWidgetItem,itemName);
+        modeList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,pathWidgetItem,itemName);
         i++;
     }
 }
@@ -9284,6 +9311,17 @@ void BoundaryDatabase::deletePort (string name)
             modified=true;
             break;
         }
+        i++;
+    }
+}
+
+// Straight lines do no have normals, but a normal is needed to orient arrow heads for display in OpenParEMg.
+// Look for paths without normals and assign the normal from the associated port to the path.
+void BoundaryDatabase::assignPathNormals ()
+{
+    long unsigned int i=0;
+    while (i < portList.size()) {
+        portList[i]->assignPathNormals(&pathList);
         i++;
     }
 }

@@ -313,10 +313,11 @@ class IntegrationPath
       std::complex<double> get_integratedValue () {return integratedValue;}
       void set_integratedValue (std::complex<double> integratedValue_) {integratedValue=integratedValue_;}
       void output (std::ofstream *, std::vector<Path *> *, Path *, bool, bool, int);
+      void assignPathNormals (struct point, std::vector<Path *> *);
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
-      void draw (Relay *, BoundaryDatabase *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+      void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -517,10 +518,11 @@ class Mode
       void snapToMeshBoundary (std::vector<Path *> *, mfem::Mesh *);
       void populateGamma (double, GammaDatabase *);
       void reset ();
+      void assignPathNormals (struct point, std::vector<Path *> *);
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
-      void draw (Relay *, BoundaryDatabase *, struct point *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+      void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -753,6 +755,7 @@ class Port
       void buildAggregateModeList (std::vector<Mode *> *);
       bool has_mode (Mode *, long unsigned int *);
       void deleteMode (std::string);
+      void assignPathNormals (std::vector<Path *> *);
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
@@ -885,6 +888,7 @@ class BoundaryDatabase
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *, long unsigned int, long unsigned int);
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *);
       void deletePort (std::string);
+      void assignPathNormals ();
 #ifdef HAS_GUI
       void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
       void draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);

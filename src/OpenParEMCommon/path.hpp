@@ -140,12 +140,15 @@ class Path {
       void reverseOrder ();
       bool lineIntersects (struct point, struct point);
       struct point getInsidePoint ();
+      void assignPathNormal (struct point);
 #ifdef HAS_GUI
       //void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       void create_item (CustomOpenGLWidget *, CustomTreeWidgetItem *);
+      void create_item (CustomOpenGLWidget *, CustomTreeWidgetItem *, Handle(AIS_Shape), bool);
       //CustomTreeWidgetItem* get_item () {return item;}
       TopoDS_Wire create_TopoDS_Wire ();
-      void addPoints (Handle(AIS_Shape) shape, bool, bool);
+      void addFacePoints (Handle(AIS_Shape) shape, bool, bool);
+      void addWirePoints (Handle(AIS_Shape) shape);
 #endif
 };
 

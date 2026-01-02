@@ -77,6 +77,8 @@ public:
     }
     bool set_gridPlane ();
 
+    void set_isPath (bool isPath_) {isPath=isPath_;}
+    bool get_isPath () {return isPath;}
     void set_drawLine (bool drawLine_) {drawLine=drawLine_;}
 
     void reshowItems () {
@@ -260,7 +262,10 @@ public:
         drawingTracker->reset();
     }
 
-    void selectOnVertex () {viewerContext->Deactivate(); viewerContext->Activate(1);}
+    //void selectOnVertex () {viewerContext->Deactivate(); viewerContext->Activate(1);}
+    void selectOnVertex (Handle(AIS_Shape) shape) {viewerContext->Deactivate(); viewerContext->Activate(shape,1);}
+
+    //void deactivateAll () {viewerContext->Deactivate();}
 
 protected:
     void initializeGL () override;
@@ -293,15 +298,18 @@ private:
 
     RectangleSelector *rectSelect;
 
-    // for all drawing
+    // all drawing
     bool ignoreLeftMouseRelease;
+    bool isPath;
     Relay *relay;
 
-    // for lines
+    // line
+    Handle(AIS_Shape) lineShape;
     bool drawLine;
     bool firstPointSelected;
     gp_Pnt firstPoint;
     gp_Pnt secondPoint;
+
 };
 
 #endif // CUSTOMOPENGLWIDGET_H

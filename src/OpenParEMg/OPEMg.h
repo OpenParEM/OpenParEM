@@ -249,8 +249,10 @@ private slots:
     void loadMeshFile (QString);
     void checkFinish ();
 
+    void cancelDraw ();
     void on_actionDrawLine_triggered ();
-    void drawLineFinished ();
+    void drawLineFinished (Handle(AIS_Shape));
+    void drawPath ();
 
 public slots:
     void setMenus ();
@@ -302,6 +304,7 @@ private:
     QAction *expandAllAction;
     QAction *collapseAllAction;
     QAction *createPortAction;
+    QAction *drawAction;
 
     // gmsh
     gmsh::vectorpair drawingEntities;
@@ -334,6 +337,7 @@ private:
 
     // drawing
     bool isActiveDrawing;
+    struct point normal;
 
 };
 
