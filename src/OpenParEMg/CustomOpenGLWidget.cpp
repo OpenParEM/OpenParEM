@@ -91,7 +91,7 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     viewCube->SetFixedAnimationLoop(false);
     viewCube->SetAutoStartAnimation(true);
     viewCube->TransformPersistence()->SetOffset2d(Graphic3d_Vec2i(100, 150));
-    viewCube->SetDuration(0.0);  // snaps to face views
+    viewCube->SetDuration(0.0);  // snaps to face views when clicking the cube
 
     // viewer
     view=viewer->CreateView();

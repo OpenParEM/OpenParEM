@@ -76,6 +76,7 @@ qt_add_executable(OpenParEMg
     CustomSpinBox.h
     logo.qrc
     Relay.h Relay.cpp
+    #PolygonSelection.h PolygonSelection.cpp
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)

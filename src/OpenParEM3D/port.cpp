@@ -18,7 +18,6 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <qapplication.h>
 #include <quadmath.h>
 #include <iostream>
 #include <sstream>
@@ -34,6 +33,7 @@
 #include "petscsys.h"
 
 #ifdef HAS_GUI
+#include <qapplication.h>
 #include "../OpenParEMg/CustomSpinBox.h"
 #include <Qt>
 #include <QComboBox>
@@ -2435,7 +2435,9 @@ void IntegrationPath::print (string indent)
       i++;
    }
 
+#if HAS_GUI
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   item=%p\n",indent.c_str(),item);
+#endif
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndIntegrationPath\n",indent.c_str());
 
    return;
