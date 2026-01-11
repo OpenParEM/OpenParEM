@@ -594,6 +594,7 @@ Path::Path(int startLine_, int endLine_)
 
 #if HAS_GUI
    item=nullptr;
+   portItem=nullptr;
 #endif
 }
 
@@ -1882,7 +1883,8 @@ double Path::area ()
    bool allocatedPath=false;
    double area=0;
 
-   if (points.size() == 0) return DBL_MAX;
+   if (points.size() == 0) return 0;
+   if (points.size() == 2) return 0;
 
    int dim=points[0]->get_point_value().dim;
    if (dim == 2) path=this;
@@ -2127,7 +2129,7 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
 
 void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem, Handle(AIS_Shape) drawingShape, bool show)
 {
-    CustomTreeWidgetItem *item=new CustomTreeWidgetItem(0);
+    item=new CustomTreeWidgetItem(0);
     item->set_type(4);
     item->set_OPEMobject(this);
     item->setText(0,QString::fromStdString(get_name()));
@@ -2135,10 +2137,9 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
     item->set_selectionMode(0);
     item->setForeground(0,Qt::black);
 
-    //Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (create_TopoDS_Wire());
-    drawingWindow->displayShape(drawingShape,item->get_displayMode(),item->get_selectionMode());
+    //drawingWindow->displayShape(drawingShape,item->get_displayMode(),item->get_selectionMode());
     item->set_AIS_Shape(drawingShape);
-    drawingWindow->insertItemToMap(drawingShape,item);
+    //drawingWindow->insertItemToMap(drawingShape,item);
 
     // arrow heads
 
@@ -2199,18 +2200,18 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
             arrowHead.push_point(p2);
 
             Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (arrowHead.create_TopoDS_Wire());
-            drawingWindow->displayShape(drawingShape,item->get_displayMode(),item->get_selectionMode());
+            //drawingWindow->displayShape(drawingShape,item->get_displayMode(),item->get_selectionMode());
             item->push_arrowHead(drawingShape);
-            drawingWindow->insertItemToMap(drawingShape,item);
+            //drawingWindow->insertItemToMap(drawingShape,item);
         }
         i++;
     }
 
-    drawingWindow->hideItem(item);
-    if (show) drawingWindow->showItem(item);
+    //drawingWindow->hideItem(item);
+    //if (show) drawingWindow->showItem(item);
     parentItem->addChild(item);
 
-    drawingWindow->updateViewer();
+    //drawingWindow->updateViewer();
 }
 
 #endif

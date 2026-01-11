@@ -194,9 +194,7 @@ private slots:
     bool hasOneSelectedSport ();
     bool hasVoltage ();
     bool hasCurrent ();
-    void insertPath (int);
-    void insertVoltagePath ();
-    void insertCurrentPath ();
+    void insertPath (CustomTreeWidgetItem *);
     //void selectItems ();
     void unselectRootDrawingItems ();
     void unselectDrawingItems ();
@@ -280,8 +278,10 @@ private:
     CustomTreeWidgetItem boundary;
     CustomTreeWidgetItem mesh;
 
-    CustomTreeWidgetItem *clickedItem,*previousClickedItem;
+    CustomTreeWidgetItem *clickedItem,*previousClickedItem,*workingItem;
     QAction *currentSelectionAction;
+    int selectionIndex;
+    int previousSelectionIndex;
     bool CTRLpressed;
     bool SHIFTpressed;
 
@@ -298,8 +298,6 @@ private:
     QAction *deleteAction;
     QAction *assignAction;
     QAction *insertAction;
-    QAction *insertActionV;
-    QAction *insertActionI;
     QAction *renameAction;
     QAction *expandAllAction;
     QAction *collapseAllAction;

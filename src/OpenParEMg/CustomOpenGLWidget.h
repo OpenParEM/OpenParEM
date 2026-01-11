@@ -26,6 +26,7 @@
 #include <QMouseEvent>
 
 #include "CustomTreeWidgetItem.h"
+#include "PolygonSelection.h"
 #include "RectangleSelector.h"
 #include "ItemTracking.h"
 #include "Relay.h"
@@ -262,8 +263,17 @@ public:
         drawingTracker->reset();
     }
 
-    //void selectOnVertex () {viewerContext->Deactivate(); viewerContext->Activate(1);}
-    void selectOnVertex (Handle(AIS_Shape) shape) {viewerContext->Deactivate(); viewerContext->Activate(shape,1);}
+    void selectOnVertex (Path *outline) {
+        if (vertexFilter) viewerContext->RemoveFilter(vertexFilter);
+        vertexFilter=new VertexFilter();
+        vertexFilter->set_outline(outline);
+        viewerContext->AddFilter(vertexFilter);
+    }
+
+    void removeSelectOnVertex () {
+        viewerContext->RemoveFilter(vertexFilter);
+        vertexFilter=nullptr;
+    }
 
     //void deactivateAll () {viewerContext->Deactivate();}
 
@@ -309,6 +319,9 @@ private:
     bool firstPointSelected;
     gp_Pnt firstPoint;
     gp_Pnt secondPoint;
+
+    // filter
+    VertexFilter *vertexFilter;
 
 };
 

@@ -1,36 +1,49 @@
 #ifndef POLYGONSELECTION_H
 #define POLYGONSELECTION_H
 
-#pragma once
-
-#include <AIS_InteractiveObject.hxx>
+#include <SelectMgr_Filter.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Pnt.hxx>
-#include <gp_Pnt2d.hxx>
-#include <vector>
+#include "path.hpp"
 
-class AIS_PlanePolygon : public AIS_InteractiveObject
+
+// class MyCustomFilter : public SelectMgr_Filter {
+// public:
+//     // Return Standard_True if the owner is allowed to be selected
+//     virtual Standard_Boolean IsOk(const Handle(SelectMgr_EntityOwner)& theOwner) const override {
+//         if (theOwner.IsNull()) return Standard_False;
+
+//         // Example: Filter by interactive object type
+//         Handle(AIS_InteractiveObject) anObj = Handle(AIS_InteractiveObject)::DownCast(theOwner->Selectable());
+//         if (!anObj.IsNull() && anObj->IsKind(STANDARD_TYPE(AIS_Shape))) {
+//             //return Standard_True; // Only allow AIS_Shape objects
+//             Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(anObj);
+//             if (!aisShape.IsNull()) {
+//                 const TopoDS_Shape& shape = aisShape->Shape();
+//                 TopAbs_ShapeEnum type = shape.ShapeType();
+//                 std::cout << "TopAbs_ShapeEnum=" << type << std::endl; std::cout.flush();
+//                 return Standard_True;
+//                 // if (type == TopAbs_VERTEX) {
+//                 //     std::cout << "TopAbs_VERTEX" << std::endl; std::cout.flush();
+//                 //     return Standard_True;
+//                 // }
+//             }
+//         }
+//         return Standard_False;
+//     }
+// };
+
+class VertexFilter : public SelectMgr_Filter
 {
 public:
-    AIS_PlanePolygon(const gp_Pln& thePlane,
-                     const std::vector<gp_Pnt2d>& thePolygon2d);
-
-    DEFINE_STANDARD_RTTIEXT(AIS_PlanePolygon, AIS_InteractiveObject)
-
-    const gp_Pln& Plane() const { return myPlane; }
-    const std::vector<gp_Pnt>& Vertices() const { return myVertices; }
-
-protected:
-    void Compute(const Handle(PrsMgr_PresentationManager)&,
-                 const Handle(Prs3d_Presentation)&,
-                 const Standard_Integer) override {}
-
-    void ComputeSelection(const Handle(SelectMgr_Selection)&,
-                          const Standard_Integer) override;
+    bool set_outline (Path *);
+    virtual Standard_Boolean IsOk (const Handle(SelectMgr_EntityOwner)& theOwner) const;
 
 private:
-    gp_Pln myPlane;
-    std::vector<gp_Pnt> myVertices;
+    std::vector<gp_Pnt> outline;
+    gp_Pln plane;
+    std::vector<gp_Pnt2d> outline2D;
 };
+
 
 #endif // POLYGONSELECTION_H

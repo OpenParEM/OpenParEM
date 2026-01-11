@@ -49,6 +49,8 @@ public:
     void set_integrationPath (IntegrationPath *integrationPath_) {integrationPath=integrationPath_;}
     void set_boundaryDatabase (BoundaryDatabase *boundaryDatabase_) {boundaryDatabase=boundaryDatabase_;}
 
+    IntegrationPath* get_integrationPath () {return integrationPath;}
+
 protected:
     void focusInEvent(QFocusEvent *event) override
     {

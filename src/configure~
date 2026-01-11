@@ -6750,22 +6750,22 @@ fi
 
 
 have_openmpi=yes
-if test "have_open_pal" = "no"; then
+if test "$have_open_pal" = "no"; then
    have_openmpi=no
 fi
-if test "have_open_rte" = "no"; then
+if test "$have_open_rte" = "no"; then
    have_openmpi=no
 fi
-if test "have_mpi" = "no"; then
+if test "$have_mpi" = "no"; then
    have_openmpi=no
 fi
-if test "have_mpifh" = "no"; then
+if test "$have_mpifh" = "no"; then
    have_openmpi=no
 fi
-if test "have_mpi_usempif08" = "no"; then
+if test "$have_mpi_usempif08" = "no"; then
    have_openmpi=no
 fi
-if test "have_mpi_usempi_ignore_tkr" = "no"; then
+if test "$have_mpi_usempi_ignore_tkr" = "no"; then
    have_openmpi=no
 fi
 
@@ -7056,29 +7056,29 @@ fi
 
 
 have_mpich=yes
-if test "have_mpi" = "no"; then
+if test "$have_mpi" = "no"; then
    have_mpich=no
 fi
-if test "have_mpich" = "no"; then
+if test "$have_mpich" = "no"; then
    have_mpich=no
 fi
-if test "have_mpicxx" = "no"; then
+if test "$have_mpicxx" = "no"; then
    have_mpich=no
 fi
-if test "have_mpichcxx" = "no"; then
+if test "$have_mpichcxx" = "no"; then
    have_mpich=no
 fi
-if test "have_mpifort" = "no"; then
+if test "$have_mpifort" = "no"; then
    have_mpich=no
 fi
-if test "have_mpichf90" = "no"; then
+if test "$have_mpichf90" = "no"; then
    have_mpich=no
 fi
-if test "have_fmpich" = "no"; then
+if test "$have_fmpich" = "no"; then
    have_mpich=no
 fi
 
-if test "have_openmpi" = "no" && test "have_mpich" = "no"; then
+if test "$have_openmpi" = "no" && test "$have_mpich" = "no"; then
    as_fn_error $? "cannot find OpenMPI or MPICH library; check config.log" "$LINENO" 5
 fi
 

@@ -40,6 +40,7 @@
 #include <BRepTools.hxx>
 #include <TopoDS_Face.hxx>
 #include "Aspect_NeutralWindow.hxx"
+#include "PolygonSelection.h"
 #include <OpenGl_FrameBuffer.hxx>
 #include <V3d_RectangularGrid.hxx>
 
@@ -116,6 +117,8 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     isPath=false;
     drawLine=false;
     firstPointSelected=false;
+
+    vertexFilter=nullptr;
 }
 
 CustomOpenGLWidget::~CustomOpenGLWidget ()
@@ -258,7 +261,6 @@ bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const
 
 Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
 {
-    std::cout << "CreateAISLineFromVertices" << std::endl; std::cout.flush();
     TopoDS_Vertex v1=BRepBuilderAPI_MakeVertex(p1);
     TopoDS_Vertex v2=BRepBuilderAPI_MakeVertex(p2);
 

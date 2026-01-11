@@ -35,6 +35,7 @@ public:
                     j++;
                 }
             } else {
+                EraseShape(item->get_AIS_Shape());
                 DisplayShape(item->get_AIS_Shape(),item->get_displayMode(), item->get_selectionMode());
             }
             i++;

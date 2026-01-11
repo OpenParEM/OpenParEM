@@ -34,8 +34,11 @@
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <gp_Pnt.hxx>
 #include <TopoDS_Wire.hxx>
-#include "CustomOpenGLWidget.h"
-#include "CustomTreeWidgetItem.h"
+//#include "CustomOpenGLWidget.h"
+//#include "CustomTreeWidgetItem.h"
+
+class CustomOpenGLWidget;
+class CustomTreeWidgetItem;
 #endif
 
 struct point point_copy (struct point);
@@ -73,7 +76,8 @@ class Path {
       bool hasOutput;
       bool modified;
       #ifdef HAS_GUI
-      CustomTreeWidgetItem *item;
+      CustomTreeWidgetItem *item;      // tree item for this path
+      CustomTreeWidgetItem *portItem;  // valid port for this path
       #endif
    public:
       Path (int, int);
@@ -142,10 +146,11 @@ class Path {
       struct point getInsidePoint ();
       void assignPathNormal (struct point);
 #ifdef HAS_GUI
-      //void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       void create_item (CustomOpenGLWidget *, CustomTreeWidgetItem *);
       void create_item (CustomOpenGLWidget *, CustomTreeWidgetItem *, Handle(AIS_Shape), bool);
-      //CustomTreeWidgetItem* get_item () {return item;}
+      CustomTreeWidgetItem* get_item () {return item;}
+      void set_portItem (CustomTreeWidgetItem *portItem_) {portItem=portItem_;}
+      CustomTreeWidgetItem* get_portItem () {return portItem;}
       TopoDS_Wire create_TopoDS_Wire ();
       void addFacePoints (Handle(AIS_Shape) shape, bool, bool);
       void addWirePoints (Handle(AIS_Shape) shape);

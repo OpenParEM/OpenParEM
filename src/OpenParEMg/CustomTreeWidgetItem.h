@@ -149,6 +149,7 @@ public:
         if (is_voltage()) std::cout << "   type=voltage" << std::endl;
         if (is_current()) std::cout << "   type=current" << std::endl;
         if (is_scale()) std::cout << "   type=scale" << std::endl;
+        if (is_scaleValue()) std::cout << "   type=scaleValue" << std::endl;
         if (is_integrationPathSegment()) std::cout << "   type=integrationPathSegment" << std::endl;
         std::cout << "   dimTag.first=" << dimTag.first << std::endl
                   << "   dimTag.second=" << dimTag.second << std::endl

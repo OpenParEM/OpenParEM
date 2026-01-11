@@ -286,6 +286,7 @@ class IntegrationPath
       IntegrationPath (int, int);
       IntegrationPath (std::vector<Path *> *, std::vector<Path *> *, std::string);
       ~IntegrationPath ();
+      void addPaths (std::vector<Path *> *, std::vector<Path *> *);
       bool is_modified ();
       void set_modified () {modified=true;}
       int get_startLine () {return startLine;}
@@ -318,6 +319,7 @@ class IntegrationPath
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
       void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+      void crossLink (std::vector<Path *> *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -523,6 +525,7 @@ class Mode
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
       void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+      void crossLink (std::vector<Path *> *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -760,6 +763,7 @@ class Port
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
       void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+      void crossLink (std::vector<Path *> *);
 #endif
 };
 
@@ -892,6 +896,7 @@ class BoundaryDatabase
 #ifdef HAS_GUI
       void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
       void draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
+      void crossLink ();
 #endif
 };
 

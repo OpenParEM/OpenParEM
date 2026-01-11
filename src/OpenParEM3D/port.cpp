@@ -1738,6 +1738,43 @@ IntegrationPath::IntegrationPath (vector<Path *> *pathList, vector<Path *> *path
 #endif
 }
 
+void IntegrationPath::addPaths (vector<Path *> *pathList, vector<Path *> *pathsToAdd)
+{
+   // data
+
+   long unsigned int i=0;
+   while (i < pathsToAdd->size()) {
+
+       // path name
+       keywordPair *path=new keywordPair();
+       path->push_alias("path");
+       path->set_value((*pathsToAdd)[i]->get_name());
+       path->set_positive_required(false);
+       path->set_non_negative_required(false);
+       path->set_lowerLimit(0);
+       path->set_upperLimit(0);
+       path->set_checkLimits(false);
+       path->set_loaded(true);
+       pathNameList.push_back(path);
+
+       // path index in the path database
+       long unsigned int j=0;
+       while (j < pathList->size()) {
+           if ((*pathsToAdd)[i] == (*pathList)[j]) {
+              pathIndexList.push_back(j);
+           }
+           j++;
+       }
+
+       // reverse list - user can manually correct, if needed
+       reverseList.push_back(false);
+
+       i++;
+   }
+
+   modified=true;
+}
+
 bool IntegrationPath::is_modified ()
 {
     if (modified) return true;
@@ -2519,71 +2556,16 @@ void IntegrationPath::assignPathNormals (struct point normal, std::vector<Path *
 #ifdef HAS_GUI
 
 void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
-                            QTreeWidget *drawingItemTree, CustomTreeWidgetItem *pathItemTree, CustomTreeWidgetItem *itemMode)
+                            QTreeWidget *drawingItemTree, CustomTreeWidgetItem *pathItemTree, CustomTreeWidgetItem *itemVI)
 {
-    // type
-    CustomTreeWidgetItem *itemType=new CustomTreeWidgetItem(0);
-    if (is_voltage()) {
-        itemType->setText(0,"voltage");
-        itemType->set_type(10);
-    }
-    if (is_current()) {
-        itemType->setText(0,"current");
-        itemType->set_type(11);
-    }
-    itemType->setFlags(itemMode->flags() & ~Qt::ItemIsEditable);
-    itemType->setToolTip(0,"Type of integration path.");
-    itemMode->addChild(itemType);
-
-    // path
-
-    long unsigned int i=0;
-    while (i < pathIndexList.size()) {
-
-        // signed name
-        QString name="+";
-        if (reverseList[i]) name="-";
-        name.append(pathNameList[i]->get_value().c_str());
-
-        // tree item
-        CustomTreeWidgetItem *itemSegment=new CustomTreeWidgetItem(0);
-        //itemSegment->set_AIS_Shape(drawingShape);
-        itemSegment->setText(0,name);
-        itemSegment->set_type(14);
-        itemSegment->setForeground(0,Qt::gray);
-        itemSegment->setFlags(itemType->flags() & ~Qt::ItemIsEditable);
-        itemSegment->setToolTip(0,"Path segment for integration.");
-
-        // attach path
-        Path *path=boundaryDatabase->get_pathList()[pathIndexList[i]];
-        itemSegment->set_OPEMobject((void *)path);
-
-        // attach item
-        int j=0;
-        while (j < pathItemTree->childCount()) {
-            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) pathItemTree->child(j);
-            if (child->get_OPEMojbect() == path) {
-                std::cout << "    match" << std::endl;  std::cout.flush();
-                itemSegment->push_linkedItem(child);
-                child->push_linkedItem(itemSegment);
-            }
-            j++;
-        }
-
-        itemType->addChild(itemSegment);
-        drawingWindow->showItem(itemSegment);
-
-        i++;
-    }
-
     // scale
 
     CustomTreeWidgetItem *itemScale=new CustomTreeWidgetItem(0);
     itemScale->setText(0,"scale");
     itemScale->set_type(12);
-    itemScale->setFlags(itemMode->flags() & ~Qt::ItemIsEditable);
+    itemScale->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
     itemScale->setToolTip(0,"Scale factor for the integration path.");
-    itemType->addChild(itemScale);
+    itemVI->addChild(itemScale);
 
     //QString enabledBackground="background: rgb(255,255,255);";
     //QString disabledBackground="background: rgb(240,240,240);";
@@ -2603,10 +2585,59 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, Cu
     scaleEdit->setValidator(&doubleValidator);
     drawingItemTree->setItemWidget(itemScaleValue,0,scaleEdit);
 
+    // paths
+
+    long unsigned int i=0;
+    while (i < pathIndexList.size()) {
+
+        // signed name
+        QString name="+";
+        if (reverseList[i]) name="-";
+        name.append(pathNameList[i]->get_value().c_str());
+
+        // tree item
+        CustomTreeWidgetItem *itemSegment=new CustomTreeWidgetItem(0);
+        //itemSegment->set_AIS_Shape(drawingShape);
+        itemSegment->setText(0,name);
+        itemSegment->set_type(14);
+        itemSegment->setForeground(0,Qt::gray);
+        itemSegment->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
+        itemSegment->setToolTip(0,"Path segment for integration.");
+
+        // attach path
+        Path *path=boundaryDatabase->get_pathList()[pathIndexList[i]];
+        itemSegment->set_OPEMobject((void *)path);
+
+        // attach item
+        int j=0;
+        while (j < pathItemTree->childCount()) {
+            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) pathItemTree->child(j);
+            if (child->get_OPEMojbect() == path) {
+                itemSegment->push_linkedItem(child);
+                child->push_linkedItem(itemSegment);
+            }
+            j++;
+        }
+
+        itemVI->addChild(itemSegment);
+        drawingWindow->showItem(itemSegment);
+
+        i++;
+    }
+
     QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,&textValueChanged);
     QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,relay,&Relay::setMenus);
-
 }
+
+void IntegrationPath::crossLink (std::vector<Path *> *pathList, CustomTreeWidgetItem *portItem)
+{
+    long unsigned int i=0;
+    while (i < pathIndexList.size()) {
+        (*pathList)[pathIndexList[i]]->set_portItem(portItem);
+        i++;
+    }
+}
+
 #endif
 
 IntegrationPath::~IntegrationPath ()
@@ -3380,6 +3411,9 @@ Mode::Mode(int startLine_, int endLine_, std::string calculation_)
 
    calculation=calculation_;
    modified=false;
+#ifdef HAS_GUI
+   item=nullptr;
+#endif
 }
 
 bool Mode::is_modified ()
@@ -4179,13 +4213,14 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
         netname.append(QString::number(get_Sport()));
     }
 
-    CustomTreeWidgetItem *itemNet=new CustomTreeWidgetItem(0);
-    itemNet->setText(0,netname);
-    itemNet->set_type(5);
-    itemNet->setToolTip(0,"Mode and its net name.");
-    itemNet->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
-    itemName->addChild(itemNet);
-    itemNet->set_OPEMobject(this);
+    item=new CustomTreeWidgetItem(0);
+    item->setText(0,netname);
+    item->set_type(5);
+    item->setToolTip(0,"Mode and its net name.");
+    item->setForeground(0,Qt::black);
+    item->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
+    itemName->addChild(item);
+    item->set_OPEMobject(this);
 
     // S port
     CustomTreeWidgetItem *itemSport=new CustomTreeWidgetItem(0);
@@ -4193,13 +4228,15 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     itemSport->set_type(8);
     itemSport->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
     itemSport->setToolTip(0,"S-port number for the mode.");
-    itemNet->addChild(itemSport);
+    itemSport->setForeground(0,Qt::black);
+    item->addChild(itemSport);
 
     // Sport number
 
     CustomTreeWidgetItem *itemSportValue=new CustomTreeWidgetItem(0);
     itemSportValue->set_type(9);
     itemSportValue->setToolTip(0,"S-parameter port number.");
+    itemSportValue->setForeground(0,Qt::black);
     itemSportValue->setFlags(itemName->flags() & ~Qt::ItemIsSelectable);
     itemSport->addChild(itemSportValue);
 
@@ -4215,13 +4252,53 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,relay,&Relay::setMenus);
 
-    // integration paths
+
+    // voltage integration paths
+
+    CustomTreeWidgetItem *itemVoltage=new CustomTreeWidgetItem(0);
+    itemVoltage->setText(0,"voltage");
+    itemVoltage->set_type(10);
+    itemVoltage->setFlags(item->flags() & ~Qt::ItemIsEditable);
+    itemVoltage->setToolTip(0,"Voltage integration path.");
+    itemVoltage->setForeground(0,Qt::black);
+    item->addChild(itemVoltage);
+
     long unsigned int i=0;
     while (i < integrationPathList.size()) {
-        integrationPathList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree, pathItemTree, itemNet);
+        if (integrationPathList[i]->is_voltage()) {
+            integrationPathList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,pathItemTree,itemVoltage);
+        }
+        i++;
+    }
+
+    // current integration paths
+
+    CustomTreeWidgetItem *itemCurrent=new CustomTreeWidgetItem(0);
+    itemCurrent->setText(0,"current");
+    itemCurrent->set_type(11);
+    itemCurrent->setFlags(item->flags() & ~Qt::ItemIsEditable);
+    itemCurrent->setToolTip(0,"Current integration path.");
+    itemCurrent->setForeground(0,Qt::black);
+    item->addChild(itemCurrent);
+
+    i=0;
+    while (i < integrationPathList.size()) {
+        if (integrationPathList[i]->is_current()) {
+            integrationPathList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,pathItemTree,itemCurrent);
+        }
         i++;
     }
 }
+
+void Mode::crossLink (std::vector<Path *> *pathList, CustomTreeWidgetItem *portItem)
+{
+    long unsigned int i=0;
+    while (i < integrationPathList.size()) {
+        integrationPathList[i]->crossLink(pathList,portItem);
+        i++;
+    }
+}
+
 #endif
 
 Mode::~Mode()
@@ -7101,6 +7178,15 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     }
 }
 
+void Port::crossLink (std::vector<Path *> *pathList)
+{
+    long unsigned int i=0;
+    while (i < modeList.size()) {
+        modeList[i]->crossLink(pathList,item);
+        i++;
+    }
+}
+
 #endif
 
 Port::~Port ()
@@ -9345,6 +9431,7 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData, CustomO
     // ports
     i=0;
     while (i < portList.size()) {
+        // create the AIS_Shape and the item, but the shape must be added to the drawing elsewhere
         portList[i]->draw(relay,projData,this,drawingWindow,drawingItemTree,pathTreeItem,portTreeItem);
         i++;
     }
@@ -9380,6 +9467,15 @@ void BoundaryDatabase::draw_port (Relay *relay, Port *port, struct projectData *
 //         i++;
 //     }
 //}
+
+void BoundaryDatabase::crossLink ()
+{
+    long unsigned int i=0;
+    while (i < portList.size()) {
+        portList[i]->crossLink(&pathList);
+        i++;
+    }
+}
 
 #endif
 
