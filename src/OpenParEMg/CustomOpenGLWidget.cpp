@@ -295,7 +295,6 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
         //std::cout << "                                   : X=" << pointOnPlane.X() << "  Y=" << pointOnPlane.Y() << "  Z=" << pointOnPlane.Z() << std::endl; std::cout.flush();
     }
 
-    //xxx
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
 
     // line
@@ -367,6 +366,29 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
         if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
+    }
+
+    //xxx
+    for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
+        // 1. Get the specific sub-shape (Face) actually clicked
+        TopoDS_Shape pickedShape = viewerContext->SelectedShape();
+
+        // 2. Check if the picked shape is a Face
+        // if (pickedShape.ShapeType() == TopAbs_FACE) {
+        //     // Cast to specific TopoDS_Face if needed
+        //     TopoDS_Face selectedFace = TopoDS::Face(pickedShape);
+
+        //     // Print or process your face object here
+        //     std::cout << "Successfully retrieved the selected FACE object." << std::endl;
+        // }
+
+        // Get the shape type enumeration
+        TopAbs_ShapeEnum shapeTypeEnum = pickedShape.ShapeType();
+
+        // Convert the enumeration to a string name using the TopAbs class helper
+        Standard_CString shapeTypeName = TopAbs::ShapeTypeToString(shapeTypeEnum);
+
+        std::cout << "Selected Shape Type: " << shapeTypeName << std::endl;
     }
 
     // process mouse buttons

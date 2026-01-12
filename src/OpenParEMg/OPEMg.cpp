@@ -598,10 +598,10 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         if (clickedItem->is_solid()) assignAction->setEnabled(true);
 
         createPortAction->setEnabled(false);
-        if (ui->drawingWindow->hasOneFaceSelected()) {createPortAction->setEnabled(true);}
+        if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {createPortAction->setEnabled(true);}
 
         createPathAction->setEnabled(false);
-        if (ui->drawingWindow->hasOneFaceSelected()) {createPathAction->setEnabled(true);}
+        if (ui->drawingWindow->numberDrawingFaceSelected() > 0) {createPathAction->setEnabled(true);}
 
         menu.addAction(showAction);
         menu.addAction(hideAction);
@@ -903,10 +903,12 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
     menu.addAction(createPathAction);
 
     createPortAction->setEnabled(false);
-    if (ui->drawingWindow->hasOneFaceSelected()) {createPortAction->setEnabled(true);}
+    std::cout << "ui->drawingWindow->NbSelected()=" << ui->drawingWindow->NbSelected() << std::endl; std::cout.flush();
+    std::cout << "ui->drawingWindow->numberDrawingFaceSelected()=" << ui->drawingWindow->numberDrawingFaceSelected() << std::endl; std::cout.flush();
+    if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {createPortAction->setEnabled(true);}
 
     createPathAction->setEnabled(false);
-    if (ui->drawingWindow->hasOneFaceSelected()) {createPathAction->setEnabled(true);}
+    if (ui->drawingWindow->numberDrawingFaceSelected() > 0) {createPathAction->setEnabled(true);}
 
     menu.exec(ui->drawingWindow->mapToGlobal(pnt));
 
@@ -2157,68 +2159,77 @@ void OpenParEMg::createPath ()
 {
     std::cout << "OpenParEMg::createPath" << std::endl; std::cout.flush();
 
-    // default path name
+    int faceCount=0;
+    while (faceCount < ui->drawingWindow->numberDrawingFaceSelected()) {
 
-    std::string pathName="p";
+        // default path name
 
-    int i=1;
-    while (boundaryDatabase->pathNameExists(pathName)) {
-        std::string testName=pathName;
-        testName.append("_").append(std::to_string(i));
-        if (boundaryDatabase->pathNameExists(testName)) {i++;}
-        else {pathName=testName; break;}
-    }
+        std::string pathName="p";
 
-    // path name placed in a keywordPair
-    keywordPair *kwPathName=new keywordPair();
-    kwPathName->set_keyword("path");
-    kwPathName->set_value(pathName);
-    kwPathName->set_lineNumber(0);
-    kwPathName->set_loaded(true);
-
-    // path
-
-    Path *newPath=new Path(0,0);
-    newPath->set_name(pathName);
-    newPath->is_modified();
-
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        newPath->addFacePoints(item->get_AIS_Shape(),true,true);
-        i++;
-    }
-
-    boundaryDatabase->push_path(newPath);
-    newPath->create_item(ui->drawingWindow,&path);
-
-    // add new path to the drawing
-    CustomTreeWidgetItem *item=newPath->get_item();
-    if (item) {
-        addShape(item->get_AIS_Shape()->Shape(),item,false);
-        item->setForeground(0,Qt::gray);
-        ui->drawingWindow->showItem(item);
-
-        long unsigned int j=0;
-        while (j < item->get_arrowHeads_size()) {
-            ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
-            ui->drawingWindow->insertItemToMap(item->get_arrowHead(j),item);
-            j++;
+        int i=1;
+        while (boundaryDatabase->pathNameExists(pathName)) {
+            std::string testName=pathName;
+            testName.append("_").append(std::to_string(i));
+            if (boundaryDatabase->pathNameExists(testName)) {i++;}
+            else {pathName=testName; break;}
         }
-    }
 
-    // see if the path is within an existing port
-    Port *port=boundaryDatabase->get_matchingPort(newPath);
-    if (port) newPath->set_portItem(port->get_item());
+        // path name placed in a keywordPair
+        keywordPair *kwPathName=new keywordPair();
+        kwPathName->set_keyword("path");
+        kwPathName->set_value(pathName);
+        kwPathName->set_lineNumber(0);
+        kwPathName->set_loaded(true);
+
+        // path
+
+        Path *newPath=new Path(0,0);
+        newPath->set_name(pathName);
+        newPath->is_modified();
+
+        // QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+        // i=0;
+        // while (i < selectedItems.count()) {
+        //     CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        //     newPath->addFacePoints(item->get_AIS_Shape()->Shape(),true,true);
+        //     i++;
+        // }
+
+        newPath->addFacePoints(ui->drawingWindow->get_selectedFace(faceCount),true,true);
+
+        boundaryDatabase->push_path(newPath);
+        newPath->create_item(ui->drawingWindow,&path);
+
+        // add new path to the drawing
+        CustomTreeWidgetItem *item=newPath->get_item();
+        if (item) {
+            addShape(item->get_AIS_Shape()->Shape(),item,false);
+            item->setForeground(0,Qt::gray);
+            ui->drawingWindow->showItem(item);
+
+            long unsigned int j=0;
+            while (j < item->get_arrowHeads_size()) {
+                ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
+                ui->drawingWindow->insertItemToMap(item->get_arrowHead(j),item);
+                j++;
+            }
+        }
+
+        // see if the path is within an existing port
+        Port *port=boundaryDatabase->get_matchingPort(newPath);
+        if (port) newPath->set_portItem(port->get_item());
+
+        faceCount++;
+    }
 
     setMenus();
     ui->drawingWindow->updateViewer();
 }
 
+//xxx
 void OpenParEMg::createPort ()
 {
-    std::cout << "OpenParEMg::createPort" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::createPortFromDrawing" << std::endl; std::cout.flush();
 
     // next available s-port number
     int sport=boundaryDatabase->get_SportCount()+1;
@@ -2275,13 +2286,8 @@ void OpenParEMg::createPort ()
     newPath->set_name(pathName);
     newPath->is_modified();
 
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        newPath->addFacePoints(item->get_AIS_Shape(),true,true);
-        i++;
-    }
+    TopoDS_Shape selectedShape=ui->drawingWindow->get_selectedFace();
+    newPath->addFacePoints(selectedShape,true,true);
 
     boundaryDatabase->push_path(newPath);
     newPath->create_item(ui->drawingWindow,&path);
@@ -3086,7 +3092,6 @@ bool OpenParEMg::loadBrepFile (QString filePath)
     if (filePath.isEmpty()) {
         retval=true;
     } else {
-        QFileInfo fileInfo(filePath);
         TopoDS_Shape s;
         BRep_Builder b;
         if (BRepTools::Read(s,filePath.toStdString().c_str(),b)) {

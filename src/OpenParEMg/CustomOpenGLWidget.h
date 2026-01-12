@@ -258,6 +258,43 @@ public:
 
     bool hasOneFaceSelected () {return drawingTracker->hasOneFaceSelected();}
 
+    Standard_Integer NbSelected () {return viewerContext->NbSelected();}
+
+    int numberDrawingFaceSelected () {
+        int count=0;
+        for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
+            TopoDS_Shape pickedShape = viewerContext->SelectedShape();
+            if (pickedShape.ShapeType() == TopAbs_FACE) count++;
+        }
+        return count;
+    }
+
+    // assumes one selected shape that has been verified elsewhere
+    TopoDS_Shape get_selectedFace () {
+        TopoDS_Shape pickedShape;
+        for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
+            pickedShape=viewerContext->SelectedShape();
+            if (pickedShape.ShapeType() == TopAbs_FACE) {
+                break;
+            }
+        }
+        return pickedShape;
+    }
+
+    // get the selected face by index; max available verified elsewhere
+    TopoDS_Shape get_selectedFace (int index) {
+        int count=0;
+        TopoDS_Shape pickedShape;
+        for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
+            pickedShape=viewerContext->SelectedShape();
+            if (pickedShape.ShapeType() == TopAbs_FACE) {
+                if (count == index) break;
+                count++;
+            }
+        }
+        return pickedShape;
+    }
+
     void reset () {
         std::cout << "CustomOpenGLWidget::reset" << std::endl; std::cout.flush();
         drawingTracker->reset();

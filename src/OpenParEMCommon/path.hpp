@@ -152,7 +152,7 @@ class Path {
       void set_portItem (CustomTreeWidgetItem *portItem_) {portItem=portItem_;}
       CustomTreeWidgetItem* get_portItem () {return portItem;}
       TopoDS_Wire create_TopoDS_Wire ();
-      void addFacePoints (Handle(AIS_Shape) shape, bool, bool);
+      void addFacePoints (TopoDS_Shape, bool, bool);
       void addWirePoints (Handle(AIS_Shape) shape);
 #endif
 };

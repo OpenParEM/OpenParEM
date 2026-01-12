@@ -2054,12 +2054,9 @@ TopoDS_Wire Path::create_TopoDS_Wire ()
     return polygon.Wire();
 }
 
-// create a path from a face
-// should only be called if shape has just one face
-// May reverse the direction of the normal.
-void Path::addFacePoints (Handle(AIS_Shape) shape, bool setClosed, bool calcNormal)
+void Path::addFacePoints (TopoDS_Shape shape, bool setClosed, bool calcNormal)
 {
-    TopExp_Explorer faceExplorer(shape->Shape(),TopAbs_FACE);
+    TopExp_Explorer faceExplorer(shape,TopAbs_FACE);
     while (faceExplorer.More()) {
         const TopoDS_Shape& subShape=faceExplorer.Current();
         TopoDS_Face face=TopoDS::Face(subShape);
