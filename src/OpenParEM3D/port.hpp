@@ -759,6 +759,7 @@ class Port
       bool has_mode (Mode *, long unsigned int *);
       void deleteMode (std::string);
       void assignPathNormals (std::vector<Path *> *);
+      bool isPathInside (Path *);
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
@@ -893,6 +894,7 @@ class BoundaryDatabase
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *);
       void deletePort (std::string);
       void assignPathNormals ();
+      Port* get_matchingPort (Path *);
 #ifdef HAS_GUI
       void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
       void draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);

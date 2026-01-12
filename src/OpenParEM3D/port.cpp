@@ -4338,6 +4338,10 @@ DifferentialPair::DifferentialPair (int startLine_, int endLine_)
    Sport_N.set_checkLimits(true);
 
    modified=false;
+
+#ifdef HAS_GUI
+   item=nullptr;
+#endif
 }
 
 bool DifferentialPair::load(string *indent, inputFile *inputs)
@@ -4505,6 +4509,10 @@ Port::Port (int startLine_, int endLine_)
    TiTvSize=0;
 
    modified=false;
+
+#ifdef HAS_GUI
+   item=nullptr;
+#endif
 }
 
 bool Port::is_modified ()
@@ -7014,6 +7022,12 @@ void Port::assignPathNormals (std::vector<Path *> *pathList)
     }
 }
 
+bool Port::isPathInside (Path *path)
+{
+    if (!outline) return false;
+    return outline->is_path_inside(path);
+}
+
 #ifdef HAS_GUI
 void comboIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatabase *boundaryDatabase, int type, CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance) {
 
@@ -7105,6 +7119,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     itemName->setToolTip(0,"Port name.");
     portWidgetItem->addChild(itemName);
     itemName->set_OPEMobject(this);
+    set_item(itemName);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
     Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
@@ -7180,6 +7195,8 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
 
 void Port::crossLink (std::vector<Path *> *pathList)
 {
+    if (outline) outline->set_portItem(item);
+
     long unsigned int i=0;
     while (i < modeList.size()) {
         modeList[i]->crossLink(pathList,item);
@@ -9412,6 +9429,16 @@ void BoundaryDatabase::assignPathNormals ()
         portList[i]->assignPathNormals(&pathList);
         i++;
     }
+}
+
+Port* BoundaryDatabase::get_matchingPort (Path *path)
+{
+    long unsigned int i=0;
+    while (i < portList.size()) {
+        if (portList[i]->isPathInside(path)) return portList[i];
+        i++;
+    }
+    return nullptr;
 }
 
 #ifdef HAS_GUI

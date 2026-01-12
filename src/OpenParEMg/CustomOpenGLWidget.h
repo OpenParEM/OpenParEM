@@ -275,8 +275,6 @@ public:
         vertexFilter=nullptr;
     }
 
-    //void deactivateAll () {viewerContext->Deactivate();}
-
 protected:
     void initializeGL () override;
     void paintGL () override;

@@ -243,6 +243,7 @@ private slots:
     void set_selectionMode (CustomTreeWidgetItem *, int);
 
     void createPort ();
+    void createPath ();
 
     void loadMeshFile (QString);
     void checkFinish ();
@@ -251,6 +252,8 @@ private slots:
     void on_actionDrawLine_triggered ();
     void drawLineFinished (Handle(AIS_Shape));
     void drawPath ();
+    bool insertActionValid ();
+    void insertSelectedPath ();
 
 public slots:
     void setMenus ();
@@ -302,6 +305,7 @@ private:
     QAction *expandAllAction;
     QAction *collapseAllAction;
     QAction *createPortAction;
+    QAction *createPathAction;
     QAction *drawAction;
 
     // gmsh

@@ -139,6 +139,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     insertAction=nullptr;
     renameAction=nullptr;
     createPortAction=nullptr;
+    createPathAction=nullptr;
     drawAction=nullptr;
 
     /////////////////////////////////////////////////////////////////////////////
@@ -251,6 +252,7 @@ OpenParEMg::~OpenParEMg ()
     if (expandAllAction) delete expandAllAction;
     if (collapseAllAction) delete collapseAllAction;
     if (createPortAction) delete createPortAction;
+    if (createPathAction) delete createPathAction;
     if (drawAction) delete drawAction;
 
     if (timer) delete timer;
@@ -575,6 +577,8 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         assignAction=new QAction("Assign Material");
         createPortAction=new QAction("Create Port");
         createPortAction->setToolTip("Copy the selected face and create a port.");
+        createPathAction=new QAction("Create Path");
+        createPathAction->setToolTip("Copy the selected face and create a path.");
 
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
@@ -583,6 +587,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
         connect(assignAction, &QAction::triggered, this, &OpenParEMg::assignMaterial);
         connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
+        connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
 
         showAction->setEnabled(ui->drawingWindow->isValidShow());
         hideAction->setEnabled(ui->drawingWindow->isValidHide());
@@ -592,6 +597,12 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         assignAction->setEnabled(false);
         if (clickedItem->is_solid()) assignAction->setEnabled(true);
 
+        createPortAction->setEnabled(false);
+        if (ui->drawingWindow->hasOneFaceSelected()) {createPortAction->setEnabled(true);}
+
+        createPathAction->setEnabled(false);
+        if (ui->drawingWindow->hasOneFaceSelected()) {createPathAction->setEnabled(true);}
+
         menu.addAction(showAction);
         menu.addAction(hideAction);
         //menu.addAction(selectAction);
@@ -599,9 +610,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         menu.addAction(deleteAction);
         menu.addAction(assignAction);
         menu.addAction(createPortAction);
-
-        createPortAction->setEnabled(false);
-        if (ui->drawingWindow->hasOneFaceSelected()) {createPortAction->setEnabled(true);}
+        menu.addAction(createPathAction);
     }
 
     if (clickedItem->is_rootPath()) {
@@ -781,6 +790,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         showAction=new QAction("Show",this);
         hideAction=new QAction("Hide",this);
         drawAction=new QAction("Draw Path");
+        insertAction=new QAction("Add Path");
         //unselectAction=new QAction("Unselect",this);
         //deleteAction=new QAction("Delete",this);
         expandAllAction=new QAction("Expand All",this);
@@ -789,6 +799,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showVIItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideVIItems);
         connect(drawAction, &QAction::triggered, this, &OpenParEMg::drawPath);
+        connect(insertAction, &QAction::triggered, this, &OpenParEMg::insertSelectedPath);
         //connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectVIItems);
         //connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteVIItems);
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
@@ -802,9 +813,13 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         drawAction->setEnabled(false);
         if (treeSelectionCount() == 1 && clickedItem->foreground(0) == Qt::black) drawAction->setEnabled(true);
 
+        insertAction->setEnabled(insertActionValid());
+
+
         menu.addAction(showAction);
         menu.addAction(hideAction);
         menu.addAction(drawAction);
+        menu.addAction(insertAction);
         //menu.addAction(unselectAction);
         //menu.addAction(deleteAction);
         menu.addAction(expandAllAction);
@@ -854,6 +869,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
     if (assignAction) {delete assignAction; assignAction=nullptr;}
     if (insertAction) {delete insertAction; insertAction=nullptr;}
     if (createPortAction) {delete createPortAction; createPortAction=nullptr;}
+    if (createPathAction) {delete createPathAction; createPathAction=nullptr;}
 }
 
 void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
@@ -868,12 +884,15 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
     deleteAction=new QAction("Delete",this);
     createPortAction=new QAction("Create Port");
     createPortAction->setToolTip("Copy the selected face and create a port.");
+    createPathAction=new QAction("Create Path");
+    createPathAction->setToolTip("Copy the selected face and create a path.");
 
     connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
     connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
     connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
     connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
     connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
+    connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
 
     QMenu menu(this);
     menu.addAction(showAction);
@@ -881,9 +900,13 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
     menu.addAction(unselectAction);
     menu.addAction(deleteAction);
     menu.addAction(createPortAction);
+    menu.addAction(createPathAction);
 
     createPortAction->setEnabled(false);
     if (ui->drawingWindow->hasOneFaceSelected()) {createPortAction->setEnabled(true);}
+
+    createPathAction->setEnabled(false);
+    if (ui->drawingWindow->hasOneFaceSelected()) {createPathAction->setEnabled(true);}
 
     menu.exec(ui->drawingWindow->mapToGlobal(pnt));
 
@@ -892,6 +915,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
     if (unselectAction) {delete unselectAction; unselectAction=nullptr;}
     if (deleteAction) {delete deleteAction; deleteAction=nullptr;}
     if (createPortAction) {delete createPortAction; createPortAction=nullptr;}
+    if (createPathAction) {delete createPathAction; createPathAction=nullptr;}
 }
 
 void OpenParEMg::showRootDrawingItems ()
@@ -2129,6 +2153,69 @@ void OpenParEMg::hideIntegrationPathItems ()
     ui->drawingWindow->updateViewer();
 }
 
+void OpenParEMg::createPath ()
+{
+    std::cout << "OpenParEMg::createPath" << std::endl; std::cout.flush();
+
+    // default path name
+
+    std::string pathName="p";
+
+    int i=1;
+    while (boundaryDatabase->pathNameExists(pathName)) {
+        std::string testName=pathName;
+        testName.append("_").append(std::to_string(i));
+        if (boundaryDatabase->pathNameExists(testName)) {i++;}
+        else {pathName=testName; break;}
+    }
+
+    // path name placed in a keywordPair
+    keywordPair *kwPathName=new keywordPair();
+    kwPathName->set_keyword("path");
+    kwPathName->set_value(pathName);
+    kwPathName->set_lineNumber(0);
+    kwPathName->set_loaded(true);
+
+    // path
+
+    Path *newPath=new Path(0,0);
+    newPath->set_name(pathName);
+    newPath->is_modified();
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        newPath->addFacePoints(item->get_AIS_Shape(),true,true);
+        i++;
+    }
+
+    boundaryDatabase->push_path(newPath);
+    newPath->create_item(ui->drawingWindow,&path);
+
+    // add new path to the drawing
+    CustomTreeWidgetItem *item=newPath->get_item();
+    if (item) {
+        addShape(item->get_AIS_Shape()->Shape(),item,false);
+        item->setForeground(0,Qt::gray);
+        ui->drawingWindow->showItem(item);
+
+        long unsigned int j=0;
+        while (j < item->get_arrowHeads_size()) {
+            ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
+            ui->drawingWindow->insertItemToMap(item->get_arrowHead(j),item);
+            j++;
+        }
+    }
+
+    // see if the path is within an existing port
+    Port *port=boundaryDatabase->get_matchingPort(newPath);
+    if (port) newPath->set_portItem(port->get_item());
+
+    setMenus();
+    ui->drawingWindow->updateViewer();
+}
+
 void OpenParEMg::createPort ()
 {
     std::cout << "OpenParEMg::createPort" << std::endl; std::cout.flush();
@@ -2213,8 +2300,6 @@ void OpenParEMg::createPort ()
             j++;
         }
     }
-
-
 
     // port
 
@@ -4285,5 +4370,52 @@ void OpenParEMg::drawPath ()
 
     ui->drawingWindow->set_isPath(true);
     on_actionDrawLine_triggered();
+}
+
+bool OpenParEMg::insertActionValid ()
+{
+    int VIcount=0;
+    CustomTreeWidgetItem *VIitem;
+    int pathCount=0;
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_voltage() || item->is_current()) {VIitem=item; VIcount++;}
+        if (item->is_path()) pathCount++;
+        i++;
+    }
+
+    if (VIcount != 1) return false;
+    if (pathCount == 0) return false;
+
+    // check that the paths are within the port
+
+    CustomTreeWidgetItem *modeParentItem=(CustomTreeWidgetItem *)VIitem->QTreeWidgetItem::parent();
+    CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)modeParentItem->QTreeWidgetItem::parent();
+
+    i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_path()) {
+            Path *path=(Path *)item->get_OPEMojbect();
+            if (path->get_portItem() != portParentItem) return false;
+        }
+        i++;
+    }
+
+    return true;
+}
+
+void OpenParEMg::insertSelectedPath ()
+{
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_voltage() || item->is_current()) {insertPath(item);}
+        i++;
+    }
 }
 

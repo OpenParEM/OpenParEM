@@ -571,6 +571,20 @@ public:
     {
         if (selectTracking) {std::cout << "ItemTracker::hasOneFaceSelected" << std::endl; std::cout.flush();}
 
+        //xxx
+        int count=0;
+        long unsigned int i=0;
+        while (i < selectedItems.size()) {
+            Handle(AIS_Shape) shape=selectedItems[i]->get_AIS_Shape();
+            if (!shape.IsNull()) {
+                TopAbs_ShapeEnum shapeType=shape->Shape().ShapeType();
+                if (shapeType == TopAbs_FACE) count++;
+            }
+            i++;
+        }
+        std::cout << "face count=" << count << std::endl; std::cout.flush();
+
+
         if (selectedItems.size() == 1) {
             Handle(AIS_Shape) shape=selectedItems[0]->get_AIS_Shape();
             if (!shape.IsNull()) {
