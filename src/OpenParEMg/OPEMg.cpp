@@ -131,16 +131,25 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->drawingWindow->set_pathItemTree(&path);
     ui->drawingWindow->set_relay(relay);
 
-    showAction=nullptr;
-    hideAction=nullptr;
-    unselectAction=nullptr;
-    deleteAction=nullptr;
-    assignAction=nullptr;
-    insertAction=nullptr;
-    renameAction=nullptr;
-    createPortAction=nullptr;
-    createPathAction=nullptr;
-    drawAction=nullptr;
+    QActionList.push_back(showAction);
+    QActionList.push_back(hideAction);
+    QActionList.push_back(unselectAction);
+    QActionList.push_back(deleteAction);
+    QActionList.push_back(assignAction);
+    QActionList.push_back(insertAction);
+    QActionList.push_back(renameAction);
+    QActionList.push_back(expandAllAction);
+    QActionList.push_back(collapseAllAction);
+    QActionList.push_back(createPortAction);
+    QActionList.push_back(createPathAction);
+    QActionList.push_back(drawPathAction);
+    QActionList.push_back(drawPolygonAction);
+    QActionList.push_back(doneAction);
+    QActionList.push_back(cancelAction);
+    QActionList.push_back(deleteLastPointAction);
+    QActionList.push_back(closeAction);
+    initQActionList();
+
 
     /////////////////////////////////////////////////////////////////////////////
     // item selection tree
@@ -230,6 +239,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     /////////////////////////////////////////////////////////////////////////////
 
     isActiveDrawing=false;
+    isDrawLine=false;
+    isDrawPolygon=false;
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -242,18 +253,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
 OpenParEMg::~OpenParEMg ()
 {
-    if (showAction) delete showAction;
-    if (hideAction) delete hideAction;
-    if (unselectAction) delete unselectAction;
-    if (deleteAction) delete deleteAction;
-    if (assignAction) delete assignAction;
-    if (insertAction) delete insertAction;
-    if (renameAction) delete renameAction;
-    if (expandAllAction) delete expandAllAction;
-    if (collapseAllAction) delete collapseAllAction;
-    if (createPortAction) delete createPortAction;
-    if (createPathAction) delete createPathAction;
-    if (drawAction) delete drawAction;
+    freeQActionList();
 
     if (timer) delete timer;
     if (MPI_PORT_COMM) MPI_Comm_free(MPI_PORT_COMM);
@@ -261,6 +261,27 @@ OpenParEMg::~OpenParEMg ()
     gmsh::finalize();
     PetscFinalize();
     delete ui;
+}
+
+void OpenParEMg::initQActionList ()
+{
+    long unsigned int i=0;
+    while (i < QActionList.size()) {
+        QActionList[i]=nullptr;
+        i++;
+    }
+}
+
+void OpenParEMg::freeQActionList ()
+{
+    long unsigned int i=0;
+    while (i < QActionList.size()) {
+        if (QActionList[i]) {
+            delete QActionList[i];
+            QActionList[i]=nullptr;
+        }
+        i++;
+    }
 }
 
 void OpenParEMg::setMenus ()
@@ -274,7 +295,6 @@ void OpenParEMg::setMenus ()
     //printLockouts();
 
     // disable all menus while actively drawing
-    std::cout << "OpenParEMg::setMenus: isActiveDrawing=" << isActiveDrawing << std::endl; std::cout.flush();
     if (isActiveDrawing) {
         ui->menubar->setEnabled(false);
         return;
@@ -789,7 +809,8 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
 
         showAction=new QAction("Show",this);
         hideAction=new QAction("Hide",this);
-        drawAction=new QAction("Draw Path");
+        drawPathAction=new QAction("Draw Line Path");
+        drawPolygonAction=new QAction("Draw Polygon Path");
         insertAction=new QAction("Add Path");
         //unselectAction=new QAction("Unselect",this);
         //deleteAction=new QAction("Delete",this);
@@ -798,7 +819,8 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
 
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showVIItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideVIItems);
-        connect(drawAction, &QAction::triggered, this, &OpenParEMg::drawPath);
+        connect(drawPathAction, &QAction::triggered, this, &OpenParEMg::drawLinePath);
+        connect(drawPolygonAction, &QAction::triggered, this, &OpenParEMg::drawPolygonPath);
         connect(insertAction, &QAction::triggered, this, &OpenParEMg::insertSelectedPath);
         //connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectVIItems);
         //connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteVIItems);
@@ -810,15 +832,19 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         //unselectAction->setEnabled(ui->drawingWindow->hasVISelectedItems());
         //deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
-        drawAction->setEnabled(false);
-        if (treeSelectionCount() == 1 && clickedItem->foreground(0) == Qt::black) drawAction->setEnabled(true);
+        drawPathAction->setEnabled(false);
+        if (treeSelectionCount() == 1 && clickedItem->foreground(0) == Qt::black) drawPathAction->setEnabled(true);
+
+        drawPolygonAction->setEnabled(false);
+        if (treeSelectionCount() == 1 && clickedItem->foreground(0) == Qt::black) drawPolygonAction->setEnabled(true);
 
         insertAction->setEnabled(insertActionValid());
 
 
         menu.addAction(showAction);
         menu.addAction(hideAction);
-        menu.addAction(drawAction);
+        menu.addAction(drawPathAction);
+        menu.addAction(drawPolygonAction);
         menu.addAction(insertAction);
         //menu.addAction(unselectAction);
         //menu.addAction(deleteAction);
@@ -862,62 +888,99 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
 
     menu.exec(ui->drawingItemTree->mapToGlobal(pnt));
 
-    if (showAction) {delete showAction; showAction=nullptr;}
-    if (hideAction) {delete hideAction; hideAction=nullptr;}
-    if (unselectAction) {delete unselectAction; unselectAction=nullptr;}
-    if (deleteAction) {delete deleteAction; deleteAction=nullptr;}
-    if (assignAction) {delete assignAction; assignAction=nullptr;}
-    if (insertAction) {delete insertAction; insertAction=nullptr;}
-    if (createPortAction) {delete createPortAction; createPortAction=nullptr;}
-    if (createPathAction) {delete createPathAction; createPathAction=nullptr;}
+    freeQActionList();
 }
 
 void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 {
     std::cout << "OpenParEMg::drawingWindowContextMenu_triggered" << std::endl; std::cout.flush();
 
-    if (!ui->drawingWindow->hasAnySelectedItems()) return;
+    //xxx
+    if (isActiveDrawing) {
+        if (isDrawLine) {
+            cancelAction=new QAction("Cancel");
 
-    showAction=new QAction("Show",this);
-    hideAction=new QAction("Hide",this);
-    unselectAction=new QAction("Unselect",this);
-    deleteAction=new QAction("Delete",this);
-    createPortAction=new QAction("Create Port");
-    createPortAction->setToolTip("Copy the selected face and create a port.");
-    createPathAction=new QAction("Create Path");
-    createPathAction->setToolTip("Copy the selected face and create a path.");
+            connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDraw);
 
-    connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
-    connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
-    connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
-    connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
-    connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
-    connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
+            QMenu menu(this);
+            menu.addAction(cancelAction);
 
-    QMenu menu(this);
-    menu.addAction(showAction);
-    menu.addAction(hideAction);
-    menu.addAction(unselectAction);
-    menu.addAction(deleteAction);
-    menu.addAction(createPortAction);
-    menu.addAction(createPathAction);
+            menu.exec(ui->drawingWindow->mapToGlobal(pnt));
 
-    createPortAction->setEnabled(false);
-    std::cout << "ui->drawingWindow->NbSelected()=" << ui->drawingWindow->NbSelected() << std::endl; std::cout.flush();
-    std::cout << "ui->drawingWindow->numberDrawingFaceSelected()=" << ui->drawingWindow->numberDrawingFaceSelected() << std::endl; std::cout.flush();
-    if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {createPortAction->setEnabled(true);}
+            if (cancelAction) {delete cancelAction; cancelAction=nullptr;}
+        }
 
-    createPathAction->setEnabled(false);
-    if (ui->drawingWindow->numberDrawingFaceSelected() > 0) {createPathAction->setEnabled(true);}
+        if (isDrawPolygon) {
+            deleteLastPointAction=new QAction("Delete Point");
+            doneAction=new QAction("Finished");
+            closeAction=new QAction("Close Polygon");
+            cancelAction=new QAction("Cancel");
 
-    menu.exec(ui->drawingWindow->mapToGlobal(pnt));
+            connect(deleteLastPointAction, &QAction::triggered, this, &OpenParEMg::deleteLastPoint);
+            connect(doneAction, &QAction::triggered, this, &OpenParEMg::finishPolygon);
+            connect(closeAction, &QAction::triggered, this, &OpenParEMg::closePolygon);
+            connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDraw);
 
-    if (showAction) {delete showAction; showAction=nullptr;}
-    if (hideAction) {delete hideAction; hideAction=nullptr;}
-    if (unselectAction) {delete unselectAction; unselectAction=nullptr;}
-    if (deleteAction) {delete deleteAction; deleteAction=nullptr;}
-    if (createPortAction) {delete createPortAction; createPortAction=nullptr;}
-    if (createPathAction) {delete createPathAction; createPathAction=nullptr;}
+            deleteLastPointAction->setEnabled(false);
+            if (ui->drawingWindow->get_shapePoints_size() > 1) deleteLastPointAction->setEnabled(true);
+
+            doneAction->setEnabled(false);
+            if (ui->drawingWindow->get_shapePoints_size() > 1) doneAction->setEnabled(true);
+
+            closeAction->setEnabled(false);
+            if (ui->drawingWindow->get_shapePoints_size() > 2) closeAction->setEnabled(true);
+
+            QMenu menu(this);
+            menu.addAction(deleteLastPointAction);
+            menu.addAction(doneAction);
+            menu.addAction(closeAction);
+            menu.addAction(cancelAction);
+
+            menu.exec(ui->drawingWindow->mapToGlobal(pnt));
+
+            freeQActionList();
+        }
+
+    } else {
+        if (ui->drawingWindow->hasAnySelectedItems()) {
+
+            showAction=new QAction("Show",this);
+            hideAction=new QAction("Hide",this);
+            unselectAction=new QAction("Unselect",this);
+            deleteAction=new QAction("Delete",this);
+            createPortAction=new QAction("Create Port");
+            createPortAction->setToolTip("Copy the selected face and create a port.");
+            createPathAction=new QAction("Create Path");
+            createPathAction->setToolTip("Copy the selected face and create a path.");
+
+            connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
+            connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
+            connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
+            connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
+            connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
+            connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
+
+            QMenu menu(this);
+            menu.addAction(showAction);
+            menu.addAction(hideAction);
+            menu.addAction(unselectAction);
+            menu.addAction(deleteAction);
+            menu.addAction(createPortAction);
+            menu.addAction(createPathAction);
+
+            createPortAction->setEnabled(false);
+            std::cout << "ui->drawingWindow->NbSelected()=" << ui->drawingWindow->NbSelected() << std::endl; std::cout.flush();
+            std::cout << "ui->drawingWindow->numberDrawingFaceSelected()=" << ui->drawingWindow->numberDrawingFaceSelected() << std::endl; std::cout.flush();
+            if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {createPortAction->setEnabled(true);}
+
+            createPathAction->setEnabled(false);
+            if (ui->drawingWindow->numberDrawingFaceSelected() > 0) {createPathAction->setEnabled(true);}
+
+            menu.exec(ui->drawingWindow->mapToGlobal(pnt));
+
+            freeQActionList();
+        }
+    }
 }
 
 void OpenParEMg::showRootDrawingItems ()
@@ -1502,7 +1565,6 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
         addScaleToTree=true;
     } else {
         // existing integration path
-        //xxx
         int i=0;
         while (i < item->childCount()) {
             CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
@@ -2226,7 +2288,6 @@ void OpenParEMg::createPath ()
     ui->drawingWindow->updateViewer();
 }
 
-//xxx
 void OpenParEMg::createPort ()
 {
     std::cout << "OpenParEMg::createPortFromDrawing" << std::endl; std::cout.flush();
@@ -4222,9 +4283,12 @@ void OpenParEMg::on_actionSelectWithBox_triggered ()
 }
 
 void OpenParEMg::cancelDraw ()
-{
+{    
     isActiveDrawing=false;
+    isDrawLine=false;
+    isDrawPolygon=false;
     ui->drawingWindow->set_drawLine(false);
+    ui->drawingWindow->set_drawPolygon(false);
 
     // restore the prior selection index
     if (previousSelectionIndex == 0) on_actionShape_triggered();
@@ -4236,6 +4300,7 @@ void OpenParEMg::cancelDraw ()
     else if (previousSelectionIndex == 6) on_actionSolid_triggered();
 
     workingItem=nullptr;
+    ui->drawingWindow->cancelDraw();
     ui->drawingWindow->removeSelectOnVertex();
     ui->drawingWindow->updateViewer();
     setMenus();
@@ -4243,9 +4308,22 @@ void OpenParEMg::cancelDraw ()
 
 void OpenParEMg::on_actionDrawLine_triggered ()
 {
+    ui->drawingWindow->clearDrawPoints();
     isActiveDrawing=true;
+    isDrawLine=true;
     ui->drawingWindow->unselectAllItems();
     ui->drawingWindow->set_drawLine(true);
+    ui->drawingWindow->updateViewer();
+    setMenus();
+}
+
+void OpenParEMg::on_actionDrawPolygon_triggered ()
+{
+    ui->drawingWindow->clearDrawPoints();
+    isActiveDrawing=true;
+    isDrawPolygon=true;
+    ui->drawingWindow->unselectAllItems();
+    ui->drawingWindow->set_drawPolygon(true);
     ui->drawingWindow->updateViewer();
     setMenus();
 }
@@ -4255,6 +4333,8 @@ void OpenParEMg::drawLineFinished (Handle(AIS_Shape) lineShape)
     std::cout << "OpenParEMg::drawLineFinished" << std::endl; std::cout.flush();
 
     isActiveDrawing=false;
+    isDrawLine=false;
+    isDrawPolygon=false;
 
     // add to tree
     if (ui->drawingWindow->get_isPath()) {
@@ -4374,7 +4454,18 @@ void OpenParEMg::drawPath ()
     }
 
     ui->drawingWindow->set_isPath(true);
+}
+
+void OpenParEMg::drawLinePath ()
+{
+    drawPath();
     on_actionDrawLine_triggered();
+}
+
+void OpenParEMg::drawPolygonPath ()
+{
+    drawPath();
+    on_actionDrawPolygon_triggered();
 }
 
 bool OpenParEMg::insertActionValid ()
@@ -4422,5 +4513,20 @@ void OpenParEMg::insertSelectedPath ()
         if (item->is_voltage() || item->is_current()) {insertPath(item);}
         i++;
     }
+}
+
+void OpenParEMg::deleteLastPoint ()
+{
+    ui->drawingWindow->deleteLastPoint();
+}
+
+void OpenParEMg::finishPolygon ()
+{
+    ui->drawingWindow->finishDrawPolygon();
+}
+
+void OpenParEMg::closePolygon ()
+{
+    ui->drawingWindow->closePolygon();
 }
 

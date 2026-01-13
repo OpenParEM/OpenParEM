@@ -175,6 +175,7 @@
     </widget>
     <addaction name="menuDrawing_Plane"/>
     <addaction name="actionDrawLine"/>
+    <addaction name="actionDrawPolygon"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -485,6 +486,11 @@
    </property>
    <property name="toolTip">
     <string>Draw a line between two points.</string>
+   </property>
+  </action>
+  <action name="actionDrawPolygon">
+   <property name="text">
+    <string>polygon</string>
    </property>
   </action>
  </widget>

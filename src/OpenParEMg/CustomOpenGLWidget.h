@@ -63,6 +63,9 @@ public:
     void fitAll () {view->FitAll(); view->Redraw();}
     void fitSelected () {viewerContext->FitSelected(view); view->Redraw();}
 
+    void cancelDraw ();
+    void drawRubberBand (gp_Pnt);
+
     void wheelEvent (QWheelEvent*) override;
     void keyPressEvent (QKeyEvent*) override;
     void mousePressEvent (QMouseEvent*) override;
@@ -81,6 +84,8 @@ public:
     void set_isPath (bool isPath_) {isPath=isPath_;}
     bool get_isPath () {return isPath;}
     void set_drawLine (bool drawLine_) {drawLine=drawLine_;}
+    void set_drawPolygon (bool drawPolygon_) {drawPolygon=drawPolygon_;}
+    void clearDrawPoints () {shapePoints.clear();}
 
     void reshowItems () {
         std::cout << "CustomOpenGLWidget::reshowItems" << std::endl; std::cout.flush();
@@ -312,6 +317,30 @@ public:
         vertexFilter=nullptr;
     }
 
+    void deleteLastPoint () {
+        shapePoints.pop_back();
+
+        QPoint localPos=mapFromGlobal(QCursor::pos());
+
+        Standard_Real x,y,z;
+        view->Convert(localPos.x(),localPos.y(),x,y,z);
+        gp_Pnt movePoint(x,y,z);
+
+        drawRubberBand(movePoint);
+    }
+
+    void closePolygon () {
+        if (shapePoints.size() > 2) {
+            shapePoints.push_back(shapePoints[0]);
+            finishDrawPolygon();
+        }
+    }
+
+    long unsigned int get_shapePoints_size () {return shapePoints.size();}
+
+    void finishDrawLine ();
+    void finishDrawPolygon ();
+
 protected:
     void initializeGL () override;
     void paintGL () override;
@@ -349,11 +378,9 @@ private:
     Relay *relay;
 
     // line
-    Handle(AIS_Shape) lineShape;
-    bool drawLine;
-    bool firstPointSelected;
-    gp_Pnt firstPoint;
-    gp_Pnt secondPoint;
+    Handle(AIS_Shape) lineRubberBand;
+    bool drawLine, drawPolygon;
+    std::vector<gp_Pnt> shapePoints;
 
     // filter
     VertexFilter *vertexFilter;

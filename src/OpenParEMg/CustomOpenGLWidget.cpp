@@ -116,7 +116,7 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     ignoreLeftMouseRelease=false;
     isPath=false;
     drawLine=false;
-    firstPointSelected=false;
+    drawPolygon=false;
 
     vertexFilter=nullptr;
 }
@@ -197,6 +197,17 @@ void CustomOpenGLWidget::clearDrawing ()
     viewerContext->UpdateCurrentViewer();
 }
 
+void CustomOpenGLWidget::cancelDraw ()
+{
+    if (!lineRubberBand.IsNull()) {viewerContext->Remove(lineRubberBand,Standard_True); lineRubberBand.Nullify();}
+
+    drawLine=false;
+    drawPolygon=false;
+
+    viewerContext->ClearDetected(Standard_True);
+    viewerContext->ClearSelected(Standard_True);
+}
+
 void CustomOpenGLWidget::wheelEvent (QWheelEvent* event)
 {
     QOpenGLWidget::wheelEvent(event);
@@ -215,17 +226,10 @@ void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
     switch (aKey)
     {
         case Aspect_VKey_Escape: {
-
-            // line
-
-            if (!lineShape.IsNull()) {viewerContext->Remove(lineShape,Standard_True); lineShape.Nullify();}
-
-            drawLine=false;
-            firstPointSelected=false;
-
-            viewerContext->ClearDetected(Standard_True);
-            viewerContext->ClearSelected(Standard_True);
-            emit relay->cancelDraw();
+            if (drawLine || drawPolygon) {
+                cancelDraw();
+                emit relay->cancelDraw();
+            }
         }
 
         // case Aspect_VKey_F: {
@@ -273,6 +277,53 @@ Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
     return shape;
 }
 
+void CustomOpenGLWidget::finishDrawLine ()
+{
+    drawLine=false;
+    viewerContext->ClearDetected(Standard_True);
+
+    if (!lineRubberBand.IsNull()) {
+        viewerContext->Remove(lineRubberBand,Standard_True);
+        lineRubberBand.Nullify();
+    }
+
+    Handle(AIS_Shape) newLineShape=CreateAISLineFromVertices(shapePoints[shapePoints.size()-2],shapePoints[shapePoints.size()-1]);
+    if (!newLineShape.IsNull()) {
+        viewerContext->Activate(newLineShape);
+        viewerContext->Display(newLineShape,Standard_True);
+    }
+
+    emit relay->drawLineFinished(newLineShape);
+}
+
+void CustomOpenGLWidget::finishDrawPolygon ()
+{
+    drawPolygon=false;
+    viewerContext->ClearDetected(Standard_True);
+
+    if (!lineRubberBand.IsNull()) {
+        viewerContext->Remove(lineRubberBand,Standard_True);
+        lineRubberBand.Nullify();
+    }
+
+    BRepBuilderAPI_MakePolygon polyMaker;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        polyMaker.Add(shapePoints[i]);
+        i++;
+    }
+
+    TopoDS_Wire wire=polyMaker.Wire();
+    Handle(AIS_Shape) newPolygonShape=new AIS_Shape(wire);
+
+    if (!newPolygonShape.IsNull()) {
+        viewerContext->Activate(newPolygonShape);
+        viewerContext->Display(newPolygonShape,Standard_True);
+    }
+
+    emit relay->drawLineFinished(newPolygonShape);
+}
+
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
     std::cout << "CustomOpenGLWidget::mousePressEvent" << std::endl; std::cout.flush();
@@ -298,7 +349,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
 
     // line
-    if (drawLine && !owner.IsNull()) {
+    if ((drawLine || drawPolygon) && !owner.IsNull()) {
         Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
         if (!brepOwner.IsNull()) {
             TopoDS_Shape shape = brepOwner->Shape();
@@ -308,35 +359,24 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
                     if (!vertex.IsNull()) {
                         ignoreLeftMouseRelease=true;
 
-                        if (firstPointSelected) {
-                            secondPoint = BRep_Tool::Pnt(vertex);
+                        if (shapePoints.size() > 0) {
+                            shapePoints.push_back(BRep_Tool::Pnt(vertex));
 
-                            if (!secondPoint.IsEqual(firstPoint,Precision::Confusion())) {
-                                drawLine=false;
-                                firstPointSelected=false;
-                                viewerContext->ClearDetected(Standard_True);
-                                //viewerContext->ClearSelected(Standard_True);
-
-                                if (!lineShape.IsNull()) {
-                                    viewerContext->Remove(lineShape,Standard_True);
-                                    lineShape.Nullify();
+                            if (drawLine) {
+                                if (!shapePoints[shapePoints.size()-1].IsEqual(shapePoints[shapePoints.size()-2],Precision::Confusion())) {
+                                    finishDrawLine();
                                 }
+                            }
 
-                                Handle(AIS_Shape) newLineShape=CreateAISLineFromVertices(firstPoint,secondPoint);
-                                if (!newLineShape.IsNull()) {
-                                    viewerContext->Activate(newLineShape);
-                                    viewerContext->Display(newLineShape,Standard_True);
+                            if (drawPolygon) {
+                                if (!shapePoints[shapePoints.size()-1].IsEqual(shapePoints[shapePoints.size()-2],Precision::Confusion())) {
+                                    if (shapePoints[shapePoints.size()-1].IsEqual(shapePoints[0],Precision::Confusion())) {
+                                        finishDrawPolygon();
+                                    }
                                 }
-
-                                emit relay->drawLineFinished(newLineShape);
-
-                                std::cout << "line: (" << firstPoint.X() << "," << firstPoint.Y() << "," << firstPoint.Z() << ") - "
-                                          <<        "(" << secondPoint.X() << "," << secondPoint.Y() << "," << secondPoint.Z() << ")"
-                                          << std::endl; std::cout.flush();
                             }
                         } else {
-                            firstPoint = BRep_Tool::Pnt(vertex);
-                            firstPointSelected=true;
+                            shapePoints.push_back(BRep_Tool::Pnt(vertex));
                         }
                     }
                 }
@@ -346,7 +386,8 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
     // pass the mouse press from Qt to OCCT
     bool passClick=true;
-    if (event->button() == Qt::RightButton && hasAnySelectedItems()) passClick=false;  // a popup menu will appear
+    if (event->button() == Qt::RightButton && hasAnySelectedItems()) passClick=false;       // a popup menu will appear
+    if (event->button() == Qt::RightButton && (drawLine || drawPolygon)) passClick=false;  // prevent right-click from zooming
     if (passClick) {
         const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
@@ -366,29 +407,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
         if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
-    }
-
-    //xxx
-    for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
-        // 1. Get the specific sub-shape (Face) actually clicked
-        TopoDS_Shape pickedShape = viewerContext->SelectedShape();
-
-        // 2. Check if the picked shape is a Face
-        // if (pickedShape.ShapeType() == TopAbs_FACE) {
-        //     // Cast to specific TopoDS_Face if needed
-        //     TopoDS_Face selectedFace = TopoDS::Face(pickedShape);
-
-        //     // Print or process your face object here
-        //     std::cout << "Successfully retrieved the selected FACE object." << std::endl;
-        // }
-
-        // Get the shape type enumeration
-        TopAbs_ShapeEnum shapeTypeEnum = pickedShape.ShapeType();
-
-        // Convert the enumeration to a string name using the TopAbs class helper
-        Standard_CString shapeTypeName = TopAbs::ShapeTypeToString(shapeTypeEnum);
-
-        std::cout << "Selected Shape Type: " << shapeTypeName << std::endl;
     }
 
     // process mouse buttons
@@ -457,23 +475,48 @@ Handle(AIS_InteractiveObject) CustomOpenGLWidget::getLastSelected ()
     return io;
 }
 
+void CustomOpenGLWidget::drawRubberBand (gp_Pnt movePoint)
+{
+    if (!lineRubberBand.IsNull()) {viewerContext->Remove(lineRubberBand,Standard_True); lineRubberBand.Nullify();}
+
+    if (drawLine) {
+        lineRubberBand=CreateAISLineFromVertices(shapePoints[shapePoints.size()-1],movePoint);
+    }
+
+    if (drawPolygon) {
+        BRepBuilderAPI_MakePolygon polyMaker;
+        long unsigned int i=0;
+        while (i < shapePoints.size()) {
+            polyMaker.Add(shapePoints[i]);
+            i++;
+        }
+        polyMaker.Add(movePoint);
+
+        TopoDS_Wire wire=polyMaker.Wire();
+        lineRubberBand=new AIS_Shape(wire);
+    }
+
+    if (!lineRubberBand.IsNull()) {
+        viewerContext->Display(lineRubberBand,0,-1,Standard_True);
+    }
+}
+
 void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
 {
     QOpenGLWidget::mouseMoveEvent(event);
     if (view.IsNull()) return;
 
     // line rubberband
-    if (drawLine && firstPointSelected) {
+    if (drawLine || drawPolygon) {
+        if (shapePoints.size() > 0) {
+            // move to point
+            Standard_Real x,y,z;
+            view->Convert(event->pos().x(),event->pos().y(),x,y,z);
+            gp_Pnt movePoint(x,y,z);
 
-        Standard_Real x,y,z;
-        view->Convert(event->pos().x(),event->pos().y(),x,y,z);
-        secondPoint.SetCoord(x,y,z);
-
-        if (!secondPoint.IsEqual(firstPoint,Precision::Confusion())) {
-            if (!lineShape.IsNull()) {viewerContext->Remove(lineShape,Standard_True); lineShape.Nullify();}
-            lineShape=CreateAISLineFromVertices(firstPoint,secondPoint);
-            if (!lineShape.IsNull()) {
-                viewerContext->Display(lineShape,0,-1,Standard_True);
+            // rubberband line
+            if (!shapePoints[shapePoints.size()-1].IsEqual(movePoint,Precision::Confusion())) {
+                drawRubberBand(movePoint);
             }
         }
     }

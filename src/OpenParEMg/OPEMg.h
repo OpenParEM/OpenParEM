@@ -250,10 +250,19 @@ private slots:
 
     void cancelDraw ();
     void on_actionDrawLine_triggered ();
+    void on_actionDrawPolygon_triggered ();
     void drawLineFinished (Handle(AIS_Shape));
     void drawPath ();
+    void drawLinePath ();
+    void drawPolygonPath ();
     bool insertActionValid ();
     void insertSelectedPath ();
+    void finishPolygon ();
+    void deleteLastPoint ();
+    void closePolygon ();
+
+    void initQActionList();
+    void freeQActionList();
 
 public slots:
     void setMenus ();
@@ -306,7 +315,13 @@ private:
     QAction *collapseAllAction;
     QAction *createPortAction;
     QAction *createPathAction;
-    QAction *drawAction;
+    QAction *drawPathAction;
+    QAction *drawPolygonAction;
+    QAction *doneAction;
+    QAction *cancelAction;
+    QAction *deleteLastPointAction;
+    QAction *closeAction;
+    std::vector<QAction *> QActionList;
 
     // gmsh
     gmsh::vectorpair drawingEntities;
@@ -339,6 +354,8 @@ private:
 
     // drawing
     bool isActiveDrawing;
+    bool isDrawLine;
+    bool isDrawPolygon;
     struct point normal;
 
 };
