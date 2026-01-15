@@ -4,7 +4,7 @@
 #pragma once
 #include <QObject>
 #include <Standard_Handle.hxx>
-#include <AIS_Shape.hxx>
+#include <TopoDS.hxx>
 
 class Relay : public QObject
 {
@@ -14,7 +14,7 @@ public:
 
 signals:
     void setMenus ();
-    void drawLineFinished (Handle(AIS_Shape));
+    void drawLineFinished (TopoDS_Wire);
     void cancelDraw ();
 };
 

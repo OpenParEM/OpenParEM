@@ -40,6 +40,7 @@
 
 #include <Standard_WarningsDisable.hxx>
 #include <Standard_WarningsRestore.hxx>
+#include <TopoDS_Face.hxx>
 #include <V3d_View.hxx>
 
 class CustomOpenGLWidget : public QOpenGLWidget, public AIS_ViewController
@@ -48,6 +49,12 @@ class CustomOpenGLWidget : public QOpenGLWidget, public AIS_ViewController
 public:
     CustomOpenGLWidget (QWidget *parent = nullptr);
     virtual ~CustomOpenGLWidget ();
+
+    void set_wireframe (bool state)
+    {
+        if (state) viewerContext->SetDisplayMode(AIS_WireFrame, Standard_False);
+        else viewerContext->SetDisplayMode(AIS_Shaded, Standard_False);
+    }
 
     void set_drawingItemTree (CustomTreeWidgetItem *drawingItemTree_) {drawingItemTree=drawingItemTree_;}
     void set_portItemTree (CustomTreeWidgetItem *portItemTree_) {portItemTree=portItemTree_;}
@@ -84,7 +91,7 @@ public:
     void set_isPath (bool isPath_) {isPath=isPath_;}
     bool get_isPath () {return isPath;}
     void set_drawLine (bool drawLine_) {drawLine=drawLine_;}
-    void set_drawPolygon (bool drawPolygon_) {drawPolygon=drawPolygon_;}
+    void set_drawPolyline (bool drawPolyline_) {drawPolyline=drawPolyline_;}
     void clearDrawPoints () {shapePoints.clear();}
 
     void reshowItems () {
@@ -210,14 +217,21 @@ public:
 
     void insertItemToMap (Handle(AIS_Shape) shape, CustomTreeWidgetItem *item)
     {
-        std::cout << "CustomOpenGLWidget::insertItemToMap" << std::endl; std::cout.flush();
+        std::cout << "CustomOpenGLWidget::insertItemToMap  type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
+        if (shape.IsNull()) {std::cout << "   ERROR: shape item is null" << std::endl; std::cout.flush();}
         drawingTracker->insertItemToMap(shape,item);
     }
 
     void displayShape (Handle(AIS_Shape) shape, int displayMode, int selectionMode)
     {
-        std::cout << "CustomOpenGLWidget::displayShape" << std::endl; std::cout.flush();
+        std::cout << "CustomOpenGLWidget::displayShape   type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
         viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
+    }
+
+    void displayShape (Handle(AIS_Shape) shape)
+    {
+        std::cout << "CustomOpenGLWidget::displayShape   type" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
+        viewerContext->Display(shape,Standard_False);
     }
 
     void hideShape (Handle(AIS_Shape) shape)
@@ -245,13 +259,10 @@ public:
         shape.Nullify();
     }
 
-    void setSelectionShape () {viewerContext->Activate(0);}
-    void setSelectionVertex () {viewerContext->Activate(1);}
-    void setSelectionEdge () {viewerContext->Activate(2);}
-    void setSelectionWire () {viewerContext->Activate(3);}
-    void setSelectionFace () {viewerContext->Activate(4);}
-    void setSelectionShell () {viewerContext->Activate(5);}
-    void setSelectionSolid () {viewerContext->Activate(6);}
+    void Activate (Standard_Integer mode, Standard_Boolean theIsForce) {viewerContext->Activate(mode,theIsForce);}
+    void Activate (Handle(AIS_Shape) shape, Standard_Integer mode, Standard_Boolean theIsForce) {viewerContext->Activate(shape,mode,theIsForce);}
+    void Deactivate () {viewerContext->Deactivate();}
+
 
     void getSelected (std::vector<Handle(AIS_InteractiveObject)> *);
     Handle(AIS_InteractiveObject) getLastSelected ();
@@ -306,15 +317,26 @@ public:
     }
 
     void selectOnVertex (Path *outline) {
-        if (vertexFilter) viewerContext->RemoveFilter(vertexFilter);
+        if (!outline) return;
+
+        if (vertexFilter.IsNull()) {
+            viewerContext->RemoveFilter(vertexFilter);
+            vertexFilter.Nullify();
+        }
+
         vertexFilter=new VertexFilter();
         vertexFilter->set_outline(outline);
         viewerContext->AddFilter(vertexFilter);
     }
 
     void removeSelectOnVertex () {
-        viewerContext->RemoveFilter(vertexFilter);
-        vertexFilter=nullptr;
+        if (!vertexFilter.IsNull()) {
+            std::cout << "place b1" << std::endl; std::cout.flush();
+            viewerContext->RemoveFilter(vertexFilter);
+            std::cout << "place b2" << std::endl; std::cout.flush();
+            vertexFilter.Nullify();
+            std::cout << "place b3" << std::endl; std::cout.flush();
+        }
     }
 
     void deleteLastPoint () {
@@ -329,17 +351,16 @@ public:
         drawRubberBand(movePoint);
     }
 
-    void closePolygon () {
+    void closePolyline () {
         if (shapePoints.size() > 2) {
             shapePoints.push_back(shapePoints[0]);
-            finishDrawPolygon();
+            finishDrawLine();
         }
     }
 
     long unsigned int get_shapePoints_size () {return shapePoints.size();}
 
     void finishDrawLine ();
-    void finishDrawPolygon ();
 
 protected:
     void initializeGL () override;
@@ -379,11 +400,12 @@ private:
 
     // line
     Handle(AIS_Shape) lineRubberBand;
-    bool drawLine, drawPolygon;
+    bool drawLine, drawPolyline;
     std::vector<gp_Pnt> shapePoints;
 
     // filter
-    VertexFilter *vertexFilter;
+    Handle(VertexFilter) vertexFilter;
+    Handle(AIS_Shape) temporaryVertex;  // for mid-point selection on edges
 
 };
 

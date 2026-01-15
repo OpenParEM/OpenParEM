@@ -4,6 +4,7 @@
 #include <gce_MakePln.hxx>
 #include <StdSelect_BRepOwner.hxx>
 #include <BRep_Tool.hxx>
+#include <TopExp.hxx>
 
 
 bool IsPointOnPlane (const gp_Pln& plane, const gp_Pnt& p, Standard_Real tol = Precision::Confusion())
@@ -69,18 +70,7 @@ bool IsPointInsideOrOnPolygon2d (const gp_Pnt2d& p, const std::vector<gp_Pnt2d>&
     return inside;
 }
 
-
-
-
-
-
-
-bool FindNonCollinearTriplet(
-    const std::vector<gp_Pnt>& pts,
-    gp_Pnt& p1,
-    gp_Pnt& p2,
-    gp_Pnt& p3,
-    Standard_Real tol = Precision::Confusion())
+bool FindNonCollinearTriplet (const std::vector<gp_Pnt>& pts, gp_Pnt& p1, gp_Pnt& p2, gp_Pnt& p3, Standard_Real tol = Precision::Confusion())
 {
     const int n = static_cast<int>(pts.size());
     if (n < 3)
@@ -133,21 +123,41 @@ bool IsPolygonPlanar (const std::vector<gp_Pnt>& poly, const gp_Pln& plane, Stan
     return false;
 }
 
+bool VertexFilter::get_midPoint (TopoDS_Edge& edge, gp_Pnt *midPoint)
+{
+    // first point must be on the plane
+    TopoDS_Vertex v1=TopExp::FirstVertex(edge);
+    const gp_Pnt pnt1=BRep_Tool::Pnt(v1);
+    if (!IsPointOnPlane(plane,pnt1)) return Standard_False;
+
+    // second point must be on the plane
+    TopoDS_Vertex v2=TopExp::LastVertex(edge);
+    const gp_Pnt pnt2=BRep_Tool::Pnt(v2);
+    if (!IsPointOnPlane(plane,pnt2)) return Standard_False;
+
+    // mid point
+    midPoint->SetCoord((pnt1.X()+pnt2.X())/2.0,(pnt1.Y()+pnt2.Y())/2.0,(pnt1.Z()+pnt2.Z())/2.0);
+    gp_Pnt2d pntmid2D=ProjectToPlane2d(plane,*midPoint);
+
+    // point must be on or in the outline
+    if (IsPointInsideOrOnPolygon2d(pntmid2D,outline2D)) return Standard_True;
+
+    return Standard_False;
+}
+
 Standard_Boolean VertexFilter::IsOk (const Handle(SelectMgr_EntityOwner)& theOwner) const
 {
-    //std::cout << "VertexFilter::IsOk" << std::endl; std::cout.flush();
     Handle(StdSelect_BRepOwner) aBRepOwner = Handle(StdSelect_BRepOwner)::DownCast(theOwner);
     if (aBRepOwner.IsNull() || !aBRepOwner->HasShape()) return Standard_False;
-    //std::cout << " aBRepOwner" << std::endl; std::cout.flush();
 
-    const TopoDS_Shape& aShape = aBRepOwner->Shape();
-    //std::cout << "   shape type=" << aShape.ShapeType() << std::endl; std::cout.flush();
+    const TopoDS_Shape& aShape=aBRepOwner->Shape();
+
+    // vertices
     if (aShape.ShapeType() == TopAbs_VERTEX) {
-        //std::cout << "   found TopAbs_VERTEX" << std::endl; std::cout.flush();
 
         // get the vertex
-        const TopoDS_Vertex vertex = TopoDS::Vertex(aShape);
-        const gp_Pnt pnt = BRep_Tool::Pnt(vertex);
+        const TopoDS_Vertex vertex=TopoDS::Vertex(aShape);
+        const gp_Pnt pnt=BRep_Tool::Pnt(vertex);
 
         // see if it is on the plane
         if (!IsPointOnPlane(plane,pnt)) return Standard_False;
@@ -159,11 +169,41 @@ Standard_Boolean VertexFilter::IsOk (const Handle(SelectMgr_EntityOwner)& theOwn
         if (IsPointInsideOrOnPolygon2d(pnt2D,outline2D)) return Standard_True;
     }
 
+    // edges
+    if (aShape.ShapeType() == TopAbs_EDGE) {
+        std::cout << "place 1" << std::endl; std::cout.flush();
+        TopoDS_Vertex v1,v2;
+        TopExp::Vertices(TopoDS::Edge(aShape),v1,v2);
+
+        // first point
+        std::cout << "place 2" << std::endl; std::cout.flush();
+        gp_Pnt p1=BRep_Tool::Pnt(v1);
+        if (!IsPointOnPlane(plane,p1)) return Standard_False;
+
+        // second point
+        std::cout << "place 3" << std::endl; std::cout.flush();
+        gp_Pnt p2=BRep_Tool::Pnt(v2);
+        if (!IsPointOnPlane(plane,p2)) return Standard_False;
+
+        // midpoint
+        std::cout << "place 4" << std::endl; std::cout.flush();
+        gp_Pnt pntmid((p1.X()+p2.X())/2.0,(p1.Y()+p2.Y())/2.0,(p1.Z()+p2.Z())/2.0);
+
+        // get a 2D point on the plane
+        std::cout << "place 5" << std::endl; std::cout.flush();
+        gp_Pnt2d pntmid2D=ProjectToPlane2d(plane,pntmid);
+
+        // see if the point is in or on the polygon
+        std::cout << "place 6" << std::endl; std::cout.flush();
+        if (IsPointInsideOrOnPolygon2d(pntmid2D,outline2D)) return Standard_True;
+    }
+
     return Standard_False;
 }
 
-bool VertexFilter::set_outline (Path *path_outline) {
-
+bool VertexFilter::set_outline (Path *path_outline)
+{
+    if (!path_outline) return Standard_True;
     outline.clear();
 
     // convert from Path to gp_Pnt vector

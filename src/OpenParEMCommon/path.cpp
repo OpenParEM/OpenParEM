@@ -19,6 +19,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "path.hpp"
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
 
 #ifdef HAS_GUI
 #include <AIS_Shape.hxx>
@@ -2040,22 +2042,37 @@ void Path::assignPathNormal (struct point normal_)
 
 TopoDS_Wire Path::create_TopoDS_Wire ()
 {
-    BRepBuilderAPI_MakePolygon polygon;
+    std::cout << "Path::create_TopoDS_Wire" << std::endl; std::cout.flush();
 
+    BRepBuilderAPI_MakeWire wireBuilder;
+
+    if (points.size() < 2) return TopoDS_Wire(); // null wire
+
+    gp_Pnt v1(points[0]->get_point_value().x,points[0]->get_point_value().y,points[0]->get_point_value().z);
+    gp_Pnt v2;
     long unsigned int i=0;
-    while (i < points.size()) {
-        gp_Pnt vertex(points[i]->get_point_value().x,points[i]->get_point_value().y,points[i]->get_point_value().z);
-        polygon.Add(vertex);
+    while (i < points.size()-1) {
+        v2.SetCoord(points[i+1]->get_point_value().x,points[i+1]->get_point_value().y,points[i+1]->get_point_value().z);
+        wireBuilder.Add(BRepBuilderAPI_MakeEdge(v1,v2));
+        v1=v2;
         i++;
     }
 
-    if (get_closed()) polygon.Close();
+    if (is_closed()) {
+        gp_Pnt v2(points[0]->get_point_value().x,points[0]->get_point_value().y,points[0]->get_point_value().z);
+        wireBuilder.Add(BRepBuilderAPI_MakeEdge(v1,v2));
+    }
 
-    return polygon.Wire();
+    if (!wireBuilder.IsDone()) return TopoDS_Wire();
+
+    return wireBuilder.Wire();
 }
 
+// create path from face
 void Path::addFacePoints (TopoDS_Shape shape, bool setClosed, bool calcNormal)
 {
+    std::cout << "Path::addFacePoints" << std::endl; std::cout.flush();
+
     TopExp_Explorer faceExplorer(shape,TopAbs_FACE);
     while (faceExplorer.More()) {
         const TopoDS_Shape& subShape=faceExplorer.Current();
@@ -2098,45 +2115,54 @@ void Path::addFacePoints (TopoDS_Shape shape, bool setClosed, bool calcNormal)
     }
 }
 
-// create a path from a wire
-// should only be called if shape has just one wire
-void Path::addWirePoints (Handle(AIS_Shape) shape)
+// create path from wire
+void Path::addWirePoints (TopoDS_Wire wire)
 {
-    TopExp_Explorer explorer(shape->Shape(),TopAbs_VERTEX);
-    while (explorer.More()) {
-        const TopoDS_Shape& currentShape=explorer.Current();
-        const TopoDS_Vertex& vertex=TopoDS::Vertex(currentShape);
+    std::cout << "Path::addWirePoints" << std::endl; std::cout.flush();
 
-        gp_Pnt pnt=BRep_Tool::Pnt(vertex);
+    std::vector<TopoDS_Vertex> vertices;
+    TopoDS_Vertex lastVertex;
+
+    for (TopExp_Explorer exp(wire, TopAbs_EDGE); exp.More(); exp.Next()) {
+        TopoDS_Edge edge=TopoDS::Edge(exp.Current());
+        TopoDS_Vertex v1,v2;
+        TopExp::Vertices(edge,v1,v2);
+
+        if (vertices.empty()) {
+            vertices.push_back(v1);
+            vertices.push_back(v2);
+            lastVertex=v2;
+        } else {
+            if (!v1.IsSame(lastVertex)) vertices.push_back(v1);
+            vertices.push_back(v2);
+            lastVertex=v2;
+        }
+    }
+
+    long unsigned int i=0;
+    while (i < vertices.size()) {
+        gp_Pnt pnt=BRep_Tool::Pnt(vertices[i]);
         keywordPair *point=new keywordPair();
         point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
         points.push_back(point);
-
-        explorer.Next();
+        i++;
     }
 }
 
-//xxx
-
-void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
+void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem, bool show)
 {
-    Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (create_TopoDS_Wire());
-    create_item(drawingWindow,parentItem,drawingShape,false);
-}
+    std::cout << "Path::create_item" << std::endl; std::cout.flush();
 
-void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem, Handle(AIS_Shape) drawingShape, bool show)
-{
     item=new CustomTreeWidgetItem(0);
     item->set_type(4);
     item->set_OPEMobject(this);
     item->setText(0,QString::fromStdString(get_name()));
-    item->set_displayMode(0);
-    item->set_selectionMode(0);
     item->setForeground(0,Qt::black);
 
-    //drawingWindow->displayShape(drawingShape,item->get_displayMode(),item->get_selectionMode());
-    item->set_AIS_Shape(drawingShape);
-    //drawingWindow->insertItemToMap(drawingShape,item);
+    // shape
+    TopoDS_Wire wire=create_TopoDS_Wire();
+    Handle(AIS_Shape) shape=new AIS_Shape(wire);
+    item->set_AIS_Shape(shape);
 
     // arrow heads
 
@@ -2161,7 +2187,6 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
     }
 
     // make arrows
-
     i=0;
     while (i < points.size()) {
         keywordPair *from=points[i];
@@ -2196,19 +2221,13 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
             arrowHead.push_point(tip);
             arrowHead.push_point(p2);
 
-            Handle(AIS_Shape) drawingShape=new CustomAIS_Shape (arrowHead.create_TopoDS_Wire());
-            //drawingWindow->displayShape(drawingShape,item->get_displayMode(),item->get_selectionMode());
-            item->push_arrowHead(drawingShape);
-            //drawingWindow->insertItemToMap(drawingShape,item);
+            Handle(AIS_Shape) arrowDrawingShape=new CustomAIS_Shape (arrowHead.create_TopoDS_Wire());
+            item->push_arrowHead(arrowDrawingShape);
         }
         i++;
     }
 
-    //drawingWindow->hideItem(item);
-    //if (show) drawingWindow->showItem(item);
     parentItem->addChild(item);
-
-    //drawingWindow->updateViewer();
 }
 
 #endif

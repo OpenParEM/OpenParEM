@@ -31,9 +31,7 @@ class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
 public:
     CustomTreeWidgetItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type) {
         type=0;
-        set_dimTag(-1,-1);  // invalid initialization
-        displayMode=0;      // 0 - wireframe, 1 - shaded
-        selectionMode=0;
+        set_dimTag(-1,-1);  // for mesh items; invalid initialization
         OPEMobject=nullptr;
     }
 
@@ -97,11 +95,6 @@ public:
     long unsigned int get_meshEntitiesSize () {return meshEntities.size();}
     Handle(AIS_Shape) get_meshEntity (long unsigned int i) {return meshEntities[i];}
 
-    int get_displayMode () {return displayMode;}
-    void set_displayMode (int displayMode_) {displayMode=displayMode_;}
-    int get_selectionMode () {return selectionMode;}
-    void set_selectionMode (int selectionMode_) {selectionMode=selectionMode_;}
-
     void deleteChildren (QTreeWidgetItem *item)
     {
         QList<QTreeWidgetItem*> children=item->takeChildren();
@@ -153,8 +146,9 @@ public:
         if (is_integrationPathSegment()) std::cout << "   type=integrationPathSegment" << std::endl;
         std::cout << "   dimTag.first=" << dimTag.first << std::endl
                   << "   dimTag.second=" << dimTag.second << std::endl
-                  << "   displayMode=" << displayMode << std::endl
-                  << "   selectionMode=" << selectionMode << std::endl;
+                  //<< "   displayMode=" << displayMode << std::endl
+                  //<< "   selectionMode=" << selectionMode << std::endl
+                  ;
     }
 
     void reset () {
@@ -173,8 +167,6 @@ private slots:
 private:
     Handle(AIS_Shape) shape;                           // for drawing
     std::vector<Handle(AIS_Shape)> arrowHeads;         // used integration lines
-    int displayMode;                                   //    0 - wireframe, 1 - shaded
-    int selectionMode;                                 //    0 - shape, 1 - vertex, ...
     std::vector<Handle(AIS_Shape)> meshEntities;       // for mesh
     std::pair<int,int> dimTag;                         //
     bool forShowHide;                                  // false - does not participate in item tree show/hide operations; true - does participate

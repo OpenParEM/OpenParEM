@@ -84,7 +84,7 @@ public:
     OpenParEMg (QWidget *parent = nullptr);
     ~OpenParEMg ();
 
-    void addShape (TopoDS_Shape, CustomTreeWidgetItem *, bool);
+    void addShape (TopoDS_Shape, CustomTreeWidgetItem *, bool, bool);
     bool loadBrepFile (QString);
     bool loadStepFile (QString);
     bool saveStepFile (QString, std::vector<Handle(AIS_InteractiveObject)> *);
@@ -250,16 +250,16 @@ private slots:
 
     void cancelDraw ();
     void on_actionDrawLine_triggered ();
-    void on_actionDrawPolygon_triggered ();
-    void drawLineFinished (Handle(AIS_Shape));
+    void on_actionDrawPolyline_triggered ();
+    void drawLineFinished (TopoDS_Wire);
     void drawPath ();
     void drawLinePath ();
-    void drawPolygonPath ();
+    void drawPolylinePath ();
     bool insertActionValid ();
     void insertSelectedPath ();
-    void finishPolygon ();
+    void finishPolyline ();
     void deleteLastPoint ();
-    void closePolygon ();
+    void closePolyline ();
 
     void initQActionList();
     void freeQActionList();
@@ -316,7 +316,7 @@ private:
     QAction *createPortAction;
     QAction *createPathAction;
     QAction *drawPathAction;
-    QAction *drawPolygonAction;
+    QAction *drawPolylineAction;
     QAction *doneAction;
     QAction *cancelAction;
     QAction *deleteLastPointAction;
@@ -355,7 +355,7 @@ private:
     // drawing
     bool isActiveDrawing;
     bool isDrawLine;
-    bool isDrawPolygon;
+    bool isDrawPolyline;
     struct point normal;
 
 };

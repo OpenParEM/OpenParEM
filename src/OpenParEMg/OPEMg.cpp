@@ -143,7 +143,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(createPortAction);
     QActionList.push_back(createPathAction);
     QActionList.push_back(drawPathAction);
-    QActionList.push_back(drawPolygonAction);
+    QActionList.push_back(drawPolylineAction);
     QActionList.push_back(doneAction);
     QActionList.push_back(cancelAction);
     QActionList.push_back(deleteLastPointAction);
@@ -240,7 +240,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     isActiveDrawing=false;
     isDrawLine=false;
-    isDrawPolygon=false;
+    isDrawPolyline=false;
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -502,6 +502,8 @@ void OpenParEMg::setMenus ()
         ui->actionSimulateOptions->setEnabled(true);
         ui->actionFrequencyPlan->setEnabled(true);
     }
+
+    std::cout << "out OpenParEMg::setMenus" << std::endl; std::cout.flush();
 }
 
 
@@ -810,7 +812,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         showAction=new QAction("Show",this);
         hideAction=new QAction("Hide",this);
         drawPathAction=new QAction("Draw Line Path");
-        drawPolygonAction=new QAction("Draw Polygon Path");
+        drawPolylineAction=new QAction("Draw Polyline Path");
         insertAction=new QAction("Add Path");
         //unselectAction=new QAction("Unselect",this);
         //deleteAction=new QAction("Delete",this);
@@ -820,7 +822,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showVIItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideVIItems);
         connect(drawPathAction, &QAction::triggered, this, &OpenParEMg::drawLinePath);
-        connect(drawPolygonAction, &QAction::triggered, this, &OpenParEMg::drawPolygonPath);
+        connect(drawPolylineAction, &QAction::triggered, this, &OpenParEMg::drawPolylinePath);
         connect(insertAction, &QAction::triggered, this, &OpenParEMg::insertSelectedPath);
         //connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectVIItems);
         //connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteVIItems);
@@ -835,8 +837,8 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         drawPathAction->setEnabled(false);
         if (treeSelectionCount() == 1 && clickedItem->foreground(0) == Qt::black) drawPathAction->setEnabled(true);
 
-        drawPolygonAction->setEnabled(false);
-        if (treeSelectionCount() == 1 && clickedItem->foreground(0) == Qt::black) drawPolygonAction->setEnabled(true);
+        drawPolylineAction->setEnabled(false);
+        if (treeSelectionCount() == 1 && clickedItem->foreground(0) == Qt::black) drawPolylineAction->setEnabled(true);
 
         insertAction->setEnabled(insertActionValid());
 
@@ -844,7 +846,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         menu.addAction(showAction);
         menu.addAction(hideAction);
         menu.addAction(drawPathAction);
-        menu.addAction(drawPolygonAction);
+        menu.addAction(drawPolylineAction);
         menu.addAction(insertAction);
         //menu.addAction(unselectAction);
         //menu.addAction(deleteAction);
@@ -895,7 +897,6 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 {
     std::cout << "OpenParEMg::drawingWindowContextMenu_triggered" << std::endl; std::cout.flush();
 
-    //xxx
     if (isActiveDrawing) {
         if (isDrawLine) {
             cancelAction=new QAction("Cancel");
@@ -910,15 +911,15 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             if (cancelAction) {delete cancelAction; cancelAction=nullptr;}
         }
 
-        if (isDrawPolygon) {
+        if (isDrawPolyline) {
             deleteLastPointAction=new QAction("Delete Point");
             doneAction=new QAction("Finished");
-            closeAction=new QAction("Close Polygon");
+            closeAction=new QAction("Close Polyline");
             cancelAction=new QAction("Cancel");
 
             connect(deleteLastPointAction, &QAction::triggered, this, &OpenParEMg::deleteLastPoint);
-            connect(doneAction, &QAction::triggered, this, &OpenParEMg::finishPolygon);
-            connect(closeAction, &QAction::triggered, this, &OpenParEMg::closePolygon);
+            connect(doneAction, &QAction::triggered, this, &OpenParEMg::finishPolyline);
+            connect(closeAction, &QAction::triggered, this, &OpenParEMg::closePolyline);
             connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDraw);
 
             deleteLastPointAction->setEnabled(false);
@@ -2258,20 +2259,21 @@ void OpenParEMg::createPath ()
         // }
 
         newPath->addFacePoints(ui->drawingWindow->get_selectedFace(faceCount),true,true);
+        newPath->create_item(ui->drawingWindow,&path,false);  // creates AIS_Shape
 
         boundaryDatabase->push_path(newPath);
-        newPath->create_item(ui->drawingWindow,&path);
 
         // add new path to the drawing
         CustomTreeWidgetItem *item=newPath->get_item();
         if (item) {
-            addShape(item->get_AIS_Shape()->Shape(),item,false);
+            addShape(item->get_AIS_Shape()->Shape(),item,false,true);
             item->setForeground(0,Qt::gray);
             ui->drawingWindow->showItem(item);
 
             long unsigned int j=0;
             while (j < item->get_arrowHeads_size()) {
-                ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
+                //ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
+                ui->drawingWindow->displayShape(item->get_arrowHead(j));
                 ui->drawingWindow->insertItemToMap(item->get_arrowHead(j),item);
                 j++;
             }
@@ -2349,20 +2351,22 @@ void OpenParEMg::createPort ()
 
     TopoDS_Shape selectedShape=ui->drawingWindow->get_selectedFace();
     newPath->addFacePoints(selectedShape,true,true);
+    newPath->create_item(ui->drawingWindow,&path,false);  // creates AIS_Shape
 
     boundaryDatabase->push_path(newPath);
-    newPath->create_item(ui->drawingWindow,&path);
+
 
     // add new path to the drawing
     CustomTreeWidgetItem *item=newPath->get_item();
     if (item) {
-        addShape(item->get_AIS_Shape()->Shape(),item,false);
+        addShape(item->get_AIS_Shape()->Shape(),item,false,true);
         item->setForeground(0,Qt::gray);
         ui->drawingWindow->showItem(item);
 
         long unsigned int j=0;
         while (j < item->get_arrowHeads_size()) {
-            ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
+            //ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
+            ui->drawingWindow->displayShape(item->get_arrowHead(j));
             ui->drawingWindow->insertItemToMap(item->get_arrowHead(j),item);
             j++;
         }
@@ -2446,7 +2450,7 @@ void OpenParEMg::createPort ()
 // recursive
 void OpenParEMg::set_selectionMode (CustomTreeWidgetItem *item, int selectionMode)
 {
-    item->set_selectionMode(selectionMode);
+    //item->set_selectionMode(selectionMode);
 
     int i=0;
     while (i < item->childCount()) {
@@ -2459,7 +2463,7 @@ void OpenParEMg::set_selectionMode (CustomTreeWidgetItem *item, int selectionMod
 // recursive
 void OpenParEMg::set_displayMode (CustomTreeWidgetItem *item, int displayMode)
 {
-    item->set_displayMode(displayMode);
+    //item->set_displayMode(displayMode);
 
     int i=0;
     while (i < item->childCount()) {
@@ -2637,19 +2641,20 @@ void OpenParEMg::on_actionOpen_triggered ()
             // ToDo: rename draw since this does not actually draw
             boundaryDatabase->draw(relay,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
 
-            // add paths to the drawing
+            // add paths to the tree
             long unsigned int i=0;
             while (i < boundaryDatabase->get_pathList_size()) {
                 Path *path=boundaryDatabase->get_path(i);
                 CustomTreeWidgetItem *item=path->get_item();
                 if (item) {
-                    addShape(item->get_AIS_Shape()->Shape(),item,false);
+                    addShape(item->get_AIS_Shape()->Shape(),item,false,true);
                     item->setForeground(0,Qt::gray);
                     ui->drawingWindow->showItem(item);
 
                     long unsigned int j=0;
                     while (j < item->get_arrowHeads_size()) {
-                        ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
+                        //ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
+                        ui->drawingWindow->displayShape(item->get_arrowHead(j));
                         ui->drawingWindow->insertItemToMap(item->get_arrowHead(j),item);
                         j++;
                     }
@@ -3042,9 +3047,11 @@ void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
     }
 }
 
-void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool isRoot)
+void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool isRoot, bool hasAISShape)
 {
     if (shape.IsNull()) return;
+
+    std::cout << "OpenParEMg::addShape  type=" << TopAbs::ShapeTypeToString(shape.ShapeType()) << std::endl; std::cout.flush();
 
     // tree item name
 
@@ -3103,9 +3110,12 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
 
     // item entry
 
-    Handle(AIS_Shape) drawingShape=new AIS_Shape(shape);
+    Handle(AIS_Shape) drawingShape;
+    if (hasAISShape) drawingShape=item->get_AIS_Shape();
+    else drawingShape=new AIS_Shape(shape);
     CustomTreeWidgetItem *newItem;
 
+    // only drawing can have isRoot=true
     if (isRoot) {
         isRoot=false;
         ui->drawingWindow->insertItemToMap(drawingShape,&drawing);
@@ -3115,7 +3125,7 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
         newItem=&drawing;
     } else {
         newItem=new CustomTreeWidgetItem(0);
-        newItem->set_AIS_Shape(drawingShape);
+        if (!hasAISShape) newItem->set_AIS_Shape(drawingShape);
         newItem->setText(0,name);
         newItem->set_type(0);  // default value
         newItem->setForeground(0,Qt::gray);
@@ -3141,7 +3151,7 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
     TopoDS_Iterator topoIterator(shape);
     while (topoIterator.More()) {
         const TopoDS_Shape& child=topoIterator.Value();
-        addShape(child,newItem,isRoot);
+        addShape(child,newItem,isRoot,false);
         topoIterator.Next();
     }
 }
@@ -3156,7 +3166,7 @@ bool OpenParEMg::loadBrepFile (QString filePath)
         TopoDS_Shape s;
         BRep_Builder b;
         if (BRepTools::Read(s,filePath.toStdString().c_str(),b)) {
-            addShape(s,nullptr,true);
+            addShape(s,nullptr,true,false);
             brepFileLoaded=true;
             projectFileChanged=true;
         } else retval=true;
@@ -3176,7 +3186,7 @@ bool OpenParEMg::loadStepFile (QString filePath)
         if (status == IFSelect_RetDone) {
             reader.TransferRoots();
             TopoDS_Shape s=reader.OneShape();
-            addShape(s,nullptr,true);
+            addShape(s,nullptr,true,false);
             stepFileLoaded=true;
             projectFileChanged=true;
         } else retval=true;
@@ -3419,13 +3429,11 @@ void OpenParEMg::on_actionShape_triggered()
     currentSelectionAction=ui->actionShape;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    previousSelectionIndex=selectionIndex;
-    selectionIndex=0;
-    set_selectionMode(&drawing,selectionIndex);
-    set_selectionMode(&path,selectionIndex);
-    set_selectionMode(&port,selectionIndex);
-    set_selectionMode(&boundary,selectionIndex);
-    ui->drawingWindow->reshowItems();
+    previousSelectionIndex=0;
+
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(0,Standard_False);
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::on_actionVertex_triggered()
@@ -3436,13 +3444,11 @@ void OpenParEMg::on_actionVertex_triggered()
     currentSelectionAction=ui->actionVertex;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    previousSelectionIndex=selectionIndex;
-    selectionIndex=1;
-    set_selectionMode(&drawing,selectionIndex);
-    set_selectionMode(&path,selectionIndex);
-    set_selectionMode(&port,selectionIndex);
-    set_selectionMode(&boundary,selectionIndex);
-    ui->drawingWindow->reshowItems();
+    previousSelectionIndex=1;
+
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(1,Standard_False);
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::on_actionEdge_triggered()
@@ -3453,13 +3459,11 @@ void OpenParEMg::on_actionEdge_triggered()
     currentSelectionAction=ui->actionEdge;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    previousSelectionIndex=selectionIndex;
-    selectionIndex=2;
-    set_selectionMode(&drawing,selectionIndex);
-    set_selectionMode(&path,selectionIndex);
-    set_selectionMode(&port,selectionIndex);
-    set_selectionMode(&boundary,selectionIndex);
-    ui->drawingWindow->reshowItems();
+    previousSelectionIndex=2;
+
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(2,Standard_False);
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::on_actionWire_triggered()
@@ -3470,13 +3474,11 @@ void OpenParEMg::on_actionWire_triggered()
     currentSelectionAction=ui->actionWire;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    previousSelectionIndex=selectionIndex;
-    selectionIndex=3;
-    set_selectionMode(&drawing,selectionIndex);
-    set_selectionMode(&path,selectionIndex);
-    set_selectionMode(&port,selectionIndex);
-    set_selectionMode(&boundary,selectionIndex);
-    ui->drawingWindow->reshowItems();
+    previousSelectionIndex=3;
+
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(3,Standard_False);
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::on_actionFace_triggered()
@@ -3487,13 +3489,11 @@ void OpenParEMg::on_actionFace_triggered()
     currentSelectionAction=ui->actionFace;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    previousSelectionIndex=selectionIndex;
-    selectionIndex=4;
-    set_selectionMode(&drawing,selectionIndex);
-    set_selectionMode(&path,selectionIndex);
-    set_selectionMode(&port,selectionIndex);
-    set_selectionMode(&boundary,selectionIndex);
-    ui->drawingWindow->reshowItems();
+    previousSelectionIndex=4;
+
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(4,Standard_False);
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::on_actionShell_triggered()
@@ -3504,13 +3504,11 @@ void OpenParEMg::on_actionShell_triggered()
     currentSelectionAction=ui->actionShell;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    previousSelectionIndex=selectionIndex;
-    selectionIndex=5;
-    set_selectionMode(&drawing,selectionIndex);
-    set_selectionMode(&path,selectionIndex);
-    set_selectionMode(&port,selectionIndex);
-    set_selectionMode(&boundary,selectionIndex);
-    ui->drawingWindow->reshowItems();
+    previousSelectionIndex=5;
+
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(5,Standard_False);
+    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::on_actionSolid_triggered()
@@ -3521,13 +3519,11 @@ void OpenParEMg::on_actionSolid_triggered()
     currentSelectionAction=ui->actionSolid;
     currentSelectionAction->setCheckable(true);
     currentSelectionAction->setChecked(true);
-    previousSelectionIndex=selectionIndex;
-    selectionIndex=6;
-    set_selectionMode(&drawing,selectionIndex);
-    set_selectionMode(&path,selectionIndex);
-    set_selectionMode(&port,selectionIndex);
-    set_selectionMode(&boundary,selectionIndex);
-    ui->drawingWindow->reshowItems();
+    previousSelectionIndex=6;
+
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(6,Standard_False);
+    ui->drawingWindow->updateViewer();
 }
 
 int OpenParEMg::treeSelectionCount ()
@@ -3988,17 +3984,24 @@ void OpenParEMg::on_actionMeshDelete_triggered ()
 
 void OpenParEMg::on_actionWireframe_triggered ()
 {
-    if (ui->actionWireframe->isChecked() == true) {
-        set_displayMode(&drawing,0);
-        set_displayMode(&port,0);
-        set_displayMode(&boundary,0);
-    } else {
-        set_displayMode(&drawing,1);
-        set_displayMode(&port,1);
-        set_displayMode(&boundary,1);
-    }
+    // if (ui->actionWireframe->isChecked() == true) {
+    //     set_displayMode(&drawing,0);
+    //     set_displayMode(&port,0);
+    //     set_displayMode(&boundary,0);
+    // } else {
+    //     set_displayMode(&drawing,1);
+    //     set_displayMode(&port,1);
+    //     set_displayMode(&boundary,1);
+    // }
 
-    ui->drawingWindow->reshowItems();
+    // ui->drawingWindow->reshowItems();
+    // ui->drawingWindow->updateViewer();
+
+    if (ui->actionWireframe->isChecked() == true) {
+        ui->drawingWindow->set_wireframe(true);
+    } else {
+        ui->drawingWindow->set_wireframe(false);
+    }
     ui->drawingWindow->updateViewer();
 }
 
@@ -4286,9 +4289,9 @@ void OpenParEMg::cancelDraw ()
 {    
     isActiveDrawing=false;
     isDrawLine=false;
-    isDrawPolygon=false;
+    isDrawPolyline=false;
     ui->drawingWindow->set_drawLine(false);
-    ui->drawingWindow->set_drawPolygon(false);
+    ui->drawingWindow->set_drawPolyline(false);
 
     // restore the prior selection index
     if (previousSelectionIndex == 0) on_actionShape_triggered();
@@ -4299,15 +4302,22 @@ void OpenParEMg::cancelDraw ()
     else if (previousSelectionIndex == 5) on_actionShell_triggered();
     else if (previousSelectionIndex == 6) on_actionSolid_triggered();
 
+    std::cout << "place a" << std::endl; std::cout.flush();
     workingItem=nullptr;
     ui->drawingWindow->cancelDraw();
+    std::cout << "place b" << std::endl; std::cout.flush();
     ui->drawingWindow->removeSelectOnVertex();
+    std::cout << "place c" << std::endl; std::cout.flush();
     ui->drawingWindow->updateViewer();
+    std::cout << "place d" << std::endl; std::cout.flush();
     setMenus();
+    std::cout << "place e" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::on_actionDrawLine_triggered ()
 {
+    std::cout << "OpenParEMg::on_actionDrawLine_triggered" << std::endl; std::cout.flush();
+
     ui->drawingWindow->clearDrawPoints();
     isActiveDrawing=true;
     isDrawLine=true;
@@ -4317,24 +4327,26 @@ void OpenParEMg::on_actionDrawLine_triggered ()
     setMenus();
 }
 
-void OpenParEMg::on_actionDrawPolygon_triggered ()
+void OpenParEMg::on_actionDrawPolyline_triggered ()
 {
+    std::cout << "OpenParEMg::on_actionDrawPolyline_triggered" << std::endl; std::cout.flush();
+
     ui->drawingWindow->clearDrawPoints();
     isActiveDrawing=true;
-    isDrawPolygon=true;
+    isDrawPolyline=true;
     ui->drawingWindow->unselectAllItems();
-    ui->drawingWindow->set_drawPolygon(true);
+    ui->drawingWindow->set_drawPolyline(true);
     ui->drawingWindow->updateViewer();
     setMenus();
 }
 
-void OpenParEMg::drawLineFinished (Handle(AIS_Shape) lineShape)
+void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
 {
     std::cout << "OpenParEMg::drawLineFinished" << std::endl; std::cout.flush();
 
     isActiveDrawing=false;
     isDrawLine=false;
-    isDrawPolygon=false;
+    isDrawPolyline=false;
 
     // add to tree
     if (ui->drawingWindow->get_isPath()) {
@@ -4353,23 +4365,25 @@ void OpenParEMg::drawLineFinished (Handle(AIS_Shape) lineShape)
         Path *newPath=new Path(0,0);
         newPath->set_name(pathName);
         newPath->set_closed(false);
-        newPath->addWirePoints(lineShape);
+        newPath->addWirePoints(wire);
         newPath->set_normal(normal);
         boundaryDatabase->push_path(newPath);
 
+        //xxx
         // item
-        newPath->create_item(ui->drawingWindow,&path,lineShape,true);
+        newPath->create_item(ui->drawingWindow,&path,true);  // creates AIS_Shape
 
         // add new path to the drawing
         CustomTreeWidgetItem *item=newPath->get_item();
         if (item) {
-            addShape(item->get_AIS_Shape()->Shape(),item,false);
+            addShape(item->get_AIS_Shape()->Shape(),item,false,true);
             item->setForeground(0,Qt::gray);
             ui->drawingWindow->showItem(item);
 
             long unsigned int j=0;
             while (j < item->get_arrowHeads_size()) {
-                ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
+                //ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
+                ui->drawingWindow->displayShape(item->get_arrowHead(j));
                 ui->drawingWindow->insertItemToMap(item->get_arrowHead(j),item);
                 j++;
             }
@@ -4382,7 +4396,6 @@ void OpenParEMg::drawLineFinished (Handle(AIS_Shape) lineShape)
 
         // select
         ui->drawingWindow->selectItem(item);
-
 
         ui->drawingWindow->set_isPath(false);
 
@@ -4416,8 +4429,10 @@ void OpenParEMg::drawPath ()
     // to avoid stray clicks in the selection tree
     workingItem=clickedItem;
 
-    // set to select on vertices
-    on_actionVertex_triggered();
+    // set to select on vertices and edges
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(1,Standard_False);  // vertices
+    ui->drawingWindow->Activate(2,Standard_False);  // edges
 
     // enable selection on just the port
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
@@ -4443,6 +4458,7 @@ void OpenParEMg::drawPath ()
                 Path *portPath=(Path *)portItem->get_OPEMojbect();
 
                 // select on vertices within the port path
+                //xxx
                 ui->drawingWindow->selectOnVertex(portPath);
 
                 // get the normal to apply to the drawn Path
@@ -4462,10 +4478,10 @@ void OpenParEMg::drawLinePath ()
     on_actionDrawLine_triggered();
 }
 
-void OpenParEMg::drawPolygonPath ()
+void OpenParEMg::drawPolylinePath ()
 {
     drawPath();
-    on_actionDrawPolygon_triggered();
+    on_actionDrawPolyline_triggered();
 }
 
 bool OpenParEMg::insertActionValid ()
@@ -4520,13 +4536,13 @@ void OpenParEMg::deleteLastPoint ()
     ui->drawingWindow->deleteLastPoint();
 }
 
-void OpenParEMg::finishPolygon ()
+void OpenParEMg::finishPolyline ()
 {
-    ui->drawingWindow->finishDrawPolygon();
+    ui->drawingWindow->finishDrawLine();
 }
 
-void OpenParEMg::closePolygon ()
+void OpenParEMg::closePolyline ()
 {
-    ui->drawingWindow->closePolygon();
+    ui->drawingWindow->closePolyline();
 }
 

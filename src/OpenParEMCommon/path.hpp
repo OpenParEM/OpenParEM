@@ -146,14 +146,13 @@ class Path {
       struct point getInsidePoint ();
       void assignPathNormal (struct point);
 #ifdef HAS_GUI
-      void create_item (CustomOpenGLWidget *, CustomTreeWidgetItem *);
-      void create_item (CustomOpenGLWidget *, CustomTreeWidgetItem *, Handle(AIS_Shape), bool);
+      void create_item (CustomOpenGLWidget *, CustomTreeWidgetItem *, bool);
       CustomTreeWidgetItem* get_item () {return item;}
       void set_portItem (CustomTreeWidgetItem *portItem_) {portItem=portItem_;}
       CustomTreeWidgetItem* get_portItem () {return portItem;}
       TopoDS_Wire create_TopoDS_Wire ();
       void addFacePoints (TopoDS_Shape, bool, bool);
-      void addWirePoints (Handle(AIS_Shape) shape);
+      void addWirePoints (TopoDS_Wire);
 #endif
 };
 

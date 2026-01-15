@@ -21,6 +21,7 @@
 #include "CustomOpenGLWidget.h"
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
 #include <Geom_Plane.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
@@ -40,7 +41,6 @@
 #include <BRepTools.hxx>
 #include <TopoDS_Face.hxx>
 #include "Aspect_NeutralWindow.hxx"
-#include "PolygonSelection.h"
 #include <OpenGl_FrameBuffer.hxx>
 #include <V3d_RectangularGrid.hxx>
 
@@ -52,6 +52,11 @@
 #include <IntAna_IntConicQuad.hxx>
 #include <Standard_Boolean.hxx>
 #include <StdSelect_BRepOwner.hxx>
+#include <TopExp.hxx>
+#include <Geom_CartesianPoint.hxx>
+#include <Prs3d_Drawer.hxx>
+#include <Prs3d_PointAspect.hxx>
+#include <Graphic3d_AspectMarker3d.hxx>
 
 CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (theParent)
 {
@@ -116,9 +121,17 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     ignoreLeftMouseRelease=false;
     isPath=false;
     drawLine=false;
-    drawPolygon=false;
+    drawPolyline=false;
 
-    vertexFilter=nullptr;
+    // set a default so that all vertices highlight with a circle
+
+    Handle(Prs3d_Drawer) drawer=viewerContext->DefaultDrawer();
+
+    // size
+    viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_RING1,Quantity_NOC_CYAN1,2.5));
+
+    // for testing only
+    //view->SetFrustumCulling(Standard_False);
 }
 
 CustomOpenGLWidget::~CustomOpenGLWidget ()
@@ -130,9 +143,6 @@ CustomOpenGLWidget::~CustomOpenGLWidget ()
     viewer.Nullify();
 
     if (drawingTracker) delete drawingTracker;
-    //if (portTracker) delete portTracker;
-    //if (boundaryTracker) delete boundaryTracker;
-    //if (meshTracker) delete meshTracker;
 
     makeCurrent();
     displayConnection.Nullify();
@@ -202,7 +212,7 @@ void CustomOpenGLWidget::cancelDraw ()
     if (!lineRubberBand.IsNull()) {viewerContext->Remove(lineRubberBand,Standard_True); lineRubberBand.Nullify();}
 
     drawLine=false;
-    drawPolygon=false;
+    drawPolyline=false;
 
     viewerContext->ClearDetected(Standard_True);
     viewerContext->ClearSelected(Standard_True);
@@ -226,7 +236,14 @@ void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
     switch (aKey)
     {
         case Aspect_VKey_Escape: {
-            if (drawLine || drawPolygon) {
+            if (drawLine || drawPolyline) {
+
+                // remove temporaryVertex, if needed
+                if (!temporaryVertex.IsNull()) {
+                    viewerContext->Remove(temporaryVertex,Standard_True);
+                    temporaryVertex.Nullify();
+                }
+
                 cancelDraw();
                 emit relay->cancelDraw();
             }
@@ -277,51 +294,36 @@ Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
     return shape;
 }
 
+// line (single segment polyline), polyline, or polygon (closed polyline)
 void CustomOpenGLWidget::finishDrawLine ()
 {
+    std::cout << "CustomOpenGLWidget::finishDrawLine" << std::endl; std::cout.flush();
+
     drawLine=false;
+    drawPolyline=false;
     viewerContext->ClearDetected(Standard_True);
 
+    // remove the rubber band
     if (!lineRubberBand.IsNull()) {
         viewerContext->Remove(lineRubberBand,Standard_True);
         lineRubberBand.Nullify();
     }
 
-    Handle(AIS_Shape) newLineShape=CreateAISLineFromVertices(shapePoints[shapePoints.size()-2],shapePoints[shapePoints.size()-1]);
-    if (!newLineShape.IsNull()) {
-        viewerContext->Activate(newLineShape);
-        viewerContext->Display(newLineShape,Standard_True);
+    // remove temporaryVertex
+    if (!temporaryVertex.IsNull()) {
+        viewerContext->Remove(temporaryVertex,Standard_True);
+        temporaryVertex.Nullify();
     }
 
-    emit relay->drawLineFinished(newLineShape);
-}
-
-void CustomOpenGLWidget::finishDrawPolygon ()
-{
-    drawPolygon=false;
-    viewerContext->ClearDetected(Standard_True);
-
-    if (!lineRubberBand.IsNull()) {
-        viewerContext->Remove(lineRubberBand,Standard_True);
-        lineRubberBand.Nullify();
-    }
-
-    BRepBuilderAPI_MakePolygon polyMaker;
+    BRepBuilderAPI_MakeWire wireBuilder;
     long unsigned int i=0;
-    while (i < shapePoints.size()) {
-        polyMaker.Add(shapePoints[i]);
+    while (i < shapePoints.size()-1) {
+        TopoDS_Edge edge=BRepBuilderAPI_MakeEdge(shapePoints[i],shapePoints[i+1]);
+        wireBuilder.Add(edge);
         i++;
     }
 
-    TopoDS_Wire wire=polyMaker.Wire();
-    Handle(AIS_Shape) newPolygonShape=new AIS_Shape(wire);
-
-    if (!newPolygonShape.IsNull()) {
-        viewerContext->Activate(newPolygonShape);
-        viewerContext->Display(newPolygonShape,Standard_True);
-    }
-
-    emit relay->drawLineFinished(newPolygonShape);
+    emit relay->drawLineFinished(wireBuilder.Wire());
 }
 
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
@@ -349,7 +351,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
 
     // line
-    if ((drawLine || drawPolygon) && !owner.IsNull()) {
+    if ((drawLine || drawPolyline) && !owner.IsNull()) {
         Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
         if (!brepOwner.IsNull()) {
             TopoDS_Shape shape = brepOwner->Shape();
@@ -368,10 +370,10 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
                                 }
                             }
 
-                            if (drawPolygon) {
+                            if (drawPolyline) {
                                 if (!shapePoints[shapePoints.size()-1].IsEqual(shapePoints[shapePoints.size()-2],Precision::Confusion())) {
                                     if (shapePoints[shapePoints.size()-1].IsEqual(shapePoints[0],Precision::Confusion())) {
-                                        finishDrawPolygon();
+                                        finishDrawLine();
                                     }
                                 }
                             }
@@ -387,7 +389,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     // pass the mouse press from Qt to OCCT
     bool passClick=true;
     if (event->button() == Qt::RightButton && hasAnySelectedItems()) passClick=false;       // a popup menu will appear
-    if (event->button() == Qt::RightButton && (drawLine || drawPolygon)) passClick=false;  // prevent right-click from zooming
+    if (event->button() == Qt::RightButton && (drawLine || drawPolyline)) passClick=false;  // prevent right-click from zooming
     if (passClick) {
         const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
@@ -483,7 +485,7 @@ void CustomOpenGLWidget::drawRubberBand (gp_Pnt movePoint)
         lineRubberBand=CreateAISLineFromVertices(shapePoints[shapePoints.size()-1],movePoint);
     }
 
-    if (drawPolygon) {
+    if (drawPolyline) {
         BRepBuilderAPI_MakePolygon polyMaker;
         long unsigned int i=0;
         while (i < shapePoints.size()) {
@@ -501,13 +503,52 @@ void CustomOpenGLWidget::drawRubberBand (gp_Pnt movePoint)
     }
 }
 
-void CustomOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
+void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
 {
     QOpenGLWidget::mouseMoveEvent(event);
+
     if (view.IsNull()) return;
 
+    if (viewerContext->HasDetected()) {
+        Handle(SelectMgr_EntityOwner) anOwner = viewerContext->DetectedOwner();
+        Handle(StdSelect_BRepOwner) aBRepOwner = Handle(StdSelect_BRepOwner)::DownCast(anOwner);
+        if (!aBRepOwner.IsNull()) {
+            TopoDS_Shape detectedShape = aBRepOwner->Shape();
+
+            // create a temporary vertex at the mid point
+            if (detectedShape.ShapeType() == TopAbs_EDGE) {
+
+                // clean up
+                if (!temporaryVertex.IsNull()) {
+                    viewerContext->Remove(temporaryVertex,Standard_True);
+                    temporaryVertex.Nullify();
+                }
+
+                // get the mid point
+                const TopoDS_Edge& edge=TopoDS::Edge(detectedShape);
+                TopoDS_Vertex v1=TopExp::FirstVertex(edge);
+                const gp_Pnt pnt1=BRep_Tool::Pnt(v1);
+                TopoDS_Vertex v2=TopExp::LastVertex(edge);
+                const gp_Pnt pnt2=BRep_Tool::Pnt(v2);
+                gp_Pnt pntmid((pnt1.X()+pnt2.X())/2.0,(pnt1.Y()+pnt2.Y())/2.0,(pnt1.Z()+pnt2.Z())/2.0);
+
+                // create vertex
+                TopoDS_Vertex newVertex=BRepBuilderAPI_MakeVertex(pntmid);
+                temporaryVertex=new AIS_Shape(newVertex);
+                viewerContext->Display(temporaryVertex,Standard_True);
+            }
+        }
+
+    } else {
+        // remove the temporary vertex
+        if (!temporaryVertex.IsNull()) {
+            viewerContext->Remove(temporaryVertex,Standard_True);
+            temporaryVertex.Nullify();
+        }
+    }
+
     // line rubberband
-    if (drawLine || drawPolygon) {
+    if (drawLine || drawPolyline) {
         if (shapePoints.size() > 0) {
             // move to point
             Standard_Real x,y,z;

@@ -31,12 +31,14 @@ public:
             if (item->is_mesh()) {
                 long unsigned int j=0;
                 while (j < item->get_meshEntitiesSize()) {
-                    DisplayShape(item->get_meshEntity(j),item->get_displayMode(),item->get_selectionMode());
+                    //DisplayShape(item->get_meshEntity(j),item->get_displayMode(),item->get_selectionMode());
+                    DisplayShape(item->get_meshEntity(j));
                     j++;
                 }
             } else {
                 EraseShape(item->get_AIS_Shape());
-                DisplayShape(item->get_AIS_Shape(),item->get_displayMode(), item->get_selectionMode());
+                //DisplayShape(item->get_AIS_Shape(),item->get_displayMode(), item->get_selectionMode());
+                DisplayShape(item->get_AIS_Shape());
             }
             i++;
         }
@@ -60,15 +62,20 @@ public:
             return;
         }
 
+        //xxx
+        item->print();
+
         // show item
         if (item->is_rootDrawing()) {
             if (item->foreground(0) == Qt::black) return;
-            DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            //DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            DisplayShape(item->get_AIS_Shape());
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
         } else if (item->is_drawing()) {
             if (item->foreground(0) == Qt::black) return;
-            DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            //DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            DisplayShape(item->get_AIS_Shape());
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
         } else if (item->is_rootPath()) {
@@ -81,13 +88,13 @@ public:
         } else if (item->is_path()) {
             if (item->foreground(0) == Qt::black) return;
 
-            DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
+            DisplayShape(item->get_AIS_Shape());
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
 
             long unsigned int i=0;
             while (i < item->get_arrowHeads_size()) {
-                DisplayShape(item->get_arrowHead(i),item->get_displayMode(),item->get_selectionMode());
+                DisplayShape(item->get_arrowHead(i));
                 i++;
             }
 
@@ -136,7 +143,8 @@ public:
             visibleItems.push_back(item);
             long unsigned int i=0;
             while (i < item->get_meshEntitiesSize()){
-                DisplayShape(item->get_meshEntity(i),item->get_displayMode(),item->get_selectionMode());
+                //DisplayShape(item->get_meshEntity(i),item->get_displayMode(),item->get_selectionMode());
+                DisplayShape(item->get_meshEntity(i));
                 i++;
             }
         } else if (item->is_sport()) {
@@ -712,6 +720,9 @@ public:
         if (item->is_mesh()) return;
         if (item->is_sportLabel()) return;
 
+        //xxx
+        if (shape.IsNull()) {std::cout << "ItemTracker::insertItemToMap  ERROR inserting null shape" << std::endl; std::cout.flush();}
+
         shapeToItemMap.insert({shape,item});
     }
 
@@ -738,6 +749,12 @@ private:
     {
         if (shape.IsNull()) return;
         viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
+    }
+
+    void DisplayShape (Handle(AIS_Shape) shape)
+    {
+        if (shape.IsNull()) return;
+        viewerContext->Display(shape,Standard_False);
     }
 
     void SelectShape (Handle(AIS_Shape) shape)
