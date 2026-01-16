@@ -171,30 +171,24 @@ Standard_Boolean VertexFilter::IsOk (const Handle(SelectMgr_EntityOwner)& theOwn
 
     // edges
     if (aShape.ShapeType() == TopAbs_EDGE) {
-        std::cout << "place 1" << std::endl; std::cout.flush();
         TopoDS_Vertex v1,v2;
         TopExp::Vertices(TopoDS::Edge(aShape),v1,v2);
 
         // first point
-        std::cout << "place 2" << std::endl; std::cout.flush();
         gp_Pnt p1=BRep_Tool::Pnt(v1);
         if (!IsPointOnPlane(plane,p1)) return Standard_False;
 
         // second point
-        std::cout << "place 3" << std::endl; std::cout.flush();
         gp_Pnt p2=BRep_Tool::Pnt(v2);
         if (!IsPointOnPlane(plane,p2)) return Standard_False;
 
         // midpoint
-        std::cout << "place 4" << std::endl; std::cout.flush();
         gp_Pnt pntmid((p1.X()+p2.X())/2.0,(p1.Y()+p2.Y())/2.0,(p1.Z()+p2.Z())/2.0);
 
         // get a 2D point on the plane
-        std::cout << "place 5" << std::endl; std::cout.flush();
         gp_Pnt2d pntmid2D=ProjectToPlane2d(plane,pntmid);
 
         // see if the point is in or on the polygon
-        std::cout << "place 6" << std::endl; std::cout.flush();
         if (IsPointInsideOrOnPolygon2d(pntmid2D,outline2D)) return Standard_True;
     }
 

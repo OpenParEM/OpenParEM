@@ -128,7 +128,7 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     Handle(Prs3d_Drawer) drawer=viewerContext->DefaultDrawer();
 
     // size
-    viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_RING1,Quantity_NOC_CYAN1,2.5));
+    //viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
 
     // for testing only
     //view->SetFrustumCulling(Standard_False);
@@ -213,6 +213,8 @@ void CustomOpenGLWidget::cancelDraw ()
 
     drawLine=false;
     drawPolyline=false;
+
+    viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
 
     viewerContext->ClearDetected(Standard_True);
     viewerContext->ClearSelected(Standard_True);
@@ -322,6 +324,8 @@ void CustomOpenGLWidget::finishDrawLine ()
         wireBuilder.Add(edge);
         i++;
     }
+
+    viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
 
     emit relay->drawLineFinished(wireBuilder.Wire());
 }

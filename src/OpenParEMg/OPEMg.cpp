@@ -4302,16 +4302,11 @@ void OpenParEMg::cancelDraw ()
     else if (previousSelectionIndex == 5) on_actionShell_triggered();
     else if (previousSelectionIndex == 6) on_actionSolid_triggered();
 
-    std::cout << "place a" << std::endl; std::cout.flush();
     workingItem=nullptr;
     ui->drawingWindow->cancelDraw();
-    std::cout << "place b" << std::endl; std::cout.flush();
     ui->drawingWindow->removeSelectOnVertex();
-    std::cout << "place c" << std::endl; std::cout.flush();
     ui->drawingWindow->updateViewer();
-    std::cout << "place d" << std::endl; std::cout.flush();
     setMenus();
-    std::cout << "place e" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::on_actionDrawLine_triggered ()

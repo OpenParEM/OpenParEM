@@ -42,6 +42,7 @@
 #include <Standard_WarningsRestore.hxx>
 #include <TopoDS_Face.hxx>
 #include <V3d_View.hxx>
+#include <Prs3d_PointAspect.hxx>
 
 class CustomOpenGLWidget : public QOpenGLWidget, public AIS_ViewController
 {
@@ -90,8 +91,14 @@ public:
 
     void set_isPath (bool isPath_) {isPath=isPath_;}
     bool get_isPath () {return isPath;}
-    void set_drawLine (bool drawLine_) {drawLine=drawLine_;}
-    void set_drawPolyline (bool drawPolyline_) {drawPolyline=drawPolyline_;}
+    void set_drawLine (bool drawLine_) {
+        drawLine=drawLine_;
+        viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
+    }
+    void set_drawPolyline (bool drawPolyline_) {
+        drawPolyline=drawPolyline_;
+        viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
+    }
     void clearDrawPoints () {shapePoints.clear();}
 
     void reshowItems () {
