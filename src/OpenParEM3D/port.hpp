@@ -161,7 +161,6 @@ class Boundary
       bool is_default_boundary () {return is_default;}
       void set_default_boundary () {is_default=true;}
       bool is_modified () {return modified;}
-      void set_modified () {modified=true;}
       std::string get_name () {return name.get_value();}
       int get_attribute () {return attribute;}
       int get_pathIndex (int i) {return pathIndexList[i];}
@@ -170,9 +169,9 @@ class Boundary
       int get_wave_impedance_lineNumber () {return wave_impedance.get_lineNumber();}
       mfem::Vector get_normal () {return normal;}
       void set_normal (double nx, double ny, double nz) {normal(0)=nx; normal(1)=ny; normal(2)=nz;}
-      void set_name (std::string name_) {name.set_value(name_);}
-      void set_type (std::string type_) {type.set_value(type_);}
-      void set_material (std::string material_) {material.set_value(material_);}
+      void set_name (std::string name_) {name.set_value(name_); modified=true;}
+      void set_type (std::string type_) {type.set_value(type_); modified=true;}
+      void set_material (std::string material_) {material.set_value(material_); modified=true;}
       void set_attribute (int attribute_) {attribute=attribute_;};
       void set_assignedToMesh () {assignedToMesh=true;}
       bool is_assignedToMesh () {return assignedToMesh;}
@@ -184,7 +183,7 @@ class Boundary
       bool get_reverse (long unsigned int i) {return reverseList[i];}
       long unsigned int get_pathIndexList_size () {return pathIndexList.size();}
       long unsigned int get_path (long unsigned int i) {return pathIndexList[i];}
-      void push (long unsigned int a) {pathIndexList.push_back(a);}
+      void push (long unsigned int a) {pathIndexList.push_back(a); modified=true;}
       bool is_surface_impedance ();
       bool is_perfect_electric_conductor();
       bool is_perfect_magnetic_conductor();
@@ -208,6 +207,7 @@ class Boundary
       void print();
       void save (std::ofstream *);
       bool snapToMeshBoundary (std::vector<Path *> *, mfem::Mesh *, std::string);
+      void recalculatePathIndexList (std::vector<Path *> *);
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
@@ -288,16 +288,16 @@ class IntegrationPath
       ~IntegrationPath ();
       void addPaths (std::vector<Path *> *, std::vector<Path *> *);
       bool is_modified ();
-      void set_modified () {modified=true;}
       int get_startLine () {return startLine;}
       int get_endLine () {return endLine;}
+      long unsigned int get_pathCount () {return pathNameList.size();}
       std::string get_type () {return type.get_value();}
       double get_scale () {return scale.get_dbl_value();}
-      void set_scale (double scale_) {scale.set_dbl_value(scale_); scale.set_loaded(true);}
+      void set_scale (double scale_) {scale.set_dbl_value(scale_); scale.set_loaded(true); modified=true;}
       std::vector<long unsigned int>* get_pathIndexList () {return &pathIndexList;}
       std::vector<OPEMIntegrationPointList *>* get_pointsList () {return &pointsList;}
       std::vector<bool>* get_reverseList () {return &reverseList;}
-      bool load(std::string *, inputFile *);
+      bool load (std::string *, inputFile *);
       bool inIntegrationPathBlock (int);
       bool check (std::string *, std::vector<Path *> *);
       bool checkBoundingBox(mfem::Vector *, mfem::Vector *, std::string *, double, std::vector<Path *> *);
@@ -315,6 +315,9 @@ class IntegrationPath
       void set_integratedValue (std::complex<double> integratedValue_) {integratedValue=integratedValue_;}
       void output (std::ofstream *, std::vector<Path *> *, Path *, bool, bool, int);
       void assignPathNormals (struct point, std::vector<Path *> *);
+      void renamePath (std::string, std::string);
+      void recalculatePathIndexList (std::vector<Path *> *);
+      void removePath (Path *);
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
@@ -443,14 +446,13 @@ class Mode
       Mode(int,int,std::string);
       ~Mode();
       bool is_modified ();
-      void set_modified () {modified=true;}
       int get_startLine() {return startLine;}
       int get_endLine() {return endLine;}
       std::string get_net() {return net.get_value();}
-      void set_net (std::string name) {net.set_value(name); net.set_loaded(true);}
+      void set_net (std::string name) {net.set_value(name); net.set_loaded(true); modified=true;}
       bool net_is_loaded () {return net.is_loaded();}
       int get_Sport() {return Sport.get_int_value();}
-      void set_Sport (int Sport_) {Sport.set_int_value(Sport_); Sport.set_loaded(true);}
+      void set_Sport (int Sport_) {Sport.set_int_value(Sport_); Sport.set_loaded(true); modified=true;}
       int get_Sport_lineNumber() {return Sport.get_lineNumber();}
       std::string get_type (long unsigned int i) {return integrationPathList[i]->get_type();}
       double get_alpha() {return fields.get_alpha();}
@@ -464,8 +466,8 @@ class Mode
       std::complex<double> get_weight (int i) {return weight[i];}
       int get_modeNumber2D() {return modeNumber2D;}
       void set_modeNumber2D (int modeNumber2D_) {modeNumber2D=modeNumber2D_;}
-      void set_alpha(double alpha_) {fields.set_alpha(alpha_);}
-      void set_beta(double beta_) {fields.set_beta(beta_);}
+      void set_alpha (double alpha_) {fields.set_alpha(alpha_);}
+      void set_beta (double beta_) {fields.set_beta(beta_);}
       void set_impedance (double ReZ, double ImZ) {fields.set_impedance(ReZ,ImZ);}
       bool has_voltage ();
       bool has_current ();
@@ -521,6 +523,9 @@ class Mode
       void populateGamma (double, GammaDatabase *);
       void reset ();
       void assignPathNormals (struct point, std::vector<Path *> *);
+      void renamePath (std::string, std::string);
+      void recalculatePathIndexList (std::vector<Path *> *);
+      void removeIntegrationPath (std::string, Path *);
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
@@ -643,19 +648,19 @@ class Port
       int get_startLine () {return startLine;}
       int get_endLine () {return endLine;}
       bool is_modified ();
-      void set_modified () {modified=true;}
       std::string get_name () {return name.get_value();}
-      void set_name (std::string name_) {name.set_value(name_); name.set_keyword("name"); name.set_lineNumber(0); name.set_loaded(true);}
+      void set_name (std::string name_) {name.set_value(name_); name.set_keyword("name"); name.set_lineNumber(0); name.set_loaded(true); modified=true;}
       int get_name_lineNumber () {return name.get_lineNumber();}
       bool netNameExists (std::string);
       std::string get_impedance_definition () {return impedance_definition.get_value();}
       std::string get_impedance_calculation () {return impedance_calculation.get_value();}
-      void set_impedance_definition (std::string value) {impedance_definition.set_value(value);}
-      void set_impedance_calculation (std::string value) {impedance_calculation.set_value(value);}
+      void set_impedance_definition (std::string value) {impedance_definition.set_value(value); modified=true;}
+      void set_impedance_calculation (std::string value) {impedance_calculation.set_value(value); modified=true;}
       void push_path (keywordPair *name, long unsigned int index, bool reverse) {
           pathNameList.push_back(name);
           pathIndexList.push_back(index);
           reverseList.push_back(reverse);
+          modified=true;
       }
       long unsigned int get_modeCount ();
       int get_SportCount ();
@@ -665,7 +670,7 @@ class Port
       int get_last_attribute (int);
       int get_adjacent_element_attribute (int);
       //Path* get_outline () {return outline;}
-      void set_outline (Path *outline_) {outline=outline_;}
+      void set_outline (Path *outline_) {outline=outline_; modified=true;}
       Path* get_rotated_outline () {return rotated_outline;}
       int get_pathIndex (int i) {return pathIndexList[i];}
       void push_portAttribute (PortAttribute *portAttribute) {attributeList.push_back(portAttribute);};
@@ -679,20 +684,20 @@ class Port
       bool inBlock (int);
       bool inModeBlocks (int);
       bool findModeBlocks (inputFile *);
-      void push_mode (Mode *mode) {modeList.push_back(mode);}
+      void push_mode (Mode *mode) {modeList.push_back(mode); modified=true;}
       bool inDifferentialPairBlocks (int);
       bool findLineBlocks (inputFile *);
       bool findDifferentialPairBlocks (inputFile *);
       bool check (std::string *, std::vector<Path *> *, bool);
       bool assignPathIndices (std::vector<Path *> *);
-      bool checkBoundingBox(mfem::Vector *, mfem::Vector *, std::string *, double, std::vector<Path *> *);
+      bool checkBoundingBox (mfem::Vector *, mfem::Vector *, std::string *, double, std::vector<Path *> *);
       std::vector<int> get_SportList ();
-      void push(long unsigned int a) {pathIndexList.push_back(a);}
-      bool merge(std::vector<Path *> *);
+      void push (long unsigned int a) {pathIndexList.push_back(a);}
+      bool merge (std::vector<Path *> *);
       bool is_point_inside (double, double, double);
       bool is_triangleInside (mfem::DenseMatrix *);
       bool is_modePathInside (std::string *, std::vector<Path *> *);
-      bool createRotated(std::vector<Path *> *, std::string);
+      bool createRotated (std::vector<Path *> *, std::string);
       bool create2Dmesh (int, mfem::ParMesh *, std::vector<mfem::ParSubMesh> *, long unsigned int, double);
       void saveMesh (MeshMaterialList *, std::string *, mfem::ParSubMesh *);
       bool postProcessMesh (std::string, std::string);
@@ -701,9 +706,9 @@ class Port
       void set_filenames();
       bool has_complex_path ();
       bool is_overlapPath (Path *);
-      mfem::Vector& get_normal() {return normal;}
-      mfem::Vector get_rotated_normal() {return rotated_normal;}
-      bool createDirectory(std::string *);
+      mfem::Vector& get_normal () {return normal;}
+      mfem::Vector get_rotated_normal () {return rotated_normal;}
+      bool createDirectory (std::string *);
       void set2DModeNumbers();
       int get_last_attribute ();
       void print ();
@@ -760,6 +765,8 @@ class Port
       void deleteMode (std::string);
       void assignPathNormals (std::vector<Path *> *);
       bool isPathInside (Path *);
+      void renamePath (std::string, std::string);
+      void recalculatePathIndexList (std::vector<Path *> *);
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
@@ -786,10 +793,10 @@ class BoundaryDatabase
       std::vector<Current *> radiationCurrents;     //  Aggregated list from Boundary and copied across ranks
 
       bool modified=false;
+
    public:
       ~BoundaryDatabase();
       bool is_modified ();
-      void set_modified () {modified=true;}
       void set_tempDirectory(std::string tempDirectory_) {tempDirectory=tempDirectory_;}
       std::string get_tempDirectory() {return tempDirectory;}
       void set_drivingSetName (std::string drivingSetName_) {drivingSetName=drivingSetName_;}
@@ -895,6 +902,8 @@ class BoundaryDatabase
       void deletePort (std::string);
       void assignPathNormals ();
       Port* get_matchingPort (Path *);
+      void renamePath (std::string, std::string);
+      void deletePath (Path *);
 #ifdef HAS_GUI
       void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
       void draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);

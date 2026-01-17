@@ -91,17 +91,23 @@ public:
 
     void set_isPath (bool isPath_) {isPath=isPath_;}
     bool get_isPath () {return isPath;}
-    void set_drawLine (bool drawLine_) {
+
+    void set_drawLine (bool drawLine_)
+    {
         drawLine=drawLine_;
         viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
     }
-    void set_drawPolyline (bool drawPolyline_) {
+
+    void set_drawPolyline (bool drawPolyline_)
+    {
         drawPolyline=drawPolyline_;
         viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
     }
+
     void clearDrawPoints () {shapePoints.clear();}
 
-    void reshowItems () {
+    void reshowItems ()
+    {
         std::cout << "CustomOpenGLWidget::reshowItems" << std::endl; std::cout.flush();
         drawingTracker->reshowVisibleItems();
     }
@@ -154,7 +160,8 @@ public:
         drawingTracker->hideItem(item);
     }
 
-    void hideAllItems () {
+    void hideAllItems ()
+    {
         std::cout << "CustomOpenGLWidget::hideAllItems" << std::endl; std::cout.flush();
         drawingTracker->hideAllItems();
     }
@@ -204,6 +211,18 @@ public:
     {
         std::cout << "CustomOpenGLWidget::hasAnySelectedItems" << std::endl; std::cout.flush();
         return drawingTracker->hasAnySelectedItems();
+    }
+
+    int get_pathSelectedCount ()
+    {
+        std::cout << "CustomOpenGLWidget::get_pathSelectedCount" << std::endl; std::cout.flush();
+        return drawingTracker->get_pathSelectedCount();
+    }
+
+    int get_portSelectedCount ()
+    {
+        std::cout << "CustomOpenGLWidget::get_portSelectedCount" << std::endl; std::cout.flush();
+        return drawingTracker->get_portSelectedCount();
     }
 
     void unselectItem (CustomTreeWidgetItem *item)
@@ -260,7 +279,8 @@ public:
     //     viewerContext->Erase(shape,Standard_False);
     // }
 
-    void deleteShape (Handle(AIS_Shape) shape) {
+    void deleteShape (Handle(AIS_Shape) shape)
+    {
         std::cout << "CustomOpenGLWidget::deleteShape" << std::endl; std::cout.flush();
         viewerContext->Remove(shape,Standard_True);
         shape.Nullify();
@@ -283,7 +303,8 @@ public:
 
     Standard_Integer NbSelected () {return viewerContext->NbSelected();}
 
-    int numberDrawingFaceSelected () {
+    int numberDrawingFaceSelected ()
+    {
         int count=0;
         for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
             TopoDS_Shape pickedShape = viewerContext->SelectedShape();
@@ -293,7 +314,8 @@ public:
     }
 
     // assumes one selected shape that has been verified elsewhere
-    TopoDS_Shape get_selectedFace () {
+    TopoDS_Shape get_selectedFace ()
+    {
         TopoDS_Shape pickedShape;
         for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
             pickedShape=viewerContext->SelectedShape();
@@ -305,7 +327,8 @@ public:
     }
 
     // get the selected face by index; max available verified elsewhere
-    TopoDS_Shape get_selectedFace (int index) {
+    TopoDS_Shape get_selectedFace (int index)
+    {
         int count=0;
         TopoDS_Shape pickedShape;
         for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
@@ -318,12 +341,14 @@ public:
         return pickedShape;
     }
 
-    void reset () {
+    void reset ()
+    {
         std::cout << "CustomOpenGLWidget::reset" << std::endl; std::cout.flush();
         drawingTracker->reset();
     }
 
-    void selectOnVertex (Path *outline) {
+    void selectOnVertex (Path *outline)
+    {
         if (!outline) return;
 
         if (vertexFilter.IsNull()) {
@@ -336,17 +361,16 @@ public:
         viewerContext->AddFilter(vertexFilter);
     }
 
-    void removeSelectOnVertex () {
+    void removeSelectOnVertex ()
+    {
         if (!vertexFilter.IsNull()) {
-            std::cout << "place b1" << std::endl; std::cout.flush();
             viewerContext->RemoveFilter(vertexFilter);
-            std::cout << "place b2" << std::endl; std::cout.flush();
             vertexFilter.Nullify();
-            std::cout << "place b3" << std::endl; std::cout.flush();
         }
     }
 
-    void deleteLastPoint () {
+    void deleteLastPoint ()
+    {
         shapePoints.pop_back();
 
         QPoint localPos=mapFromGlobal(QCursor::pos());
@@ -358,7 +382,8 @@ public:
         drawRubberBand(movePoint);
     }
 
-    void closePolyline () {
+    void closePolyline ()
+    {
         if (shapePoints.size() > 2) {
             shapePoints.push_back(shapePoints[0]);
             finishDrawLine();

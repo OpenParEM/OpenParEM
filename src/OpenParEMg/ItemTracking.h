@@ -10,15 +10,19 @@ class ItemTracker : public QObject
 
 public:
 
-    ItemTracker (const Handle(AIS_InteractiveContext)& context) : viewerContext(context) {}
+    ItemTracker (const Handle(AIS_InteractiveContext)& context) : viewerContext(context)
+    {
+        pathSelectedCount=0;
+        portSelectedCount=0;
+
+        showTracking=true;
+        hideTracking=true;
+        selectTracking=true;
+        unselectTracking=true;
+        deleteTracking=true;
+    }
 
     ~ItemTracker() {}
-
-    bool showTracking=true;
-    bool hideTracking=true;
-    bool selectTracking=true;
-    bool unselectTracking=true;
-    bool deleteTracking=true;
 
     // show
 
@@ -388,6 +392,8 @@ public:
             removeVisibleItem(item);
         } else if (item->is_scale()) {
             // nothing to do
+        } else if (item->is_scaleValue()) {
+            // nothing to do
         } else if (item->is_impedanceDefinition()) {
             // nothing to do
         } else if (item->is_impedanceCalculation ()) {
@@ -395,7 +401,7 @@ public:
         } else if (item->is_sportNumber()) {
             // nothing to do
         } else {
-            std::cout << "ASSERT: Invalid option in ItemTracking::hideItem" << std::endl; std::cout.flush();
+            std::cout << "ASSERT: Invalid option in ItemTracking::hideItem  type=" << item->get_type() << std::endl; std::cout.flush();
         }
     }
 
@@ -410,6 +416,8 @@ public:
             i++;
         }
 
+        pathSelectedCount=0;
+        portSelectedCount=0;
         selectedItems.clear();
     }
 
@@ -428,6 +436,8 @@ public:
             itemCount=visibleItems.size();
         }
 
+        pathSelectedCount=0;
+        portSelectedCount=0;
         selectedItems.clear();
     }
 
@@ -532,6 +542,8 @@ public:
             SelectShape(item->get_AIS_Shape());
         }
         item->setSelected(Standard_True);
+        if (item->is_path()) pathSelectedCount++;
+        if (item->is_port()) portSelectedCount++;
         selectedItems.push_back(item);
 
         int i=0;
@@ -603,6 +615,8 @@ public:
         return false;
     }
 
+    int get_pathSelectedCount () {return pathSelectedCount;}
+    int get_portSelectedCount () {return portSelectedCount;}
 
     // unselect
 
@@ -634,6 +648,8 @@ public:
             item->setSelected(Standard_False);
             i++;
         }
+        pathSelectedCount=0;
+        portSelectedCount=0;
         selectedItems.clear();
     }
 
@@ -665,6 +681,8 @@ public:
         while (i < selectedItems.size()) {
             CustomTreeWidgetItem *item=selectedItems[i];
             if (item == unselectItem) {
+                if (item->is_path()) pathSelectedCount--;
+                if (item->is_port()) portSelectedCount--;
                 selectedItems.erase(selectedItems.begin()+i);
                 break;
             }
@@ -735,6 +753,9 @@ public:
         visibleItems.clear();
         selectedItems.clear();
         shapeToItemMap.clear();
+
+        pathSelectedCount=0;
+        portSelectedCount=0;
     }
 
 private:
@@ -781,6 +802,15 @@ private:
         shapeToItemMap.erase(item->get_AIS_Shape());
         item->get_AIS_Shape().Nullify();
 
+        // remove arrow heads
+        long unsigned int j=0;
+        while (j < item->get_arrowHeads_size()) {
+            viewerContext->Remove(item->get_arrowHead(j),Standard_False);
+            shapeToItemMap.erase(item->get_arrowHead(j));
+            item->get_arrowHead(j).Nullify();
+            j++;
+        }
+
         // process children
         int i=0;
         while (i < item->childCount()) {
@@ -807,6 +837,15 @@ private:
     std::vector<CustomTreeWidgetItem *> visibleItems;
     std::vector<CustomTreeWidgetItem *> selectedItems;
     std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> shapeToItemMap;
+    int pathSelectedCount;
+    int portSelectedCount;
+
+    // for debug
+    bool showTracking;
+    bool hideTracking;
+    bool selectTracking;
+    bool unselectTracking;
+    bool deleteTracking;
 };
 
 #endif // ITEMTRACKING_H

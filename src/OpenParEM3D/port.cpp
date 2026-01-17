@@ -834,6 +834,8 @@ void Boundary::save (ofstream *out)
     }
 
     *out << "   EndBoundary" << endl;
+
+    modified=false;
 }
 
 bool Boundary::inBlock (int lineNumber)
@@ -1519,6 +1521,24 @@ bool Boundary::snapToMeshBoundary (vector<Path *> *pathList, Mesh *mesh, string 
    return false;
 }
 
+void Boundary::recalculatePathIndexList (std::vector<Path *> *pathList)
+{
+    std::cout << "Boundary::recalculatePathIndexList" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < pathNameList.size()) {
+        long unsigned int j=0;
+        while (j < pathList->size()) {
+            if (pathNameList[i]->get_value().compare((*pathList)[j]->get_name()) == 0) {
+                pathIndexList[i]=j;
+                break;
+            }
+            j++;
+        }
+        i++;
+    }
+}
+
 #ifdef HAS_GUI
 
 void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
@@ -1542,7 +1562,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     int j=0;
     while (j < boundaryWidgetItem->childCount()) {
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) boundaryWidgetItem->child(j);
-        if (child->get_OPEMojbect() == path) {
+        if (child->get_OPEMobject() == path) {
             itemName->push_linkedItem(child);
             child->push_linkedItem(itemName);
         }
@@ -2505,6 +2525,8 @@ void IntegrationPath::save (ofstream *out)
     }
 
     *out << "      EndIntegrationPath" << endl;
+
+    modified=false;
 }
 
 void IntegrationPath::output (ofstream *out, vector<Path *> *pathList, Path *rotatedPath, bool spin180degrees, bool isModal, int modeNumber2D)
@@ -2549,6 +2571,55 @@ void IntegrationPath::assignPathNormals (struct point normal, std::vector<Path *
     long unsigned int i=0;
     while (i < pathIndexList.size()) {
         (*pathList)[pathIndexList[i]]->assignPathNormal(normal);
+        i++;
+    }
+}
+
+void IntegrationPath::renamePath(std::string from, std::string to)
+{
+     std::cout << "IntegrationPath::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < pathNameList.size()) {
+        if (pathNameList[i]->get_value().compare(from) == 0) {
+            pathNameList[i]->set_value(to);
+            modified=true;
+        }
+        i++;
+    }
+}
+
+void IntegrationPath::recalculatePathIndexList (std::vector<Path *> *pathList)
+{
+    std::cout << "IntegrationPath::recalculatePathIndexList" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < pathNameList.size()) {
+        long unsigned int j=0;
+        while (j < pathList->size()) {
+            if (pathNameList[i]->get_value().compare((*pathList)[j]->get_name()) == 0) {
+                pathIndexList[i]=j;
+                break;
+            }
+            j++;
+        }
+        i++;
+    }
+}
+
+void IntegrationPath::removePath (Path *path)
+{
+    std::cout << "IntegrationPath::removePath" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < pathNameList.size()) {
+        if (pathNameList[i]->get_value().compare(path->get_name()) == 0) {
+            pathNameList.erase(pathNameList.begin()+i);
+            pathIndexList.erase(pathIndexList.begin()+i);
+            reverseList.erase(reverseList.begin()+i);
+            std::cout << "****************************** modified=true" << std::endl; std::cout.flush();
+            modified=true;
+        }
         i++;
     }
 }
@@ -2612,7 +2683,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, Cu
         int j=0;
         while (j < pathItemTree->childCount()) {
             CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) pathItemTree->child(j);
-            if (child->get_OPEMojbect() == path) {
+            if (child->get_OPEMobject() == path) {
                 itemSegment->push_linkedItem(child);
                 child->push_linkedItem(itemSegment);
             }
@@ -3461,7 +3532,6 @@ bool Mode::findIntegrationPathBlocks(inputFile *inputs)
    return fail;
 }
 
-//xxx
 IntegrationPath* Mode::addIntegrationPath (vector<Path *> *pathList, vector<Path *> *pathsToAdd, string type)
 {
     IntegrationPath *integrationPath=new IntegrationPath(pathList,pathsToAdd,type);
@@ -3721,6 +3791,8 @@ void Mode::save (std::ofstream *out)
 
     if (is_modal()) {*out << "   EndMode" << endl;}
     if (is_line()) {*out << "   EndLine" << endl;}
+
+    modified=false;
 }
 
 void printMatlabComplex(double re, double im)
@@ -4199,6 +4271,52 @@ void Mode::assignPathNormals (struct point normal, std::vector<Path *> *pathList
     }
 }
 
+void Mode::renamePath (std::string from, std::string to)
+{
+     std::cout << "Mode::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < integrationPathList.size()) {
+        integrationPathList[i]->renamePath(from,to);
+        if (integrationPathList[i]->is_modified()) modified=true;
+        i++;
+    }
+}
+
+void Mode::recalculatePathIndexList (std::vector<Path *> *pathList)
+{
+    std::cout << "Mode::recalculatePathIndexList" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < integrationPathList.size()) {
+        integrationPathList[i]->recalculatePathIndexList(pathList);
+        i++;
+    }
+}
+
+void Mode::removeIntegrationPath (std::string type, Path *path)
+{
+    // remove the path
+    long unsigned int i=0;
+    while (i < integrationPathList.size()) {
+        if (integrationPathList[i]->get_type().compare(type) == 0) {
+            integrationPathList[i]->removePath(path);
+        }
+        i++;
+    }
+
+    // remove integration paths that do not have any paths
+    i=0;
+    while (i < integrationPathList.size()) {
+        if (integrationPathList[i]->get_pathCount() == 0) {
+            delete integrationPathList[i];
+            integrationPathList.erase(integrationPathList.begin()+i);
+            modified=true;
+        }
+        i++;
+    }
+}
+
 #ifdef HAS_GUI
 
 void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
@@ -4248,7 +4366,6 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     sportNumber->setValue(get_Sport());
     drawingItemTree->setItemWidget(itemSportValue,0,sportNumber);
 
-    //xxx
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,relay,&Relay::setMenus);
 
@@ -4442,7 +4559,8 @@ void DifferentialPair::save (ofstream *out)
     *out << "      Sport_P=" << Sport_P.get_int_value() << endl;
     *out << "      Sport_N=" << Sport_N.get_int_value() << endl;
     *out << "   EndDifferentialPair" << endl;
-    return;
+
+    modified=false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -5234,7 +5352,7 @@ void Port::save (std::ofstream *out)
     *out << "EndPort" << endl;
     *out << std::endl;
 
-    return;
+    modified=false;
 }
 
 void Port::printPaths (vector<Path *> *pathList)
@@ -7028,6 +7146,51 @@ bool Port::isPathInside (Path *path)
     return outline->is_path_inside(path);
 }
 
+void Port::renamePath (std::string from, std::string to)
+{
+     std::cout << "Port::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < pathNameList.size()) {
+        if (pathNameList[i]->get_value().compare(from) == 0) {
+            pathNameList[i]->set_value(to);
+            modified=true;
+        }
+        i++;
+    }
+
+    i=0;
+    while (i < modeList.size()) {
+        modeList[i]->renamePath(from,to);
+        if (modeList[i]->is_modified()) modified=true;
+        i++;
+    }
+}
+
+void Port::recalculatePathIndexList (std::vector<Path *> *pathList)
+{
+    std::cout << "Port::recalculatePathIndexList" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < pathNameList.size()) {
+        long unsigned int j=0;
+        while (j < pathList->size()) {
+            if (pathNameList[i]->get_value().compare((*pathList)[j]->get_name()) == 0) {
+                pathIndexList[i]=j;
+                break;
+            }
+            j++;
+        }
+        i++;
+    }
+
+    i=0;
+    while (i < modeList.size()) {
+        modeList[i]->recalculatePathIndexList(pathList);
+        i++;
+    }
+}
+
 #ifdef HAS_GUI
 void comboIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatabase *boundaryDatabase, int type, CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance) {
 
@@ -7036,16 +7199,12 @@ void comboIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatab
         if (index == 0) port->set_impedance_definition("VI");
         if (index == 1) port->set_impedance_definition("PV");
         if (index == 2) port->set_impedance_definition("PI");
-        port->set_modified();
-        boundaryDatabase->set_modified();
     }
 
     // Port: impedance calculation
     if (port && type == 1) {
         if (index == 0) port->set_impedance_calculation("line");
         if (index == 1) port->set_impedance_calculation("modal");
-        port->set_modified();
-        boundaryDatabase->set_modified();
     }
 
     // Boundary: type
@@ -7070,8 +7229,6 @@ void comboIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatab
             if (itemMaterial) itemMaterial->setHidden(true);
             if (itemWaveImpedance) itemWaveImpedance->setHidden(false);
         }
-        boundary->set_modified();
-        boundaryDatabase->set_modified();
     }
 
     return;
@@ -7079,31 +7236,17 @@ void comboIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatab
 
 void comboTextChanged (QString text, Boundary *boundary, BoundaryDatabase *boundaryDatabase)
 {
-    if (boundary) {
-        boundary->set_material(text.toStdString());
-        boundary->set_modified();
-        boundaryDatabase->set_modified();
-    }
+    if (boundary) boundary->set_material(text.toStdString());
 }
 
 void spinValueChanged (int value, Mode *mode, BoundaryDatabase *boundaryDatabase)
 {
-    if (mode) {
-        mode->set_Sport(value);
-        mode->set_modified();
-        boundaryDatabase->set_modified();
-    }
+    if (mode) mode->set_Sport(value);
 }
 
 void textValueChanged (QString text, IntegrationPath *integrationPath, BoundaryDatabase *boundaryDatabase)
 {
-    std::cout << "textValueChanged" << std::endl; std::cout.flush();
-    if (integrationPath) {
-        std::cout << "   has integrationPath" << std::endl; std::cout.flush();
-        integrationPath->set_scale(text.toDouble());
-        integrationPath->set_modified();
-        boundaryDatabase->set_modified();
-    }
+    if (integrationPath) integrationPath->set_scale(text.toDouble());
 }
 
 void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
@@ -7128,7 +7271,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     int j=0;
     while (j < pathWidgetItem->childCount()) {
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) pathWidgetItem->child(j);
-        if (child->get_OPEMojbect() == path) {
+        if (child->get_OPEMobject() == path) {
             itemName->push_linkedItem(child);
             child->push_linkedItem(itemName);
         }
@@ -7507,7 +7650,6 @@ void BoundaryDatabase::save (std::ofstream *out)
     PetscMPIInt rank;
     MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-    modified=false;
     if (rank != 0) return;
 
     *out << version_name << " " << version_value << endl;
@@ -7536,6 +7678,8 @@ void BoundaryDatabase::save (std::ofstream *out)
         portList[i]->save(out);
         i++;
     }
+
+    modified=false;
 }
 
 bool BoundaryDatabase::inBlocks (int lineNumber)
@@ -9439,6 +9583,52 @@ Port* BoundaryDatabase::get_matchingPort (Path *path)
         i++;
     }
     return nullptr;
+}
+
+void BoundaryDatabase::renamePath (std::string from, std::string to)
+{
+    std::cout << "BoundaryDatabase::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < pathList.size()) {
+        if (pathList[i]->has_name(from)) pathList[i]->set_name(to);
+        if (pathList[i]->is_modified()) modified=true;
+        i++;
+    }
+
+    i=0;
+    while (i < portList.size()) {
+        portList[i]->renamePath(from,to);
+        if (portList[i]->is_modified()) modified=true;
+        i++;
+    }
+}
+
+void BoundaryDatabase::deletePath (Path *path)
+{
+    std::cout << "BoundaryDatabase::deletePath" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < pathList.size()) {
+        if (pathList[i] == path) {
+            pathList.erase(pathList.begin()+i);
+            break;
+        }
+        i++;
+    }
+
+    i=0;
+    while (i < portList.size()) {
+        portList[i]->recalculatePathIndexList(&pathList);
+        i++;
+    }
+
+    i=0;
+    while (i < boundaryList.size()) {
+        boundaryList[i]->recalculatePathIndexList(&pathList);
+        i++;
+    }
+
 }
 
 #ifdef HAS_GUI

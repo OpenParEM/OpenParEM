@@ -88,6 +88,7 @@ class Path {
       //bool checkBoundingBox (Vector *, Vector *, string *, double);
       bool checkBoundingBox (mfem::Vector *, mfem::Vector *, std::string *, double);
       std::string get_name () {return name.get_value();}
+      bool has_name (std::string name_) {if (get_name().compare(name_) == 0) return true; return false;}
       bool name_is_loaded () {return name.is_loaded();}
       int get_name_lineNumber () {return name.get_lineNumber();}
       bool get_closed () {return closed.get_bool_value();}

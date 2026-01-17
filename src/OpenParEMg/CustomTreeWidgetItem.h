@@ -36,7 +36,7 @@ public:
     }
 
     void set_OPEMobject (void *pointer) {OPEMobject=pointer;}
-    void* get_OPEMojbect () {return OPEMobject;}
+    void* get_OPEMobject () {return OPEMobject;}
 
     long unsigned int linkedItems_size () {return linkedItems.size();}
     void push_linkedItem (CustomTreeWidgetItem *linkedItem) {linkedItems.push_back(linkedItem);}
@@ -116,6 +116,17 @@ public:
         if (!forShowHide) return false;
         if (foreground(0) == Qt::black) return true;
         return false;
+    }
+
+    void removeLinkedItem (CustomTreeWidgetItem *item)
+    {
+        std::cout << "CustomTreeWidgetItem::removeLinkedItem" << std::endl; std::cout.flush();
+
+        long unsigned int i=0;
+        while (i < linkedItems.size()) {
+            if (linkedItems[i] == item) linkedItems.erase(linkedItems.begin()+i);
+            i++;
+        }
     }
 
     void print () {

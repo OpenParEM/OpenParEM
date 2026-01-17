@@ -171,7 +171,10 @@ private slots:
     void showDrawingItems ();
     void hideRootDrawingItems ();
     void hideDrawingItems ();
+    void renamePathItems ();
+    void deletePathItems ();
     void showRootPathItems ();
+    bool isPathValidDelete ();
     void showPathItems ();
     bool rootPathValidShow ();
     void hideRootPathItems ();
@@ -213,6 +216,7 @@ private slots:
     void hideNetItems ();
     void showVIItems ();
     void hideVIItems ();
+    void removeIntegrationPathItems ();
     void showIntegrationPathItems ();
     void hideIntegrationPathItems ();
     //void showDisplayShape (CustomTreeWidgetItem *);
@@ -308,6 +312,7 @@ private:
     QAction *hideAction;
     QAction *unselectAction;
     QAction *deleteAction;
+    QAction *removeAction;
     QAction *assignAction;
     QAction *insertAction;
     QAction *renameAction;
@@ -333,8 +338,6 @@ private:
     // lockouts
     bool projectFileLoaded;
     bool projectFileChanged;
-    bool boundaryDatabaseLoaded;
-    bool boundaryDatabaseChanged;
     bool meshFileLoaded;
     bool meshFileChanged;
     bool brepFileLoaded;
