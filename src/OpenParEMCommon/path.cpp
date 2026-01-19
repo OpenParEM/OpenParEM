@@ -592,7 +592,7 @@ Path::Path(int startLine_, int endLine_)
    normal.dim=3; normal.x=-2; normal.y=-2; normal.z=-2;
 
    hasOutput=false;
-   modified=false;
+   modified=true;
 
 #if HAS_GUI
    item=nullptr;

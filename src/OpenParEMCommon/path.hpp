@@ -103,6 +103,7 @@ class Path {
       void push_point (keywordPair *point) {points.push_back(point);}
       void pop_point () {points.pop_back();}
       bool compare (long unsigned int i, keywordPair test_point);
+      void set_unmodified () {modified=false;}
       void set_closed (bool value) {closed.set_bool_value(value); closed.set_loaded(true);}
       bool is_closed () {return closed.get_bool_value();}
       void set_name (std::string name_) {name.set_value(name_); name.set_keyword("name"); name.set_lineNumber(0); name.set_loaded(true);}

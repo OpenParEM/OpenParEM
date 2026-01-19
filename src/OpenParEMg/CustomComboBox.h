@@ -25,8 +25,8 @@
 #include "port.hpp"
 #include "CustomTreeWidgetItem.h"
 
-void comboIndexChanged (int, Port *, Boundary *, BoundaryDatabase *, int, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
-void comboTextChanged (QString value, Boundary *, BoundaryDatabase *);
+void comboIndexChanged (int, Port *, Boundary *, int, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+void comboTextChanged (QString value, Boundary *);
 
 class CustomComboBox : public QComboBox {
     Q_OBJECT
@@ -41,12 +41,10 @@ public:
         itemMaterial=nullptr;
         itemWaveImpedance=nullptr;
         drawingTracker=nullptr;
-        boundaryDatabase=nullptr;
     }
 
     void set_port (Port *port_) {port=port_;}
     void set_boundary (Boundary *boundary_) {boundary=boundary_;}
-    void set_boundaryDatabase (BoundaryDatabase *boundaryDatabase_) {boundaryDatabase=boundaryDatabase_;}
     void set_type (int type_) {type=type_;}
     void set_itemMaterial (CustomTreeWidgetItem *itemMaterial_) {itemMaterial=itemMaterial_;}
     void set_itemWaveImpedance (CustomTreeWidgetItem *itemWaveImpedance_) {itemWaveImpedance=itemWaveImpedance_;}
@@ -66,15 +64,15 @@ protected:
     }
 
 signals:
-    void CustomCurrentIndexChanged (int, Port *, Boundary *, BoundaryDatabase *, int, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
-    void CustomCurrentTextChanged (QString, Boundary *, BoundaryDatabase *);
+    void CustomCurrentIndexChanged (int, Port *, Boundary *, int, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+    void CustomCurrentTextChanged (QString, Boundary *);
 
 private slots:
     void handleCurrentIndexChanged (int index) {
-        emit CustomCurrentIndexChanged(index,port,boundary,boundaryDatabase,type,itemMaterial,itemWaveImpedance);
+        emit CustomCurrentIndexChanged(index,port,boundary,type,itemMaterial,itemWaveImpedance);
     }
     void handleCurrentTextChanged (QString text) {
-        emit CustomCurrentTextChanged(text,boundary,boundaryDatabase);
+        emit CustomCurrentTextChanged(text,boundary);
     }
 
 private:
@@ -86,7 +84,6 @@ private:
     CustomTreeWidgetItem *itemMaterial;
     CustomTreeWidgetItem *itemWaveImpedance;
     ItemTracker *drawingTracker;
-    BoundaryDatabase *boundaryDatabase;  // for setting the modified flag
 };
 
 

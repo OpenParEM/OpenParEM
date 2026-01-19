@@ -192,7 +192,9 @@ private slots:
     bool rootMeshValidHide ();
     //void addSportNet ();
     void renameSportNet ();
-    void deleteSportNet ();
+    bool deleteSportValid ();
+    void deleteSportItem (CustomTreeWidgetItem *);
+    void deleteSportItems ();
     void rename_returnPressed ();
     bool hasOneSelectedSport ();
     bool hasVoltage ();
@@ -210,8 +212,6 @@ private slots:
     void deletePortItem (CustomTreeWidgetItem *);
     void deleteRootPortItems ();
     void deletePortItems ();
-    void deleteSportItem (CustomTreeWidgetItem *);
-    void deleteSportItems ();
     void showNetItems ();
     void hideNetItems ();
     void showVIItems ();

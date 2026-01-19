@@ -40,6 +40,7 @@
 #include <QPushButton>
 #include "CustomLineEdit.h"
 #include "CustomComboBox.h"
+#include <QStandardItemModel>
 #endif
 
 string convertLogic (int a)
@@ -576,7 +577,7 @@ Boundary::Boundary(int startLine_, int endLine_)
    normal.SetSize(3);
    normal(0)=-1; normal(1)=-1; normal(2)=-1;
 
-   modified=false;
+   modified=true;
 
 #if HAS_GUI
    doubleValidator.setBottom(0);
@@ -1584,7 +1585,6 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     comboType->addItem("Radiation");
     comboType->set_port(nullptr);
     comboType->set_boundary(this);
-    comboType->set_boundaryDatabase(boundaryDatabase);
     comboType->set_type(2);
     if (is_perfect_electric_conductor()) comboType->setCurrentIndex(0);
     if (is_perfect_magnetic_conductor()) comboType->setCurrentIndex(1);
@@ -1683,7 +1683,7 @@ IntegrationPath::IntegrationPath (int startLine_, int endLine_)
 
    // defaults
    scale.set_dbl_value(1);
-   modified=false;
+   modified=true;
 
 #if HAS_GUI
    item=nullptr;
@@ -3481,7 +3481,7 @@ Mode::Mode(int startLine_, int endLine_, std::string calculation_)
    // defaults
 
    calculation=calculation_;
-   modified=false;
+   modified=true;
 #ifdef HAS_GUI
    item=nullptr;
 #endif
@@ -4317,6 +4317,17 @@ void Mode::removeIntegrationPath (std::string type, Path *path)
     }
 }
 
+void Mode::set_unmodified ()
+{
+    modified=false;
+
+    long unsigned int i=0;
+    while (i < integrationPathList.size()) {
+        integrationPathList[i]->set_unmodified();
+        i++;
+    }
+}
+
 #ifdef HAS_GUI
 
 void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
@@ -4454,7 +4465,7 @@ DifferentialPair::DifferentialPair (int startLine_, int endLine_)
    Sport_N.set_upperLimit(100);
    Sport_N.set_checkLimits(true);
 
-   modified=false;
+   modified=true;
 
 #ifdef HAS_GUI
    item=nullptr;
@@ -4626,10 +4637,11 @@ Port::Port (int startLine_, int endLine_)
    Tv=nullptr;
    TiTvSize=0;
 
-   modified=false;
+   modified=true;
 
 #ifdef HAS_GUI
    item=nullptr;
+   comboZdef=nullptr;
 #endif
 }
 
@@ -4650,6 +4662,23 @@ bool Port::is_modified ()
     }
 
     return false;
+}
+
+void Port::set_unmodified ()
+{
+    modified=false;
+
+    long unsigned int i=0;
+    while (i < modeList.size()) {
+        modeList[i]->set_unmodified();
+        i++;
+    }
+
+    i=0;
+    while (i < differentialPairList.size()) {
+        differentialPairList[i]->set_unmodified();
+        i++;
+    }
 }
 
 bool Port::netNameExists (string netName)
@@ -7125,7 +7154,8 @@ void Port::deleteMode (std::string net)
     while (i < modeList.size()) {
         if (modeList[i]->get_net().compare(net) == 0) {
             delete modeList[i];
-            modeList.erase(modeList.begin(),modeList.begin()+i);
+            modeList.erase(modeList.begin()+i);
+            modified=true;
         }
         i++;
     }
@@ -7192,8 +7222,9 @@ void Port::recalculatePathIndexList (std::vector<Path *> *pathList)
 }
 
 #ifdef HAS_GUI
-void comboIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatabase *boundaryDatabase, int type, CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance) {
-
+void comboIndexChanged (int index, Port *port, Boundary *boundary, int type,
+                        CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance)
+{
     // Port: impedance definition
     if (port && type == 0) {
         if (index == 0) port->set_impedance_definition("VI");
@@ -7234,7 +7265,7 @@ void comboIndexChanged (int index, Port *port, Boundary *boundary, BoundaryDatab
     return;
 }
 
-void comboTextChanged (QString text, Boundary *boundary, BoundaryDatabase *boundaryDatabase)
+void comboTextChanged (QString text, Boundary *boundary)
 {
     if (boundary) boundary->set_material(text.toStdString());
 }
@@ -7287,18 +7318,19 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
     itemName->addChild(itemImpedanceDefinition);
 
-    CustomComboBox *comboZdef=new CustomComboBox();
+    comboZdef=new CustomComboBox();
     comboZdef->set_itemTracker(drawingWindow->get_itemTracker());
-    comboZdef->addItem("VI");
-    comboZdef->addItem("PV");
-    comboZdef->addItem("PI");
+    comboZdef->addItem("VI");       // 0
+    comboZdef->addItem("PV");       // 1
+    comboZdef->addItem("PI");       // 2
+    comboZdef->addItem("invalid");  // 3
     comboZdef->set_port(this);
     comboZdef->set_boundary(nullptr);
-    comboZdef->set_boundaryDatabase(boundaryDatabase);
     comboZdef->set_type(0);
     if (impedance_definition.get_value().compare("VI") == 0) comboZdef->setCurrentIndex(0);
-    if (impedance_definition.get_value().compare("PV") == 0) comboZdef->setCurrentIndex(1);
-    if (impedance_definition.get_value().compare("PI") == 0) comboZdef->setCurrentIndex(2);
+    else if (impedance_definition.get_value().compare("PV") == 0) comboZdef->setCurrentIndex(1);
+    else if (impedance_definition.get_value().compare("PI") == 0) comboZdef->setCurrentIndex(2);
+    else comboZdef->setCurrentIndex(3);
     drawingItemTree->setItemWidget(itemImpedanceDefinition,0,comboZdef);
 
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
@@ -7319,7 +7351,6 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     comboZcalc->set_port(this);
     comboZcalc->set_type(1);
     comboZcalc->set_boundary(nullptr);
-    comboZcalc->set_boundaryDatabase(boundaryDatabase);
     if (is_line()) comboZcalc->setCurrentIndex(0);
     if (is_modal()) comboZcalc->setCurrentIndex(1);
     drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
@@ -7344,6 +7375,85 @@ void Port::crossLink (std::vector<Path *> *pathList)
     while (i < modeList.size()) {
         modeList[i]->crossLink(pathList,item);
         i++;
+    }
+}
+
+void Port::set_comboZdef ()
+{
+    if (!comboZdef) return;
+
+    bool has_voltage=true;
+    bool has_current=true;
+
+    long unsigned int i=0;
+    while (i < modeList.size()) {
+        if (!modeList[i]->has_voltage()) has_voltage=false;
+        if (!modeList[i]->has_current()) has_current=false;
+        i++;
+    }
+
+    QStandardItemModel *model = qobject_cast<QStandardItemModel *>(comboZdef->model());
+    QStandardItem *item;
+
+    int currentIndex=comboZdef->currentIndex();
+
+    if (model) {
+
+        // invalid - never selectable but might get assigned
+        item=model->item(3);
+        if (item) item->setEnabled(false);
+
+        // VI
+        item=model->item(0);
+        if (item) {
+            item->setEnabled(false);
+            if (has_voltage) {
+                if (has_current) {
+                    item->setEnabled(true);
+                    if (currentIndex == 3) {comboZdef->setCurrentIndex(0); currentIndex=0;}
+                } else {
+                    if (currentIndex == 0) comboZdef->setCurrentIndex(1);  // PV
+                }
+            } else {
+                if (has_current) {
+                    if (currentIndex == 0) comboZdef->setCurrentIndex(2);  // PI
+                } else {
+                    if (currentIndex == 0) comboZdef->setCurrentIndex(3);  // invalid
+                }
+            }
+        }
+
+        // PV
+        item=model->item(1);
+        if (item) {
+            item->setEnabled(false);
+            if (has_voltage) {
+                item->setEnabled(true);
+                if (currentIndex == 3) {comboZdef->setCurrentIndex(1); currentIndex=1;}
+            } else {
+                if (has_current) {
+                    if (currentIndex == 1) comboZdef->setCurrentIndex(2);  // PI
+                } else {
+                    if (currentIndex == 1) comboZdef->setCurrentIndex(3);  // invalid
+                }
+            }
+        }
+
+        // PI
+        item=model->item(2);
+        if (item) {
+            item->setEnabled(false);
+            if (has_current) {
+                item->setEnabled(true);
+                if (currentIndex == 3) {comboZdef->setCurrentIndex(2); currentIndex=2;}
+            } else {
+                if (has_voltage) {
+                    if (currentIndex == 2) comboZdef->setCurrentIndex(1);  // PV
+                } else {
+                    if (currentIndex == 2) comboZdef->setCurrentIndex(3);  // invalid
+                }
+            }
+        }
     }
 }
 
@@ -9629,6 +9739,32 @@ void BoundaryDatabase::deletePath (Path *path)
         i++;
     }
 
+    modified=true;
+}
+
+void BoundaryDatabase::set_unmodified ()
+{
+    std::cout << "BoundaryDatabase::set_unmodified" << std::endl; std::cout.flush();
+
+    modified=false;
+
+    long unsigned int i=0;
+    while (i < pathList.size()) {
+        pathList[i]->set_unmodified();
+        i++;
+    }
+
+    i=0;
+    while (i < portList.size()) {
+        portList[i]->set_unmodified();
+        i++;
+    }
+
+    i=0;
+    while (i < boundaryList.size()) {
+        boundaryList[i]->set_unmodified();
+        i++;
+    }
 }
 
 #ifdef HAS_GUI
@@ -9690,6 +9826,15 @@ void BoundaryDatabase::crossLink ()
     long unsigned int i=0;
     while (i < portList.size()) {
         portList[i]->crossLink(&pathList);
+        i++;
+    }
+}
+
+void BoundaryDatabase::set_comboZdef ()
+{
+    long unsigned int i=0;
+    while (i < portList.size()) {
+        portList[i]->set_comboZdef();
         i++;
     }
 }

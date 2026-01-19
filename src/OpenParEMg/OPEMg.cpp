@@ -496,6 +496,8 @@ void OpenParEMg::setMenus ()
         ui->actionFrequencyPlan->setEnabled(true);
     }
 
+    boundaryDatabase->set_comboZdef();
+
     std::cout << "out OpenParEMg::setMenus" << std::endl; std::cout.flush();
 }
 
@@ -722,8 +724,6 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         renameAction->setEnabled(false);
         if (ui->drawingWindow->get_portSelectedCount() == 1) renameAction->setEnabled(true);
 
-        deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
-
         menu.addAction(showAction);
         menu.addAction(hideAction);
         menu.addAction(unselectAction);
@@ -788,12 +788,14 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         showAction=new QAction("Show",this);
         hideAction=new QAction("Hide",this);
         renameAction=new QAction("Rename",this);
+        deleteAction=new QAction("Delete",this);
         expandAllAction=new QAction("Expand All",this);
         collapseAllAction=new QAction("Collapse All",this);
 
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showNetItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideNetItems);
         connect(renameAction, &QAction::triggered, this, &OpenParEMg::renameSportNet);
+        connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteSportItems);
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
@@ -803,9 +805,12 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         showAction->setEnabled(ui->drawingWindow->isNetValidShow());
         hideAction->setEnabled(ui->drawingWindow->isNetValidHide());
 
+        deleteAction->setEnabled(deleteSportValid());
+
         menu.addAction(showAction);
         menu.addAction(hideAction);
         menu.addAction(renameAction);
+        menu.addAction(deleteAction);
         menu.addAction(expandAllAction);
         menu.addAction(collapseAllAction);
     }
@@ -1481,19 +1486,58 @@ void OpenParEMg::renameSportNet ()
     }
 }
 
-void OpenParEMg::deleteSportNet ()
+bool is_uniqueItem (std::vector<CustomTreeWidgetItem *> *portItemList, QTreeWidgetItem *item)
 {
-    std::cout << "OpenParEMg::deleteSportNet" << std::endl; std::cout.flush();
+    long unsigned int i=0;
+    while (i < portItemList->size()) {
+        if ((*portItemList)[i] == item) return false;
+        i++;
+    }
+    return true;
+}
 
+bool OpenParEMg::deleteSportValid ()
+{
+    // get a list of unique port items
+    std::vector<CustomTreeWidgetItem *> portItemList;
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_sport()) ui->drawingWindow->deleteItem(item);
+        if (item->is_sport()) {
+            CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            if (is_uniqueItem(&portItemList,portParentItem)) portItemList.push_back(portParentItem);
+        }
         i++;
     }
 
-    ui->drawingWindow->updateViewer();
+    // cycle through the ports
+    long unsigned int j=0;
+    while (j < portItemList.size()) {
+
+        // number of modes on this port
+        Port *port=(Port *)portItemList[j]->get_OPEMobject();
+        int modeCount=port->get_modeCount();
+
+        // count the number of selected modes on this port
+        int selectedCount=0;
+        QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+        int k=0;
+        while (k < selectedItems.count()) {
+            CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[k];
+            if (item->is_sport()) {
+                CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                if (portParentItem == portItemList[j]) selectedCount++;
+            }
+            k++;
+        }
+
+        if (modeCount == selectedCount) return false;
+
+        j++;
+    }
+
+    return true;
 }
 
 bool OpenParEMg::hasOneSelectedSport ()
@@ -1952,6 +1996,12 @@ void OpenParEMg::deletePortItem (CustomTreeWidgetItem * item)
 {
     std::cout << "OpenParEMg::deletePortItem" << std::endl; std::cout.flush();
 
+    // unlink the outline
+    Port *port=(Port *)item->get_OPEMobject();
+    Path *outline=port->get_outline();
+    CustomTreeWidgetItem *outlineItem=outline->get_item();
+    outlineItem->removeLinkedItem(item);
+
     // remove from the boundary database
     boundaryDatabase->deletePort(item->text(0).toStdString());
 
@@ -1968,6 +2018,13 @@ void OpenParEMg::deletePortItem (CustomTreeWidgetItem * item)
                     while (k < grandChild->childCount()) {
                         CustomTreeWidgetItem *greatGrandChild=(CustomTreeWidgetItem *) grandChild->child(k);
                         if (greatGrandChild->is_integrationPathSegment()) {
+
+                            // unlink
+                            Path *path=(Path *)greatGrandChild->get_OPEMobject();
+                            CustomTreeWidgetItem *pathItem=path->get_item();
+                            pathItem->removeLinkedItem(greatGrandChild);
+
+                            // delete
                             ui->drawingWindow->deleteItem(greatGrandChild);
                         }
                         k++;
@@ -2029,34 +2086,33 @@ void OpenParEMg::deletePortItems ()
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *sportItem)
+void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *item)
 {
     std::cout << "OpenParEMg::deleteSportItem" << std::endl; std::cout.flush();
 
     // port
-    CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)sportItem->QTreeWidgetItem::parent();
+    CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
     Port *port=boundaryDatabase->get_port(parentItem->text(0).toStdString());
 
     // remove from the port
-    port->deleteMode(sportItem->text(0).toStdString());
+    port->deleteMode(item->text(0).toStdString());
 
     // remove the integration paths
     int i=0;
-    while (i < sportItem->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) sportItem->child(i);
-        if (child->is_sport()) {
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        if (child->is_voltage() || child->is_current()) {
             int j=0;
             while (j < child->childCount()) {
-                CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *) child->child(j);
-                if (grandChild->is_voltage() || grandChild->is_current()) {
-                    int k=0;
-                    while (k < grandChild->childCount()) {
-                        CustomTreeWidgetItem *greatGrandChild=(CustomTreeWidgetItem *) grandChild->child(k);
-                        if (greatGrandChild->is_integrationPathSegment()) {
-                            ui->drawingWindow->deleteItem(greatGrandChild);
-                        }
-                        k++;
-                    }
+                CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *)child->child(j);
+                if (grandChild->is_integrationPathSegment()) {
+
+                    // unlink
+                    Path *path=(Path *)grandChild->get_OPEMobject();
+                    CustomTreeWidgetItem *pathItem=path->get_item();
+                    pathItem->removeLinkedItem(grandChild);
+
+                    ui->drawingWindow->deleteItem(grandChild);
                 }
                 j++;
             }
@@ -2064,8 +2120,8 @@ void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *sportItem)
         i++;
     }
 
+    ui->drawingWindow->deleteItem(item);
     setMenus();
-    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::deleteSportItems ()
@@ -2076,7 +2132,7 @@ void OpenParEMg::deleteSportItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_sportLabel()) {
+        if (item->is_sport()) {
             deleteSportItem(item);
         }
         i++;
@@ -2719,6 +2775,7 @@ void OpenParEMg::on_actionOpen_triggered ()
             mb.critical(nullptr, "Error", "Error in loading port and boundary definitions.");
             mb.setFixedSize(500, 200);
         } else {
+            boundaryDatabase->set_unmodified();
             boundaryDatabase->assignPathNormals();  // to correctly orient arrow heads
             // ToDo: rename draw since this does not actually draw
             boundaryDatabase->draw(relay,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
@@ -2989,6 +3046,7 @@ void OpenParEMg::on_actionSaveAs_triggered ()
                                                   nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isEmpty()) return;
 
+    QString portDefinitionFile;
     if (save_project (filePath.toStdString().c_str(),&projData,&defaultData,"")) {
         QString message="Error in saving the project file.";
         QMessageBox mb;
@@ -2997,7 +3055,22 @@ void OpenParEMg::on_actionSaveAs_triggered ()
     } else {
         // replace the project file name with the new one
         QFileInfo fileInfo(filePath);
+        absolutePath=fileInfo.absolutePath();
         projectFile=fileInfo.fileName();
+
+        // port definition file
+
+        portDefinitionFile=fileInfo.baseName();
+        portDefinitionFile.append("_ports.txt");
+
+        if (projData.port_definition_file) free(projData.port_definition_file);
+        projData.port_definition_file=(char *)malloc((portDefinitionFile.length()+1)*sizeof(char));
+        int i=0;
+        while (i < portDefinitionFile.length()) {
+            projData.port_definition_file[i]=portDefinitionFile.data()[i].toLatin1();
+            i++;
+        }
+        projData.port_definition_file[i]='\0';
 
         projData.modified=0;
         projectFileChanged=false;
@@ -3312,8 +3385,11 @@ bool OpenParEMg::saveStepFile (QString filePath, std::vector<Handle(AIS_Interact
 bool OpenParEMg::saveBoundaryDatabase ()
 {
     if (!boundaryDatabase) return true;
+
     QString filename=absolutePath;
     filename.append("/").append(projData.port_definition_file);
+    std::cout << "Saving the boundary database to " << filename.toStdString() << std::endl; std::cout.flush();
+
     std::ofstream outputFile(filename.toStdString());
     if (outputFile.is_open()) {
         boundaryDatabase->save(&outputFile);

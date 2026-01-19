@@ -66,6 +66,8 @@ extern "C" void matrixVectorMultiply (lapack_complex_double *, lapack_complex_do
 extern "C" double vectorGetRealValue (lapack_complex_double *, lapack_int);
 extern "C" double vectorGetImagValue (lapack_complex_double *, lapack_int);
 
+class CustomComboBox;
+
 class RotatedMesh : public mfem::Mesh
 {
    public:
@@ -161,6 +163,7 @@ class Boundary
       bool is_default_boundary () {return is_default;}
       void set_default_boundary () {is_default=true;}
       bool is_modified () {return modified;}
+      void set_unmodified () {modified=false;}
       std::string get_name () {return name.get_value();}
       int get_attribute () {return attribute;}
       int get_pathIndex (int i) {return pathIndexList[i];}
@@ -288,6 +291,7 @@ class IntegrationPath
       ~IntegrationPath ();
       void addPaths (std::vector<Path *> *, std::vector<Path *> *);
       bool is_modified ();
+      void set_unmodified () {modified=false;}
       int get_startLine () {return startLine;}
       int get_endLine () {return endLine;}
       long unsigned int get_pathCount () {return pathNameList.size();}
@@ -446,6 +450,7 @@ class Mode
       Mode(int,int,std::string);
       ~Mode();
       bool is_modified ();
+      void set_unmodified ();
       int get_startLine() {return startLine;}
       int get_endLine() {return endLine;}
       std::string get_net() {return net.get_value();}
@@ -566,6 +571,7 @@ class DifferentialPair
       DifferentialPair (int, int);
       bool is_loaded ();
       bool is_modified () {return modified;}
+      void set_unmodified () {modified=false;}
       void set_modified () {modified=true;}
       int get_startLine() {return startLine;}
       int get_endLine() {return endLine;}
@@ -639,7 +645,7 @@ class Port
 
 #ifdef HAS_GUI
       CustomTreeWidgetItem *item;
-      //std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap=nullptr;
+      CustomComboBox *comboZdef;   // comboBox for the impedance definition
 #endif
 
    public:
@@ -648,6 +654,7 @@ class Port
       int get_startLine () {return startLine;}
       int get_endLine () {return endLine;}
       bool is_modified ();
+      void set_unmodified ();
       std::string get_name () {return name.get_value();}
       void set_name (std::string name_) {name.set_value(name_); name.set_keyword("name"); name.set_lineNumber(0); name.set_loaded(true); modified=true;}
       int get_name_lineNumber () {return name.get_lineNumber();}
@@ -669,7 +676,7 @@ class Port
       int get_attribute (int);
       int get_last_attribute (int);
       int get_adjacent_element_attribute (int);
-      //Path* get_outline () {return outline;}
+      Path* get_outline () {return outline;}
       void set_outline (Path *outline_) {outline=outline_; modified=true;}
       Path* get_rotated_outline () {return rotated_outline;}
       int get_pathIndex (int i) {return pathIndexList[i];}
@@ -772,6 +779,7 @@ class Port
       CustomTreeWidgetItem* get_item () {return item;}
       void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
       void crossLink (std::vector<Path *> *);
+      void set_comboZdef ();
 #endif
 };
 
@@ -797,6 +805,7 @@ class BoundaryDatabase
    public:
       ~BoundaryDatabase();
       bool is_modified ();
+      void set_unmodified ();
       void set_tempDirectory(std::string tempDirectory_) {tempDirectory=tempDirectory_;}
       std::string get_tempDirectory() {return tempDirectory;}
       void set_drivingSetName (std::string drivingSetName_) {drivingSetName=drivingSetName_;}
@@ -908,6 +917,7 @@ class BoundaryDatabase
       void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
       void draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
       void crossLink ();
+      void set_comboZdef ();
 #endif
 };
 
