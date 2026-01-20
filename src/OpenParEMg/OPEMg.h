@@ -87,6 +87,7 @@ public:
     void addShape (TopoDS_Shape, CustomTreeWidgetItem *, bool, bool);
     bool loadBrepFile (QString);
     bool loadStepFile (QString);
+    bool saveBrepFile (char *);
     bool saveStepFile (QString, std::vector<Handle(AIS_InteractiveObject)> *);
     bool saveBoundaryDatabase ();
     //bool menuAllHidden (CustomTreeWidgetItem *);
@@ -267,6 +268,8 @@ private slots:
 
     void initQActionList();
     void freeQActionList();
+
+
 
 public slots:
     void setMenus ();

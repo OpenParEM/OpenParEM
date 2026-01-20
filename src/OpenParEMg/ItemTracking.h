@@ -744,6 +744,14 @@ public:
         shapeToItemMap.insert({shape,item});
     }
 
+    void removeItemFromMap (CustomTreeWidgetItem *item)
+    {
+        Handle(AIS_Shape) shape=item->get_AIS_Shape();
+        if (shape.IsNull()) return;
+        if (viewerContext->IsDisplayed(shape)) viewerContext->Erase(shape,Standard_False);
+        shapeToItemMap.erase(shape);
+    }
+
     // reset
 
     void reset ()

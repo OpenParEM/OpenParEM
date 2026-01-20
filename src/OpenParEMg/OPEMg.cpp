@@ -36,6 +36,7 @@
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
 
 #include <QIcon>
 #include <QFileDialog>
@@ -2766,6 +2767,9 @@ void OpenParEMg::on_actionOpen_triggered ()
                 QMessageBox mb;
                 mb.critical(nullptr, "Error",message);
                 mb.setFixedSize(500, 200);
+            } else {
+                drawing.setForeground(0,Qt::gray);
+                ui->drawingWindow->showItem(&drawing);
             }
         }
 
@@ -3000,7 +3004,7 @@ void OpenParEMg::on_actionSave_triggered ()
             if (save_project (projectFile.toStdString().c_str(),&projData,&defaultData,"")) {
                 QString message="Error in saving the project file.";
                 QMessageBox mb;
-                mb.critical(nullptr, "Error",message);
+                mb.critical(nullptr,"Error",message);
                 mb.setFixedSize(500, 200);
             }
             projData.modified=0;
@@ -3013,6 +3017,14 @@ void OpenParEMg::on_actionSave_triggered ()
     // ports and boundaries
     if (saveBoundaryDatabase()) {
         QString message="Error in saving the boundary database.";
+        QMessageBox mb;
+        mb.critical(nullptr, "Error",message);
+        mb.setFixedSize(500, 200);
+    }
+
+    // Brep
+    if (saveBrepFile(projData.gui_brep_file)) {
+        QString message="Error in saving the drawing file.";
         QMessageBox mb;
         mb.critical(nullptr, "Error",message);
         mb.setFixedSize(500, 200);
@@ -3079,6 +3091,14 @@ void OpenParEMg::on_actionSaveAs_triggered ()
     // ports and boundaries
     if (saveBoundaryDatabase()) {
         QString message="Error in saving the boundary database.";
+        QMessageBox mb;
+        mb.critical(nullptr, "Error",message);
+        mb.setFixedSize(500, 200);
+    }
+
+    // Brep
+    if (saveBrepFile(projData.gui_brep_file)) {
+        QString message="Error in saving the drawing file.";
         QMessageBox mb;
         mb.critical(nullptr, "Error",message);
         mb.setFixedSize(500, 200);
@@ -3350,6 +3370,32 @@ bool OpenParEMg::loadStepFile (QString filePath)
         } else retval=true;
     }
     return retval;
+}
+
+CustomTreeWidgetItem* get_vertexItem (CustomTreeWidgetItem *item)
+{
+    Handle(AIS_Shape) shape=item->get_AIS_Shape();
+    if (shape.IsNull()) return nullptr;
+    if (shape->Shape().ShapeType() == TopAbs_VERTEX) return item;
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+        if (get_vertexItem(child)) return child;
+        i++;
+    }
+
+    return nullptr;
+}
+
+bool OpenParEMg::saveBrepFile (char *filePath)
+{
+    std::cout << "OpenParEMg::saveBrepFile" << std::endl; std::cout.flush();
+
+    if (drawing.get_AIS_Shape()->Shape().IsNull()) return true;
+    if (!BRepTools::Write(drawing.get_AIS_Shape()->Shape(),filePath)) return true;
+
+    return false;
 }
 
 bool OpenParEMg::saveStepFile (QString filePath, std::vector<Handle(AIS_InteractiveObject)> *selectedList)
@@ -4472,6 +4518,11 @@ void OpenParEMg::on_actionDrawLine_triggered ()
 {
     std::cout << "OpenParEMg::on_actionDrawLine_triggered" << std::endl; std::cout.flush();
 
+    // set to select on vertices and edges
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(1,Standard_False);  // vertices
+    ui->drawingWindow->Activate(2,Standard_False);  // edges
+
     ui->drawingWindow->clearDrawPoints();
     isActiveDrawing=true;
     isDrawLine=true;
@@ -4484,6 +4535,11 @@ void OpenParEMg::on_actionDrawLine_triggered ()
 void OpenParEMg::on_actionDrawPolyline_triggered ()
 {
     std::cout << "OpenParEMg::on_actionDrawPolyline_triggered" << std::endl; std::cout.flush();
+
+    // set to select on vertices and edges
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(1,Standard_False);  // vertices
+    ui->drawingWindow->Activate(2,Standard_False);  // edges
 
     ui->drawingWindow->clearDrawPoints();
     isActiveDrawing=true;
@@ -4554,10 +4610,40 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
 
         // add the path to the working item
         insertPath(workingItem);
-
-
     } else {
-        //ToDo
+        //xxx
+        Handle(AIS_Shape) drawingShape=drawing.get_AIS_Shape();
+        BRep_Builder builder;
+
+        // reuse a top-level compound, if it exists
+        if (drawingShape->Shape().ShapeType() == TopAbs_COMPOUND) {
+            TopoDS_Compound compound=TopoDS::Compound(drawingShape->Shape());
+            BRep_Builder builder;
+            builder.Add(compound,wire);
+            drawingShape->Redisplay(true);
+        } else {
+            // make a top-level compound
+            TopoDS_Compound compound;
+            builder.MakeCompound(compound);
+            builder.Add(compound,drawingShape->Shape());
+            builder.Add(compound,wire);
+
+            ui->drawingWindow->removeItemFromMap(&drawing);
+            drawingShape.Nullify();
+
+            drawingShape=new AIS_Shape(compound);
+            drawing.set_AIS_Shape(drawingShape);
+            ui->drawingWindow->insertItemToMap(drawingShape,&drawing);
+        }
+
+        // add the shape to the tree; when the new compound is saved and reloaded,
+        // the wire will show up then without additional processing
+        addShape(wire,&drawing,false,false);
+
+        projectFileChanged=true;
+        drawing.setForeground(0,Qt::gray);
+        ui->drawingWindow->showItem(&drawing);
+        ui->drawingWindow->unselectItem(&drawing);
     }
 
     // restore the prior selection index
@@ -4582,10 +4668,10 @@ void OpenParEMg::drawPath ()
     // to avoid stray clicks in the selection tree
     workingItem=clickedItem;
 
-    // set to select on vertices and edges
-    ui->drawingWindow->Deactivate();
-    ui->drawingWindow->Activate(1,Standard_False);  // vertices
-    ui->drawingWindow->Activate(2,Standard_False);  // edges
+    // // set to select on vertices and edges
+    // ui->drawingWindow->Deactivate();
+    // ui->drawingWindow->Activate(1,Standard_False);  // vertices
+    // ui->drawingWindow->Activate(2,Standard_False);  // edges
 
     // enable selection on just the port
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();

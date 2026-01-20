@@ -243,9 +243,16 @@ public:
 
     void insertItemToMap (Handle(AIS_Shape) shape, CustomTreeWidgetItem *item)
     {
-        std::cout << "CustomOpenGLWidget::insertItemToMap  type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
-        if (shape.IsNull()) {std::cout << "   ERROR: shape item is null" << std::endl; std::cout.flush();}
+        if (shape.IsNull()) {std::cout << "   CustomOpenGLWidget::insertItemToMap: ASSERT: shape item is null" << std::endl; std::cout.flush(); return;}
+        //std::cout << "CustomOpenGLWidget::insertItemToMap  type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
+        std::cout << "CustomOpenGLWidget::insertItemToMap" << std::endl; std::cout.flush();
         drawingTracker->insertItemToMap(shape,item);
+    }
+
+    void removeItemFromMap (CustomTreeWidgetItem *item)
+    {
+        std::cout << "CustomOpenGLWidget::removeItemFromMap" << std::endl; std::cout.flush();
+        drawingTracker->removeItemFromMap(item);
     }
 
     void displayShape (Handle(AIS_Shape) shape, int displayMode, int selectionMode)

@@ -492,6 +492,9 @@
    <property name="text">
     <string>polyline</string>
    </property>
+   <property name="toolTip">
+    <string>Draw a polyline.  Close it to obtain a polygon.</string>
+   </property>
   </action>
  </widget>
  <customwidgets>

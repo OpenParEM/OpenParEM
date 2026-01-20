@@ -339,50 +339,75 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
     // point click position
     QPointF pos=event->position();
-    std::cout << "CustomOpenGLWidget::mousePressEvent: x=" << pos.x() << "  y=" << pos.y() << std::endl; std::cout.flush();
 
+    // Create a gp_Pnt
+    gp_Pnt clickPoint;
     if (viewer->IsGridActive() && snapToGrid) {
         Standard_Real X,Y,Z;
         view->ConvertToGrid(pos.x(),pos.y(),X,Y,Z);
-        std::cout << "                                   : X=" << X << "  Y=" << Y << "  Z=" << Z << std::endl; std::cout.flush();
+        clickPoint.SetCoord(X,Y,Z);
     } else {
-        gp_Pnt pointOnPlane;
         // ToDo: next line causes crash when the view is exactly on an axis
-        //PixelToPointOnPlane (pos.x(),pos.y(),pointOnPlane);
-        //std::cout << "                                   : X=" << pointOnPlane.X() << "  Y=" << pointOnPlane.Y() << "  Z=" << pointOnPlane.Z() << std::endl; std::cout.flush();
+        PixelToPointOnPlane (pos.x(),pos.y(),clickPoint);
     }
 
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
 
     // line
-    if ((drawLine || drawPolyline) && !owner.IsNull()) {
-        Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
-        if (!brepOwner.IsNull()) {
-            TopoDS_Shape shape = brepOwner->Shape();
-            if (!shape.IsNull()) {
-                if (shape.ShapeType() == TopAbs_VERTEX) {
-                    TopoDS_Vertex vertex=TopoDS::Vertex(shape);
-                    if (!vertex.IsNull()) {
-                        ignoreLeftMouseRelease=true;
+    if (event->button() == Qt::LeftButton) {
+        if (drawLine || drawPolyline) {
+            if (owner.IsNull()) {
+                ignoreLeftMouseRelease=true;
 
-                        if (shapePoints.size() > 0) {
-                            shapePoints.push_back(BRep_Tool::Pnt(vertex));
+                if (shapePoints.size() > 0) {
+                    shapePoints.push_back(clickPoint);
 
-                            if (drawLine) {
-                                if (!shapePoints[shapePoints.size()-1].IsEqual(shapePoints[shapePoints.size()-2],Precision::Confusion())) {
-                                    finishDrawLine();
-                                }
+                    if (drawLine) {
+                        if (!shapePoints[shapePoints.size()-1].IsEqual(shapePoints[shapePoints.size()-2],Precision::Confusion())) {
+                            finishDrawLine();
+                        }
+                    }
+
+                    if (drawPolyline) {
+                        if (!shapePoints[shapePoints.size()-1].IsEqual(shapePoints[shapePoints.size()-2],Precision::Confusion())) {
+                            if (shapePoints[shapePoints.size()-1].IsEqual(shapePoints[0],Precision::Confusion())) {
+                                finishDrawLine();
                             }
+                        }
+                    }
+                } else {
+                    shapePoints.push_back(clickPoint);
+                }
+            } else {
+                Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
+                if (!brepOwner.IsNull()) {
+                    TopoDS_Shape shape = brepOwner->Shape();
+                    if (!shape.IsNull()) {
+                        if (shape.ShapeType() == TopAbs_VERTEX) {
+                            TopoDS_Vertex vertex=TopoDS::Vertex(shape);
+                            if (!vertex.IsNull()) {
+                                ignoreLeftMouseRelease=true;
 
-                            if (drawPolyline) {
-                                if (!shapePoints[shapePoints.size()-1].IsEqual(shapePoints[shapePoints.size()-2],Precision::Confusion())) {
-                                    if (shapePoints[shapePoints.size()-1].IsEqual(shapePoints[0],Precision::Confusion())) {
-                                        finishDrawLine();
+                                if (shapePoints.size() > 0) {
+                                    shapePoints.push_back(BRep_Tool::Pnt(vertex));
+
+                                    if (drawLine) {
+                                        if (!shapePoints[shapePoints.size()-1].IsEqual(shapePoints[shapePoints.size()-2],Precision::Confusion())) {
+                                            finishDrawLine();
+                                        }
                                     }
+
+                                    if (drawPolyline) {
+                                        if (!shapePoints[shapePoints.size()-1].IsEqual(shapePoints[shapePoints.size()-2],Precision::Confusion())) {
+                                            if (shapePoints[shapePoints.size()-1].IsEqual(shapePoints[0],Precision::Confusion())) {
+                                                finishDrawLine();
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    shapePoints.push_back(BRep_Tool::Pnt(vertex));
                                 }
                             }
-                        } else {
-                            shapePoints.push_back(BRep_Tool::Pnt(vertex));
                         }
                     }
                 }
