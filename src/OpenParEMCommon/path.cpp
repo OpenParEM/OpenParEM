@@ -2149,7 +2149,7 @@ void Path::addWirePoints (TopoDS_Wire wire)
     }
 }
 
-void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem, bool show)
+void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
 {
     std::cout << "Path::create_item" << std::endl; std::cout.flush();
 

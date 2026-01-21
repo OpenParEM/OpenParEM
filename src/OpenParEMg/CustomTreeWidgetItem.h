@@ -177,7 +177,7 @@ private slots:
 
 private:
     Handle(AIS_Shape) shape;                           // for drawing
-    std::vector<Handle(AIS_Shape)> arrowHeads;         // used integration lines
+    std::vector<Handle(AIS_Shape)> arrowHeads;         // for integration lines to show direction
     std::vector<Handle(AIS_Shape)> meshEntities;       // for mesh
     std::pair<int,int> dimTag;                         //
     bool forShowHide;                                  // false - does not participate in item tree show/hide operations; true - does participate

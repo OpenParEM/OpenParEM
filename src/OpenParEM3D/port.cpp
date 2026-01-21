@@ -9777,7 +9777,7 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData, CustomO
     // paths
     long unsigned int i=0;
     while (i < pathList.size()) {
-        pathList[i]->create_item(drawingWindow,pathTreeItem,false);
+        pathList[i]->create_item(drawingWindow,pathTreeItem);
         i++;
     }
 

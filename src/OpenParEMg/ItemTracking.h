@@ -721,6 +721,7 @@ public:
                 // nothing to do
             } else {
                 // drawing
+                std::cout << "viewerContext->IsDisplayed(item->get_AIS_Shape())=" << viewerContext->IsDisplayed(item->get_AIS_Shape()) << std::endl; std::cout.flush();
                 if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) return false;
             }
             i++;
