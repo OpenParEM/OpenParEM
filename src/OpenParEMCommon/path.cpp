@@ -19,8 +19,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "path.hpp"
-#include <BRepBuilderAPI_MakeEdge.hxx>
-#include <BRepBuilderAPI_MakeWire.hxx>
 
 #ifdef HAS_GUI
 #include <AIS_Shape.hxx>
@@ -32,6 +30,8 @@
 #include <TopExp.hxx>
 #include <BRepTools.hxx>
 #include <BRepTools_WireExplorer.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
 #include "CustomOpenGLWidget.h"
 #endif
 
@@ -2042,8 +2042,6 @@ void Path::assignPathNormal (struct point normal_)
 
 TopoDS_Wire Path::create_TopoDS_Wire ()
 {
-    std::cout << "Path::create_TopoDS_Wire" << std::endl; std::cout.flush();
-
     BRepBuilderAPI_MakeWire wireBuilder;
 
     if (points.size() < 2) return TopoDS_Wire(); // null wire
@@ -2071,8 +2069,6 @@ TopoDS_Wire Path::create_TopoDS_Wire ()
 // create path from face
 void Path::addFacePoints (TopoDS_Shape shape, bool setClosed, bool calcNormal)
 {
-    std::cout << "Path::addFacePoints" << std::endl; std::cout.flush();
-
     TopExp_Explorer faceExplorer(shape,TopAbs_FACE);
     while (faceExplorer.More()) {
         const TopoDS_Shape& subShape=faceExplorer.Current();
@@ -2118,8 +2114,6 @@ void Path::addFacePoints (TopoDS_Shape shape, bool setClosed, bool calcNormal)
 // create path from wire
 void Path::addWirePoints (TopoDS_Wire wire)
 {
-    std::cout << "Path::addWirePoints" << std::endl; std::cout.flush();
-
     std::vector<TopoDS_Vertex> vertices;
     TopoDS_Vertex lastVertex;
 
@@ -2151,8 +2145,6 @@ void Path::addWirePoints (TopoDS_Wire wire)
 
 void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
 {
-    std::cout << "Path::create_item" << std::endl; std::cout.flush();
-
     item=new CustomTreeWidgetItem(0);
     item->set_type(4);
     item->set_OPEMobject(this);

@@ -15,11 +15,11 @@ public:
         pathSelectedCount=0;
         portSelectedCount=0;
 
-        showTracking=true;
-        hideTracking=true;
-        selectTracking=true;
-        unselectTracking=true;
-        deleteTracking=true;
+        showTracking=false;
+        hideTracking=false;
+        selectTracking=false;
+        unselectTracking=false;
+        deleteTracking=false;
     }
 
     ~ItemTracker() {}
@@ -65,9 +65,6 @@ public:
             std::cout << "ASSERT: ItemTracking::showItem passed a null pointer." << std::endl; std::cout.flush();
             return;
         }
-
-        //xxx
-        item->print();
 
         // show item
         if (item->is_rootDrawing()) {

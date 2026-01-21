@@ -1504,9 +1504,14 @@ bool MaterialDatabase::load (const char *path, const char *filename, bool checkI
 
 Material* MaterialDatabase::get(std::string name)
 {
+    // remove any uniqueification that may have been applied
+    size_t pos=name.rfind("_OPEM_RESERVED_");
+    std::string strippedName=name.substr(0,pos);
+
    long unsigned int i=0;
    while (i < materialList.size()) {
-      if (materialList[i]->get_name()->get_value().compare(name) == 0) return materialList[i];
+      //if (materialList[i]->get_name()->get_value().compare(name) == 0) return materialList[i];
+       if (materialList[i]->get_name()->get_value().compare(strippedName) == 0) return materialList[i];
       i++;
    }
    return nullptr;

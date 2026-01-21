@@ -296,7 +296,7 @@ void OpenParEMg::freeQActionList ()
 
 void OpenParEMg::setMenus ()
 {
-    std::cout << "OpenParEMg::setMenus" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::setMenus" << std::endl; std::cout.flush();
 
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
 
@@ -513,7 +513,7 @@ void OpenParEMg::setMenus ()
 
     boundaryDatabase->set_comboZdef();
 
-    std::cout << "out OpenParEMg::setMenus" << std::endl; std::cout.flush();
+    //std::cout << "out OpenParEMg::setMenus" << std::endl; std::cout.flush();
 }
 
 
@@ -971,14 +971,9 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showIntegrationPathItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideIntegrationPathItems);
 
-        removeAction->setEnabled(false);
-        showAction->setEnabled(false);
-        hideAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            removeAction->setEnabled(true);
-            showAction->setEnabled(ui->drawingWindow->isValidShow());
-            hideAction->setEnabled(ui->drawingWindow->isValidHide());
-        }
+        removeAction->setEnabled(true);
+        showAction->setEnabled(ui->drawingWindow->isValidShow());
+        hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
         menu.addAction(removeAction);
         menu.addAction(showAction);
@@ -2714,6 +2709,7 @@ void OpenParEMg::set_displayMode (CustomTreeWidgetItem *item, int displayMode)
 
 void OpenParEMg::setPhysicalGroups ()
 {
+    std::cout << "OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
     int i=0;
     while (i < projData.physicalGroupMaterialCount) {
         std::vector<int> physicalGroupList;
@@ -2722,7 +2718,14 @@ void OpenParEMg::setPhysicalGroups ()
         std::cout << "OpenParEMg::setPhysicalGroups:  dim=" << projData.physicalGroupMaterials[i].dim
                   << "  tag=" << projData.physicalGroupMaterials[i].tag
                   << "  materialName=" << projData.physicalGroupMaterials[i].materialName << std::endl; std::cout.flush();
-        gmsh::model::addPhysicalGroup(projData.physicalGroupMaterials[i].dim,physicalGroupList,-1,projData.physicalGroupMaterials[i].materialName);
+
+        // uniquify the physical group name with the group tag to avoid gmsh eliminating
+        // physical groups with duplicated names from the $PhysicalNames/$EndPhysicalNames block in the msh file
+        std::string groupName=projData.physicalGroupMaterials[i].materialName;
+        groupName.append("_OPEM_RESERVED_");
+        groupName.append(std::to_string(projData.physicalGroupMaterials[i].tag));
+
+        gmsh::model::addPhysicalGroup(projData.physicalGroupMaterials[i].dim,physicalGroupList,-1,groupName.c_str());
         i++;
     }
 }
@@ -3151,6 +3154,8 @@ void OpenParEMg::on_actionSaveAs_triggered ()
     projectFile=fileInfo.fileName();
     projectName=fileInfo.completeBaseName();
 
+    QDir::setCurrent(absolutePath);
+
     // update included file names for the new project name
 
     // port_definition_file
@@ -3290,6 +3295,15 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
 {
     if (shape.IsNull()) return;
 
+    // ensure the root item is a compound
+    if (isRoot && shape.ShapeType() != TopAbs_COMPOUND) {
+        BRep_Builder builder;
+        TopoDS_Compound compound;
+        builder.MakeCompound(compound);
+        builder.Add(compound,shape);
+        shape=compound;
+    }
+
     // tree item name
 
     QString name="";
@@ -3305,37 +3319,41 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
     case TopAbs_COMPSOLID:
         name="COMPSOLID";
         volumeCount++;   // a guess
-        dimTag.first=3; dimTag.second=volumeCount++;
+        dimTag.first=3; dimTag.second=volumeCount;
+        //xxx
+        std::cout << "COMPSOLID: volumeCount=" << volumeCount << std::endl; std::cout.flush();
         break;
     case TopAbs_SOLID:
         name="SOLID";
         volumeCount++;
-        dimTag.first=3; dimTag.second=volumeCount++;
+        dimTag.first=3; dimTag.second=volumeCount;
+        //xxx
+        std::cout << "SOLID: volumeCount=" << volumeCount << std::endl; std::cout.flush();
         break;
     case TopAbs_SHELL:
         name="SHELL";
         surfaceCount++;  // a guess
-        dimTag.first=2; dimTag.second=surfaceCount++;
+        dimTag.first=2; dimTag.second=surfaceCount;
         break;
     case TopAbs_FACE:
         name="FACE";
         surfaceCount++;  // aguess
-        dimTag.first=2; dimTag.second=surfaceCount++;
+        dimTag.first=2; dimTag.second=surfaceCount;
         break;
     case TopAbs_WIRE:
         name="WIRE";
         curveCount++;    // a guess
-        dimTag.first=2; dimTag.second=surfaceCount++;
+        dimTag.first=2; dimTag.second=surfaceCount;
         break;
     case TopAbs_EDGE:
         name="EDGE";
         curveCount++;
-        dimTag.first=2; dimTag.second=surfaceCount++;
+        dimTag.first=2; dimTag.second=surfaceCount;
         break;
     case TopAbs_VERTEX:
         name="VERTEX";
         pointCount++;
-        dimTag.first=1; dimTag.second=pointCount++;
+        dimTag.first=1; dimTag.second=pointCount;
         break;
     case TopAbs_SHAPE:
         name="SHAPE";
@@ -3354,30 +3372,11 @@ void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool 
 
     // only drawing can have isRoot=true
     if (isRoot) {
-
-        // ensure the root item is a compound
-        if (drawingShape->Shape().ShapeType() != TopAbs_COMPOUND) {
-            BRep_Builder builder;
-            TopoDS_Compound compound;
-            builder.MakeCompound(compound);
-            builder.Add(compound,drawingShape->Shape());
-            Handle(AIS_Shape) compoundShape=new AIS_Shape(compound);
-
-            ui->drawingWindow->insertItemToMap(compoundShape,&drawing);
-            drawing.set_AIS_Shape(compoundShape);
-            ui->drawingWindow->showItem(&drawing);
-            ui->drawingWindow->unselectItem(&drawing);
-            newItem=&drawing;
-
-            drawingShape.Nullify();
-            addShape(shape,&drawing,false,false);
-        } else {
-            ui->drawingWindow->insertItemToMap(drawingShape,&drawing);
-            drawing.set_AIS_Shape(drawingShape);
-            ui->drawingWindow->showItem(&drawing);
-            ui->drawingWindow->unselectItem(&drawing);
-            newItem=&drawing;
-        }
+        ui->drawingWindow->insertItemToMap(drawingShape,&drawing);
+        drawing.set_AIS_Shape(drawingShape);
+        ui->drawingWindow->showItem(&drawing);
+        ui->drawingWindow->unselectItem(&drawing);
+        newItem=&drawing;
     } else {
         newItem=new CustomTreeWidgetItem(0);
         if (!itemHasAISShape) newItem->set_AIS_Shape(drawingShape);
@@ -3934,9 +3933,6 @@ void OpenParEMg::drawMesh()
 {
     std::cout << "OpenParEMg::drawMesh" << std::endl; std::cout.flush();
 
-    // clear the mesh tree items
-    //mesh.deleteChildren(&mesh);
-
     // get all nodes
     std::vector<std::size_t> nodeTags;
     std::vector<double> nodeCoords, nodeParams;
@@ -4169,6 +4165,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
     meshFileLoaded=true;
     meshFileChanged=true;
+    projectFileChanged=true;
 
     drawMesh();
 
@@ -4281,8 +4278,9 @@ void OpenParEMg::on_actionMeshSaveAs_triggered ()
 void OpenParEMg::on_actionMeshDelete_triggered ()
 {
     deleteMesh();
-    meshFileChanged=false;
+    meshFileChanged=true;
     meshFileLoaded=false;
+    projectFileChanged=true;
     setMenus();
 }
 

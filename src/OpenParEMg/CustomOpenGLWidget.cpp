@@ -60,6 +60,9 @@
 
 CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (theParent)
 {
+    // debug
+    showTracking=false;
+
     // settings
     setMouseTracking(true);
     setBackgroundRole(QPalette::NoRole);
