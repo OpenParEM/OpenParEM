@@ -74,6 +74,19 @@
 #include "mpi.h"
 //#include "RectangleSelector.h"
 
+bool cstrFromQString (char **aCstr, QString& aQString)
+{
+    if (*aCstr) free(*aCstr);
+    *aCstr=(char *)malloc((aQString.length()+1)*sizeof(char));
+    int i=0;
+    while (i < aQString.length()) {
+        (*aCstr)[i]=aQString.data()[i].toLatin1();  // ToDo: Generalize this for better character support?
+        i++;
+    }
+    (*aCstr)[i]='\0';
+    return false;
+}
+
 OpenParEMg::OpenParEMg (QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::OpenParEMg)
@@ -2786,29 +2799,26 @@ void OpenParEMg::on_actionOpen_triggered ()
     // return if user cancels
     if (testProjectFile.isNull()) return;
 
-    // reset as new
-    on_actionNew_triggered ();
-    projectFile=testProjectFile;
-
     // break up the full path
-    QFileInfo fileInfo(projectFile);
+    QFileInfo fileInfo(testProjectFile);
     absolutePath=fileInfo.absolutePath();
-    QString projectName=fileInfo.fileName();
+    projectFile=fileInfo.fileName();
+    projectName=fileInfo.completeBaseName();
 
     QDir::setCurrent(absolutePath);
-    projectFile=projectName;
 
     QString currentPath;
     currentPath=QDir::currentPath();
 
+    // reset as new
+    on_actionNew_triggered ();
+
     // load the file
     if (QFile::exists(projectFile)) {
 
-        //QDir::setCurrent(absolutePath);
-        //projectFile=projectName;
-
-        if (load_project_file (projectName.toLatin1().toStdString().c_str(),&projData,"   ")) {
+        if (load_project_file (projectFile.toStdString().c_str(),&projData,"   ")) {
             projectFile="";
+            projectName="";
             QDir::setCurrent(currentPath);
 
             QMessageBox mb;
@@ -2820,17 +2830,17 @@ void OpenParEMg::on_actionOpen_triggered ()
             return;
         }
 
-        /* stress test to look for leaks in loading/freeing projData; run while monitoring memory consumption with top
-        std::cout << "starting memory test" << std::endl; std::cout.flush();
-        int i=0;
-        while (i < 1000000) {
-            free_project(&projData);
-            init_project (&projData);
-            load_project_file (projectName.toLatin1().toStdString().c_str(),&projData,"   ");
-            std::cout << "i=" << i << std::endl; std::cout.flush();
-            i++;
-        }
-        exit(1); */
+        // stress test to look for leaks in loading/freeing projData; run while monitoring memory consumption with top
+        // std::cout << "starting memory test" << std::endl; std::cout.flush();
+        // int i=0;
+        // while (i < 1000000) {
+        //     free_project(&projData);
+        //     init_project (&projData);
+        //     load_project_file (projectName.toStdString().c_str(),&projData,"   ");
+        //     std::cout << "i=" << i << std::endl; std::cout.flush();
+        //     i++;
+        // }
+        // exit(1);
 
         // load materials
         if (materialDatabase->load_materials(projData.materials_global_path,projData.materials_global_name,
@@ -3079,23 +3089,17 @@ void OpenParEMg::on_actionFrequencyPlan_triggered ()
     setMenus();
 }
 
-void OpenParEMg::on_actionSave_triggered ()
+void OpenParEMg::saveProject ()
 {
     // project
-    if (projectFileLoaded) {
-        if (QFile::exists(projectFile)) {
-            if (save_project (projectFile.toStdString().c_str(),&projData,&defaultData,"")) {
-                QString message="Error in saving the project file.";
-                QMessageBox mb;
-                mb.critical(nullptr,"Error",message);
-                mb.setFixedSize(500, 200);
-            }
-            projData.modified=0;
-            projectFileChanged=false;
-        } else {
-            on_actionSaveAs_triggered();
-        }
+    if (save_project (projectFile.toStdString().c_str(),&projData,&defaultData,"")) {
+        QString message="Error in saving the project file.";
+        QMessageBox mb;
+        mb.critical(nullptr,"Error",message);
+        mb.setFixedSize(500, 200);
     }
+    projData.modified=0;
+    projectFileChanged=false;
 
     // ports and boundaries
     if (saveBoundaryDatabase()) {
@@ -3115,98 +3119,60 @@ void OpenParEMg::on_actionSave_triggered ()
 
     // mesh
     if (meshFileLoaded) {
+
+        // create a name, if needed
+        if (strcmp(projData.mesh_file,"") == 0) {
+            QString meshFile=projectName;
+            meshFile.append(".msh");
+            cstrFromQString(&(projData.mesh_file),meshFile);
+        }
+
         on_actionMeshSave_triggered();
         meshFileChanged=false;
-    } else {
-        if (QFile::exists(projData.mesh_file)) {
-            QMessageBox::StandardButton reply;
-            reply = QMessageBox::question(this,"OpenParEMg","A mesh file exists.  Do you want to delete it?",QMessageBox::Yes|QMessageBox::No);
-            if (reply == QMessageBox::Yes) {
-                if (!QFile::remove(projData.mesh_file)) {
-                    QString message="Error in deleting the mesh file.";
-                    QMessageBox mb;
-                    mb.critical(nullptr, "Error",message);
-                    mb.setFixedSize(500, 200);
-                }
-            }
-        }
     }
 
     setMenus();
 }
 
+void OpenParEMg::on_actionSave_triggered ()
+{
+    if (QFile::exists(projectFile)) saveProject();
+    else on_actionSaveAs_triggered();
+}
+
 void OpenParEMg::on_actionSaveAs_triggered ()
 {
-    QString filePath=QFileDialog::getSaveFileName(this, tr("Open Project File"), absolutePath, tr("Project Files (*.proj)","All Files (*)"),
+    QString filePath=QFileDialog::getSaveFileName(this, tr("Save Project"), absolutePath, tr("Project Files (*.proj)","All Files (*)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isEmpty()) return;
 
-    QString portDefinitionFile;
-    if (save_project (filePath.toStdString().c_str(),&projData,&defaultData,"")) {
-        QString message="Error in saving the project file.";
-        QMessageBox mb;
-        mb.critical(nullptr, "Error",message);
-        mb.setFixedSize(500, 200);
-    } else {
-        // replace the project file name with the new one
-        QFileInfo fileInfo(filePath);
-        absolutePath=fileInfo.absolutePath();
-        projectFile=fileInfo.fileName();
+    QFileInfo fileInfo(filePath);
+    absolutePath=fileInfo.absolutePath();
+    projectFile=fileInfo.fileName();
+    projectName=fileInfo.completeBaseName();
 
-        // port definition file
+    // update included file names for the new project name
 
-        portDefinitionFile=fileInfo.baseName();
-        portDefinitionFile.append("_ports.txt");
+    // port_definition_file
+    QString portDefinitionFile=projectName;
+    portDefinitionFile.append("_ports.txt");
+    cstrFromQString (&(projData.port_definition_file),portDefinitionFile);
 
-        if (projData.port_definition_file) free(projData.port_definition_file);
-        projData.port_definition_file=(char *)malloc((portDefinitionFile.length()+1)*sizeof(char));
-        int i=0;
-        while (i < portDefinitionFile.length()) {
-            projData.port_definition_file[i]=portDefinitionFile.data()[i].toLatin1();
-            i++;
-        }
-        projData.port_definition_file[i]='\0';
-
-        projData.modified=0;
-        projectFileChanged=false;
-    }
-
-    // ports and boundaries
-    if (saveBoundaryDatabase()) {
-        QString message="Error in saving the boundary database.";
-        QMessageBox mb;
-        mb.critical(nullptr, "Error",message);
-        mb.setFixedSize(500, 200);
-    }
-
-    // Brep
-    if (saveBrepFile(projData.gui_brep_file)) {
-        QString message="Error in saving the drawing file.";
-        QMessageBox mb;
-        mb.critical(nullptr, "Error",message);
-        mb.setFixedSize(500, 200);
-    }
-
-    // mesh
+    // mesh_file
     if (meshFileLoaded) {
-        on_actionMeshSave_triggered();
-        meshFileChanged=false;
-    } else {
-        if (QFile::exists(projData.mesh_file)) {
-            QMessageBox::StandardButton reply;
-            reply = QMessageBox::question(this,"OpenParEMg","A mesh file exists.  Do you want to delete it?",QMessageBox::Yes|QMessageBox::No);
-            if (reply == QMessageBox::Yes) {
-                if (!QFile::remove(projData.mesh_file)) {
-                    QString message="Error in deleting the mesh file.";
-                    QMessageBox mb;
-                    mb.critical(nullptr, "Error",message);
-                    mb.setFixedSize(500, 200);
-                }
-            }
-        }
+        QString meshFile=projectName;
+        meshFile.append(".msh");
+        cstrFromQString (&(projData.mesh_file),meshFile);
     }
 
-    setMenus();
+    // gui_brep_file
+    if (brepFileLoaded) {
+        QString brepFile=projectName;
+        brepFile.append(".brep");
+        cstrFromQString (&(projData.gui_brep_file),brepFile);
+    }
+
+    saveProject();
 }
 
 void OpenParEMg::on_actionRefinement_triggered ()
@@ -3594,6 +3560,7 @@ void OpenParEMg::on_actionImportBrep_triggered ()
     QString filePath=QFileDialog::getOpenFileName(this, tr("Open BREP File"), "", tr("BREP Files (*.brep)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isEmpty()) return;
+
     if (loadBrepFile(filePath)) {
         QString message="Unable to load Brep file \"";
         message.append(filePath);
@@ -3604,16 +3571,7 @@ void OpenParEMg::on_actionImportBrep_triggered ()
     } else {
         QFileInfo fileInfo(filePath);
         QString brepName=fileInfo.fileName();
-
-        if (projData.gui_brep_file) free(projData.gui_brep_file);
-        projData.gui_brep_file=(char *)malloc((brepName.length()+1)*sizeof(char));
-        int i=0;
-        while (i < brepName.length()) {
-            projData.gui_brep_file[i]=brepName.data()[i].toLatin1();
-            i++;
-        }
-        projData.gui_brep_file[i]='\0';
-        projectFileChanged=true;
+        cstrFromQString (&(projData.gui_brep_file),brepName);
     }
 
     ui->drawingWindow->fitAll();
@@ -4250,27 +4208,12 @@ void OpenParEMg::loadMeshFile (QString meshfile)
 
         // save the file name if different
         if (meshfile.compare(projData.mesh_file) != 0) {
-            if (projData.mesh_file) free(projData.mesh_file);
-            projData.mesh_file=(char *)malloc((meshfile.length()+1)*sizeof(char));
-            int i=0;
-            while (i < meshfile.length()) {
-                projData.mesh_file[i]=meshfile.data()[i].toLatin1();
-                i++;
-            }
-            projData.mesh_file[i]='\0';
+            cstrFromQString (&(projData.mesh_file),meshfile);
             projectFileChanged=true;
         }
 
-    } else {
-        // if (meshfile.compare("") != 0) {
-        //     QMessageBox mb;
-        //     QString message="Error in loading the specified mesh file \"";
-        //     message.append(meshfile);
-        //     message.append("\".");
-        //     mb.critical(nullptr, "Error",message);
-        //     mb.setFixedSize(500, 200);
-        // }
     }
+
     setMenus();
 }
 
@@ -4299,24 +4242,36 @@ void OpenParEMg::on_actionMeshSave_triggered ()
 
 void OpenParEMg::on_actionMeshSaveAs_triggered ()
 {
-    // get file name
-    QString testMeshFile=QFileDialog::getSaveFileName(this,tr("Save Mesh File"), absolutePath, tr("Data Files (*.msh);;All Files (*)"),
-                                                        nullptr,QFileDialog::DontUseNativeDialog);
-    if (testMeshFile.isNull()) return;
+    QString testAbsolutePath="";
+    QString meshfile;
 
-    gmsh::write(testMeshFile.toStdString());
+    while (testAbsolutePath != absolutePath) {
+
+        // get file name
+        QString testMeshFile=QFileDialog::getSaveFileName(this,tr("Save Mesh File"), absolutePath, tr("Data Files (*.msh);;All Files (*)"),
+                                                          nullptr,QFileDialog::DontUseNativeDialog);
+        if (testMeshFile.isNull()) return;
+
+        // break up the full path
+        QFileInfo fileInfo(testMeshFile);
+        testAbsolutePath=fileInfo.absolutePath();
+        meshfile=fileInfo.fileName();
+
+        // test if done
+        if (testAbsolutePath != absolutePath) break;
+
+        // enforce working directory restriction
+        QMessageBox mb;
+        mb.critical(nullptr, "Error","Cannot save meshes outside of the project directory.");
+        mb.setFixedSize(500, 200);
+    }
+
+    gmsh::write(meshfile.toStdString());
     meshFileChanged=false;
 
     // save the filename in projData
-    if (testMeshFile.compare(projData.mesh_file) != 0) {
-        if (projData.mesh_file) free(projData.mesh_file);
-        projData.mesh_file=(char *) malloc((testMeshFile.size()+1)*sizeof(char));
-        int i=0;
-        while (i < testMeshFile.size()) {
-            projData.mesh_file[i]=testMeshFile.data()[i].toLatin1();
-            i++;
-        }
-        projData.mesh_file[i]='\0';
+    if (meshfile.compare(projData.mesh_file) != 0) {
+        cstrFromQString (&(projData.mesh_file),meshfile);
         projectFileChanged=true;
     }
 
@@ -4418,13 +4373,8 @@ void OpenParEMg::on_actionRun_triggered ()
 
     // run OpenParEM3D
 
-    char *project=(char *)malloc((projectFile.toLatin1().toStdString().length()+1)*sizeof(char));
-    int i=0;
-    while (i < projectFile.toLatin1().toStdString().length()) {
-        project[i]=projectFile.data()[i].toLatin1();
-        i++;
-    }
-    project[i]='\0';
+    char *project=nullptr;
+    cstrFromQString (&project,projectFile);
 
     char** argv=(char **)malloc(2*sizeof(char *));
     argv[0]=project;
@@ -4443,7 +4393,7 @@ void OpenParEMg::on_actionRun_triggered ()
 
     // check that all processes spawned
     bool fail=false;
-    i=0;
+    int i=0;
     while (i < projData.gui_slot_count) {
         if (error_codes[i] == MPI_ERR_SPAWN) {
             fail=true;
@@ -4715,7 +4665,6 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
 
         // path name
 
-        //xxx
         std::string pathName;
 
         if (workingItem->is_voltage()) {

@@ -84,6 +84,7 @@ public:
     OpenParEMg (QWidget *parent = nullptr);
     ~OpenParEMg ();
 
+    void saveProject ();
     void addShape (TopoDS_Shape, CustomTreeWidgetItem *, bool, bool);
     bool loadBrepFile (QString);
     bool loadStepFile (QString);
@@ -282,14 +283,14 @@ private:
     //void getActionRunSetup (bool *, QString *);
 
     Ui::OpenParEMg *ui;
-    QString projectFile;
+    QString absolutePath;  // to the project
+    QString projectFile;   // projectFile without path but with extension
+    QString projectName;   // projectFile without path and without extension
     struct projectData projData,defaultData;
 
     MaterialDatabase *materialDatabase;
     QString selectedMaterial;
     BoundaryDatabase *boundaryDatabase;
-
-    QString absolutePath;
 
     CustomTreeWidgetItem drawing;
     CustomTreeWidgetItem path;

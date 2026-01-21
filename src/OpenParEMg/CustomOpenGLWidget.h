@@ -244,7 +244,6 @@ public:
     void insertItemToMap (Handle(AIS_Shape) shape, CustomTreeWidgetItem *item)
     {
         if (shape.IsNull()) {std::cout << "   CustomOpenGLWidget::insertItemToMap: ASSERT: shape item is null" << std::endl; std::cout.flush(); return;}
-        //std::cout << "CustomOpenGLWidget::insertItemToMap  type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
         std::cout << "CustomOpenGLWidget::insertItemToMap" << std::endl; std::cout.flush();
         drawingTracker->insertItemToMap(shape,item);
     }
