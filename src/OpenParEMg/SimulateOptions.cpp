@@ -24,7 +24,7 @@
 #include "string.h"
 
 
-SimOptions::SimOptions(QWidget *parent)
+SimOptions::SimOptions (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::SimOptions)
 {
@@ -32,11 +32,10 @@ SimOptions::SimOptions(QWidget *parent)
     this->setFixedSize(518,503);
 }
 
-SimOptions::~SimOptions()
+SimOptions::~SimOptions ()
 {
     delete ui;
 }
-
 
 void SimOptions::set_projData (struct projectData *a)
 {
@@ -72,6 +71,10 @@ void SimOptions::set_projData (struct projectData *a)
     skipMixedModeConversion=projData->debug_skip_mixed_conversion;
     skipForcedReciprocity=projData->debug_skip_forced_reciprocity;
     preconditioner=projData->debug_refine_preconditioner;
+    solverIterations=projData->output_show_iterations;
+    meshRefinement=projData->output_show_refining_mesh;
+    postProcessing=projData->output_show_postprocessing;
+    showLicense=projData->output_show_license;
     createTestCases=projData->test_create_cases;
     showDetailedCases=projData->test_show_detailed_cases;
 
@@ -217,6 +220,18 @@ void SimOptions::set_projData (struct projectData *a)
     if (preconditioner == 1) index=1;
     ui->preconditioner->setCurrentIndex(index);
 
+    if (solverIterations) ui->solverIterations->setCheckState(Qt::Checked);
+    else ui->solverIterations->setCheckState(Qt::Unchecked);
+
+    if (meshRefinement) ui->meshRefinement->setCheckState(Qt::Checked);
+    else ui->meshRefinement->setCheckState(Qt::Unchecked);
+
+    if (postProcessing) ui->postProcessing->setCheckState(Qt::Checked);
+    else ui->postProcessing->setCheckState(Qt::Unchecked);
+
+    if (showLicense) ui->showLicense->setCheckState(Qt::Checked);
+    else ui->showLicense->setCheckState(Qt::Unchecked);
+
     if (createTestCases) ui->createTestCases->setCheckState(Qt::Checked);
     else ui->createTestCases->setCheckState(Qt::Unchecked);
 
@@ -239,10 +254,12 @@ void SimOptions::set_projData (struct projectData *a)
         ui->shiftFactor->setEnabled(false);
         ui->saveFields->setEnabled(false);
         ui->calculatePoynting->setEnabled(false);
-        ui->solverIterations->setEnabled(false);
         ui->meshRefinement->setEnabled(false);
         ui->showLicense->setEnabled(false);
+        ui->solverIterations->setEnabled(false);
+        ui->meshRefinement->setEnabled(false);
         ui->postProcessing->setEnabled(false);
+        ui->showLicense->setEnabled(false);
         ui->createTestCases->setEnabled(false);
         ui->showDetailedCases->setEnabled(false);
         ui->showProjectFile->setEnabled(false);
@@ -472,6 +489,30 @@ void SimOptions::on_simulateOptionOk_clicked()
         projData->modified=1;
     }
 
+    // output_show_iterations
+    if (projData->output_show_iterations != solverIterations) {
+        projData->output_show_iterations=solverIterations;
+        projData->modified=1;
+    }
+
+    // output_show_refining_mesh
+    if (projData->output_show_refining_mesh != meshRefinement) {
+        projData->output_show_refining_mesh=meshRefinement;
+        projData->modified=1;
+    }
+
+    // output_show_postprocessing
+    if (projData->output_show_postprocessing != postProcessing) {
+        projData->output_show_postprocessing=postProcessing;
+        projData->modified=1;
+    }
+
+    // output_show_license
+    if (projData->output_show_license != showLicense) {
+        projData->output_show_license=showLicense;
+        projData->modified=1;
+    }
+
     // test_create_cases
     if (projData->test_create_cases != createTestCases) {
         projData->test_create_cases=createTestCases;
@@ -555,7 +596,7 @@ void SimOptions::on_tolerance2D_returnPressed ()
     ui->simulateOptionOk->setEnabled(true);
 }
 
-void SimOptions::on_tolerance3D_returnPressed()
+void SimOptions::on_tolerance3D_returnPressed ()
 {
     tolerance3D=ui->tolerance3D->text().toDouble();
     if (tolerance3D < 1e-15*(1-1e-14)) {
@@ -574,14 +615,14 @@ void SimOptions::on_tolerance3D_returnPressed()
     ui->simulateOptionOk->setEnabled(true);
 }
 
-void SimOptions::on_iterationLimit_valueChanged(int arg1)
+void SimOptions::on_iterationLimit_valueChanged (int arg1)
 {
     iterationLimit=arg1;
     ui->simulateOptionOk->setEnabled(true);
 }
 
 
-void SimOptions::on_checkHomogeneous_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_checkHomogeneous_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) checkHomogeneous=1;
     else checkHomogeneous=0;
@@ -589,14 +630,14 @@ void SimOptions::on_checkHomogeneous_checkStateChanged(const Qt::CheckState &arg
 }
 
 
-void SimOptions::on_modesBuffer_valueChanged(int arg1)
+void SimOptions::on_modesBuffer_valueChanged (int arg1)
 {
     modesBuffer=arg1;
     ui->simulateOptionOk->setEnabled(true);
 }
 
 
-void SimOptions::on_checkClosedLoop_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_checkClosedLoop_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) checkClosedLoop=1;
     else checkClosedLoop=0;
@@ -604,14 +645,14 @@ void SimOptions::on_checkClosedLoop_checkStateChanged(const Qt::CheckState &arg1
 }
 
 
-void SimOptions::on_accurateResidual_stateChanged(int arg1)
+void SimOptions::on_accurateResidual_stateChanged (int arg1)
 {
     accurateResidual=arg1;
     ui->simulateOptionOk->setEnabled(true);
 }
 
 
-void SimOptions::on_shiftInvert_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_shiftInvert_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) {
         shiftInvert=1;
@@ -626,14 +667,14 @@ void SimOptions::on_shiftInvert_checkStateChanged(const Qt::CheckState &arg1)
 }
 
 
-void SimOptions::on_shiftFactor_valueChanged(double arg1)
+void SimOptions::on_shiftFactor_valueChanged (double arg1)
 {
     shiftFactor=arg1;
     ui->simulateOptionOk->setEnabled(true);
 }
 
 
-void SimOptions::on_saveFields_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_saveFields_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) {
         saveFields=1;
@@ -647,7 +688,7 @@ void SimOptions::on_saveFields_checkStateChanged(const Qt::CheckState &arg1)
 }
 
 
-void SimOptions::on_calculatePoynting_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_calculatePoynting_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) calculatePoynting=1;
     else calculatePoynting=0;
@@ -655,7 +696,7 @@ void SimOptions::on_calculatePoynting_checkStateChanged(const Qt::CheckState &ar
 }
 
 
-void SimOptions::on_showProjectFile_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_showProjectFile_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) showProjectFile=1;
     else showProjectFile=0;
@@ -663,7 +704,7 @@ void SimOptions::on_showProjectFile_checkStateChanged(const Qt::CheckState &arg1
 }
 
 
-void SimOptions::on_showFrequencyPlan_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_showFrequencyPlan_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) showFrequencyPlan=1;
     else showFrequencyPlan=0;
@@ -671,14 +712,14 @@ void SimOptions::on_showFrequencyPlan_checkStateChanged(const Qt::CheckState &ar
 }
 
 
-void SimOptions::on_showImpedanceDetails_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_showImpedanceDetails_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) showImpedanceDetails=1;
     else showImpedanceDetails=0;
     ui->simulateOptionOk->setEnabled(true);
 }
 
-void SimOptions::on_showPortDefinitions_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_showPortDefinitions_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) showPortDefinitions=1;
     else showPortDefinitions=0;
@@ -686,7 +727,7 @@ void SimOptions::on_showPortDefinitions_checkStateChanged(const Qt::CheckState &
 }
 
 
-void SimOptions::on_showMaterials_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_showMaterials_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) showMaterials=1;
     else showMaterials=0;
@@ -694,7 +735,7 @@ void SimOptions::on_showMaterials_checkStateChanged(const Qt::CheckState &arg1)
 }
 
 
-void SimOptions::on_showMemoryUsage_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_showMemoryUsage_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) showMemoryUsage=1;
     else showMemoryUsage=0;
@@ -702,7 +743,7 @@ void SimOptions::on_showMemoryUsage_checkStateChanged(const Qt::CheckState &arg1
 }
 
 
-void SimOptions::on_savePortFields_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_savePortFields_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) savePortFields=1;
     else savePortFields=0;
@@ -710,7 +751,7 @@ void SimOptions::on_savePortFields_checkStateChanged(const Qt::CheckState &arg1)
 }
 
 
-void SimOptions::on_keepTempFiles_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_keepTempFiles_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) keepTempFiles=1;
     else keepTempFiles=0;
@@ -718,7 +759,7 @@ void SimOptions::on_keepTempFiles_checkStateChanged(const Qt::CheckState &arg1)
 }
 
 
-void SimOptions::on_skipMixedModeConversion_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_skipMixedModeConversion_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) skipMixedModeConversion=1;
     else skipMixedModeConversion=0;
@@ -726,7 +767,7 @@ void SimOptions::on_skipMixedModeConversion_checkStateChanged(const Qt::CheckSta
 }
 
 
-void SimOptions::on_skipForcedReciprocity_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_skipForcedReciprocity_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) skipForcedReciprocity=1;
     else skipForcedReciprocity=0;
@@ -734,7 +775,7 @@ void SimOptions::on_skipForcedReciprocity_checkStateChanged(const Qt::CheckState
 }
 
 
-void SimOptions::on_preconditioner_activated(int index)
+void SimOptions::on_preconditioner_activated (int index)
 {
     if (index == 0) preconditioner=0;
     if (index == 1) preconditioner=1;
@@ -742,7 +783,7 @@ void SimOptions::on_preconditioner_activated(int index)
 }
 
 
-void SimOptions::on_createTestCases_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_createTestCases_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) createTestCases=1;
     else createTestCases=0;
@@ -750,22 +791,51 @@ void SimOptions::on_createTestCases_checkStateChanged(const Qt::CheckState &arg1
 }
 
 
-void SimOptions::on_showDetailedCases_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_showDetailedCases_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) showDetailedCases=1;
     else showDetailedCases=0;
     ui->simulateOptionOk->setEnabled(true);
 }
 
-void SimOptions::on_initialGuess_currentIndexChanged(int index)
+void SimOptions::on_initialGuess_currentIndexChanged (int index)
 {
     initialGuessLevel=index;
     ui->simulateOptionOk->setEnabled(true);
 }
 
-void SimOptions::on_femOrder_valueChanged(int arg1)
+void SimOptions::on_femOrder_valueChanged (int arg1)
 {
     femOrder=arg1;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+void SimOptions::on_solverIterations_checkStateChanged (const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) solverIterations=1;
+    else solverIterations=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+void SimOptions::on_meshRefinement_checkStateChanged (const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) meshRefinement=1;
+    else meshRefinement=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+void SimOptions::on_postProcessing_checkStateChanged (const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) postProcessing=1;
+    else postProcessing=0;
+    ui->simulateOptionOk->setEnabled(true);
+}
+
+
+void SimOptions::on_showLicense_checkStateChanged (const Qt::CheckState &arg1)
+{
+    if (arg1 == Qt::Checked) showLicense=1;
+    else showLicense=0;
     ui->simulateOptionOk->setEnabled(true);
 }
 

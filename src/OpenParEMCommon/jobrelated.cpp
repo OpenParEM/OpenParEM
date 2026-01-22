@@ -21,7 +21,7 @@
 #include "jobrelated.hpp"
 
 // tool: 2 for OpenParEM2D, 3 for OpenParEM3D
-void exit_job_on_error (chrono::steady_clock::time_point job_start_time, const char *lockfile, bool removeLock, int tool)
+void exit_job_base (chrono::steady_clock::time_point job_start_time, const char *lockfile, bool removeLock, int tool, int return_code)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -51,8 +51,19 @@ void exit_job_on_error (chrono::steady_clock::time_point job_start_time, const c
 
    PetscFinalize();
 
-   exit(1);
+   exit(return_code);
 }
+
+void exit_job_on_error (chrono::steady_clock::time_point job_start_time, const char *lockfile, bool removeLock, int tool)
+{
+   exit_job_base(job_start_time,lockfile,removeLock,tool,1);
+}
+
+void exit_job (chrono::steady_clock::time_point job_start_time, const char *lockfile, bool removeLock, int tool)
+{
+   exit_job_base(job_start_time,lockfile,removeLock,tool,0);
+}
+
 
 // this method is not guaranteed
 char* create_lock_file (const char *baseName)

@@ -127,14 +127,7 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     drawPolyline=false;
 
     // set a default so that all vertices highlight with a circle
-
     Handle(Prs3d_Drawer) drawer=viewerContext->DefaultDrawer();
-
-    // size
-    //viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
-
-    // for testing only
-    //view->SetFrustumCulling(Standard_False);
 }
 
 CustomOpenGLWidget::~CustomOpenGLWidget ()

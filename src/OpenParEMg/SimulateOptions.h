@@ -74,12 +74,15 @@ private slots:
     void on_createTestCases_checkStateChanged (const Qt::CheckState &arg1);
     void on_showDetailedCases_checkStateChanged (const Qt::CheckState &arg1);
     void on_initialGuess_currentIndexChanged (int);
-
     void on_slotCount_valueChanged(int arg1);
-
     void on_femOrder_valueChanged(int arg1);
+    void on_solverIterations_checkStateChanged(const Qt::CheckState &arg1);
+    void on_meshRefinement_checkStateChanged(const Qt::CheckState &arg1);
+    void on_postProcessing_checkStateChanged(const Qt::CheckState &arg1);
+    void on_showLicense_checkStateChanged(const Qt::CheckState &arg1);
 
 private:
+
     Ui::SimOptions *ui;
     bool cancelClose;
     struct projectData *projData;
@@ -113,6 +116,10 @@ private:
     int skipMixedModeConversion;
     int skipForcedReciprocity;
     int preconditioner;
+    int meshRefinement;
+    int solverIterations;
+    int postProcessing;
+    int showLicense;
     int createTestCases;
     int showDetailedCases;
 

@@ -425,7 +425,7 @@ int postProcess (struct projectData *projData, char *resultsDir, EPS *eps, doubl
    if (projData->solution_active_mode_count < projData->solution_modes) {
       if (projData->solution_active_mode_count == 0) {
          prefix(); if (PetscPrintf (PETSC_COMM_WORLD,
-            "         INFO: None the requested %d modes were found.\n",
+            "         INFO: None of the requested %d modes were found.\n",
             projData->solution_modes)) return 1;
       } else if (projData->solution_active_mode_count == 1) {
          prefix(); if (PetscPrintf (PETSC_COMM_WORLD,

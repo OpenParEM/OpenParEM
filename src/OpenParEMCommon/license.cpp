@@ -34,7 +34,11 @@ void print_copyright_notice (string program_name, int major, int minor, int patc
 
 void print_license()
 {
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Printing license text ...\n\n");
+   PetscMPIInt rank;
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   #include "formatted_license.txt"
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Printing license text ...\n\n");
+   if (rank == 0) {
+      #include "formatted_license.txt"
+   }
 }

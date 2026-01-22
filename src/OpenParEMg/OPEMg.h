@@ -86,8 +86,8 @@ public:
 
     void saveProject ();
     void addShape (TopoDS_Shape, CustomTreeWidgetItem *, bool, bool);
-    bool loadBrepFile (QString);
-    bool loadStepFile (QString);
+    bool loadBrepFile (QString, bool);
+    bool loadStepFile (QString, bool);
     bool saveBrepFile (char *);
     bool saveStepFile (QString, std::vector<Handle(AIS_InteractiveObject)> *);
     bool saveBoundaryDatabase ();
@@ -96,7 +96,7 @@ public:
     //void meshShowEntities ();
     //void meshHideEntities ();
     void drawMesh ();
-    void deleteMesh ();
+    void deleteMesh (bool);
 
     int treeSelectionCount ();
     bool hasSelectedPaths ();
@@ -340,12 +340,12 @@ private:
     int volumeCount;
 
     // lockouts
-    bool projectFileLoaded;
-    bool projectFileChanged;
-    bool meshFileLoaded;
-    bool meshFileChanged;
-    bool brepFileLoaded;
-    bool stepFileLoaded;
+    bool projectFileLoaded;  // project setup variable including paths
+    bool projectChanged;
+    bool brepFileLoaded;     // drawing (brep or step)
+    bool brepChanged;
+    bool meshFileLoaded;     // mesh
+    bool meshChanged;
     bool drawingPlaneShown;
     bool simulationRunning;
     bool simulationStopping;
