@@ -297,6 +297,7 @@ void CustomOpenGLWidget::finishDrawLine ()
 {
     std::cout << "CustomOpenGLWidget::finishDrawLine" << std::endl; std::cout.flush();
 
+    ignoreLeftMouseRelease=false;
     drawLine=false;
     drawPolyline=false;
     viewerContext->ClearDetected(Standard_True);
@@ -440,7 +441,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     if (event->button() == Qt::LeftButton) {
 
         if (!ignoreLeftMouseRelease) {
-            ignoreLeftMouseRelease=false;
 
             bool hasModifier=false;
             if (event->button() == Qt::LeftButton) {
@@ -593,56 +593,16 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
                                      OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateViewer();
 }
 
-bool CustomOpenGLWidget::set_gridPlane ()
+void CustomOpenGLWidget::set_gridPlane ()
 {
-    std::cout << "   viewerContext->NbSelected()=" << viewerContext->NbSelected() << std::endl; std::cout.flush();
-    if (viewerContext->NbSelected() == 1) {
-        viewerContext->InitSelected();
-        while (viewerContext->MoreSelected()) {
-            Handle(AIS_InteractiveObject) io=viewerContext->SelectedInteractive();
-            Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(io);
-            if (!shape.IsNull()) {
-                const TopoDS_Shape& aShape = shape->Shape();
-                if (aShape.ShapeType() == TopAbs_FACE) {
 
-                    TopoDS_Face face = TopoDS::Face(aShape);
-
-                    // get the place of the face
-                    Handle(Geom_Surface) surface=BRep_Tool::Surface(face);
-                    Handle(Geom_Plane) gPlane=Handle(Geom_Plane)::DownCast(surface);
-                    drawingPlane=gPlane->Pln();
-
-                    //view->SetGrid(drawingPlane.Position(),Aspect_GT_Rectangular);
-                    viewer->SetPrivilegedPlane(drawingPlane.Position());
-
-                    /*
-                // current grid's data
-                Standard_Real xOrigin,yOrigin,xStep,yStep,rotationAngle,xSize,ySize,offset;
-                viewer->RectangularGridValues(xOrigin,yOrigin,xStep,yStep,rotationAngle);
-                viewer->RectangularGridGraphicValues(xSize,ySize,offset);
-
-                // new grid data
-
-                gp_Pnt origin=drawingPlane.Location();
-
-
-
-                viewer->SetRectangularGridValues(xOrigin,yOrigin,xStep,yStep,rotationAngle);
-                viewer->SetRectangularGridGraphicValues(xSize,ySize,offset);
-
-
-                */
-
-                    return true;
-                }
-            }
-            viewerContext->NextSelected();
-        }
-        return false;
-    } else {
-        std::cout << "No face selected to set the grid plane." << std::endl; std::cout.flush();
+    TopoDS_Face face=getSelectedFace();
+    if (!face.IsNull()) {
+        Handle(Geom_Surface) surface=BRep_Tool::Surface(face);
+        Handle(Geom_Plane) gPlane=Handle(Geom_Plane)::DownCast(surface);
+        drawingPlane=gPlane->Pln();
+        viewer->SetPrivilegedPlane(drawingPlane.Position());
     }
-    return true;
 }
 
 void CustomOpenGLWidget::showGrid ()

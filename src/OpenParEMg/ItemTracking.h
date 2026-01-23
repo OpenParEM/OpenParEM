@@ -584,11 +584,11 @@ public:
         return false;
     }
 
+    //xxx
     bool hasOneFaceSelected ()
     {
         if (selectTracking) {std::cout << "ItemTracker::hasOneFaceSelected" << std::endl; std::cout.flush();}
 
-        //xxx
         int count=0;
         long unsigned int i=0;
         while (i < selectedItems.size()) {
@@ -736,7 +736,6 @@ public:
         if (item->is_mesh()) return;
         if (item->is_sportLabel()) return;
 
-        //xxx
         if (shape.IsNull()) {std::cout << "ItemTracker::insertItemToMap  ERROR inserting null shape" << std::endl; std::cout.flush();}
 
         shapeToItemMap.insert({shape,item});

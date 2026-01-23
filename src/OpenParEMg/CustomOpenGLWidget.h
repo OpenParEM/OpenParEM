@@ -40,6 +40,7 @@
 
 #include <Standard_WarningsDisable.hxx>
 #include <Standard_WarningsRestore.hxx>
+#include <StdSelect_BRepOwner.hxx>
 #include <TopoDS_Face.hxx>
 #include <V3d_View.hxx>
 #include <Prs3d_PointAspect.hxx>
@@ -87,7 +88,7 @@ public:
         snapToGrid=state;
         viewer->SetGridEcho(state);
     }
-    bool set_gridPlane ();
+    void set_gridPlane ();
 
     void set_isPath (bool isPath_) {isPath=isPath_;}
     bool get_isPath () {return isPath;}
@@ -205,6 +206,29 @@ public:
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::hasOneSelectedItem" << std::endl; std::cout.flush();
         return drawingTracker->hasOneSelectedItem();
+    }
+
+    TopoDS_Face getSelectedFace ()
+    {
+        TopoDS_Face face;
+
+        // 1 - the bare face
+        // 2 - the face as part of an object
+        if (viewerContext->NbSelected() == 1 || viewerContext->NbSelected() == 2) {
+            for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
+                Handle(SelectMgr_EntityOwner) owner=viewerContext->SelectedOwner();
+                Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
+                if (!brepOwner.IsNull()) {
+                    TopoDS_Shape shape=brepOwner->Shape();
+                    if (shape.ShapeType() == TopAbs_FACE) {
+                        face=TopoDS::Face(shape);
+                        break;
+                    }
+                }
+            }
+        }
+
+        return face;
     }
 
     bool hasAnySelectedItems ()
@@ -397,6 +421,8 @@ public:
     }
 
     long unsigned int get_shapePoints_size () {return shapePoints.size();}
+
+    void clearSelected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearSelected(theToUpdateViewer);}
 
     void finishDrawLine ();
 

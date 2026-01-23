@@ -427,13 +427,11 @@ void OpenParEMg::setMenus ()
             ui->actionDrawingPlaneShow->setEnabled(false);
             ui->actionDrawingPlaneHide->setEnabled(true);
             ui->actionDrawingPlaneSnapToGrid->setEnabled(true);
+            ui->actionDrawingPlaneSetToFace->setEnabled(false);
 
             if (brepFileLoaded) {
-                if (ui->drawingWindow->hasOneFaceSelected()) {
-                    ui->actionDrawingPlaneSetToFace->setEnabled(true);
-                }
-            } else {
-                ui->actionDrawingPlaneSetToFace->setEnabled(false);
+                TopoDS_Face face=ui->drawingWindow->getSelectedFace();
+                if (!face.IsNull()) ui->actionDrawingPlaneSetToFace->setEnabled(true);
             }
 
         } else {
@@ -3875,18 +3873,31 @@ void OpenParEMg::clearTreeSelection ()
     ui->drawingWindow->updateViewer();
 }
 
-// click on background in the item tree to clear the selection
-bool OpenParEMg::eventFilter(QObject *obj, QEvent *event)
+bool OpenParEMg::eventFilter (QObject *obj, QEvent *event)
 {
-    if (obj == ui->drawingItemTree->viewport()) {
-        if (event->type() == QEvent::MouseButtonPress) {
+    //std::cout << "OpenParEMg::eventFilter  event->type()=" << event->type() << std::endl; std::cout.flush();
+
+    if (event->type() == QEvent::MouseButtonPress) {
+
+        // click on background in the item tree to clear the selection
+        if (obj == ui->drawingItemTree->viewport()) {
             QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
             if (ui->drawingItemTree->indexAt(mouseEvent->pos()).isValid() == false) {
                 clearTreeSelection();
             }
-            return false;
         }
     }
+
+    if (event->type() == QEvent::Paint) {
+
+        // special processing for setting the drawing plane
+        if (drawingPlaneShown && brepFileLoaded) {
+            ui->actionDrawingPlaneSetToFace->setEnabled(false);
+            TopoDS_Face face=ui->drawingWindow->getSelectedFace();
+            if (!face.IsNull()) ui->actionDrawingPlaneSetToFace->setEnabled(true);
+        }
+    }
+
     return QObject::eventFilter(obj, event);
 }
 
@@ -4601,6 +4612,7 @@ void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered()
 void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
     ui->drawingWindow->set_gridPlane();
+    ui->drawingWindow->clearSelected(Standard_True);
     ui->drawingWindow->updateViewer();
     setMenus();
 }
@@ -4751,6 +4763,20 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
         // add the path to the working item
         insertPath(workingItem);
     } else {
+
+        // build a face if the polygon is closed
+        bool validFace=false;
+        TopoDS_Face face;
+        if (wire.Closed()) {
+            std::cout << "wire is closed" << std::endl; std::cout.flush();
+            BRepBuilderAPI_MakeFace faceBuilder(wire);
+            if (faceBuilder.IsDone()) {
+                validFace=true;
+                face=faceBuilder.Face();
+            }
+        }
+
+        // top-level shape
         Handle(AIS_Shape) drawingShape=drawing.get_AIS_Shape();
         BRep_Builder builder;
 
@@ -4758,14 +4784,25 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
         if (drawingShape->Shape().ShapeType() == TopAbs_COMPOUND) {
             TopoDS_Compound compound=TopoDS::Compound(drawingShape->Shape());
             BRep_Builder builder;
-            builder.Add(compound,wire);
+            if (validFace) {
+                builder.Add(compound,face);
+            } else {
+                builder.Add(compound,wire);
+            }
             drawingShape->Redisplay(true);
         } else {
+            // should not occur
+            std::cout << "OpenParEMg::drawLineFinished found non-COMPOUND top level shape." << std::endl; std::cout.flush();
+
             // make a top-level compound
             TopoDS_Compound compound;
             builder.MakeCompound(compound);
             builder.Add(compound,drawingShape->Shape());
-            builder.Add(compound,wire);
+            if (validFace) {
+                builder.Add(compound,face);
+            } else {
+                builder.Add(compound,wire);
+            }
 
             ui->drawingWindow->removeItemFromMap(&drawing);
             drawingShape.Nullify();
@@ -4775,11 +4812,15 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
             ui->drawingWindow->insertItemToMap(drawingShape,&drawing);
         }
 
-        // add the shape to the tree; when the new compound is saved and reloaded,
-        // the wire will show up then without additional processing
-        addShape(wire,&drawing,false,false);
+        // add the shape to the tree
+        if (validFace) {
+            addShape(face,&drawing,false,false);
+        } else {
+            addShape(wire,&drawing,false,false);
+        }
 
         projectChanged=true;
+        brepChanged=true;
         drawing.setForeground(0,Qt::gray);
         ui->drawingWindow->showItem(&drawing);
         ui->drawingWindow->unselectItem(&drawing);
