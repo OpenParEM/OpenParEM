@@ -314,8 +314,7 @@ void OpenParEMg::setMenus ()
         ui->actionNew->setEnabled(false);
         ui->actionOpen->setEnabled(false);
         ui->actionSave->setEnabled(false);
-        if (projectChanged) ui->actionSave->setEnabled(true);
-        if (boundaryDatabaseChanged) ui->actionSave->setEnabled(true);
+        if (projectChanged || boundaryDatabaseChanged || brepChanged) ui->actionSave->setEnabled(true);
         ui->actionSaveAs->setEnabled(true);
         ui->actionClose->setEnabled(true);
         ui->actionExit->setEnabled(true);
@@ -1078,12 +1077,12 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             menu.addAction(createPathAction);
 
             createPortAction->setEnabled(false);
-            std::cout << "ui->drawingWindow->NbSelected()=" << ui->drawingWindow->NbSelected() << std::endl; std::cout.flush();
-            std::cout << "ui->drawingWindow->numberDrawingFaceSelected()=" << ui->drawingWindow->numberDrawingFaceSelected() << std::endl; std::cout.flush();
             if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {createPortAction->setEnabled(true);}
 
             createPathAction->setEnabled(false);
             if (ui->drawingWindow->numberDrawingFaceSelected() > 0) {createPathAction->setEnabled(true);}
+
+            deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
             menu.exec(ui->drawingWindow->mapToGlobal(pnt));
 
@@ -1972,6 +1971,7 @@ void OpenParEMg::deleteDrawingItems()
 {
     std::cout << "OpenParEMg::deleteDrawingItems" << std::endl; std::cout.flush();
 
+    // delete from the selected item down
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < selectedItems.count()) {
@@ -1982,16 +1982,34 @@ void OpenParEMg::deleteDrawingItems()
         i++;
     }
 
+    //xxx
+    // isValidDelete verified that the parent is the item drawing, which is a COMPOUND
+    // rebuild the compound with what remains
+
+    BRep_Builder builder;
+    TopoDS_Compound compound;
+    builder.MakeCompound(compound);
+    i=0;
+    while (i < drawing.childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
+        builder.Add(compound,child->get_AIS_Shape()->Shape());
+        i++;
+    }
+
+    ui->drawingWindow->removeItemFromMap(&drawing);
+    drawing.get_AIS_Shape().Nullify();
+
+    Handle(AIS_Shape) drawingShape=new AIS_Shape(compound);
+    drawing.set_AIS_Shape(drawingShape);
+    ui->drawingWindow->insertItemToMap(drawingShape,&drawing);
+
+
     clickedItem=nullptr;
     previousClickedItem=nullptr;
-
-    //setRootForeground(&drawing);
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
+    brepChanged=true;
 
     ui->drawingWindow->updateViewer();
+    setMenus();
 }
 
 void OpenParEMg::unselectRootPortItems()
@@ -3095,6 +3113,7 @@ void OpenParEMg::saveProject ()
 {
     // project
     if (projectChanged) {
+        std::cout << "Saved project file" << std::endl; std::cout.flush();
         if (save_project (projectFile.toStdString().c_str(),&projData,&defaultData,"")) {
             QString message="Error in saving the project file.";
             QMessageBox mb;
@@ -3107,6 +3126,7 @@ void OpenParEMg::saveProject ()
 
     // ports and boundaries
     if (boundaryDatabase->is_modified()) {
+        std::cout << "Saved boundary database file" << std::endl; std::cout.flush();
         if (saveBoundaryDatabase()) {
             QString message="Error in saving the boundary database.";
             QMessageBox mb;
@@ -3117,6 +3137,7 @@ void OpenParEMg::saveProject ()
 
     // Brep
     if (brepChanged) {
+        std::cout << "Saved Brep file" << std::endl; std::cout.flush();
         if (saveBrepFile(projData.gui_brep_file)) {
             QString message="Error in saving the drawing file.";
             QMessageBox mb;
@@ -3127,6 +3148,7 @@ void OpenParEMg::saveProject ()
 
     // mesh
     if (meshFileLoaded && meshChanged) {
+        std::cout << "Saved mesh file" << std::endl; std::cout.flush();
         on_actionMeshSave_triggered();
         meshChanged=false;
     }
@@ -3517,6 +3539,7 @@ bool OpenParEMg::saveBrepFile (char *filePath)
     std::cout << "OpenParEMg::saveBrepFile" << std::endl; std::cout.flush();
 
     if (drawing.get_AIS_Shape()->Shape().IsNull()) return true;
+    std::cout << "place 1" << std::endl; std::cout.flush();
     if (BRepTools::Write(drawing.get_AIS_Shape()->Shape(),filePath)) brepChanged=false;
     else return true;
 
@@ -3607,7 +3630,6 @@ void OpenParEMg::on_actionImportStep_triggered()
     ui->drawingWindow->fitAll();
     ui->drawingWindow->updateViewer();
 
-    projectChanged=true;
     setMenus();
 }
 
@@ -3639,7 +3661,7 @@ void OpenParEMg::on_actionExportStep_triggered()
 
 void OpenParEMg::on_actionExit_triggered ()
 {
-    if (projectChanged || meshChanged || boundaryDatabase->is_modified()) {
+    if (projectChanged || brepChanged || meshChanged || boundaryDatabase->is_modified()) {
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this,"OpenParEMg","There are unsaved changes.  Do you want to exit anyway?",QMessageBox::Yes|QMessageBox::No);
         if (reply == QMessageBox::No) return;
@@ -3666,6 +3688,10 @@ void OpenParEMg::on_actionSelectMaterialsDatabase_triggered ()
 void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int column)
 {
     std::cout << "OpenParEMg::on_drawingItemTree_itemClicked" << std::endl; std::cout.flush();
+    std::cout << "   clickedItem=" << clickedItem << std::endl;
+    std::cout << "   previousClickedItem=" << previousClickedItem << std::endl;
+    std::cout << "   CTRLpressed=" << CTRLpressed << std::endl;
+    std::cout << "   SHIFTpressed" << SHIFTpressed << std::endl;
 
     clickedItem=(CustomTreeWidgetItem *)item;
     ui->drawingItemTree->setCurrentItem(clickedItem);
@@ -4145,7 +4171,6 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
 
     if (!meshFileLoaded) return;
 
-    std::cout << "place 1" << std::endl; std::cout.flush();
     int i=0;
     while (i < mesh.childCount()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *) mesh.child(i);
@@ -4163,12 +4188,9 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
         }
         i++;
     }
-    std::cout << "place 2" << std::endl; std::cout.flush();
 
     // remove the mesh file
     if (deleteMeshFile && strcmp(projData.mesh_file,"") != 0) {
-        //xxx
-
         QFile meshFile=QFile(projData.mesh_file);
         if (meshFile.exists()) {
             meshFile.remove();
@@ -4176,7 +4198,6 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
             cstrFromQString(&(projData.mesh_file),blank);
         }
     }
-    std::cout << "place 3" << std::endl; std::cout.flush();
 
     ui->drawingWindow->updateViewer();
     mesh.deleteChildren(&mesh);
@@ -4202,7 +4223,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     gmsh::model::mesh::generate();
 
     // default name for the mesh
-    //xxx
     if (strcmp(projData.mesh_file,"") == 0) {
         QString meshFile=projectName;
         meshFile.append(".msh");
@@ -4819,7 +4839,6 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
             addShape(wire,&drawing,false,false);
         }
 
-        projectChanged=true;
         brepChanged=true;
         drawing.setForeground(0,Qt::gray);
         ui->drawingWindow->showItem(&drawing);

@@ -584,7 +584,6 @@ public:
         return false;
     }
 
-    //xxx
     bool hasOneFaceSelected ()
     {
         if (selectTracking) {std::cout << "ItemTracker::hasOneFaceSelected" << std::endl; std::cout.flush();}
@@ -707,7 +706,38 @@ public:
     {
         if (deleteTracking) {std::cout << "ItemTracker::isValidDelete" << std::endl; std::cout.flush();}
 
+        bool performCheck=true;
+        // count the items
         long unsigned int i=0;
+        while (i < selectedItems.size()) {
+            CustomTreeWidgetItem *item=selectedItems[i];
+            if (item->is_mesh()) {
+                // nothing to do
+            } else if (item->is_port() || item->is_boundary()) {
+                if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) performCheck=false;
+            } else if (item->is_sportLabel()) {
+                // nothing to do
+            } else {
+                // drawing
+                if (viewerContext->IsDisplayed(item->get_AIS_Shape())) {
+
+                    CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                    if (parent) {
+                        // parent must be a COMPOUND
+                        //if (parent->get_AIS_Shape()->Shape().ShapeType() == TopAbs_COMPOUND) count++;
+
+                        // parent must be the item Drawing
+                        if (parent->text(0).compare("Drawing") != 0) performCheck=false;
+                    }
+                }
+            }
+            i++;
+        }
+
+        if (!performCheck) return false;
+
+        // checks
+        i=0;
         while (i < selectedItems.size()) {
             CustomTreeWidgetItem *item=selectedItems[i];
             if (item->is_mesh()) {
@@ -718,11 +748,22 @@ public:
                 // nothing to do
             } else {
                 // drawing
-                std::cout << "viewerContext->IsDisplayed(item->get_AIS_Shape())=" << viewerContext->IsDisplayed(item->get_AIS_Shape()) << std::endl; std::cout.flush();
                 if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) return false;
+
+                CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                if (parent) {
+                    // ToDo: probably have to generalize this at some point
+
+                    // parent must be a COMPOUND
+                    //if (parent->get_AIS_Shape()->Shape().ShapeType() != TopAbs_COMPOUND) return false;
+
+                    // parent must be the item drawing
+                    if (parent->text(0).compare("Drawing") != 0) return false;
+                }
             }
             i++;
         }
+
         return true;
     }
 
