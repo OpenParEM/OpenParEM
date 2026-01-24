@@ -124,6 +124,7 @@
     <property name="title">
      <string>Materials</string>
     </property>
+    <addaction name="actionMaterialsOptions"/>
     <addaction name="actionSelectMaterialsDatabase"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -494,6 +495,11 @@
    </property>
    <property name="toolTip">
     <string>Draw a polyline.  Close it to obtain a polygon.</string>
+   </property>
+  </action>
+  <action name="actionMaterialsOptions">
+   <property name="text">
+    <string>Options ...</string>
    </property>
   </action>
  </widget>

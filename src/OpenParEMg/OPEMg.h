@@ -272,6 +272,8 @@ private slots:
 
 
 
+    void on_actionMaterialsOptions_triggered();
+
 public slots:
     void setMenus ();
 

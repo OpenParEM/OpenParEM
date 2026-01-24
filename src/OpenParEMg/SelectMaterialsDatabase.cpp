@@ -38,8 +38,6 @@ SelectMaterialsDatabase::SelectMaterialsDatabase (QWidget *parent)
     globalIsValid=false;
     localIsValid=false;
 
-    checkLimits=1;
-
     ui->OkButton->setEnabled(false);
 }
 
@@ -56,6 +54,9 @@ SelectMaterialsDatabase::~SelectMaterialsDatabase ()
 void SelectMaterialsDatabase::set_projData (struct projectData *a)
 {
     projData=a;
+
+    ui->globalMaterialFile->blockSignals(true);
+    ui->localMaterialFile->blockSignals(true);
 
     ui->globalFile->setChecked(false);
     ui->globalMaterialFile->setEnabled(false);
@@ -87,9 +88,6 @@ void SelectMaterialsDatabase::set_projData (struct projectData *a)
         emit ui->localMaterialFile->returnPressed();
     }
 
-    checkLimits=projData->materials_check_limits;
-    ui->checkLimits->setChecked(checkLimits);
-
     if (simulationRunning) {
         ui->globalFile->setEnabled(false);
         ui->globalMaterialFile->setEnabled(false);
@@ -97,8 +95,10 @@ void SelectMaterialsDatabase::set_projData (struct projectData *a)
         ui->localFile->setEnabled(false);
         ui->localMaterialFile->setEnabled(false);
         ui->selectLocal->setEnabled(false);
-        ui->checkLimits->setEnabled(false);
     }
+
+    ui->globalMaterialFile->blockSignals(false);
+    ui->localMaterialFile->blockSignals(false);
 }
 
 void SelectMaterialsDatabase::on_selectLocal_clicked ()
@@ -168,14 +168,6 @@ void SelectMaterialsDatabase::on_OkButton_clicked ()
         sprintf(projData->materials_local_name,"%s",localFilename);
         projData->modified=1;
     }
-
-    // check limits
-    if (projData->materials_check_limits != checkLimits) {
-        projData->materials_check_limits=checkLimits;
-        projData->modified=1;
-    }
-
-    // ToDo: default boundary condition material
 
     if (projData->modified) {
 
@@ -331,11 +323,4 @@ void SelectMaterialsDatabase::on_localMaterialFile_returnPressed ()
     if (localIsValid) ui->OkButton->setEnabled(true);
 }
 
-void SelectMaterialsDatabase::on_checkLimits_stateChanged (int arg1)
-{
-    checkLimits=0;
-    if (arg1) checkLimits=1;
-    std::cout << "checkLimits=" << checkLimits << std::endl; std::cout.flush();
-    ui->OkButton->setEnabled(true);
-}
 

@@ -18,49 +18,44 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef SELECTMATERIALSDATABASE_H
-#define SELECTMATERIALSDATABASE_H
+
+#ifndef MATERIALSOPTIONS_H
+#define MATERIALSOPTIONS_H
 
 #include <QDialog>
-#include <unistd.h>
-#include "project.h"
 #include "OpenParEMmaterials.hpp"
 
 namespace Ui {
-class SelectMaterialsDatabase;
+class MaterialsOptions;
 }
 
-class SelectMaterialsDatabase : public QDialog{
+class MaterialsOptions : public QDialog
+{
     Q_OBJECT
 
 public:
-    explicit SelectMaterialsDatabase (QWidget *parent = nullptr);
-    void set_materialDatabase (MaterialDatabase *materialDatabase_) {materialDatabase=materialDatabase_;}
-    void set_absolutePath (QString *absolutePath_) {absolutePath=absolutePath_;}
+    explicit MaterialsOptions (QWidget *parent = nullptr);
+    ~MaterialsOptions ();
+
     void set_projData (struct projectData *);
+    void set_materialDatabase (MaterialDatabase *materialDatabase_) {materialDatabase=materialDatabase_;}
+    void fillMaterialSelector ();
     void set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
-    ~SelectMaterialsDatabase();
 
 private slots:
-    void on_selectLocal_clicked ();
-    void on_selectGlobal_clicked ();
+    void on_checkLimits_stateChanged (int arg1);
+    void on_defaultBoundaryMaterial_currentTextChanged (const QString &arg1);
     void on_OkButton_clicked ();
-    void on_cancelButton_clicked ();
-    void on_globalFile_stateChanged (int);
-    void on_localFile_stateChanged (int);
-    void on_globalMaterialFile_returnPressed ();
-    void on_localMaterialFile_returnPressed ();
+    void on_CancelButton_clicked ();
 
 private:
-    Ui::SelectMaterialsDatabase *ui;
+    Ui::MaterialsOptions *ui;
+
     struct projectData *projData;
     MaterialDatabase *materialDatabase;
-    QString *absolutePath;
-    char *globalPath, *globalFilename;
-    char *localPath, *localFilename;
-    bool globalIsValid;
-    bool localIsValid;
+    std::string defaultMaterial;
+    int checkLimits;
     bool simulationRunning;
 };
 
-#endif // SELECTMATERIALSDATABASE_H
+#endif // MATERIALSOPTIONS_H

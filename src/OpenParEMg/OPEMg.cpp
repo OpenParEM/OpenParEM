@@ -69,6 +69,7 @@
 #include "CustomOpenGLWidget.h"
 #include "CustomLineEdit.h"
 #include "SelectMaterialsDatabase.h"
+#include "MaterialsOptions.h"
 #include "CustomTreeWidgetItem.h"
 #include "MaterialSelection.h"
 #include "mpi.h"
@@ -294,6 +295,7 @@ void OpenParEMg::freeQActionList ()
     }
 }
 
+//xxx
 void OpenParEMg::setMenus ()
 {
     //std::cout << "OpenParEMg::setMenus" << std::endl; std::cout.flush();
@@ -314,14 +316,20 @@ void OpenParEMg::setMenus ()
         ui->actionNew->setEnabled(false);
         ui->actionOpen->setEnabled(false);
         ui->actionSave->setEnabled(false);
-        if (projectChanged || boundaryDatabaseChanged || brepChanged) ui->actionSave->setEnabled(true);
+        if (projectChanged || boundaryDatabaseChanged || brepChanged) {
+            if (strcmp(projData.project_name,"") == 0) ui->actionSave->setEnabled(false);
+            else ui->actionSave->setEnabled(true);
+        }
         ui->actionSaveAs->setEnabled(true);
         ui->actionClose->setEnabled(true);
         ui->actionExit->setEnabled(true);
         ui->actionSelectMaterialsDatabase->setEnabled(true);
+        ui->actionMaterialsOptions->setEnabled(true);
         ui->actionUnselectAll->setEnabled(true);
         ui->actionShowAll->setEnabled(true);
         ui->actionHideAll->setEnabled(true);
+        ui->actionDrawLine->setEnabled(true);
+        ui->actionDrawPolyline->setEnabled(true);
         ui->actionMeshOptions->setEnabled(true);
         ui->actionMeshLoad->setEnabled(true);
         ui->actionMeshSave->setEnabled(false);
@@ -459,12 +467,16 @@ void OpenParEMg::setMenus ()
         ui->actionShowAll->setEnabled(false);
         ui->actionHideAll->setEnabled(false);
         ui->actionWireframe->setEnabled(false);
+
         ui->actionDrawingPlaneShow->setEnabled(false);
         ui->actionDrawingPlaneHide->setEnabled(false);
         ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
+        ui->actionDrawLine->setEnabled(false);
+        ui->actionDrawPolyline->setEnabled(false);
 
         ui->actionSelectMaterialsDatabase->setEnabled(false);
+        ui->actionMaterialsOptions->setEnabled(false);
 
         ui->actionMeshOptions->setEnabled(false);
         ui->actionMeshGenerate->setEnabled(false);
@@ -498,7 +510,12 @@ void OpenParEMg::setMenus ()
         ui->actionImportBrep->setEnabled(false);
         ui->actionImportStep->setEnabled(false);
         ui->actionExportStep->setEnabled(false);
+        ui->actionDrawLine->setEnabled(false);
+        ui->actionDrawPolyline->setEnabled(false);
+        ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
+        ui->actionDrawingPlaneSetToFace->setEnabled(false);
         ui->actionSelectMaterialsDatabase->setEnabled(true);
+        ui->actionMaterialsOptions->setEnabled(true);
         ui->actionMeshOptions->setEnabled(true);
         ui->actionMeshLoad->setEnabled(false);
         ui->actionMeshSave->setEnabled(false);
@@ -838,12 +855,8 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showMeshItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideMeshItems);
 
-        showAction->setEnabled(false);
-        hideAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            showAction->setEnabled(ui->drawingWindow->isValidShow());
-            hideAction->setEnabled(ui->drawingWindow->isValidHide());
-        }
+        showAction->setEnabled(ui->drawingWindow->isValidShow());
+        hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
         menu.addAction(showAction);
         menu.addAction(hideAction);
@@ -1982,7 +1995,6 @@ void OpenParEMg::deleteDrawingItems()
         i++;
     }
 
-    //xxx
     // isValidDelete verified that the parent is the item drawing, which is a COMPOUND
     // rebuild the compound with what remains
 
@@ -2819,6 +2831,9 @@ void OpenParEMg::on_actionOpen_triggered ()
     // return if user cancels
     if (testProjectFile.isNull()) return;
 
+    // reset as new
+    on_actionNew_triggered ();
+
     // break up the full path
     QFileInfo fileInfo(testProjectFile);
     absolutePath=fileInfo.absolutePath();
@@ -2830,25 +2845,11 @@ void OpenParEMg::on_actionOpen_triggered ()
     QString currentPath;
     currentPath=QDir::currentPath();
 
-    // reset as new
-    on_actionNew_triggered ();
-
     // load the file
     if (QFile::exists(projectFile)) {
 
-        if (load_project_file (projectFile.toStdString().c_str(),&projData,"   ")) {
-            projectFile="";
-            projectName="";
-            QDir::setCurrent(currentPath);
-
-            QMessageBox mb;
-            mb.critical(nullptr, "Error", "Unable to load the requested project file.");
-            mb.setFixedSize(500, 200);
-
-            on_actionClose_triggered();
-
-            return;
-        }
+        // ignore errors so that users can save incomplete project for safety and later work
+        load_project_file (projectFile.toStdString().c_str(),&projData,"   ");
 
         // stress test to look for leaks in loading/freeing projData; run while monitoring memory consumption with top
         // std::cout << "starting memory test" << std::endl; std::cout.flush();
@@ -2863,12 +2864,14 @@ void OpenParEMg::on_actionOpen_triggered ()
         // exit(1);
 
         // load materials
-        if (materialDatabase->load_materials(projData.materials_global_path,projData.materials_global_name,
-                                             projData.materials_local_path,projData.materials_local_name,
-                                             projData.materials_check_limits)) {
-            QMessageBox mb;
-            mb.critical(nullptr, "Error", "Unable to load the specified materials files.");
-            mb.setFixedSize(500, 200);
+        if (strcmp(projData.materials_global_name,"") != 0 || strcmp(projData.materials_local_name,"") != 0) {
+            if (materialDatabase->load_materials(projData.materials_global_path,projData.materials_global_name,
+                                                 projData.materials_local_path,projData.materials_local_name,
+                                                 projData.materials_check_limits)) {
+                QMessageBox mb;
+                mb.critical(nullptr, "Error", "Unable to load the specified materials files.");
+                mb.setFixedSize(500, 200);
+            }
         }
 
         // load brep file, if defined
@@ -2887,11 +2890,15 @@ void OpenParEMg::on_actionOpen_triggered ()
         }
 
         // load boundaries, if any, and draw
-        if (boundaryDatabase->load(projData.port_definition_file,projData.solution_check_closed_loop)) {
-            QMessageBox mb;
-            mb.critical(nullptr, "Error", "Error in loading port and boundary definitions.");
-            mb.setFixedSize(500, 200);
-        } else {
+        if (strcmp(projData.port_definition_file,"") != 0) {
+            if (boundaryDatabase->load(projData.port_definition_file,projData.solution_check_closed_loop)) {
+                QMessageBox mb;
+                mb.critical(nullptr, "Info", "Boundaries require additional setup.");
+                mb.setFixedSize(500, 200);
+            }
+
+            // continue despite the errors
+
             boundaryDatabase->set_unmodified();
             boundaryDatabase->assignPathNormals();  // to correctly orient arrow heads
             // ToDo: rename draw since this does not actually draw
@@ -2923,7 +2930,9 @@ void OpenParEMg::on_actionOpen_triggered ()
         }
 
         // load mesh, if any, and draw
-        loadMeshFile(QString::fromStdString(projData.mesh_file));
+        if (strcmp(projData.mesh_file,"") != 0) {
+            loadMeshFile(QString::fromStdString(projData.mesh_file));
+        }
 
         ui->drawingWindow->fitAll();
         ui->drawingWindow->updateViewer();
@@ -3036,6 +3045,7 @@ void OpenParEMg::on_actionNew_triggered ()
     init_project (&projData);
     projData.modified=0;
     projectFileLoaded=true;
+    projectChanged=true;
     setMenus();
 }
 
@@ -3111,6 +3121,34 @@ void OpenParEMg::on_actionFrequencyPlan_triggered ()
 
 void OpenParEMg::saveProject ()
 {
+    // update included file names, if needed
+
+    // port_definition_file
+    if (boundaryDatabase->is_modified() && strcmp(projData.port_definition_file,"") == 0) {
+        QString portDefinitionFile=projectName;
+        portDefinitionFile.append("_ports.txt");
+        cstrFromQString (&(projData.port_definition_file),portDefinitionFile);
+        projectChanged=true;
+    }
+
+    // mesh_file
+    if (meshFileLoaded && strcmp(projData.mesh_file,"") == 0 ) {
+        QString meshFile=projectName;
+        meshFile.append(".msh");
+        cstrFromQString (&(projData.mesh_file),meshFile);
+        projectChanged=true;
+    }
+
+    // gui_brep_file
+    if (brepFileLoaded && strcmp(projData.gui_brep_file,"") == 0) {
+        QString brepFile=projectName;
+        brepFile.append(".brep");
+        cstrFromQString (&(projData.gui_brep_file),brepFile);
+        projectChanged=true;
+    }
+
+    // save
+
     // project
     if (projectChanged) {
         std::cout << "Saved project file" << std::endl; std::cout.flush();
@@ -3158,8 +3196,14 @@ void OpenParEMg::saveProject ()
 
 void OpenParEMg::on_actionSave_triggered ()
 {
-    if (QFile::exists(projectFile)) saveProject();
-    else on_actionSaveAs_triggered();
+    std::cout << "projectFile=" << projectFile.toStdString() << std::endl; std::cout.flush();
+    if (QFile::exists(projectFile)) {
+        std::cout << "file exists" << std::endl; std::cout.flush();
+        saveProject();
+    } else {
+        std::cout << "file does not exist" << std::endl; std::cout.flush();
+        on_actionSaveAs_triggered();
+    }
 }
 
 void OpenParEMg::on_actionSaveAs_triggered ()
@@ -3174,27 +3218,6 @@ void OpenParEMg::on_actionSaveAs_triggered ()
     projectName=fileInfo.completeBaseName();
 
     QDir::setCurrent(absolutePath);
-
-    // update included file names for the new project name
-
-    // port_definition_file
-    QString portDefinitionFile=projectName;
-    portDefinitionFile.append("_ports.txt");
-    cstrFromQString (&(projData.port_definition_file),portDefinitionFile);
-
-    // mesh_file
-    if (meshFileLoaded) {
-        QString meshFile=projectName;
-        meshFile.append(".msh");
-        cstrFromQString (&(projData.mesh_file),meshFile);
-    }
-
-    // gui_brep_file
-    if (brepFileLoaded) {
-        QString brepFile=projectName;
-        brepFile.append(".brep");
-        cstrFromQString (&(projData.gui_brep_file),brepFile);
-    }
 
     saveProject();
 }
@@ -3473,6 +3496,7 @@ bool OpenParEMg::loadBrepFile (QString filePath, bool createName)
                 QString brepName=fileInfo.fileName();
                 cstrFromQString (&(projData.gui_brep_file),brepName);
                 projectChanged=true;
+                brepChanged=true;
             }
 
             drawing.setForeground(0,Qt::gray);
@@ -3539,7 +3563,6 @@ bool OpenParEMg::saveBrepFile (char *filePath)
     std::cout << "OpenParEMg::saveBrepFile" << std::endl; std::cout.flush();
 
     if (drawing.get_AIS_Shape()->Shape().IsNull()) return true;
-    std::cout << "place 1" << std::endl; std::cout.flush();
     if (BRepTools::Write(drawing.get_AIS_Shape()->Shape(),filePath)) brepChanged=false;
     else return true;
 
@@ -3685,13 +3708,29 @@ void OpenParEMg::on_actionSelectMaterialsDatabase_triggered ()
     setMenus();
 }
 
+void OpenParEMg::on_actionMaterialsOptions_triggered()
+{
+    MaterialsOptions *materialsOptions=new MaterialsOptions();
+    materialsOptions->set_simulationRunning(simulationRunning);
+    materialsOptions->set_projData(&projData);
+    materialsOptions->set_materialDatabase(materialDatabase);
+    materialsOptions->fillMaterialSelector();
+    materialsOptions->exec();
+    delete materialsOptions;
+
+    if (projData.modified) {
+        projectChanged=true;
+    }
+    setMenus();
+}
+
 void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int column)
 {
     std::cout << "OpenParEMg::on_drawingItemTree_itemClicked" << std::endl; std::cout.flush();
     std::cout << "   clickedItem=" << clickedItem << std::endl;
     std::cout << "   previousClickedItem=" << previousClickedItem << std::endl;
     std::cout << "   CTRLpressed=" << CTRLpressed << std::endl;
-    std::cout << "   SHIFTpressed" << SHIFTpressed << std::endl;
+    std::cout << "   SHIFTpressed=" << SHIFTpressed << std::endl;
 
     clickedItem=(CustomTreeWidgetItem *)item;
     ui->drawingItemTree->setCurrentItem(clickedItem);
@@ -3982,7 +4021,7 @@ void OpenParEMg::on_actionUnselectAll_triggered ()
 
 void OpenParEMg::drawMesh()
 {
-    std::cout << "OpenParEMg::drawMesh" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::drawMesh" << std::endl; std::cout.flush();
 
     // get all nodes
     std::vector<std::size_t> nodeTags;
@@ -4196,6 +4235,7 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
             meshFile.remove();
             QString blank="";
             cstrFromQString(&(projData.mesh_file),blank);
+            projectChanged=true;
         }
     }
 
@@ -4711,7 +4751,6 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
     isDrawLine=false;
     isDrawPolyline=false;
 
-    // add to tree
     if (ui->drawingWindow->get_isPath()) {
 
         // parents
@@ -4748,7 +4787,6 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
         // path
         Path *newPath=new Path(0,0);
         newPath->set_name(pathName);
-        newPath->set_closed(false);
         newPath->addWirePoints(wire);
         newPath->set_normal(normal);
         boundaryDatabase->push_path(newPath);
@@ -4765,7 +4803,6 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
 
             long unsigned int j=0;
             while (j < item->get_arrowHeads_size()) {
-                //ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
                 ui->drawingWindow->displayShape(item->get_arrowHead(j));
                 ui->drawingWindow->insertItemToMap(item->get_arrowHead(j),item);
                 j++;
@@ -4812,7 +4849,7 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
             drawingShape->Redisplay(true);
         } else {
             // should not occur
-            std::cout << "OpenParEMg::drawLineFinished found non-COMPOUND top level shape." << std::endl; std::cout.flush();
+            std::cout << "ASSERT: OpenParEMg::drawLineFinished found non-COMPOUND top level shape." << std::endl; std::cout.flush();
 
             // make a top-level compound
             TopoDS_Compound compound;
@@ -4839,7 +4876,6 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
             addShape(wire,&drawing,false,false);
         }
 
-        brepChanged=true;
         drawing.setForeground(0,Qt::gray);
         ui->drawingWindow->showItem(&drawing);
         ui->drawingWindow->unselectItem(&drawing);
@@ -4854,6 +4890,7 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
     else if (previousSelectionIndex == 5) on_actionShell_triggered();
     else if (previousSelectionIndex == 6) on_actionSolid_triggered();
 
+    brepChanged=true;
     workingItem=nullptr;
     ui->drawingWindow->removeSelectOnVertex();
     ui->drawingWindow->updateViewer();
@@ -4977,4 +5014,5 @@ void OpenParEMg::closePolyline ()
 {
     ui->drawingWindow->closePolyline();
 }
+
 

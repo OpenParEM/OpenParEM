@@ -77,6 +77,7 @@ qt_add_executable(OpenParEMg
     logo.qrc
     Relay.h Relay.cpp
     PolygonSelection.h PolygonSelection.cpp
+    MaterialsOptions.h MaterialsOptions.cpp MaterialsOptions.ui
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)

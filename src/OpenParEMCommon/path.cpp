@@ -2117,6 +2117,7 @@ void Path::addWirePoints (TopoDS_Wire wire)
     std::vector<TopoDS_Vertex> vertices;
     TopoDS_Vertex lastVertex;
 
+    // get the vertices from the wire
     for (TopExp_Explorer exp(wire, TopAbs_EDGE); exp.More(); exp.Next()) {
         TopoDS_Edge edge=TopoDS::Edge(exp.Current());
         TopoDS_Vertex v1,v2;
@@ -2133,12 +2134,20 @@ void Path::addWirePoints (TopoDS_Wire wire)
         }
     }
 
+    // convert to keyword pairs for the path
+
+    set_closed(wire.Closed());
+    long unsigned int upperLimit=vertices.size();
+    if (is_closed()) upperLimit--;
+
     long unsigned int i=0;
-    while (i < vertices.size()) {
+    while (i < upperLimit) {
         gp_Pnt pnt=BRep_Tool::Pnt(vertices[i]);
         keywordPair *point=new keywordPair();
+
         point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
         points.push_back(point);
+
         i++;
     }
 }

@@ -9744,8 +9744,6 @@ void BoundaryDatabase::deletePath (Path *path)
 
 void BoundaryDatabase::set_unmodified ()
 {
-    std::cout << "BoundaryDatabase::set_unmodified" << std::endl; std::cout.flush();
-
     modified=false;
 
     long unsigned int i=0;
