@@ -316,7 +316,7 @@ void OpenParEMg::setMenus ()
         ui->actionNew->setEnabled(false);
         ui->actionOpen->setEnabled(false);
         ui->actionSave->setEnabled(false);
-        if (projectChanged || boundaryDatabaseChanged || brepChanged) {
+        if (projectChanged || boundaryDatabaseChanged || brepChanged || meshChanged) {
             if (strcmp(projData.project_name,"") == 0) ui->actionSave->setEnabled(false);
             else ui->actionSave->setEnabled(true);
         }
@@ -4066,9 +4066,9 @@ void OpenParEMg::drawMesh()
                 i+=1;
                 count++;
             }
-            verticesItem->setSelected(false);
-            ui->drawingWindow->showItem(verticesItem);
-            ui->drawingWindow->unselectItem(verticesItem);
+            // verticesItem->setSelected(false);
+            // ui->drawingWindow->showItem(verticesItem);
+            // ui->drawingWindow->unselectItem(verticesItem);
         }
 
         // edges
@@ -4091,9 +4091,9 @@ void OpenParEMg::drawMesh()
                 i+=2;
                 count++;
             }
-            edgesItem->setSelected(false);
-            ui->drawingWindow->showItem(edgesItem);
-            ui->drawingWindow->unselectItem(edgesItem);
+            // edgesItem->setSelected(false);
+            // ui->drawingWindow->showItem(edgesItem);
+            // ui->drawingWindow->unselectItem(edgesItem);
         }
 
         // triangles
@@ -4133,12 +4133,12 @@ void OpenParEMg::drawMesh()
                 i+=3;
                 count++;
             }
-            wiresItem->setSelected(false);
-            ui->drawingWindow->showItem(wiresItem);
-            ui->drawingWindow->unselectItem(wiresItem);
-            trianglesItem->setSelected(false);
-            ui->drawingWindow->showItem(trianglesItem);
-            ui->drawingWindow->unselectItem(trianglesItem);
+            // wiresItem->setSelected(false);
+            // ui->drawingWindow->showItem(wiresItem);
+            // ui->drawingWindow->unselectItem(wiresItem);
+            // trianglesItem->setSelected(false);
+            // ui->drawingWindow->showItem(trianglesItem);
+            // ui->drawingWindow->unselectItem(trianglesItem);
         }
 
         // tetrahedron
@@ -4189,18 +4189,17 @@ void OpenParEMg::drawMesh()
                 i+=4;
                 count++;
             }
-            tetrahedronsItem->setSelected(false);
-            ui->drawingWindow->showItem(tetrahedronsItem);
-            ui->drawingWindow->unselectItem(tetrahedronsItem);
+            // tetrahedronsItem->setSelected(false);
+            // ui->drawingWindow->showItem(tetrahedronsItem);
+            // ui->drawingWindow->unselectItem(tetrahedronsItem);
         }
 
         e++;
     }
 
-    // update menus
-    //ui->drawingWindow->set_hasMesh(true);
-    ui->drawingWindow->fitAll();
-    ui->drawingWindow->updateViewer();
+    // ui->drawingWindow->fitAll();
+    // ui->drawingWindow->updateViewer();
+    meshChanged=true;
     setMenus();
 }
 
@@ -4274,10 +4273,10 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     meshChanged=true;
 
     drawMesh();
-
-    // set the physical groups with material names
     setPhysicalGroups();
+    ui->drawingWindow->showItem(&mesh);
 
+    ui->drawingWindow->updateViewer();
     setMenus();
 }
 
@@ -4322,6 +4321,7 @@ void OpenParEMg::on_actionMeshLoad_triggered ()
     if (meshfile.isNull()) return;
 
     loadMeshFile(meshfile);
+    ui->drawingWindow->showItem(&mesh);
     setMenus();
 }
 
