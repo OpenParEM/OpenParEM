@@ -1081,7 +1081,8 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
         }
 
     } else {
-        if (ui->drawingWindow->hasAnySelectedItems()) {
+        //if (ui->drawingWindow->hasAnySelectedItems()) {
+        if (ui->drawingWindow->get_NbSelected()) {
 
             showAction=new QAction("Show",this);
             hideAction=new QAction("Hide",this);
@@ -2606,7 +2607,19 @@ void OpenParEMg::extrudeFace ()
         faceCount++;  // should only be one
     }
 
+    // get the normal
+    Handle(Geom_Surface) surface=BRep_Tool::Surface(selectedFace);
+    Handle(Geom_Plane) plane=Handle(Geom_Plane)::DownCast(surface);
+    if (plane.IsNull()) {
+        QMessageBox mb;
+        mb.critical(nullptr, "Error", "Unable to complete the extrude operation.");
+        mb.setFixedSize(500, 200);
+        return;
+    }
+    faceNormal=plane->Pln().Axis().Direction();
+
     LengthInputForm *form=new LengthInputForm();
+    form->set_normal(faceNormal);
     form->set_drawingWindow(ui->drawingWindow);
     form->set_relay(relay);
     form->setModal(false);
@@ -2619,19 +2632,8 @@ void OpenParEMg::finishExtrudeFace (double length, bool cancel)
 {
     if (!cancel) {
 
-        // get the normal
-        Handle(Geom_Surface) surface=BRep_Tool::Surface(selectedFace);
-        Handle(Geom_Plane) plane=Handle(Geom_Plane)::DownCast(surface);
-        if (plane.IsNull()) {
-            QMessageBox mb;
-            mb.critical(nullptr, "Error", "Unable to complete the extrude operation.");
-            mb.setFixedSize(500, 200);
-            return;
-        }
-        gp_Dir normal=plane->Pln().Axis().Direction();
-
         // scale it
-        gp_Vec scaledVec=gp_Vec(normal)*length;
+        gp_Vec scaledVec=gp_Vec(faceNormal)*length;
 
         // extrude it
         BRepPrimAPI_MakePrism aPrism(selectedFace,scaledVec);
@@ -2642,12 +2644,12 @@ void OpenParEMg::finishExtrudeFace (double length, bool cancel)
         builder.Add(compound,aPrism);
         drawing.get_AIS_Shape()->Redisplay(true);
         addShape(aPrism,&drawing,false,false);
-        ui->drawingWindow->selectItem(&drawing);
     }
 
     ui->drawingItemTree->setEnabled(true);
     restoreSelection();
     isActiveDrawing=false;
+    brepChanged=true;
     setMenus();
     ui->drawingWindow->updateViewer();
 }
@@ -3665,27 +3667,11 @@ bool OpenParEMg::saveBrepFile (char *filePath)
     return false;
 }
 
-bool OpenParEMg::saveStepFile (QString filePath, std::vector<Handle(AIS_InteractiveObject)> *selectedList)
+bool OpenParEMg::saveStepFile (QString filePath)
 {
     if (!filePath.isEmpty()) {
-
-        // create a compund object from the selected objects
-        TopoDS_Compound compound;
-        BRep_Builder builder;
-        builder.MakeCompound(compound);
-        Handle(AIS_Shape) shape;
-
-        long unsigned int i=0;
-        while (i < selectedList->size()) {
-            shape=Handle(AIS_Shape)::DownCast((*selectedList)[i]);
-            builder.Add(compound,shape->Shape());
-            i++;
-        }
-
-        // write the STEP file
-
         STEPControl_Writer writer;
-        writer.Transfer(compound,STEPControl_ManifoldSolidBrep,Standard_True);
+        writer.Transfer(drawing.get_AIS_Shape()->Shape(),STEPControl_ManifoldSolidBrep,Standard_True);
 
         IFSelect_ReturnStatus status=writer.Write(filePath.toStdString().c_str());
         if (status == IFSelect_RetDone) {
@@ -3754,20 +3740,21 @@ void OpenParEMg::on_actionImportStep_triggered()
 
 void OpenParEMg::on_actionExportStep_triggered()
 {
-    std::vector<Handle(AIS_InteractiveObject)> selectedList;
-    ui->drawingWindow->getSelected (&selectedList);
-    if (selectedList.size() == 0) {
-        QMessageBox mb;
-        mb.critical(nullptr,"Error","Select solid shapes to export.");
-        mb.setFixedSize(500, 200);
-        return;
-    }
+    // std::vector<Handle(AIS_InteractiveObject)> selectedList;
+    // ui->drawingWindow->getSelected (&selectedList);
+    // if (selectedList.size() == 0) {
+    //     QMessageBox mb;
+    //     mb.critical(nullptr,"Error","Select solid shapes to export.");
+    //     mb.setFixedSize(500, 200);
+    //     return;
+    // }
 
-    QString filePath=QFileDialog::getSaveFileName(this,tr("Save STEP File"), "/home/briany/OpenParEM", tr("STEP Files (*.step *.stp)"),
+    QString filePath=QFileDialog::getSaveFileName(this,tr("Save STEP File"), absolutePath, tr("STEP Files (*.step *.stp)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isNull()) return;
 
-    if (saveStepFile(filePath,&selectedList)) {
+    //if (saveStepFile(filePath,&selectedList)) {
+    if (saveStepFile(filePath)) {
         QString message="Unable to save STEP file \"";
         message.append(filePath);
         message.append("\".");

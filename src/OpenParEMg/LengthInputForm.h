@@ -39,6 +39,7 @@ public:
     explicit LengthInputForm(QWidget *parent = nullptr);
     ~LengthInputForm();
 
+    void set_normal (gp_Dir normal_) {normal=normal_;}
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
     void set_relay (Relay *relay_) {
         relay=relay_;
@@ -58,6 +59,7 @@ private slots:
 private:
     Ui::LengthInputForm *ui;
 
+    gp_Dir normal;
     double length;
     bool pickStartPoint;
     bool pickEndPoint;

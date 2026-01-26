@@ -183,11 +183,11 @@ public:
         drawingTracker->selectItem(item);
     }
 
-    bool hasSelectedItems (int type)
-    {
-        if (showTracking) std::cout << "CustomOpenGLWidget::hasSelectedItems" << std::endl; std::cout.flush();
-        return drawingTracker->hasSelectedItems(type);
-    }
+    // bool hasSelectedItems (int type)
+    // {
+    //     if (showTracking) std::cout << "CustomOpenGLWidget::hasSelectedItems" << std::endl; std::cout.flush();
+    //     return drawingTracker->hasSelectedItems(type);
+    // }
 
     bool hasDrawingSelectedItems ()
     {
@@ -207,11 +207,11 @@ public:
         return drawingTracker->hasSelectedItems(2);
     }
 
-    bool hasOneSelectedItem ()
-    {
-        if (showTracking) std::cout << "CustomOpenGLWidget::hasOneSelectedItem" << std::endl; std::cout.flush();
-        return drawingTracker->hasOneSelectedItem();
-    }
+    // bool hasOneSelectedItem ()
+    // {
+    //     if (showTracking) std::cout << "CustomOpenGLWidget::hasOneSelectedItem" << std::endl; std::cout.flush();
+    //     return drawingTracker->hasOneSelectedItem();
+    // }
 
     TopoDS_Face getSelectedFace ()
     {
@@ -236,11 +236,11 @@ public:
         return face;
     }
 
-    bool hasAnySelectedItems ()
-    {
-        if (showTracking) std::cout << "CustomOpenGLWidget::hasAnySelectedItems" << std::endl; std::cout.flush();
-        return drawingTracker->hasAnySelectedItems();
-    }
+    // bool hasAnySelectedItems ()
+    // {
+    //     if (showTracking) std::cout << "CustomOpenGLWidget::hasAnySelectedItems" << std::endl; std::cout.flush();
+    //     return drawingTracker->hasAnySelectedItems();
+    // }
 
     int get_pathSelectedCount ()
     {
@@ -323,8 +323,9 @@ public:
 
     void Deactivate (const Handle(AIS_Shape)& shape) {viewerContext->Deactivate(shape);}
     void Activate (const Handle(AIS_Shape)& shape, int mode, Standard_Boolean theIsForce) {viewerContext->Activate(shape,mode,theIsForce);}
+    Standard_Integer get_NbSelected () {return viewerContext->NbSelected();}
 
-    void getSelected (std::vector<Handle(AIS_InteractiveObject)> *);
+    //void getSelected (std::vector<Handle(AIS_InteractiveObject)> *);
     Handle(AIS_InteractiveObject) getLastSelected ();
 
     ItemTracker* get_itemTracker () {return drawingTracker;}
@@ -332,7 +333,7 @@ public:
     void selectRectangle ();
     void endSelectRectangle ();
 
-    bool hasOneFaceSelected () {return drawingTracker->hasOneFaceSelected();}
+    //bool hasOneFaceSelected () {return drawingTracker->hasOneFaceSelected();}
 
     Standard_Integer NbSelected () {return viewerContext->NbSelected();}
 

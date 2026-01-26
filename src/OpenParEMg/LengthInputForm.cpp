@@ -32,6 +32,11 @@ LengthInputForm::LengthInputForm(QWidget *parent)
     validator.setNotation(QDoubleValidator::ScientificNotation);
     ui->lineEdit->setValidator(&validator);
 
+    ui->pickStart->setCheckable(true);
+    ui->pickEnd->setCheckable(true);
+    ui->OkButton->setCheckable(true);
+    ui->CancelButton->setCheckable(true);
+
     ui->OkButton->setEnabled(false);
 
     length=0;
@@ -55,6 +60,8 @@ void LengthInputForm::on_pickStart_clicked ()
     pickStartPoint=true;
     pickEndPoint=false;
 
+    ui->pickStart->setChecked(true);
+
     drawingWindow->unselectAllItems();
     drawingWindow->set_pickVertex(true);
     drawingWindow->updateViewer();
@@ -67,6 +74,8 @@ void LengthInputForm::on_pickEnd_clicked ()
     pickStartPoint=false;
     pickEndPoint=true;
 
+    ui->pickEnd->setChecked(true);
+
     drawingWindow->unselectAllItems();
     drawingWindow->set_pickVertex(true);
     drawingWindow->updateViewer();
@@ -76,12 +85,14 @@ void LengthInputForm::on_pickEnd_clicked ()
 
 void LengthInputForm::on_OkButton_clicked ()
 {
+    ui->OkButton->setChecked(true);
     emit relay->finishExtrudeFace(length,false);
     close ();
 }
 
 void LengthInputForm::on_CancelButton_clicked ()
 {
+    ui->CancelButton->setChecked(true);
     emit relay->finishExtrudeFace(length,true);
     close();
 }
@@ -93,6 +104,7 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
         ui->startX->setText(QString::number(startPoint.X()));
         ui->startY->setText(QString::number(startPoint.Y()));
         ui->startZ->setText(QString::number(startPoint.Z()));
+        ui->pickStart->setChecked(false);
     }
 
     if (pickEndPoint) {
@@ -100,10 +112,16 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
         ui->endX->setText(QString::number(endPoint.X()));
         ui->endY->setText(QString::number(endPoint.Y()));
         ui->endZ->setText(QString::number(endPoint.Z()));
+        ui->pickEnd->setChecked(false);
     }
 
     Standard_Real distance=startPoint.Distance(endPoint);
     length=distance;
+
+    gp_Dir selectionDir;
+    selectionDir.SetCoord(endPoint.X()-startPoint.X(),endPoint.Y()-startPoint.Y(),endPoint.Z()-startPoint.Z());
+    if (normal.IsOpposite(selectionDir,1.5)) length=-length;
+
     ui->lineEdit->setText(QString::number(length));
 }
 

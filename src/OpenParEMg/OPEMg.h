@@ -89,7 +89,7 @@ public:
     bool loadBrepFile (QString, bool);
     bool loadStepFile (QString, bool);
     bool saveBrepFile (char *);
-    bool saveStepFile (QString, std::vector<Handle(AIS_InteractiveObject)> *);
+    bool saveStepFile (QString);
     bool saveBoundaryDatabase ();
     //bool menuAllHidden (CustomTreeWidgetItem *);
     //bool menuAllShown (CustomTreeWidgetItem *);
@@ -365,6 +365,7 @@ private:
     Relay *relay;
 
     // vertex pick
+    gp_Dir faceNormal;
     TopoDS_Face selectedFace;
 
     // drawing
