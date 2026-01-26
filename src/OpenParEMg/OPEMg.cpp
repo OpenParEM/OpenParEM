@@ -477,7 +477,7 @@ void OpenParEMg::setMenus ()
             ui->actionDrawingPlaneSnapToGrid->setEnabled(true);
             ui->actionDrawingPlaneSetToFace->setEnabled(false);
 
-            if (brepFileLoaded) {
+            if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {
                 TopoDS_Face face=ui->drawingWindow->getSelectedFace();
                 if (!face.IsNull()) ui->actionDrawingPlaneSetToFace->setEnabled(true);
             }
