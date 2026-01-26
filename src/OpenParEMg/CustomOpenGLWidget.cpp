@@ -206,16 +206,27 @@ void CustomOpenGLWidget::clearDrawing ()
 
 void CustomOpenGLWidget::cancelDraw ()
 {
-    if (!lineRubberBand.IsNull()) {viewerContext->Remove(lineRubberBand,Standard_True); lineRubberBand.Nullify();}
-
+    // invalidate flags
     pickVertex=false;
     drawLine=false;
     drawPolyline=false;
+    ignoreLeftMouseRelease=false;
+    isPath=false;
 
+    // remove temporaryVertex, if needed
+    if (!temporaryVertex.IsNull()) {
+        viewerContext->Remove(temporaryVertex,Standard_True);
+        temporaryVertex.Nullify();
+    }
+
+    // remove rubberband, if needed
+    if (!lineRubberBand.IsNull()) {viewerContext->Remove(lineRubberBand,Standard_True); lineRubberBand.Nullify();}
+
+    // reset point selection symbol
     viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
 
+    // clear detection
     viewerContext->ClearDetected(Standard_True);
-    viewerContext->ClearSelected(Standard_True);
 }
 
 void CustomOpenGLWidget::wheelEvent (QWheelEvent* event)
@@ -236,17 +247,11 @@ void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
     switch (aKey)
     {
         case Aspect_VKey_Escape: {
+            //std::cout << "CustomOpenGLWidget::keyPressEvent  Aspect_VKey_Escape" << std::endl; std::cout.flush();
             if (pickVertex || drawLine || drawPolyline) {
-
-                // remove temporaryVertex, if needed
-                if (!temporaryVertex.IsNull()) {
-                    viewerContext->Remove(temporaryVertex,Standard_True);
-                    temporaryVertex.Nullify();
-                }
-
-                cancelDraw();
                 if (pickVertex) emit relay->finishExtrudeFace(0,true);
                 if (drawLine || drawPolyline) emit relay->cancelDraw();
+                cancelDraw();
             }
         }
 
@@ -311,7 +316,6 @@ void CustomOpenGLWidget::finishPickVertex ()
     }
 
     viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
-
     emit relay->pickVertexFinished(vertexPoint);
 }
 

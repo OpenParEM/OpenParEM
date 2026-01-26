@@ -27,6 +27,7 @@
 #include <QStyledItemDelegate>
 #include <QTimer>
 
+#include "LengthInputForm.h"
 #include "Relay.h"
 #include "CustomLineEdit.h"
 #include "project.h"
@@ -363,6 +364,9 @@ private:
 
     // relay
     Relay *relay;
+
+    // forms
+    LengthInputForm *lengthInputForm;
 
     // vertex pick
     gp_Dir faceNormal;

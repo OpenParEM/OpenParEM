@@ -53,6 +53,7 @@ void LengthInputForm::on_lineEdit_returnPressed ()
 {
     length=ui->lineEdit->text().toDouble();
     ui->OkButton->setEnabled(true);
+    if (abs(length) < 1e-12) ui->OkButton->setEnabled(false);
 }
 
 void LengthInputForm::on_pickStart_clicked ()
@@ -87,14 +88,14 @@ void LengthInputForm::on_OkButton_clicked ()
 {
     ui->OkButton->setChecked(true);
     emit relay->finishExtrudeFace(length,false);
-    close ();
+    QDialog::close();
 }
 
 void LengthInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
     emit relay->finishExtrudeFace(length,true);
-    close();
+    QDialog::close();
 }
 
 void LengthInputForm::pickVertexFinished (gp_Pnt point)
@@ -117,12 +118,25 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
 
     Standard_Real distance=startPoint.Distance(endPoint);
     length=distance;
-
-    gp_Dir selectionDir;
-    selectionDir.SetCoord(endPoint.X()-startPoint.X(),endPoint.Y()-startPoint.Y(),endPoint.Z()-startPoint.Z());
-    if (normal.IsOpposite(selectionDir,1.5)) length=-length;
+    if (length > 1e-12) {
+        gp_Dir selectionDir;
+        selectionDir.SetCoord(endPoint.X()-startPoint.X(),endPoint.Y()-startPoint.Y(),endPoint.Z()-startPoint.Z());
+        if (normal.IsOpposite(selectionDir,1.5)) length=-length;
+        ui->OkButton->setEnabled(true);
+    } else {
+        ui->OkButton->setEnabled(false);
+    }
 
     ui->lineEdit->setText(QString::number(length));
+}
+
+void LengthInputForm::reject ()
+{
+    std::cout << "LengthInputForm::reject" << std::endl; std::cout.flush();
+    ui->CancelButton->setChecked(true);
+    emit relay->finishExtrudeFace(length,true);
+
+    QDialog::reject();
 }
 
 void LengthInputForm::print_point (gp_Pnt point)

@@ -47,6 +47,8 @@ public:
     }
     void pickVertexFinished (gp_Pnt);
 
+    void reject () override;
+
     void print_point (gp_Pnt);
 
 private slots:
@@ -54,6 +56,8 @@ private slots:
     void on_pickStart_clicked ();
     void on_pickEnd_clicked ();
     void on_OkButton_clicked ();
+
+public slots:
     void on_CancelButton_clicked ();
 
 private:

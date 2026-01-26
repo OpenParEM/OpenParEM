@@ -258,6 +258,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     isDrawLine=false;
     isDrawPolyline=false;
 
+    lengthInputForm=nullptr;
+
     /////////////////////////////////////////////////////////////////////////////
 
     ui->drawingItemTree->show();
@@ -2641,19 +2643,20 @@ void OpenParEMg::extrudeFace ()
     }
     faceNormal=plane->Pln().Axis().Direction();
 
-    LengthInputForm *form=new LengthInputForm();
-    form->set_normal(faceNormal);
-    form->set_drawingWindow(ui->drawingWindow);
-    form->set_relay(relay);
-    form->setModal(false);
-    form->show();
+    if (lengthInputForm) delete lengthInputForm;
+    lengthInputForm=new LengthInputForm();
+    lengthInputForm->set_normal(faceNormal);
+    lengthInputForm->set_drawingWindow(ui->drawingWindow);
+    lengthInputForm->set_relay(relay);
+    lengthInputForm->setModal(false);
+    lengthInputForm->show();
 
     setMenus();
 }
 
 void OpenParEMg::finishExtrudeFace (double length, bool cancel)
 {
-    if (!cancel) {
+    if (!cancel && abs(length) > 1e-12) {
 
         // scale it
         gp_Vec scaledVec=gp_Vec(faceNormal)*length;
@@ -2867,7 +2870,6 @@ void OpenParEMg::setPhysicalGroups ()
     // check the first-level children for SOLID
     int i=0;
     while (i < drawing.childCount()) {
-        //xxx
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
         if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_SOLID) {
             QString itemMaterial=child->text(0);
@@ -4084,6 +4086,20 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
         CTRLpressed=true;
     } else if (event->key() == Qt::Key_Shift) {
         SHIFTpressed=true;
+    } else if (event->key() == Qt::Key_Escape) {
+        //std::cout << "OpenParEMg::keyPressEvent   Qt::Key_Escape" << std::endl; std::cout.flush();
+
+        if (lengthInputForm) {
+            lengthInputForm->on_CancelButton_clicked();
+            lengthInputForm=nullptr;
+        }
+
+        ui->drawingWindow->unselectAllItems();
+
+        ui->drawingWindow->cancelDraw();
+        isActiveDrawing=false;
+        isDrawLine=false;
+        isDrawPolyline=false;
     }
     QWidget::keyPressEvent(event);
 }
