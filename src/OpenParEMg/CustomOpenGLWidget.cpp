@@ -123,6 +123,7 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
 
     ignoreLeftMouseRelease=false;
     isPath=false;
+    pickVertex=false;
     drawLine=false;
     drawPolyline=false;
 
@@ -207,6 +208,7 @@ void CustomOpenGLWidget::cancelDraw ()
 {
     if (!lineRubberBand.IsNull()) {viewerContext->Remove(lineRubberBand,Standard_True); lineRubberBand.Nullify();}
 
+    pickVertex=false;
     drawLine=false;
     drawPolyline=false;
 
@@ -234,7 +236,7 @@ void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
     switch (aKey)
     {
         case Aspect_VKey_Escape: {
-            if (drawLine || drawPolyline) {
+            if (pickVertex || drawLine || drawPolyline) {
 
                 // remove temporaryVertex, if needed
                 if (!temporaryVertex.IsNull()) {
@@ -243,7 +245,8 @@ void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
                 }
 
                 cancelDraw();
-                emit relay->cancelDraw();
+                if (pickVertex) emit relay->finishExtrudeFace(0,true);
+                if (drawLine || drawPolyline) emit relay->cancelDraw();
             }
         }
 
@@ -290,6 +293,26 @@ Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
     Handle(AIS_Shape) shape=new AIS_Shape(edge);
 
     return shape;
+}
+
+// vertex draw or pick
+void CustomOpenGLWidget::finishPickVertex ()
+{
+    std::cout << "CustomOpenGLWidget::finishPickVertex" << std::endl; std::cout.flush();
+
+    ignoreLeftMouseRelease=false;
+    pickVertex=false;
+    viewerContext->ClearDetected(Standard_True);
+
+    // remove temporaryVertex
+    if (!temporaryVertex.IsNull()) {
+        viewerContext->Remove(temporaryVertex,Standard_True);
+        temporaryVertex.Nullify();
+    }
+
+    viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
+
+    emit relay->pickVertexFinished(vertexPoint);
 }
 
 // line (single segment polyline), polyline, or polygon (closed polyline)
@@ -350,9 +373,9 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
 
-    // line
     if (event->button() == Qt::LeftButton) {
-        if (drawLine || drawPolyline) {
+
+        if (pickVertex || drawLine || drawPolyline) {
             if (owner.IsNull()) {
                 ignoreLeftMouseRelease=true;
 
@@ -383,6 +406,15 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
                         if (shape.ShapeType() == TopAbs_VERTEX) {
                             TopoDS_Vertex vertex=TopoDS::Vertex(shape);
                             if (!vertex.IsNull()) {
+
+                                // single point
+                                if (pickVertex) {
+                                    vertexPoint=BRep_Tool::Pnt(vertex);
+                                    finishPickVertex();
+                                }
+
+                                // multiple points
+
                                 ignoreLeftMouseRelease=true;
 
                                 if (shapePoints.size() > 0) {
@@ -470,6 +502,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     } else if (event->button() == Qt::RightButton) {
         std::cout << "CustomOpenGLWidget::mouseReleaseEvent Qt::RightButton" << std::endl; std::cout.flush();
+        std::cout << "   drawingTracker->hasAnySelectedItems()=" << drawingTracker->hasAnySelectedItems() << std::endl; std::cout.flush();
         if (drawingTracker->hasAnySelectedItems()) {
             contextMenu->exec(QCursor::pos());
         }

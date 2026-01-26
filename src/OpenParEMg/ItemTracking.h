@@ -69,13 +69,11 @@ public:
         // show item
         if (item->is_rootDrawing()) {
             if (item->foreground(0) == Qt::black) return;
-            //DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
             DisplayShape(item->get_AIS_Shape());
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
         } else if (item->is_drawing()) {
             if (item->foreground(0) == Qt::black) return;
-            //DisplayShape(item->get_AIS_Shape(),item->get_displayMode(),item->get_selectionMode());
             DisplayShape(item->get_AIS_Shape());
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
@@ -291,6 +289,10 @@ public:
 
         if (item->foreground(0) == Qt::gray) return;
 
+        // always unselect
+        unselectItem(item);
+
+        // custom hide
         if (item->is_rootDrawing()) {
             EraseShape(item->get_AIS_Shape());
             item->setForeground(0,Qt::gray);

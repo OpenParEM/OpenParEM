@@ -106,6 +106,8 @@ public:
     void shapeCount (TopoDS_Shape, int *);
     void setPhysicalGroups ();
 
+    void restoreSelection ();
+
 private slots:
     // File
     void on_actionNew_triggered ();
@@ -250,6 +252,7 @@ private slots:
 
     void createPort ();
     void createPath ();
+    void extrudeFace ();
 
     void loadMeshFile (QString);
     void checkFinish ();
@@ -270,12 +273,11 @@ private slots:
     void initQActionList();
     void freeQActionList();
 
-
-
     void on_actionMaterialsOptions_triggered();
 
 public slots:
     void setMenus ();
+    void finishExtrudeFace (double, bool);
 
 private:
     //void setMenus ();
@@ -332,6 +334,7 @@ private:
     QAction *cancelAction;
     QAction *deleteLastPointAction;
     QAction *closeAction;
+    QAction *extrudeAction;
     std::vector<QAction *> QActionList;
 
     // gmsh
@@ -361,12 +364,14 @@ private:
     // relay
     Relay *relay;
 
+    // vertex pick
+    TopoDS_Face selectedFace;
+
     // drawing
     bool isActiveDrawing;
     bool isDrawLine;
     bool isDrawPolyline;
     struct point normal;
-
 };
 
 #endif // OPEMG_H

@@ -18,36 +18,54 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MATERIALSELECTION_H
-#define MATERIALSELECTION_H
+#ifndef LENGTHINPUTFORM_H
+#define LENGTHINPUTFORM_H
 
+#include "CustomOpenGLWidget.h"
+#include "Relay.h"
 #include <QDialog>
-#include "OpenParEMmaterials.hpp"
+#include <TopoDS_Vertex.hxx>
+#include <qvalidator.h>
 
 namespace Ui {
-class MaterialSelection;
+class LengthInputForm;
 }
 
-class MaterialSelection : public QDialog
+class LengthInputForm : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit MaterialSelection (QWidget *parent = nullptr);
-    ~MaterialSelection ();
+    explicit LengthInputForm(QWidget *parent = nullptr);
+    ~LengthInputForm();
 
-    void set_materialDatabase (MaterialDatabase *materialDatabase_) {materialDatabase=materialDatabase_;}
-    void set_selectedMaterial (QString *selectedMaterial_) {selectedMaterial=selectedMaterial_;}
+    void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
+    void set_relay (Relay *relay_) {
+        relay=relay_;
+        connect(relay,&Relay::pickVertexFinished,this,&LengthInputForm::pickVertexFinished);
+    }
+    void pickVertexFinished (gp_Pnt);
 
-    void populate ();
+    void print_point (gp_Pnt);
+
 private slots:
-    void on_materialSelectOk_clicked ();
-    void on_materialSelectCancel_clicked ();
+    void on_lineEdit_returnPressed ();
+    void on_pickStart_clicked ();
+    void on_pickEnd_clicked ();
+    void on_OkButton_clicked ();
+    void on_CancelButton_clicked ();
 
 private:
-    Ui::MaterialSelection *ui;
-    MaterialDatabase *materialDatabase;
-    QString *selectedMaterial;
+    Ui::LengthInputForm *ui;
+
+    double length;
+    bool pickStartPoint;
+    bool pickEndPoint;
+    gp_Pnt startPoint, endPoint;
+    QDoubleValidator validator;
+
+    CustomOpenGLWidget *drawingWindow;
+    Relay *relay;
 };
 
-#endif // MATERIALSELECTION_H
+#endif // LENGTHINPUTFORM_H

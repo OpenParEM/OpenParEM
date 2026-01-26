@@ -93,6 +93,11 @@ public:
     void set_isPath (bool isPath_) {isPath=isPath_;}
     bool get_isPath () {return isPath;}
 
+    void set_pickVertex (bool pickVertex_) {
+        pickVertex=pickVertex_;
+        viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
+    }
+
     void set_drawLine (bool drawLine_)
     {
         drawLine=drawLine_;
@@ -316,10 +321,8 @@ public:
         shape.Nullify();
     }
 
-    void Activate (Standard_Integer mode, Standard_Boolean theIsForce) {viewerContext->Activate(mode,theIsForce);}
-    void Activate (Handle(AIS_Shape) shape, Standard_Integer mode, Standard_Boolean theIsForce) {viewerContext->Activate(shape,mode,theIsForce);}
-    void Deactivate () {viewerContext->Deactivate();}
-
+    void Deactivate (const Handle(AIS_Shape)& shape) {viewerContext->Deactivate(shape);}
+    void Activate (const Handle(AIS_Shape)& shape, int mode, Standard_Boolean theIsForce) {viewerContext->Activate(shape,mode,theIsForce);}
 
     void getSelected (std::vector<Handle(AIS_InteractiveObject)> *);
     Handle(AIS_InteractiveObject) getLastSelected ();
@@ -424,6 +427,7 @@ public:
 
     void clearSelected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearSelected(theToUpdateViewer);}
 
+    void finishPickVertex ();
     void finishDrawLine ();
 
 protected:
@@ -461,6 +465,10 @@ private:
     bool ignoreLeftMouseRelease;
     bool isPath;
     Relay *relay;
+
+    // vertex
+    bool pickVertex;
+    gp_Pnt vertexPoint;
 
     // line
     Handle(AIS_Shape) lineRubberBand;

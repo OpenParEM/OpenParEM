@@ -19,8 +19,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "OPEMg.h"
+#include "LengthInputForm.h"
 #include "ui_OPEMg.h"
 
+#include <Geom_Plane.hxx>
 #include <csignal>
 #include <quadmath.h>
 #include <iostream>
@@ -37,6 +39,7 @@
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
+#include <BRepPrimAPI_MakePrism.hxx>
 
 #include <QIcon>
 #include <QFileDialog>
@@ -61,6 +64,7 @@
 //#include "petscsys.h"
 #include "MeshOptions.h"
 #include "SimulateOptions.h"
+#include "LengthInputForm.h"
 #include "about.h"
 #include "license.h"
 #include "FrequencyPlanG.h"
@@ -129,6 +133,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     connect(relay,&Relay::setMenus,this,&OpenParEMg::setMenus);
     connect(relay,&Relay::drawLineFinished,this,&OpenParEMg::drawLineFinished);
     connect(relay,&Relay::cancelDraw,this,&OpenParEMg::cancelDraw);
+    connect(relay,&Relay::finishExtrudeFace,this,&OpenParEMg::finishExtrudeFace);
 
     /////////////////////////////////////////////////////////////////////////////
     // drawing window
@@ -159,6 +164,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(cancelAction);
     QActionList.push_back(deleteLastPointAction);
     QActionList.push_back(closeAction);
+    QActionList.push_back(extrudeAction);
     initQActionList();
 
 
@@ -295,7 +301,19 @@ void OpenParEMg::freeQActionList ()
     }
 }
 
-//xxx
+void OpenParEMg::restoreSelection ()
+{
+    //std::cout << "OpenParEMg::restoreSelection  previousSelectionIndex=" << previousSelectionIndex << std::endl; std::cout.flush();
+
+    if (previousSelectionIndex == 0) on_actionShape_triggered();
+    else if (previousSelectionIndex == 1) on_actionVertex_triggered();
+    else if (previousSelectionIndex == 2) on_actionEdge_triggered();
+    else if (previousSelectionIndex == 3) on_actionWire_triggered();
+    else if (previousSelectionIndex == 4) on_actionFace_triggered();
+    else if (previousSelectionIndex == 5) on_actionShell_triggered();
+    else if (previousSelectionIndex == 6) on_actionSolid_triggered();
+}
+
 void OpenParEMg::setMenus ()
 {
     //std::cout << "OpenParEMg::setMenus" << std::endl; std::cout.flush();
@@ -1073,6 +1091,8 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             createPortAction->setToolTip("Copy the selected face and create a port.");
             createPathAction=new QAction("Create Path");
             createPathAction->setToolTip("Copy the selected face and create a path.");
+            extrudeAction=new QAction("Extrude");
+            extrudeAction->setToolTip("Extrude the selected face along its normal.");
 
             connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
             connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
@@ -1080,17 +1100,32 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
             connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
             connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
+            connect(extrudeAction, &QAction::triggered, this, &OpenParEMg::extrudeFace);
 
             QMenu menu(this);
             menu.addAction(showAction);
             menu.addAction(hideAction);
             menu.addAction(unselectAction);
             menu.addAction(deleteAction);
-            menu.addAction(createPortAction);
-            menu.addAction(createPathAction);
+            //menu.addAction(createPortAction);
+            //menu.addAction(createPathAction);
+
+            QMenu setup("Setup");
+            setup.addAction(createPortAction);
+            setup.addAction(createPathAction);
+            menu.addMenu(&setup);
+
+            QMenu modify("Modify");
+            modify.addAction(extrudeAction);
+            menu.addMenu(&modify);
 
             createPortAction->setEnabled(false);
-            if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {createPortAction->setEnabled(true);}
+            extrudeAction->setEnabled(false);
+            std::cout << "ui->drawingWindow->numberDrawingFaceSelected()=" << ui->drawingWindow->numberDrawingFaceSelected() << std::endl; std::cout.flush();
+            if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {
+                createPortAction->setEnabled(true);
+                extrudeAction->setEnabled(true);
+            }
 
             createPathAction->setEnabled(false);
             if (ui->drawingWindow->numberDrawingFaceSelected() > 0) {createPathAction->setEnabled(true);}
@@ -1116,11 +1151,10 @@ void OpenParEMg::showRootDrawingItems ()
         i++;
     }
 
-    //setRootForeground(&drawing);
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
+    // deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1137,11 +1171,10 @@ void OpenParEMg::showDrawingItems ()
         i++;
     }
 
-    //setRootForeground(&drawing);
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
+    // deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1154,17 +1187,14 @@ void OpenParEMg::hideRootDrawingItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        //if (item->is_rootDrawing()) {
-            ui->drawingWindow->hideItem(item);
-        //}
+        ui->drawingWindow->hideItem(item);
         i++;
     }
 
-    //setRootForeground(&drawing);
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
+    // deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1181,10 +1211,10 @@ void OpenParEMg::hideDrawingItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
+    // deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1252,8 +1282,8 @@ void OpenParEMg::showRootPathItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1292,8 +1322,8 @@ void OpenParEMg::hideRootPathItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1327,8 +1357,8 @@ void OpenParEMg::showPathItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1358,8 +1388,8 @@ void OpenParEMg::hidePathItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1386,8 +1416,8 @@ void OpenParEMg::showRootPortItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1406,8 +1436,8 @@ void OpenParEMg::showPortItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1433,8 +1463,8 @@ void OpenParEMg::hideRootPortItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1453,8 +1483,8 @@ void OpenParEMg::hidePortItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1481,8 +1511,8 @@ void OpenParEMg::showRootMeshItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1520,8 +1550,8 @@ void OpenParEMg::hideRootMeshItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1540,8 +1570,8 @@ void OpenParEMg::showMeshItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1571,8 +1601,8 @@ void OpenParEMg::hideMeshItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+    // showAction->setEnabled(ui->drawingWindow->isValidShow());
+    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1990,6 +2020,7 @@ void OpenParEMg::deleteDrawingItems()
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
         if (item->is_drawing()) {
+            ui->drawingWindow->hideItem(item);
             ui->drawingWindow->deleteItem(item);
         }
         i++;
@@ -2552,6 +2583,71 @@ void OpenParEMg::createPath ()
         faceCount++;
     }
 
+    setMenus();
+    ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::extrudeFace ()
+{
+    // disable menus
+    isActiveDrawing=true;
+
+    // disable tree
+    ui->drawingItemTree->setEnabled(false);
+
+    // set to select on vertices and edges
+    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),1,Standard_False);  // vertices
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),2,Standard_False);  // edges
+
+    int faceCount=0;
+    while (faceCount < ui->drawingWindow->numberDrawingFaceSelected()) {
+        selectedFace=TopoDS::Face(ui->drawingWindow->get_selectedFace(faceCount));
+        faceCount++;  // should only be one
+    }
+
+    LengthInputForm *form=new LengthInputForm();
+    form->set_drawingWindow(ui->drawingWindow);
+    form->set_relay(relay);
+    form->setModal(false);
+    form->show();
+
+    setMenus();
+}
+
+void OpenParEMg::finishExtrudeFace (double length, bool cancel)
+{
+    if (!cancel) {
+
+        // get the normal
+        Handle(Geom_Surface) surface=BRep_Tool::Surface(selectedFace);
+        Handle(Geom_Plane) plane=Handle(Geom_Plane)::DownCast(surface);
+        if (plane.IsNull()) {
+            QMessageBox mb;
+            mb.critical(nullptr, "Error", "Unable to complete the extrude operation.");
+            mb.setFixedSize(500, 200);
+            return;
+        }
+        gp_Dir normal=plane->Pln().Axis().Direction();
+
+        // scale it
+        gp_Vec scaledVec=gp_Vec(normal)*length;
+
+        // extrude it
+        BRepPrimAPI_MakePrism aPrism(selectedFace,scaledVec);
+
+        // rebuild and add to the top-level COMPOUND
+        TopoDS_Compound compound=TopoDS::Compound(drawing.get_AIS_Shape()->Shape());
+        BRep_Builder builder;
+        builder.Add(compound,aPrism);
+        drawing.get_AIS_Shape()->Redisplay(true);
+        addShape(aPrism,&drawing,false,false);
+        ui->drawingWindow->selectItem(&drawing);
+    }
+
+    ui->drawingItemTree->setEnabled(true);
+    restoreSelection();
+    isActiveDrawing=false;
     setMenus();
     ui->drawingWindow->updateViewer();
 }
@@ -3814,8 +3910,8 @@ void OpenParEMg::on_actionShape_triggered()
     currentSelectionAction->setChecked(true);
     previousSelectionIndex=0;
 
-    ui->drawingWindow->Deactivate();
-    ui->drawingWindow->Activate(0,Standard_False);
+    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),0,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3829,8 +3925,8 @@ void OpenParEMg::on_actionVertex_triggered()
     currentSelectionAction->setChecked(true);
     previousSelectionIndex=1;
 
-    ui->drawingWindow->Deactivate();
-    ui->drawingWindow->Activate(1,Standard_False);
+    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),1,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3844,8 +3940,8 @@ void OpenParEMg::on_actionEdge_triggered()
     currentSelectionAction->setChecked(true);
     previousSelectionIndex=2;
 
-    ui->drawingWindow->Deactivate();
-    ui->drawingWindow->Activate(2,Standard_False);
+    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),2,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3859,8 +3955,8 @@ void OpenParEMg::on_actionWire_triggered()
     currentSelectionAction->setChecked(true);
     previousSelectionIndex=3;
 
-    ui->drawingWindow->Deactivate();
-    ui->drawingWindow->Activate(3,Standard_False);
+    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),3,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3874,8 +3970,8 @@ void OpenParEMg::on_actionFace_triggered()
     currentSelectionAction->setChecked(true);
     previousSelectionIndex=4;
 
-    ui->drawingWindow->Deactivate();
-    ui->drawingWindow->Activate(4,Standard_False);
+    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),4,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3889,8 +3985,8 @@ void OpenParEMg::on_actionShell_triggered()
     currentSelectionAction->setChecked(true);
     previousSelectionIndex=5;
 
-    ui->drawingWindow->Deactivate();
-    ui->drawingWindow->Activate(5,Standard_False);
+    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),5,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3904,8 +4000,8 @@ void OpenParEMg::on_actionSolid_triggered()
     currentSelectionAction->setChecked(true);
     previousSelectionIndex=6;
 
-    ui->drawingWindow->Deactivate();
-    ui->drawingWindow->Activate(6,Standard_False);
+    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),6,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -4692,13 +4788,7 @@ void OpenParEMg::cancelDraw ()
     ui->drawingWindow->set_drawPolyline(false);
 
     // restore the prior selection index
-    if (previousSelectionIndex == 0) on_actionShape_triggered();
-    else if (previousSelectionIndex == 1) on_actionVertex_triggered();
-    else if (previousSelectionIndex == 2) on_actionEdge_triggered();
-    else if (previousSelectionIndex == 3) on_actionWire_triggered();
-    else if (previousSelectionIndex == 4) on_actionFace_triggered();
-    else if (previousSelectionIndex == 5) on_actionShell_triggered();
-    else if (previousSelectionIndex == 6) on_actionSolid_triggered();
+    restoreSelection();
 
     workingItem=nullptr;
     ui->drawingWindow->cancelDraw();
@@ -4712,9 +4802,9 @@ void OpenParEMg::on_actionDrawLine_triggered ()
     std::cout << "OpenParEMg::on_actionDrawLine_triggered" << std::endl; std::cout.flush();
 
     // set to select on vertices and edges
-    ui->drawingWindow->Deactivate();
-    ui->drawingWindow->Activate(1,Standard_False);  // vertices
-    ui->drawingWindow->Activate(2,Standard_False);  // edges
+    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),1,Standard_False);  // vertices
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),2,Standard_False);  // edges
 
     ui->drawingWindow->clearDrawPoints();
     isActiveDrawing=true;
@@ -4730,9 +4820,9 @@ void OpenParEMg::on_actionDrawPolyline_triggered ()
     std::cout << "OpenParEMg::on_actionDrawPolyline_triggered" << std::endl; std::cout.flush();
 
     // set to select on vertices and edges
-    ui->drawingWindow->Deactivate();
-    ui->drawingWindow->Activate(1,Standard_False);  // vertices
-    ui->drawingWindow->Activate(2,Standard_False);  // edges
+    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),1,Standard_False);  // vertices
+    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),2,Standard_False);  // edges
 
     ui->drawingWindow->clearDrawPoints();
     isActiveDrawing=true;
@@ -4876,19 +4966,11 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
             addShape(wire,&drawing,false,false);
         }
 
-        drawing.setForeground(0,Qt::gray);
-        ui->drawingWindow->showItem(&drawing);
         ui->drawingWindow->unselectItem(&drawing);
     }
 
     // restore the prior selection index
-    if (previousSelectionIndex == 0) on_actionShape_triggered();
-    else if (previousSelectionIndex == 1) on_actionVertex_triggered();
-    else if (previousSelectionIndex == 2) on_actionEdge_triggered();
-    else if (previousSelectionIndex == 3) on_actionWire_triggered();
-    else if (previousSelectionIndex == 4) on_actionFace_triggered();
-    else if (previousSelectionIndex == 5) on_actionShell_triggered();
-    else if (previousSelectionIndex == 6) on_actionSolid_triggered();
+    restoreSelection();
 
     brepChanged=true;
     workingItem=nullptr;

@@ -78,6 +78,7 @@ qt_add_executable(OpenParEMg
     Relay.h Relay.cpp
     PolygonSelection.h PolygonSelection.cpp
     MaterialsOptions.h MaterialsOptions.cpp MaterialsOptions.ui
+    LengthInputForm.h LengthInputForm.cpp LengthInputForm.ui
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)
