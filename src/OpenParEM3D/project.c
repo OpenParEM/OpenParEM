@@ -577,6 +577,19 @@ int check_antennaPatterns (struct projectData *projData, const char* indent)
    return fail;
 }
 
+void clear_physicalGroupMaterials (struct projectData *data)
+{
+    int i=0;
+    while (i < data->physicalGroupMaterialCount) {
+        if (data->physicalGroupMaterials[i].materialName) {
+            free(data->physicalGroupMaterials[i].materialName);
+            data->physicalGroupMaterials[i].materialName=NULL;
+        }
+        i++;
+    }
+    data->physicalGroupMaterialCount=0;
+}
+
 void add_physicalGroupMaterial (struct projectData *data, int lineNumber, int dim, int tag, char *materialName)
 {
     int i;

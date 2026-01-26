@@ -343,7 +343,7 @@ void OpenParEMg::setMenus ()
 
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
 
-    //printLockouts();
+    printLockouts();
 
     // disable all menus while actively drawing
     if (isActiveDrawing) {
@@ -2859,7 +2859,28 @@ void OpenParEMg::set_displayMode (CustomTreeWidgetItem *item, int displayMode)
 void OpenParEMg::setPhysicalGroups ()
 {
     //std::cout << "OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
+
+    // re-build the physical groups list
+
+    clear_physicalGroupMaterials (&projData);
+
+    // check the first-level children for SOLID
     int i=0;
+    while (i < drawing.childCount()) {
+        //xxx
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
+        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_SOLID) {
+            QString itemMaterial=child->text(0);
+            char *material=nullptr;
+            cstrFromQString (&material,itemMaterial);
+            add_physicalGroupMaterial(&projData,-1,child->get_dimTag().first,child->get_dimTag().second,material);
+            if (material) {free(material);}
+        }
+        i++;
+    }
+
+    // assign to mesh
+    i=0;
     while (i < projData.physicalGroupMaterialCount) {
         std::vector<int> physicalGroupList;
         physicalGroupList.push_back(0);
@@ -2901,10 +2922,6 @@ void OpenParEMg::assignMaterial ()
 
     if (selectedMaterial != "") {
         clickedItem->setText(0,selectedMaterial);
-
-        QByteArray byteArray=selectedMaterial.toUtf8();
-        char *material=byteArray.data();
-        add_physicalGroupMaterial(&projData,-1,clickedItem->get_dimTag().first,clickedItem->get_dimTag().second,material);
         projectChanged=true;
         setMenus();
     }
@@ -3075,9 +3092,6 @@ void OpenParEMg::on_actionOpen_triggered ()
         mb.setFixedSize(500, 200);
     }
 
-    //setRootForeground(&port);
-    //setRootForeground(&boundary);
-    //setRootForeground(&mesh);
     setMenus();
 }
 
@@ -3100,10 +3114,10 @@ void OpenParEMg::printLockouts ()
 {
     std::cout << "Lockouts:" << std::endl
               << "   projectFileLoaded=" << projectFileLoaded << std::endl
-              << "   projectFileChanged=" << projectChanged << std::endl
+              << "   projectChanged=" << projectChanged << std::endl
               << "   boundaryDatabaseChanged=" << boundaryDatabase->is_modified() << std::endl
               << "   meshFileLoaded=" << meshFileLoaded << std::endl
-              << "   meshFileChanged=" << meshChanged << std::endl
+              << "   meshChanged=" << meshChanged << std::endl
               << "   brepFileLoaded=" << brepFileLoaded << std::endl
               << "   brepChanged=" << brepChanged << std::endl
               << "   drawingPlaneShown=" << drawingPlaneShown << std::endl
@@ -4295,9 +4309,6 @@ void OpenParEMg::drawMesh()
         e++;
     }
 
-    // ui->drawingWindow->fitAll();
-    // ui->drawingWindow->updateViewer();
-    meshChanged=true;
     setMenus();
 }
 

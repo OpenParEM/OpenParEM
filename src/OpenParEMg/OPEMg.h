@@ -40,6 +40,7 @@ extern "C" void init_project (struct projectData *);
 extern "C" void free_project (struct projectData *);
 extern "C" PetscErrorCode load_project_file (const char *, struct projectData *, const char *);
 extern "C" int save_project (const char *, struct projectData *, struct projectData *, const char *);
+extern "C" void clear_physicalGroupMaterials (struct projectData *);
 extern "C" void add_physicalGroupMaterial (struct projectData *, int, int, int, char *);
 
 QT_BEGIN_NAMESPACE
