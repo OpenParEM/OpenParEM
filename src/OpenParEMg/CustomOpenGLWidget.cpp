@@ -446,8 +446,8 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
     // pass the mouse press from Qt to OCCT
     bool passClick=true;
-    if (event->button() == Qt::RightButton && NbSelected() > 0) passClick=false;            // a popup menu will appear
-    if (event->button() == Qt::RightButton && (drawLine || drawPolyline)) passClick=false;  // prevent right-click from zooming
+    if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;            // a popup menu will appear
+    if (event->button() == Qt::RightButton && (pickVertex || drawLine || drawPolyline)) passClick=false;   // prevent right-click from zooming
     if (passClick) {
         const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
@@ -502,8 +502,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     } else if (event->button() == Qt::RightButton) {
         std::cout << "CustomOpenGLWidget::mouseReleaseEvent Qt::RightButton" << std::endl; std::cout.flush();
-        std::cout << "   drawingTracker->hasAnySelectedItems()=" << drawingTracker->hasAnySelectedItems() << std::endl; std::cout.flush();
-        //if (drawingTracker->hasAnySelectedItems()) {
         if (viewerContext->NbSelected() > 0) {
             contextMenu->exec(QCursor::pos());
         }

@@ -119,9 +119,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     ui->actionShape->setCheckable(true);
     ui->actionShape->setChecked(true);
-    currentSelectionAction=ui->actionShape;
-    selectionIndex=0;
-    previousSelectionIndex=0;
+
+    on_actionShape_triggered();
 
     ui->actionWireframe->setChecked(true);
 
@@ -299,6 +298,30 @@ void OpenParEMg::freeQActionList ()
         }
         i++;
     }
+}
+
+void OpenParEMg::clearSelection ()
+{
+    ui->actionShape->setChecked(false);
+    ui->actionShape->setCheckable(false);
+
+    ui->actionVertex->setChecked(false);
+    ui->actionVertex->setCheckable(false);
+
+    ui->actionEdge->setChecked(false);
+    ui->actionEdge->setCheckable(false);
+
+    ui->actionWire->setChecked(false);
+    ui->actionWire->setCheckable(false);
+
+    ui->actionFace->setChecked(false);
+    ui->actionFace->setCheckable(false);
+
+    ui->actionShell->setChecked(false);
+    ui->actionShell->setCheckable(false);
+
+    ui->actionSolid->setChecked(false);
+    ui->actionSolid->setCheckable(false);
 }
 
 void OpenParEMg::restoreSelection ()
@@ -2597,9 +2620,9 @@ void OpenParEMg::extrudeFace ()
     ui->drawingItemTree->setEnabled(false);
 
     // set to select on vertices and edges
-    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),1,Standard_False);  // vertices
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),2,Standard_False);  // edges
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(1,Standard_False);  // vertices
+    ui->drawingWindow->Activate(2,Standard_False);  // edges
 
     int faceCount=0;
     while (faceCount < ui->drawingWindow->numberDrawingFaceSelected()) {
@@ -3127,9 +3150,8 @@ void OpenParEMg::resetProject ()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
     workingItem=nullptr;
-    currentSelectionAction=ui->actionShape;
-    selectionIndex=0;
-    previousSelectionIndex=0;
+
+    on_actionShape_triggered();
 
     resetLockouts();
 
@@ -3891,14 +3913,13 @@ void OpenParEMg::on_actionShape_triggered()
 {
     std::cout << "OpenParEMg::on_actionShape_triggered" << std::endl; std::cout.flush();
 
-    currentSelectionAction->setCheckable(false);
-    currentSelectionAction=ui->actionShape;
-    currentSelectionAction->setCheckable(true);
-    currentSelectionAction->setChecked(true);
+    clearSelection();
+    ui->actionShape->setCheckable(true);
+    ui->actionShape->setChecked(true);
     previousSelectionIndex=0;
 
-    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),0,Standard_False);
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(0,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3906,14 +3927,13 @@ void OpenParEMg::on_actionVertex_triggered()
 {
     std::cout << "OpenParEMg::on_actionVertex_triggered" << std::endl; std::cout.flush();
 
-    currentSelectionAction->setCheckable(false);
-    currentSelectionAction=ui->actionVertex;
-    currentSelectionAction->setCheckable(true);
-    currentSelectionAction->setChecked(true);
+    clearSelection();
+    ui->actionVertex->setCheckable(true);
+    ui->actionVertex->setChecked(true);
     previousSelectionIndex=1;
 
-    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),1,Standard_False);
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(1,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3921,14 +3941,13 @@ void OpenParEMg::on_actionEdge_triggered()
 {
     std::cout << "OpenParEMg::on_actionEdge_triggered" << std::endl; std::cout.flush();
 
-    currentSelectionAction->setCheckable(false);
-    currentSelectionAction=ui->actionEdge;
-    currentSelectionAction->setCheckable(true);
-    currentSelectionAction->setChecked(true);
+    clearSelection();
+    ui->actionEdge->setCheckable(true);
+    ui->actionEdge->setChecked(true);
     previousSelectionIndex=2;
 
-    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),2,Standard_False);
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(2,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3936,14 +3955,13 @@ void OpenParEMg::on_actionWire_triggered()
 {
     std::cout << "OpenParEMg::on_actionWire_triggered" << std::endl; std::cout.flush();
 
-    currentSelectionAction->setCheckable(false);
-    currentSelectionAction=ui->actionWire;
-    currentSelectionAction->setCheckable(true);
-    currentSelectionAction->setChecked(true);
+    clearSelection();
+    ui->actionWire->setCheckable(true);
+    ui->actionWire->setChecked(true);
     previousSelectionIndex=3;
 
-    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),3,Standard_False);
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(3,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3951,14 +3969,13 @@ void OpenParEMg::on_actionFace_triggered()
 {
     std::cout << "OpenParEMg::on_actionFace_triggered" << std::endl; std::cout.flush();
 
-    currentSelectionAction->setCheckable(false);
-    currentSelectionAction=ui->actionFace;
-    currentSelectionAction->setCheckable(true);
-    currentSelectionAction->setChecked(true);
+    clearSelection();
+    ui->actionFace->setCheckable(true);
+    ui->actionFace->setChecked(true);
     previousSelectionIndex=4;
 
-    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),4,Standard_False);
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(4,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3966,14 +3983,13 @@ void OpenParEMg::on_actionShell_triggered()
 {
     std::cout << "OpenParEMg::on_actionShell_triggered" << std::endl; std::cout.flush();
 
-    currentSelectionAction->setCheckable(false);
-    currentSelectionAction=ui->actionShell;
-    currentSelectionAction->setCheckable(true);
-    currentSelectionAction->setChecked(true);
+    clearSelection();
+    ui->actionShell->setCheckable(true);
+    ui->actionShell->setChecked(true);
     previousSelectionIndex=5;
 
-    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),5,Standard_False);
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(5,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3981,14 +3997,13 @@ void OpenParEMg::on_actionSolid_triggered()
 {
     std::cout << "OpenParEMg::on_actionSolid_triggered" << std::endl; std::cout.flush();
 
-    currentSelectionAction->setCheckable(false);
-    currentSelectionAction=ui->actionSolid;
-    currentSelectionAction->setCheckable(true);
-    currentSelectionAction->setChecked(true);
+    clearSelection();
+    ui->actionSolid->setCheckable(true);
+    ui->actionSolid->setChecked(true);
     previousSelectionIndex=6;
 
-    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),6,Standard_False);
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(6,Standard_False);
     ui->drawingWindow->updateViewer();
 }
 
@@ -4789,9 +4804,9 @@ void OpenParEMg::on_actionDrawLine_triggered ()
     std::cout << "OpenParEMg::on_actionDrawLine_triggered" << std::endl; std::cout.flush();
 
     // set to select on vertices and edges
-    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),1,Standard_False);  // vertices
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),2,Standard_False);  // edges
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(1,Standard_False);  // vertices
+    ui->drawingWindow->Activate(2,Standard_False);  // edges
 
     ui->drawingWindow->clearDrawPoints();
     isActiveDrawing=true;
@@ -4807,9 +4822,9 @@ void OpenParEMg::on_actionDrawPolyline_triggered ()
     std::cout << "OpenParEMg::on_actionDrawPolyline_triggered" << std::endl; std::cout.flush();
 
     // set to select on vertices and edges
-    ui->drawingWindow->Deactivate(drawing.get_AIS_Shape());
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),1,Standard_False);  // vertices
-    ui->drawingWindow->Activate(drawing.get_AIS_Shape(),2,Standard_False);  // edges
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(1,Standard_False);  // vertices
+    ui->drawingWindow->Activate(2,Standard_False);  // edges
 
     ui->drawingWindow->clearDrawPoints();
     isActiveDrawing=true;

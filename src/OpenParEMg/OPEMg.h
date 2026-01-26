@@ -106,6 +106,7 @@ public:
     void shapeCount (TopoDS_Shape, int *);
     void setPhysicalGroups ();
 
+    void clearSelection ();
     void restoreSelection ();
 
 private slots:
@@ -303,8 +304,6 @@ private:
     CustomTreeWidgetItem mesh;
 
     CustomTreeWidgetItem *clickedItem,*previousClickedItem,*workingItem;
-    QAction *currentSelectionAction;
-    int selectionIndex;
     int previousSelectionIndex;
     bool CTRLpressed;
     bool SHIFTpressed;

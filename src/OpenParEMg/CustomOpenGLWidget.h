@@ -321,8 +321,8 @@ public:
         shape.Nullify();
     }
 
-    void Deactivate (const Handle(AIS_Shape)& shape) {viewerContext->Deactivate(shape);}
-    void Activate (const Handle(AIS_Shape)& shape, int mode, Standard_Boolean theIsForce) {viewerContext->Activate(shape,mode,theIsForce);}
+    void Deactivate () {viewerContext->Deactivate();}
+    void Activate (int mode, Standard_Boolean theIsForce) {viewerContext->Activate(mode,theIsForce);}
     Standard_Integer get_NbSelected () {return viewerContext->NbSelected();}
 
     //void getSelected (std::vector<Handle(AIS_InteractiveObject)> *);
