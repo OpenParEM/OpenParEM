@@ -53,6 +53,7 @@ private slots:
 private:
     Ui::OPEMg_Refinement *ui;
     struct projectData *projData;
+    int refinementVariableIndex;
     QDoubleValidator toleranceValidator;
     bool simulationRunning;
 };

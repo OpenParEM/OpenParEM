@@ -651,7 +651,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
             showAction->setEnabled(ui->drawingWindow->isValidShow());
             hideAction->setEnabled(ui->drawingWindow->isValidHide());
             unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-            deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
+            //deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
             assignAction->setEnabled(false);
             if (clickedItem->is_solid()) assignAction->setEnabled(true);
@@ -693,7 +693,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         createPortAction->setEnabled(false);
         createPathAction->setEnabled(false);
         if (clickedItem->childCount() > 0) {
-            showAction->setEnabled(ui->drawingWindow->isValidShow());
+            showAction->setEnabled(isDrawingValidShow());
             hideAction->setEnabled(ui->drawingWindow->isValidHide());
             unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
             deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
@@ -1165,22 +1165,43 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
     }
 }
 
+// all must be the same type
+bool OpenParEMg::isDrawingValidShow ()
+{
+    std::cout << "OpenParEMg::isDrawingValidShow" << std::endl; std::cout.flush();
+
+    bool foundType=false;
+    TopAbs_ShapeEnum type;
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (foundType) {
+            if (item->get_AIS_Shape()->Shape().ShapeType() != type) return false;
+        } else {
+            foundType=true;
+            type=item->get_AIS_Shape()->Shape().ShapeType();
+        }
+        i++;
+    }
+    return true;
+}
+
 void OpenParEMg::showRootDrawingItems ()
 {
     std::cout << "OpenParEMg::showRootDrawingItems" << std::endl; std::cout.flush();
+
+    ui->drawingWindow->hideItem(&drawing);
 
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        ui->drawingWindow->showItem(item);
+        if (item->is_rootDrawing()) {
+            ui->drawingWindow->showItem(item);
+        }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    // unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    // deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1189,18 +1210,17 @@ void OpenParEMg::showDrawingItems ()
 {
     std::cout << "OpenParEMg::showDrawingItems" << std::endl; std::cout.flush();
 
+    ui->drawingWindow->hideItem(&drawing);
+
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        ui->drawingWindow->showItem(item);
+        if (item->is_drawing()) {
+            ui->drawingWindow->showItem(item);
+        }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    // unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    // deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1213,14 +1233,11 @@ void OpenParEMg::hideRootDrawingItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        ui->drawingWindow->hideItem(item);
+        if (item->is_rootDrawing()) {
+            ui->drawingWindow->hideItem(item);
+        }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    // unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    // deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1233,14 +1250,11 @@ void OpenParEMg::hideDrawingItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        ui->drawingWindow->hideItem(item);
+        if (item->is_drawing()) {
+            ui->drawingWindow->hideItem(item);
+        }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    // unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    // deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1276,9 +1290,11 @@ void OpenParEMg::deletePathItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        boundaryDatabase->deletePath((Path *)item->get_OPEMobject());
-        ui->drawingWindow->deleteItem(item);
-        path.removeChild(item);
+        if (item->is_path()) {
+            boundaryDatabase->deletePath((Path *)item->get_OPEMobject());
+            ui->drawingWindow->deleteItem(item);
+            path.removeChild(item);
+        }
         i++;
     }
 
@@ -1294,22 +1310,22 @@ void OpenParEMg::showRootPathItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        // if (item->is_rootPath()) {
+        //     int j=0;
+        //     while (j < item->childCount()) {
+        //         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+        //         ui->drawingWindow->showItem(child);
+        //         child->setForeground(0,Qt::black);
+        //         j++;
+        //     }
+        // } else {
+        //     ui->drawingWindow->showItem(item);
+        // }
         if (item->is_rootPath()) {
-            int j=0;
-            while (j < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
-                ui->drawingWindow->showItem(child);
-                child->setForeground(0,Qt::black);
-                j++;
-            }
-        } else {
             ui->drawingWindow->showItem(item);
         }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1334,22 +1350,22 @@ void OpenParEMg::hideRootPathItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        // if (item->is_rootPath()) {
+        //     int j=0;
+        //     while (j < item->childCount()) {
+        //         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+        //         ui->drawingWindow->hideItem(child);
+        //         child->setForeground(0,Qt::gray);
+        //         j++;
+        //     }
+        // } else {
+        //     ui->drawingWindow->hideItem(item);
+        // }
         if (item->is_rootPath()) {
-            int j=0;
-            while (j < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
-                ui->drawingWindow->hideItem(child);
-                child->setForeground(0,Qt::gray);
-                j++;
-            }
-        } else {
             ui->drawingWindow->hideItem(item);
         }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1379,12 +1395,11 @@ void OpenParEMg::showPathItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        ui->drawingWindow->showItem(item);
+        if (item->is_path()) {
+            ui->drawingWindow->showItem(item);
+        }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1408,14 +1423,11 @@ void OpenParEMg::hidePathItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        //if (item->is_path()) {
+        if (item->is_path()) {
             ui->drawingWindow->hideItem(item);
-        //}
+        }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1429,21 +1441,18 @@ void OpenParEMg::showRootPortItems ()
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
         if (item->is_rootPort()) {
-            int j=0;
-            while (j < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
-                ui->drawingWindow->showItem(child);
-                child->setForeground(0,Qt::black);
-                j++;
-            }
-        } else {
+        //     int j=0;
+        //     while (j < item->childCount()) {
+        //         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+        //         ui->drawingWindow->showItem(child);
+        //         child->setForeground(0,Qt::black);
+        //         j++;
+        //     }
+        // } else {
             ui->drawingWindow->showItem(item);
         }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1456,14 +1465,11 @@ void OpenParEMg::showPortItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        //if (item->is_port()) {
+        if (item->is_port()) {
             ui->drawingWindow->showItem(item);
-        //}
+        }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1477,20 +1483,17 @@ void OpenParEMg::hideRootPortItems ()
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
         if (item->is_rootPort()) {
-            int j=0;
-            while (j < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
-                ui->drawingWindow->hideItem(child);
-                j++;
-            }
-        } else {
+        //     int j=0;
+        //     while (j < item->childCount()) {
+        //         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+        //         ui->drawingWindow->hideItem(child);
+        //         j++;
+        //     }
+        // } else {
             ui->drawingWindow->hideItem(item);
         }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1503,14 +1506,11 @@ void OpenParEMg::hidePortItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        //if (item->is_port()) {
+        if (item->is_port()) {
             ui->drawingWindow->hideItem(item);
-        //}
+        }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1531,14 +1531,12 @@ void OpenParEMg::showRootMeshItems ()
                 child->setForeground(0,Qt::black);
                 j++;
             }
-        } else {
-            ui->drawingWindow->showItem(item);
         }
+        // } else {
+        //     ui->drawingWindow->showItem(item);
+        // }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1570,14 +1568,12 @@ void OpenParEMg::hideRootMeshItems ()
                 child->setForeground(0,Qt::gray);
                 j++;
             }
-        } else {
-          ui->drawingWindow->hideItem(item);
         }
+        // } else {
+        //   ui->drawingWindow->hideItem(item);
+        // }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1590,14 +1586,11 @@ void OpenParEMg::showMeshItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        //if (item->is_mesh()) {
+        if (item->is_mesh()) {
             ui->drawingWindow->showItem(item);
-        //}
+        }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -1621,14 +1614,11 @@ void OpenParEMg::hideMeshItems ()
     int i=0;
     while (i < selectedItems.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        //if (item->is_mesh()) {
+        if (item->is_mesh()) {
             ui->drawingWindow->hideItem(item);
-        //}
+        }
         i++;
     }
-
-    // showAction->setEnabled(ui->drawingWindow->isValidShow());
-    // hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -2147,11 +2137,6 @@ void OpenParEMg::unselectPortItems()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    unselectAction->setEnabled(ui->drawingWindow->hasPortSelectedItems());
-    deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
-
     ui->drawingWindow->updateViewer();
 }
 
@@ -2366,9 +2351,6 @@ void OpenParEMg::showNetItems ()
         i++;
     }
 
-    showAction->setEnabled(ui->drawingWindow->isNetValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isNetValidHide());
-
     ui->drawingWindow->updateViewer();
 }
 
@@ -2385,9 +2367,6 @@ void OpenParEMg::showVIItems ()
         }
         i++;
     }
-
-    showAction->setEnabled(ui->drawingWindow->isVIValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isVIValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -2502,10 +2481,6 @@ void OpenParEMg::hideNetItems ()
         i++;
     }
 
-    //setRootForeground(&port);
-    showAction->setEnabled(ui->drawingWindow->isNetValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isNetValidHide());
-
     ui->drawingWindow->updateViewer();
 }
 
@@ -2522,9 +2497,6 @@ void OpenParEMg::hideVIItems ()
         }
         i++;
     }
-
-    showAction->setEnabled(ui->drawingWindow->isVIValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isVIValidHide());
 
     ui->drawingWindow->updateViewer();
 }
@@ -2543,9 +2515,6 @@ void OpenParEMg::hideIntegrationPathItems ()
         }
         i++;
     }
-
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
 }

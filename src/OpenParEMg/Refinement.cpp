@@ -65,14 +65,17 @@ void OPEMg_Refinement::set_projData(struct projectData *a)
 
     if (strcmp(projData->refinement_variable,"S") == 0) {
         ui->refinementVariable->setCurrentIndex(0);
+        refinementVariableIndex=0;
         ui->absoluteTolLabel->setEnabled(false);
         ui->absoluteTol->setEnabled(false);
     } else if (strcmp(projData->refinement_variable,"SandH") == 0) {
         ui->refinementVariable->setCurrentIndex(1);
+        refinementVariableIndex=1;
         ui->absoluteTolLabel->setEnabled(true);
         ui->absoluteTol->setEnabled(true);
     } else if (strcmp(projData->refinement_variable,"SorH") == 0) {
         ui->refinementVariable->setCurrentIndex(2);
+        refinementVariableIndex=2;
         ui->absoluteTolLabel->setEnabled(true);
         ui->absoluteTol->setEnabled(true);
     }
@@ -112,25 +115,47 @@ void OPEMg_Refinement::on_refinementVariable_activated(int index)
 
 void OPEMg_Refinement::on_refineOk_clicked()
 {
-    projData->refinement_iteration_min=ui->refineMin->value();
-    projData->refinement_iteration_max=ui->refineMax->value();
-    projData->refinement_required_passes=ui->requiredPasses->value();
-    projData->refinement_relative_tolerance=ui->relativeTol->text().toDouble();
-    projData->refinement_absolute_tolerance=ui->absoluteTol->text().toDouble();
+    if (projData->refinement_iteration_min != ui->refineMin->value()) {
+        projData->refinement_iteration_min=ui->refineMin->value();
+        projData->modified=1;
+    }
 
-    int index=ui->refinementVariable->currentIndex();
-    if (index == 0) {
-        if (projData->refinement_variable) free(projData->refinement_variable);
-        projData->refinement_variable=(char *) malloc(2*sizeof(char));
-        sprintf(projData->refinement_variable,"%s","S");
-    } else if (index == 1) {
-        if (projData->refinement_variable) free(projData->refinement_variable);
-        projData->refinement_variable=(char *) malloc(6*sizeof(char));
-        sprintf(projData->refinement_variable,"%s","SandH");
-    } else if (index == 2) {
-        if (projData->refinement_variable) free(projData->refinement_variable);
-        projData->refinement_variable=(char *) malloc(5*sizeof(char));
-        sprintf(projData->refinement_variable,"%s","SorH");
+    if (projData->refinement_iteration_max != ui->refineMax->value()) {
+        projData->refinement_iteration_max=ui->refineMax->value();
+        projData->modified=1;
+    }
+
+    if (projData->refinement_required_passes |= ui->requiredPasses->value()) {
+        projData->refinement_required_passes=ui->requiredPasses->value();
+        projData->modified=1;
+    }
+
+    if (projData->refinement_relative_tolerance != ui->relativeTol->text().toDouble()) {
+        projData->refinement_relative_tolerance=ui->relativeTol->text().toDouble();
+        projData->modified=1;
+    }
+
+    if (projData->refinement_absolute_tolerance != ui->absoluteTol->text().toDouble()) {
+        projData->refinement_absolute_tolerance=ui->absoluteTol->text().toDouble();
+        projData->modified=1;
+    }
+
+    if (refinementVariableIndex != ui->refinementVariable->currentIndex()) {
+        int index=ui->refinementVariable->currentIndex();
+        if (index == 0) {
+            if (projData->refinement_variable) free(projData->refinement_variable);
+            projData->refinement_variable=(char *) malloc(2*sizeof(char));
+            sprintf(projData->refinement_variable,"%s","S");
+        } else if (index == 1) {
+            if (projData->refinement_variable) free(projData->refinement_variable);
+            projData->refinement_variable=(char *) malloc(6*sizeof(char));
+            sprintf(projData->refinement_variable,"%s","SandH");
+        } else if (index == 2) {
+            if (projData->refinement_variable) free(projData->refinement_variable);
+            projData->refinement_variable=(char *) malloc(5*sizeof(char));
+            sprintf(projData->refinement_variable,"%s","SorH");
+        }
+        projData->modified=1;
     }
 
     close();

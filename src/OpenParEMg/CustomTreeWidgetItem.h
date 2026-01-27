@@ -106,6 +106,7 @@ public:
 
     bool isValidShow ()
     {
+        //xxx
         if (!forShowHide) return false;
         if (foreground(0) == Qt::gray) return true;
         return false;
@@ -127,6 +128,30 @@ public:
             if (linkedItems[i] == item) linkedItems.erase(linkedItems.begin()+i);
             i++;
         }
+    }
+
+    void print_type ()
+    {
+        if (is_rootDrawing()) std::cout << "root drawing" << std::endl;
+        if (is_drawing()) std::cout << "drawing" << std::endl;
+        if (is_rootBoundary()) std::cout << "root boundary" << std::endl;
+        if (is_boundary()) std::cout << "boundary" << std::endl;
+        if (is_rootPort()) std::cout << "root port" << std::endl;
+        if (is_port()) std::cout << "port" << std::endl;
+        if (is_rootMesh()) std::cout << "root mesh" << std::endl;
+        if (is_mesh()) std::cout << "mesh" << std::endl;
+        if (is_rootPath()) std::cout << "root path" << std::endl;
+        if (is_path()) std::cout << "path" << std::endl;
+        if (is_sport()) std::cout << "Sport" << std::endl;
+        if (is_impedanceDefinition()) std::cout << "impedance definition" << std::endl;
+        if (is_impedanceCalculation()) std::cout << "impedance calculation" << std::endl;
+        if (is_sportLabel()) std::cout << "sport label" << std::endl;
+        if (is_sportNumber()) std::cout << "sport number" << std::endl;
+        if (is_voltage()) std::cout << "voltage" << std::endl;
+        if (is_current()) std::cout << "current" << std::endl;
+        if (is_scale()) std::cout << "scale" << std::endl;
+        if (is_scaleValue()) std::cout << "scaleValue" << std::endl;
+        if (is_integrationPathSegment()) std::cout << "integration path segment" << std::endl;
     }
 
     void print () {

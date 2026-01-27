@@ -174,6 +174,7 @@ private slots:
     void collapse (CustomTreeWidgetItem *);
     void expandAllItems ();
     void collapseAllItems ();
+    bool isDrawingValidShow ();
     void showRootDrawingItems ();
     void showDrawingItems ();
     void hideRootDrawingItems ();

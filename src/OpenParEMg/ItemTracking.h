@@ -57,6 +57,7 @@ public:
     //     showItem(item);
     // }
 
+    //
     void showItem (CustomTreeWidgetItem *item)
     {
         if (showTracking) {std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();}
@@ -68,15 +69,46 @@ public:
 
         // show item
         if (item->is_rootDrawing()) {
-            if (item->foreground(0) == Qt::black) return;
-            DisplayShape(item->get_AIS_Shape());
-            item->setForeground(0,Qt::black);
-            visibleItems.push_back(item);
+            // show item
+            if (item->foreground(0) == Qt::gray) {
+                DisplayShape(item->get_AIS_Shape());
+                item->setForeground(0,Qt::black);
+                visibleItems.push_back(item);
+            }
+
+            // // hide children
+            // int i=0;
+            // while (i < item->childCount()) {
+            //     CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+            //     hideItem(child);
+            //     i++;
+            // }
         } else if (item->is_drawing()) {
-            if (item->foreground(0) == Qt::black) return;
-            DisplayShape(item->get_AIS_Shape());
-            item->setForeground(0,Qt::black);
-            visibleItems.push_back(item);
+            // hide parents
+            // CustomTreeWidgetItem *testItem=item;
+            // CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)testItem->QTreeWidgetItem::parent();
+            // hideItem(parentItem);
+            // if (!parentItem->is_rootDrawing()) {
+            //     testItem=parentItem;
+            //     parentItem=(CustomTreeWidgetItem *)testItem->QTreeWidgetItem::parent();
+            //     hideItem(parentItem);
+            // }
+
+            // show item
+            if (item->foreground(0) == Qt::gray) {
+                DisplayShape(item->get_AIS_Shape());
+                item->setForeground(0,Qt::black);
+                visibleItems.push_back(item);
+                //selectItem(item);
+            }
+
+            // // hide children
+            // int i=0;
+            // while (i < item->childCount()) {
+            //     CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+            //     hideItem(child);
+            //     i++;
+            // }
         } else if (item->is_rootPath()) {
             int i=0;
             while (i < item->childCount()) {
@@ -156,6 +188,7 @@ public:
         } else if (item->is_sportLabel()) {
             // nothing to do
         } else if (item->is_voltage() || item->is_current()) {
+            if (item->foreground(0) == Qt::black) return;
             int i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
@@ -163,6 +196,7 @@ public:
                 i++;
             }
         } else if (item->is_integrationPathSegment()) {
+            if (item->foreground(0) == Qt::black) return;
             long unsigned int i=0;
             while (i < item->linkedItems_size()) {
                 CustomTreeWidgetItem *linkedItem=item->get_linkedItem(i);
@@ -195,7 +229,7 @@ public:
             if (item->isValidShow()) return true;
 
             // children
-            if (!item->is_drawing()) {  // skip drawing for speed
+            if (!item->is_drawing()) {
                 int j=0;
                 while (j < item->childCount()) {
                     CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
@@ -278,6 +312,7 @@ public:
     //     hideItem(item);
     // }
 
+    //xxx
     void hideItem (CustomTreeWidgetItem *item)
     {
         if (hideTracking) {std::cout << "ItemTracker::hideItem" << std::endl; std::cout.flush();}
@@ -287,20 +322,39 @@ public:
             return;
         }
 
-        if (item->foreground(0) == Qt::gray) return;
-
-        // always unselect
-        unselectItem(item);
-
         // custom hide
         if (item->is_rootDrawing()) {
-            EraseShape(item->get_AIS_Shape());
-            item->setForeground(0,Qt::gray);
-            removeVisibleItem(item);
+
+            // hide item
+            if (item->foreground(0) == Qt::black) {
+                EraseShape(item->get_AIS_Shape());
+                item->setForeground(0,Qt::gray);
+                removeVisibleItem(item);
+            }
+
+            // hide children
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                hideItem(child);
+                i++;
+            }
         } else if (item->is_drawing()) {
-            EraseShape(item->get_AIS_Shape());
-            item->setForeground(0,Qt::gray);
-            removeVisibleItem(item);
+
+            // hide item
+            if (item->foreground(0) == Qt::black) {
+                EraseShape(item->get_AIS_Shape());
+                item->setForeground(0,Qt::gray);
+                removeVisibleItem(item);
+            }
+
+            // hide children
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                hideItem(child);
+                i++;
+            }
         } else if (item->is_rootPath()) {
             int i=0;
             while (i < item->childCount()) {
@@ -309,6 +363,8 @@ public:
                 i++;
             }
         } else if (item->is_path()) {
+            if (item->foreground(0) == Qt::gray) return;
+
             EraseShape(item->get_AIS_Shape());
             item->setForeground(0,Qt::gray);
             removeVisibleItem(item);
@@ -333,13 +389,17 @@ public:
                 i++;
             }
         } else if (item->is_port()) {
+            if (item->foreground(0) == Qt::gray) return;
+
             item->setForeground(0,Qt::gray);
             removeVisibleItem(item);
 
             int i=0;
             while (i < item->linkedItems_size()) {
                 CustomTreeWidgetItem *linkedItem=item->get_linkedItem(i);
-                hideItem(linkedItem);
+                if (item->is_port()) {
+                    hideItem(linkedItem);
+                }
                 i++;
             }
 
@@ -358,6 +418,8 @@ public:
                 i++;
             }
         } else if (item->is_mesh()) {
+            if (item->foreground(0) == Qt::gray) return;
+
             item->setForeground(0,Qt::gray);
             removeVisibleItem(item);
             long unsigned int i=0;
@@ -366,6 +428,8 @@ public:
                 i++;
             }
         } else if (item->is_sport()) {
+            if (item->foreground(0) == Qt::gray) return;
+
             int i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
@@ -375,6 +439,8 @@ public:
         } else if (item->is_sportLabel()) {
             // nothing to do
         } else if (item->is_voltage() || item->is_current()) {
+            if (item->foreground(0) == Qt::gray) return;
+
             int i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
@@ -382,6 +448,8 @@ public:
                 i++;
             }
         } else if (item->is_integrationPathSegment()) {
+            if (item->foreground(0) == Qt::gray) return;
+
             long unsigned int i=0;
             while (i < item->linkedItems_size()) {
                 hideItem(item->get_linkedItem(i));
@@ -701,7 +769,9 @@ public:
         // if (item->is_root()) return;
 
         DeleteItem(item);
-        delete item;
+        if (!item->is_rootDrawing()) {
+            delete item;
+        }
     }
 
     bool isValidDelete ()
