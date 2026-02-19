@@ -45,36 +45,6 @@ Polywire::Polywire(QObject *parent)
     : QObject{parent}
 {}
 
-void Polywire::drawRubberband ()
-{
-    //std::cout << "Polywire::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
-
-    if (shapePoints.size() == 0) return;
-
-    if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
-
-    if (is_line()) {
-        rubberband=CreateAISLineFromVertices(shapePoints[shapePoints.size()-1],currentMousePosition);
-    }
-
-    if (is_polyline()) {
-        BRepBuilderAPI_MakePolygon polyMaker;
-        long unsigned int i=0;
-        while (i < shapePoints.size()) {
-            polyMaker.Add(shapePoints[i]);
-            i++;
-        }
-        polyMaker.Add(currentMousePosition);
-
-        TopoDS_Wire wire=polyMaker.Wire();
-        rubberband=new AIS_Shape(wire);
-    }
-
-    if (!rubberband.IsNull()) {
-        viewerContext->Display(rubberband,0,-1,Standard_True);
-    }
-}
-
 void Polywire::deleteRubberband ()
 {
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
@@ -85,24 +55,6 @@ bool Polywire::isValidPoint (gp_Pnt &pnt)
     if (shapePoints.size() == 0) return true;
     if (shapePoints[shapePoints.size()-1].IsEqual(pnt,Precision::Confusion())) return false;
     return true;
-}
-
-bool Polywire::canDeleteLastPoint ()
-{
-    if (is_polyline() && shapePoints.size() > 1) return true;
-    return false;
-}
-
-bool Polywire::canFinish ()
-{
-    if (is_polyline() && shapePoints.size() > 1) return true;
-    return false;
-}
-
-bool Polywire::canClose ()
-{
-    if (is_polyline() && shapePoints.size() > 2) return true;
-    return false;
 }
 
 void Polywire::addPoint (gp_Pnt &pnt)
@@ -122,27 +74,6 @@ void Polywire::close ()
     }
 }
 
-bool Polywire::isFinished ()
-{
-    if (shapePoints.size() == 0) return false;
-
-    // line - only 2 points
-    if (is_line()) {
-        if (shapePoints.size() == 2) return true;
-    }
-
-    // polyline - last point equals first
-    if (is_polyline()) {
-        if (shapePoints.size() > 1) {
-            if (shapePoints[shapePoints.size()-1].IsEqual(shapePoints[0],Precision::Confusion())) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
 TopoDS_Wire Polywire::buildWire ()
 {
     BRepBuilderAPI_MakeWire wireBuilder;
@@ -154,4 +85,42 @@ TopoDS_Wire Polywire::buildWire ()
     }
 
     return wireBuilder.Wire();
+}
+
+void Line::drawRubberband ()
+{
+    //std::cout << "Line::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
+
+    if (shapePoints.size() == 0) return;
+
+    if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
+    rubberband=CreateAISLineFromVertices(shapePoints[shapePoints.size()-1],currentMousePosition);
+
+    if (!rubberband.IsNull()) {
+        viewerContext->Display(rubberband,0,-1,Standard_True);
+    }
+}
+
+void Polyline::drawRubberband ()
+{
+    //std::cout << "Polyline::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
+
+    if (shapePoints.size() == 0) return;
+
+    if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
+
+    BRepBuilderAPI_MakePolygon polyMaker;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        polyMaker.Add(shapePoints[i]);
+        i++;
+    }
+    polyMaker.Add(currentMousePosition);
+
+    TopoDS_Wire wire=polyMaker.Wire();
+    rubberband=new AIS_Shape(wire);
+
+    if (!rubberband.IsNull()) {
+        viewerContext->Display(rubberband,0,-1,Standard_True);
+    }
 }

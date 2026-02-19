@@ -254,7 +254,6 @@ void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
             if (pickVertex || polywire) {
                 if (pickVertex) emit relay->finishExtrudeFace(0,true);
                 if (polywire) emit relay->cancelDraw();
-                cancelDraw();
             }
         }
 

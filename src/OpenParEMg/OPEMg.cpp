@@ -4039,8 +4039,6 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
         }
 
         ui->drawingWindow->unselectAllItems();
-
-        //ui->drawingWindow->cancelDraw();
         disableMenus=false;
     }
     QWidget::keyPressEvent(event);
@@ -4781,8 +4779,7 @@ void OpenParEMg::on_actionDrawLine_triggered ()
     ui->drawingWindow->Activate(2,Standard_False);  // edges
 
     if (polywire) delete polywire;
-    polywire=new Polywire();
-    polywire->set_line();
+    polywire=new Line();
     polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
 
     ui->drawingWindow->set_polywire(polywire);
@@ -4801,8 +4798,7 @@ void OpenParEMg::on_actionDrawPolyline_triggered ()
     ui->drawingWindow->Activate(2,Standard_False);  // edges
 
     if (polywire) delete polywire;
-    polywire=new Polywire();
-    polywire->set_polyline();
+    polywire=new Polyline();
     polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
 
     ui->drawingWindow->set_polywire(polywire);

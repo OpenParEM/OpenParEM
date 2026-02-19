@@ -28,7 +28,7 @@
 #include <gp_Pnt.hxx>
 #include "keywordPair.hpp"
 
-
+class OpenParEMg;
 
 class Polywire : public QObject
 {
@@ -36,21 +36,19 @@ class Polywire : public QObject
 
 public:
     explicit Polywire(QObject *parent = nullptr);
-    void drawRubberband ();
+    virtual ~Polywire() {}
+
+    virtual void drawRubberband () = 0;
     void deleteRubberband ();
     bool isValidPoint (gp_Pnt &pnt);
-    bool canDeleteLastPoint ();
-    bool canFinish ();
-    bool canClose ();
+    virtual bool canDeleteLastPoint () = 0;
+    virtual bool canFinish () = 0;
+    virtual bool canClose () = 0;
     void addPoint (gp_Pnt &pnt);
     void setCurrentMousePosition (gp_Pnt &currentMousePosition_) {currentMousePosition=currentMousePosition_;}
     void deleteLastPoint ();
     void close ();
-    bool isFinished ();
-
-    void set_line () {type=0;}
-    void set_polyline () {type=1;}
-
+    virtual bool isFinished () = 0;
     bool is_line () {if (type == 0) return true; return false;}
     bool is_polyline () {if (type == 1) return true; return false;}
 
@@ -63,16 +61,44 @@ public:
 
 signals:
 
-private:
-    bool type;     // 0 - line; 1 - polyline
-    //bool isPath;
+protected:
+    int type;  // 0 - line; 1 - polyline
     std::vector<gp_Pnt> shapePoints;
     struct point normal;
     gp_Pnt currentMousePosition;
     Handle(AIS_Shape) rubberband;
-
     Handle(AIS_InteractiveContext) viewerContext;
 };
+
+class Line : public Polywire
+{
+public:
+    Line () {type=0;}
+    void drawRubberband () override;
+    bool canDeleteLastPoint () override {return false;}
+    bool canFinish () override {return false;}
+    bool canClose () override {return false;}
+    bool isFinished () override {if (shapePoints.size() == 2) return true; return false;}
+};
+
+class Polyline : public Polywire
+{
+public:
+    Polyline () {type=1;}
+    void drawRubberband () override;
+    bool canDeleteLastPoint () override {if (shapePoints.size() > 1) return true; return false;}
+    bool canFinish () override {if (shapePoints.size() > 1) return true; return false;}
+    bool canClose () override {if (shapePoints.size() > 2) return true; return false;}
+    bool isFinished () override {
+        if (shapePoints.size() > 1) {
+            if (shapePoints[shapePoints.size()-1].IsEqual(shapePoints[0],Precision::Confusion())) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
+
 
 
 #endif // POLYWIRE_H

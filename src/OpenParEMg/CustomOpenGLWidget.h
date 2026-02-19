@@ -74,7 +74,7 @@ public:
     void fitSelected () {viewerContext->FitSelected(view); view->Redraw();}
 
     void cancelDraw ();
-    void drawRubberBand (gp_Pnt);
+    //void drawRubberBand (gp_Pnt);
 
     void wheelEvent (QWheelEvent*) override;
     void keyPressEvent (QKeyEvent*) override;
@@ -397,29 +397,6 @@ public:
             vertexFilter.Nullify();
         }
     }
-
-    // void deleteLastPoint ()
-    // {
-    //     shapePoints.pop_back();
-
-    //     QPoint localPos=mapFromGlobal(QCursor::pos());
-
-    //     Standard_Real x,y,z;
-    //     view->Convert(localPos.x(),localPos.y(),x,y,z);
-    //     gp_Pnt movePoint(x,y,z);
-
-    //     drawRubberBand(movePoint);
-    // }
-
-    // void closePolyline ()
-    // {
-    //     if (shapePoints.size() > 2) {
-    //         shapePoints.push_back(shapePoints[0]);
-    //         finishDrawLine();
-    //     }
-    // }
-
-    //long unsigned int get_shapePoints_size () {return shapePoints.size();}
 
     void clearSelected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearSelected(theToUpdateViewer);}
 
