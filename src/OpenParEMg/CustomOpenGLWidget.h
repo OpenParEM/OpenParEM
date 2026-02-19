@@ -17,7 +17,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.   //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
-///
+
 #ifndef CUSTOMOPENGLWIDGET_H
 #define CUSTOMOPENGLWIDGET_H
 
@@ -30,6 +30,7 @@
 #include "RectangleSelector.h"
 #include "ItemTracking.h"
 #include "Relay.h"
+#include "Polywire.h"
 
 #include "OpenGl_GraphicDriver.hxx"
 #include <Aspect_DisplayConnection.hxx>
@@ -98,19 +99,13 @@ public:
         viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
     }
 
-    void set_drawLine (bool drawLine_)
+    void set_polywire (Polywire *polywire_)
     {
-        drawLine=drawLine_;
+        polywire=polywire_;
         viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
     }
 
-    void set_drawPolyline (bool drawPolyline_)
-    {
-        drawPolyline=drawPolyline_;
-        viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
-    }
-
-    void clearDrawPoints () {shapePoints.clear();}
+    //void clearDrawPoints () {shapePoints.clear();}
 
     void reshowItems ()
     {
@@ -403,33 +398,35 @@ public:
         }
     }
 
-    void deleteLastPoint ()
-    {
-        shapePoints.pop_back();
+    // void deleteLastPoint ()
+    // {
+    //     shapePoints.pop_back();
 
-        QPoint localPos=mapFromGlobal(QCursor::pos());
+    //     QPoint localPos=mapFromGlobal(QCursor::pos());
 
-        Standard_Real x,y,z;
-        view->Convert(localPos.x(),localPos.y(),x,y,z);
-        gp_Pnt movePoint(x,y,z);
+    //     Standard_Real x,y,z;
+    //     view->Convert(localPos.x(),localPos.y(),x,y,z);
+    //     gp_Pnt movePoint(x,y,z);
 
-        drawRubberBand(movePoint);
-    }
+    //     drawRubberBand(movePoint);
+    // }
 
-    void closePolyline ()
-    {
-        if (shapePoints.size() > 2) {
-            shapePoints.push_back(shapePoints[0]);
-            finishDrawLine();
-        }
-    }
+    // void closePolyline ()
+    // {
+    //     if (shapePoints.size() > 2) {
+    //         shapePoints.push_back(shapePoints[0]);
+    //         finishDrawLine();
+    //     }
+    // }
 
-    long unsigned int get_shapePoints_size () {return shapePoints.size();}
+    //long unsigned int get_shapePoints_size () {return shapePoints.size();}
 
     void clearSelected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearSelected(theToUpdateViewer);}
 
     void finishPickVertex ();
     void finishDrawLine ();
+
+    Handle(AIS_InteractiveContext) get_viewerContext () {return viewerContext;}
 
 protected:
     void initializeGL () override;
@@ -472,9 +469,10 @@ private:
     gp_Pnt vertexPoint;
 
     // line
-    Handle(AIS_Shape) lineRubberBand;
-    bool drawLine, drawPolyline;
-    std::vector<gp_Pnt> shapePoints;
+    //Handle(AIS_Shape) lineRubberBand;
+    //bool drawLine, drawPolyline;
+    //std::vector<gp_Pnt> shapePoints;
+    Polywire *polywire;
 
     // filter
     Handle(VertexFilter) vertexFilter;

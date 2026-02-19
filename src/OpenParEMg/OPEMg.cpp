@@ -254,9 +254,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     // drawing
     /////////////////////////////////////////////////////////////////////////////
 
-    isActiveDrawing=false;
-    isDrawLine=false;
-    isDrawPolyline=false;
+    disableMenus=false;
+    polywire=nullptr;
 
     lengthInputForm=nullptr;
 
@@ -345,10 +344,10 @@ void OpenParEMg::setMenus ()
 
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
 
-    printLockouts();
+    //printLockouts();
 
-    // disable all menus while actively drawing
-    if (isActiveDrawing) {
+    // disable all menus on command
+    if (disableMenus || polywire) {
         ui->menubar->setEnabled(false);
         return;
     }
@@ -1060,21 +1059,17 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 {
     std::cout << "OpenParEMg::drawingWindowContextMenu_triggered" << std::endl; std::cout.flush();
 
-    if (isActiveDrawing) {
-        if (isDrawLine) {
+    if (polywire) {
+        if (polywire->is_line()) {
             cancelAction=new QAction("Cancel");
-
             connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDraw);
 
             QMenu menu(this);
             menu.addAction(cancelAction);
 
             menu.exec(ui->drawingWindow->mapToGlobal(pnt));
-
-            if (cancelAction) {delete cancelAction; cancelAction=nullptr;}
-        }
-
-        if (isDrawPolyline) {
+            freeQActionList();
+        } else if (polywire->is_polyline()) {
             deleteLastPointAction=new QAction("Delete Point");
             doneAction=new QAction("Finished");
             closeAction=new QAction("Close Polyline");
@@ -1086,13 +1081,13 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDraw);
 
             deleteLastPointAction->setEnabled(false);
-            if (ui->drawingWindow->get_shapePoints_size() > 1) deleteLastPointAction->setEnabled(true);
+            if (polywire->canDeleteLastPoint()) deleteLastPointAction->setEnabled(true);
 
             doneAction->setEnabled(false);
-            if (ui->drawingWindow->get_shapePoints_size() > 1) doneAction->setEnabled(true);
+            if (polywire->canFinish()) doneAction->setEnabled(true);
 
             closeAction->setEnabled(false);
-            if (ui->drawingWindow->get_shapePoints_size() > 2) closeAction->setEnabled(true);
+            if (polywire->canClose()) closeAction->setEnabled(true);
 
             QMenu menu(this);
             menu.addAction(deleteLastPointAction);
@@ -1935,25 +1930,6 @@ void OpenParEMg::rename_returnPressed ()
     ui->drawingWindow->updateViewer();
 }
 
-// void OpenParEMg::selectItems()
-// {
-//     std::cout << "OpenParEMg::selectItems" << std::endl; std::cout.flush();
-
-//     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-//     int i=0;
-//     while (i < selectedItems.count()) {
-//         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-//         ui->drawingWindow->selectItem(item);
-//         i++;
-//     }
-//     showAction->setEnabled(ui->drawingWindow->isValidShow());
-//     hideAction->setEnabled(ui->drawingWindow->isValidHide());
-//     unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-//     deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
-
-//     ui->drawingWindow->updateViewer();
-// }
-
 void OpenParEMg::unselectRootDrawingItems()
 {
     std::cout << "OpenParEMg::unselectRootDrawingItems" << std::endl; std::cout.flush();
@@ -2584,8 +2560,7 @@ void OpenParEMg::createPath ()
 
 void OpenParEMg::extrudeFace ()
 {
-    // disable menus
-    isActiveDrawing=true;
+    disableMenus=true;
 
     // disable tree
     ui->drawingItemTree->setEnabled(false);
@@ -2643,7 +2618,7 @@ void OpenParEMg::finishExtrudeFace (double length, bool cancel)
 
     ui->drawingItemTree->setEnabled(true);
     restoreSelection();
-    isActiveDrawing=false;
+    disableMenus=false;
     brepChanged=true;
     setMenus();
     ui->drawingWindow->updateViewer();
@@ -4056,7 +4031,7 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
     } else if (event->key() == Qt::Key_Shift) {
         SHIFTpressed=true;
     } else if (event->key() == Qt::Key_Escape) {
-        //std::cout << "OpenParEMg::keyPressEvent   Qt::Key_Escape" << std::endl; std::cout.flush();
+        std::cout << "OpenParEMg::keyPressEvent   Qt::Key_Escape" << std::endl; std::cout.flush();
 
         if (lengthInputForm) {
             lengthInputForm->on_CancelButton_clicked();
@@ -4065,10 +4040,8 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
 
         ui->drawingWindow->unselectAllItems();
 
-        ui->drawingWindow->cancelDraw();
-        isActiveDrawing=false;
-        isDrawLine=false;
-        isDrawPolyline=false;
+        //ui->drawingWindow->cancelDraw();
+        disableMenus=false;
     }
     QWidget::keyPressEvent(event);
 }
@@ -4778,21 +4751,24 @@ void OpenParEMg::on_actionSelectWithBox_triggered ()
 }
 
 void OpenParEMg::cancelDraw ()
-{    
-    isActiveDrawing=false;
-    isDrawLine=false;
-    isDrawPolyline=false;
-    ui->drawingWindow->set_drawLine(false);
-    ui->drawingWindow->set_drawPolyline(false);
+{
+    std::cout << "OpenParEMg::cancelDraw" << std::endl; std::cout.flush();
 
-    // restore the prior selection index
-    restoreSelection();
+    if (polywire) {
+        polywire->deleteRubberband();
+        delete polywire;
+        polywire=nullptr;
 
-    workingItem=nullptr;
-    ui->drawingWindow->cancelDraw();
-    ui->drawingWindow->removeSelectOnVertex();
-    ui->drawingWindow->updateViewer();
-    setMenus();
+        // restore the prior selection index
+        restoreSelection();
+
+        workingItem=nullptr;
+        ui->drawingWindow->cancelDraw();
+        ui->drawingWindow->removeSelectOnVertex();
+        ui->drawingWindow->updateViewer();
+        setMenus();
+    }
+    std::cout << "exit OpenParEMg::cancelDraw" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::on_actionDrawLine_triggered ()
@@ -4804,11 +4780,13 @@ void OpenParEMg::on_actionDrawLine_triggered ()
     ui->drawingWindow->Activate(1,Standard_False);  // vertices
     ui->drawingWindow->Activate(2,Standard_False);  // edges
 
-    ui->drawingWindow->clearDrawPoints();
-    isActiveDrawing=true;
-    isDrawLine=true;
+    if (polywire) delete polywire;
+    polywire=new Polywire();
+    polywire->set_line();
+    polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+
+    ui->drawingWindow->set_polywire(polywire);
     ui->drawingWindow->unselectAllItems();
-    ui->drawingWindow->set_drawLine(true);
     ui->drawingWindow->updateViewer();
     setMenus();
 }
@@ -4822,11 +4800,13 @@ void OpenParEMg::on_actionDrawPolyline_triggered ()
     ui->drawingWindow->Activate(1,Standard_False);  // vertices
     ui->drawingWindow->Activate(2,Standard_False);  // edges
 
-    ui->drawingWindow->clearDrawPoints();
-    isActiveDrawing=true;
-    isDrawPolyline=true;
+    if (polywire) delete polywire;
+    polywire=new Polywire();
+    polywire->set_polyline();
+    polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+
+    ui->drawingWindow->set_polywire(polywire);
     ui->drawingWindow->unselectAllItems();
-    ui->drawingWindow->set_drawPolyline(true);
     ui->drawingWindow->updateViewer();
     setMenus();
 }
@@ -4835,9 +4815,7 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
 {
     std::cout << "OpenParEMg::drawLineFinished" << std::endl; std::cout.flush();
 
-    isActiveDrawing=false;
-    isDrawLine=false;
-    isDrawPolyline=false;
+    disableMenus=false;
 
     if (ui->drawingWindow->get_isPath()) {
 
@@ -4876,7 +4854,7 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
         Path *newPath=new Path(0,0);
         newPath->set_name(pathName);
         newPath->addWirePoints(wire);
-        newPath->set_normal(normal);
+        newPath->set_normal(polywire->getNormal());
         boundaryDatabase->push_path(newPath);
 
         // item
@@ -4967,6 +4945,9 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
         ui->drawingWindow->unselectItem(&drawing);
     }
 
+    delete polywire;
+    polywire=nullptr;
+
     // restore the prior selection index
     restoreSelection();
 
@@ -5012,7 +4993,7 @@ void OpenParEMg::drawPath ()
 
                 // get the normal to apply to the drawn Path
                 // Since the drawing is confined to the drawn Path, the normals will be the same.
-                normal=portPath->get_normal();
+                polywire->setNormal(portPath->get_normal());
             }
         }
         i++;
@@ -5082,17 +5063,21 @@ void OpenParEMg::insertSelectedPath ()
 
 void OpenParEMg::deleteLastPoint ()
 {
-    ui->drawingWindow->deleteLastPoint();
+    polywire->deleteLastPoint();
+    polywire->drawRubberband();
 }
 
 void OpenParEMg::finishPolyline ()
 {
     ui->drawingWindow->finishDrawLine();
+    delete polywire;
+    polywire=nullptr;
 }
 
 void OpenParEMg::closePolyline ()
 {
-    ui->drawingWindow->closePolyline();
+    polywire->close();
+    finishPolyline();
 }
 
 

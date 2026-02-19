@@ -374,10 +374,12 @@ private:
     TopoDS_Face selectedFace;
 
     // drawing
-    bool isActiveDrawing;
-    bool isDrawLine;
-    bool isDrawPolyline;
-    struct point normal;
+    //bool isActiveDrawing;
+    // bool isDrawLine;
+    // bool isDrawPolyline;
+    //struct point normal;
+    bool disableMenus;
+    Polywire *polywire;
 };
 
 #endif // OPEMG_H
