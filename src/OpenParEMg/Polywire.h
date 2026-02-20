@@ -40,19 +40,21 @@ public:
 
     virtual void drawRubberband () = 0;
     void deleteRubberband ();
-    bool isValidPoint (gp_Pnt &pnt);
+    virtual bool isValidPoint (gp_Pnt &pnt);
     virtual bool canDeleteLastPoint () = 0;
     virtual bool canFinish () = 0;
     virtual bool canClose () = 0;
-    void addPoint (gp_Pnt &pnt);
+    virtual void addPoint (gp_Pnt &pnt);
     void setCurrentMousePosition (gp_Pnt &currentMousePosition_) {currentMousePosition=currentMousePosition_;}
     void deleteLastPoint ();
     void close ();
     virtual bool isFinished () = 0;
     bool is_line () {if (type == 0) return true; return false;}
     bool is_polyline () {if (type == 1) return true; return false;}
+    bool is_rectangle () {if (type == 2) return true; return false;}
 
     void setNormal (struct point normal_) {normal=normal_;}
+    void setNormal (double x, double y, double z) {normal.x=x; normal.y=y; normal.z=z;}
     struct point getNormal () {return normal;}
 
     void set_viewerContext (Handle(AIS_InteractiveContext) viewerContext_) {viewerContext=viewerContext_;}
@@ -62,7 +64,7 @@ public:
 signals:
 
 protected:
-    int type;  // 0 - line; 1 - polyline
+    int type;  // 0 - line; 1 - polyline; 2 - rectangle
     std::vector<gp_Pnt> shapePoints;
     struct point normal;
     gp_Pnt currentMousePosition;
@@ -97,6 +99,19 @@ public:
         }
         return false;
     }
+};
+
+class Rectangle : public Polywire
+{
+public:
+    Rectangle () {type=2;}
+    void drawRubberband () override;
+    bool isValidPoint (gp_Pnt &pnt) override;
+    bool canDeleteLastPoint () override {return false;}
+    bool canFinish () override {return false;}
+    bool canClose () override {return false;}
+    void addPoint (gp_Pnt &pnt) override;
+    bool isFinished () override {if (shapePoints.size() == 5) return true; return false;}
 };
 
 

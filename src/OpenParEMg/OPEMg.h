@@ -264,6 +264,7 @@ private slots:
     void cancelDraw ();
     void on_actionDrawLine_triggered ();
     void on_actionDrawPolyline_triggered ();
+    void on_actionDrawRectangle_triggered ();
     void drawLineFinished (TopoDS_Wire);
     void drawPath ();
     void drawLinePath ();
@@ -374,10 +375,6 @@ private:
     TopoDS_Face selectedFace;
 
     // drawing
-    //bool isActiveDrawing;
-    // bool isDrawLine;
-    // bool isDrawPolyline;
-    //struct point normal;
     bool disableMenus;
     Polywire *polywire;
 };

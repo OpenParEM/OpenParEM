@@ -177,6 +177,7 @@
     <addaction name="menuDrawing_Plane"/>
     <addaction name="actionDrawLine"/>
     <addaction name="actionDrawPolyline"/>
+    <addaction name="actionDrawRectangle"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -500,6 +501,11 @@
   <action name="actionMaterialsOptions">
    <property name="text">
     <string>Options ...</string>
+   </property>
+  </action>
+  <action name="actionDrawRectangle">
+   <property name="text">
+    <string>rectangle</string>
    </property>
   </action>
  </widget>

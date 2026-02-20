@@ -122,10 +122,8 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     rectSelect=nullptr;
 
     ignoreLeftMouseRelease=false;
-    isPath=false;
+    isIntegrationPath=false;
     pickVertex=false;
-    //drawLine=false;
-    //drawPolyline=false;
     polywire=nullptr;
 
     // set a default so that all vertices highlight with a circle
@@ -207,12 +205,12 @@ void CustomOpenGLWidget::clearDrawing ()
 
 void CustomOpenGLWidget::cancelDraw ()
 {
-    std::cout << "CustomOpenGLWidget::cancelDraw" << std::endl; std::cout.flush();
+    //std::cout << "CustomOpenGLWidget::cancelDraw" << std::endl; std::cout.flush();
 
     // invalidate flags
     pickVertex=false;
     ignoreLeftMouseRelease=false;
-    isPath=false;
+    isIntegrationPath=false;
 
     // remove temporaryVertex, if needed
     if (!temporaryVertex.IsNull()) {
@@ -229,7 +227,7 @@ void CustomOpenGLWidget::cancelDraw ()
     // clear polywire
     polywire=nullptr;
 
-    std::cout << "exit CustomOpenGLWidget::cancelDraw" << std::endl; std::cout.flush();
+    //std::cout << "exit CustomOpenGLWidget::cancelDraw" << std::endl; std::cout.flush();
 }
 
 void CustomOpenGLWidget::wheelEvent (QWheelEvent* event)
@@ -250,7 +248,7 @@ void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
     switch (aKey)
     {
         case Aspect_VKey_Escape: {
-            std::cout << "CustomOpenGLWidget::keyPressEvent  Aspect_VKey_Escape" << std::endl; std::cout.flush();
+            //std::cout << "CustomOpenGLWidget::keyPressEvent  Aspect_VKey_Escape" << std::endl; std::cout.flush();
             if (pickVertex || polywire) {
                 if (pickVertex) emit relay->finishExtrudeFace(0,true);
                 if (polywire) emit relay->cancelDraw();
@@ -288,20 +286,6 @@ bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const
     return true;
 }
 
-// Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
-// {
-//     TopoDS_Vertex v1=BRepBuilderAPI_MakeVertex(p1);
-//     TopoDS_Vertex v2=BRepBuilderAPI_MakeVertex(p2);
-
-//     BRepBuilderAPI_MakeEdge makeEdge(v1, v2);
-//     TopoDS_Edge edge=makeEdge.Edge();
-
-//     if (!makeEdge.IsDone()) return nullptr;
-//     Handle(AIS_Shape) shape=new AIS_Shape(edge);
-
-//     return shape;
-// }
-
 // vertex draw or pick
 void CustomOpenGLWidget::finishPickVertex ()
 {
@@ -323,11 +307,9 @@ void CustomOpenGLWidget::finishPickVertex ()
 
 void CustomOpenGLWidget::finishDrawLine ()
 {
-    std::cout << "CustomOpenGLWidget::finishDrawLine" << std::endl; std::cout.flush();
+    //std::cout << "CustomOpenGLWidget::finishDrawLine" << std::endl; std::cout.flush();
 
     ignoreLeftMouseRelease=false;
-    // drawLine=false;
-    // drawPolyline=false;
     viewerContext->ClearDetected(Standard_True);
 
     // remove the rubber band
@@ -541,6 +523,10 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
         Standard_Real x,y,z;
         view->Convert(event->pos().x(),event->pos().y(),x,y,z);
         gp_Pnt movePoint(x,y,z);
+
+        //xxx
+        PixelToPointOnPlane (event->pos().x(),event->pos().y(),movePoint);
+
 
         polywire->setCurrentMousePosition(movePoint);
         polywire->drawRubberband ();

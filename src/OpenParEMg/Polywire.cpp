@@ -79,8 +79,12 @@ TopoDS_Wire Polywire::buildWire ()
     BRepBuilderAPI_MakeWire wireBuilder;
     long unsigned int i=0;
     while (i < shapePoints.size()-1) {
-        TopoDS_Edge edge=BRepBuilderAPI_MakeEdge(shapePoints[i],shapePoints[i+1]);
-        wireBuilder.Add(edge);
+        if (shapePoints[i].IsEqual(shapePoints[i+1],Precision::Confusion())) {
+            std::cout << "ASSERT: Polywire::buildWire found duplicate points" << std::endl; std::cout.flush();
+        } else {
+            TopoDS_Edge edge=BRepBuilderAPI_MakeEdge(shapePoints[i],shapePoints[i+1]);
+            wireBuilder.Add(edge);
+        }
         i++;
     }
 
@@ -116,6 +120,85 @@ void Polyline::drawRubberband ()
         i++;
     }
     polyMaker.Add(currentMousePosition);
+
+    TopoDS_Wire wire=polyMaker.Wire();
+    rubberband=new AIS_Shape(wire);
+
+    if (!rubberband.IsNull()) {
+        viewerContext->Display(rubberband,0,-1,Standard_True);
+    }
+}
+
+bool Rectangle::isValidPoint (gp_Pnt &pnt)
+{
+    if (shapePoints.size() == 0) return true;
+    if (shapePoints[0].IsEqual(pnt,Precision::Confusion())) return false;
+    return true;
+}
+
+void Rectangle::addPoint (gp_Pnt &pnt)
+{
+    if (shapePoints.size() == 0) {
+        shapePoints.push_back(pnt);
+    } else {
+        currentMousePosition=pnt;
+        drawRubberband();
+    }
+}
+
+void Rectangle::drawRubberband ()
+{
+    //std::cout << "Rectangle::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
+
+    if (shapePoints.size() == 0) return;
+
+    if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
+
+    // ensure enough space
+    if (shapePoints.size() < 5) {
+        long unsigned int i=0;
+        while (i < 5) {
+            if (shapePoints.size() == 5) break;
+            shapePoints.push_back(shapePoints[0]); // dummy data except that shapePoints[4]=shapePoints[0] closes the shape
+            i++;
+        }
+    }
+
+    // current location
+    shapePoints[2]=currentMousePosition;
+
+    // diagonal vector
+    gp_Vec d(shapePoints[0],currentMousePosition);
+
+    // normal
+    gp_Vec n(normal.x,normal.y,normal.z);
+
+    // u, v directions
+
+    gp_Vec u(1,0,0);
+    gp_Vec test=n.Crossed(u);
+    if (test.IsEqual(gp_Vec(0,0,0),Precision::Confusion(),Precision::Confusion())) {
+        u.SetCoord(0,1,0);
+    }
+
+    gp_Vec v=n.Crossed(u).Normalized();
+
+    // the other two points
+
+    double du=d.Dot(u);
+    double dv=d.Dot(v);
+
+    shapePoints[1]=shapePoints[0].Translated(u*du);
+    shapePoints[3]=shapePoints[0].Translated(v*dv);
+
+    // build wire
+
+    BRepBuilderAPI_MakePolygon polyMaker;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        polyMaker.Add(shapePoints[i]);
+        i++;
+    }
 
     TopoDS_Wire wire=polyMaker.Wire();
     rubberband=new AIS_Shape(wire);

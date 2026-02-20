@@ -91,8 +91,8 @@ public:
     }
     void set_gridPlane ();
 
-    void set_isPath (bool isPath_) {isPath=isPath_;}
-    bool get_isPath () {return isPath;}
+    void set_isIntegrationPath (bool isIntegrationPath_) {isIntegrationPath=isIntegrationPath_;}
+    bool get_isIntegrationPath () {return isIntegrationPath;}
 
     void set_pickVertex (bool pickVertex_) {
         pickVertex=pickVertex_;
@@ -405,6 +405,8 @@ public:
 
     Handle(AIS_InteractiveContext) get_viewerContext () {return viewerContext;}
 
+    gp_Dir get_normal () {return view->Viewer()->PrivilegedPlane().Direction();}
+
 protected:
     void initializeGL () override;
     void paintGL () override;
@@ -438,17 +440,14 @@ private:
 
     // all drawing
     bool ignoreLeftMouseRelease;
-    bool isPath;
+    bool isIntegrationPath;             // drawing integration path within a port
     Relay *relay;
 
     // vertex
     bool pickVertex;
     gp_Pnt vertexPoint;
 
-    // line
-    //Handle(AIS_Shape) lineRubberBand;
-    //bool drawLine, drawPolyline;
-    //std::vector<gp_Pnt> shapePoints;
+    // general 2D objects
     Polywire *polywire;
 
     // filter

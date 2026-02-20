@@ -372,6 +372,7 @@ void OpenParEMg::setMenus ()
         ui->actionHideAll->setEnabled(true);
         ui->actionDrawLine->setEnabled(true);
         ui->actionDrawPolyline->setEnabled(true);
+        ui->actionDrawRectangle->setEnabled(true);
         ui->actionMeshOptions->setEnabled(true);
         ui->actionMeshLoad->setEnabled(true);
         ui->actionMeshSave->setEnabled(false);
@@ -516,6 +517,7 @@ void OpenParEMg::setMenus ()
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
         ui->actionDrawLine->setEnabled(false);
         ui->actionDrawPolyline->setEnabled(false);
+        ui->actionDrawRectangle->setEnabled(false);
 
         ui->actionSelectMaterialsDatabase->setEnabled(false);
         ui->actionMaterialsOptions->setEnabled(false);
@@ -554,6 +556,7 @@ void OpenParEMg::setMenus ()
         ui->actionExportStep->setEnabled(false);
         ui->actionDrawLine->setEnabled(false);
         ui->actionDrawPolyline->setEnabled(false);
+        ui->actionDrawRectangle->setEnabled(false);
         ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
         ui->actionSelectMaterialsDatabase->setEnabled(true);
@@ -1098,8 +1101,16 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             menu.exec(ui->drawingWindow->mapToGlobal(pnt));
 
             freeQActionList();
-        }
+        } else if (polywire->is_rectangle()) {
+            cancelAction=new QAction("Cancel");
+            connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDraw);
 
+            QMenu menu(this);
+            menu.addAction(cancelAction);
+
+            menu.exec(ui->drawingWindow->mapToGlobal(pnt));
+            freeQActionList();
+        }
     } else {
         //if (ui->drawingWindow->hasAnySelectedItems()) {
         if (ui->drawingWindow->get_NbSelected()) {
@@ -3871,7 +3882,7 @@ void OpenParEMg::on_actionFitAll_triggered ()
 
 void OpenParEMg::on_actionShape_triggered()
 {
-    std::cout << "OpenParEMg::on_actionShape_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionShape_triggered" << std::endl; std::cout.flush();
 
     clearSelection();
     ui->actionShape->setCheckable(true);
@@ -4031,7 +4042,7 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
     } else if (event->key() == Qt::Key_Shift) {
         SHIFTpressed=true;
     } else if (event->key() == Qt::Key_Escape) {
-        std::cout << "OpenParEMg::keyPressEvent   Qt::Key_Escape" << std::endl; std::cout.flush();
+        //std::cout << "OpenParEMg::keyPressEvent   Qt::Key_Escape" << std::endl; std::cout.flush();
 
         if (lengthInputForm) {
             lengthInputForm->on_CancelButton_clicked();
@@ -4750,7 +4761,7 @@ void OpenParEMg::on_actionSelectWithBox_triggered ()
 
 void OpenParEMg::cancelDraw ()
 {
-    std::cout << "OpenParEMg::cancelDraw" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::cancelDraw" << std::endl; std::cout.flush();
 
     if (polywire) {
         polywire->deleteRubberband();
@@ -4766,7 +4777,7 @@ void OpenParEMg::cancelDraw ()
         ui->drawingWindow->updateViewer();
         setMenus();
     }
-    std::cout << "exit OpenParEMg::cancelDraw" << std::endl; std::cout.flush();
+    //std::cout << "exit OpenParEMg::cancelDraw" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::on_actionDrawLine_triggered ()
@@ -4778,9 +4789,10 @@ void OpenParEMg::on_actionDrawLine_triggered ()
     ui->drawingWindow->Activate(1,Standard_False);  // vertices
     ui->drawingWindow->Activate(2,Standard_False);  // edges
 
-    if (polywire) delete polywire;
-    polywire=new Line();
-    polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+    if (!polywire) {
+        polywire=new Line();
+        polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+    }
 
     ui->drawingWindow->set_polywire(polywire);
     ui->drawingWindow->unselectAllItems();
@@ -4790,16 +4802,41 @@ void OpenParEMg::on_actionDrawLine_triggered ()
 
 void OpenParEMg::on_actionDrawPolyline_triggered ()
 {
-    std::cout << "OpenParEMg::on_actionDrawPolyline_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionDrawPolyline_triggered" << std::endl; std::cout.flush();
 
     // set to select on vertices and edges
     ui->drawingWindow->Deactivate();
     ui->drawingWindow->Activate(1,Standard_False);  // vertices
     ui->drawingWindow->Activate(2,Standard_False);  // edges
 
-    if (polywire) delete polywire;
-    polywire=new Polyline();
-    polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+    if (!polywire) {
+        polywire=new Polyline();
+        polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+    }
+
+    ui->drawingWindow->set_polywire(polywire);
+    ui->drawingWindow->unselectAllItems();
+    ui->drawingWindow->updateViewer();
+    setMenus();
+}
+
+void OpenParEMg::on_actionDrawRectangle_triggered ()
+{
+    //std::cout << "OpenParEMg::on_actionDrawRectangle_triggered" << std::endl; std::cout.flush();
+
+    // set to select on vertices and edges
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(1,Standard_False);  // vertices
+    ui->drawingWindow->Activate(2,Standard_False);  // edges
+
+    if (!polywire) {
+        polywire=new Rectangle();
+
+        gp_Dir normal=ui->drawingWindow->get_normal();
+        polywire->setNormal(normal.X(),normal.Y(),normal.Z());
+
+        polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+    }
 
     ui->drawingWindow->set_polywire(polywire);
     ui->drawingWindow->unselectAllItems();
@@ -4809,11 +4846,13 @@ void OpenParEMg::on_actionDrawPolyline_triggered ()
 
 void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
 {
-    std::cout << "OpenParEMg::drawLineFinished" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::drawLineFinished" << std::endl; std::cout.flush();
 
     disableMenus=false;
 
-    if (ui->drawingWindow->get_isPath()) {
+    if (ui->drawingWindow->get_isIntegrationPath()) {
+
+        // integration paths restricted to ports
 
         // parents
         CustomTreeWidgetItem *modeParentItem=(CustomTreeWidgetItem *)workingItem->QTreeWidgetItem::parent();
@@ -4877,17 +4916,18 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
         // select
         ui->drawingWindow->selectItem(item);
 
-        ui->drawingWindow->set_isPath(false);
+        ui->drawingWindow->set_isIntegrationPath(false);
 
         // add the path to the working item
         insertPath(workingItem);
     } else {
 
+        // general drawing paths
+
         // build a face if the polygon is closed
         bool validFace=false;
         TopoDS_Face face;
         if (wire.Closed()) {
-            std::cout << "wire is closed" << std::endl; std::cout.flush();
             BRepBuilderAPI_MakeFace faceBuilder(wire);
             if (faceBuilder.IsDone()) {
                 validFace=true;
@@ -4897,7 +4937,17 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
 
         // top-level shape
         Handle(AIS_Shape) drawingShape=drawing.get_AIS_Shape();
-        BRep_Builder builder;
+
+        // create a top-level shape if needed
+        if (drawingShape.IsNull()) {
+            TopoDS_Compound compound;
+            BRep_Builder builder;
+            builder.MakeCompound(compound);
+            drawingShape=new AIS_Shape(compound);
+            addShape (drawingShape->Shape(),&drawing,true,false);
+            drawing.setForeground(0,Qt::gray);
+            brepFileLoaded=true;
+        }
 
         // reuse a top-level compound, if it exists
         if (drawingShape->Shape().ShapeType() == TopAbs_COMPOUND) {
@@ -4915,6 +4965,7 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
 
             // make a top-level compound
             TopoDS_Compound compound;
+            BRep_Builder builder;
             builder.MakeCompound(compound);
             builder.Add(compound,drawingShape->Shape());
             if (validFace) {
@@ -4951,7 +5002,10 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
     workingItem=nullptr;
     ui->drawingWindow->removeSelectOnVertex();
     ui->drawingWindow->updateViewer();
+    ui->drawingWindow->showItem(&drawing);
     setMenus();
+
+    //std::cout << "exit OpenParEMg::drawLineFinished" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::drawPath ()
@@ -4961,32 +5015,43 @@ void OpenParEMg::drawPath ()
     // to avoid stray clicks in the selection tree
     workingItem=clickedItem;
 
+    std::cout << "place 1" << std::endl; std::cout.flush();
     // enable selection on just the port
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    std::cout << "place 2" << std::endl; std::cout.flush();
     int i=0;
     while (i < selectedItems.count()) {
+        std::cout << "place 3" << std::endl; std::cout.flush();
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        std::cout << "place 4" << std::endl; std::cout.flush();
         if (item->is_voltage() || item->is_current()) {
 
+            std::cout << "place 5" << std::endl; std::cout.flush();
             // mode parent
             CustomTreeWidgetItem *modeParentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
 
+            std::cout << "place 6" << std::endl; std::cout.flush();
             // port parent
             CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)modeParentItem->QTreeWidgetItem::parent();
 
+            std::cout << "place 7" << std::endl; std::cout.flush();
             // port shape
             if (portParentItem->linkedItems_size() > 0) {
 
+                std::cout << "place 8" << std::endl; std::cout.flush();
                 // port shape
                 CustomTreeWidgetItem *portItem=portParentItem->get_linkedItem(0);  // should just be one linked item to the port outline
                 Handle(AIS_Shape) portShape=portItem->get_AIS_Shape();
 
+                std::cout << "place 9" << std::endl; std::cout.flush();
                 // port path
                 Path *portPath=(Path *)portItem->get_OPEMobject();
 
+                std::cout << "place 10" << std::endl; std::cout.flush();
                 // select on vertices within the port path
                 ui->drawingWindow->selectOnVertex(portPath);
 
+                std::cout << "place 11" << std::endl; std::cout.flush();
                 // get the normal to apply to the drawn Path
                 // Since the drawing is confined to the drawn Path, the normals will be the same.
                 polywire->setNormal(portPath->get_normal());
@@ -4995,17 +5060,25 @@ void OpenParEMg::drawPath ()
         i++;
     }
 
-    ui->drawingWindow->set_isPath(true);
+    std::cout << "place 12" << std::endl; std::cout.flush();
+    ui->drawingWindow->set_isIntegrationPath(true);
+    std::cout << "place 13" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::drawLinePath ()
 {
+    polywire=new Line();
+    polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+
     drawPath();
     on_actionDrawLine_triggered();
 }
 
 void OpenParEMg::drawPolylinePath ()
 {
+    polywire=new Polyline();
+    polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+
     drawPath();
     on_actionDrawPolyline_triggered();
 }
@@ -5075,5 +5148,4 @@ void OpenParEMg::closePolyline ()
     polywire->close();
     finishPolyline();
 }
-
 
