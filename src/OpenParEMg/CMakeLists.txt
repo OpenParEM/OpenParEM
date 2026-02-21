@@ -64,7 +64,7 @@ qt_add_executable(OpenParEMg
     ../OpenParEMCommon/sourcefile.cpp ../OpenParEMCommon/sourcefile.hpp
     ../OpenParEM3D/pattern.cpp ../OpenParEM3D/pattern.hpp
     ../OpenParEMCommon/mesh.cpp ../OpenParEMCommon/mesh.hpp
-    CustomAIS_Shape.h
+
     CustomComboBox.h
     SelectMaterialsDatabase.h SelectMaterialsDatabase.cpp SelectMaterialsDatabase.ui
     OcctQtTools.h

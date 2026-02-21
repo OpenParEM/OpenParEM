@@ -22,7 +22,6 @@
 
 #ifdef HAS_GUI
 #include <AIS_Shape.hxx>
-#include "CustomAIS_Shape.h"
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Face.hxx>
@@ -2208,12 +2207,9 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
         }
 
         if (to) {
-            struct point shifted_segment=point_subtraction(to->get_point_value(),from->get_point_value());
-            struct point shifted_normal=point_subtraction(normal,from->get_point_value());
-            struct point arrowOffset=point_scale(shortestLength/10,point_normalize(point_cross_product(shifted_segment,shifted_normal)));
-
             struct point center=point_midpoint(from->get_point_value(),to->get_point_value());
             struct point centerOffset=point_scale(shortestLength/20,point_normalize(point_subtraction(center,from->get_point_value())));
+            struct point arrowOffset=point_scale(2,point_cross_product(normal,centerOffset));
 
             keywordPair *tip=new keywordPair();
             tip->set_point_value(point_addition(center,centerOffset));
@@ -2230,7 +2226,7 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
             arrowHead.push_point(tip);
             arrowHead.push_point(p2);
 
-            Handle(AIS_Shape) arrowDrawingShape=new CustomAIS_Shape (arrowHead.create_TopoDS_Wire());
+            Handle(AIS_Shape) arrowDrawingShape=new AIS_Shape (arrowHead.create_TopoDS_Wire());
             item->push_arrowHead(arrowDrawingShape);
         }
         i++;

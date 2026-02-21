@@ -343,7 +343,7 @@ void OpenParEMg::setMenus ()
 
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
 
-    printLockouts();
+    //printLockouts();
 
     // disable all menus on command
     if (disableMenus) {
