@@ -170,26 +170,23 @@ void Rectangle::drawRubberband ()
     // diagonal vector
     gp_Vec d(shapePoints[0],currentMousePosition);
 
-    // normal
-    gp_Vec n(normal.x,normal.y,normal.z);
-
     // u, v directions
 
-    gp_Vec u(1,0,0);
-    gp_Vec test=n.Crossed(u);
+    u.SetCoord(1,0,0);
+    gp_Vec test=normal.Crossed(u);
     if (test.IsEqual(gp_Vec(0,0,0),Precision::Confusion(),Precision::Confusion())) {
         u.SetCoord(0,1,0);
     }
 
-    gp_Vec v=n.Crossed(u).Normalized();
+    v=normal.Crossed(u).Normalized();
 
     // the other two points
 
-    double du=d.Dot(u);
-    double dv=d.Dot(v);
+    width=d.Dot(u);
+    height=d.Dot(v);
 
-    shapePoints[1]=shapePoints[0].Translated(u*du);
-    shapePoints[3]=shapePoints[0].Translated(v*dv);
+    shapePoints[1]=shapePoints[0].Translated(u*width);
+    shapePoints[3]=shapePoints[0].Translated(v*height);
 
     // build wire
 

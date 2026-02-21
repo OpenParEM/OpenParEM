@@ -33,10 +33,14 @@ public:
         type=0;
         set_dimTag(-1,-1);  // for mesh items; invalid initialization
         OPEMobject=nullptr;
+        polywire=nullptr;
     }
 
     void set_OPEMobject (void *pointer) {OPEMobject=pointer;}
     void* get_OPEMobject () {return OPEMobject;}
+
+    void set_Polywire (void *polywire_) {polywire=polywire_;}
+    void* get_Polywire () {return polywire;}
 
     long unsigned int linkedItems_size () {return linkedItems.size();}
     void push_linkedItem (CustomTreeWidgetItem *linkedItem) {linkedItems.push_back(linkedItem);}
@@ -160,6 +164,7 @@ public:
         else std::cout << "   shape type=" << shape->Type() << std::endl;
         std::cout << "   forShowHide=" << forShowHide << std::endl;
         std::cout << "   OPEMobject=" << OPEMobject << std::endl;
+        std::cout << "   polywire=" << polywire << std::endl;
         if (is_rootDrawing()) std::cout << "   type=rootDrawing" << std::endl;
         if (is_rootPort()) std::cout << "   type=rootPort" << std::endl;
         if (is_rootBoundary()) std::cout << "   type=rootBoundary" << std::endl;
@@ -181,10 +186,7 @@ public:
         if (is_scaleValue()) std::cout << "   type=scaleValue" << std::endl;
         if (is_integrationPathSegment()) std::cout << "   type=integrationPathSegment" << std::endl;
         std::cout << "   dimTag.first=" << dimTag.first << std::endl
-                  << "   dimTag.second=" << dimTag.second << std::endl
-                  //<< "   displayMode=" << displayMode << std::endl
-                  //<< "   selectionMode=" << selectionMode << std::endl
-                  ;
+                  << "   dimTag.second=" << dimTag.second << std::endl;
     }
 
     void reset () {
@@ -195,6 +197,7 @@ public:
         arrowHeads.clear();
         meshEntities.clear();
         OPEMobject=nullptr;
+        polywire=nullptr;
         linkedItems.clear();
     }
 
@@ -219,6 +222,8 @@ private:
                                                        // 104 - root path item
     void *OPEMobject;                                  // a pointer to an item in the boundary database
                                                        // *path, *mode, *boundary, etc
+                                                       // cast to the correct object type
+    void *polywire;                                    // Polywire object for this item
                                                        // cast to the correct object type
     std::vector<CustomTreeWidgetItem *> linkedItems;   // link to path items, if any
 };

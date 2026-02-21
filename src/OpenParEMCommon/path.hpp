@@ -148,6 +148,7 @@ class Path {
       struct point getInsidePoint ();
       void assignPathNormal (struct point);
 #ifdef HAS_GUI
+      void set_normal (gp_Vec);
       void create_item (CustomOpenGLWidget *, CustomTreeWidgetItem *);
       CustomTreeWidgetItem* get_item () {return item;}
       void set_portItem (CustomTreeWidgetItem *portItem_) {portItem=portItem_;}

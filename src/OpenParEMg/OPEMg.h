@@ -377,6 +377,7 @@ private:
     // drawing
     bool disableMenus;
     Polywire *polywire;
+    std::vector<Polywire *> polywireDatabase;
 };
 
 #endif // OPEMG_H

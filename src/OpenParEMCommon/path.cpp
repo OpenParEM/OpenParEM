@@ -2040,6 +2040,14 @@ void Path::assignPathNormal (struct point normal_)
 
 #ifdef HAS_GUI
 
+void Path::set_normal (gp_Vec a)
+{
+    normal.x=a.X();
+    normal.y=a.Y();
+    normal.z=a.Z();
+    normal.dim=3;
+}
+
 TopoDS_Wire Path::create_TopoDS_Wire ()
 {
     BRepBuilderAPI_MakeWire wireBuilder;

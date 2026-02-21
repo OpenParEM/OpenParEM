@@ -53,9 +53,10 @@ public:
     bool is_polyline () {if (type == 1) return true; return false;}
     bool is_rectangle () {if (type == 2) return true; return false;}
 
-    void setNormal (struct point normal_) {normal=normal_;}
-    void setNormal (double x, double y, double z) {normal.x=x; normal.y=y; normal.z=z;}
-    struct point getNormal () {return normal;}
+    void setNormal (gp_Vec normal_) {normal=normal_;}
+    void setNormal (struct point normal_) {normal.SetCoord(normal_.x,normal_.y,normal_.z);}
+    void setNormal (double x, double y, double z) {normal.SetCoord(x,y,z);}
+    gp_Vec getNormal () {return normal;}
 
     void set_viewerContext (Handle(AIS_InteractiveContext) viewerContext_) {viewerContext=viewerContext_;}
 
@@ -66,7 +67,7 @@ signals:
 protected:
     int type;  // 0 - line; 1 - polyline; 2 - rectangle
     std::vector<gp_Pnt> shapePoints;
-    struct point normal;
+    gp_Vec normal;
     gp_Pnt currentMousePosition;
     Handle(AIS_Shape) rubberband;
     Handle(AIS_InteractiveContext) viewerContext;
@@ -112,6 +113,10 @@ public:
     bool canClose () override {return false;}
     void addPoint (gp_Pnt &pnt) override;
     bool isFinished () override {if (shapePoints.size() == 5) return true; return false;}
+
+private:
+    gp_Vec u,v;
+    double width,height;
 };
 
 
