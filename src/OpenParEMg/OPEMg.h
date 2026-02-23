@@ -28,6 +28,7 @@
 #include <QTimer>
 
 #include "LengthInputForm.h"
+#include "RectangleEditForm.h"
 #include "Relay.h"
 #include "CustomLineEdit.h"
 #include "project.h"
@@ -254,6 +255,8 @@ private slots:
     void set_displayMode (CustomTreeWidgetItem *, int);
     void set_selectionMode (CustomTreeWidgetItem *, int);
 
+    void editObject ();
+    bool isValidObjectEdit ();
     void createPort ();
     void createPath ();
     void extrudeFace ();
@@ -283,6 +286,7 @@ private slots:
 public slots:
     void setMenus ();
     void finishExtrudeFace (double, bool);
+    void finishEditObject (bool);
 
 private:
     //void setMenus ();
@@ -333,6 +337,7 @@ private:
     QAction *createPathAction;
     QAction *drawPathAction;
     QAction *drawPolylineAction;
+    QAction *editAction;
     QAction *doneAction;
     QAction *cancelAction;
     QAction *deleteLastPointAction;
@@ -369,6 +374,7 @@ private:
 
     // forms
     LengthInputForm *lengthInputForm;
+    RectangleEditForm *rectangleEditForm;
 
     // vertex pick
     gp_Dir faceNormal;

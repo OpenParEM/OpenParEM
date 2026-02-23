@@ -24,6 +24,7 @@
 #include <QTreeWidgetItem>
 #include <QMenu>
 #include "AIS_Shape.hxx"
+#include <AIS_InteractiveContext.hxx>
 
 class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
     Q_OBJECT
@@ -85,6 +86,11 @@ public:
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
     Handle(AIS_Shape) get_AIS_Shape () {return shape;}
+    void delete_AIS_Shape (Handle(AIS_InteractiveContext) viewerContext) {
+        if (shape.IsNull()) return;
+        viewerContext->Remove(shape,Standard_True);
+        shape.Nullify();
+    }
 
     void push_arrowHead (Handle(AIS_Shape) arrowHead) {arrowHeads.push_back(arrowHead);}
     long unsigned int get_arrowHeads_size () {return arrowHeads.size();}

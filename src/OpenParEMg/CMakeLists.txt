@@ -80,6 +80,8 @@ qt_add_executable(OpenParEMg
     MaterialsOptions.h MaterialsOptions.cpp MaterialsOptions.ui
     LengthInputForm.h LengthInputForm.cpp LengthInputForm.ui
     Polywire.h Polywire.cpp
+    RectangleEditForm.h RectangleEditForm.cpp RectangleEditForm.ui
+
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)

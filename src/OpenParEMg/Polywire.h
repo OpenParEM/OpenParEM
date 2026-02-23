@@ -58,13 +58,20 @@ public:
     void setNormal (double x, double y, double z) {normal.SetCoord(x,y,z);}
     gp_Vec getNormal () {return normal;}
 
+    gp_Pnt getPosition ();
+
     void set_viewerContext (Handle(AIS_InteractiveContext) viewerContext_) {viewerContext=viewerContext_;}
 
     TopoDS_Wire buildWire();
+    void moveTo (gp_Pnt &pnt);
+
+    bool isModified () {return modified;}
+    void setModified (bool modified_) {modified=modified_;}
 
 signals:
 
 protected:
+    bool modified;
     int type;  // 0 - line; 1 - polyline; 2 - rectangle
     std::vector<gp_Pnt> shapePoints;
     gp_Vec normal;
@@ -113,6 +120,14 @@ public:
     bool canClose () override {return false;}
     void addPoint (gp_Pnt &pnt) override;
     bool isFinished () override {if (shapePoints.size() == 5) return true; return false;}
+
+    double getWidth () {return width;}
+    double getHeight () {return height;}
+
+    void setWidth (double width_) {width=width_;}
+    void setHeight (double height_) {height=height_;}
+
+    void recalculate ();
 
 private:
     gp_Vec u,v;

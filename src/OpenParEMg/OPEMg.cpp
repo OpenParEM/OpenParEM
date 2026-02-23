@@ -19,7 +19,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "OPEMg.h"
-#include "LengthInputForm.h"
 #include "ui_OPEMg.h"
 
 #include <Geom_Plane.hxx>
@@ -133,6 +132,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     connect(relay,&Relay::drawLineFinished,this,&OpenParEMg::drawLineFinished);
     connect(relay,&Relay::cancelDraw,this,&OpenParEMg::cancelDraw);
     connect(relay,&Relay::finishExtrudeFace,this,&OpenParEMg::finishExtrudeFace);
+    connect(relay,&Relay::finishEditObject,this,&OpenParEMg::finishEditObject);
+
 
     /////////////////////////////////////////////////////////////////////////////
     // drawing window
@@ -159,6 +160,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(createPathAction);
     QActionList.push_back(drawPathAction);
     QActionList.push_back(drawPolylineAction);
+    QActionList.push_back(editAction);
     QActionList.push_back(doneAction);
     QActionList.push_back(cancelAction);
     QActionList.push_back(deleteLastPointAction);
@@ -257,6 +259,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     polywire=nullptr;
 
     lengthInputForm=nullptr;
+    rectangleEditForm=nullptr;
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1114,10 +1117,11 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
         //if (ui->drawingWindow->hasAnySelectedItems()) {
         if (ui->drawingWindow->get_NbSelected()) {
 
-            showAction=new QAction("Show",this);
-            hideAction=new QAction("Hide",this);
-            unselectAction=new QAction("Unselect",this);
-            deleteAction=new QAction("Delete",this);
+            showAction=new QAction("Show");
+            hideAction=new QAction("Hide");
+            editAction=new QAction("Edit");
+            unselectAction=new QAction("Unselect");
+            deleteAction=new QAction("Delete");
             createPortAction=new QAction("Create Port");
             createPortAction->setToolTip("Copy the selected face and create a port.");
             createPathAction=new QAction("Create Path");
@@ -1127,6 +1131,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 
             connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
             connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
+            connect(editAction, &QAction::triggered, this, &OpenParEMg::editObject);
             connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
             connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
             connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
@@ -1147,12 +1152,12 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             menu.addMenu(&setup);
 
             QMenu modify("Modify");
+            modify.addAction(editAction);
             modify.addAction(extrudeAction);
             menu.addMenu(&modify);
 
             createPortAction->setEnabled(false);
             extrudeAction->setEnabled(false);
-            std::cout << "ui->drawingWindow->numberDrawingFaceSelected()=" << ui->drawingWindow->numberDrawingFaceSelected() << std::endl; std::cout.flush();
             if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {
                 createPortAction->setEnabled(true);
                 extrudeAction->setEnabled(true);
@@ -1160,6 +1165,9 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 
             createPathAction->setEnabled(false);
             if (ui->drawingWindow->numberDrawingFaceSelected() > 0) {createPathAction->setEnabled(true);}
+
+            editAction->setEnabled(false);
+            if (isValidObjectEdit()) editAction->setEnabled(true);
 
             deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
@@ -2629,12 +2637,169 @@ void OpenParEMg::finishExtrudeFace (double length, bool cancel)
         builder.Add(compound,aPrism);
         drawing.get_AIS_Shape()->Redisplay(true);
         addShape(aPrism,&drawing,false,false);
+
+        brepChanged=true;
     }
 
     ui->drawingItemTree->setEnabled(true);
     restoreSelection();
     disableMenus=false;
-    brepChanged=true;
+    setMenus();
+    ui->drawingWindow->updateViewer();
+}
+
+bool OpenParEMg::isValidObjectEdit ()
+{
+    int count=0;
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    std::cout << "   selectedItems.count()=" << selectedItems.count() << std::endl; std::cout.flush();
+    int i=0;
+    while (i < selectedItems.count()) {
+        std::cout << "i=" << i << std::endl; std::cout.flush();
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_drawing()) {
+            Polywire *polywire=static_cast<Polywire*>(item->get_Polywire());
+            std::cout << "   polywire=" << polywire << std::endl; std::cout.flush();
+
+            Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+            if (rectangle) count++;
+        }
+        i++;
+    }
+    //xxx
+    std::cout << "count=" << count << std::endl; std::cout.flush();
+    if (count == 1) return true;
+    return false;
+}
+
+void OpenParEMg::editObject ()
+{
+    std::cout << "OpenParEMg::editObject" << std::endl; std::cout.flush();
+
+    disableMenus=true;
+    ui->drawingItemTree->setEnabled(false);
+
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item->is_drawing()) {
+            Polywire *polywire=static_cast<Polywire*>(item->get_Polywire());
+
+            Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+            if (rectangle) {
+
+                if (rectangleEditForm) delete rectangleEditForm;
+                rectangleEditForm=new RectangleEditForm();
+                rectangleEditForm->set_polywire(rectangle);
+                rectangleEditForm->set_drawingWindow(ui->drawingWindow);
+                rectangleEditForm->set_relay(relay);
+                rectangleEditForm->setModal(false);
+                rectangleEditForm->show();
+            }
+        }
+        i++;
+    }
+
+    setMenus();
+}
+
+void OpenParEMg::finishEditObject (bool cancel)
+{
+    std::cout << "OpenParEMg::finishEditObject  cancel=" << cancel << std::endl; std::cout.flush();
+
+    if (!cancel) {
+
+        //xxx
+
+        QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+        int i=0;
+        while (i < selectedItems.count()) {
+            CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+            if (item->is_drawing()) {
+                Polywire *polywire=static_cast<Polywire*>(item->get_Polywire());
+
+                Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+                if (rectangle) {
+
+                    // void insertItemToMap (Handle(AIS_Shape) shape, CustomTreeWidgetItem *item)
+                    // {
+                    //     if (shape.IsNull()) {std::cout << "   CustomOpenGLWidget::insertItemToMap: ASSERT: shape item is null" << std::endl; std::cout.flush(); return;}
+                    //     if (showTracking) std::cout << "CustomOpenGLWidget::insertItemToMap" << std::endl; std::cout.flush();
+                    //     drawingTracker->insertItemToMap(shape,item);
+                    // }
+
+                    // void removeItemFromMap (CustomTreeWidgetItem *item)
+
+                    // replace the shape in item
+
+                    ui->drawingWindow->removeItemFromMap(item);
+                    Handle(AIS_Shape) shape=item->get_AIS_Shape();
+                    ui->drawingWindow->hideShape(shape);
+                    item->delete_AIS_Shape(ui->drawingWindow->get_viewerContext());
+
+                    TopoDS_Wire wire=rectangle->buildWire();
+
+                    bool validFace=false;
+                    TopoDS_Face face;
+                    if (wire.Closed()) {
+                        BRepBuilderAPI_MakeFace faceBuilder(wire);
+                        if (faceBuilder.IsDone()) {
+                            validFace=true;
+                            face=faceBuilder.Face();
+                        }
+                    }
+
+                    Handle(AIS_Shape) newShape;
+                    if (validFace) newShape=new AIS_Shape(face);
+                    else newShape=new AIS_Shape(wire);
+
+                    item->set_AIS_Shape(newShape);
+                    ui->drawingWindow->insertItemToMap(newShape,item);
+
+
+
+                    // rebuild the top-level shape
+
+                    // delete the old one
+                    ui->drawingWindow->removeItemFromMap(&drawing);
+                    Handle(AIS_Shape) drawingShape=drawing.get_AIS_Shape();
+                    if (!drawingShape.IsNull()) {
+                        ui->drawingWindow->deleteShape(drawingShape);
+                    }
+
+                    // create a new top-level shape
+                    TopoDS_Compound compound;
+                    BRep_Builder builder;
+                    builder.MakeCompound(compound);
+
+                    // cycle through the top-level children and add to the compound
+                    int j=0;
+                    while (j < drawing.childCount()) {
+                        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(j);
+                        builder.Add(compound,child->get_AIS_Shape()->Shape());
+                        j++;
+                    }
+
+                    Handle(AIS_Shape) newDrawingShape=new AIS_Shape(compound);
+                    drawing.set_AIS_Shape(newDrawingShape);
+                    ui->drawingWindow->insertItemToMap(newDrawingShape,&drawing);
+
+                    item->setForeground(0,Qt::gray);
+                    ui->drawingWindow->showItem(item);
+                }
+            }
+            i++;
+        }
+
+
+
+        brepChanged=true;
+    }
+
+    ui->drawingItemTree->setEnabled(true);
+    restoreSelection();
+    disableMenus=false;
     setMenus();
     ui->drawingWindow->updateViewer();
 }
@@ -4064,6 +4229,12 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
             lengthInputForm=nullptr;
         }
 
+        if (rectangleEditForm) {
+            rectangleEditForm->on_CancelButton_clicked();
+            rectangleEditForm=nullptr;
+        }
+
+
         ui->drawingWindow->unselectAllItems();
         disableMenus=false;
         setMenus();
@@ -4273,10 +4444,10 @@ void OpenParEMg::drawMesh()
                 TopoDS_Compound tetrahedron;
                 BRep_Builder builder;
                 builder.MakeCompound(tetrahedron);
-                builder.Add(tetrahedron, face123);
-                builder.Add(tetrahedron, face134);
-                builder.Add(tetrahedron, face124);
-                builder.Add(tetrahedron, face234);
+                builder.Add(tetrahedron,face123);
+                builder.Add(tetrahedron,face134);
+                builder.Add(tetrahedron,face124);
+                builder.Add(tetrahedron,face234);
 
                 Handle(AIS_Shape) shape=new AIS_Shape(tetrahedron);
                 tetrahedronsItem->get_meshEntities()->push_back(shape);

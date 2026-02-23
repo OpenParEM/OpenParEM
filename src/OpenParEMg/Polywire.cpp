@@ -43,7 +43,9 @@ Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
 
 Polywire::Polywire(QObject *parent)
     : QObject{parent}
-{}
+{
+    modified=false;
+}
 
 void Polywire::deleteRubberband ()
 {
@@ -74,6 +76,13 @@ void Polywire::close ()
     }
 }
 
+gp_Pnt Polywire::getPosition ()
+{
+    gp_Pnt position(0,0,0);
+    if (shapePoints.size() > 0) position=shapePoints[0];
+    return position;
+}
+
 TopoDS_Wire Polywire::buildWire ()
 {
     BRepBuilderAPI_MakeWire wireBuilder;
@@ -89,6 +98,21 @@ TopoDS_Wire Polywire::buildWire ()
     }
 
     return wireBuilder.Wire();
+}
+
+void Polywire::moveTo (gp_Pnt &pnt)
+{
+    if (shapePoints.size() == 0) return;
+    modified=true;
+
+    gp_Pnt offset;
+    offset=shapePoints[0].XYZ()-pnt.XYZ();
+
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        shapePoints[i]=shapePoints[i].XYZ()-offset.XYZ();
+        i++;
+    }
 }
 
 void Line::drawRubberband ()
@@ -203,4 +227,14 @@ void Rectangle::drawRubberband ()
     if (!rubberband.IsNull()) {
         viewerContext->Display(rubberband,0,-1,Standard_True);
     }
+}
+
+// for change in width and/or height
+void Rectangle::recalculate ()
+{
+    modified=true;
+    shapePoints[1]=shapePoints[0].Translated(u*width);
+    shapePoints[2]=shapePoints[0].Translated(u*width).Translated(v*height);
+    shapePoints[3]=shapePoints[0].Translated(v*height);
+    shapePoints[4]=shapePoints[0];
 }
