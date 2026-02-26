@@ -18,64 +18,31 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LENGTHINPUTFORM_H
-#define LENGTHINPUTFORM_H
+#ifndef PROCESS_H
+#define PROCESS_H
 
-#include "CustomOpenGLWidget.h"
-#include "Process.h"
-#include "Relay.h"
-#include <QDialog>
-#include <TopoDS_Vertex.hxx>
-#include <qvalidator.h>
+#include <QWidget>
 
-namespace Ui {
-class LengthInputForm;
-}
-
-class LengthInputForm : public QDialog
+class Process : public QWidget
 {
     Q_OBJECT
-
 public:
-    explicit LengthInputForm(QWidget *parent = nullptr);
-    ~LengthInputForm();
+    explicit Process (QWidget *parent = nullptr);
+    bool isModified () {return modified;}
 
-    void set_length (double);
-    void set_normal (gp_Dir normal_) {normal=normal_;}
-    void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
-    void set_relay (Relay *relay_) {
-        relay=relay_;
-        connect(relay,&Relay::pickVertexFinished,this,&LengthInputForm::pickVertexFinished);
-    }
-    void set_Extrude (Extrude *extrude_) {extrude=extrude_;}
-    void pickVertexFinished (gp_Pnt);
+signals:
 
-    void reject () override;
-
-    void print_point (gp_Pnt);
-
-private slots:
-    void on_lineEdit_returnPressed ();
-    void on_pickStart_clicked ();
-    void on_pickEnd_clicked ();
-    void on_OkButton_clicked ();
-
-public slots:
-    void on_CancelButton_clicked ();
-
-private:
-    Ui::LengthInputForm *ui;
-
-    gp_Dir normal;
-    double length;
-    bool pickStartPoint;
-    bool pickEndPoint;
-    gp_Pnt startPoint, endPoint;
-    QDoubleValidator validator;
-    Extrude *extrude;
-
-    CustomOpenGLWidget *drawingWindow;
-    Relay *relay;
+protected:
+    bool modified;
 };
 
-#endif // LENGTHINPUTFORM_H
+class Extrude : public Process
+{
+public:
+    void set_length (double length_) {length=length_;}
+    double get_length () {return length;}
+private:
+    double length;
+};
+
+#endif // PROCESS_H

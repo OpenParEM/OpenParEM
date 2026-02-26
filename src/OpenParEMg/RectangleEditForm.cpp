@@ -70,13 +70,13 @@ void RectangleEditForm::on_positionX_returnPressed ()
 
 void RectangleEditForm::on_positionY_returnPressed ()
 {
-    position.SetY(ui->positionX->text().toDouble());
+    position.SetY(ui->positionY->text().toDouble());
     ui->OkButton->setEnabled(true);
 }
 
 void RectangleEditForm::on_positionZ_returnPressed ()
 {
-    position.SetZ(ui->positionX->text().toDouble());
+    position.SetZ(ui->positionZ->text().toDouble());
     ui->OkButton->setEnabled(true);
 }
 
@@ -84,7 +84,6 @@ void RectangleEditForm::on_pick_clicked ()
 {
     ui->pick->setChecked(true);
 
-    drawingWindow->unselectAllItems();
     drawingWindow->set_pickVertex(true);
     drawingWindow->updateViewer();
 
@@ -93,13 +92,13 @@ void RectangleEditForm::on_pick_clicked ()
 
 void RectangleEditForm::on_width_returnPressed ()
 {
-    width=ui->positionX->text().toDouble();
+    width=ui->width->text().toDouble();
     ui->OkButton->setEnabled(true);
 }
 
 void RectangleEditForm::on_height_returnPressed ()
 {
-    height=ui->positionX->text().toDouble();
+    height=ui->height->text().toDouble();
     ui->OkButton->setEnabled(true);
 }
 
@@ -108,9 +107,14 @@ void RectangleEditForm::on_OkButton_clicked ()
     ui->OkButton->setChecked(true);
 
     gp_Pnt position(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
+    std::cout << "position=(" << position.X() << "," << position.Y() << "," << position.Z() << ")" << std::endl; std::cout.flush();
+    std::cout << "polywire->getPosition()=(" << polywire->getPosition().X() << "," << polywire->getPosition().Y() << "," << polywire->getPosition().Z() << ")" << std::endl; std::cout.flush();
     if (!position.IsEqual(polywire->getPosition(),Precision::Confusion())) {
+        std::cout << "  Move to position" << std::endl; std::cout.flush();
         polywire->moveTo(position);
     }
+    std::cout << "after: polywire->getPosition()=(" << polywire->getPosition().X() << "," << polywire->getPosition().Y() << "," << polywire->getPosition().Z() << ")" << std::endl; std::cout.flush();
+
 
     bool recalculate=false;
 
@@ -142,6 +146,11 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
     ui->positionX->setText(QString::number(point.X()));
     ui->positionY->setText(QString::number(point.Y()));
     ui->positionZ->setText(QString::number(point.Z()));
+
+    position.SetX(ui->positionX->text().toDouble());
+    position.SetY(ui->positionY->text().toDouble());
+    position.SetZ(ui->positionZ->text().toDouble());
+
     ui->pick->setChecked(false);
 
     ui->OkButton->setEnabled(true);

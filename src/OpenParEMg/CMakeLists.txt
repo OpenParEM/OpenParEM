@@ -81,6 +81,7 @@ qt_add_executable(OpenParEMg
     LengthInputForm.h LengthInputForm.cpp LengthInputForm.ui
     Polywire.h Polywire.cpp
     RectangleEditForm.h RectangleEditForm.cpp RectangleEditForm.ui
+    Process.h Process.cpp
 
 )
 

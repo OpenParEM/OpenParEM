@@ -35,6 +35,7 @@ public:
         set_dimTag(-1,-1);  // for mesh items; invalid initialization
         OPEMobject=nullptr;
         polywire=nullptr;
+        process=nullptr;
     }
 
     void set_OPEMobject (void *pointer) {OPEMobject=pointer;}
@@ -42,6 +43,9 @@ public:
 
     void set_Polywire (void *polywire_) {polywire=polywire_;}
     void* get_Polywire () {return polywire;}
+
+    void set_Process (void *process_) {process=process_;}
+    void* get_Process () {return process;}
 
     long unsigned int linkedItems_size () {return linkedItems.size();}
     void push_linkedItem (CustomTreeWidgetItem *linkedItem) {linkedItems.push_back(linkedItem);}
@@ -83,6 +87,15 @@ public:
     bool is_rootBoundary () {if (type == 102) return true; return false;}
     bool is_rootMesh () {if (type == 103) return true; return false;}
     bool is_rootPath () {if (type == 104) return true; return false;}
+    bool is_root ()
+    {
+        if (is_rootDrawing()) return true;
+        if (is_rootPort()) return true;
+        if (is_rootBoundary()) return true;
+        if (is_rootMesh()) return true;
+        if (is_rootPath()) return true;
+        return false;
+    }
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
     Handle(AIS_Shape) get_AIS_Shape () {return shape;}
@@ -140,6 +153,14 @@ public:
         }
     }
 
+    bool hasParent ()
+    {
+        CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)this->QTreeWidgetItem::parent();
+        if (!parentItem) return false;
+        if (parentItem->is_rootDrawing()) return false;
+        return true;
+    }
+
     void print_type ()
     {
         if (is_rootDrawing()) std::cout << "root drawing" << std::endl;
@@ -167,7 +188,8 @@ public:
     void print () {
         std::cout << "CustomTreeWidgetItem:" << std::endl;
         if (shape.IsNull()) std::cout << "   shape=null" << std::endl;
-        else std::cout << "   shape type=" << shape->Type() << std::endl;
+        else std::cout << "   shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
+        //else std::cout << "   shape type=" << shape->Type() << std::endl;
         std::cout << "   forShowHide=" << forShowHide << std::endl;
         std::cout << "   OPEMobject=" << OPEMobject << std::endl;
         std::cout << "   polywire=" << polywire << std::endl;
@@ -231,6 +253,8 @@ private:
                                                        // cast to the correct object type
     void *polywire;                                    // Polywire object for this item
                                                        // cast to the correct object type
+    void *process;                                     // for drawing processing of children
+                                                       // cast tp the correct process type
     std::vector<CustomTreeWidgetItem *> linkedItems;   // link to path items, if any
 };
 

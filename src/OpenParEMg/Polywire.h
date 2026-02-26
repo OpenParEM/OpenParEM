@@ -24,6 +24,7 @@
 #include <AIS_Shape.hxx>
 #include <QObject>
 #include <TopoDS_Edge.hxx>
+#include <TopoDS_Face.hxx>
 #include <TopoDS_Wire.hxx>
 #include <gp_Pnt.hxx>
 #include "keywordPair.hpp"
@@ -49,9 +50,6 @@ public:
     void deleteLastPoint ();
     void close ();
     virtual bool isFinished () = 0;
-    bool is_line () {if (type == 0) return true; return false;}
-    bool is_polyline () {if (type == 1) return true; return false;}
-    bool is_rectangle () {if (type == 2) return true; return false;}
 
     void setNormal (gp_Vec normal_) {normal=normal_;}
     void setNormal (struct point normal_) {normal.SetCoord(normal_.x,normal_.y,normal_.z);}
@@ -72,7 +70,6 @@ signals:
 
 protected:
     bool modified;
-    int type;  // 0 - line; 1 - polyline; 2 - rectangle
     std::vector<gp_Pnt> shapePoints;
     gp_Vec normal;
     gp_Pnt currentMousePosition;
@@ -83,7 +80,7 @@ protected:
 class Line : public Polywire
 {
 public:
-    Line () {type=0;}
+    Line () {}
     void drawRubberband () override;
     bool canDeleteLastPoint () override {return false;}
     bool canFinish () override {return false;}
@@ -94,7 +91,7 @@ public:
 class Polyline : public Polywire
 {
 public:
-    Polyline () {type=1;}
+    Polyline () {}
     void drawRubberband () override;
     bool canDeleteLastPoint () override {if (shapePoints.size() > 1) return true; return false;}
     bool canFinish () override {if (shapePoints.size() > 1) return true; return false;}
@@ -107,12 +104,14 @@ public:
         }
         return false;
     }
+    void buildFromFace (TopoDS_Face &face);
+
 };
 
 class Rectangle : public Polywire
 {
 public:
-    Rectangle () {type=2;}
+    Rectangle () {}
     void drawRubberband () override;
     bool isValidPoint (gp_Pnt &pnt) override;
     bool canDeleteLastPoint () override {return false;}

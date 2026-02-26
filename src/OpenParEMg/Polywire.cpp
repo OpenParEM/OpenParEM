@@ -25,7 +25,12 @@
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
+#include <BRepTools_WireExplorer.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
+#include <BRepTools.hxx>
+#include <BRep_Tool.hxx>
 
 Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
 {
@@ -150,6 +155,21 @@ void Polyline::drawRubberband ()
 
     if (!rubberband.IsNull()) {
         viewerContext->Display(rubberband,0,-1,Standard_True);
+    }
+}
+
+void Polyline::buildFromFace (TopoDS_Face &face)
+{
+    // use the outer wire
+    TopoDS_Wire wire=BRepTools::OuterWire(face);
+
+    // transfer vertices
+    BRepTools_WireExplorer wireExp(wire,face);
+    while (wireExp.More())
+    {
+        gp_Pnt point=BRep_Tool::Pnt(wireExp.CurrentVertex());
+        shapePoints.push_back(point);
+        wireExp.Next();
     }
 }
 

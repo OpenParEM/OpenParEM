@@ -42,11 +42,19 @@ LengthInputForm::LengthInputForm(QWidget *parent)
     length=0;
     pickStartPoint=false;
     pickEndPoint=false;
+
+    extrude=nullptr;
 }
 
 LengthInputForm::~LengthInputForm ()
 {
     delete ui;
+}
+
+void LengthInputForm::set_length (double length_)
+{
+    length=length_;
+    ui->lineEdit->setText(QString::number(length));
 }
 
 void LengthInputForm::on_lineEdit_returnPressed ()
@@ -63,7 +71,6 @@ void LengthInputForm::on_pickStart_clicked ()
 
     ui->pickStart->setChecked(true);
 
-    drawingWindow->unselectAllItems();
     drawingWindow->set_pickVertex(true);
     drawingWindow->updateViewer();
 
@@ -77,7 +84,6 @@ void LengthInputForm::on_pickEnd_clicked ()
 
     ui->pickEnd->setChecked(true);
 
-    drawingWindow->unselectAllItems();
     drawingWindow->set_pickVertex(true);
     drawingWindow->updateViewer();
 
@@ -87,14 +93,18 @@ void LengthInputForm::on_pickEnd_clicked ()
 void LengthInputForm::on_OkButton_clicked ()
 {
     ui->OkButton->setChecked(true);
-    emit relay->finishExtrudeFace(length,false);
+    if (extrude) {
+        extrude->set_length(length);
+        emit relay->finishEditObject(false);
+    } else {emit relay->finishExtrudeFace(length,false);}
     QDialog::close();
 }
 
 void LengthInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishExtrudeFace(length,true);
+    if (extrude) {emit relay->finishEditObject(true);}
+    else {emit relay->finishExtrudeFace(length,true);}
     QDialog::close();
 }
 
@@ -134,7 +144,8 @@ void LengthInputForm::reject ()
 {
     std::cout << "LengthInputForm::reject" << std::endl; std::cout.flush();
     ui->CancelButton->setChecked(true);
-    emit relay->finishExtrudeFace(length,true);
+    if (extrude) {emit relay->finishEditObject(true);}
+    else {emit relay->finishExtrudeFace(length,true);}
 
     QDialog::reject();
 }

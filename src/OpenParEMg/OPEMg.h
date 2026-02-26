@@ -28,6 +28,7 @@
 #include <QTimer>
 
 #include "LengthInputForm.h"
+#include "Process.h"
 #include "RectangleEditForm.h"
 #include "Relay.h"
 #include "CustomLineEdit.h"
@@ -88,7 +89,9 @@ public:
     ~OpenParEMg ();
 
     void saveProject ();
-    void addShape (TopoDS_Shape, CustomTreeWidgetItem *, bool, bool);
+    void addRootDisplayShape (TopoDS_Shape);
+    void addItemWithShape (CustomTreeWidgetItem *);
+    CustomTreeWidgetItem* addItemShape (TopoDS_Shape, CustomTreeWidgetItem *);
     bool loadBrepFile (QString, bool);
     bool loadStepFile (QString, bool);
     bool saveBrepFile (char *);
@@ -111,6 +114,10 @@ public:
 
     void clearSelection ();
     void restoreSelection ();
+
+    void rebuildTopLevelShape ();
+    void reextrudeFace (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+    void reprocess (CustomTreeWidgetItem *);
 
 private slots:
     // File
@@ -259,6 +266,7 @@ private slots:
     bool isValidObjectEdit ();
     void createPort ();
     void createPath ();
+    void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape);
     void extrudeFace ();
 
     void loadMeshFile (QString);
@@ -384,6 +392,7 @@ private:
     bool disableMenus;
     Polywire *polywire;
     std::vector<Polywire *> polywireDatabase;
+    std::vector<Process *> processDatabase;
 };
 
 #endif // OPEMG_H
