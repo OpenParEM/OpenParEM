@@ -14,11 +14,15 @@ public:
 
 signals:
     void setMenus ();
-    void pickVertexFinished (gp_Pnt);
-    void finishExtrudeFace (double, bool);
-    void finishEditObject (bool);
-    void drawLineFinished (TopoDS_Wire);
-    void cancelDraw ();
+    // void pickVertexFinished (gp_Pnt);
+    // void finishExtrudeFace (double, bool);
+    // void finishEditObject (bool);
+    // void drawLineFinished (TopoDS_Wire);
+    // void cancelDraw ();
+
+    void finishOperation (gp_Pnt, double, bool);
+    void getCurrentMousePosition (gp_Pnt);
+    void getPickedVertex (gp_Pnt, bool);
 };
 
 #endif // RELAY_H

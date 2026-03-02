@@ -19,6 +19,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "Process.h"
+#include <AIS_InteractiveContext.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepPrimAPI_MakePrism.hxx>
 
 Process::Process (QWidget *parent)
     : QWidget{parent}

@@ -43,7 +43,7 @@ public:
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
     void set_relay (Relay *relay_) {
         relay=relay_;
-        connect(relay,&Relay::pickVertexFinished,this,&RectangleEditForm::pickVertexFinished);
+        //connect(relay,&Relay::pickVertexFinished,this,&RectangleEditForm::pickVertexFinished);
     }
     void pickVertexFinished (gp_Pnt);
 
@@ -66,8 +66,8 @@ private:
 
     Rectangle *polywire;
     QDoubleValidator validator;
-    double width,height;
-    gp_Pnt position;
+    // double width,height;
+    // gp_Pnt position;
 
     CustomOpenGLWidget *drawingWindow;
     Relay *relay;

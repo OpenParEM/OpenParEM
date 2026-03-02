@@ -45,10 +45,10 @@ public:
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
     void set_relay (Relay *relay_) {
         relay=relay_;
-        connect(relay,&Relay::pickVertexFinished,this,&LengthInputForm::pickVertexFinished);
+        //connect(relay,&Relay::pickVertexFinished,this,&LengthInputForm::pickVertexFinished);
     }
     void set_Extrude (Extrude *extrude_) {extrude=extrude_;}
-    void pickVertexFinished (gp_Pnt);
+
 
     void reject () override;
 
@@ -61,6 +61,7 @@ private slots:
     void on_OkButton_clicked ();
 
 public slots:
+    void pickVertexFinished (gp_Pnt);
     void on_CancelButton_clicked ();
 
 private:

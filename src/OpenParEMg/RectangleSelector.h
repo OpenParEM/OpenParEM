@@ -26,7 +26,6 @@ public:
         : QObject(widget),m_context(context),m_view(view),m_widget(widget)
     {
         m_rubber=new AIS_RubberBand();
-        //xxx
         m_rubber->SetLineColor(Quantity_NOC_WHITE);
         if (m_widget) m_widget->installEventFilter(this);
     }

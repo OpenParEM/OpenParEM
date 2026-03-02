@@ -93,18 +93,20 @@ void LengthInputForm::on_pickEnd_clicked ()
 void LengthInputForm::on_OkButton_clicked ()
 {
     ui->OkButton->setChecked(true);
-    if (extrude) {
-        extrude->set_length(length);
-        emit relay->finishEditObject(false);
-    } else {emit relay->finishExtrudeFace(length,false);}
+    relay->finishOperation(gp_Pnt(0,0,0),length,false);
+    // if (extrude) {
+    //     extrude->set_length(length);
+    //     emit relay->finishEditObject(false);
+    // } else {emit relay->finishExtrudeFace(length,false);}
     QDialog::close();
 }
 
 void LengthInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
-    if (extrude) {emit relay->finishEditObject(true);}
-    else {emit relay->finishExtrudeFace(length,true);}
+    // if (extrude) {emit relay->finishEditObject(true);}
+    // else {emit relay->finishExtrudeFace(length,true);}
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,true);
     QDialog::close();
 }
 
@@ -144,8 +146,9 @@ void LengthInputForm::reject ()
 {
     std::cout << "LengthInputForm::reject" << std::endl; std::cout.flush();
     ui->CancelButton->setChecked(true);
-    if (extrude) {emit relay->finishEditObject(true);}
-    else {emit relay->finishExtrudeFace(length,true);}
+    // if (extrude) {emit relay->finishEditObject(true);}
+    // else {emit relay->finishExtrudeFace(length,true);}
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,true);
 
     QDialog::reject();
 }

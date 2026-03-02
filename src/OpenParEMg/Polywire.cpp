@@ -107,11 +107,28 @@ TopoDS_Wire Polywire::buildWire ()
 
 void Polywire::moveTo (gp_Pnt &pnt)
 {
+    std::cout << "Polywire::moveTo  pnt=(" << pnt.X() << "," << pnt.Y() << "," << pnt.Z() << ")" << std::endl; std::cout.flush();
+
     if (shapePoints.size() == 0) return;
     modified=true;
 
     gp_Pnt offset;
     offset=shapePoints[0].XYZ()-pnt.XYZ();
+
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        shapePoints[i]=shapePoints[i].XYZ()-offset.XYZ();
+        i++;
+    }
+}
+
+void Polywire::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
+{
+    if (shapePoints.size() == 0) return;
+    modified=true;
+
+    gp_Pnt offset;
+    offset=pnt2.XYZ()-pnt1.XYZ();
 
     long unsigned int i=0;
     while (i < shapePoints.size()) {

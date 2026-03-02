@@ -30,7 +30,7 @@
 #include "RectangleSelector.h"
 #include "ItemTracking.h"
 #include "Relay.h"
-#include "Polywire.h"
+//#include "Polywire.h"
 
 #include "OpenGl_GraphicDriver.hxx"
 #include <Aspect_DisplayConnection.hxx>
@@ -91,19 +91,19 @@ public:
     }
     void set_gridPlane ();
 
-    void set_isIntegrationPath (bool isIntegrationPath_) {isIntegrationPath=isIntegrationPath_;}
-    bool get_isIntegrationPath () {return isIntegrationPath;}
+    //void set_isIntegrationPath (bool isIntegrationPath_) {isIntegrationPath=isIntegrationPath_;}
+    //bool get_isIntegrationPath () {return isIntegrationPath;}
 
     void set_pickVertex (bool pickVertex_) {
         pickVertex=pickVertex_;
         viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
     }
 
-    void set_polywire (Polywire *polywire_)
-    {
-        polywire=polywire_;
-        viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
-    }
+    // void set_polywire (Polywire *polywire_)
+    // {
+    //     polywire=polywire_;
+    //     viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
+    // }
 
     //void clearDrawPoints () {shapePoints.clear();}
 
@@ -401,11 +401,17 @@ public:
     void clearSelected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearSelected(theToUpdateViewer);}
 
     void finishPickVertex ();
-    void finishDrawLine ();
+    //void finishDrawLine ();
 
     Handle(AIS_InteractiveContext) get_viewerContext () {return viewerContext;}
 
     gp_Dir get_normal () {return view->Viewer()->PrivilegedPlane().Direction();}
+
+    void set_selectedItems (std::vector<CustomTreeWidgetItem *> *selectedItems_) {selectedItems=selectedItems_;}
+
+    void reset_vertexSymbol () {
+        viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
+    }
 
 protected:
     void initializeGL () override;
@@ -439,16 +445,16 @@ private:
     RectangleSelector *rectSelect;
 
     // all drawing
-    bool ignoreLeftMouseRelease;
-    bool isIntegrationPath;             // drawing integration path within a port
+    //bool isIntegrationPath;             // drawing integration path within a port
     Relay *relay;
+    std::vector<CustomTreeWidgetItem *> *selectedItems;
 
     // vertex
     bool pickVertex;
     gp_Pnt vertexPoint;
 
-    // general 2D objects
-    Polywire *polywire;
+    //// general 2D objects
+    //Polywire *polywire;
 
     // filter
     Handle(VertexFilter) vertexFilter;

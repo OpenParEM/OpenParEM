@@ -119,6 +119,12 @@ public:
     void reextrudeFace (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void reprocess (CustomTreeWidgetItem *);
 
+    void startOperation ();
+    void startPickVertex ();
+    //void finishPickVertex (gp_Pnt);
+    void finishExtrudeFace (double, bool);
+    void finishMoveObject ();
+
 private slots:
     // File
     void on_actionNew_triggered ();
@@ -263,6 +269,7 @@ private slots:
     void set_selectionMode (CustomTreeWidgetItem *, int);
 
     void editObject ();
+    void moveObject ();
     bool isValidObjectEdit ();
     void createPort ();
     void createPath ();
@@ -291,10 +298,16 @@ private slots:
 
     void on_actionMaterialsOptions_triggered();
 
+    void getCurrentMousePosition (gp_Pnt);
+    void finishOperation (gp_Pnt, double, bool);
+    void getPickedVertex (gp_Pnt, bool);
+
 public slots:
     void setMenus ();
-    void finishExtrudeFace (double, bool);
     void finishEditObject (bool);
+
+signals:
+    void sendPnt (gp_Pnt);
 
 private:
     //void setMenus ();
@@ -346,6 +359,7 @@ private:
     QAction *drawPathAction;
     QAction *drawPolylineAction;
     QAction *editAction;
+    QAction *moveAction;
     QAction *doneAction;
     QAction *cancelAction;
     QAction *deleteLastPointAction;
@@ -387,12 +401,23 @@ private:
     // vertex pick
     gp_Dir faceNormal;
     TopoDS_Face selectedFace;
+    std::vector<gp_Pnt> vertexList;
 
     // drawing
     bool disableMenus;
+    bool isIntegrationPath;
     Polywire *polywire;
+    std::vector<CustomTreeWidgetItem *> selectedItems;
     std::vector<Polywire *> polywireDatabase;
     std::vector<Process *> processDatabase;
+
+    // operation
+    int operation;   // 0 - no operation defined
+                     // 1 - pick vertex
+                     // 11 - draw line; 12 - draw polyline; 13 - draw rectangle
+                     // 21 - extrude
+                     // 31 - edit
+                     // 41 - move
 };
 
 #endif // OPEMG_H

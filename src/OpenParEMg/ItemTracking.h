@@ -214,6 +214,7 @@ public:
             // nothing to do
         } else {
             std::cout << "ASSERT: Invalid option in ItemTracking::showItem" << std::endl; std::cout.flush();
+            item->print();
         }
     }
 
@@ -312,7 +313,6 @@ public:
     //     hideItem(item);
     // }
 
-    //xxx
     void hideItem (CustomTreeWidgetItem *item)
     {
         if (hideTracking) {std::cout << "ItemTracker::hideItem" << std::endl; std::cout.flush();}

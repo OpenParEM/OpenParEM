@@ -64,19 +64,19 @@ void RectangleEditForm::set_polywire (Rectangle *polywire_)
 
 void RectangleEditForm::on_positionX_returnPressed ()
 {
-    position.SetX(ui->positionX->text().toDouble());
+    //position.SetX(ui->positionX->text().toDouble());
     ui->OkButton->setEnabled(true);
 }
 
 void RectangleEditForm::on_positionY_returnPressed ()
 {
-    position.SetY(ui->positionY->text().toDouble());
+    //position.SetY(ui->positionY->text().toDouble());
     ui->OkButton->setEnabled(true);
 }
 
 void RectangleEditForm::on_positionZ_returnPressed ()
 {
-    position.SetZ(ui->positionZ->text().toDouble());
+    //position.SetZ(ui->positionZ->text().toDouble());
     ui->OkButton->setEnabled(true);
 }
 
@@ -92,13 +92,13 @@ void RectangleEditForm::on_pick_clicked ()
 
 void RectangleEditForm::on_width_returnPressed ()
 {
-    width=ui->width->text().toDouble();
+    //width=ui->width->text().toDouble();
     ui->OkButton->setEnabled(true);
 }
 
 void RectangleEditForm::on_height_returnPressed ()
 {
-    height=ui->height->text().toDouble();
+    //height=ui->height->text().toDouble();
     ui->OkButton->setEnabled(true);
 }
 
@@ -130,7 +130,7 @@ void RectangleEditForm::on_OkButton_clicked ()
 
     if (recalculate) polywire->recalculate();
 
-    emit relay->finishEditObject(false);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,false);
 
     QDialog::close();
 }
@@ -147,9 +147,9 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
     ui->positionY->setText(QString::number(point.Y()));
     ui->positionZ->setText(QString::number(point.Z()));
 
-    position.SetX(ui->positionX->text().toDouble());
-    position.SetY(ui->positionY->text().toDouble());
-    position.SetZ(ui->positionZ->text().toDouble());
+    // position.SetX(ui->positionX->text().toDouble());
+    // position.SetY(ui->positionY->text().toDouble());
+    // position.SetZ(ui->positionZ->text().toDouble());
 
     ui->pick->setChecked(false);
 
@@ -159,8 +159,7 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
 void RectangleEditForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishEditObject(true);
-
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,true);
     QDialog::reject();
 }
 

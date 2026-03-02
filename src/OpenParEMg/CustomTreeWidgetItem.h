@@ -24,13 +24,16 @@
 #include <QTreeWidgetItem>
 #include <QMenu>
 #include "AIS_Shape.hxx"
+#include "Polywire.h"
+#include "Process.h"
 #include <AIS_InteractiveContext.hxx>
 
 class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
     Q_OBJECT
 
 public:
-    CustomTreeWidgetItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type) {
+    CustomTreeWidgetItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type)
+    {
         type=0;
         set_dimTag(-1,-1);  // for mesh items; invalid initialization
         OPEMobject=nullptr;
@@ -51,7 +54,8 @@ public:
     void push_linkedItem (CustomTreeWidgetItem *linkedItem) {linkedItems.push_back(linkedItem);}
     CustomTreeWidgetItem* get_linkedItem (long unsigned int i) {return linkedItems[i];}
 
-    void set_type (int type_) {
+    void set_type (int type_)
+    {
         type=type_;
         forShowHide=false;
         if (is_drawing()) forShowHide=true;
@@ -99,7 +103,8 @@ public:
 
     void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
     Handle(AIS_Shape) get_AIS_Shape () {return shape;}
-    void delete_AIS_Shape (Handle(AIS_InteractiveContext) viewerContext) {
+    void delete_AIS_Shape (Handle(AIS_InteractiveContext) viewerContext)
+    {
         if (shape.IsNull()) return;
         viewerContext->Remove(shape,Standard_True);
         shape.Nullify();
@@ -129,7 +134,6 @@ public:
 
     bool isValidShow ()
     {
-        //xxx
         if (!forShowHide) return false;
         if (foreground(0) == Qt::gray) return true;
         return false;
@@ -185,7 +189,8 @@ public:
         if (is_integrationPathSegment()) std::cout << "integration path segment" << std::endl;
     }
 
-    void print () {
+    void print ()
+    {
         std::cout << "CustomTreeWidgetItem:" << std::endl;
         if (shape.IsNull()) std::cout << "   shape=null" << std::endl;
         else std::cout << "   shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
@@ -217,7 +222,8 @@ public:
                   << "   dimTag.second=" << dimTag.second << std::endl;
     }
 
-    void reset () {
+    void reset ()
+    {
         deleteChildren(this);
         set_AIS_Shape(nullptr);
         setForeground(0,Qt::black);
@@ -228,6 +234,27 @@ public:
         polywire=nullptr;
         linkedItems.clear();
     }
+
+    // void drawRubberband ()
+    // {
+    //     if (polywire) {
+    //         Polywire *temp=static_cast<Polywire *>(polywire);
+
+    //         Polyline *polyline=dynamic_cast<Polyline *>(temp);
+    //         if (polyline) polyline->drawRubberband();
+
+    //         Rectangle *rectangle=dynamic_cast<Rectangle *>(temp);
+    //         if (temp) temp->drawRubberband();
+    //     }
+
+    //     if (process) {
+    //         Process *temp=static_cast<Process *>(process);
+
+    //         Extrude *extrude=dynamic_cast<Extrude *>(temp);
+    //         if (extrude) extrude->drawRubberband();
+    //     }
+
+    // }
 
 private slots:
 
