@@ -611,7 +611,7 @@ if [ $print_help -eq 1 ]; then
    echo "  --without-prrte          skip compiling libprrte"
    echo "  --with-openmpi[=file]    compile OpenMPI and related libraries using the default distribution or the provided file"
    echo "  --without-openmpi        skip compiling OpenMPI and related libraries; MPI plus development libraries must be installed on the system"
-   echo "  --with-MPICH[=file]      compile MPICH and related libraries using the default distribution or the provided file"
+   echo "  --with-mpich[=file]      compile MPICH and related libraries using the default distribution or the provided file"
    echo "  --without-mpich          skip compiling MPICH and related libraries; MPI plus development libraries must be installed on the system"
    echo "  --with-hypre[=file]      compile libHYPRE using the default distribution or the provided file"
    echo "  --without-hypre          skip compiling libHYPRE"
