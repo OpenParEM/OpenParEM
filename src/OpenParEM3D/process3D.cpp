@@ -351,6 +351,7 @@ bool TestCaseDatabase::load (const char *filename)
             }
          }
       }
+      inFile.close();
    } else {
       cout << "|ERROR3122: Unable to open file \"" << filename << "\" for reading." << endl;
       return true;

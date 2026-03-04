@@ -120,11 +120,7 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     viewer->SetGridEcho(Standard_False);
 
     rectSelect=nullptr;
-
-    //ignoreLeftMouseRelease=false;
-    //isIntegrationPath=false;
     pickVertex=false;
-    //polywire=nullptr;
 
     // set a default so that all vertices highlight with a circle
     Handle(Prs3d_Drawer) drawer=viewerContext->DefaultDrawer();
@@ -193,6 +189,7 @@ void CustomOpenGLWidget::paintGL ()
 
 void CustomOpenGLWidget::updateViewer ()
 {
+    //std::cout << "CustomOpenGLWidget::updateViewer" << std::endl; std::cout.flush();
     viewerContext->UpdateCurrentViewer();
     repaint();
 }
@@ -209,8 +206,6 @@ void CustomOpenGLWidget::cancelDraw ()
 
     // invalidate flags
     pickVertex=false;
-    //ignoreLeftMouseRelease=false;
-    //isIntegrationPath=false;
 
     // remove temporaryVertex, if needed
     if (!temporaryVertex.IsNull()) {
@@ -291,43 +286,14 @@ void CustomOpenGLWidget::finishPickVertex ()
 {
     std::cout << "CustomOpenGLWidget::finishPickVertex" << std::endl; std::cout.flush();
 
-    //ignoreLeftMouseRelease=false;
-    //pickVertex=false;
-    viewerContext->ClearDetected(Standard_True);
-
     // remove temporaryVertex
     if (!temporaryVertex.IsNull()) {
        viewerContext->Remove(temporaryVertex,Standard_True);
        temporaryVertex.Nullify();
     }
 
-    //viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
     emit relay->getPickedVertex(vertexPoint,false);
 }
-
-// void CustomOpenGLWidget::finishDrawLine ()
-// {
-//     std::cout << "CustomOpenGLWidget::finishDrawLine" << std::endl; std::cout.flush();
-
-//     ignoreLeftMouseRelease=false;
-//     viewerContext->ClearDetected(Standard_True);
-
-//     // remove the rubber band
-//     polywire->deleteRubberband();
-
-//     // remove temporaryVertex
-//     if (!temporaryVertex.IsNull()) {
-//         viewerContext->Remove(temporaryVertex,Standard_True);
-//         temporaryVertex.Nullify();
-//     }
-
-//     viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
-
-//     emit relay->finishOperation(gp_Pnt(0,0,0),0,false);
-
-//     polywire=nullptr;
-//     std::cout << "exit CustomOpenGLWidget::finishDrawLine" << std::endl; std::cout.flush();
-// }
 
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
@@ -353,49 +319,6 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
 
     if (event->button() == Qt::LeftButton) {
-
-        // if (pickVertex || polywire) {
-        //     if (owner.IsNull()) {
-        //         ignoreLeftMouseRelease=true;
-
-        //         if (polywire) {
-        //             if (polywire->isValidPoint(clickPoint)) {
-        //                 polywire->addPoint(clickPoint);
-        //                 if (polywire->isFinished()) finishDrawLine();
-        //             }
-        //         }
-        //     } else {
-        //         Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
-        //         if (!brepOwner.IsNull()) {
-        //             TopoDS_Shape shape = brepOwner->Shape();
-        //             if (!shape.IsNull()) {
-        //                 if (shape.ShapeType() == TopAbs_VERTEX) {
-        //                     TopoDS_Vertex vertex=TopoDS::Vertex(shape);
-        //                     gp_Pnt pnt=BRep_Tool::Pnt(vertex);
-        //                     if (!vertex.IsNull()) {
-
-        //                         // single point
-        //                         if (pickVertex) {
-        //                             vertexPoint=pnt;
-        //                             finishPickVertex();
-        //                         }
-
-        //                         // multiple points
-
-        //                         ignoreLeftMouseRelease=true;
-
-        //                         if (polywire) {
-        //                             if (polywire->isValidPoint(pnt)) {
-        //                                 polywire->addPoint(pnt);
-        //                                 if (polywire->isFinished()) finishDrawLine();
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
 
         if (pickVertex) {
             if (owner.IsNull()) {
@@ -437,15 +360,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
 
-    // pass the mouse release from Qt to OCCT
-    bool passClick=true;
-    if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
-    if (passClick) {
-        const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
-        const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
-        if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
-    }
-
     // process mouse buttons
     if (event->button() == Qt::LeftButton) {
 
@@ -483,6 +397,15 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         if (viewerContext->NbSelected() > 0) {
             contextMenu->exec(QCursor::pos());
         }
+    }
+
+    // pass the mouse release from Qt to OCCT
+    bool passClick=true;
+    if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
+    if (passClick) {
+        const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
+        const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
+        if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
     }
 }
 
@@ -550,18 +473,6 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
     gp_Pnt mousePosition(x,y,z);
     PixelToPointOnPlane (event->pos().x(),event->pos().y(),mousePosition);
     emit relay->getCurrentMousePosition(mousePosition);
-
-    // if (polywire) {
-    //     polywire->setCurrentMousePosition(mousePosition);
-    //     polywire->drawRubberband();
-    // }
-
-    // long unsigned int i=0;
-    // while (i < selectedItems->size()) {
-    //     selectedItems[i]->drawRubberband(mousePosition);
-    //     i++;
-    // }
-
 
     // pass the mouse position from Qt to OCCT
     const Graphic3d_Vec2i position(event->pos().x(),event->pos().y());

@@ -525,6 +525,7 @@ bool TestCaseDatabase::loadTestCases (const char *filename)
             }
          }
       }
+      inFile.close();
    } else {
       cout << "ERROR2221: Unable to open file \"" << filename << "\" for reading." << endl;
       return true;
@@ -1129,6 +1130,7 @@ bool EMfieldDatabase::loadEMfields (const char *filename)
             }
          }
       }
+      inFile.close();
    } else {
       cout << "ERROR2225: Unable to open file \"" << filename << "\" for reading." << endl;
       return true;

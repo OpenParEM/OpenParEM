@@ -115,6 +115,7 @@ public:
     void clearSelection ();
     void restoreSelection ();
 
+    bool isValidExtrudeFace ();
     void rebuildTopLevelShape ();
     void reextrudeFace (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void reprocess (CustomTreeWidgetItem *);
@@ -124,6 +125,12 @@ public:
     //void finishPickVertex (gp_Pnt);
     void finishExtrudeFace (double, bool);
     void finishMoveObject ();
+
+    bool isValidMergeSolids ();
+    void finishMergeSolids ();
+
+    bool isValidSubtractSolids ();
+    void finishSubtractSolids ();
 
 private slots:
     // File
@@ -275,6 +282,8 @@ private slots:
     void createPath ();
     void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape);
     void extrudeFace ();
+    void mergeSolids ();
+    void subtractSolids ();
 
     void loadMeshFile (QString);
     void checkFinish ();
@@ -365,6 +374,8 @@ private:
     QAction *deleteLastPointAction;
     QAction *closeAction;
     QAction *extrudeAction;
+    QAction *mergeAction;
+    QAction *subtractAction;
     std::vector<QAction *> QActionList;
 
     // gmsh
@@ -406,6 +417,7 @@ private:
     // drawing
     bool disableMenus;
     bool isIntegrationPath;
+    gp_Pnt lastMousePosition;
     Polywire *polywire;
     std::vector<CustomTreeWidgetItem *> selectedItems;
     std::vector<Polywire *> polywireDatabase;
@@ -415,7 +427,7 @@ private:
     int operation;   // 0 - no operation defined
                      // 1 - pick vertex
                      // 11 - draw line; 12 - draw polyline; 13 - draw rectangle
-                     // 21 - extrude
+                     // 21 - extrude;  22 - merge;  23 - subtract
                      // 31 - edit
                      // 41 - move
 };

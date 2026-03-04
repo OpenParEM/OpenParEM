@@ -119,10 +119,10 @@ add_library(gmsh SHARED IMPORTED)
 set_target_properties(gmsh PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libgmsh.so")
 
 # OpenMPI
-#set(MPI_LIBS mpi_mpifh  mpi  mpi_usempif08  mpi_usempi_ignore_tkr)
+set(MPI_LIBS mpi_mpifh  mpi  mpi_usempif08  mpi_usempi_ignore_tkr)
 
 # MPICH
-set (MPI_LIBS mpi mpich mpicxx mpichcxx mpifort mpichf90 fmpich)
+#set (MPI_LIBS mpi mpich mpicxx mpichcxx mpifort mpichf90 fmpich)
 
 target_link_libraries(OpenParEMg
     PRIVATE

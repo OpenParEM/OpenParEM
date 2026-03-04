@@ -39,7 +39,9 @@
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
+#include <ShapeUpgrade_UnifySameDomain.hxx>
 
 #include <QIcon>
 #include <QFileDialog>
@@ -129,17 +131,9 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     /////////////////////////////////////////////////////////////////////////////
 
     relay=new Relay();
-    // connect(relay,&Relay::setMenus,this,&OpenParEMg::setMenus);
-    // connect(relay,&Relay::drawLineFinished,this,&OpenParEMg::drawLineFinished);
-    // connect(relay,&Relay::cancelDraw,this,&OpenParEMg::cancelDraw);
-    // connect(relay,&Relay::finishExtrudeFace,this,&OpenParEMg::finishExtrudeFace);
-    // connect(relay,&Relay::finishEditObject,this,&OpenParEMg::finishEditObject);
-
     connect(relay,&Relay::finishOperation,this,&OpenParEMg::finishOperation);
     connect(relay,&Relay::getCurrentMousePosition,this,&OpenParEMg::getCurrentMousePosition);
     connect(relay,&Relay::getPickedVertex,this,&OpenParEMg::getPickedVertex);
-
-
 
     /////////////////////////////////////////////////////////////////////////////
     // drawing window
@@ -173,6 +167,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(deleteLastPointAction);
     QActionList.push_back(closeAction);
     QActionList.push_back(extrudeAction);
+    QActionList.push_back(mergeAction);
+    QActionList.push_back(subtractAction);
     initQActionList();
 
 
@@ -1140,6 +1136,10 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             createPathAction->setToolTip("Copy the selected face and create a path.");
             extrudeAction=new QAction("Extrude");
             extrudeAction->setToolTip("Extrude the selected face along its normal.");
+            mergeAction=new QAction("Merge");
+            mergeAction->setToolTip("Merger two solid objects.");
+            subtractAction=new QAction("Subtract");
+            subtractAction->setToolTip("Subtract the second selected solid object from the first selected solid object.");
 
             connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
             connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
@@ -1150,6 +1150,9 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
             connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
             connect(extrudeAction, &QAction::triggered, this, &OpenParEMg::extrudeFace);
+            connect(mergeAction, &QAction::triggered, this, &OpenParEMg::mergeSolids);
+            connect(subtractAction, &QAction::triggered, this, &OpenParEMg::subtractSolids);
+
 
             QMenu menu(this);
             menu.addAction(showAction);
@@ -1168,6 +1171,8 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             modify.addAction(editAction);
             modify.addAction(moveAction);
             modify.addAction(extrudeAction);
+            modify.addAction(mergeAction);
+            modify.addAction(subtractAction);
             menu.addMenu(&modify);
 
             createPortAction->setEnabled(false);
@@ -1177,7 +1182,6 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 
                 QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
                 if (selectedItems.count() == 1 && clickedItem) {
-                    //if (!clickedItem->hasParent()) extrudeAction->setEnabled(true);
                     extrudeAction->setEnabled(true);
                 }
             }
@@ -1189,6 +1193,12 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             if (isValidObjectEdit()) editAction->setEnabled(true);
 
             moveAction->setEnabled(true);
+
+            mergeAction->setEnabled(false);
+            if (isValidMergeSolids()) mergeAction->setEnabled(true);
+
+            subtractAction->setEnabled(false);
+            if (isValidSubtractSolids()) subtractAction->setEnabled(true);
 
             deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
@@ -2675,7 +2685,6 @@ void OpenParEMg::finishExtrudeFace (double length, bool cancel)
         // define the process
         Extrude *extrude=new Extrude();
         extrude->set_length(length);
-        //extrude->set_viewerContext(ui->drawingWindow->get_viewerContext());
         newItem->set_Process(extrude);
 
         polywire=static_cast<Polywire*>(clickedItem->get_Polywire());
@@ -2695,7 +2704,6 @@ void OpenParEMg::finishExtrudeFace (double length, bool cancel)
             childItem->set_Polywire(polywire);
             polywire=nullptr;
         }
-        //extrude->set_Polywire(polywire);
 
         // save the process
         processDatabase.push_back(extrude);
@@ -2703,12 +2711,6 @@ void OpenParEMg::finishExtrudeFace (double length, bool cancel)
 
         brepChanged=true;
     }
-
-    ui->drawingItemTree->setEnabled(true);
-    restoreSelection();
-    disableMenus=false;
-    setMenus();
-    ui->drawingWindow->updateViewer();
 
     std::cout << "exit OpenParEMg::finishExtrudeFace" << std::endl; std::cout.flush();
 }
@@ -2762,9 +2764,8 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
     }
 
     Process *process=static_cast<Process*>(item->get_Process());
-    std::cout << "   process=" << process << std::endl; std::cout.flush();
+
     Extrude *extrude=dynamic_cast<Extrude *>(process);
-    std::cout << "   extrude=" << extrude << std::endl; std::cout.flush();
     if (extrude) {
         int i=0;
         while (i < item->childCount()) {
@@ -2773,6 +2774,63 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
             i++;
         }
     }
+
+    Merge *merge=dynamic_cast<Merge *>(process);
+    if (merge) {
+        //yyy
+        if (item->childCount() == 2) {
+
+            CustomTreeWidgetItem *child1=(CustomTreeWidgetItem *)item->child(0);
+            CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
+
+            // get shapes
+            TopoDS_Shape shape1=child1->get_AIS_Shape()->Shape();
+            TopoDS_Shape shape2=child2->get_AIS_Shape()->Shape();
+
+            // build merged shape
+            BRepAlgoAPI_Fuse fuse(shape1,shape2);
+            fuse.Build();
+            if (!fuse.IsDone()) return;
+
+            TopoDS_Shape mergedShape=fuse.Shape();
+
+            ShapeUpgrade_UnifySameDomain unify(mergedShape);
+            unify.Build();
+            mergedShape=unify.Shape();
+
+            replaceItemShape(item,mergedShape);
+            brepChanged=true;
+        }
+    }
+
+    Subtract *subtract=dynamic_cast<Subtract *>(process);
+    if (subtract) {
+        if (item->childCount() == 2) {
+
+            CustomTreeWidgetItem *child1=(CustomTreeWidgetItem *)item->child(0);
+            CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
+
+            // get shapes
+            TopoDS_Shape shape1=child1->get_AIS_Shape()->Shape();
+            TopoDS_Shape shape2=child2->get_AIS_Shape()->Shape();
+
+            // build subtacted shape
+            BRepAlgoAPI_Cut cut(shape1,shape2);
+            cut.Build();
+            if (!cut.IsDone()) return;
+
+            TopoDS_Shape subtractedShape=cut.Shape();
+
+            ShapeUpgrade_UnifySameDomain unify(subtractedShape);
+            unify.Build();
+            subtractedShape=unify.Shape();
+
+            replaceItemShape(item,subtractedShape);
+            brepChanged=true;
+        }
+    }
+
+    item->reset_transformation();
 
     // recursively work to the top of the tree
     CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
@@ -2858,8 +2916,6 @@ void OpenParEMg::editObject ()
         }
         i++;
     }
-
-    setMenus();
 }
 
 void OpenParEMg::finishMoveObject ()
@@ -2874,12 +2930,6 @@ void OpenParEMg::finishMoveObject ()
         }
         i++;
     }
-
-    ui->drawingItemTree->setEnabled(true);
-    restoreSelection();
-    disableMenus=false;
-    setMenus();
-    ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::rebuildTopLevelShape ()
@@ -2936,12 +2986,6 @@ void OpenParEMg::finishEditObject (bool cancel)
         brepChanged=true;
     }
 
-    ui->drawingItemTree->setEnabled(true);
-    restoreSelection();
-    disableMenus=false;
-    setMenus();
-    ui->drawingWindow->updateViewer();
-
     std::cout << "exit OpenParEMg::finishEditObject  cancel=" << cancel << std::endl; std::cout.flush();
 }
 
@@ -2964,8 +3008,172 @@ void OpenParEMg::moveObject ()
     }
     ui->drawingWindow->set_selectedItems(&selectedItems);
 
-    vertexList.clear();
     ui->drawingWindow->set_pickVertex(true);
+}
+
+bool OpenParEMg::isValidMergeSolids ()
+{
+    std::cout << "OpenParEMg::isValidMergeSolids" << std::endl; std::cout.flush();
+
+    int solidCount=0;
+    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < items.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        if (item->is_drawing()) {
+            Handle(AIS_Shape) shape=item->get_AIS_Shape();
+            if (!shape.IsNull()) {
+                if (shape->Shape().ShapeType() == TopAbs_SOLID) solidCount++;
+            }
+        }
+        i++;
+    }
+    if (solidCount == 2 && items.count() == solidCount) return true;
+    return false;
+}
+
+void OpenParEMg::mergeSolids ()
+{
+    operation=22;
+    startOperation();
+
+    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < items.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        if (item->is_drawing()) {
+            ui->drawingWindow->hideItem(item);
+            selectedItems.push_back(item);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->set_selectedItems(&selectedItems);
+
+    finishOperation(gp_Pnt(0,0,0),0,false);
+}
+
+void OpenParEMg::finishMergeSolids ()
+{
+    if (selectedItems.size() != 2) return;
+
+    // get shapes
+    TopoDS_Shape shape1=selectedItems[0]->get_AIS_Shape()->Shape();
+    TopoDS_Shape shape2=selectedItems[1]->get_AIS_Shape()->Shape();
+
+    // build merged shape
+    BRepAlgoAPI_Fuse fuse(shape1,shape2);
+    fuse.Build();
+    if (!fuse.IsDone()) return;
+
+    TopoDS_Shape mergedShape=fuse.Shape();
+
+    ShapeUpgrade_UnifySameDomain unify(mergedShape);
+    unify.Build();
+    mergedShape=unify.Shape();
+
+    //xxx
+
+    // add it
+    CustomTreeWidgetItem *newItem=addItemShape(mergedShape,&drawing);
+    ui->drawingWindow->insertItemToMap(newItem->get_AIS_Shape(),&drawing);
+
+    // define the process
+    Merge *merge=new Merge();
+    newItem->set_Process(merge);
+
+    // save the process
+    processDatabase.push_back(merge);
+    merge=nullptr;
+
+    // move the items in the tree
+
+    drawing.removeChild(selectedItems[0]);
+    newItem->addChild(selectedItems[0]);
+
+    drawing.removeChild(selectedItems[1]);
+    newItem->addChild(selectedItems[1]);
+
+    // rebuild top level
+    reprocess(&drawing);
+
+    brepChanged=true;
+}
+
+bool OpenParEMg::isValidSubtractSolids ()
+{
+    std::cout << "OpenParEMg::isValidMergeSolids" << std::endl; std::cout.flush();
+    return isValidMergeSolids();
+}
+
+void OpenParEMg::subtractSolids ()
+{
+    operation=23;
+    startOperation();
+
+    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < items.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        if (item->is_drawing()) {
+            ui->drawingWindow->hideItem(item);
+            selectedItems.push_back(item);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->set_selectedItems(&selectedItems);
+
+    finishOperation(gp_Pnt(0,0,0),0,false);
+}
+
+void OpenParEMg::finishSubtractSolids ()
+{
+    if (selectedItems.size() != 2) return;
+
+    // get shapes
+    TopoDS_Shape shape1=selectedItems[0]->get_AIS_Shape()->Shape();
+    TopoDS_Shape shape2=selectedItems[1]->get_AIS_Shape()->Shape();
+
+    //xxx
+
+    // build subtacted shape
+    BRepAlgoAPI_Cut cut(shape1,shape2);
+    cut.Build();
+    if (!cut.IsDone()) return;
+
+    TopoDS_Shape subtractedShape=cut.Shape();
+
+    ShapeUpgrade_UnifySameDomain unify(subtractedShape);
+    unify.Build();
+    subtractedShape=unify.Shape();
+
+    //xxx
+
+    // add it
+    CustomTreeWidgetItem *newItem=addItemShape(subtractedShape,&drawing);
+    ui->drawingWindow->insertItemToMap(newItem->get_AIS_Shape(),&drawing);
+
+    // define the process
+    Subtract *subtract=new Subtract();
+    newItem->set_Process(subtract);
+
+    // save the process
+    processDatabase.push_back(subtract);
+    subtract=nullptr;
+
+    // move the items in the tree
+
+    drawing.removeChild(selectedItems[0]);
+    newItem->addChild(selectedItems[0]);
+
+    drawing.removeChild(selectedItems[1]);
+    newItem->addChild(selectedItems[1]);
+
+    // rebuild top level
+    reprocess(&drawing);
+
+    brepChanged=true;
 }
 
 void OpenParEMg::createPort ()
@@ -5637,6 +5845,11 @@ void OpenParEMg::startOperation ()
     ui->drawingWindow->Deactivate();
     ui->drawingWindow->Activate(1,Standard_False);  // vertices
     ui->drawingWindow->Activate(2,Standard_False);  // edges
+
+    // reset lists
+    vertexList.clear();
+    selectedItems.clear();
+
     std::cout << "exit OpenParEMg::startOperation  operation=" << operation << std::endl; std::cout.flush();
 }
 
@@ -5646,21 +5859,40 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
         polywire->setCurrentMousePosition(pnt);
         polywire->drawRubberband();
     }
+
+
+    //if (operation == 41 && vertexList.size() > 0) {
+    if (operation == 41) {
+        std::cout << "place 1" << std::endl; std::cout.flush();
+        std::cout << "   vertexList.size()=" << vertexList.size() << std::endl; std::cout.flush();
+        long unsigned int i=0;
+        while (i < selectedItems.size()) {
+            std::cout << "   place 2" << std::endl; std::cout.flush();
+            //selectedItems[i]->moveShape(vertexList[0],pnt,ui->drawingWindow->get_viewerContext());
+            selectedItems[i]->moveShape(lastMousePosition,pnt,ui->drawingWindow->get_viewerContext());
+            ui->drawingWindow->updateViewer();
+            i++;
+        }
+    }
+
+    lastMousePosition=pnt;
 }
 
 void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 {
-    std::cout << "OpenParEMg::getPickedVertex  operation=" << operation << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::getPickedVertex  operation=" << operation << "  polywire=" << polywire << std::endl; std::cout.flush();
 
     if (cancel) finishOperation(pnt,0,true);
 
     vertexList.push_back(pnt);
 
-    if (polywire) {
-        if (polywire->isValidPoint(pnt)) {
-            polywire->addPoint(pnt);
-            if (polywire->isFinished()) {
-                finishOperation(pnt,0,false);
+    if (operation == 11 || operation == 12 || operation == 13) {
+        if (polywire) {
+            if (polywire->isValidPoint(pnt)) {
+                polywire->addPoint(pnt);
+                if (polywire->isFinished()) {
+                    finishOperation(pnt,0,false);
+                }
             }
         }
     }
@@ -5668,6 +5900,8 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     if (operation == 21 && lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
     if (operation == 31 && rectangleEditForm) rectangleEditForm->pickVertexFinished(pnt);
     if (operation == 41 && vertexList.size() == 2) finishOperation(pnt,0,false);
+
+    lastMousePosition=pnt;
 }
 
 void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
@@ -5675,7 +5909,6 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
     std::cout << "OpenParEMg::finishOperation  operation=" << operation  << std::endl; std::cout.flush();
 
     if (cancel) {
-        operation=0;
 
         if (polywire) {
             polywire->deleteRubberband();
@@ -5689,13 +5922,14 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
 
         ui->drawingWindow->set_pickVertex(false);
 
-        return;
+    } else {
+        if (operation == 11 || operation == 12 || operation == 13) drawLineFinished(polywire->buildWire());
+        if (operation == 21) finishExtrudeFace(length,false);
+        if (operation == 22) finishMergeSolids();
+        if (operation == 23) finishSubtractSolids();
+        if (operation == 31) finishEditObject(false);
+        if (operation == 41) finishMoveObject();
     }
-
-    if (operation == 11 || operation == 12 || operation == 13) drawLineFinished(polywire->buildWire());
-    if (operation == 21) finishExtrudeFace(length,false);
-    if (operation == 31) finishEditObject(false);
-    if (operation == 41) finishMoveObject();
 
     // enable tree
     ui->drawingItemTree->setEnabled(true);
@@ -5709,6 +5943,13 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
 
     // reset the vertex symbol
     ui->drawingWindow->reset_vertexSymbol();
+
+    // reset lists
+    selectedItems.clear();
+    vertexList.clear();
+
+    // set to no active operation
+    operation=0;
 
     setMenus();
 }

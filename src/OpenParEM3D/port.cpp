@@ -2843,7 +2843,7 @@ bool FieldSet::loadSolution(string *directory, string portName, size_t t_size, s
             fail=true;
          }
       }
-      ssEigenVecE.close();
+      ssEigenVecH.close();
       if (fail) return true;
    } else {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3052: Unable to open file \"%s\" for reading.\n",filename);
@@ -5733,6 +5733,8 @@ void Port::saveModeFile (struct projectData *projData, vector<Path *> *pathList,
          modeList[i]->output(&modeFile,pathList,rotated_outline,spin180degrees);
          i++;
       }
+
+      modeFile.close();
    } else {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3082: Failed to open file \"%s\" for writing.\n",modeFilename.str().c_str());
    }

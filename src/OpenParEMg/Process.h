@@ -59,4 +59,14 @@ private:
     //Polywire *polywire;  // base Polywire for extrusion
 };
 
+class Merge : public Process
+{
+
+};
+
+class Subtract : public Process
+{
+
+};
+
 #endif // PROCESS_H

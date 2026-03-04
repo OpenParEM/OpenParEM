@@ -165,6 +165,39 @@ public:
         return true;
     }
 
+    void moveShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_InteractiveContext) viewerContext)
+    {
+        if (shape.IsNull()) return;
+
+        std::cout << "p1=(" << p1.X() << "," << p1.Y() << "," << p1.Z() << ")" << std::endl; std::cout.flush();
+        std::cout << "p2=(" << p2.X() << "," << p2.Y() << "," << p2.Z() << ")" << std::endl; std::cout.flush();
+
+        gp_Trsf step;
+        step.SetTranslation(p1,p2);
+        aTrsf=step*aTrsf;
+        shape->SetLocalTransformation(aTrsf);
+        //viewerContext->RecomputeSelectionOnly(shape);
+
+        std::cout << "shape->HasTransformation()=" << shape->HasTransformation() << std::endl; std::cout.flush();
+
+        //TopLoc_Location aLoc(aTrsf);
+        //viewerContext->SetLocation(shape,aLoc);
+        viewerContext->Redisplay(shape,Standard_True);
+
+        // long unsigned int i=0;
+        // while (i < arrowHeads.size()) {
+        //     //viewerContext->SetLocation(arrowHeads[i],aLoc);
+        //     arrowHeads[i]->SetLocalTransformation(aTrsf);
+        //     viewerContext->Redisplay(arrowHeads[i], Standard_True);
+        //     i++;
+        // }
+    }
+
+    void reset_transformation ()
+    {
+        aTrsf=gp_Trsf();
+    }
+
     void print_type ()
     {
         if (is_rootDrawing()) std::cout << "root drawing" << std::endl;
@@ -260,6 +293,7 @@ private slots:
 
 private:
     Handle(AIS_Shape) shape;                           // for drawing
+    gp_Trsf aTrsf;
     std::vector<Handle(AIS_Shape)> arrowHeads;         // for integration lines to show direction
     std::vector<Handle(AIS_Shape)> meshEntities;       // for mesh
     std::pair<int,int> dimTag;                         //
