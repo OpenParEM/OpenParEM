@@ -1182,7 +1182,8 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 
                 QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
                 if (selectedItems.count() == 1 && clickedItem) {
-                    extrudeAction->setEnabled(true);
+                    CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)clickedItem->QTreeWidgetItem::parent();
+                    if (parent == &drawing) extrudeAction->setEnabled(true);
                 }
             }
 
@@ -3023,7 +3024,10 @@ bool OpenParEMg::isValidMergeSolids ()
         if (item->is_drawing()) {
             Handle(AIS_Shape) shape=item->get_AIS_Shape();
             if (!shape.IsNull()) {
-                if (shape->Shape().ShapeType() == TopAbs_SOLID) solidCount++;
+                if (shape->Shape().ShapeType() == TopAbs_SOLID || shape->Shape().ShapeType() == TopAbs_COMPOUND) {
+                    CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                    if (parent == &drawing) solidCount++;
+                }
             }
         }
         i++;
