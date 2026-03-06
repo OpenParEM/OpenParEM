@@ -30,6 +30,7 @@
 #include "LengthInputForm.h"
 #include "Process.h"
 #include "RectangleEditForm.h"
+#include "PolycircleEditForm.h"
 #include "Relay.h"
 #include "CustomLineEdit.h"
 #include "project.h"
@@ -410,6 +411,7 @@ private:
     // forms
     LengthInputForm *lengthInputForm;
     RectangleEditForm *rectangleEditForm;
+    PolycircleEditForm *polycircleEditForm;
 
     // vertex pick
     gp_Dir faceNormal;

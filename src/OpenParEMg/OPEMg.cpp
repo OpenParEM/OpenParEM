@@ -264,6 +264,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     lengthInputForm=nullptr;
     rectangleEditForm=nullptr;
+    polycircleEditForm=nullptr;
 
     operation=0;
 
@@ -2915,6 +2916,18 @@ void OpenParEMg::editObject ()
                 rectangleEditForm->show();
             }
 
+            Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+            if (polycircle) {
+                if (polycircleEditForm) delete polycircleEditForm;
+                polycircleEditForm=new PolycircleEditForm();
+                polycircleEditForm->set_Polycircle(polycircle);
+                polycircleEditForm->set_drawingWindow(ui->drawingWindow);
+                polycircleEditForm->set_relay(relay);
+                polycircleEditForm->setModal(false);
+                connect(this,&OpenParEMg::sendPnt,polycircleEditForm,&PolycircleEditForm::pickVertexFinished);
+                polycircleEditForm->show();
+            }
+
             Process *process=static_cast<Process *>(item->get_Process());
 
             Extrude *extrude=dynamic_cast<Extrude *>(process);
@@ -2971,7 +2984,9 @@ void OpenParEMg::rebuildTopLevelShape ()
     int j=0;
     while (j < drawing.childCount()) {
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(j);
-        builder.Add(compound,child->get_AIS_Shape()->Shape());
+        if (child && !child->get_AIS_Shape().IsNull()) {
+            builder.Add(compound,child->get_AIS_Shape()->Shape());
+        }
         j++;
     }
     replaceItemShape(&drawing,compound);
@@ -2981,7 +2996,6 @@ void OpenParEMg::finishEditObject (double length, bool cancel)
 {
     std::cout << "OpenParEMg::finishEditObject  length=" << length << "  cancel=" << cancel << std::endl; std::cout.flush();
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    std::cout << "   selectedItems.count()=" << selectedItems.count() << std::endl; std::cout.flush();
 
     if (!cancel) {
         int i=0;
@@ -3010,8 +3024,6 @@ void OpenParEMg::finishEditObject (double length, bool cancel)
 
         brepChanged=true;
     }
-
-    std::cout << "exit OpenParEMg::finishEditObject  cancel=" << cancel << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::moveObject ()
@@ -4772,6 +4784,12 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
             rectangleEditForm=nullptr;
         }
 
+        if (polycircleEditForm) {
+            polycircleEditForm->on_CancelButton_clicked();
+            delete polycircleEditForm;
+            polycircleEditForm=nullptr;
+        }
+
 
         ui->drawingWindow->unselectAllItems();
         disableMenus=false;
@@ -5940,6 +5958,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     if (operation == 31) {
         if (rectangleEditForm) rectangleEditForm->pickVertexFinished(pnt);
         if (lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
+        if (polycircleEditForm) polycircleEditForm->pickVertexFinished(pnt);
     }
     if (operation == 41 && vertexList.size() == 2) finishOperation(pnt,0,false);
 
@@ -5972,6 +5991,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
 
     if (lengthInputForm) lengthInputForm=nullptr;
     if (rectangleEditForm) rectangleEditForm=nullptr;
+    if (polycircleEditForm) polycircleEditForm=nullptr;
 
     // enable tree
     ui->drawingItemTree->setEnabled(true);

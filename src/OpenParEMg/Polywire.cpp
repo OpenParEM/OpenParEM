@@ -356,11 +356,12 @@ void Polycircle::recalculate ()
         gp_Trsf rot;
         rot.SetRotation(axis,i*step);
 
-        gp_Pnt p=firstPoint;;
+        gp_Pnt p=firstPoint;
         p.Transform(rot);
 
         shapePoints.push_back(p);
 
         i++;
     }
+    shapePoints.push_back(shapePoints[0]);
 }

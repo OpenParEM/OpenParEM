@@ -64,19 +64,16 @@ void RectangleEditForm::set_polywire (Rectangle *polywire_)
 
 void RectangleEditForm::on_positionX_returnPressed ()
 {
-    //position.SetX(ui->positionX->text().toDouble());
     ui->OkButton->setEnabled(true);
 }
 
 void RectangleEditForm::on_positionY_returnPressed ()
 {
-    //position.SetY(ui->positionY->text().toDouble());
     ui->OkButton->setEnabled(true);
 }
 
 void RectangleEditForm::on_positionZ_returnPressed ()
 {
-    //position.SetZ(ui->positionZ->text().toDouble());
     ui->OkButton->setEnabled(true);
 }
 
@@ -98,7 +95,6 @@ void RectangleEditForm::on_width_returnPressed ()
 
 void RectangleEditForm::on_height_returnPressed ()
 {
-    //height=ui->height->text().toDouble();
     ui->OkButton->setEnabled(true);
 }
 
@@ -107,14 +103,9 @@ void RectangleEditForm::on_OkButton_clicked ()
     ui->OkButton->setChecked(true);
 
     gp_Pnt position(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
-    std::cout << "position=(" << position.X() << "," << position.Y() << "," << position.Z() << ")" << std::endl; std::cout.flush();
-    std::cout << "polywire->getPosition()=(" << polywire->getPosition().X() << "," << polywire->getPosition().Y() << "," << polywire->getPosition().Z() << ")" << std::endl; std::cout.flush();
     if (!position.IsEqual(polywire->getPosition(),Precision::Confusion())) {
-        std::cout << "  Move to position" << std::endl; std::cout.flush();
         polywire->moveTo(position);
     }
-    std::cout << "after: polywire->getPosition()=(" << polywire->getPosition().X() << "," << polywire->getPosition().Y() << "," << polywire->getPosition().Z() << ")" << std::endl; std::cout.flush();
-
 
     bool recalculate=false;
 

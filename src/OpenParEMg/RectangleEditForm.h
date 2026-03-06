@@ -41,10 +41,7 @@ public:
 
     void set_polywire (Rectangle *);
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
-    void set_relay (Relay *relay_) {
-        relay=relay_;
-        //connect(relay,&Relay::pickVertexFinished,this,&RectangleEditForm::pickVertexFinished);
-    }
+    void set_relay (Relay *relay_) {relay=relay_;}
     void pickVertexFinished (gp_Pnt);
 
     void reject () override;

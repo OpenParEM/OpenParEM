@@ -153,6 +153,10 @@ public:
     bool isFinished () override {if (firstPointSet) return true; return false;}
 
     gp_Pnt getCenterPoint () {return centerPoint;}
+    gp_Pnt getFirstPoint () {return firstPoint;}
+
+    void setCenterPoint (gp_Pnt centerPoint_) {centerPoint=centerPoint_;}
+    void setFirstPoint (gp_Pnt firstPoint_) {firstPoint=firstPoint_;}
 
     int getVertexCount () {return vertexCount;}
     void setVertexCount (int vertexCount_) {vertexCount=vertexCount_;}
