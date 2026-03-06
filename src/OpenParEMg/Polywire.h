@@ -113,6 +113,7 @@ class Rectangle : public Polywire
 {
 public:
     Rectangle () {}
+    Rectangle (Rectangle *);
     void drawRubberband () override;
     bool isValidPoint (gp_Pnt &pnt) override;
     bool canDeleteLastPoint () override {return false;}
@@ -128,6 +129,9 @@ public:
     void setHeight (double height_) {height=height_;}
 
     void recalculate ();
+    void recalculate (gp_Pnt, gp_Pnt);
+
+    gp_Pnt getOppositeCorner ();
 
 private:
     gp_Vec u,v;

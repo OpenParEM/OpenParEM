@@ -70,6 +70,7 @@ void LengthInputForm::on_pickStart_clicked ()
 {
     pickStartPoint=true;
     pickEndPoint=false;
+    this->setEnabled(false);
 
     ui->pickStart->setChecked(true);
 
@@ -81,6 +82,7 @@ void LengthInputForm::on_pickEnd_clicked ()
 {
     pickStartPoint=false;
     pickEndPoint=true;
+    this->setEnabled(false);
 
     ui->pickEnd->setChecked(true);
 
@@ -104,6 +106,8 @@ void LengthInputForm::on_CancelButton_clicked ()
 
 void LengthInputForm::pickVertexFinished (gp_Pnt point)
 {
+    this->setEnabled(true);
+
     if (pickStartPoint) {
         hasStartPoint=true;
         startPoint=point;

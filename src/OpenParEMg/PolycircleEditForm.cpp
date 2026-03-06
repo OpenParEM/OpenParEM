@@ -7,7 +7,7 @@ PolycircleEditForm::PolycircleEditForm (QWidget *parent)
 {
     ui->setupUi(this);
 
-    polycircle=nullptr;
+    polywire=nullptr;
 
     doubleValidator.setNotation(QDoubleValidator::ScientificNotation);
     intValidator.setBottom(3);
@@ -39,55 +39,67 @@ PolycircleEditForm::~PolycircleEditForm ()
     delete ui;
 }
 
+bool PolycircleEditForm::isValid ()
+{
+    gp_Pnt centerPoint(ui->centerPositionX->text().toDouble(),ui->centerPositionY->text().toDouble(),ui->centerPositionZ->text().toDouble());
+    gp_Pnt firstPoint(ui->firstPositionX->text().toDouble(),ui->firstPositionY->text().toDouble(),ui->firstPositionZ->text().toDouble());
+    double radius=centerPoint.Distance(firstPoint);
+    if (radius < Precision::Confusion()) return false;
+    return true;
+}
+
 void PolycircleEditForm::set_Polycircle (Polycircle *polycircle_)
 {
-    polycircle=polycircle_;
+    polywire=polycircle_;
 
-    ui->centerPositionX->setText(QString::number(polycircle->getCenterPoint().X()));
-    ui->centerPositionY->setText(QString::number(polycircle->getCenterPoint().Y()));
-    ui->centerPositionZ->setText(QString::number(polycircle->getCenterPoint().Z()));
+    ui->centerPositionX->setText(QString::number(polywire->getCenterPoint().X()));
+    ui->centerPositionY->setText(QString::number(polywire->getCenterPoint().Y()));
+    ui->centerPositionZ->setText(QString::number(polywire->getCenterPoint().Z()));
 
-    ui->firstPositionX->setText(QString::number(polycircle->getFirstPoint().X()));
-    ui->firstPositionY->setText(QString::number(polycircle->getFirstPoint().Y()));
-    ui->firstPositionZ->setText(QString::number(polycircle->getFirstPoint().Z()));
+    ui->firstPositionX->setText(QString::number(polywire->getFirstPoint().X()));
+    ui->firstPositionY->setText(QString::number(polywire->getFirstPoint().Y()));
+    ui->firstPositionZ->setText(QString::number(polywire->getFirstPoint().Z()));
 
-    double radius=polycircle->getCenterPoint().Distance(polycircle->getFirstPoint());
+    double radius=polywire->getCenterPoint().Distance(polywire->getFirstPoint());
     ui->radius->setText(QString::number(radius));
 
-    ui->vertexCount->setText(QString::number(polycircle->getVertexCount()));
+    ui->vertexCount->setText(QString::number(polywire->getVertexCount()));
 }
 
 void PolycircleEditForm::on_centerPositionX_returnPressed ()
 {
-    ui->OkButton->setEnabled(true);
+    ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_centerPositionY_returnPressed ()
 {
-    ui->OkButton->setEnabled(true);
+    ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_centerPositionZ_returnPressed ()
 {
-    ui->OkButton->setEnabled(true);
+    ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_pickCenter_clicked ()
 {
     ui->pickCenter->setChecked(true);
+    this->setEnabled(false);
 
     pickCenterPoint=true;
 
     drawingWindow->set_pickVertex(true);
     drawingWindow->updateViewer();
-
-    ui->OkButton->setEnabled(true);
 }
 
 void PolycircleEditForm::on_radius_returnPressed ()
 {
+    if (ui->radius->text().toDouble() < Precision::Confusion()) return;
+
     gp_Pnt centerPoint(ui->centerPositionX->text().toDouble(),ui->centerPositionY->text().toDouble(),ui->centerPositionZ->text().toDouble());
     gp_Pnt firstPoint(ui->firstPositionX->text().toDouble(),ui->firstPositionY->text().toDouble(),ui->firstPositionZ->text().toDouble());
+
+    if (centerPoint.Distance(firstPoint) < Precision::Confusion()) return;
 
     gp_Vec dir(centerPoint,firstPoint);
     dir.Normalize();
@@ -97,39 +109,38 @@ void PolycircleEditForm::on_radius_returnPressed ()
     ui->firstPositionY->setText(QString::number(newFirstPoint.Y()));
     ui->firstPositionZ->setText(QString::number(newFirstPoint.Z()));
 
-    ui->OkButton->setEnabled(true);
+    ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_firstPositionX_returnPressed ()
 {
-    ui->OkButton->setEnabled(true);
+    ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_firstPositionY_returnPressed ()
 {
-    ui->OkButton->setEnabled(true);
+    ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_firstPositionZ_returnPressed ()
 {
-    ui->OkButton->setEnabled(true);
+    ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_pickFirst_clicked ()
 {
     ui->pickFirst->setChecked(true);
+    this->setEnabled(false);
 
     pickFirstPoint=true;
 
     drawingWindow->set_pickVertex(true);
     drawingWindow->updateViewer();
-
-    ui->OkButton->setEnabled(true);
 }
 
 void PolycircleEditForm::on_vertexCount_returnPressed ()
 {
-    ui->OkButton->setEnabled(true);
+    ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_OkButton_clicked ()
@@ -137,13 +148,13 @@ void PolycircleEditForm::on_OkButton_clicked ()
     gp_Pnt centerPoint(ui->centerPositionX->text().toDouble(),ui->centerPositionY->text().toDouble(),ui->centerPositionZ->text().toDouble());
     gp_Pnt firstPoint(ui->firstPositionX->text().toDouble(),ui->firstPositionY->text().toDouble(),ui->firstPositionZ->text().toDouble());
 
-    polycircle->setCenterPoint(centerPoint);
-    polycircle->setFirstPoint(firstPoint);
+    polywire->setCenterPoint(centerPoint);
+    polywire->setFirstPoint(firstPoint);
 
     int vertexCount=ui->vertexCount->text().toInt();
-    polycircle->setVertexCount(vertexCount);
+    polywire->setVertexCount(vertexCount);
 
-    polycircle->recalculate();
+    polywire->recalculate();
 
     emit relay->finishOperation(gp_Pnt(0,0,0),0,false);
 
@@ -152,6 +163,8 @@ void PolycircleEditForm::on_OkButton_clicked ()
 
 void PolycircleEditForm::pickVertexFinished (gp_Pnt point)
 {
+    this->setEnabled(true);
+
     if (pickCenterPoint) {
         pickCenterPoint=false;
         ui->centerPositionX->setText(QString::number(point.X()));
@@ -173,7 +186,7 @@ void PolycircleEditForm::pickVertexFinished (gp_Pnt point)
     double radius=centerPoint.Distance(firstPoint);
     ui->radius->setText(QString::number(radius));
 
-    ui->OkButton->setEnabled(true);
+    ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_CancelButton_clicked ()

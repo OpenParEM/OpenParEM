@@ -23,6 +23,7 @@ public:
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
     void set_relay (Relay *relay_) {relay=relay_;}
     void pickVertexFinished (gp_Pnt);
+    bool isValid ();
 
     void reject () override;
 
@@ -45,7 +46,7 @@ private slots:
 private:
     Ui::PolycircleEditForm *ui;
 
-    Polycircle *polycircle;
+    Polycircle *polywire;
 
     bool pickCenterPoint;
     bool pickFirstPoint;
