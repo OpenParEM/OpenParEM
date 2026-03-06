@@ -314,7 +314,7 @@ private slots:
 
 public slots:
     void setMenus ();
-    void finishEditObject (bool);
+    void finishEditObject (double, bool);
 
 signals:
     void sendPnt (gp_Pnt);

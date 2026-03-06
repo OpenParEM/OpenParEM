@@ -52,11 +52,8 @@ class Extrude : public Process
 public:
     void set_length (double length_) {length=length_;}
     double get_length () {return length;}
-    //void set_Polywire (Polywire *polywire_) {polywire=polywire_;}
-    //void drawRubberband (gp_Pnt &pnt) override;
 private:
     double length;       // length of the extrusion
-    //Polywire *polywire;  // base Polywire for extrusion
 };
 
 class Merge : public Process

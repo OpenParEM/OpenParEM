@@ -2977,9 +2977,9 @@ void OpenParEMg::rebuildTopLevelShape ()
     replaceItemShape(&drawing,compound);
 }
 
-void OpenParEMg::finishEditObject (bool cancel)
+void OpenParEMg::finishEditObject (double length, bool cancel)
 {
-    std::cout << "OpenParEMg::finishEditObject  cancel=" << cancel << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::finishEditObject  length=" << length << "  cancel=" << cancel << std::endl; std::cout.flush();
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     std::cout << "   selectedItems.count()=" << selectedItems.count() << std::endl; std::cout.flush();
 
@@ -3000,7 +3000,10 @@ void OpenParEMg::finishEditObject (bool cancel)
                 Process *process=static_cast<Process *>(item->get_Process());
 
                 Extrude *extrude=dynamic_cast<Extrude *>(process);
-                if (extrude) reprocess(item);
+                if (extrude) {
+                    extrude->set_length(length);
+                    reprocess(item);
+                }
             }
             i++;
         }
@@ -5934,7 +5937,10 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     }
 
     if (operation == 21 && lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
-    if (operation == 31 && rectangleEditForm) rectangleEditForm->pickVertexFinished(pnt);
+    if (operation == 31) {
+        if (rectangleEditForm) rectangleEditForm->pickVertexFinished(pnt);
+        if (lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
+    }
     if (operation == 41 && vertexList.size() == 2) finishOperation(pnt,0,false);
 
     lastMousePosition=pnt;
@@ -5953,9 +5959,6 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
             polywire=nullptr;
         }
 
-        if (operation == 21 && lengthInputForm) lengthInputForm=nullptr;
-        if (operation == 31 && rectangleEditForm) rectangleEditForm=nullptr;
-
         ui->drawingWindow->set_pickVertex(false);
 
     } else {
@@ -5963,9 +5966,12 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
         if (operation == 21) finishExtrudeFace(length,false);
         if (operation == 22) finishMergeSolids();
         if (operation == 23) finishSubtractSolids();
-        if (operation == 31) finishEditObject(false);
+        if (operation == 31) finishEditObject(length,false);
         if (operation == 41) finishMoveObject();
     }
+
+    if (lengthInputForm) lengthInputForm=nullptr;
+    if (rectangleEditForm) rectangleEditForm=nullptr;
 
     // enable tree
     ui->drawingItemTree->setEnabled(true);
