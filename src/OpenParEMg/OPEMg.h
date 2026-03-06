@@ -291,6 +291,7 @@ private slots:
     void cancelDraw ();
     void on_actionDrawLine_triggered ();
     void on_actionDrawPolyline_triggered ();
+    void on_actionDrawPolycircle_triggered ();
     void on_actionDrawRectangle_triggered ();
     void drawLineFinished (TopoDS_Wire);
     void drawPath ();
@@ -367,6 +368,7 @@ private:
     QAction *createPathAction;
     QAction *drawPathAction;
     QAction *drawPolylineAction;
+    QAction *drawPolycircleAction;
     QAction *editAction;
     QAction *moveAction;
     QAction *doneAction;
@@ -426,7 +428,7 @@ private:
     // operation
     int operation;   // 0 - no operation defined
                      // 1 - pick vertex
-                     // 11 - draw line; 12 - draw polyline; 13 - draw rectangle
+                     // 11 - draw line; 12 - draw polyline; 13 - draw rectangle; 14 - draw polycircle
                      // 21 - extrude;  22 - merge;  23 - subtract
                      // 31 - edit
                      // 41 - move

@@ -380,6 +380,7 @@ void OpenParEMg::setMenus ()
         ui->actionHideAll->setEnabled(true);
         ui->actionDrawLine->setEnabled(true);
         ui->actionDrawPolyline->setEnabled(true);
+        ui->actionDrawPolycircle->setEnabled(true);
         ui->actionDrawRectangle->setEnabled(true);
         ui->actionMeshOptions->setEnabled(true);
         ui->actionMeshLoad->setEnabled(true);
@@ -525,6 +526,7 @@ void OpenParEMg::setMenus ()
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
         ui->actionDrawLine->setEnabled(false);
         ui->actionDrawPolyline->setEnabled(false);
+        ui->actionDrawPolycircle->setEnabled(false);
         ui->actionDrawRectangle->setEnabled(false);
 
         ui->actionSelectMaterialsDatabase->setEnabled(false);
@@ -564,6 +566,7 @@ void OpenParEMg::setMenus ()
         ui->actionExportStep->setEnabled(false);
         ui->actionDrawLine->setEnabled(false);
         ui->actionDrawPolyline->setEnabled(false);
+        ui->actionDrawPolycircle->setEnabled(false);
         ui->actionDrawRectangle->setEnabled(false);
         ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
@@ -1112,6 +1115,15 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 
             freeQActionList();
         } else if (dynamic_cast<Rectangle *>(test)){
+            cancelAction=new QAction("Cancel");
+            connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDraw);
+
+            QMenu menu(this);
+            menu.addAction(cancelAction);
+
+            menu.exec(ui->drawingWindow->mapToGlobal(pnt));
+            freeQActionList();
+        } else if (dynamic_cast<Polycircle *>(test)) {
             cancelAction=new QAction("Cancel");
             connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDraw);
 
@@ -2747,11 +2759,25 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
     }
 
     Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
-    std::cout << "   polywire=" << polywire << std::endl; std::cout.flush();
+
     Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
-    std::cout << "   rectangle=" << rectangle << std::endl; std::cout.flush();
     if (rectangle) {
         TopoDS_Wire wire=rectangle->buildWire();
+        bool validFace=false;
+        TopoDS_Face face;
+        if (wire.Closed()) {
+            BRepBuilderAPI_MakeFace faceBuilder(wire);
+            if (faceBuilder.IsDone()) {
+                validFace=true;
+                face=faceBuilder.Face();
+            }
+        }
+        replaceItemShape(item,face);
+    }
+
+    Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+    if (polycircle) {
+        TopoDS_Wire wire=polycircle->buildWire();
         bool validFace=false;
         TopoDS_Face face;
         if (wire.Closed()) {
@@ -2965,21 +2991,16 @@ void OpenParEMg::finishEditObject (bool cancel)
                 Polywire *polywire=static_cast<Polywire*>(item->get_Polywire());
 
                 Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
-                if (rectangle) {
-                    reprocess(item);
-                    //item->setForeground(0,Qt::gray);
-                    //ui->drawingWindow->showItem(item);
-                }
+                if (rectangle) reprocess(item);
+
+                Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+                if (polycircle) reprocess(item);
 
 
                 Process *process=static_cast<Process *>(item->get_Process());
 
                 Extrude *extrude=dynamic_cast<Extrude *>(process);
-                if (extrude) {
-                    reprocess(item);
-                    //item->setForeground(0,Qt::gray);
-                    //ui->drawingWindow->showItem(item);
-                }
+                if (extrude) reprocess(item);
             }
             i++;
         }
@@ -5509,6 +5530,22 @@ void OpenParEMg::on_actionDrawPolyline_triggered ()
     //ui->drawingWindow->set_polywire(polywire);
 }
 
+void OpenParEMg::on_actionDrawPolycircle_triggered ()
+{
+    //std::cout << "OpenParEMg::on_actionDrawPolycircle_triggered" << std::endl; std::cout.flush();
+
+    operation=14;
+    startPickVertex();
+
+    if (!polywire) {
+        polywire=new Polycircle();
+        gp_Dir normal=ui->drawingWindow->get_normal();
+        polywire->setNormal(normal.X(),normal.Y(),normal.Z());
+        polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+    }
+
+}
+
 void OpenParEMg::on_actionDrawRectangle_triggered ()
 {
     //std::cout << "OpenParEMg::on_actionDrawRectangle_triggered" << std::endl; std::cout.flush();
@@ -5864,15 +5901,10 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
         polywire->drawRubberband();
     }
 
-
-    //if (operation == 41 && vertexList.size() > 0) {
-    if (operation == 41) {
-        std::cout << "place 1" << std::endl; std::cout.flush();
-        std::cout << "   vertexList.size()=" << vertexList.size() << std::endl; std::cout.flush();
+    // ToDo: fix animation of move; current setup does not work
+    if (operation == 41 && vertexList.size() > 0) {
         long unsigned int i=0;
         while (i < selectedItems.size()) {
-            std::cout << "   place 2" << std::endl; std::cout.flush();
-            //selectedItems[i]->moveShape(vertexList[0],pnt,ui->drawingWindow->get_viewerContext());
             selectedItems[i]->moveShape(lastMousePosition,pnt,ui->drawingWindow->get_viewerContext());
             ui->drawingWindow->updateViewer();
             i++;
@@ -5890,7 +5922,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 
     vertexList.push_back(pnt);
 
-    if (operation == 11 || operation == 12 || operation == 13) {
+    if (operation == 11 || operation == 12 || operation == 13 || operation == 14) {
         if (polywire) {
             if (polywire->isValidPoint(pnt)) {
                 polywire->addPoint(pnt);
@@ -5927,7 +5959,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
         ui->drawingWindow->set_pickVertex(false);
 
     } else {
-        if (operation == 11 || operation == 12 || operation == 13) drawLineFinished(polywire->buildWire());
+        if (operation == 11 || operation == 12 || operation == 13 || operation == 14) drawLineFinished(polywire->buildWire());
         if (operation == 21) finishExtrudeFace(length,false);
         if (operation == 22) finishMergeSolids();
         if (operation == 23) finishSubtractSolids();
@@ -5957,5 +5989,8 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
 
     setMenus();
 }
+
+
+
 
 

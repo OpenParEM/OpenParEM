@@ -134,6 +134,38 @@ private:
     double width,height;
 };
 
+class Polycircle : public Polywire
+{
+public:
+    Polycircle ()
+    {
+        centerPointSet=false;
+        firstPointSet=false;
+        vertexCount=12;
+    }
+
+    void drawRubberband () override;
+    bool isValidPoint (gp_Pnt &pnt) override;
+    bool canDeleteLastPoint () override {return false;}
+    bool canFinish () override {return false;}
+    bool canClose () override {return false;}
+    void addPoint (gp_Pnt &pnt) override;
+    bool isFinished () override {if (firstPointSet) return true; return false;}
+
+    gp_Pnt getCenterPoint () {return centerPoint;}
+
+    int getVertexCount () {return vertexCount;}
+    void setVertexCount (int vertexCount_) {vertexCount=vertexCount_;}
+
+    void recalculate ();
+private:
+    bool centerPointSet;
+    gp_Pnt centerPoint;
+    bool firstPointSet;
+    gp_Pnt firstPoint;
+    int vertexCount;
+};
+
 
 
 #endif // POLYWIRE_H

@@ -178,6 +178,7 @@
     <addaction name="actionDrawLine"/>
     <addaction name="actionDrawPolyline"/>
     <addaction name="actionDrawRectangle"/>
+    <addaction name="actionDrawPolycircle"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -506,6 +507,11 @@
   <action name="actionDrawRectangle">
    <property name="text">
     <string>rectangle</string>
+   </property>
+  </action>
+  <action name="actionDrawPolycircle">
+   <property name="text">
+    <string>polycircle</string>
    </property>
   </action>
  </widget>

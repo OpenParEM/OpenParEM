@@ -275,3 +275,92 @@ void Rectangle::recalculate ()
     shapePoints[3]=shapePoints[0].Translated(v*height);
     shapePoints[4]=shapePoints[0];
 }
+
+void Polycircle::drawRubberband ()
+{
+    //std::cout << "Polycircle::drawRubberband" << std::endl; std::cout.flush();
+
+    if (!centerPointSet) return;
+
+    // reset
+    if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
+    shapePoints.clear();
+
+    // shape
+
+    gp_Ax1 axis(centerPoint,normal);
+    firstPoint=currentMousePosition;
+
+    double step=2.0*M_PI/vertexCount;
+
+    int i=0;
+    while (i < vertexCount) {
+        gp_Trsf rot;
+        rot.SetRotation(axis,i*step);
+
+        gp_Pnt p=firstPoint;;
+        p.Transform(rot);
+
+        shapePoints.push_back(p);
+
+        i++;
+    }
+    shapePoints.push_back(shapePoints[0]);
+
+    // build wire
+
+    BRepBuilderAPI_MakePolygon polyMaker;
+    long unsigned int j=0;
+    while (j < shapePoints.size()) {
+        polyMaker.Add(shapePoints[j]);
+        j++;
+    }
+
+    TopoDS_Wire wire=polyMaker.Wire();
+    rubberband=new AIS_Shape(wire);
+
+    if (!rubberband.IsNull()) {
+        viewerContext->Display(rubberband,0,-1,Standard_True);
+    }
+}
+
+bool Polycircle::isValidPoint (gp_Pnt &pnt)
+{
+    if (!centerPointSet) return true;
+    if (centerPoint.IsEqual(pnt,Precision::Confusion())) return false;
+    return true;
+}
+
+void Polycircle::addPoint (gp_Pnt &pnt)
+{
+    if (!centerPointSet) {
+        centerPoint=pnt;
+        centerPointSet=true;
+    } else {
+        firstPoint=pnt;
+        firstPointSet=true;
+        currentMousePosition=pnt;
+        drawRubberband();
+    }
+}
+
+void Polycircle::recalculate ()
+{
+    shapePoints.clear();
+
+    gp_Ax1 axis(centerPoint,normal);
+    double step=2.0*M_PI/vertexCount;
+
+    int i=0;
+    while (i < vertexCount) {
+        gp_Trsf rot;
+        rot.SetRotation(axis,i*step);
+
+        gp_Pnt p=firstPoint;;
+        p.Transform(rot);
+
+        shapePoints.push_back(p);
+
+        i++;
+    }
+}
