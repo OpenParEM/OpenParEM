@@ -2958,20 +2958,6 @@ void OpenParEMg::editObject ()
     }
 }
 
-void OpenParEMg::finishMoveObject ()
-{
-    long unsigned int i=0;
-    while (i < selectedItems.size()) {
-        Polywire *polywire=static_cast<Polywire *>(selectedItems[i]->get_Polywire());
-        if (polywire) {
-            polywire->shift(vertexList[1],vertexList[0]);
-            reprocess(selectedItems[i]);
-            brepChanged=true;
-        }
-        i++;
-    }
-}
-
 void OpenParEMg::rebuildTopLevelShape ()
 {
     std::cout << "OpenParEMg::rebuildTopLevelShape" << std::endl; std::cout.flush();
@@ -3026,28 +3012,6 @@ void OpenParEMg::finishEditObject (double length, bool cancel)
     }
 }
 
-void OpenParEMg::moveObject ()
-{
-    std::cout << "OpenParEMg::moveObject" << std::endl; std::cout.flush();
-
-    operation=41;
-    startOperation();
-
-    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
-    int i=0;
-    while (i < items.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
-        if (item->is_drawing()) {
-            ui->drawingWindow->hideItem(item);
-            selectedItems.push_back(item);
-        }
-        i++;
-    }
-    ui->drawingWindow->set_selectedItems(&selectedItems);
-
-    ui->drawingWindow->set_pickVertex(true);
-}
-
 bool OpenParEMg::isValidMergeSolids ()
 {
     std::cout << "OpenParEMg::isValidMergeSolids" << std::endl; std::cout.flush();
@@ -3083,23 +3047,23 @@ void OpenParEMg::mergeSolids ()
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
         if (item->is_drawing()) {
             ui->drawingWindow->hideItem(item);
-            selectedItems.push_back(item);
+            selectedItemsList.push_back(item);
         }
         i++;
     }
 
-    ui->drawingWindow->set_selectedItems(&selectedItems);
+    ui->drawingWindow->set_selectedItems(&selectedItemsList);
 
     finishOperation(gp_Pnt(0,0,0),0,false);
 }
 
 void OpenParEMg::finishMergeSolids ()
 {
-    if (selectedItems.size() != 2) return;
+    if (selectedItemsList.size() != 2) return;
 
     // get shapes
-    TopoDS_Shape shape1=selectedItems[0]->get_AIS_Shape()->Shape();
-    TopoDS_Shape shape2=selectedItems[1]->get_AIS_Shape()->Shape();
+    TopoDS_Shape shape1=selectedItemsList[0]->get_AIS_Shape()->Shape();
+    TopoDS_Shape shape2=selectedItemsList[1]->get_AIS_Shape()->Shape();
 
     // build merged shape
     BRepAlgoAPI_Fuse fuse(shape1,shape2);
@@ -3128,11 +3092,11 @@ void OpenParEMg::finishMergeSolids ()
 
     // move the items in the tree
 
-    drawing.removeChild(selectedItems[0]);
-    newItem->addChild(selectedItems[0]);
+    drawing.removeChild(selectedItemsList[0]);
+    newItem->addChild(selectedItemsList[0]);
 
-    drawing.removeChild(selectedItems[1]);
-    newItem->addChild(selectedItems[1]);
+    drawing.removeChild(selectedItemsList[1]);
+    newItem->addChild(selectedItemsList[1]);
 
     // rebuild top level
     reprocess(&drawing);
@@ -3157,23 +3121,23 @@ void OpenParEMg::subtractSolids ()
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
         if (item->is_drawing()) {
             ui->drawingWindow->hideItem(item);
-            selectedItems.push_back(item);
+            selectedItemsList.push_back(item);
         }
         i++;
     }
 
-    ui->drawingWindow->set_selectedItems(&selectedItems);
+    ui->drawingWindow->set_selectedItems(&selectedItemsList);
 
     finishOperation(gp_Pnt(0,0,0),0,false);
 }
 
 void OpenParEMg::finishSubtractSolids ()
 {
-    if (selectedItems.size() != 2) return;
+    if (selectedItemsList.size() != 2) return;
 
     // get shapes
-    TopoDS_Shape shape1=selectedItems[0]->get_AIS_Shape()->Shape();
-    TopoDS_Shape shape2=selectedItems[1]->get_AIS_Shape()->Shape();
+    TopoDS_Shape shape1=selectedItemsList[0]->get_AIS_Shape()->Shape();
+    TopoDS_Shape shape2=selectedItemsList[1]->get_AIS_Shape()->Shape();
 
     //xxx
 
@@ -3204,16 +3168,67 @@ void OpenParEMg::finishSubtractSolids ()
 
     // move the items in the tree
 
-    drawing.removeChild(selectedItems[0]);
-    newItem->addChild(selectedItems[0]);
+    drawing.removeChild(selectedItemsList[0]);
+    newItem->addChild(selectedItemsList[0]);
 
-    drawing.removeChild(selectedItems[1]);
-    newItem->addChild(selectedItems[1]);
+    drawing.removeChild(selectedItemsList[1]);
+    newItem->addChild(selectedItemsList[1]);
 
     // rebuild top level
     reprocess(&drawing);
 
     brepChanged=true;
+}
+
+void OpenParEMg::moveObject ()
+{
+    std::cout << "OpenParEMg::moveObject" << std::endl; std::cout.flush();
+
+    operation=24;
+    startOperation();
+
+    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < items.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        if (item->is_drawing()) {
+            ui->drawingWindow->hideItem(item);
+            selectedItemsList.push_back(item);
+        }
+        i++;
+    }
+    ui->drawingWindow->set_selectedItems(&selectedItemsList);
+
+    ui->drawingWindow->set_pickVertex(true);
+}
+
+void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item)
+{
+    Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
+    if (polywire) {
+        polywire->shift(vertexList[1],vertexList[0]);
+        reprocess(item);
+        brepChanged=true;
+    }
+
+    Process *process=static_cast<Process *>(item->get_Process());
+    if (process) {
+        int i=0;
+        while (i < item->childCount()) {
+            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+            finishMoveObject(child);
+            i++;
+        }
+    }
+}
+
+void OpenParEMg::finishMoveObject ()
+{
+    long unsigned int i=0;
+    while (i < selectedItemsList.size()) {
+        finishMoveObject(selectedItemsList[i]);
+        i++;
+    }
 }
 
 void OpenParEMg::createPort ()
@@ -5910,7 +5925,7 @@ void OpenParEMg::startOperation ()
 
     // reset lists
     vertexList.clear();
-    selectedItems.clear();
+    selectedItemsList.clear();
 
     std::cout << "exit OpenParEMg::startOperation  operation=" << operation << std::endl; std::cout.flush();
 }
@@ -5925,8 +5940,8 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
     // ToDo: fix animation of move; current setup does not work
     if (operation == 41 && vertexList.size() > 0) {
         long unsigned int i=0;
-        while (i < selectedItems.size()) {
-            selectedItems[i]->moveShape(lastMousePosition,pnt,ui->drawingWindow->get_viewerContext());
+        while (i < selectedItemsList.size()) {
+            selectedItemsList[i]->moveShape(lastMousePosition,pnt,ui->drawingWindow->get_viewerContext());
             ui->drawingWindow->updateViewer();
             i++;
         }
@@ -5955,12 +5970,12 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     }
 
     if (operation == 21 && lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
+    if (operation == 24 && vertexList.size() == 2) finishOperation(pnt,0,false);
     if (operation == 31) {
         if (rectangleEditForm) rectangleEditForm->pickVertexFinished(pnt);
         if (lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
         if (polycircleEditForm) polycircleEditForm->pickVertexFinished(pnt);
     }
-    if (operation == 41 && vertexList.size() == 2) finishOperation(pnt,0,false);
 
     lastMousePosition=pnt;
 }
@@ -5985,8 +6000,8 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
         if (operation == 21) finishExtrudeFace(length,false);
         if (operation == 22) finishMergeSolids();
         if (operation == 23) finishSubtractSolids();
+        if (operation == 24) finishMoveObject();
         if (operation == 31) finishEditObject(length,false);
-        if (operation == 41) finishMoveObject();
     }
 
     if (lengthInputForm) lengthInputForm=nullptr;
@@ -6007,7 +6022,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
     ui->drawingWindow->reset_vertexSymbol();
 
     // reset lists
-    selectedItems.clear();
+    selectedItemsList.clear();
     vertexList.clear();
 
     // set to no active operation

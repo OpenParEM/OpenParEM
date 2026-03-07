@@ -125,6 +125,7 @@ public:
     void startPickVertex ();
     //void finishPickVertex (gp_Pnt);
     void finishExtrudeFace (double, bool);
+    void finishMoveObject (CustomTreeWidgetItem *);
     void finishMoveObject ();
 
     bool isValidMergeSolids ();
@@ -423,7 +424,7 @@ private:
     bool isIntegrationPath;
     gp_Pnt lastMousePosition;
     Polywire *polywire;
-    std::vector<CustomTreeWidgetItem *> selectedItems;
+    std::vector<CustomTreeWidgetItem *> selectedItemsList;
     std::vector<Polywire *> polywireDatabase;
     std::vector<Process *> processDatabase;
 
@@ -431,9 +432,8 @@ private:
     int operation;   // 0 - no operation defined
                      // 1 - pick vertex
                      // 11 - draw line; 12 - draw polyline; 13 - draw rectangle; 14 - draw polycircle
-                     // 21 - extrude;  22 - merge;  23 - subtract
+                     // 21 - extrude;  22 - merge;  23 - subtract; 24 - move
                      // 31 - edit
-                     // 41 - move
 };
 
 #endif // OPEMG_H

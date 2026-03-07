@@ -23,6 +23,7 @@
 
 //#include "Polywire.h"
 #include <QWidget>
+#include <gp_Pnt.hxx>
 
 class Process : public QWidget
 {
