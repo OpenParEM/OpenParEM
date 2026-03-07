@@ -43,12 +43,8 @@ public:
     void set_length (double length_);
     void set_normal (gp_Dir normal_) {normal=normal_;}
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
-    void set_relay (Relay *relay_) {
-        relay=relay_;
-        //connect(relay,&Relay::pickVertexFinished,this,&LengthInputForm::pickVertexFinished);
-    }
+    void set_relay (Relay *relay_) {relay=relay_;}
     void set_Extrude (Extrude *extrude_) {extrude=extrude_;}
-
 
     void reject () override;
 

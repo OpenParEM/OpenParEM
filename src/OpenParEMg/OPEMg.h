@@ -116,15 +116,16 @@ public:
     void clearSelection ();
     void restoreSelection ();
 
-    bool isValidExtrudeFace ();
     void rebuildTopLevelShape ();
-    void reextrudeFace (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void reprocess (CustomTreeWidgetItem *);
 
     void startOperation ();
     void startPickVertex ();
-    //void finishPickVertex (gp_Pnt);
-    void finishExtrudeFace (double, bool);
+
+    bool isValidExtrudePolywire ();
+    void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+    void finishExtrudePolywire (double, bool);
+
     void finishMoveObject (CustomTreeWidgetItem *);
     void finishMoveObject ();
 
@@ -283,7 +284,7 @@ private slots:
     void createPort ();
     void createPath ();
     void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape);
-    void extrudeFace ();
+    void extrudePolywire ();
     void mergeSolids ();
     void subtractSolids ();
 

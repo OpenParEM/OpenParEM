@@ -1148,9 +1148,9 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             createPathAction=new QAction("Create Path");
             createPathAction->setToolTip("Copy the selected face and create a path.");
             extrudeAction=new QAction("Extrude");
-            extrudeAction->setToolTip("Extrude the selected face along its normal.");
+            extrudeAction->setToolTip("Extrude the selected polywires along each normal.");
             mergeAction=new QAction("Merge");
-            mergeAction->setToolTip("Merger two solid objects.");
+            mergeAction->setToolTip("Merge two solid objects.");
             subtractAction=new QAction("Subtract");
             subtractAction->setToolTip("Subtract the second selected solid object from the first selected solid object.");
 
@@ -1162,7 +1162,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
             connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
             connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
-            connect(extrudeAction, &QAction::triggered, this, &OpenParEMg::extrudeFace);
+            connect(extrudeAction, &QAction::triggered, this, &OpenParEMg::extrudePolywire);
             connect(mergeAction, &QAction::triggered, this, &OpenParEMg::mergeSolids);
             connect(subtractAction, &QAction::triggered, this, &OpenParEMg::subtractSolids);
 
@@ -1189,31 +1189,18 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             menu.addMenu(&modify);
 
             createPortAction->setEnabled(false);
-            extrudeAction->setEnabled(false);
             if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {
                 createPortAction->setEnabled(true);
-
-                QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-                if (selectedItems.count() == 1 && clickedItem) {
-                    CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)clickedItem->QTreeWidgetItem::parent();
-                    if (parent == &drawing) extrudeAction->setEnabled(true);
-                }
             }
 
             createPathAction->setEnabled(false);
             if (ui->drawingWindow->numberDrawingFaceSelected() > 0) {createPathAction->setEnabled(true);}
 
-            editAction->setEnabled(false);
-            if (isValidObjectEdit()) editAction->setEnabled(true);
-
+            editAction->setEnabled(isValidObjectEdit());
             moveAction->setEnabled(true);
-
-            mergeAction->setEnabled(false);
-            if (isValidMergeSolids()) mergeAction->setEnabled(true);
-
-            subtractAction->setEnabled(false);
-            if (isValidSubtractSolids()) subtractAction->setEnabled(true);
-
+            extrudeAction->setEnabled(isValidExtrudePolywire());
+            mergeAction->setEnabled(isValidMergeSolids());
+            subtractAction->setEnabled(isValidSubtractSolids());
             deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
             menu.exec(ui->drawingWindow->mapToGlobal(pnt));
@@ -2642,30 +2629,42 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &sha
     ui->drawingWindow->showItem(item);
 }
 
-// when drawing
-void OpenParEMg::extrudeFace ()
+bool OpenParEMg::isValidExtrudePolywire ()
+{
+    std::cout << "OpenParEMg::isValidExtrudePolywire" << std::endl; std::cout.flush();
+
+    int polywireCount=0;
+    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < items.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        if (item->is_drawing()) {
+            Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
+            if (polywire) polywireCount++;
+        }
+        i++;
+    }
+    if (polywireCount > 0 && items.count() == polywireCount) return true;
+    return false;
+}
+
+void OpenParEMg::extrudePolywire ()
 {
     std::cout << "OpenParEMg::extrudeFace" << std::endl; std::cout.flush();
 
     operation=21;
     startOperation();
 
-    int faceCount=0;
-    while (faceCount < ui->drawingWindow->numberDrawingFaceSelected()) {
-        selectedFace=TopoDS::Face(ui->drawingWindow->get_selectedFace(faceCount));
-        faceCount++;  // should only be one
+    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < items.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        ui->drawingWindow->hideItem(item);
+        selectedItemsList.push_back(item);
+        i++;
     }
 
-    // get the normal
-    Handle(Geom_Surface) surface=BRep_Tool::Surface(selectedFace);
-    Handle(Geom_Plane) plane=Handle(Geom_Plane)::DownCast(surface);
-    if (plane.IsNull()) {
-        QMessageBox mb;
-        mb.critical(nullptr, "Error", "Unable to complete the extrude operation.");
-        mb.setFixedSize(500, 200);
-        return;
-    }
-    faceNormal=plane->Pln().Axis().Direction();
+    ui->drawingWindow->set_selectedItems(&selectedItemsList);
 
     if (lengthInputForm) delete lengthInputForm;
     lengthInputForm=new LengthInputForm();
@@ -2675,62 +2674,55 @@ void OpenParEMg::extrudeFace ()
     lengthInputForm->setModal(false);
     connect(this,&OpenParEMg::sendPnt,lengthInputForm,&LengthInputForm::pickVertexFinished);
     lengthInputForm->show();
-
-    setMenus();
-
-    std::cout << "exit OpenParEMg::extrudeFace" << std::endl; std::cout.flush();
 }
 
-void OpenParEMg::finishExtrudeFace (double length, bool cancel)
+void OpenParEMg::finishExtrudePolywire (double length, bool cancel)
 {
     std::cout << "OpenParEMg::finishExtrudeFace" << std::endl; std::cout.flush();
 
     if (!cancel && abs(length) > 1e-12) {
 
-        // scale it
-        gp_Vec scaledVec=gp_Vec(faceNormal)*length;
+        int i=0;
+        while (i < selectedItemsList.size()) {
+            CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItemsList[i];
+            if (!item->get_AIS_Shape().IsNull()) {
+                Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
+                if (polywire) {
 
-        // extrude it
-        BRepPrimAPI_MakePrism aPrism(selectedFace,scaledVec);
+                    // scale it
+                    gp_Vec scaledVec=gp_Vec(polywire->getNormal())*length;
 
-        // add it
-        CustomTreeWidgetItem *newItem=addItemShape(aPrism,&drawing);
+                    // extrude it
+                    BRepPrimAPI_MakePrism aPrism(item->get_AIS_Shape()->Shape(),scaledVec);
 
-        // define the process
-        Extrude *extrude=new Extrude();
-        extrude->set_length(length);
-        newItem->set_Process(extrude);
+                    // add it
+                    CustomTreeWidgetItem *newItem=addItemShape(aPrism,&drawing);
 
-        polywire=static_cast<Polywire*>(clickedItem->get_Polywire());
-        if (!polywire) {
-            // create a polywire if one does not exist
-            Polyline *polyline=new Polyline();
-            polyline->buildFromFace(selectedFace);
-            polyline->setNormal(faceNormal);
+                    // define the process
+                    Extrude *extrude=new Extrude();
+                    extrude->set_length(length);
+                    newItem->set_Process(extrude);
 
-            CustomTreeWidgetItem *childItem=addItemShape(selectedFace,newItem);
-            childItem->set_Polywire(polyline);
-        } else {
-            // move the face object
-            polywire->setNormal(faceNormal);
-            ui->drawingWindow->deleteItem(clickedItem);
-            CustomTreeWidgetItem *childItem=addItemShape(selectedFace,newItem);
-            childItem->set_Polywire(polywire);
-            polywire=nullptr;
+                    // save the process
+                    processDatabase.push_back(extrude);
+                    extrude=nullptr;
+
+                    // move the object
+                    drawing.removeChild(item);
+                    newItem->addChild(item);
+
+                    brepChanged=true;
+                }
+            }
+            i++;
         }
 
-        // save the process
-        processDatabase.push_back(extrude);
-        extrude=nullptr;
-
-        brepChanged=true;
+        // rebuild top level
+        reprocess(&drawing);
     }
-
-    std::cout << "exit OpenParEMg::finishExtrudeFace" << std::endl; std::cout.flush();
 }
 
-// when reprocessing
-void OpenParEMg::reextrudeFace (CustomTreeWidgetItem *item, CustomTreeWidgetItem *child)
+void OpenParEMg::reextrudePolywire (CustomTreeWidgetItem *item, CustomTreeWidgetItem *child)
 {
     std::cout << "OpenParEMg::reextrudeFace" << std::endl; std::cout.flush();
 
@@ -2798,7 +2790,7 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
         int i=0;
         while (i < item->childCount()) {
             CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-            reextrudeFace(item,child);
+            reextrudePolywire(item,child);
             i++;
         }
     }
@@ -5997,7 +5989,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
 
     } else {
         if (operation == 11 || operation == 12 || operation == 13 || operation == 14) drawLineFinished(polywire->buildWire());
-        if (operation == 21) finishExtrudeFace(length,false);
+        if (operation == 21) finishExtrudePolywire(length,false);
         if (operation == 22) finishMergeSolids();
         if (operation == 23) finishSubtractSolids();
         if (operation == 24) finishMoveObject();
