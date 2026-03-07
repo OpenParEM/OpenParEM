@@ -18,55 +18,136 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "LengthInputForm.h"
-#include "ui_LengthInputForm.h"
+#include "RotateInputForm.h"
+#include "ui_RotateInputForm.h"
 
-LengthInputForm::LengthInputForm(QWidget *parent)
+RotateInputForm::RotateInputForm(QWidget *parent)
     : QDialog(parent)
-    , ui(new Ui::LengthInputForm)
+    , ui(new Ui::RotateInputForm)
 {
     ui->setupUi(this);
 
-    setFixedSize(width(),height());
-
-    validator.setNotation(QDoubleValidator::ScientificNotation);
-    ui->lineEdit->setValidator(&validator);
-
     ui->pickStart->setCheckable(true);
+    ui->pickStart->setEnabled(false);
     ui->pickEnd->setCheckable(true);
+    ui->pickEnd->setEnabled(false);
     ui->OkButton->setCheckable(true);
     ui->CancelButton->setCheckable(true);
 
-    ui->OkButton->setEnabled(false);
-
-    length=0;
     pickStartPoint=false;
     pickEndPoint=false;
     hasStartPoint=false;
     hasEndPoint=false;
 
-    extrude=nullptr;
+    ui->Xaxis->setChecked(false);
+    ui->Yaxis->setChecked(false);
+    ui->Zaxis->setChecked(false);
+    ui->CustomAxis->setChecked(false);
+
+    // default to x-axis
+
+    ui->Xaxis->setChecked(true);
+
+    ui->startX->setText("0");
+    ui->startY->setText("0");
+    ui->startZ->setText("0");
+    startPoint.SetCoord(0,0,0);
+
+    ui->endX->setText("1");
+    ui->endY->setText("0");
+    ui->endZ->setText("0");
+    endPoint.SetCoord(1,0,0);
+
+    // default angle is set to 90 degrees in the forms editor
 }
 
-LengthInputForm::~LengthInputForm ()
+RotateInputForm::~RotateInputForm ()
 {
     delete ui;
 }
 
-void LengthInputForm::set_length (double length_)
+void RotateInputForm::on_Xaxis_clicked ()
 {
-    length=length_;
-    ui->lineEdit->setText(QString::number(length));
-}
+    ui->Xaxis->setChecked(true);
+    ui->Yaxis->setChecked(false);
+    ui->Zaxis->setChecked(false);
+    ui->CustomAxis->setChecked(false);
 
-void LengthInputForm::on_lineEdit_returnPressed ()
-{
-    length=ui->lineEdit->text().toDouble();
+    ui->startX->setText("0");
+    ui->startY->setText("0");
+    ui->startZ->setText("0");
+    startPoint.SetCoord(0,0,0);
+
+    ui->endX->setText("1");
+    ui->endY->setText("0");
+    ui->endZ->setText("0");
+    endPoint.SetCoord(1,0,0);
+
     ui->OkButton->setEnabled(true);
-    if (abs(length) < 1e-12) ui->OkButton->setEnabled(false);
 }
 
-void LengthInputForm::on_pickStart_clicked ()
+void RotateInputForm::on_Yaxis_clicked ()
+{
+    ui->Xaxis->setChecked(false);
+    ui->Yaxis->setChecked(true);
+    ui->Zaxis->setChecked(false);
+    ui->CustomAxis->setChecked(false);
+
+    ui->startX->setText("0");
+    ui->startY->setText("0");
+    ui->startZ->setText("0");
+    startPoint.SetCoord(0,0,0);
+
+    ui->endX->setText("0");
+    ui->endY->setText("1");
+    ui->endZ->setText("0");
+    endPoint.SetCoord(0,1,0);
+
+    ui->OkButton->setEnabled(true);
+}
+
+void RotateInputForm::on_Zaxis_clicked ()
+{
+    ui->Xaxis->setChecked(false);
+    ui->Yaxis->setChecked(false);
+    ui->Zaxis->setChecked(true);
+    ui->CustomAxis->setChecked(false);
+
+    ui->startX->setText("0");
+    ui->startY->setText("0");
+    ui->startZ->setText("0");
+    startPoint.SetCoord(0,0,0);
+
+    ui->endX->setText("0");
+    ui->endY->setText("0");
+    ui->endZ->setText("1");
+    endPoint.SetCoord(0,0,1);
+
+    ui->OkButton->setEnabled(true);
+}
+
+void RotateInputForm::on_CustomAxis_clicked ()
+{
+    ui->OkButton->setEnabled(false);
+
+    ui->Xaxis->setChecked(false);
+    ui->Yaxis->setChecked(false);
+    ui->Zaxis->setChecked(false);
+    ui->CustomAxis->setChecked(true);
+
+    ui->startX->setText("");
+    ui->startY->setText("");
+    ui->startZ->setText("");
+
+    ui->endX->setText("");
+    ui->endY->setText("");
+    ui->endZ->setText("");
+
+    ui->pickStart->setEnabled(true);
+    ui->pickEnd->setEnabled(true);
+}
+
+void RotateInputForm::on_pickStart_clicked ()
 {
     pickStartPoint=true;
     pickEndPoint=false;
@@ -78,7 +159,7 @@ void LengthInputForm::on_pickStart_clicked ()
     drawingWindow->updateViewer();
 }
 
-void LengthInputForm::on_pickEnd_clicked ()
+void RotateInputForm::on_pickEnd_clicked ()
 {
     pickStartPoint=false;
     pickEndPoint=true;
@@ -90,21 +171,22 @@ void LengthInputForm::on_pickEnd_clicked ()
     drawingWindow->updateViewer();
 }
 
-void LengthInputForm::on_OkButton_clicked ()
+void RotateInputForm::on_OkButton_clicked ()
 {
     ui->OkButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),length,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+    double angle=ui->angleDegrees->value();
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,angle,startPoint,endPoint,false);
     QDialog::close();
 }
 
-void LengthInputForm::on_CancelButton_clicked ()
+void RotateInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
     emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
     QDialog::close();
 }
 
-void LengthInputForm::pickVertexFinished (gp_Pnt point)
+void RotateInputForm::pickVertexFinished (gp_Pnt point)
 {
     this->setEnabled(true);
 
@@ -128,31 +210,19 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
 
     if (hasStartPoint && hasEndPoint) {
         Standard_Real distance=startPoint.Distance(endPoint);
-        length=distance;
-        if (length > 1e-12) {
-            gp_Dir selectionDir;
-            selectionDir.SetCoord(endPoint.X()-startPoint.X(),endPoint.Y()-startPoint.Y(),endPoint.Z()-startPoint.Z());
-            if (normal.IsOpposite(selectionDir,1.5)) length=-length;
+        if (distance > 1e-12) {
             ui->OkButton->setEnabled(true);
         } else {
             ui->OkButton->setEnabled(false);
         }
-
-        ui->lineEdit->setText(QString::number(length));
     }
 }
 
-void LengthInputForm::reject ()
+void RotateInputForm::reject ()
 {
-    std::cout << "LengthInputForm::reject" << std::endl; std::cout.flush();
     ui->CancelButton->setChecked(true);
     emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
 
     QDialog::reject();
-}
-
-void LengthInputForm::print_point (gp_Pnt point)
-{
-    std::cout << "picked point: (" << point.X() << "," << point.Y() << "," << point.Z() << ")" << std::endl; std::cout.flush();
 }
 

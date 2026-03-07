@@ -1,3 +1,23 @@
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//    OpenParEM3g - A GUI for OpenParEM3D                                     //
+//    Copyright (C) 2025 Brian Young                                          //
+//                                                                            //
+//    This program is free software: you can redistribute it and/or modify    //
+//    it under the terms of the GNU General Public License as published by    //
+//    the Free Software Foundation, either version 3 of the License, or       //
+//    (at your option) any later version.                                     //
+//                                                                            //
+//    This program is distributed in the hope that it will be useful,         //
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of          //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           //
+//    GNU General Public License for more details.                            //
+//                                                                            //
+//    You should have received a copy of the GNU General Public License       //
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.   //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 #include "PolycircleEditForm.h"
 #include "ui_PolycircleEditForm.h"
 
@@ -156,7 +176,7 @@ void PolycircleEditForm::on_OkButton_clicked ()
 
     polywire->recalculate();
 
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,false);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
 
     QDialog::close();
 }
@@ -198,6 +218,6 @@ void PolycircleEditForm::on_CancelButton_clicked ()
 void PolycircleEditForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
     QDialog::reject();
 }

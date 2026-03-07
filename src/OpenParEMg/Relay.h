@@ -14,7 +14,7 @@ public:
 
 signals:
     void setMenus ();
-    void finishOperation (gp_Pnt, double, bool);
+    void finishOperation (gp_Pnt, double, double, gp_Pnt, gp_Pnt, bool);
     void getCurrentMousePosition (gp_Pnt);
     void getPickedVertex (gp_Pnt, bool);
 };

@@ -28,6 +28,7 @@
 #include <QTimer>
 
 #include "LengthInputForm.h"
+#include "RotateInputForm.h"
 #include "Process.h"
 #include "RectangleEditForm.h"
 #include "PolycircleEditForm.h"
@@ -128,6 +129,9 @@ public:
 
     void finishMoveObject (CustomTreeWidgetItem *);
     void finishMoveObject ();
+
+    void finishRotateObject (CustomTreeWidgetItem *, double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
+    void finishRotateObject (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
 
     bool isValidMergeSolids ();
     void finishMergeSolids ();
@@ -280,6 +284,7 @@ private slots:
 
     void editObject ();
     void moveObject ();
+    void rotateObject ();
     bool isValidObjectEdit ();
     void createPort ();
     void createPath ();
@@ -312,7 +317,7 @@ private slots:
     void on_actionMaterialsOptions_triggered();
 
     void getCurrentMousePosition (gp_Pnt);
-    void finishOperation (gp_Pnt, double, bool);
+    void finishOperation (gp_Pnt, double, double, gp_Pnt, gp_Pnt, bool);
     void getPickedVertex (gp_Pnt, bool);
 
 public slots:
@@ -374,6 +379,7 @@ private:
     QAction *drawPolycircleAction;
     QAction *editAction;
     QAction *moveAction;
+    QAction *rotateAction;
     QAction *doneAction;
     QAction *cancelAction;
     QAction *deleteLastPointAction;
@@ -414,6 +420,7 @@ private:
     LengthInputForm *lengthInputForm;
     RectangleEditForm *rectangleEditForm;
     PolycircleEditForm *polycircleEditForm;
+    RotateInputForm *rotateInputForm;
 
     // vertex pick
     gp_Dir faceNormal;
@@ -433,7 +440,7 @@ private:
     int operation;   // 0 - no operation defined
                      // 1 - pick vertex
                      // 11 - draw line; 12 - draw polyline; 13 - draw rectangle; 14 - draw polycircle
-                     // 21 - extrude;  22 - merge;  23 - subtract; 24 - move
+                     // 21 - extrude;  22 - merge;  23 - subtract; 24 - move; 25 - rotate
                      // 31 - edit
 };
 

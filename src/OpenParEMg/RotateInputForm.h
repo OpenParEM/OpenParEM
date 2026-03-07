@@ -18,27 +18,55 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef POLYGONSELECTION_H
-#define POLYGONSELECTION_H
+#ifndef ROTATEINPUTFORM_H
+#define ROTATEINPUTFORM_H
 
-#include <SelectMgr_Filter.hxx>
-#include <gp_Pln.hxx>
+#include "CustomOpenGLWidget.h"
+#include <QDialog>
 #include <gp_Pnt.hxx>
-#include "path.hpp"
+#include <qvalidator.h>
 
-class VertexFilter : public SelectMgr_Filter
+namespace Ui {
+class RotateInputForm;
+}
+
+class RotateInputForm : public QDialog
 {
-public:
-    DEFINE_STANDARD_RTTI_INLINE(VertexFilter, SelectMgr_Filter)
+    Q_OBJECT
 
-    bool set_outline (Path *);
-    bool get_midPoint (TopoDS_Edge& edge, gp_Pnt *);
-    virtual Standard_Boolean IsOk (const Handle(SelectMgr_EntityOwner)& theOwner) const override;
+public:
+    explicit RotateInputForm(QWidget *parent = nullptr);
+    ~RotateInputForm();
+
+    void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
+    void set_relay (Relay *relay_) {relay=relay_;}
+
+    void reject () override;
+
+private slots:
+    void on_Xaxis_clicked ();
+    void on_Yaxis_clicked ();
+    void on_Zaxis_clicked ();
+    void on_CustomAxis_clicked ();
+    void on_pickStart_clicked ();
+    void on_pickEnd_clicked ();
+    void on_OkButton_clicked ();
+
+public slots:
+    void pickVertexFinished (gp_Pnt);
+    void on_CancelButton_clicked ();
 
 private:
-    std::vector<gp_Pnt> outline;
-    gp_Pln plane;
-    std::vector<gp_Pnt2d> outline2D;
+    Ui::RotateInputForm *ui;
+
+    bool pickStartPoint;
+    bool pickEndPoint;
+    bool hasStartPoint;
+    bool hasEndPoint;
+    gp_Pnt startPoint, endPoint;
+
+    CustomOpenGLWidget *drawingWindow;
+    Relay *relay;
 };
 
-#endif // POLYGONSELECTION_H
+#endif // ROTATEINPUTFORM_H

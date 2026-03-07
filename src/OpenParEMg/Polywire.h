@@ -63,6 +63,7 @@ public:
     TopoDS_Wire buildWire();
     void moveTo (gp_Pnt &pnt);
     void shift (gp_Pnt &pnt1, gp_Pnt &pnt2);
+    void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
 
     bool isModified () {return modified;}
     void setModified (bool modified_) {modified=modified_;}

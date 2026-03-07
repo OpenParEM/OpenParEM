@@ -137,6 +137,27 @@ void Polywire::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
     }
 }
 
+void Polywire::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
+{
+    if (shapePoints.size() == 0) return;
+    modified=true;
+
+    gp_Dir dir(gp_Vec(p1,p2));
+    gp_Ax1 axis(p1,dir);
+
+    double angleRadians=angleDegrees*M_PI/180;
+
+    // points
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        shapePoints[i]=shapePoints[i].Rotated(axis,angleRadians);
+        i++;
+    }
+
+    // normal
+    normal=normal.Rotated(axis,angleRadians);
+}
+
 void Line::drawRubberband ()
 {
     //std::cout << "Line::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();

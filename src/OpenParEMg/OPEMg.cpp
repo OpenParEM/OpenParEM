@@ -63,10 +63,10 @@
 #include <QTreeWidgetItem>
 //#include <thread>
 
-//#include "petscsys.h"
 #include "MeshOptions.h"
 #include "SimulateOptions.h"
 #include "LengthInputForm.h"
+#include "RotateInputForm.h"
 #include "about.h"
 #include "license.h"
 #include "FrequencyPlanG.h"
@@ -162,6 +162,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(drawPolylineAction);
     QActionList.push_back(editAction);
     QActionList.push_back(moveAction);
+    QActionList.push_back(rotateAction);
     QActionList.push_back(doneAction);
     QActionList.push_back(cancelAction);
     QActionList.push_back(deleteLastPointAction);
@@ -265,6 +266,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     lengthInputForm=nullptr;
     rectangleEditForm=nullptr;
     polycircleEditForm=nullptr;
+    rotateInputForm=nullptr;
 
     operation=0;
 
@@ -1141,6 +1143,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             hideAction=new QAction("Hide");
             editAction=new QAction("Edit");
             moveAction=new QAction("Move");
+            rotateAction=new QAction("Rotate");
             unselectAction=new QAction("Unselect");
             deleteAction=new QAction("Delete");
             createPortAction=new QAction("Create Port");
@@ -1158,6 +1161,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
             connect(editAction, &QAction::triggered, this, &OpenParEMg::editObject);
             connect(moveAction, &QAction::triggered, this, &OpenParEMg::moveObject);
+            connect(rotateAction, &QAction::triggered, this, &OpenParEMg::rotateObject);
             connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
             connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
             connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
@@ -1183,6 +1187,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             QMenu modify("Modify");
             modify.addAction(editAction);
             modify.addAction(moveAction);
+            modify.addAction(rotateAction);
             modify.addAction(extrudeAction);
             modify.addAction(mergeAction);
             modify.addAction(subtractAction);
@@ -1198,6 +1203,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 
             editAction->setEnabled(isValidObjectEdit());
             moveAction->setEnabled(true);
+            rotateAction->setEnabled(true);
             extrudeAction->setEnabled(isValidExtrudePolywire());
             mergeAction->setEnabled(isValidMergeSolids());
             subtractAction->setEnabled(isValidSubtractSolids());
@@ -3045,7 +3051,7 @@ void OpenParEMg::mergeSolids ()
 
     ui->drawingWindow->set_selectedItems(&selectedItemsList);
 
-    finishOperation(gp_Pnt(0,0,0),0,false);
+    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
 }
 
 void OpenParEMg::finishMergeSolids ()
@@ -3119,7 +3125,7 @@ void OpenParEMg::subtractSolids ()
 
     ui->drawingWindow->set_selectedItems(&selectedItemsList);
 
-    finishOperation(gp_Pnt(0,0,0),0,false);
+    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
 }
 
 void OpenParEMg::finishSubtractSolids ()
@@ -3218,6 +3224,63 @@ void OpenParEMg::finishMoveObject ()
     long unsigned int i=0;
     while (i < selectedItemsList.size()) {
         finishMoveObject(selectedItemsList[i]);
+        i++;
+    }
+}
+
+void OpenParEMg::rotateObject ()
+{
+    std::cout << "OpenParEMg::rotateObject" << std::endl; std::cout.flush();
+
+    operation=25;
+    startOperation();
+
+    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < items.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        if (item->is_drawing()) {
+            ui->drawingWindow->hideItem(item);
+            selectedItemsList.push_back(item);
+        }
+        i++;
+    }
+    ui->drawingWindow->set_selectedItems(&selectedItemsList);
+
+    if (rotateInputForm) delete rotateInputForm;
+    rotateInputForm=new RotateInputForm();
+    rotateInputForm->set_drawingWindow(ui->drawingWindow);
+    rotateInputForm->set_relay(relay);
+    rotateInputForm->setModal(false);
+    connect(this,&OpenParEMg::sendPnt,rotateInputForm,&RotateInputForm::pickVertexFinished);
+    rotateInputForm->show();
+}
+
+void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item, double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
+{
+    Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
+    if (polywire) {
+        polywire->rotate(angleDegrees,p1,p2);
+        reprocess(item);
+        brepChanged=true;
+    }
+
+    Process *process=static_cast<Process *>(item->get_Process());
+    if (process) {
+        int i=0;
+        while (i < item->childCount()) {
+            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+            finishRotateObject(child,angleDegrees,p1,p2);
+            i++;
+        }
+    }
+}
+
+void OpenParEMg::finishRotateObject (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
+{
+    long unsigned int i=0;
+    while (i < selectedItemsList.size()) {
+        finishRotateObject(selectedItemsList[i],angleDegrees,p1,p2);
         i++;
     }
 }
@@ -4796,6 +4859,11 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
             polycircleEditForm=nullptr;
         }
 
+        if (rotateInputForm) {
+            rotateInputForm->on_CancelButton_clicked();
+            delete rotateInputForm;
+            rotateInputForm=nullptr;
+        }
 
         ui->drawingWindow->unselectAllItems();
         disableMenus=false;
@@ -5866,9 +5934,8 @@ void OpenParEMg::deleteLastPoint ()
 
 void OpenParEMg::finishPolyline ()
 {
-    std::cout << "OpenParEMg::finishPolyline  operation=" << operation  << std::endl; std::cout.flush();
-    finishOperation(gp_Pnt(0,0,0),0,false);
-    std::cout << "exit OpenParEMg::finishPolyline  operation=" << operation  << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishPolyline  operation=" << operation  << std::endl; std::cout.flush();
+    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
 }
 
 void OpenParEMg::closePolyline ()
@@ -5918,6 +5985,7 @@ void OpenParEMg::startOperation ()
     vertexList.clear();
     selectedItemsList.clear();
 
+    setMenus();
     std::cout << "exit OpenParEMg::startOperation  operation=" << operation << std::endl; std::cout.flush();
 }
 
@@ -5945,7 +6013,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 {
     std::cout << "OpenParEMg::getPickedVertex  operation=" << operation << "  polywire=" << polywire << std::endl; std::cout.flush();
 
-    if (cancel) finishOperation(pnt,0,true);
+    if (cancel) finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
 
     vertexList.push_back(pnt);
 
@@ -5954,14 +6022,15 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
             if (polywire->isValidPoint(pnt)) {
                 polywire->addPoint(pnt);
                 if (polywire->isFinished()) {
-                    finishOperation(pnt,0,false);
+                    finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
                 }
             }
         }
     }
 
     if (operation == 21 && lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
-    if (operation == 24 && vertexList.size() == 2) finishOperation(pnt,0,false);
+    if (operation == 24 && vertexList.size() == 2) finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+    if (operation == 25 && rotateInputForm) rotateInputForm->pickVertexFinished(pnt);
     if (operation == 31) {
         if (rectangleEditForm) rectangleEditForm->pickVertexFinished(pnt);
         if (lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
@@ -5971,7 +6040,8 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     lastMousePosition=pnt;
 }
 
-void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
+// pass in variables needed by various operations; not all operations use all variables
+void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees, gp_Pnt p1, gp_Pnt p2, bool cancel)
 {
     std::cout << "OpenParEMg::finishOperation  operation=" << operation  << std::endl; std::cout.flush();
 
@@ -5992,12 +6062,14 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, bool cancel)
         if (operation == 22) finishMergeSolids();
         if (operation == 23) finishSubtractSolids();
         if (operation == 24) finishMoveObject();
+        if (operation == 25) finishRotateObject(angleDegrees,p1,p2);
         if (operation == 31) finishEditObject(length,false);
     }
 
     if (lengthInputForm) lengthInputForm=nullptr;
     if (rectangleEditForm) rectangleEditForm=nullptr;
     if (polycircleEditForm) polycircleEditForm=nullptr;
+    if (rotateInputForm) rotateInputForm=nullptr;
 
     // enable tree
     ui->drawingItemTree->setEnabled(true);
