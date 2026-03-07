@@ -2638,9 +2638,12 @@ bool OpenParEMg::isValidExtrudePolywire ()
     int i=0;
     while (i < items.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
-        if (item->is_drawing()) {
-            Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
-            if (polywire) polywireCount++;
+        if (item && item->is_drawing()) {
+            CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            if (parent && parent == &drawing) {
+                Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
+                if (polywire) polywireCount++;
+            }
         }
         i++;
     }
@@ -2861,23 +2864,19 @@ bool OpenParEMg::isValidObjectEdit ()
 {
     int count=0;
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    std::cout << "   selectedItems.count()=" << selectedItems.count() << std::endl; std::cout.flush();
     int i=0;
     while (i < selectedItems.count()) {
-        std::cout << "i=" << i << std::endl; std::cout.flush();
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_drawing()) {
+        if (item && item->is_drawing()) {
             Polywire *polywire=static_cast<Polywire*>(item->get_Polywire());
-            std::cout << "   polywire=" << polywire << std::endl; std::cout.flush();
             if (polywire) count++;
 
             Process *process=static_cast<Process *>(item->get_Process());
-            std::cout << "   process=" << process << std::endl; std::cout.flush();
             if (process) count++;
         }
         i++;
     }
-    if (count == 1) return true;
+    if (count == 1 && count == selectedItems.count()) return true;
     return false;
 }
 
@@ -3009,22 +3008,22 @@ bool OpenParEMg::isValidMergeSolids ()
     std::cout << "OpenParEMg::isValidMergeSolids" << std::endl; std::cout.flush();
 
     int solidCount=0;
-    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     int i=0;
-    while (i < items.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
-        if (item->is_drawing()) {
-            Handle(AIS_Shape) shape=item->get_AIS_Shape();
-            if (!shape.IsNull()) {
-                if (shape->Shape().ShapeType() == TopAbs_SOLID || shape->Shape().ShapeType() == TopAbs_COMPOUND) {
-                    CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-                    if (parent == &drawing) solidCount++;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item && item->is_drawing()) {
+            CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            if (parent && parent == &drawing) {
+                Handle(AIS_Shape) shape=item->get_AIS_Shape();
+                if (!shape.IsNull()) {
+                    if (shape->Shape().ShapeType() == TopAbs_SOLID || shape->Shape().ShapeType() == TopAbs_COMPOUND) solidCount++;
                 }
             }
         }
         i++;
     }
-    if (solidCount == 2 && items.count() == solidCount) return true;
+    if (solidCount == 2 && selectedItems.count() == solidCount) return true;
     return false;
 }
 
