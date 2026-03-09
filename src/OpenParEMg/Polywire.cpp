@@ -88,6 +88,25 @@ gp_Pnt Polywire::getPosition ()
     return position;
 }
 
+// assumes that pnt was picked from the AIS_Shape, so a very close match will be found
+void Polywire::setEditIndex (gp_Pnt &pnt)
+{
+    double closest=DBL_MAX;
+    long unsigned i=0;
+    while (i < shapePoints.size()) {
+        double distance=shapePoints[i].Distance(pnt);
+        if (distance < closest) {
+            closest=distance;
+            editIndex=i;
+        }
+        i++;
+    }
+}
+
+void Polywire::setEditPoint (gp_Pnt &pnt) {
+    shapePoints[editIndex]=pnt;
+}
+
 TopoDS_Wire Polywire::buildWire ()
 {
     BRepBuilderAPI_MakeWire wireBuilder;
@@ -166,6 +185,27 @@ void Line::drawRubberband ()
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
     rubberband=CreateAISLineFromVertices(shapePoints[shapePoints.size()-1],currentMousePosition);
+
+    if (!rubberband.IsNull()) {
+        viewerContext->Display(rubberband,0,-1,Standard_True);
+    }
+}
+
+void Line::drawStretchRubberband ()
+{
+    //std::cout << "Line::drawStretchRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
+
+    if (shapePoints.size() == 0) return;
+
+    if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
+
+    gp_Pnt p0=shapePoints[0];
+    gp_Pnt p1=shapePoints[1];
+
+    if (editIndex == 0) p0=currentMousePosition;
+    if (editIndex == 1) p1=currentMousePosition;
+
+    rubberband=CreateAISLineFromVertices(p0,p1);
 
     if (!rubberband.IsNull()) {
         viewerContext->Display(rubberband,0,-1,Standard_True);

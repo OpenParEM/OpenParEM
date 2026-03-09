@@ -24,8 +24,6 @@
 #include <QTreeWidgetItem>
 #include <QMenu>
 #include "AIS_Shape.hxx"
-#include "Polywire.h"
-#include "Process.h"
 #include <AIS_InteractiveContext.hxx>
 
 class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
@@ -34,7 +32,7 @@ class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
 public:
     CustomTreeWidgetItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type)
     {
-        type=0;
+        itemType=0;
         set_dimTag(-1,-1);  // for mesh items; invalid initialization
         OPEMobject=nullptr;
         polywire=nullptr;
@@ -54,9 +52,9 @@ public:
     void push_linkedItem (CustomTreeWidgetItem *linkedItem) {linkedItems.push_back(linkedItem);}
     CustomTreeWidgetItem* get_linkedItem (long unsigned int i) {return linkedItems[i];}
 
-    void set_type (int type_)
+    void set_itemType (int itemType_)
     {
-        type=type_;
+        itemType=itemType_;
         forShowHide=false;
         if (is_drawing()) forShowHide=true;
         if (is_port()) forShowHide=true;
@@ -69,28 +67,28 @@ public:
         if (is_rootBoundary()) forShowHide=true;
         if (is_rootMesh()) forShowHide=true;
     }
-    int get_type () {return type;}
+    int get_itemType () {return itemType;}
 
-    bool is_drawing () {if (type == 0) return true; return false;}
-    bool is_port () {if (type == 1) return true; return false;}
-    bool is_boundary () {if (type == 2) return true; return false;}
-    bool is_mesh () {if (type == 3) return true; return false;}
-    bool is_path () {if (type == 4) return true; return false;}
-    bool is_sport () {if (type == 5) return true; return false;}
-    bool is_impedanceDefinition () {if (type == 6) return true; return false;}
-    bool is_impedanceCalculation () {if (type == 7) return true; return false;}
-    bool is_sportLabel () {if (type == 8) return true; return false;}
-    bool is_sportNumber () {if (type == 9) return true; return false;}
-    bool is_voltage () {if (type == 10) return true; return false;}
-    bool is_current () {if (type == 11) return true; return false;}
-    bool is_scale () {if (type == 12) return true; return false;}
-    bool is_scaleValue () {if (type == 13) return true; return false;}
-    bool is_integrationPathSegment () {if (type == 14) return true; return false;}
-    bool is_rootDrawing () {if (type == 100) return true; return false;}
-    bool is_rootPort () {if (type == 101) return true; return false;}
-    bool is_rootBoundary () {if (type == 102) return true; return false;}
-    bool is_rootMesh () {if (type == 103) return true; return false;}
-    bool is_rootPath () {if (type == 104) return true; return false;}
+    bool is_drawing () {if (itemType == 0) return true; return false;}
+    bool is_port () {if (itemType == 1) return true; return false;}
+    bool is_boundary () {if (itemType == 2) return true; return false;}
+    bool is_mesh () {if (itemType == 3) return true; return false;}
+    bool is_path () {if (itemType == 4) return true; return false;}
+    bool is_sport () {if (itemType == 5) return true; return false;}
+    bool is_impedanceDefinition () {if (itemType == 6) return true; return false;}
+    bool is_impedanceCalculation () {if (itemType == 7) return true; return false;}
+    bool is_sportLabel () {if (itemType == 8) return true; return false;}
+    bool is_sportNumber () {if (itemType == 9) return true; return false;}
+    bool is_voltage () {if (itemType == 10) return true; return false;}
+    bool is_current () {if (itemType == 11) return true; return false;}
+    bool is_scale () {if (itemType == 12) return true; return false;}
+    bool is_scaleValue () {if (itemType == 13) return true; return false;}
+    bool is_integrationPathSegment () {if (itemType == 14) return true; return false;}
+    bool is_rootDrawing () {if (itemType == 100) return true; return false;}
+    bool is_rootPort () {if (itemType == 101) return true; return false;}
+    bool is_rootBoundary () {if (itemType == 102) return true; return false;}
+    bool is_rootMesh () {if (itemType == 103) return true; return false;}
+    bool is_rootPath () {if (itemType == 104) return true; return false;}
     bool is_root ()
     {
         if (is_rootDrawing()) return true;
@@ -198,7 +196,7 @@ public:
         aTrsf=gp_Trsf();
     }
 
-    void print_type ()
+    void print_itemType ()
     {
         if (is_rootDrawing()) std::cout << "root drawing" << std::endl;
         if (is_drawing()) std::cout << "drawing" << std::endl;
@@ -231,26 +229,27 @@ public:
         std::cout << "   forShowHide=" << forShowHide << std::endl;
         std::cout << "   OPEMobject=" << OPEMobject << std::endl;
         std::cout << "   polywire=" << polywire << std::endl;
-        if (is_rootDrawing()) std::cout << "   type=rootDrawing" << std::endl;
-        if (is_rootPort()) std::cout << "   type=rootPort" << std::endl;
-        if (is_rootBoundary()) std::cout << "   type=rootBoundary" << std::endl;
-        if (is_rootMesh()) std::cout << "   type=rootMesh" << std::endl;
-        if (is_rootPath()) std::cout << "   type=rootPath" << std::endl;
-        if (is_drawing()) std::cout << "   type=drawing" << std::endl;
-        if (is_port()) std::cout << "   type=port" << std::endl;
-        if (is_boundary()) std::cout << "   type=boundary" << std::endl;
-        if (is_mesh()) std::cout << "   type=mesh" << std::endl;
-        if (is_path()) std::cout << "   type=path" << std::endl;
-        if (is_sportLabel()) std::cout << "   type=sport" << std::endl;
-        if (is_impedanceDefinition()) std::cout << "   type=impedanceDefinition" << std::endl;
-        if (is_impedanceCalculation()) std::cout << "   type=impedanceCalculation" << std::endl;
-        if (is_sportNumber()) std::cout << "   type=sportNumber" << std::endl;
-        if (is_sport()) std::cout << "   type=sportNet" << std::endl;
-        if (is_voltage()) std::cout << "   type=voltage" << std::endl;
-        if (is_current()) std::cout << "   type=current" << std::endl;
-        if (is_scale()) std::cout << "   type=scale" << std::endl;
-        if (is_scaleValue()) std::cout << "   type=scaleValue" << std::endl;
-        if (is_integrationPathSegment()) std::cout << "   type=integrationPathSegment" << std::endl;
+        std::cout << "   itemType=" << itemType << std::endl;
+        if (is_rootDrawing()) std::cout << "   itemType=rootDrawing" << std::endl;
+        if (is_rootPort()) std::cout << "   itemType=rootPort" << std::endl;
+        if (is_rootBoundary()) std::cout << "   itemType=rootBoundary" << std::endl;
+        if (is_rootMesh()) std::cout << "   itemType=rootMesh" << std::endl;
+        if (is_rootPath()) std::cout << "   itemType=rootPath" << std::endl;
+        if (is_drawing()) std::cout << "   itemType=drawing" << std::endl;
+        if (is_port()) std::cout << "   itemType=port" << std::endl;
+        if (is_boundary()) std::cout << "   itemType=boundary" << std::endl;
+        if (is_mesh()) std::cout << "   itemType=mesh" << std::endl;
+        if (is_path()) std::cout << "   itemType=path" << std::endl;
+        if (is_sportLabel()) std::cout << "   itemType=sport" << std::endl;
+        if (is_impedanceDefinition()) std::cout << "   itemType=impedanceDefinition" << std::endl;
+        if (is_impedanceCalculation()) std::cout << "   itemType=impedanceCalculation" << std::endl;
+        if (is_sportNumber()) std::cout << "   itemType=sportNumber" << std::endl;
+        if (is_sport()) std::cout << "   itemType=sportNet" << std::endl;
+        if (is_voltage()) std::cout << "   itemType=voltage" << std::endl;
+        if (is_current()) std::cout << "   itemType=current" << std::endl;
+        if (is_scale()) std::cout << "   itemType=scale" << std::endl;
+        if (is_scaleValue()) std::cout << "   itemType=scaleValue" << std::endl;
+        if (is_integrationPathSegment()) std::cout << "   itemType=integrationPathSegment" << std::endl;
         std::cout << "   dimTag.first=" << dimTag.first << std::endl
                   << "   dimTag.second=" << dimTag.second << std::endl;
     }
@@ -298,7 +297,7 @@ private:
     std::vector<Handle(AIS_Shape)> meshEntities;       // for mesh
     std::pair<int,int> dimTag;                         //
     bool forShowHide;                                  // false - does not participate in item tree show/hide operations; true - does participate
-    int type;                                          // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh, 4 - path
+    int itemType;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh, 4 - path
                                                        // 5 - Sport (net), 6 - impedance definition, 7 - impedance calculation
                                                        // 8 - Sport label, 9 - Sport number,
                                                        // 10 - voltage, 11 - current

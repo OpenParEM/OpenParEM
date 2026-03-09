@@ -124,6 +124,9 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
 
     // set a default so that all vertices highlight with a circle
     Handle(Prs3d_Drawer) drawer=viewerContext->DefaultDrawer();
+
+    //xxx
+    //viewerContext->SetAutoActivateSelection(false);
 }
 
 CustomOpenGLWidget::~CustomOpenGLWidget ()
@@ -247,7 +250,9 @@ void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
             //if (pickVertex) emit relay->finishExtrudeFace(0,true);
             //if (polywire) emit relay->cancelDraw();
             //emit relay->finishOperation(gp_Pnt(0,0,0),0,true);
-            emit relay->getPickedVertex(gp_Pnt(0,0,0),true);
+            //xxx
+            //emit relay->getPickedVertex(gp_Pnt(0,0,0),true);
+            finishPickVertex(true);
         }
 
         // case Aspect_VKey_F: {
@@ -282,9 +287,9 @@ bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const
 }
 
 // vertex draw or pick
-void CustomOpenGLWidget::finishPickVertex ()
+void CustomOpenGLWidget::finishPickVertex (bool cancel)
 {
-    std::cout << "CustomOpenGLWidget::finishPickVertex" << std::endl; std::cout.flush();
+    std::cout << "CustomOpenGLWidget::finishPickVertex  cancel=" << cancel << std::endl; std::cout.flush();
 
     // remove temporaryVertex
     if (!temporaryVertex.IsNull()) {
@@ -292,7 +297,7 @@ void CustomOpenGLWidget::finishPickVertex ()
        temporaryVertex.Nullify();
     }
 
-    emit relay->getPickedVertex(vertexPoint,false);
+    emit relay->getPickedVertex(vertexPoint,cancel);
 }
 
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
@@ -323,7 +328,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
         if (pickVertex) {
             if (owner.IsNull()) {
                 vertexPoint=clickPoint;
-                finishPickVertex();
+                finishPickVertex(false);
             } else {
                 Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
                 if (!brepOwner.IsNull()) {
@@ -334,7 +339,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
                             gp_Pnt pnt=BRep_Tool::Pnt(vertex);
                             if (!vertex.IsNull()) {
                                 vertexPoint=pnt;
-                                finishPickVertex();
+                                finishPickVertex(false);
                             }
                         }
                     }
@@ -357,6 +362,8 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
+    std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickVertex=" << pickVertex << std::endl; std::cout.flush();
+
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
 

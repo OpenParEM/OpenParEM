@@ -39,7 +39,8 @@ public:
     explicit Polywire(QObject *parent = nullptr);
     virtual ~Polywire() {}
 
-    virtual void drawRubberband () = 0;
+    virtual void drawRubberband () = 0;         // while drawing - currentMousePosition is the next point
+    virtual void drawStretchRubberband () {}  // while stretching - currentMousePosition takes the editIndex place
     void deleteRubberband ();
     virtual bool isValidPoint (gp_Pnt &pnt);
     virtual bool canDeleteLastPoint () = 0;
@@ -60,6 +61,9 @@ public:
 
     void set_viewerContext (Handle(AIS_InteractiveContext) viewerContext_) {viewerContext=viewerContext_;}
 
+    void setEditIndex (gp_Pnt &pnt);
+    void setEditPoint (gp_Pnt &pnt);
+
     TopoDS_Wire buildWire();
     void moveTo (gp_Pnt &pnt);
     void shift (gp_Pnt &pnt1, gp_Pnt &pnt2);
@@ -72,11 +76,13 @@ signals:
 
 protected:
     bool modified;
-    std::vector<gp_Pnt> shapePoints;
-    gp_Vec normal;
-    gp_Pnt currentMousePosition;
-    Handle(AIS_Shape) rubberband;
-    Handle(AIS_InteractiveContext) viewerContext;
+    std::vector<gp_Pnt> shapePoints;                // shape outline
+    gp_Vec normal;                                  // normal to the shape
+    gp_Pnt currentMousePosition;                    // current mouse position while drawing
+    Handle(AIS_Shape) rubberband;                   // rubberband for drawing - currentMousePosition is the next point
+    Handle(AIS_InteractiveContext) viewerContext;   // drawing context
+
+    long unsigned int editIndex;                    // index into a completed shape outline for stretching
 };
 
 class Line : public Polywire
@@ -84,6 +90,7 @@ class Line : public Polywire
 public:
     Line () {}
     void drawRubberband () override;
+    void drawStretchRubberband () override;
     bool canDeleteLastPoint () override {return false;}
     bool canFinish () override {return false;}
     bool canClose () override {return false;}

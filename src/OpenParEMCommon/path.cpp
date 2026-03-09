@@ -2162,7 +2162,7 @@ void Path::addWirePoints (TopoDS_Wire wire)
 void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
 {
     item=new CustomTreeWidgetItem(0);
-    item->set_type(4);
+    item->set_itemType(4);
     item->set_OPEMobject(this);
     item->setText(0,QString::fromStdString(get_name()));
     item->setForeground(0,Qt::black);

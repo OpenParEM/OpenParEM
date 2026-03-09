@@ -91,6 +91,7 @@ public:
     ~OpenParEMg ();
 
     void saveProject ();
+    void addChildDisplayShape (CustomTreeWidgetItem *, std::pair<int,int> &dimTag);
     void addRootDisplayShape (TopoDS_Shape);
     void addItemWithShape (CustomTreeWidgetItem *);
     CustomTreeWidgetItem* addItemShape (TopoDS_Shape, CustomTreeWidgetItem *);
@@ -105,6 +106,12 @@ public:
     //void meshHideEntities ();
     void drawMesh ();
     void deleteMesh (bool);
+
+    bool isRootDrawingValidShow ();
+    bool isRootDrawingValidHide ();
+
+
+    bool isRootDrawingValidSelectAll ();
 
     int treeSelectionCount ();
     bool hasSelectedPaths ();
@@ -129,6 +136,8 @@ public:
 
     void finishMoveObject (CustomTreeWidgetItem *);
     void finishMoveObject ();
+
+    void finishStretchObject (gp_Pnt &pnt);
 
     void finishRotateObject (CustomTreeWidgetItem *, double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
     void finishRotateObject (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
@@ -197,6 +206,7 @@ private slots:
 
     // Functionality
 
+    void selectAllRootDrawingItems ();
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
     void expand (CustomTreeWidgetItem *);
     void collapse (CustomTreeWidgetItem *);
@@ -279,11 +289,12 @@ private slots:
     void keyPressEvent (QKeyEvent *) override;
     void keyReleaseEvent (QKeyEvent *) override;
 
-    void set_displayMode (CustomTreeWidgetItem *, int);
-    void set_selectionMode (CustomTreeWidgetItem *, int);
+    //void set_displayMode (CustomTreeWidgetItem *, int);
+    //void set_selectionMode (CustomTreeWidgetItem *, int);
 
     void editObject ();
     void moveObject ();
+    void stretchObject ();
     void rotateObject ();
     bool isValidObjectEdit ();
     void createPort ();
@@ -301,7 +312,7 @@ private slots:
     void on_actionDrawPolyline_triggered ();
     void on_actionDrawPolycircle_triggered ();
     void on_actionDrawRectangle_triggered ();
-    void drawLineFinished (TopoDS_Wire);
+    void finishDrawLine (TopoDS_Wire);
     void drawPath ();
     void drawLinePath ();
     void drawPolylinePath ();
@@ -331,6 +342,7 @@ private:
     //void setMenus ();
     void resetLockouts ();
     void printLockouts ();
+    void resetDrawing ();
     void resetProject ();
     //void getActionRunSetup (bool *, QString *);
 
@@ -364,6 +376,7 @@ private:
 
     QAction *showAction;
     QAction *hideAction;
+    QAction *selectAllAction;
     QAction *unselectAction;
     QAction *deleteAction;
     QAction *removeAction;
@@ -379,6 +392,7 @@ private:
     QAction *drawPolycircleAction;
     QAction *editAction;
     QAction *moveAction;
+    QAction *stretchAction;
     QAction *rotateAction;
     QAction *doneAction;
     QAction *cancelAction;
@@ -441,7 +455,7 @@ private:
                      // 1 - pick vertex
                      // 11 - draw line; 12 - draw polyline; 13 - draw rectangle; 14 - draw polycircle
                      // 21 - extrude;  22 - merge;  23 - subtract; 24 - move; 25 - rotate
-                     // 31 - edit
+                     // 31 - edit; 32 - stretch
 };
 
 #endif // OPEMG_H

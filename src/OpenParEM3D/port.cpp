@@ -1550,7 +1550,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     QString textName=QString::fromStdString(get_name());
     CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
     itemName->setText(0,textName);
-    itemName->set_type(2);
+    itemName->set_itemType(2);
     itemName->setForeground(0,Qt::gray);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     boundaryWidgetItem->addChild(itemName);
@@ -2633,7 +2633,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, Cu
 
     CustomTreeWidgetItem *itemScale=new CustomTreeWidgetItem(0);
     itemScale->setText(0,"scale");
-    itemScale->set_type(12);
+    itemScale->set_itemType(12);
     itemScale->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
     itemScale->setToolTip(0,"Scale factor for the integration path.");
     itemVI->addChild(itemScale);
@@ -2642,7 +2642,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, Cu
     //QString disabledBackground="background: rgb(240,240,240);";
 
     CustomTreeWidgetItem *itemScaleValue=new CustomTreeWidgetItem(0);
-    itemScaleValue->set_type(13);
+    itemScaleValue->set_itemType(13);
     itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
     itemScale->addChild(itemScaleValue);
 
@@ -2670,7 +2670,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, Cu
         CustomTreeWidgetItem *itemSegment=new CustomTreeWidgetItem(0);
         //itemSegment->set_AIS_Shape(drawingShape);
         itemSegment->setText(0,name);
-        itemSegment->set_type(14);
+        itemSegment->set_itemType(14);
         itemSegment->setForeground(0,Qt::gray);
         itemSegment->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
         itemSegment->setToolTip(0,"Path segment for integration.");
@@ -4344,7 +4344,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
 
     item=new CustomTreeWidgetItem(0);
     item->setText(0,netname);
-    item->set_type(5);
+    item->set_itemType(5);
     item->setToolTip(0,"Mode and its net name.");
     item->setForeground(0,Qt::black);
     item->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
@@ -4354,7 +4354,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     // S port
     CustomTreeWidgetItem *itemSport=new CustomTreeWidgetItem(0);
     itemSport->setText(0,"S Port");
-    itemSport->set_type(8);
+    itemSport->set_itemType(8);
     itemSport->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
     itemSport->setToolTip(0,"S-port number for the mode.");
     itemSport->setForeground(0,Qt::black);
@@ -4363,7 +4363,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     // Sport number
 
     CustomTreeWidgetItem *itemSportValue=new CustomTreeWidgetItem(0);
-    itemSportValue->set_type(9);
+    itemSportValue->set_itemType(9);
     itemSportValue->setToolTip(0,"S-parameter port number.");
     itemSportValue->setForeground(0,Qt::black);
     itemSportValue->setFlags(itemName->flags() & ~Qt::ItemIsSelectable);
@@ -4385,7 +4385,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
 
     CustomTreeWidgetItem *itemVoltage=new CustomTreeWidgetItem(0);
     itemVoltage->setText(0,"voltage");
-    itemVoltage->set_type(10);
+    itemVoltage->set_itemType(10);
     itemVoltage->setFlags(item->flags() & ~Qt::ItemIsEditable);
     itemVoltage->setToolTip(0,"Voltage integration path.");
     itemVoltage->setForeground(0,Qt::black);
@@ -4403,7 +4403,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
 
     CustomTreeWidgetItem *itemCurrent=new CustomTreeWidgetItem(0);
     itemCurrent->setText(0,"current");
-    itemCurrent->set_type(11);
+    itemCurrent->set_itemType(11);
     itemCurrent->setFlags(item->flags() & ~Qt::ItemIsEditable);
     itemCurrent->setToolTip(0,"Current integration path.");
     itemCurrent->setForeground(0,Qt::black);
@@ -7289,7 +7289,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
 
     CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
     itemName->setText(0,get_name().c_str());
-    itemName->set_type(1);
+    itemName->set_itemType(1);
     itemName->setForeground(0,Qt::gray);
     itemName->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
     itemName->setToolTip(0,"Port name.");
@@ -7315,7 +7315,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     // impedance definition
 
     CustomTreeWidgetItem *itemImpedanceDefinition=new CustomTreeWidgetItem(0);
-    itemImpedanceDefinition->set_type(6);
+    itemImpedanceDefinition->set_itemType(6);
     itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
     itemName->addChild(itemImpedanceDefinition);
@@ -7341,7 +7341,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     // impedance calculation
 
     CustomTreeWidgetItem *itemImpedanceCalculation=new CustomTreeWidgetItem(0);
-    itemImpedanceCalculation->set_type(7);
+    itemImpedanceCalculation->set_itemType(7);
     itemImpedanceCalculation->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
     itemName->addChild(itemImpedanceCalculation);

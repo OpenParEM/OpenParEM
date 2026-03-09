@@ -96,6 +96,32 @@ public:
         viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
     }
 
+    void set_activeShape (Handle(AIS_Shape) shape) {
+        viewerContext->Deactivate();
+        viewerContext->Activate(shape,1,Standard_False);
+        updateViewer();
+    }
+
+    void reset_activeShape (Handle(AIS_Shape) shape) {
+        viewerContext->Deactivate();
+        viewerContext->Activate(shape,1,Standard_False);
+        viewerContext->Activate(shape,2,Standard_False);
+        updateViewer();
+    }
+
+    void set_allActiveShapes () {
+        viewerContext->Deactivate();
+        viewerContext->Activate(1);
+        viewerContext->Activate(2);
+        updateViewer();
+    }
+
+    // void setDefaultSelection (Handle(AIS_Shape) shape)
+    // {
+    //     viewerContext->Deactivate(shape);
+    //     viewerContext->Activate(shape,0,Standard_False);
+    // }
+
     void reshowItems ()
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::reshowItems" << std::endl; std::cout.flush();
@@ -267,11 +293,11 @@ public:
         drawingTracker->removeItemFromMap(item);
     }
 
-    void displayShape (Handle(AIS_Shape) shape, int displayMode, int selectionMode)
-    {
-        if (showTracking) std::cout << "CustomOpenGLWidget::displayShape   type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
-        viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
-    }
+    // void displayShape (Handle(AIS_Shape) shape, int displayMode, int selectionMode)
+    // {
+    //     if (showTracking) std::cout << "CustomOpenGLWidget::displayShape   type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
+    //     viewerContext->Display(shape,displayMode,selectionMode,Standard_False);
+    // }
 
     void displayShape (Handle(AIS_Shape) shape)
     {
@@ -389,7 +415,7 @@ public:
 
     void clearSelected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearSelected(theToUpdateViewer);}
 
-    void finishPickVertex ();
+    void finishPickVertex (bool);
     //void finishDrawLine ();
 
     Handle(AIS_InteractiveContext) get_viewerContext () {return viewerContext;}

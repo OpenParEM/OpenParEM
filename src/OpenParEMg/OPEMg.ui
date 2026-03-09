@@ -177,8 +177,8 @@
     <addaction name="menuDrawing_Plane"/>
     <addaction name="actionDrawLine"/>
     <addaction name="actionDrawPolyline"/>
-    <addaction name="actionDrawRectangle"/>
     <addaction name="actionDrawPolycircle"/>
+    <addaction name="actionDrawRectangle"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>

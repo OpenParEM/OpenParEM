@@ -42,6 +42,7 @@
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
+#include <BRepBuilderAPI_Copy.hxx>
 
 #include <QIcon>
 #include <QFileDialog>
@@ -148,6 +149,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     QActionList.push_back(showAction);
     QActionList.push_back(hideAction);
+    QActionList.push_back(selectAllAction);
     QActionList.push_back(unselectAction);
     QActionList.push_back(deleteAction);
     QActionList.push_back(removeAction);
@@ -162,6 +164,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(drawPolylineAction);
     QActionList.push_back(editAction);
     QActionList.push_back(moveAction);
+    QActionList.push_back(stretchAction);
     QActionList.push_back(rotateAction);
     QActionList.push_back(doneAction);
     QActionList.push_back(cancelAction);
@@ -177,11 +180,11 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     // item selection tree
     /////////////////////////////////////////////////////////////////////////////
 
-    drawing.set_type(100);
-    port.set_type(101);
-    boundary.set_type(102);
-    mesh.set_type(103);
-    path.set_type(104);
+    drawing.set_itemType(100);
+    port.set_itemType(101);
+    boundary.set_itemType(102);
+    mesh.set_itemType(103);
+    path.set_itemType(104);
 
     ui->drawingItemTree->setHeaderHidden(true);
 
@@ -647,37 +650,24 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
     if (clickedItem->is_rootDrawing()) {
         showAction=new QAction("Show",this);
         hideAction=new QAction("Hide",this);
-        //QAction *selectAction=new QAction("Select",this);
-        unselectAction=new QAction("Unselect",this);
-        deleteAction=new QAction("Delete",this);
-        assignAction=new QAction("Assign Material");
+        selectAllAction=new QAction("Select All");
 
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showRootDrawingItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideRootDrawingItems);
-        connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectRootDrawingItems);
-        connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteRootDrawingItems);
-        connect(assignAction, &QAction::triggered, this, &OpenParEMg::assignMaterial);
+        connect(selectAllAction, &QAction::triggered, this, &OpenParEMg::selectAllRootDrawingItems);
 
         showAction->setEnabled(false);
         hideAction->setEnabled(false);
-        unselectAction->setEnabled(false);
-        deleteAction->setEnabled(false);
-        assignAction->setEnabled(false);
+        selectAllAction->setEnabled(false);
         if (clickedItem->childCount() > 0) {
-            showAction->setEnabled(ui->drawingWindow->isValidShow());
-            hideAction->setEnabled(ui->drawingWindow->isValidHide());
-            unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-            //deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
-
-            assignAction->setEnabled(false);
-            if (clickedItem->is_solid()) assignAction->setEnabled(true);
+            showAction->setEnabled(isRootDrawingValidShow());
+            hideAction->setEnabled(isRootDrawingValidHide());
+            selectAllAction->setEnabled(isRootDrawingValidSelectAll());
         }
 
         menu.addAction(showAction);
         menu.addAction(hideAction);
-        menu.addAction(unselectAction);
-        menu.addAction(deleteAction);
-        menu.addAction(assignAction);
+        menu.addAction(selectAllAction);
     }
 
     if (clickedItem->is_drawing()) {
@@ -1143,6 +1133,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             hideAction=new QAction("Hide");
             editAction=new QAction("Edit");
             moveAction=new QAction("Move");
+            stretchAction=new QAction("Stretch");
             rotateAction=new QAction("Rotate");
             unselectAction=new QAction("Unselect");
             deleteAction=new QAction("Delete");
@@ -1161,6 +1152,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
             connect(editAction, &QAction::triggered, this, &OpenParEMg::editObject);
             connect(moveAction, &QAction::triggered, this, &OpenParEMg::moveObject);
+            connect(stretchAction, &QAction::triggered, this, &OpenParEMg::stretchObject);
             connect(rotateAction, &QAction::triggered, this, &OpenParEMg::rotateObject);
             connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
             connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
@@ -1187,6 +1179,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             QMenu modify("Modify");
             modify.addAction(editAction);
             modify.addAction(moveAction);
+            modify.addAction(stretchAction);
             modify.addAction(rotateAction);
             modify.addAction(extrudeAction);
             modify.addAction(mergeAction);
@@ -1201,8 +1194,9 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             createPathAction->setEnabled(false);
             if (ui->drawingWindow->numberDrawingFaceSelected() > 0) {createPathAction->setEnabled(true);}
 
-            editAction->setEnabled(isValidObjectEdit());
+            editAction->setEnabled(isValidObjectEdit());     // single object
             moveAction->setEnabled(true);
+            stretchAction->setEnabled(isValidObjectEdit());  // single object
             rotateAction->setEnabled(true);
             extrudeAction->setEnabled(isValidExtrudePolywire());
             mergeAction->setEnabled(isValidMergeSolids());
@@ -1216,25 +1210,74 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
     }
 }
 
+bool OpenParEMg::isRootDrawingValidShow ()
+{
+    int i=0;
+    while (i < drawing.childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        if (child->isValidShow()) return true;
+        i++;
+    }
+    return false;
+}
+
+bool OpenParEMg::isRootDrawingValidHide ()
+{
+    int i=0;
+    while (i < drawing.childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        if (child->isValidHide()) return true;
+        i++;
+    }
+    return false;
+}
+
+bool OpenParEMg::isRootDrawingValidSelectAll ()
+{
+    int i=0;
+    while (i < drawing.childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        if (!child->isSelected()) return true;
+        i++;
+    }
+    return true;
+}
+
+void OpenParEMg::selectAllRootDrawingItems ()
+{
+    ui->drawingWindow->hideItem(&drawing);
+    ui->drawingWindow->unselectItem(&drawing);
+    ui->drawingItemTree->setCurrentItem(nullptr);
+    //xxx
+
+    int i=0;
+    while (i < drawing.childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        ui->drawingWindow->showItem(child);
+        ui->drawingWindow->selectItem(child);
+        i++;
+    }
+}
+
 // all must be the same type
 bool OpenParEMg::isDrawingValidShow ()
 {
     std::cout << "OpenParEMg::isDrawingValidShow" << std::endl; std::cout.flush();
 
-    bool foundType=false;
-    TopAbs_ShapeEnum type;
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    int i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (foundType) {
-            if (item->get_AIS_Shape()->Shape().ShapeType() != type) return false;
-        } else {
-            foundType=true;
-            type=item->get_AIS_Shape()->Shape().ShapeType();
-        }
-        i++;
-    }
+    // bool foundType=false;
+    // TopAbs_ShapeEnum type;
+    // QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    // int i=0;
+    // while (i < selectedItems.count()) {
+    //     CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+    //     if (foundType) {
+    //         if (item->get_AIS_Shape()->Shape().ShapeType() != type) return false;
+    //     } else {
+    //         foundType=true;
+    //         type=item->get_AIS_Shape()->Shape().ShapeType();
+    //     }
+    //     i++;
+    // }
     return true;
 }
 
@@ -1243,14 +1286,13 @@ void OpenParEMg::showRootDrawingItems ()
     std::cout << "OpenParEMg::showRootDrawingItems" << std::endl; std::cout.flush();
 
     ui->drawingWindow->hideItem(&drawing);
+    drawing.setForeground(0,Qt::black);
 
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
     int i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_rootDrawing()) {
-            ui->drawingWindow->showItem(item);
-        }
+    while (i < drawing.childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        child->setForeground(0,Qt::gray);
+        ui->drawingWindow->showItem(child);
         i++;
     }
 
@@ -1269,10 +1311,12 @@ void OpenParEMg::showDrawingItems ()
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
         if (item->is_drawing()) {
             ui->drawingWindow->showItem(item);
+            ui->drawingWindow->unselectItem(item);
         }
         i++;
     }
 
+    ui->drawingItemTree->setCurrentItem(nullptr);
     ui->drawingWindow->updateViewer();
 }
 
@@ -1280,15 +1324,8 @@ void OpenParEMg::hideRootDrawingItems ()
 {
     std::cout << "OpenParEMg::hideRootDrawingItems" << std::endl; std::cout.flush();
 
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    int i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_rootDrawing()) {
-            ui->drawingWindow->hideItem(item);
-        }
-        i++;
-    }
+    ui->drawingWindow->hideItem(&drawing);
+    drawing.setForeground(0,Qt::black);
 
     ui->drawingWindow->updateViewer();
 }
@@ -1865,12 +1902,12 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
         int i=0;
         while (i < item->childCount()) {
             CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-            std::cout << "child->get_type()=" << child->get_type() << std::endl; std::cout.flush();
+            std::cout << "child->get_itemType()=" << child->get_itemType() << std::endl; std::cout.flush();
             if (child->is_scale()) {
                 int j=0;
                 while (j < child->childCount()) {
                     CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *)child->child(j);
-                    std::cout << "   grandChild->get_type()=" << grandChild->get_type() << std::endl; std::cout.flush();
+                    std::cout << "   grandChild->get_itemType()=" << grandChild->get_itemType() << std::endl; std::cout.flush();
                     if (grandChild->is_scaleValue()) {
                         CustomLineEdit *scaleEdit=(CustomLineEdit *)ui->drawingItemTree->itemWidget(grandChild,0);
                         integrationPath=scaleEdit->get_integrationPath();
@@ -1892,13 +1929,13 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
     if (addScaleToTree) {
         CustomTreeWidgetItem *itemScale=new CustomTreeWidgetItem(0);
         itemScale->setText(0,"scale");
-        itemScale->set_type(12);
+        itemScale->set_itemType(12);
         itemScale->setFlags(item->flags() & ~Qt::ItemIsEditable);
         itemScale->setToolTip(0,"Scale factor for the integration path.");
         item->addChild(itemScale);
 
         CustomTreeWidgetItem *itemScaleValue=new CustomTreeWidgetItem(0);
-        itemScaleValue->set_type(13);
+        itemScaleValue->set_itemType(13);
         itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
         itemScale->addChild(itemScaleValue);
 
@@ -1925,7 +1962,7 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
         pathItem->setText(0,pathText);
         pathItem->setFlags(item->flags());
         pathItem->setToolTip(0,"Path segment for integration.");
-        pathItem->set_type(14);
+        pathItem->set_itemType(14);
         pathItem->setForeground(0,Qt::gray);
         pathItem->set_OPEMobject(pathsToAdd[i]);
         item->addChild(pathItem);
@@ -2029,6 +2066,7 @@ void OpenParEMg::unselectDrawingItems()
     unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
     deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
+    ui->drawingItemTree->setCurrentItem(nullptr);
     ui->drawingWindow->updateViewer();
 }
 
@@ -2036,26 +2074,9 @@ void OpenParEMg::deleteRootDrawingItems()
 {
     std::cout << "OpenParEMg::deleteRootDrawingItems" << std::endl; std::cout.flush();
 
-    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    int i=0;
-    while (i < selectedItems.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-        if (item->is_rootDrawing()) {
-            ui->drawingWindow->deleteItem(item);
-        }
-        i++;
-    }
-
-    clickedItem=nullptr;
-    previousClickedItem=nullptr;
-
-    //setRootForeground(&drawing);
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
-
+    ui->drawingWindow->deleteItem(&drawing);
     ui->drawingWindow->updateViewer();
+    setMenus();
 }
 
 void OpenParEMg::deleteDrawingItems()
@@ -2096,6 +2117,9 @@ void OpenParEMg::deleteDrawingItems()
         i++;
     }
 
+    // see if everything has been deleted
+    //xxx
+    if (drawing.childCount() == 0) resetDrawing();
 
     clickedItem=nullptr;
     previousClickedItem=nullptr;
@@ -2629,7 +2653,11 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &sha
     Handle(AIS_Shape) AISshape=new AIS_Shape(shape);
     item->set_AIS_Shape(AISshape);
     ui->drawingWindow->insertItemToMap(AISshape,item);
-    ui->drawingWindow->displayShape(AISshape);
+
+    //xxx
+    if (!item->is_rootDrawing()) {
+        ui->drawingWindow->displayShape(AISshape);
+    }
 
     // show the updated item
     ui->drawingWindow->showItem(item);
@@ -2806,7 +2834,6 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 
     Merge *merge=dynamic_cast<Merge *>(process);
     if (merge) {
-        //yyy
         if (item->childCount() == 2) {
 
             CustomTreeWidgetItem *child1=(CustomTreeWidgetItem *)item->child(0);
@@ -3073,8 +3100,6 @@ void OpenParEMg::finishMergeSolids ()
     unify.Build();
     mergedShape=unify.Shape();
 
-    //xxx
-
     // add it
     CustomTreeWidgetItem *newItem=addItemShape(mergedShape,&drawing);
     ui->drawingWindow->insertItemToMap(newItem->get_AIS_Shape(),&drawing);
@@ -3136,8 +3161,6 @@ void OpenParEMg::finishSubtractSolids ()
     TopoDS_Shape shape1=selectedItemsList[0]->get_AIS_Shape()->Shape();
     TopoDS_Shape shape2=selectedItemsList[1]->get_AIS_Shape()->Shape();
 
-    //xxx
-
     // build subtacted shape
     BRepAlgoAPI_Cut cut(shape1,shape2);
     cut.Build();
@@ -3148,8 +3171,6 @@ void OpenParEMg::finishSubtractSolids ()
     ShapeUpgrade_UnifySameDomain unify(subtractedShape);
     unify.Build();
     subtractedShape=unify.Shape();
-
-    //xxx
 
     // add it
     CustomTreeWidgetItem *newItem=addItemShape(subtractedShape,&drawing);
@@ -3224,6 +3245,79 @@ void OpenParEMg::finishMoveObject ()
     long unsigned int i=0;
     while (i < selectedItemsList.size()) {
         finishMoveObject(selectedItemsList[i]);
+        i++;
+    }
+}
+
+void PrintActiveSelectionModes(const Handle(AIS_InteractiveContext)& theContext,
+                               const Handle(AIS_InteractiveObject)& theObject)
+{
+    if (theContext.IsNull() || theObject.IsNull()) return;
+
+    TColStd_ListOfInteger activeModes;
+    theContext->ActivatedModes(theObject, activeModes);
+
+    std::cout << "Active selection modes for object: ";
+    for (TColStd_ListOfInteger::Iterator anIt(activeModes); anIt.More(); anIt.Next())
+    {
+        std::cout << anIt.Value() << " ";
+    }
+    std::cout << std::endl;
+}
+
+void OpenParEMg::stretchObject ()
+{
+    std::cout << "OpenParEMg::stretchObject" << std::endl; std::cout.flush();
+
+    operation=32;
+    startPickVertex();
+
+    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < items.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        if (item && item->is_drawing()) {
+            Handle(AIS_Shape) shape=item->get_AIS_Shape();
+            if (!shape.IsNull()) {
+                std::cout << "Before:" << std::endl;
+                PrintActiveSelectionModes(ui->drawingWindow->get_viewerContext(),shape);
+
+                // set the selected shape to be the only selectable shape
+                // includes selecting just on vertices of the shape and not midpoints
+                ui->drawingWindow->set_activeShape(shape);
+
+                std::cout << "After set_activeShape:" << std::endl;
+                PrintActiveSelectionModes(ui->drawingWindow->get_viewerContext(),shape);
+
+                // save it for processing
+                selectedItemsList.push_back(item);
+            }
+        }
+        i++;
+    }
+}
+
+void OpenParEMg::finishStretchObject (gp_Pnt &pnt)
+{
+    std::cout << "OpenParEMg::finishStretchObject" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < selectedItemsList.size()) {
+        Polywire *polywire=static_cast<Polywire *>(selectedItemsList[i]->get_Polywire());
+        if (polywire) {
+            //xxx
+            polywire->deleteRubberband();
+            polywire->setEditPoint(pnt);
+            TopoDS_Wire wire=polywire->buildWire();
+            replaceItemShape(selectedItemsList[i],wire);
+            reprocess(selectedItemsList[i]);
+
+            ui->drawingWindow->set_allActiveShapes();
+            //ui->drawingWindow->reset_activeShape(selectedItemsList[i]->get_AIS_Shape());
+            std::cout << "After replaceItemsShape:" << std::endl;
+            PrintActiveSelectionModes(ui->drawingWindow->get_viewerContext(),selectedItemsList[i]->get_AIS_Shape());
+            brepChanged=true;
+        }
         i++;
     }
 }
@@ -3436,30 +3530,30 @@ void OpenParEMg::createPort ()
 // }
 
 // recursive
-void OpenParEMg::set_selectionMode (CustomTreeWidgetItem *item, int selectionMode)
-{
-    //item->set_selectionMode(selectionMode);
+// void OpenParEMg::set_selectionMode (CustomTreeWidgetItem *item, int selectionMode)
+// {
+//     //item->set_selectionMode(selectionMode);
 
-    int i=0;
-    while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-        set_selectionMode(child,selectionMode);
-        i++;
-    }
-}
+//     int i=0;
+//     while (i < item->childCount()) {
+//         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+//         set_selectionMode(child,selectionMode);
+//         i++;
+//     }
+// }
 
 // recursive
-void OpenParEMg::set_displayMode (CustomTreeWidgetItem *item, int displayMode)
-{
-    //item->set_displayMode(displayMode);
+// void OpenParEMg::set_displayMode (CustomTreeWidgetItem *item, int displayMode)
+// {
+//     //item->set_displayMode(displayMode);
 
-    int i=0;
-    while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-        set_displayMode(child,displayMode);
-        i++;
-    }
-}
+//     int i=0;
+//     while (i < item->childCount()) {
+//         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+//         set_displayMode(child,displayMode);
+//         i++;
+//     }
+// }
 
 void OpenParEMg::setPhysicalGroups ()
 {
@@ -3694,6 +3788,7 @@ void OpenParEMg::on_actionOpen_triggered ()
         mb.setFixedSize(500, 200);
     }
 
+    on_actionShape_triggered();  // required, but doesn't seem like it should be; something is probably off elsewhere
     setMenus();
 }
 
@@ -3730,28 +3825,18 @@ void OpenParEMg::printLockouts ()
               << "   simulationAborting=" << simulationAborting << std::endl;
 }
 
-void OpenParEMg::resetProject ()
+void OpenParEMg::resetDrawing ()
 {
-    if (!projectFileLoaded) return;
-
-    // project file
-    projectFile="";
-    free_project(&defaultData);
-    free_project(&projData);
+    // counts
+    pointCount=0;
+    curveCount=0;
+    surfaceCount=0;
+    volumeCount=0;
 
     // mesh
     deleteMesh(false);
 
-    // reset material database
-    if (materialDatabase) delete materialDatabase;
-    materialDatabase=new MaterialDatabase();
-
-    // reset boundary database
-    if (boundaryDatabase) delete boundaryDatabase;
-    boundaryDatabase=new BoundaryDatabase();
-
     // reset drawing window
-
     ui->drawingWindow->clearDrawing();
     ui->drawingWindow->updateViewer();
 
@@ -3771,12 +3856,8 @@ void OpenParEMg::resetProject ()
     }
     processDatabase.clear();
 
-    // reset selection tree
+    // selection tree
     drawing.reset();
-    path.reset();
-    port.reset();
-    boundary.reset();
-    mesh.reset();
 
     //reset the tracking
     ui->drawingWindow->reset();
@@ -3785,7 +3866,36 @@ void OpenParEMg::resetProject ()
     previousClickedItem=nullptr;
     workingItem=nullptr;
 
+    brepFileLoaded=false;
+
     on_actionShape_triggered();
+}
+
+void OpenParEMg::resetProject ()
+{
+    if (!projectFileLoaded) return;
+
+    // project file
+    projectFile="";
+    free_project(&defaultData);
+    free_project(&projData);
+
+    resetDrawing();
+
+    // reset material database
+    if (materialDatabase) delete materialDatabase;
+    materialDatabase=new MaterialDatabase();
+
+    // reset boundary database
+    if (boundaryDatabase) delete boundaryDatabase;
+    boundaryDatabase=new BoundaryDatabase();
+
+    // reset selection tree
+    //drawing.reset();
+    path.reset();
+    port.reset();
+    boundary.reset();
+    mesh.reset();
 
     resetLockouts();
 
@@ -4167,7 +4277,8 @@ void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
 //     if (isRoot) {
 //         ui->drawingWindow->insertItemToMap(drawingShape,&drawing);
 //         drawing.set_AIS_Shape(drawingShape);
-//         ui->drawingWindow->showItem(&drawing);
+//         //ui->drawingWindow->showItem(&drawing);
+//         showRootDrawingItems();
 //         ui->drawingWindow->unselectItem(&drawing);
 //         newItem=&drawing;
 //     } else {
@@ -4203,7 +4314,50 @@ void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
 //     }
 // }
 
-// for root drawing item: fill out solids as part of a top-level compound
+
+void OpenParEMg::addChildDisplayShape (CustomTreeWidgetItem *item, std::pair<int,int> &dimTag)
+{
+    if (!item) return;
+
+    // item must be display for now
+    if (item != &drawing) return;
+
+    Handle(AIS_Shape) shape=item->get_AIS_Shape();
+    if (shape.IsNull()) return;
+
+    // add the shape
+    //TopoDS_Compound compound=TopoDS::Compound(shape->Shape());
+    //BRep_Builder builder;
+
+    TopoDS_Iterator topoIterator(shape->Shape());
+    while (topoIterator.More()) {
+        const TopoDS_Shape& child=topoIterator.Value();
+        TopAbs_ShapeEnum shapeType=child.ShapeType();
+        // TopAbs_COMPSOLID may not be needed
+        if (shapeType == TopAbs_COMPSOLID || shapeType == TopAbs_SOLID || shapeType == TopAbs_COMPOUND) {
+            volumeCount++;
+            dimTag.first=3; dimTag.second=volumeCount;
+
+            CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
+            Handle(AIS_Shape) drawingShape=new AIS_Shape(child);
+            newItem->set_AIS_Shape(drawingShape);
+            if (shapeType == TopAbs_COMPSOLID) newItem->setText(0,"COMPSOLID");
+            else if (shapeType == TopAbs_SOLID) newItem->setText(0,"SOLID");
+            else if (shapeType == TopAbs_COMPOUND) newItem->setText(0,"COMPOUND");
+            newItem->set_itemType(0);  // a drawing item
+            newItem->setForeground(0,Qt::gray);
+            newItem->set_dimTag(dimTag);
+            item->addChild(newItem);
+            addItemWithShape(newItem);
+
+            //builder.Add(compound,child);
+        }
+        topoIterator.Next();
+    }
+
+    //shape->Redisplay(true);
+}
+
 void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
 {
     if (shape.IsNull()) return;
@@ -4242,7 +4396,7 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
             newItem->set_AIS_Shape(drawingShape);
             if (shapeType == TopAbs_COMPSOLID) newItem->setText(0,"COMPSOLID");
             else if (shapeType == TopAbs_SOLID) newItem->setText(0,"SOLID");
-            newItem->set_type(0);  // a drawing item
+            newItem->set_itemType(0);  // a drawing item
             newItem->setForeground(0,Qt::gray);
             newItem->set_Polywire(polywire);
             newItem->set_dimTag(dimTag);
@@ -4267,6 +4421,60 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
     ui->drawingWindow->showItem(&drawing);
     ui->drawingWindow->unselectItem(&drawing);
 }
+
+/*
+// for root drawing item: fill out solids as part of a top-level compound
+void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
+{
+    if (shape.IsNull()) return;
+
+    // ensure the root item is a compound
+    if (shape.ShapeType() != TopAbs_COMPOUND) {
+        BRep_Builder builder;
+        TopoDS_Compound compound;
+        builder.MakeCompound(compound);
+        builder.Add(compound,shape);
+        shape=compound;
+    }
+
+    // variable to support meshing
+    std::pair<int,int> dimTag;
+    dimTag.first=-1; dimTag.second=-1;
+
+    // drawing item
+    Handle(AIS_Shape) drawingShape=new AIS_Shape(shape);
+    ui->drawingWindow->insertItemToMap(drawingShape,&drawing);
+    drawing.set_AIS_Shape(drawingShape);
+    addChildDisplayShape(&drawing,dimTag);
+
+    // apply materials
+    int i=0;
+    while (i < drawing.childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        if (child) {
+            Handle(AIS_Shape) shape=child->get_AIS_Shape();
+            if (!shape.IsNull()) {
+                if (shape->Shape().ShapeType() == TopAbs_SOLID) {
+                    int j=0;
+                    while (j < projData.physicalGroupMaterialCount) {
+                        if (projData.physicalGroupMaterials[j].tag == dimTag.second) {
+                            child->setText(0,projData.physicalGroupMaterials[j].materialName);
+                            break;
+                        }
+                        j++;
+                    }
+                }
+            }
+        }
+        i++;
+    }
+
+    //drawing.setForeground(0,Qt::gray);
+    //ui->drawingWindow->showItem(&drawing);
+    showRootDrawingItems();
+    //ui->drawingWindow->unselectItem(&drawing);
+}
+*/
 
 // for non-root drawing items where the item and shape have already been created
 void OpenParEMg::addItemWithShape (CustomTreeWidgetItem *item)
@@ -4323,7 +4531,7 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (TopoDS_Shape shape, CustomTreeWi
 
     // set variables
     newItem->setText(0,TopAbs::ShapeTypeToString(shape.ShapeType()));
-    newItem->set_type(0);  // default to drawing, but generally need to change elsewhere
+    newItem->set_itemType(0);  // default to drawing, but generally need to change elsewhere
     newItem->setForeground(0,Qt::gray);
     newItem->set_Polywire(polywire);
     newItem->set_dimTag(dimTag);
@@ -4387,8 +4595,9 @@ bool OpenParEMg::loadBrepFile (QString filePath, bool createName)
                 brepChanged=true;
             }
 
-            drawing.setForeground(0,Qt::gray);
-            ui->drawingWindow->showItem(&drawing);
+            //drawing.setForeground(0,Qt::gray);
+            //ui->drawingWindow->showItem(&drawing);
+            showRootDrawingItems();
 
         } else retval=true;
     }
@@ -4421,8 +4630,9 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
                 projectChanged=true;
             }
 
-            drawing.setForeground(0,Qt::gray);
-            ui->drawingWindow->showItem(&drawing);
+            //drawing.setForeground(0,Qt::gray);
+            //ui->drawingWindow->showItem(&drawing);
+            showRootDrawingItems();
 
         } else retval=true;
     }
@@ -4679,7 +4889,7 @@ void OpenParEMg::on_actionFitAll_triggered ()
 
 void OpenParEMg::on_actionShape_triggered()
 {
-    //std::cout << "OpenParEMg::on_actionShape_triggered" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::on_actionShape_triggered" << std::endl; std::cout.flush();
 
     clearSelection();
     ui->actionShape->setCheckable(true);
@@ -4796,9 +5006,10 @@ bool OpenParEMg::hasSelectedPaths ()
 void OpenParEMg::clearTreeSelection ()
 {
     std::cout << "OpenParEMg::clearTreeSelection" << std::endl; std::cout.flush();
+    ui->drawingWindow->unselectAllItems();
     ui->drawingItemTree->clearSelection();
     ui->drawingItemTree->setCurrentItem(nullptr);
-    ui->drawingWindow->unselectAllItems();
+    //ui->drawingWindow->unselectAllItems();
     clickedItem=nullptr;
     previousClickedItem=nullptr;
     ui->drawingWindow->updateViewer();
@@ -4885,7 +5096,8 @@ void OpenParEMg::keyReleaseEvent (QKeyEvent *event)
 void OpenParEMg::on_actionShowAll_triggered()
 {
     ui->drawingWindow->unselectAllItems();
-    ui->drawingWindow->showItem(&drawing);
+    //ui->drawingWindow->showItem(&drawing);
+    showRootDrawingItems();
     ui->drawingWindow->showItem(&path);
     ui->drawingWindow->showItem(&port);
     ui->drawingWindow->showItem(&boundary);
@@ -4947,7 +5159,7 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 15) {
             CustomTreeWidgetItem *verticesItem=new CustomTreeWidgetItem(0);
             verticesItem->setText(0,"Vertices");
-            verticesItem->set_type(3);
+            verticesItem->set_itemType(3);
             verticesItem->setForeground(0,Qt::gray);
             mesh.insertChild(0,verticesItem);
 
@@ -4971,7 +5183,7 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 1) {
             CustomTreeWidgetItem *edgesItem=new CustomTreeWidgetItem(0);
             edgesItem->setText(0,"Edges");
-            edgesItem->set_type(3);
+            edgesItem->set_itemType(3);
             edgesItem->setForeground(0,Qt::gray);
             mesh.addChild(edgesItem);
 
@@ -4996,13 +5208,13 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 2) {
             CustomTreeWidgetItem *wiresItem=new CustomTreeWidgetItem(0);
             wiresItem->setText(0,"Wires");
-            wiresItem->set_type(3);
+            wiresItem->set_itemType(3);
             wiresItem->setForeground(0,Qt::gray);
             mesh.addChild(wiresItem);
 
             CustomTreeWidgetItem *trianglesItem=new CustomTreeWidgetItem(0);
             trianglesItem->setText(0,"Triangles");
-            trianglesItem->set_type(3);
+            trianglesItem->set_itemType(3);
             trianglesItem->setForeground(0,Qt::gray);
             mesh.addChild(trianglesItem);
 
@@ -5041,7 +5253,7 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 4) {
             CustomTreeWidgetItem *tetrahedronsItem=new CustomTreeWidgetItem(0);
             tetrahedronsItem->setText(0,"Tetrahedrons");
-            tetrahedronsItem->set_type(3);
+            tetrahedronsItem->set_itemType(3);
             tetrahedronsItem->setForeground(0,Qt::gray);
             mesh.addChild(tetrahedronsItem);
 
@@ -5608,7 +5820,6 @@ void OpenParEMg::on_actionDrawLine_triggered ()
         polywire=new Line();
         polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
     }
-    //ui->drawingWindow->set_polywire(polywire);
 }
 
 void OpenParEMg::on_actionDrawPolyline_triggered ()
@@ -5657,7 +5868,7 @@ void OpenParEMg::on_actionDrawRectangle_triggered ()
     //ui->drawingWindow->set_polywire(polywire);
 }
 
-void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
+void OpenParEMg::finishDrawLine (TopoDS_Wire wire)
 {
     std::cout << "OpenParEMg::drawLineFinished  operation=" << operation << std::endl; std::cout.flush();
 
@@ -5732,7 +5943,6 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
         // add the path to the working item
         insertPath(workingItem);
     } else {
-
         // general drawing paths
 
         // build a face if the polygon is closed
@@ -5809,14 +6019,11 @@ void OpenParEMg::drawLineFinished (TopoDS_Wire wire)
     polywireDatabase.push_back(polywire);
     polywire=nullptr;
 
-
     brepChanged=true;
     workingItem=nullptr;
     ui->drawingWindow->removeSelectOnVertex();
     ui->drawingWindow->updateViewer();
     setMenus();
-
-    std::cout << "exit OpenParEMg::drawLineFinished" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::drawPath ()
@@ -5991,9 +6198,12 @@ void OpenParEMg::startOperation ()
 
 void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
 {
+
     if (polywire) {
-        polywire->setCurrentMousePosition(pnt);
-        polywire->drawRubberband();
+        if (operation == 11 || operation == 12 || operation == 13 || operation == 14) {
+            polywire->setCurrentMousePosition(pnt);
+            polywire->drawRubberband();
+        }
     }
 
     // ToDo: fix animation of move; current setup does not work
@@ -6006,12 +6216,24 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
         }
     }
 
+    if (operation == 32 && vertexList.size() == 1) {
+        long unsigned int i=0;
+        while (i < selectedItemsList.size()) {
+            Polywire *polywire=static_cast<Polywire *>(selectedItemsList[i]->get_Polywire());
+            if (polywire) {
+                polywire->setCurrentMousePosition(pnt);
+                polywire->drawStretchRubberband();
+            }
+            i++;
+        }
+    }
+
     lastMousePosition=pnt;
 }
 
 void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 {
-    std::cout << "OpenParEMg::getPickedVertex  operation=" << operation << "  polywire=" << polywire << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::getPickedVertex  cancel=" << cancel << "   operation=" << operation << std::endl; std::cout.flush();
 
     if (cancel) finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
 
@@ -6036,6 +6258,28 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
         if (lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
         if (polycircleEditForm) polycircleEditForm->pickVertexFinished(pnt);
     }
+    if (operation == 32) {
+        long unsigned int i=0;
+        while (i < selectedItemsList.size()) {
+            Polywire *polywire=static_cast<Polywire *>(selectedItemsList[i]->get_Polywire());
+            if (polywire) {
+                if (vertexList.size() == 1) {
+                    ui->drawingWindow->hideItem(selectedItemsList[i]);
+                    ui->drawingWindow->updateViewer();
+                    polywire->setEditIndex(pnt);
+
+                    // set to select on vertices and edges of all shapes
+                    ui->drawingWindow->Deactivate();
+                    ui->drawingWindow->Activate(1,Standard_False);  // vertices
+                    ui->drawingWindow->Activate(2,Standard_False);  // edges
+                }
+                if (vertexList.size() == 2) {
+                    finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+                }
+            }
+            i++;
+        }
+    }
 
     lastMousePosition=pnt;
 }
@@ -6054,17 +6298,18 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
             polywire=nullptr;
         }
 
-        ui->drawingWindow->set_pickVertex(false);
-
     } else {
-        if (operation == 11 || operation == 12 || operation == 13 || operation == 14) drawLineFinished(polywire->buildWire());
+        if (operation == 11 || operation == 12 || operation == 13 || operation == 14) finishDrawLine(polywire->buildWire());
         if (operation == 21) finishExtrudePolywire(length,false);
         if (operation == 22) finishMergeSolids();
         if (operation == 23) finishSubtractSolids();
         if (operation == 24) finishMoveObject();
         if (operation == 25) finishRotateObject(angleDegrees,p1,p2);
         if (operation == 31) finishEditObject(length,false);
+        if (operation == 32) finishStretchObject(pnt);
     }
+
+    ui->drawingWindow->set_pickVertex(false);
 
     if (lengthInputForm) lengthInputForm=nullptr;
     if (rectangleEditForm) rectangleEditForm=nullptr;
@@ -6091,6 +6336,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
     // set to no active operation
     operation=0;
 
+    clearTreeSelection();
     setMenus();
 }
 
