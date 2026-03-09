@@ -19,7 +19,7 @@ public:
         hideTracking=false;
         selectTracking=false;
         unselectTracking=false;
-        deleteTracking=true;
+        deleteTracking=false;
     }
 
     ~ItemTracker() {}

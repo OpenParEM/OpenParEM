@@ -62,7 +62,7 @@ public:
     void set_viewerContext (Handle(AIS_InteractiveContext) viewerContext_) {viewerContext=viewerContext_;}
 
     void setEditIndex (gp_Pnt &pnt);
-    void setEditPoint (gp_Pnt &pnt);
+    virtual void setEditPoint (gp_Pnt &pnt);
 
     TopoDS_Wire buildWire();
     void moveTo (gp_Pnt &pnt);
@@ -102,6 +102,7 @@ class Polyline : public Polywire
 public:
     Polyline () {}
     void drawRubberband () override;
+    void drawStretchRubberband () override;
     bool canDeleteLastPoint () override {if (shapePoints.size() > 1) return true; return false;}
     bool canFinish () override {if (shapePoints.size() > 1) return true; return false;}
     bool canClose () override {if (shapePoints.size() > 2) return true; return false;}
@@ -114,6 +115,7 @@ public:
         return false;
     }
     void buildFromFace (TopoDS_Face &face);
+    void setEditPoint (gp_Pnt &pnt) override;
 
 };
 

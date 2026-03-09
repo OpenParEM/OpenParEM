@@ -345,6 +345,12 @@ public:
 
     //bool hasOneFaceSelected () {return drawingTracker->hasOneFaceSelected();}
 
+    bool isDisplayed (Handle(AIS_Shape) shape)
+    {
+        if (viewerContext->IsDisplayed(shape)) return true;
+        return false;
+    }
+
     Standard_Integer NbSelected () {return viewerContext->NbSelected();}
 
     int numberDrawingFaceSelected ()
@@ -424,7 +430,8 @@ public:
 
     void set_selectedItems (std::vector<CustomTreeWidgetItem *> *selectedItems_) {selectedItems=selectedItems_;}
 
-    void reset_vertexSymbol () {
+    void reset_vertexSymbol ()
+    {
         viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
     }
 

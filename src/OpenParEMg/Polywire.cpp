@@ -236,6 +236,71 @@ void Polyline::drawRubberband ()
     }
 }
 
+void Polyline::drawStretchRubberband ()
+{
+    //std::cout << "Polyline::drawStretchRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
+
+    if (shapePoints.size() == 0) return;
+
+    if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
+
+    bool isClosed=false;
+    if (shapePoints[0].IsEqual(shapePoints[shapePoints.size()-1],Precision::Confusion())) isClosed=true;
+    //std::cout << "isClosed=" << isClosed << "  editIndex=" << editIndex << "  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
+
+    BRepBuilderAPI_MakePolygon polyMaker;
+    if (isClosed) {
+        if (editIndex == 0) {
+            long unsigned int i=0;
+            while (i < shapePoints.size()-1) {
+                if (i == editIndex) polyMaker.Add(currentMousePosition);
+                else polyMaker.Add(shapePoints[i]);
+                i++;
+            }
+            polyMaker.Add(currentMousePosition);
+        } else if (editIndex == shapePoints.size()-1) {
+            polyMaker.Add(currentMousePosition);
+            long unsigned int i=1;
+            while (i < shapePoints.size()) {
+                if (i == editIndex) polyMaker.Add(currentMousePosition);
+                else polyMaker.Add(shapePoints[i]);
+                i++;
+            }
+        } else {
+            long unsigned int i=0;
+            while (i < shapePoints.size()) {
+                if (i == editIndex) polyMaker.Add(currentMousePosition);
+                else polyMaker.Add(shapePoints[i]);
+                i++;
+            }
+        }
+    } else {
+        long unsigned int i=0;
+        while (i < shapePoints.size()) {
+            if (i == editIndex) polyMaker.Add(currentMousePosition);
+            else polyMaker.Add(shapePoints[i]);
+            i++;
+        }
+    }
+
+    TopoDS_Wire wire=polyMaker.Wire();
+    rubberband=new AIS_Shape(wire);
+
+    if (!rubberband.IsNull()) {
+        viewerContext->Display(rubberband,0,-1,Standard_True);
+    }
+}
+
+void Polyline::setEditPoint (gp_Pnt &pnt)
+{
+    if (editIndex == 0 || editIndex == shapePoints.size()-1) {
+        shapePoints[0]=pnt;
+        shapePoints[shapePoints.size()-1]=pnt;
+    } else {
+        shapePoints[editIndex]=pnt;
+    }
+}
+
 void Polyline::buildFromFace (TopoDS_Face &face)
 {
     // use the outer wire

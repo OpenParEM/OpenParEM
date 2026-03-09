@@ -297,6 +297,7 @@ private slots:
     void stretchObject ();
     void rotateObject ();
     bool isValidObjectEdit ();
+    bool isValidObjectStretch ();
     void createPort ();
     void createPath ();
     void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape);

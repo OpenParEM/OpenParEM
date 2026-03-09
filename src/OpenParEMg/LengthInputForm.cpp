@@ -20,6 +20,7 @@
 
 #include "LengthInputForm.h"
 #include "ui_LengthInputForm.h"
+#include <qtimer.h>
 
 LengthInputForm::LengthInputForm(QWidget *parent)
     : QDialog(parent)
@@ -31,6 +32,7 @@ LengthInputForm::LengthInputForm(QWidget *parent)
 
     validator.setNotation(QDoubleValidator::ScientificNotation);
     ui->lineEdit->setValidator(&validator);
+    ui->lineEdit->setFocus();
 
     ui->pickStart->setCheckable(true);
     ui->pickEnd->setCheckable(true);
@@ -63,7 +65,13 @@ void LengthInputForm::on_lineEdit_returnPressed ()
 {
     length=ui->lineEdit->text().toDouble();
     ui->OkButton->setEnabled(true);
-    if (abs(length) < 1e-12) ui->OkButton->setEnabled(false);
+    if (abs(length) < 1e-12) {
+        activateWindow();
+        raise();
+        ui->lineEdit->clearFocus();
+        ui->OkButton->setEnabled(true);
+        ui->OkButton->setFocus();
+    }
 }
 
 void LengthInputForm::on_pickStart_clicked ()
@@ -114,7 +122,10 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
         ui->startX->setText(QString::number(startPoint.X()));
         ui->startY->setText(QString::number(startPoint.Y()));
         ui->startZ->setText(QString::number(startPoint.Z()));
+        activateWindow();
+        raise();
         ui->pickStart->setChecked(false);
+        ui->pickEnd->setFocus();
     }
 
     if (pickEndPoint) {
@@ -123,17 +134,21 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
         ui->endX->setText(QString::number(endPoint.X()));
         ui->endY->setText(QString::number(endPoint.Y()));
         ui->endZ->setText(QString::number(endPoint.Z()));
+        activateWindow();
+        raise();
         ui->pickEnd->setChecked(false);
+        ui->pickStart->setFocus();
     }
 
     if (hasStartPoint && hasEndPoint) {
         Standard_Real distance=startPoint.Distance(endPoint);
         length=distance;
-        if (length > 1e-12) {
+        if (length > 1e-13) {
             gp_Dir selectionDir;
             selectionDir.SetCoord(endPoint.X()-startPoint.X(),endPoint.Y()-startPoint.Y(),endPoint.Z()-startPoint.Z());
             if (normal.IsOpposite(selectionDir,1.5)) length=-length;
             ui->OkButton->setEnabled(true);
+            ui->OkButton->setFocus();
         } else {
             ui->OkButton->setEnabled(false);
         }
