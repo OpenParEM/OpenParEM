@@ -868,6 +868,19 @@ public:
         portSelectedCount=0;
     }
 
+    std::vector<CustomTreeWidgetItem *> getVisibleItems ()
+    {
+        std::vector<CustomTreeWidgetItem *> copyVisibleItems;
+
+        long unsigned int i=0;
+        while (i < visibleItems.size()) {
+            copyVisibleItems.push_back(visibleItems[i]);
+            i++;
+        }
+
+        return copyVisibleItems;
+    }
+
 private:
 
     void EraseShape (Handle(AIS_Shape) shape) {

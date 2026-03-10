@@ -410,6 +410,125 @@ void Rectangle::drawRubberband ()
     }
 }
 
+void Rectangle::drawStretchRubberband ()
+{
+    //std::cout << "Rectangle::drawStretchedRubberband  editIndex=" << editIndex << std::endl; std::cout.flush();
+
+    if (shapePoints.size() == 0) return;
+
+    if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
+
+    std::vector<gp_Pnt> tempShapePoints;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        tempShapePoints.push_back(shapePoints[i]);
+        i++;
+    }
+
+    if (editIndex == 0 || editIndex == 4) {
+        gp_Vec d(currentMousePosition,tempShapePoints[2]);
+        double tempWidth=d.Dot(u);
+        double tempHeight=d.Dot(v);
+
+        if (abs(tempWidth) > Precision::Confusion() && abs(tempHeight) > Precision::Confusion()) {
+            tempShapePoints[0]=currentMousePosition;
+            tempShapePoints[1]=tempShapePoints[2].Translated(-v*tempHeight);
+            tempShapePoints[3]=tempShapePoints[2].Translated(-u*tempWidth);
+            tempShapePoints[4]=tempShapePoints[0];
+        }
+    } else if (editIndex == 1) {
+        gp_Vec d(tempShapePoints[3],currentMousePosition);
+        double tempWidth=d.Dot(u);
+        double tempHeight=-d.Dot(v);
+
+        if (abs(tempWidth) > Precision::Confusion() && abs(tempHeight) > Precision::Confusion()) {
+            tempShapePoints[0]=tempShapePoints[3].Translated(-v*tempHeight);
+            tempShapePoints[1]=currentMousePosition;
+            tempShapePoints[2]=tempShapePoints[3].Translated(u*tempWidth);
+            tempShapePoints[4]=tempShapePoints[0];
+        }
+    } else if (editIndex == 2) {
+        gp_Vec d(tempShapePoints[0],currentMousePosition);
+        double tempWidth=d.Dot(u);
+        double tempHeight=d.Dot(v);
+
+        if (abs(tempWidth) > Precision::Confusion() && abs(tempHeight) > Precision::Confusion()) {
+            tempShapePoints[1]=tempShapePoints[0].Translated(u*tempWidth);
+            tempShapePoints[2]=currentMousePosition;
+            tempShapePoints[3]=tempShapePoints[0].Translated(v*tempHeight);
+            tempShapePoints[4]=tempShapePoints[0];
+        }
+    } else if (editIndex == 3) {
+        gp_Vec d(currentMousePosition,tempShapePoints[1]);
+        double tempWidth=d.Dot(u);
+        double tempHeight=-d.Dot(v);
+
+        if (abs(tempWidth) > Precision::Confusion() && abs(tempHeight) > Precision::Confusion()) {
+            tempShapePoints[0]=tempShapePoints[1].Translated(-u*tempWidth);
+            tempShapePoints[2]=tempShapePoints[1].Translated(v*tempHeight);
+            tempShapePoints[3]=currentMousePosition;
+            tempShapePoints[4]=tempShapePoints[0];
+        }
+    }
+
+    // build wire
+
+    BRepBuilderAPI_MakePolygon polyMaker;
+    i=0;
+    while (i < tempShapePoints.size()) {
+        polyMaker.Add(tempShapePoints[i]);
+        i++;
+    }
+
+    TopoDS_Wire wire=polyMaker.Wire();
+    rubberband=new AIS_Shape(wire);
+
+    if (!rubberband.IsNull()) {
+        viewerContext->Display(rubberband,0,-1,Standard_True);
+    }
+}
+
+void Rectangle::setEditPoint (gp_Pnt &pnt)
+{
+    if (editIndex == 0 || editIndex == 4) {
+        gp_Vec d(pnt,shapePoints[2]);
+        width=d.Dot(u);
+        height=d.Dot(v);
+
+        shapePoints[0]=pnt;
+        shapePoints[1]=shapePoints[2].Translated(-v*height);
+        shapePoints[3]=shapePoints[2].Translated(-u*width);
+        shapePoints[4]=shapePoints[0];
+    } else if (editIndex == 1) {
+        gp_Vec d(shapePoints[3],pnt);
+        width=d.Dot(u);
+        height=-d.Dot(v);
+
+        shapePoints[0]=shapePoints[3].Translated(-v*height);
+        shapePoints[1]=pnt;
+        shapePoints[2]=shapePoints[3].Translated(u*width);
+        shapePoints[4]=shapePoints[0];
+    } else if (editIndex == 2) {
+        gp_Vec d(shapePoints[0],pnt);
+        width=d.Dot(u);
+        height=d.Dot(v);
+
+        shapePoints[1]=shapePoints[0].Translated(u*width);
+        shapePoints[2]=pnt;
+        shapePoints[3]=shapePoints[0].Translated(v*height);
+        shapePoints[4]=shapePoints[0];
+    } else if (editIndex == 3) {
+        gp_Vec d(pnt,shapePoints[1]);
+        width=d.Dot(u);
+        height=-d.Dot(v);
+
+        shapePoints[0]=shapePoints[1].Translated(-u*width);
+        shapePoints[2]=shapePoints[1].Translated(v*height);
+        shapePoints[3]=pnt;
+        shapePoints[4]=shapePoints[0];
+    }
+}
+
 // for change in width and/or height
 void Rectangle::recalculate ()
 {
@@ -502,6 +621,78 @@ void Polycircle::drawRubberband ()
     if (!rubberband.IsNull()) {
         viewerContext->Display(rubberband,0,-1,Standard_True);
     }
+}
+
+void Polycircle::drawStretchRubberband ()
+{
+    //std::cout << "Polycircle::drawRubberband" << std::endl; std::cout.flush();
+
+    if (!centerPointSet) return;
+
+    // reset
+    if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
+    shapePoints.clear();
+
+    // shape
+
+    gp_Ax1 axis(centerPoint,normal);
+    firstPoint=currentMousePosition;
+
+    double step=2.0*M_PI/vertexCount;
+
+    std::vector<gp_Pnt> tempShapePoints;
+    int i=0;
+    while (i < vertexCount) {
+        gp_Trsf rot;
+        rot.SetRotation(axis,i*step);
+
+        gp_Pnt p=firstPoint;;
+        p.Transform(rot);
+
+        tempShapePoints.push_back(p);
+
+        i++;
+    }
+    tempShapePoints.push_back(tempShapePoints[0]);
+
+    // build wire
+
+    BRepBuilderAPI_MakePolygon polyMaker;
+    long unsigned int j=0;
+    while (j < tempShapePoints.size()) {
+        polyMaker.Add(tempShapePoints[j]);
+        j++;
+    }
+
+    TopoDS_Wire wire=polyMaker.Wire();
+    rubberband=new AIS_Shape(wire);
+
+    if (!rubberband.IsNull()) {
+        viewerContext->Display(rubberband,0,-1,Standard_True);
+    }
+}
+
+void Polycircle::setEditPoint (gp_Pnt &pnt)
+{
+    gp_Ax1 axis(centerPoint,normal);
+    firstPoint=pnt;
+
+    double step=2.0*M_PI/vertexCount;
+
+    shapePoints.clear();
+    int i=0;
+    while (i < vertexCount) {
+        gp_Trsf rot;
+        rot.SetRotation(axis,i*step);
+
+        gp_Pnt p=firstPoint;;
+        p.Transform(rot);
+
+        shapePoints.push_back(p);
+
+        i++;
+    }
+    shapePoints.push_back(shapePoints[0]);
 }
 
 bool Polycircle::isValidPoint (gp_Pnt &pnt)

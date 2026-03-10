@@ -125,6 +125,7 @@ public:
     Rectangle () {}
     Rectangle (Rectangle *);
     void drawRubberband () override;
+    void drawStretchRubberband () override;
     bool isValidPoint (gp_Pnt &pnt) override;
     bool canDeleteLastPoint () override {return false;}
     bool canFinish () override {return false;}
@@ -143,6 +144,8 @@ public:
 
     gp_Pnt getOppositeCorner ();
 
+    void setEditPoint (gp_Pnt &pnt) override;
+
 private:
     gp_Vec u,v;
     double width,height;
@@ -159,6 +162,7 @@ public:
     }
 
     void drawRubberband () override;
+    void drawStretchRubberband () override;
     bool isValidPoint (gp_Pnt &pnt) override;
     bool canDeleteLastPoint () override {return false;}
     bool canFinish () override {return false;}
@@ -176,6 +180,9 @@ public:
     void setVertexCount (int vertexCount_) {vertexCount=vertexCount_;}
 
     void recalculate ();
+
+    void setEditPoint (gp_Pnt &pnt) override;
+
 private:
     bool centerPointSet;
     gp_Pnt centerPoint;

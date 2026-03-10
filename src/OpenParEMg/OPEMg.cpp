@@ -2648,15 +2648,17 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &sha
 
     if (!item) return;
 
-    std::vector<CustomTreeWidgetItem *> displayedItems;
-    if (item->is_rootDrawing()) {
-        int i=0;
-        while (i < item->childCount()) {
-            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-            if (ui->drawingWindow->isDisplayed(child->get_AIS_Shape())) displayedItems.push_back(child);
-            i++;
-        }
-    }
+    // std::vector<CustomTreeWidgetItem *> displayedItems;
+    // if (item->is_rootDrawing()) {
+    //     int i=0;
+    //     while (i < item->childCount()) {
+    //         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+    //         if (ui->drawingWindow->isDisplayed(child->get_AIS_Shape())) displayedItems.push_back(child);
+    //         i++;
+    //     }
+    // }
+
+    std::vector<CustomTreeWidgetItem *> displayedItems=ui->drawingWindow->getVisibleItems();
 
     // remove old shape
     if (!item->get_AIS_Shape().IsNull()) {
@@ -6251,8 +6253,30 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
         while (i < selectedItemsList.size()) {
             Polywire *polywire=static_cast<Polywire *>(selectedItemsList[i]->get_Polywire());
             if (polywire) {
-                polywire->setCurrentMousePosition(pnt);
-                polywire->drawStretchRubberband();
+
+                Line *line=dynamic_cast<Line *>(polywire);
+                if (line) {
+                    line->setCurrentMousePosition(pnt);
+                    line->drawStretchRubberband();
+                }
+
+                Polyline *polyline=dynamic_cast<Polyline *>(polywire);
+                if (polyline) {
+                    polyline->setCurrentMousePosition(pnt);
+                    polyline->drawStretchRubberband();
+                }
+
+                Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+                if (rectangle) {
+                    rectangle->setCurrentMousePosition(pnt);
+                    rectangle->drawStretchRubberband();
+                }
+
+                Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+                if (polycircle) {
+                    polycircle->setCurrentMousePosition(pnt);
+                    polycircle->drawStretchRubberband();
+                }
             }
             i++;
         }
@@ -6294,6 +6318,10 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
             Polywire *polywire=static_cast<Polywire *>(selectedItemsList[i]->get_Polywire());
             if (polywire) {
                 if (vertexList.size() == 1) {
+                    gp_Pnt position=polywire->getPosition();
+                    polywire->setCurrentMousePosition(position);
+                    polywire->drawStretchRubberband();
+
                     ui->drawingWindow->hideItem(selectedItemsList[i]);
                     ui->drawingWindow->updateViewer();
                     polywire->setEditIndex(pnt);

@@ -435,6 +435,10 @@ public:
         viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
     }
 
+    std::vector<CustomTreeWidgetItem *> getVisibleItems (){
+        return drawingTracker->getVisibleItems();
+    }
+
 protected:
     void initializeGL () override;
     void paintGL () override;
