@@ -201,6 +201,7 @@ void RectangleEditForm::on_OkButton_clicked ()
 void RectangleEditForm::on_CancelButton_clicked()
 {
     ui->CancelButton->setChecked(true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
     QDialog::close();
 }
 

@@ -428,7 +428,7 @@ public:
 
     gp_Dir get_normal () {return view->Viewer()->PrivilegedPlane().Direction();}
 
-    void set_selectedItems (std::vector<CustomTreeWidgetItem *> *selectedItems_) {selectedItems=selectedItems_;}
+    void set_selectedItemsList (std::vector<CustomTreeWidgetItem *> *selectedItemsList_) {selectedItemsList=selectedItemsList_;}
 
     void reset_vertexSymbol ()
     {
@@ -472,7 +472,7 @@ private:
 
     // all drawing
     Relay *relay;
-    std::vector<CustomTreeWidgetItem *> *selectedItems;
+    std::vector<CustomTreeWidgetItem *> *selectedItemsList;
 
     // vertex
     bool pickVertex;

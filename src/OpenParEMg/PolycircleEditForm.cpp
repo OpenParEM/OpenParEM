@@ -27,6 +27,8 @@ PolycircleEditForm::PolycircleEditForm (QWidget *parent)
 {
     ui->setupUi(this);
 
+    setFixedSize(width(),height());
+
     polywire=nullptr;
 
     doubleValidator.setNotation(QDoubleValidator::ScientificNotation);
@@ -212,6 +214,7 @@ void PolycircleEditForm::pickVertexFinished (gp_Pnt point)
 void PolycircleEditForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
     QDialog::close();
 }
 

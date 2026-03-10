@@ -27,6 +27,8 @@ RotateInputForm::RotateInputForm(QWidget *parent)
 {
     ui->setupUi(this);
 
+    setFixedSize(width(),height());
+
     ui->pickStart->setCheckable(true);
     ui->pickStart->setEnabled(false);
     ui->pickEnd->setCheckable(true);
@@ -196,7 +198,10 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
         ui->startX->setText(QString::number(startPoint.X()));
         ui->startY->setText(QString::number(startPoint.Y()));
         ui->startZ->setText(QString::number(startPoint.Z()));
+        activateWindow();
+        raise();
         ui->pickStart->setChecked(false);
+        ui->pickEnd->setFocus();
     }
 
     if (pickEndPoint) {
@@ -205,13 +210,17 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
         ui->endX->setText(QString::number(endPoint.X()));
         ui->endY->setText(QString::number(endPoint.Y()));
         ui->endZ->setText(QString::number(endPoint.Z()));
+        activateWindow();
+        raise();
         ui->pickEnd->setChecked(false);
+        ui->pickStart->setFocus();
     }
 
     if (hasStartPoint && hasEndPoint) {
         Standard_Real distance=startPoint.Distance(endPoint);
         if (distance > 1e-12) {
             ui->OkButton->setEnabled(true);
+            ui->OkButton->setFocus();
         } else {
             ui->OkButton->setEnabled(false);
         }
@@ -222,7 +231,6 @@ void RotateInputForm::reject ()
 {
     ui->CancelButton->setChecked(true);
     emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
-
     QDialog::reject();
 }
 

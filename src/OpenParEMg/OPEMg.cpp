@@ -277,6 +277,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     rotateInputForm=nullptr;
 
     operation=0;
+    ui->drawingWindow->set_selectedItemsList(&selectedItemsList);
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -2721,8 +2722,6 @@ void OpenParEMg::extrudePolywire ()
         i++;
     }
 
-    ui->drawingWindow->set_selectedItems(&selectedItemsList);
-
     if (lengthInputForm) delete lengthInputForm;
     lengthInputForm=new LengthInputForm();
     lengthInputForm->set_normal(faceNormal);
@@ -2811,103 +2810,107 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
     }
 
     Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
+    if (polywire) {
 
-    Polyline *polyline=dynamic_cast<Polyline *>(polywire);
-    if (polyline) {
-        TopoDS_Wire wire=polyline->buildWire();
-        TopoDS_Face face;
-        if (wire.Closed()) {
-            BRepBuilderAPI_MakeFace faceBuilder(wire);
-            if (faceBuilder.IsDone()) face=faceBuilder.Face();
+        Polyline *polyline=dynamic_cast<Polyline *>(polywire);
+        if (polyline) {
+            TopoDS_Wire wire=polyline->buildWire();
+            TopoDS_Face face;
+            if (wire.Closed()) {
+                BRepBuilderAPI_MakeFace faceBuilder(wire);
+                if (faceBuilder.IsDone()) face=faceBuilder.Face();
+            }
+            replaceItemShape(item,face);  // inserts to item map
         }
-        replaceItemShape(item,face);  // inserts to item map
-    }
 
-    Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
-    if (rectangle) {
-        TopoDS_Wire wire=rectangle->buildWire();
-        TopoDS_Face face;
-        if (wire.Closed()) {
-            BRepBuilderAPI_MakeFace faceBuilder(wire);
-            if (faceBuilder.IsDone()) face=faceBuilder.Face();
+        Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+        if (rectangle) {
+            TopoDS_Wire wire=rectangle->buildWire();
+            TopoDS_Face face;
+            if (wire.Closed()) {
+                BRepBuilderAPI_MakeFace faceBuilder(wire);
+                if (faceBuilder.IsDone()) face=faceBuilder.Face();
+            }
+            replaceItemShape(item,face);  // inserts to item map
         }
-        replaceItemShape(item,face);  // inserts to item map
-    }
 
-    Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
-    if (polycircle) {
-        TopoDS_Wire wire=polycircle->buildWire();
-        TopoDS_Face face;
-        if (wire.Closed()) {
-            BRepBuilderAPI_MakeFace faceBuilder(wire);
-            if (faceBuilder.IsDone()) face=faceBuilder.Face();
+        Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+        if (polycircle) {
+            TopoDS_Wire wire=polycircle->buildWire();
+            TopoDS_Face face;
+            if (wire.Closed()) {
+                BRepBuilderAPI_MakeFace faceBuilder(wire);
+                if (faceBuilder.IsDone()) face=faceBuilder.Face();
+            }
+            replaceItemShape(item,face);  // inserts to item map
         }
-        replaceItemShape(item,face);  // inserts to item map
     }
 
     Process *process=static_cast<Process*>(item->get_Process());
+    if (process) {
 
-    Extrude *extrude=dynamic_cast<Extrude *>(process);
-    if (extrude) {
-        int i=0;
-        while (i < item->childCount()) {
-            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-            reextrudePolywire(item,child);
-            i++;
+        Extrude *extrude=dynamic_cast<Extrude *>(process);
+        if (extrude) {
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+                reextrudePolywire(item,child);
+                i++;
+            }
         }
-    }
 
-    Merge *merge=dynamic_cast<Merge *>(process);
-    if (merge) {
-        if (item->childCount() == 2) {
+        Merge *merge=dynamic_cast<Merge *>(process);
+        if (merge) {
+            if (item->childCount() == 2) {
 
-            CustomTreeWidgetItem *child1=(CustomTreeWidgetItem *)item->child(0);
-            CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
+                CustomTreeWidgetItem *child1=(CustomTreeWidgetItem *)item->child(0);
+                CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
 
-            // get shapes
-            TopoDS_Shape shape1=child1->get_AIS_Shape()->Shape();
-            TopoDS_Shape shape2=child2->get_AIS_Shape()->Shape();
+                // get shapes
+                TopoDS_Shape shape1=child1->get_AIS_Shape()->Shape();
+                TopoDS_Shape shape2=child2->get_AIS_Shape()->Shape();
 
-            // build merged shape
-            BRepAlgoAPI_Fuse fuse(shape1,shape2);
-            fuse.Build();
-            if (!fuse.IsDone()) return;
+                // build merged shape
+                BRepAlgoAPI_Fuse fuse(shape1,shape2);
+                fuse.Build();
+                if (!fuse.IsDone()) return;
 
-            TopoDS_Shape mergedShape=fuse.Shape();
+                TopoDS_Shape mergedShape=fuse.Shape();
 
-            ShapeUpgrade_UnifySameDomain unify(mergedShape);
-            unify.Build();
-            mergedShape=unify.Shape();
+                ShapeUpgrade_UnifySameDomain unify(mergedShape);
+                unify.Build();
+                mergedShape=unify.Shape();
 
-            replaceItemShape(item,mergedShape);  // inserts to item map
-            brepChanged=true;
+                replaceItemShape(item,mergedShape);  // inserts to item map
+                brepChanged=true;
+            }
         }
-    }
 
-    Subtract *subtract=dynamic_cast<Subtract *>(process);
-    if (subtract) {
-        if (item->childCount() == 2) {
+        Subtract *subtract=dynamic_cast<Subtract *>(process);
+        if (subtract) {
+            if (item->childCount() == 2) {
 
-            CustomTreeWidgetItem *child1=(CustomTreeWidgetItem *)item->child(0);
-            CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
+                CustomTreeWidgetItem *child1=(CustomTreeWidgetItem *)item->child(0);
+                CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
 
-            // get shapes
-            TopoDS_Shape shape1=child1->get_AIS_Shape()->Shape();
-            TopoDS_Shape shape2=child2->get_AIS_Shape()->Shape();
+                // get shapes
+                TopoDS_Shape shape1=child1->get_AIS_Shape()->Shape();
+                TopoDS_Shape shape2=child2->get_AIS_Shape()->Shape();
 
-            // build subtacted shape
-            BRepAlgoAPI_Cut cut(shape1,shape2);
-            cut.Build();
-            if (!cut.IsDone()) return;
+                // build subtacted shape
+                BRepAlgoAPI_Cut cut(shape1,shape2);
+                cut.Build();
+                if (!cut.IsDone()) return;
 
-            TopoDS_Shape subtractedShape=cut.Shape();
+                TopoDS_Shape subtractedShape=cut.Shape();
 
-            ShapeUpgrade_UnifySameDomain unify(subtractedShape);
-            unify.Build();
-            subtractedShape=unify.Shape();
+                ShapeUpgrade_UnifySameDomain unify(subtractedShape);
+                unify.Build();
+                subtractedShape=unify.Shape();
 
-            replaceItemShape(item,subtractedShape);  // inserts to item map
-            brepChanged=true;
+                replaceItemShape(item,subtractedShape);  // inserts to item map
+                brepChanged=true;
+            }
         }
     }
 
@@ -3101,8 +3104,6 @@ void OpenParEMg::mergeSolids ()
         i++;
     }
 
-    ui->drawingWindow->set_selectedItems(&selectedItemsList);
-
     finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
 }
 
@@ -3172,8 +3173,6 @@ void OpenParEMg::subtractSolids ()
         i++;
     }
 
-    ui->drawingWindow->set_selectedItems(&selectedItemsList);
-
     finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
 }
 
@@ -3233,17 +3232,21 @@ void OpenParEMg::moveObject ()
     while (i < items.count()) {
         CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
         if (item->is_drawing()) {
+            item->setAnimate(ui->drawingWindow->get_viewerContext());
+            item->reset_transformation();
             selectedItemsList.push_back(item);
         }
         i++;
     }
-    ui->drawingWindow->set_selectedItems(&selectedItemsList);
 
     ui->drawingWindow->set_pickVertex(true);
 }
 
 void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item)
 {
+    item->unsetAnimate(ui->drawingWindow->get_viewerContext());
+    item->reset_transformation();
+
     Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
     if (polywire) {
         polywire->shift(vertexList[1],vertexList[0]);
@@ -3257,8 +3260,18 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item)
         while (i < item->childCount()) {
             CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
             finishMoveObject(child);
+            brepChanged=true;
             i++;
         }
+    }
+
+    if (!polywire && !process) {
+        //xxx
+        std::cout << "place 2" << std::endl; std::cout.flush();
+        item->moveShape(vertexList[0],vertexList[1],ui->drawingWindow->get_viewerContext());
+        ui->drawingWindow->showItem(item);
+        reprocess(item);
+        brepChanged=true;
     }
 }
 
@@ -3367,7 +3380,6 @@ void OpenParEMg::rotateObject ()
         }
         i++;
     }
-    ui->drawingWindow->set_selectedItems(&selectedItemsList);
 
     if (rotateInputForm) delete rotateInputForm;
     rotateInputForm=new RotateInputForm();
@@ -5082,31 +5094,33 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
 
         if (lengthInputForm) {
             lengthInputForm->on_CancelButton_clicked();
-            delete lengthInputForm;
+            //delete lengthInputForm;
             lengthInputForm=nullptr;
         }
 
         if (rectangleEditForm) {
             rectangleEditForm->on_CancelButton_clicked();
-            delete rectangleEditForm;
+            //delete rectangleEditForm;
             rectangleEditForm=nullptr;
         }
 
         if (polycircleEditForm) {
             polycircleEditForm->on_CancelButton_clicked();
-            delete polycircleEditForm;
+            //delete polycircleEditForm;
             polycircleEditForm=nullptr;
         }
 
         if (rotateInputForm) {
             rotateInputForm->on_CancelButton_clicked();
-            delete rotateInputForm;
+            //delete rotateInputForm;
             rotateInputForm=nullptr;
         }
 
-        ui->drawingWindow->unselectAllItems();
-        disableMenus=false;
-        setMenus();
+        // ui->drawingWindow->unselectAllItems();
+        // disableMenus=false;
+        // setMenus();
+
+        //finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
     }
     QWidget::keyPressEvent(event);
 }
@@ -6042,6 +6056,9 @@ void OpenParEMg::finishDrawLine (TopoDS_Wire wire)
             newItem=addItemShape(wire,&drawing);  // inserts to item map
         }
 
+        // put it on the Z-layer to get it higher selection priority
+        newItem->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);
+
         ui->drawingWindow->unselectAllItems();   // not working as expected
         ui->drawingWindow->selectItem(newItem);  // item is not selected when completed
     }
@@ -6238,11 +6255,10 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
         }
     }
 
-    // ToDo: fix animation of move; current setup does not work
-    if (operation == 41 && vertexList.size() > 0) {
+    if (operation == 24 && vertexList.size() > 0) {
         long unsigned int i=0;
         while (i < selectedItemsList.size()) {
-            selectedItemsList[i]->moveShape(lastMousePosition,pnt,ui->drawingWindow->get_viewerContext());
+            selectedItemsList[i]->moveAnimateShape(lastMousePosition,pnt,ui->drawingWindow->get_viewerContext());
             ui->drawingWindow->updateViewer();
             i++;
         }
@@ -6305,7 +6321,16 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     }
 
     if (operation == 21 && lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
-    if (operation == 24 && vertexList.size() == 2) finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+    if (operation == 24) {
+        if (vertexList.size() == 1) {
+            long unsigned int i=0;
+            while (i < selectedItemsList.size()) {
+                ui->drawingWindow->hideItem(selectedItemsList[i]);
+                i++;
+            }
+        }
+        if (vertexList.size() == 2) finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+    }
     if (operation == 25 && rotateInputForm) rotateInputForm->pickVertexFinished(pnt);
     if (operation == 31) {
         if (rectangleEditForm) rectangleEditForm->pickVertexFinished(pnt);
@@ -6356,6 +6381,18 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
             polywire=nullptr;
         }
 
+        if (operation == 24) {
+            long unsigned int i=0;
+            while (i < selectedItemsList.size()) {
+                selectedItemsList[i]->unsetAnimate(ui->drawingWindow->get_viewerContext());
+                ui->drawingWindow->showItem(selectedItemsList[i]);
+                i++;
+            }
+        }
+
+        //xxx
+        //if (vertexList.size() > 0) lastMousePosition=vertexList[vertexList.size()-1];
+
     } else {
         if (operation == 11 || operation == 12 || operation == 13 || operation == 14) finishDrawLine(polywire->buildWire());
         if (operation == 21) finishExtrudePolywire(length,false);
@@ -6369,10 +6406,10 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
 
     ui->drawingWindow->set_pickVertex(false);
 
-    if (lengthInputForm) lengthInputForm=nullptr;
-    if (rectangleEditForm) rectangleEditForm=nullptr;
-    if (polycircleEditForm) polycircleEditForm=nullptr;
-    if (rotateInputForm) rotateInputForm=nullptr;
+    if (lengthInputForm) {lengthInputForm=nullptr;}
+    if (rectangleEditForm) {rectangleEditForm=nullptr;}
+    if (polycircleEditForm) {polycircleEditForm=nullptr;}
+    if (rotateInputForm) {rotateInputForm=nullptr;}
 
     // enable tree
     ui->drawingItemTree->setEnabled(true);
@@ -6397,7 +6434,6 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
     clearTreeSelection();
     setMenus();
 }
-
 
 
 
