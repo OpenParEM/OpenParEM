@@ -3268,7 +3268,8 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item)
     if (!polywire && !process) {
         //xxx
         std::cout << "place 2" << std::endl; std::cout.flush();
-        item->moveShape(vertexList[0],vertexList[1],ui->drawingWindow->get_viewerContext());
+        TopoDS_Shape newShape=item->moveShape(vertexList[0],vertexList[1],ui->drawingWindow->get_viewerContext());
+        replaceItemShape(item,newShape);
         ui->drawingWindow->showItem(item);
         reprocess(item);
         brepChanged=true;

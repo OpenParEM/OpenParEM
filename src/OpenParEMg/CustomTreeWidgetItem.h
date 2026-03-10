@@ -25,6 +25,7 @@
 #include <QMenu>
 #include "AIS_Shape.hxx"
 #include <AIS_InteractiveContext.hxx>
+#include <BRepBuilderAPI_Transform.hxx>
 
 class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
     Q_OBJECT
@@ -163,16 +164,17 @@ public:
         return true;
     }
 
-    void moveShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_InteractiveContext) viewerContext)
+    TopoDS_Shape moveShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_InteractiveContext) viewerContext)
     {
-        if (shape.IsNull()) return;
-
         gp_Trsf step;
         step.SetTranslation(p1,p2);
         aTrsf=step*aTrsf;
         shape->SetLocalTransformation(aTrsf);
 
         viewerContext->Redisplay(shape,Standard_True);
+
+        BRepBuilderAPI_Transform transformer(shape->Shape(),aTrsf,Standard_True);
+        return transformer.Shape();
     }
 
     void moveAnimateShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_InteractiveContext) viewerContext)
