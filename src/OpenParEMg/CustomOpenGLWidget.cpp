@@ -278,8 +278,8 @@ bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const
 
     IntAna_IntConicQuad intersector(viewRay, drawingPlane, Precision::Confusion());
 
-    if (intersector.IsDone() && intersector.NbPoints() > 0) {
-        thePoint3D = intersector.Point(1);
+    if (intersector.IsDone() && !intersector.IsParallel() && intersector.NbPoints() > 0) {
+        thePoint3D=intersector.Point(1);
         return false;
     }
 
@@ -312,13 +312,13 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
     // Create a gp_Pnt
     gp_Pnt clickPoint;
+    bool clickPointValid=false;
     if (viewer->IsGridActive() && snapToGrid) {
         Standard_Real X,Y,Z;
         view->ConvertToGrid(pos.x(),pos.y(),X,Y,Z);
         clickPoint.SetCoord(X,Y,Z);
     } else {
-        // ToDo: next line causes crash when the view is exactly on an axis
-        PixelToPointOnPlane (pos.x(),pos.y(),clickPoint);
+        if (!PixelToPointOnPlane (pos.x(),pos.y(),clickPoint)) clickPointValid=true;
     }
 
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
@@ -478,8 +478,9 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
     Standard_Real x,y,z;
     view->Convert(event->pos().x(),event->pos().y(),x,y,z);
     gp_Pnt mousePosition(x,y,z);
-    PixelToPointOnPlane (event->pos().x(),event->pos().y(),mousePosition);
-    emit relay->getCurrentMousePosition(mousePosition);
+    if (!PixelToPointOnPlane (event->pos().x(),event->pos().y(),mousePosition)) {
+        emit relay->getCurrentMousePosition(mousePosition);
+    }
 
     // pass the mouse position from Qt to OCCT
     const Graphic3d_Vec2i position(event->pos().x(),event->pos().y());
