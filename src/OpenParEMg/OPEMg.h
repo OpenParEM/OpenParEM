@@ -332,6 +332,12 @@ private slots:
     void finishOperation (gp_Pnt, double, double, gp_Pnt, gp_Pnt, bool);
     void getPickedVertex (gp_Pnt, bool);
 
+    void on_actionDrawingSetPlaneToXY_triggered();
+
+    void on_actionDrawingSetPlaneToXZ_triggered();
+
+    void on_actionDrawingSetPlaneToYZ_triggered();
+
 public slots:
     void setMenus ();
     void finishEditObject (double, bool);

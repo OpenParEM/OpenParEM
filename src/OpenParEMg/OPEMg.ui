@@ -173,6 +173,9 @@
      <addaction name="actionDrawingPlaneHide"/>
      <addaction name="actionDrawingPlaneSnapToGrid"/>
      <addaction name="actionDrawingPlaneSetToFace"/>
+     <addaction name="actionDrawingSetPlaneToXY"/>
+     <addaction name="actionDrawingSetPlaneToXZ"/>
+     <addaction name="actionDrawingSetPlaneToYZ"/>
     </widget>
     <addaction name="menuDrawing_Plane"/>
     <addaction name="actionDrawLine"/>
@@ -435,6 +438,9 @@
    <property name="text">
     <string>Set To Face</string>
    </property>
+   <property name="toolTip">
+    <string>Set the drawing plane to the selected face.</string>
+   </property>
   </action>
   <action name="actionExportStep">
    <property name="text">
@@ -512,6 +518,30 @@
   <action name="actionDrawPolycircle">
    <property name="text">
     <string>polycircle</string>
+   </property>
+  </action>
+  <action name="actionDrawingSetPlaneToXY">
+   <property name="text">
+    <string>Set to XY Plane</string>
+   </property>
+   <property name="toolTip">
+    <string>Set the drawing plane to the x-y plane.</string>
+   </property>
+  </action>
+  <action name="actionDrawingSetPlaneToXZ">
+   <property name="text">
+    <string>Set to XZ Plane</string>
+   </property>
+   <property name="toolTip">
+    <string>Set the drawing plane to the x-z plane.</string>
+   </property>
+  </action>
+  <action name="actionDrawingSetPlaneToYZ">
+   <property name="text">
+    <string>Set to YZ Plane</string>
+   </property>
+   <property name="toolTip">
+    <string>Set the drawing plane to hte y-z plane.</string>
    </property>
   </action>
  </widget>

@@ -90,6 +90,7 @@ public:
         viewer->SetGridEcho(state);
     }
     void set_gridPlane ();
+    void set_gridPlane (gp_Pnt &origin, gp_Dir &direction);
 
     void set_pickVertex (bool pickVertex_) {
         pickVertex=pickVertex_;

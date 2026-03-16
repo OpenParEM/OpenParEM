@@ -493,14 +493,21 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
 
 void CustomOpenGLWidget::set_gridPlane ()
 {
-
     TopoDS_Face face=getSelectedFace();
     if (!face.IsNull()) {
         Handle(Geom_Surface) surface=BRep_Tool::Surface(face);
-        Handle(Geom_Plane) gPlane=Handle(Geom_Plane)::DownCast(surface);
-        drawingPlane=gPlane->Pln();
+        Handle(Geom_Plane) plane=Handle(Geom_Plane)::DownCast(surface);
+        drawingPlane=plane->Pln();
         viewer->SetPrivilegedPlane(drawingPlane.Position());
     }
+}
+
+void CustomOpenGLWidget::set_gridPlane (gp_Pnt &origin, gp_Dir &normal)
+{
+    gp_Ax3 system(origin,normal);
+    Handle(Geom_Plane) plane=new Geom_Plane(system);
+    drawingPlane=plane->Pln();
+    viewer->SetPrivilegedPlane(drawingPlane.Position());
 }
 
 void CustomOpenGLWidget::showGrid ()

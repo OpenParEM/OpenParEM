@@ -5835,6 +5835,34 @@ void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
     setMenus();
 }
 
+//xxx
+void OpenParEMg::on_actionDrawingSetPlaneToXY_triggered ()
+{
+    gp_Pnt origin(0,0,0);
+    gp_Dir direction(0,0,1);
+    ui->drawingWindow->set_gridPlane(origin,direction);
+    ui->drawingWindow->updateViewer();
+    setMenus();
+}
+
+void OpenParEMg::on_actionDrawingSetPlaneToXZ_triggered ()
+{
+    gp_Pnt origin(0,0,0);
+    gp_Dir direction(0,1,0);
+    ui->drawingWindow->set_gridPlane(origin,direction);
+    ui->drawingWindow->updateViewer();
+    setMenus();
+}
+
+void OpenParEMg::on_actionDrawingSetPlaneToYZ_triggered ()
+{
+    gp_Pnt origin(0,0,0);
+    gp_Dir normal(1,0,0);
+    ui->drawingWindow->set_gridPlane(origin,normal);
+    ui->drawingWindow->updateViewer();
+    setMenus();
+}
+
 void OpenParEMg::on_actionSelectWithBox_triggered ()
 {
     ui->drawingWindow->selectRectangle();
@@ -6445,6 +6473,9 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
     clearTreeSelection();
     setMenus();
 }
+
+
+
 
 
 
