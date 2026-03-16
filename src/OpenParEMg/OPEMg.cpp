@@ -140,6 +140,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     connect(relay,&Relay::finishOperation,this,&OpenParEMg::finishOperation);
     connect(relay,&Relay::getCurrentMousePosition,this,&OpenParEMg::getCurrentMousePosition);
     connect(relay,&Relay::getPickedVertex,this,&OpenParEMg::getPickedVertex);
+    connect(relay,&Relay::setMenus,this,&OpenParEMg::setMenus);
 
     /////////////////////////////////////////////////////////////////////////////
     // drawing window
@@ -365,6 +366,8 @@ void OpenParEMg::setMenus ()
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
 
     //printLockouts();
+    //xxx
+    std::cout << "OpenParEMg::setMenus: ui->drawingWindow->numberDrawingFaceSelected()=" << ui->drawingWindow->numberDrawingFaceSelected() << std::endl; std::cout.flush();
 
     // disable all menus on command
     if (disableMenus) {
@@ -498,18 +501,16 @@ void OpenParEMg::setMenus ()
             ui->actionDrawingPlaneShow->setEnabled(false);
             ui->actionDrawingPlaneHide->setEnabled(true);
             ui->actionDrawingPlaneSnapToGrid->setEnabled(true);
-            ui->actionDrawingPlaneSetToFace->setEnabled(false);
-
-            if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {
-                TopoDS_Face face=ui->drawingWindow->getSelectedFace();
-                if (!face.IsNull()) ui->actionDrawingPlaneSetToFace->setEnabled(true);
-            }
-
         } else {
             ui->actionDrawingPlaneShow->setEnabled(true);
             ui->actionDrawingPlaneHide->setEnabled(false);
             ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
-            ui->actionDrawingPlaneSetToFace->setEnabled(false);
+        }
+
+        ui->actionDrawingPlaneSetToFace->setEnabled(false);
+        if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {
+            TopoDS_Face face=ui->drawingWindow->getSelectedFace();
+            if (!face.IsNull()) ui->actionDrawingPlaneSetToFace->setEnabled(true);
         }
 
     } else {
@@ -4921,6 +4922,7 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
         previousClickedItem=clickedItem;
     }
     ui->drawingWindow->updateViewer();
+    setMenus();
 }
 
 void OpenParEMg::on_actionFitSelected_triggered ()
@@ -5827,7 +5829,8 @@ void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered()
 void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
     ui->drawingWindow->set_gridPlane();
-    ui->drawingWindow->clearSelected(Standard_True);
+    ui->drawingWindow->unselectAllItems();            // item tree
+    ui->drawingWindow->clearSelected(Standard_True);  // anything that may be selected directly from a drawing
     ui->drawingWindow->updateViewer();
     setMenus();
 }

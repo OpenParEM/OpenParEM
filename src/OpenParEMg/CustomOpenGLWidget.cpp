@@ -413,6 +413,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
         if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
+        emit relay->setMenus();
     }
 }
 
