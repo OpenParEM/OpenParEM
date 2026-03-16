@@ -189,6 +189,20 @@ public:
         viewerContext->Redisplay(animateShape,Standard_True);
     }
 
+
+    TopoDS_Shape rotateShape (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2, Handle(AIS_InteractiveContext) viewerContext)
+    {
+        gp_Dir dir(gp_Vec(p1,p2));
+        gp_Ax1 axis(p1,dir);
+        double angleRadians=angleDegrees*M_PI/180;
+
+        gp_Trsf rotate;
+        rotate.SetRotation(axis,angleRadians);
+
+        BRepBuilderAPI_Transform transformer(shape->Shape(),rotate);
+        return transformer.Shape();
+    }
+
     void reset_transformation ()
     {
         aTrsf=gp_Trsf();

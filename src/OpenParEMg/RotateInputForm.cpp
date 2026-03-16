@@ -29,10 +29,12 @@ RotateInputForm::RotateInputForm(QWidget *parent)
 
     setFixedSize(width(),height());
 
+    // default to custom axis
+
     ui->pickStart->setCheckable(true);
-    ui->pickStart->setEnabled(false);
+    ui->pickStart->setEnabled(true);
     ui->pickEnd->setCheckable(true);
-    ui->pickEnd->setEnabled(false);
+    ui->pickEnd->setEnabled(true);
     ui->OkButton->setCheckable(true);
     ui->CancelButton->setCheckable(true);
 
@@ -44,11 +46,7 @@ RotateInputForm::RotateInputForm(QWidget *parent)
     ui->Xaxis->setChecked(false);
     ui->Yaxis->setChecked(false);
     ui->Zaxis->setChecked(false);
-    ui->CustomAxis->setChecked(false);
-
-    // default to x-axis
-
-    ui->Xaxis->setChecked(true);
+    ui->CustomAxis->setChecked(true);
 
     ui->startX->setText("0");
     ui->startY->setText("0");
@@ -85,6 +83,9 @@ void RotateInputForm::on_Xaxis_clicked ()
     ui->endZ->setText("0");
     endPoint.SetCoord(1,0,0);
 
+    ui->pickStart->setEnabled(false);
+    ui->pickEnd->setEnabled(false);
+
     ui->OkButton->setEnabled(true);
 }
 
@@ -105,6 +106,9 @@ void RotateInputForm::on_Yaxis_clicked ()
     ui->endZ->setText("0");
     endPoint.SetCoord(0,1,0);
 
+    ui->pickStart->setEnabled(false);
+    ui->pickEnd->setEnabled(false);
+
     ui->OkButton->setEnabled(true);
 }
 
@@ -124,6 +128,9 @@ void RotateInputForm::on_Zaxis_clicked ()
     ui->endY->setText("0");
     ui->endZ->setText("1");
     endPoint.SetCoord(0,0,1);
+
+    ui->pickStart->setEnabled(false);
+    ui->pickEnd->setEnabled(false);
 
     ui->OkButton->setEnabled(true);
 }
