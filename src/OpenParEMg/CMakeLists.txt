@@ -84,6 +84,7 @@ qt_add_executable(OpenParEMg
     Process.h Process.cpp
     PolycircleEditForm.h PolycircleEditForm.cpp PolycircleEditForm.ui
     RotateInputForm.h RotateInputForm.cpp RotateInputForm.ui
+    VectorInputForm.h VectorInputForm.cpp VectorInputForm.ui
 
 )
 

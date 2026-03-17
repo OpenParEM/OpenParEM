@@ -246,12 +246,6 @@ void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
     switch (aKey)
     {
         case Aspect_VKey_Escape: {
-            //std::cout << "CustomOpenGLWidget::keyPressEvent  Aspect_VKey_Escape" << std::endl; std::cout.flush();
-            //if (pickVertex) emit relay->finishExtrudeFace(0,true);
-            //if (polywire) emit relay->cancelDraw();
-            //emit relay->finishOperation(gp_Pnt(0,0,0),0,true);
-            //xxx
-            //emit relay->getPickedVertex(gp_Pnt(0,0,0),true);
             finishPickVertex(true);
         }
 
@@ -289,7 +283,7 @@ bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const
 // vertex draw or pick
 void CustomOpenGLWidget::finishPickVertex (bool cancel)
 {
-    std::cout << "CustomOpenGLWidget::finishPickVertex  cancel=" << cancel << std::endl; std::cout.flush();
+    //std::cout << "CustomOpenGLWidget::finishPickVertex  cancel=" << cancel << std::endl; std::cout.flush();
 
     // remove temporaryVertex
     if (!temporaryVertex.IsNull()) {
@@ -325,7 +319,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
     if (event->button() == Qt::LeftButton) {
 
-        if (pickVertex) {
+        if (pickVertex /*&& clickPointValid*/) {
             if (owner.IsNull()) {
                 vertexPoint=clickPoint;
                 finishPickVertex(false);
@@ -351,7 +345,6 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     // pass the mouse press from Qt to OCCT
     bool passClick=true;
     if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;            // a popup menu will appear
-    //if (event->button() == Qt::RightButton && (pickVertex || polywire)) passClick=false;   // prevent right-click from zooming
     if (event->button() == Qt::RightButton && pickVertex) passClick=false;   // prevent right-click from zooming
     if (passClick) {
         const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
@@ -362,7 +355,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
-    std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickVertex=" << pickVertex << std::endl; std::cout.flush();
+    //std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickVertex=" << pickVertex << std::endl; std::cout.flush();
 
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
@@ -370,7 +363,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     // process mouse buttons
     if (event->button() == Qt::LeftButton) {
 
-        //if (!ignoreLeftMouseRelease) {
         if (!pickVertex) {
 
             bool hasModifier=false;
@@ -379,9 +371,9 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
                 if (event->modifiers() & Qt::ControlModifier) {
                     hasModifier=true;
-                    scheme = AIS_SelectionScheme_Add;
+                    scheme=AIS_SelectionScheme_Add;
                 } else {
-                    scheme = AIS_SelectionScheme_Replace;
+                    scheme=AIS_SelectionScheme_Replace;
                 }
 
                 viewerContext->SelectDetected(scheme);
@@ -491,12 +483,26 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
     //std::cout << "exit CustomOpenGLWidget::mouseMoveEvent  polywire=" << polywire << std::endl; std::cout.flush();
 }
 
-void CustomOpenGLWidget::set_gridPlane ()
+void CustomOpenGLWidget::set_gridPlane (TopoDS_Face &face, gp_Pnt &origin, gp_Vec &xAxis)
 {
-    TopoDS_Face face=getSelectedFace();
+    std::cout << "CustomOpenGLWidget::set_gridPlane" << std::endl; std::cout.flush();
+    //TopoDS_Face face=getSelectedFace();
     if (!face.IsNull()) {
+        std::cout << "place 1" << std::endl; std::cout.flush();
+
+        // plane
         Handle(Geom_Surface) surface=BRep_Tool::Surface(face);
         Handle(Geom_Plane) plane=Handle(Geom_Plane)::DownCast(surface);
+
+        // origin
+        plane->SetLocation(origin);
+
+        // x-axis
+        gp_Ax3 newAxis=plane->Position();
+        newAxis.SetXDirection(xAxis);
+        plane->SetPosition(newAxis);
+
+        // set
         drawingPlane=plane->Pln();
         viewer->SetPrivilegedPlane(drawingPlane.Position());
     }
@@ -529,6 +535,8 @@ void CustomOpenGLWidget::showGrid ()
 
 void CustomOpenGLWidget::hideGrid ()
 {
+    //std::cout << "CustomOpenGLWidget::hideGrid" << std::endl; std::cout.flush();
+
     viewer->DeactivateGrid();
 }
 

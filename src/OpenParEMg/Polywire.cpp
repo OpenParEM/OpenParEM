@@ -375,15 +375,13 @@ void Rectangle::drawRubberband ()
     // diagonal vector
     gp_Vec d(shapePoints[0],currentMousePosition);
 
-    // u, v directions
-
-    u.SetCoord(1,0,0);
-    gp_Vec test=normal.Crossed(u);
-    if (test.IsEqual(gp_Vec(0,0,0),Precision::Confusion(),Precision::Confusion())) {
-        u.SetCoord(0,1,0);
-    }
-
+    // v direction
     v=normal.Crossed(u).Normalized();
+
+    //xxx
+    std::cout << "u=(" << u.X() << "," << u.Y() << "," << u.Z() << ")" << std::endl; std::cout.flush();
+    std::cout << "v=(" << v.X() << "," << v.Y() << "," << v.Z() << ")" << std::endl; std::cout.flush();
+    std::cout << "normal=(" << normal.X() << "," << normal.Y() << "," << normal.Z() << ")" << std::endl; std::cout.flush();
 
     // the other two points
 

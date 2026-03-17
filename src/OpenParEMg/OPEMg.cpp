@@ -273,12 +273,15 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     polywire=nullptr;
 
     lengthInputForm=nullptr;
+    vectorInputForm=nullptr;
     rectangleEditForm=nullptr;
     polycircleEditForm=nullptr;
     rotateInputForm=nullptr;
 
     operation=0;
     ui->drawingWindow->set_selectedItemsList(&selectedItemsList);
+
+    u.SetCoord(1,0,0);
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -366,8 +369,6 @@ void OpenParEMg::setMenus ()
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
 
     //printLockouts();
-    //xxx
-    std::cout << "OpenParEMg::setMenus: ui->drawingWindow->numberDrawingFaceSelected()=" << ui->drawingWindow->numberDrawingFaceSelected() << std::endl; std::cout.flush();
 
     // disable all menus on command
     if (disableMenus) {
@@ -2725,7 +2726,6 @@ void OpenParEMg::extrudePolywire ()
 
     if (lengthInputForm) delete lengthInputForm;
     lengthInputForm=new LengthInputForm();
-    lengthInputForm->set_normal(faceNormal);
     lengthInputForm->set_drawingWindow(ui->drawingWindow);
     lengthInputForm->set_relay(relay);
     lengthInputForm->setModal(false);
@@ -3409,7 +3409,6 @@ void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item, double &angleDe
         }
     }
 
-    //xxx
     if (!polywire && !process) {
         TopoDS_Shape newShape=item->rotateShape(angleDegrees,p1,p2,ui->drawingWindow->get_viewerContext());
         replaceItemShape(item,newShape);
@@ -3876,6 +3875,8 @@ void OpenParEMg::printLockouts ()
 
 void OpenParEMg::resetDrawing ()
 {
+    //std::cout << "OpenParEMg::resetDrawing" << std::endl; std::cout.flush();
+
     // counts
     pointCount=0;
     curveCount=0;
@@ -3922,7 +3923,13 @@ void OpenParEMg::resetDrawing ()
 
 void OpenParEMg::resetProject ()
 {
+    //std::cout << "OpenParEMg::resetProject" << std::endl; std::cout.flush();
+
     if (!projectFileLoaded) return;
+
+    // drawing plane
+    if (drawingPlaneShown) on_actionDrawingPlaneHide_triggered();
+    on_actionDrawingSetPlaneToXY_triggered();
 
     // project file
     projectFile="";
@@ -3964,11 +3971,14 @@ void OpenParEMg::on_actionNew_triggered ()
 
 void OpenParEMg::on_actionClose_triggered()
 {
+    //std::cout << "OpenParEMg::on_actionClose_triggered" << std::endl; std::cout.flush();
+
     if (projectChanged || meshChanged || boundaryDatabase->is_modified()) {
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this,"OpenParEMg","There are unsaved changes.  Do you want to close anyway?",QMessageBox::Yes|QMessageBox::No);
         if (reply == QMessageBox::No) return;
     }
+
     resetProject();
     setMenus();
 }
@@ -5059,7 +5069,6 @@ void OpenParEMg::clearTreeSelection ()
     ui->drawingWindow->unselectAllItems();
     ui->drawingItemTree->clearSelection();
     ui->drawingItemTree->setCurrentItem(nullptr);
-    //ui->drawingWindow->unselectAllItems();
     clickedItem=nullptr;
     previousClickedItem=nullptr;
     ui->drawingWindow->updateViewer();
@@ -5104,33 +5113,28 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
 
         if (lengthInputForm) {
             lengthInputForm->on_CancelButton_clicked();
-            //delete lengthInputForm;
             lengthInputForm=nullptr;
+        }
+
+        if (vectorInputForm) {
+            vectorInputForm->on_CancelButton_clicked();
+            vectorInputForm=nullptr;
         }
 
         if (rectangleEditForm) {
             rectangleEditForm->on_CancelButton_clicked();
-            //delete rectangleEditForm;
             rectangleEditForm=nullptr;
         }
 
         if (polycircleEditForm) {
             polycircleEditForm->on_CancelButton_clicked();
-            //delete polycircleEditForm;
             polycircleEditForm=nullptr;
         }
 
         if (rotateInputForm) {
             rotateInputForm->on_CancelButton_clicked();
-            //delete rotateInputForm;
             rotateInputForm=nullptr;
         }
-
-        // ui->drawingWindow->unselectAllItems();
-        // disableMenus=false;
-        // setMenus();
-
-        //finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
     }
     QWidget::keyPressEvent(event);
 }
@@ -5148,7 +5152,6 @@ void OpenParEMg::keyReleaseEvent (QKeyEvent *event)
 void OpenParEMg::on_actionShowAll_triggered()
 {
     ui->drawingWindow->unselectAllItems();
-    //ui->drawingWindow->showItem(&drawing);
     showRootDrawingItems();
     ui->drawingWindow->showItem(&path);
     ui->drawingWindow->showItem(&port);
@@ -5165,9 +5168,6 @@ void OpenParEMg::on_actionHideAll_triggered ()
     ui->drawingWindow->unselectAllItems();
     ui->drawingWindow->hideAllItems();
     clearTreeSelection();
-    //setRootForeground(&port);
-    //setRootForeground(&boundary);
-    //setRootForeground(&mesh);
     setMenus();
 }
 
@@ -5780,7 +5780,7 @@ void OpenParEMg::on_actionAbort_triggered ()
 */
 }
 
-void OpenParEMg::on_actionAbortAndExit_triggered()
+void OpenParEMg::on_actionAbortAndExit_triggered ()
 {
     if (projectChanged) {
         QMessageBox::StandardButton reply;
@@ -5800,7 +5800,7 @@ void OpenParEMg::on_actionAbortAndExit_triggered()
     QApplication::quit();
 }
 
-void OpenParEMg::on_actionDrawingPlaneShow_triggered()
+void OpenParEMg::on_actionDrawingPlaneShow_triggered ()
 {
     drawingPlaneShown=true;
     ui->drawingWindow->showGrid();
@@ -5808,15 +5808,17 @@ void OpenParEMg::on_actionDrawingPlaneShow_triggered()
     setMenus();
 }
 
-void OpenParEMg::on_actionDrawingPlaneHide_triggered()
+void OpenParEMg::on_actionDrawingPlaneHide_triggered ()
 {
+    //std::cout << "OpenParEMg::on_actionDrawingPlaneHide_triggered" << std::endl; std::cout.flush();
+
     drawingPlaneShown=false;
     ui->drawingWindow->hideGrid();
     ui->drawingWindow->updateViewer();
     setMenus();
 }
 
-void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered()
+void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered ()
 {
     if (ui->actionDrawingPlaneSnapToGrid->isChecked()) {
         ui->drawingWindow->set_snapToGrid(true);
@@ -5828,9 +5830,30 @@ void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered()
 
 void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
-    ui->drawingWindow->set_gridPlane();
-    ui->drawingWindow->unselectAllItems();            // item tree
-    ui->drawingWindow->clearSelected(Standard_True);  // anything that may be selected directly from a drawing
+    //xxx
+    operation=2;
+    startOperation();
+
+    selectedFace=ui->drawingWindow->getSelectedFace();
+
+    if (vectorInputForm) delete vectorInputForm;
+    vectorInputForm=new VectorInputForm();
+    vectorInputForm->set_drawingWindow(ui->drawingWindow);
+    vectorInputForm->set_relay(relay);
+    vectorInputForm->setModal(false);
+    connect(this,&OpenParEMg::sendPnt,vectorInputForm,&VectorInputForm::pickVertexFinished);
+    vectorInputForm->show();
+}
+
+void OpenParEMg::finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2)
+{
+    std::cout << "OpenParEMg::finishPlaneSetToFace" << std::endl; std::cout.flush();
+
+    u=p2.XYZ()-p1.XYZ();
+    u.Normalize();
+
+    ui->drawingWindow->set_gridPlane(selectedFace,p1,u);
+    ui->drawingWindow->unselectAllItems();
     ui->drawingWindow->updateViewer();
     setMenus();
 }
@@ -5840,6 +5863,7 @@ void OpenParEMg::on_actionDrawingSetPlaneToXY_triggered ()
 {
     gp_Pnt origin(0,0,0);
     gp_Dir direction(0,0,1);
+    u.SetCoord(1,0,0);
     ui->drawingWindow->set_gridPlane(origin,direction);
     ui->drawingWindow->updateViewer();
     setMenus();
@@ -5849,6 +5873,7 @@ void OpenParEMg::on_actionDrawingSetPlaneToXZ_triggered ()
 {
     gp_Pnt origin(0,0,0);
     gp_Dir direction(0,1,0);
+    u.SetCoord(1,0,0);
     ui->drawingWindow->set_gridPlane(origin,direction);
     ui->drawingWindow->updateViewer();
     setMenus();
@@ -5858,6 +5883,7 @@ void OpenParEMg::on_actionDrawingSetPlaneToYZ_triggered ()
 {
     gp_Pnt origin(0,0,0);
     gp_Dir normal(1,0,0);
+    u.SetCoord(0,1,0);
     ui->drawingWindow->set_gridPlane(origin,normal);
     ui->drawingWindow->updateViewer();
     setMenus();
@@ -5949,8 +5975,15 @@ void OpenParEMg::on_actionDrawRectangle_triggered ()
         gp_Dir normal=ui->drawingWindow->get_normal();
         polywire->setNormal(normal.X(),normal.Y(),normal.Z());
         polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+
+        Polywire *pw=static_cast<Polywire *>(polywire);
+        if (pw) {
+            Rectangle *rectangle=dynamic_cast<Rectangle *>(pw);
+            if (rectangle) {
+                rectangle->setU(u);
+            }
+        }
     }
-    //ui->drawingWindow->set_polywire(polywire);
 }
 
 void OpenParEMg::finishDrawLine (TopoDS_Wire wire)
@@ -6359,6 +6392,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
         }
     }
 
+    if (operation == 2 && vectorInputForm) vectorInputForm->pickVertexFinished(pnt);
     if (operation == 21 && lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
     if (operation == 24) {
         if (vertexList.size() == 1) {
@@ -6433,6 +6467,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
         //if (vertexList.size() > 0) lastMousePosition=vertexList[vertexList.size()-1];
 
     } else {
+        if (operation == 2) finishPlaneSetToFace(p1,p2);
         if (operation == 11 || operation == 12 || operation == 13 || operation == 14) finishDrawLine(polywire->buildWire());
         if (operation == 21) finishExtrudePolywire(length,false);
         if (operation == 22) finishMergeSolids();
@@ -6446,6 +6481,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
     ui->drawingWindow->set_pickVertex(false);
 
     if (lengthInputForm) {lengthInputForm=nullptr;}
+    if (vectorInputForm) {vectorInputForm=nullptr;}
     if (rectangleEditForm) {rectangleEditForm=nullptr;}
     if (polycircleEditForm) {polycircleEditForm=nullptr;}
     if (rotateInputForm) {rotateInputForm=nullptr;}

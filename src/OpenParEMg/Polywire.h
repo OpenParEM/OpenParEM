@@ -136,6 +136,10 @@ public:
     double getWidth () {return width;}
     double getHeight () {return height;}
 
+    void setU (gp_Vec u_) {
+        u=u_;
+        std::cout << "Rectangle::setU  u=(" << u.X() << "," << u.Y() << "," << u.Z() << ")" << std::endl; std::cout.flush();
+    }
     void setWidth (double width_) {width=width_;}
     void setHeight (double height_) {height=height_;}
 

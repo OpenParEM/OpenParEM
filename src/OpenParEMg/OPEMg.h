@@ -34,6 +34,7 @@
 #include "PolycircleEditForm.h"
 #include "Relay.h"
 #include "CustomLineEdit.h"
+#include "VectorInputForm.h"
 #include "project.h"
 #include "OpenParEMmaterials.hpp"
 #include "port.hpp"
@@ -147,6 +148,8 @@ public:
 
     bool isValidSubtractSolids ();
     void finishSubtractSolids ();
+
+    void finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2);
 
 private slots:
     // File
@@ -439,12 +442,12 @@ private:
 
     // forms
     LengthInputForm *lengthInputForm;
+    VectorInputForm *vectorInputForm;
     RectangleEditForm *rectangleEditForm;
     PolycircleEditForm *polycircleEditForm;
     RotateInputForm *rotateInputForm;
 
     // vertex pick
-    gp_Dir faceNormal;
     TopoDS_Face selectedFace;
     std::vector<gp_Pnt> vertexList;
 
@@ -453,13 +456,14 @@ private:
     bool isIntegrationPath;
     gp_Pnt lastMousePosition;
     Polywire *polywire;
+    gp_Vec u;  // local axis for transfer to rectangles
     std::vector<CustomTreeWidgetItem *> selectedItemsList;
     std::vector<Polywire *> polywireDatabase;
     std::vector<Process *> processDatabase;
 
     // operation
     int operation;   // 0 - no operation defined
-                     // 1 - pick vertex
+                     // 1 - pick vertex; 2 - get local u vector
                      // 11 - draw line; 12 - draw polyline; 13 - draw rectangle; 14 - draw polycircle
                      // 21 - extrude;  22 - merge;  23 - subtract; 24 - move; 25 - rotate
                      // 31 - edit; 32 - stretch

@@ -22,7 +22,7 @@
 #include "ui_LengthInputForm.h"
 #include <qtimer.h>
 
-LengthInputForm::LengthInputForm(QWidget *parent)
+LengthInputForm::LengthInputForm (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::LengthInputForm)
 {

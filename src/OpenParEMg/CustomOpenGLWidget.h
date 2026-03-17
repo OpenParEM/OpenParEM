@@ -89,7 +89,7 @@ public:
         snapToGrid=state;
         viewer->SetGridEcho(state);
     }
-    void set_gridPlane ();
+    void set_gridPlane (TopoDS_Face &face, gp_Pnt &origin, gp_Vec &xAxis);
     void set_gridPlane (gp_Pnt &origin, gp_Dir &direction);
 
     void set_pickVertex (bool pickVertex_) {
@@ -273,7 +273,8 @@ public:
 
     void unselectAllItems () {
         if (showTracking) std::cout << "CustomOpenGLWidget::unselectAllItems" << std::endl; std::cout.flush();
-        drawingTracker->unselectAllItems();
+        drawingTracker->unselectAllItems();  // items from the tree
+        clearSelected(Standard_True);        // anything else that might be selected, such as an un-tracked edge or face
     }
 
     void deleteItem (CustomTreeWidgetItem *item) {
