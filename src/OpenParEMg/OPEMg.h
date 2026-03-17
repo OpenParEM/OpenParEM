@@ -454,9 +454,11 @@ private:
     // drawing
     bool disableMenus;
     bool isIntegrationPath;
+    bool restrictToDrawingPlane;
     gp_Pnt lastMousePosition;
     Polywire *polywire;
     gp_Vec u;  // local axis for transfer to rectangles
+    gp_Pln currentPrivilegedPlane;
     std::vector<CustomTreeWidgetItem *> selectedItemsList;
     std::vector<Polywire *> polywireDatabase;
     std::vector<Process *> processDatabase;

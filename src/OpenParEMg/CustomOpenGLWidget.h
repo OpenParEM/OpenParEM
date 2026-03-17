@@ -89,7 +89,7 @@ public:
         snapToGrid=state;
         viewer->SetGridEcho(state);
     }
-    void set_gridPlane (TopoDS_Face &face, gp_Pnt &origin, gp_Vec &xAxis);
+    void set_gridPlane (TopoDS_Face &face);
     void set_gridPlane (gp_Pnt &origin, gp_Dir &direction);
 
     void set_pickVertex (bool pickVertex_) {
@@ -440,6 +440,9 @@ public:
     std::vector<CustomTreeWidgetItem *> getVisibleItems (){
         return drawingTracker->getVisibleItems();
     }
+
+    gp_Ax3 get_privilegedPlane () {return viewer->PrivilegedPlane();}
+    void set_privilegedPlane (gp_Pln &plane);
 
 protected:
     void initializeGL () override;

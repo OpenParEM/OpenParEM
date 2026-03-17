@@ -283,6 +283,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     u.SetCoord(1,0,0);
 
+    restrictToDrawingPlane=false;
+
     /////////////////////////////////////////////////////////////////////////////
 
     ui->drawingItemTree->show();
@@ -5832,9 +5834,13 @@ void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
     //xxx
     operation=2;
+    restrictToDrawingPlane=true;
     startOperation();
 
+    currentPrivilegedPlane=ui->drawingWindow->get_privilegedPlane();
+
     selectedFace=ui->drawingWindow->getSelectedFace();
+    ui->drawingWindow->set_gridPlane(selectedFace);
 
     if (vectorInputForm) delete vectorInputForm;
     vectorInputForm=new VectorInputForm();
@@ -5849,10 +5855,28 @@ void OpenParEMg::finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2)
 {
     std::cout << "OpenParEMg::finishPlaneSetToFace" << std::endl; std::cout.flush();
 
+    // u vector
     u=p2.XYZ()-p1.XYZ();
     u.Normalize();
 
-    ui->drawingWindow->set_gridPlane(selectedFace,p1,u);
+    // origin
+
+    gp_Pln plane=ui->drawingWindow->get_privilegedPlane();
+    plane.SetLocation(p1);
+
+    // x-axis
+    gp_Ax3 newAxis=plane.Position();
+    newAxis.SetXDirection(u);
+    plane.SetPosition(newAxis);
+
+    // direction
+    gp_Dir newDir=newAxis.Direction();
+
+    // set it
+    ui->drawingWindow->set_privilegedPlane(plane);
+    currentPrivilegedPlane=plane;
+
+    restrictToDrawingPlane=false;
     ui->drawingWindow->unselectAllItems();
     ui->drawingWindow->updateViewer();
     setMenus();
@@ -5904,6 +5928,8 @@ void OpenParEMg::cancelDraw ()
         delete polywire;
         polywire=nullptr;
 
+        restrictToDrawingPlane=false;
+
         // restore the prior selection index
         restoreSelection();
 
@@ -5921,6 +5947,7 @@ void OpenParEMg::on_actionDrawLine_triggered ()
     std::cout << "OpenParEMg::on_actionDrawLine_triggered" << std::endl; std::cout.flush();
 
     operation=11;
+    restrictToDrawingPlane=true;
     startPickVertex();
 
     if (!polywire) {
@@ -5936,6 +5963,7 @@ void OpenParEMg::on_actionDrawPolyline_triggered ()
     //std::cout << "OpenParEMg::on_actionDrawPolyline_triggered" << std::endl; std::cout.flush();
 
     operation=12;
+    restrictToDrawingPlane=true;
     startPickVertex();
 
     if (!polywire) {
@@ -5952,6 +5980,7 @@ void OpenParEMg::on_actionDrawPolycircle_triggered ()
     //std::cout << "OpenParEMg::on_actionDrawPolycircle_triggered" << std::endl; std::cout.flush();
 
     operation=14;
+    restrictToDrawingPlane=true;
     startPickVertex();
 
     if (!polywire) {
@@ -5968,6 +5997,7 @@ void OpenParEMg::on_actionDrawRectangle_triggered ()
     //std::cout << "OpenParEMg::on_actionDrawRectangle_triggered" << std::endl; std::cout.flush();
 
     operation=13;
+    restrictToDrawingPlane=true;
     startPickVertex();
 
     if (!polywire) {
@@ -6134,6 +6164,8 @@ void OpenParEMg::finishDrawLine (TopoDS_Wire wire)
         ui->drawingWindow->unselectAllItems();   // not working as expected
         ui->drawingWindow->selectItem(newItem);  // item is not selected when completed
     }
+
+    restrictToDrawingPlane=false;
 
     // save the polywire
     polywire->deleteRubberband();
@@ -6379,6 +6411,13 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 
     if (cancel) finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
 
+
+    // restrict to the drawing plane
+    if (restrictToDrawingPlane) {
+        gp_Pln plane=ui->drawingWindow->get_privilegedPlane();
+        if (plane.Distance(pnt) > Precision::Confusion()) return;
+    }
+
     vertexList.push_back(pnt);
 
     if (operation == 11 || operation == 12 || operation == 13 || operation == 14) {
@@ -6463,8 +6502,11 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
             }
         }
 
-        //xxx
-        //if (vertexList.size() > 0) lastMousePosition=vertexList[vertexList.size()-1];
+        if (operation == 2) {
+            ui->drawingWindow->set_privilegedPlane(currentPrivilegedPlane);
+        }
+
+        restrictToDrawingPlane=false;
 
     } else {
         if (operation == 2) finishPlaneSetToFace(p1,p2);

@@ -483,24 +483,15 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
     //std::cout << "exit CustomOpenGLWidget::mouseMoveEvent  polywire=" << polywire << std::endl; std::cout.flush();
 }
 
-void CustomOpenGLWidget::set_gridPlane (TopoDS_Face &face, gp_Pnt &origin, gp_Vec &xAxis)
+void CustomOpenGLWidget::set_gridPlane (TopoDS_Face &face)
 {
-    std::cout << "CustomOpenGLWidget::set_gridPlane" << std::endl; std::cout.flush();
-    //TopoDS_Face face=getSelectedFace();
+    //std::cout << "CustomOpenGLWidget::set_gridPlane" << std::endl; std::cout.flush();
+
     if (!face.IsNull()) {
-        std::cout << "place 1" << std::endl; std::cout.flush();
 
         // plane
         Handle(Geom_Surface) surface=BRep_Tool::Surface(face);
         Handle(Geom_Plane) plane=Handle(Geom_Plane)::DownCast(surface);
-
-        // origin
-        plane->SetLocation(origin);
-
-        // x-axis
-        gp_Ax3 newAxis=plane->Position();
-        newAxis.SetXDirection(xAxis);
-        plane->SetPosition(newAxis);
 
         // set
         drawingPlane=plane->Pln();
@@ -514,6 +505,11 @@ void CustomOpenGLWidget::set_gridPlane (gp_Pnt &origin, gp_Dir &normal)
     Handle(Geom_Plane) plane=new Geom_Plane(system);
     drawingPlane=plane->Pln();
     viewer->SetPrivilegedPlane(drawingPlane.Position());
+}
+
+void CustomOpenGLWidget::set_privilegedPlane (gp_Pln &plane)
+{
+    viewer->SetPrivilegedPlane(plane.Position());
 }
 
 void CustomOpenGLWidget::showGrid ()
