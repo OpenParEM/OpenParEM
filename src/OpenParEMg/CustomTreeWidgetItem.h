@@ -223,7 +223,6 @@ public:
 
     void unsetAnimate (Handle(AIS_InteractiveContext) viewerContext)
     {
-        std::cout << "place 1" << std::endl; std::cout.flush();
         if (animateShape.IsNull()) return;
         viewerContext->Remove(animateShape,Standard_True);
         animateShape.Nullify();

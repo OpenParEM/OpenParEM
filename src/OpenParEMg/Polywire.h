@@ -42,7 +42,7 @@ public:
     virtual void drawRubberband () = 0;         // while drawing - currentMousePosition is the next point
     virtual void drawStretchRubberband () {}  // while stretching - currentMousePosition takes the editIndex place
     void deleteRubberband ();
-    virtual bool isValidPoint (gp_Pnt &pnt);
+    virtual bool isValidPoint (gp_Pnt &pnt, bool);
     virtual bool canDeleteLastPoint () = 0;
     virtual bool canFinish () = 0;
     virtual bool canClose () = 0;
@@ -52,12 +52,15 @@ public:
     void close ();
     virtual bool isFinished () = 0;
 
+    virtual bool isPointOnPlane (gp_Pnt &pnt);
+
     void setNormal (gp_Vec normal_) {normal=normal_;}
     void setNormal (struct point normal_) {normal.SetCoord(normal_.x,normal_.y,normal_.z);}
     void setNormal (double x, double y, double z) {normal.SetCoord(x,y,z);}
     gp_Vec getNormal () {return normal;}
 
     gp_Pnt getPosition ();
+    virtual gp_Pln getPlane ();
 
     void set_viewerContext (Handle(AIS_InteractiveContext) viewerContext_) {viewerContext=viewerContext_;}
 
@@ -65,17 +68,20 @@ public:
     virtual void setEditPoint (gp_Pnt &pnt);
 
     TopoDS_Wire buildWire();
-    void moveTo (gp_Pnt &pnt);
-    void shift (gp_Pnt &pnt1, gp_Pnt &pnt2);
-    void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
+    //virtual void moveTo (gp_Pnt &pnt);
+    virtual void shift (gp_Pnt &pnt1, gp_Pnt &pnt2);
+    virtual void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
 
     bool isModified () {return modified;}
     void setModified (bool modified_) {modified=modified_;}
+
+    bool isClosed () {return closed;}
 
 signals:
 
 protected:
     bool modified;
+    bool closed;
     std::vector<gp_Pnt> shapePoints;                // shape outline
     gp_Vec normal;                                  // normal to the shape
     gp_Pnt currentMousePosition;                    // current mouse position while drawing
@@ -102,10 +108,10 @@ class Polyline : public Polywire
 public:
     Polyline () {}
     void drawRubberband () override;
-    void drawStretchRubberband () override;
+    void drawStretchRubberband (bool);
     bool canDeleteLastPoint () override {if (shapePoints.size() > 1) return true; return false;}
     bool canFinish () override {if (shapePoints.size() > 1) return true; return false;}
-    bool canClose () override {if (shapePoints.size() > 2) return true; return false;}
+    bool canClose () override;
     bool isFinished () override {
         if (shapePoints.size() > 1) {
             if (shapePoints[shapePoints.size()-1].IsEqual(shapePoints[0],Precision::Confusion())) {
@@ -122,11 +128,15 @@ public:
 class Rectangle : public Polywire
 {
 public:
-    Rectangle () {}
+    Rectangle ()
+    {
+        closed=true;
+    }
+
     Rectangle (Rectangle *);
     void drawRubberband () override;
     void drawStretchRubberband () override;
-    bool isValidPoint (gp_Pnt &pnt) override;
+    bool isValidPoint (gp_Pnt &pnt, bool) override;
     bool canDeleteLastPoint () override {return false;}
     bool canFinish () override {return false;}
     bool canClose () override {return false;}
@@ -136,10 +146,7 @@ public:
     double getWidth () {return width;}
     double getHeight () {return height;}
 
-    void setU (gp_Vec u_) {
-        u=u_;
-        std::cout << "Rectangle::setU  u=(" << u.X() << "," << u.Y() << "," << u.Z() << ")" << std::endl; std::cout.flush();
-    }
+    void setU (gp_Vec u_) {u=u_;}
     void setWidth (double width_) {width=width_;}
     void setHeight (double height_) {height=height_;}
 
@@ -149,6 +156,8 @@ public:
     gp_Pnt getOppositeCorner ();
 
     void setEditPoint (gp_Pnt &pnt) override;
+
+    void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2) override;
 
 private:
     gp_Vec u,v;
@@ -163,16 +172,19 @@ public:
         centerPointSet=false;
         firstPointSet=false;
         vertexCount=12;
+        closed=true;
     }
 
     void drawRubberband () override;
     void drawStretchRubberband () override;
-    bool isValidPoint (gp_Pnt &pnt) override;
+    bool isValidPoint (gp_Pnt &pnt, bool) override;
     bool canDeleteLastPoint () override {return false;}
     bool canFinish () override {return false;}
     bool canClose () override {return false;}
     void addPoint (gp_Pnt &pnt) override;
     bool isFinished () override {if (firstPointSet) return true; return false;}
+
+    bool isPointOnPlane (gp_Pnt &pnt) override;
 
     gp_Pnt getCenterPoint () {return centerPoint;}
     gp_Pnt getFirstPoint () {return firstPoint;}
@@ -186,6 +198,12 @@ public:
     void recalculate ();
 
     void setEditPoint (gp_Pnt &pnt) override;
+
+    void shift (gp_Pnt &pnt1, gp_Pnt &pnt2) override;
+
+    gp_Pln getPlane () override;
+
+    void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2) override;
 
 private:
     bool centerPointSet;

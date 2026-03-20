@@ -87,6 +87,8 @@
 #include <AIS_InteractiveContext.hxx>
 #include <TopoDS_Shape.hxx>
 
+
+
 bool cstrFromQString (char **aCstr, QString& aQString)
 {
     if (*aCstr) free(*aCstr);
@@ -371,6 +373,7 @@ void OpenParEMg::setMenus ()
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
 
     //printLockouts();
+    //ui->drawingWindow->PrintAllActiveModes();
 
     // disable all menus on command
     if (disableMenus) {
@@ -1074,7 +1077,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
 
 void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 {
-    std::cout << "OpenParEMg::drawingWindowContextMenu_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::drawingWindowContextMenu_triggered" << std::endl; std::cout.flush();
 
     if (polywire) {
         Polywire *test=static_cast<Polywire*>(polywire);
@@ -1292,7 +1295,7 @@ bool OpenParEMg::isDrawingValidShow ()
 
 void OpenParEMg::showRootDrawingItems ()
 {
-    std::cout << "OpenParEMg::showRootDrawingItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::showRootDrawingItems" << std::endl; std::cout.flush();
 
     ui->drawingWindow->hideItem(&drawing);
     drawing.setForeground(0,Qt::black);
@@ -2649,19 +2652,9 @@ void OpenParEMg::createPath ()
 
 void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &shape)
 {
-    std:: cout << "OpenParEMg::replaceItemShape" << std::endl; std::cout.flush();
+    //std:: cout << "OpenParEMg::replaceItemShape" << std::endl; std::cout.flush();
 
     if (!item) return;
-
-    // std::vector<CustomTreeWidgetItem *> displayedItems;
-    // if (item->is_rootDrawing()) {
-    //     int i=0;
-    //     while (i < item->childCount()) {
-    //         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-    //         if (ui->drawingWindow->isDisplayed(child->get_AIS_Shape())) displayedItems.push_back(child);
-    //         i++;
-    //     }
-    // }
 
     std::vector<CustomTreeWidgetItem *> displayedItems=ui->drawingWindow->getVisibleItems();
 
@@ -2691,7 +2684,7 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &sha
 
 bool OpenParEMg::isValidExtrudePolywire ()
 {
-    std::cout << "OpenParEMg::isValidExtrudePolywire" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::isValidExtrudePolywire" << std::endl; std::cout.flush();
 
     int polywireCount=0;
     QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
@@ -2805,7 +2798,7 @@ void OpenParEMg::reextrudePolywire (CustomTreeWidgetItem *item, CustomTreeWidget
 
 void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 {
-    std::cout << "OpenParEMg::reprocess" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::reprocess" << std::endl; std::cout.flush();
 
     if (item == &drawing) {
         rebuildTopLevelShape();
@@ -2818,34 +2811,42 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
         Polyline *polyline=dynamic_cast<Polyline *>(polywire);
         if (polyline) {
             TopoDS_Wire wire=polyline->buildWire();
-            TopoDS_Face face;
-            if (wire.Closed()) {
-                BRepBuilderAPI_MakeFace faceBuilder(wire);
-                if (faceBuilder.IsDone()) face=faceBuilder.Face();
+            if (!wire.IsNull()) {
+                if (wire.Closed()) {
+                    TopoDS_Face face;
+                    BRepBuilderAPI_MakeFace faceBuilder(wire);
+                    if (faceBuilder.IsDone()) face=faceBuilder.Face();
+                    replaceItemShape(item,face);  // inserts to item map
+                } else {
+                    replaceItemShape(item,wire);  // inserts to item map
+                }
             }
-            replaceItemShape(item,face);  // inserts to item map
         }
 
         Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
         if (rectangle) {
             TopoDS_Wire wire=rectangle->buildWire();
-            TopoDS_Face face;
-            if (wire.Closed()) {
-                BRepBuilderAPI_MakeFace faceBuilder(wire);
-                if (faceBuilder.IsDone()) face=faceBuilder.Face();
+            if (!wire.IsNull()) {
+                TopoDS_Face face;
+                if (wire.Closed()) {
+                    BRepBuilderAPI_MakeFace faceBuilder(wire);
+                    if (faceBuilder.IsDone()) face=faceBuilder.Face();
+                }
+                replaceItemShape(item,face);  // inserts to item map
             }
-            replaceItemShape(item,face);  // inserts to item map
         }
 
         Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
         if (polycircle) {
             TopoDS_Wire wire=polycircle->buildWire();
-            TopoDS_Face face;
-            if (wire.Closed()) {
-                BRepBuilderAPI_MakeFace faceBuilder(wire);
-                if (faceBuilder.IsDone()) face=faceBuilder.Face();
+            if (!wire.IsNull()) {
+                TopoDS_Face face;
+                if (wire.Closed()) {
+                    BRepBuilderAPI_MakeFace faceBuilder(wire);
+                    if (faceBuilder.IsDone()) face=faceBuilder.Face();
+                }
+                replaceItemShape(item,face);  // inserts to item map
             }
-            replaceItemShape(item,face);  // inserts to item map
         }
     }
 
@@ -3015,7 +3016,7 @@ void OpenParEMg::editObject ()
 
 void OpenParEMg::rebuildTopLevelShape ()
 {
-    std::cout << "OpenParEMg::rebuildTopLevelShape" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::rebuildTopLevelShape" << std::endl; std::cout.flush();
 
     TopoDS_Compound compound;
     BRep_Builder builder;
@@ -3069,7 +3070,7 @@ void OpenParEMg::finishEditObject (double length, bool cancel)
 
 bool OpenParEMg::isValidMergeSolids ()
 {
-    std::cout << "OpenParEMg::isValidMergeSolids" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::isValidMergeSolids" << std::endl; std::cout.flush();
 
     int solidCount=0;
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
@@ -3156,7 +3157,7 @@ void OpenParEMg::finishMergeSolids ()
 
 bool OpenParEMg::isValidSubtractSolids ()
 {
-    std::cout << "OpenParEMg::isValidSubtractSolids" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::isValidSubtractSolids" << std::endl; std::cout.flush();
     return isValidMergeSolids();
 }
 
@@ -3225,7 +3226,7 @@ void OpenParEMg::finishSubtractSolids ()
 
 void OpenParEMg::moveObject ()
 {
-    std::cout << "OpenParEMg::moveObject" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::moveObject" << std::endl; std::cout.flush();
 
     operation=24;
     startOperation();
@@ -3252,7 +3253,18 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item)
 
     Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
     if (polywire) {
-        polywire->shift(vertexList[1],vertexList[0]);
+        Line *line=dynamic_cast<Line *>(polywire);
+        if (line) line->shift(vertexList[1],vertexList[0]);
+
+        Polyline *polyline=dynamic_cast<Polyline *>(polywire);
+        if (polyline) polyline->shift(vertexList[1],vertexList[0]);
+
+        Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+        if (rectangle) rectangle->shift(vertexList[1],vertexList[0]);
+
+        Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+        if (polycircle) polycircle->shift(vertexList[1],vertexList[0]);
+
         reprocess(item);
         brepChanged=true;
     }
@@ -3321,7 +3333,7 @@ bool OpenParEMg::isValidObjectStretch ()
 
 void OpenParEMg::stretchObject ()
 {
-    std::cout << "OpenParEMg::stretchObject" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::stretchObject" << std::endl; std::cout.flush();
 
     operation=32;
     startPickVertex();
@@ -3337,6 +3349,37 @@ void OpenParEMg::stretchObject ()
                 // includes selecting just on vertices of the shape and not midpoints
                 ui->drawingWindow->set_activeShape(shape);
 
+                // set the drawing plane
+                currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
+                //restrictToDrawingPlane=true;
+
+                Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
+                if (polywire) {
+                    Line *line=dynamic_cast<Line *>(polywire);
+                    if (line) {
+                        gp_Pln plane=line->getPlane();
+                        ui->drawingWindow->set_gridPlane(plane);
+                    }
+
+                    Polyline *polyline=dynamic_cast<Polyline *>(polywire);
+                    if (polyline) {
+                        gp_Pln plane=polyline->getPlane();
+                        ui->drawingWindow->set_gridPlane(plane);
+                    }
+
+                    Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+                    if (rectangle) {
+                        gp_Pln plane=rectangle->getPlane();
+                        ui->drawingWindow->set_gridPlane(plane);
+                    }
+
+                    Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+                    if (polycircle) {
+                        gp_Pln plane=polycircle->getPlane();
+                        ui->drawingWindow->set_gridPlane(plane);
+                    }
+                }
+
                 // save it for processing
                 selectedItemsList.push_back(item);
             }
@@ -3347,17 +3390,35 @@ void OpenParEMg::stretchObject ()
 
 void OpenParEMg::finishStretchObject (gp_Pnt &pnt)
 {
-    std::cout << "OpenParEMg::finishStretchObject" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishStretchObject" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < selectedItemsList.size()) {
         Polywire *polywire=static_cast<Polywire *>(selectedItemsList[i]->get_Polywire());
         if (polywire) {
             polywire->deleteRubberband();
-            polywire->setEditPoint(pnt);
+
+            // set the edited point
+
+            Line *line=dynamic_cast<Line *>(polywire);
+            if (line) line->setEditPoint(pnt);
+
+            Polyline *polyline=dynamic_cast<Polyline *>(polywire);
+            if (polyline) polyline->setEditPoint(pnt);
+
+            Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+            if (rectangle) rectangle->setEditPoint(pnt);
+
+            Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+            if (polycircle) polycircle->setEditPoint(pnt);
+
             TopoDS_Wire wire=polywire->buildWire();
-            replaceItemShape(selectedItemsList[i],wire);  // inserts to item map
-            reprocess(selectedItemsList[i]);
+            if (!wire.IsNull()) {
+                replaceItemShape(selectedItemsList[i],wire);  // inserts to item map
+                reprocess(selectedItemsList[i]);
+            }
+
+            ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
 
             ui->drawingWindow->set_allActiveShapes();
             brepChanged=true;
@@ -3394,9 +3455,23 @@ void OpenParEMg::rotateObject ()
 
 void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item, double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
 {
+    std::cout << "OpenParEMg::finishRotateObject" << std::endl; std::cout.flush();
+
     Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
     if (polywire) {
-        polywire->rotate(angleDegrees,p1,p2);
+
+        Line *line=dynamic_cast<Line *>(polywire);
+        if (line) line->rotate(angleDegrees,p1,p2);
+
+        Polyline *polyline=dynamic_cast<Polyline *>(polywire);
+        if (polyline) polyline->rotate(angleDegrees,p1,p2);
+
+        Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+        if (polycircle) polycircle->rotate(angleDegrees,p1,p2);
+
+        Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+        if (rectangle) rectangle->rotate(angleDegrees,p1,p2);
+
         reprocess(item);
         brepChanged=true;
     }
@@ -4951,7 +5026,7 @@ void OpenParEMg::on_actionFitAll_triggered ()
 
 void OpenParEMg::on_actionShape_triggered()
 {
-    std::cout << "OpenParEMg::on_actionShape_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionShape_triggered" << std::endl; std::cout.flush();
 
     clearSelection();
     ui->actionShape->setCheckable(true);
@@ -4965,7 +5040,7 @@ void OpenParEMg::on_actionShape_triggered()
 
 void OpenParEMg::on_actionVertex_triggered()
 {
-    std::cout << "OpenParEMg::on_actionVertex_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionVertex_triggered" << std::endl; std::cout.flush();
 
     clearSelection();
     ui->actionVertex->setCheckable(true);
@@ -4979,7 +5054,7 @@ void OpenParEMg::on_actionVertex_triggered()
 
 void OpenParEMg::on_actionEdge_triggered()
 {
-    std::cout << "OpenParEMg::on_actionEdge_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionEdge_triggered" << std::endl; std::cout.flush();
 
     clearSelection();
     ui->actionEdge->setCheckable(true);
@@ -4993,7 +5068,7 @@ void OpenParEMg::on_actionEdge_triggered()
 
 void OpenParEMg::on_actionWire_triggered()
 {
-    std::cout << "OpenParEMg::on_actionWire_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionWire_triggered" << std::endl; std::cout.flush();
 
     clearSelection();
     ui->actionWire->setCheckable(true);
@@ -5007,7 +5082,7 @@ void OpenParEMg::on_actionWire_triggered()
 
 void OpenParEMg::on_actionFace_triggered()
 {
-    std::cout << "OpenParEMg::on_actionFace_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionFace_triggered" << std::endl; std::cout.flush();
 
     clearSelection();
     ui->actionFace->setCheckable(true);
@@ -5021,7 +5096,7 @@ void OpenParEMg::on_actionFace_triggered()
 
 void OpenParEMg::on_actionShell_triggered()
 {
-    std::cout << "OpenParEMg::on_actionShell_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionShell_triggered" << std::endl; std::cout.flush();
 
     clearSelection();
     ui->actionShell->setCheckable(true);
@@ -5035,7 +5110,7 @@ void OpenParEMg::on_actionShell_triggered()
 
 void OpenParEMg::on_actionSolid_triggered()
 {
-    std::cout << "OpenParEMg::on_actionSolid_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionSolid_triggered" << std::endl; std::cout.flush();
 
     clearSelection();
     ui->actionSolid->setCheckable(true);
@@ -5067,7 +5142,8 @@ bool OpenParEMg::hasSelectedPaths ()
 
 void OpenParEMg::clearTreeSelection ()
 {
-    std::cout << "OpenParEMg::clearTreeSelection" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::clearTreeSelection" << std::endl; std::cout.flush();
+
     ui->drawingWindow->unselectAllItems();
     ui->drawingItemTree->clearSelection();
     ui->drawingItemTree->setCurrentItem(nullptr);
@@ -5832,14 +5908,15 @@ void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered ()
 
 void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
-    //xxx
+    //std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFace_triggered" << std::endl; std::cout.flush();
+
     operation=2;
     restrictToDrawingPlane=true;
     startOperation();
 
-    currentPrivilegedPlane=ui->drawingWindow->get_privilegedPlane();
+    //currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
 
-    selectedFace=ui->drawingWindow->getSelectedFace();
+    TopoDS_Face selectedFace=ui->drawingWindow->getSelectedFace();
     ui->drawingWindow->set_gridPlane(selectedFace);
 
     if (vectorInputForm) delete vectorInputForm;
@@ -5853,7 +5930,7 @@ void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 
 void OpenParEMg::finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2)
 {
-    std::cout << "OpenParEMg::finishPlaneSetToFace" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishPlaneSetToFace" << std::endl; std::cout.flush();
 
     // u vector
     u=p2.XYZ()-p1.XYZ();
@@ -5861,7 +5938,7 @@ void OpenParEMg::finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2)
 
     // origin
 
-    gp_Pln plane=ui->drawingWindow->get_privilegedPlane();
+    gp_Pln plane=ui->drawingWindow->get_gridPlane();
     plane.SetLocation(p1);
 
     // x-axis
@@ -5873,7 +5950,7 @@ void OpenParEMg::finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2)
     gp_Dir newDir=newAxis.Direction();
 
     // set it
-    ui->drawingWindow->set_privilegedPlane(plane);
+    ui->drawingWindow->set_gridPlane(plane);
     currentPrivilegedPlane=plane;
 
     restrictToDrawingPlane=false;
@@ -5882,7 +5959,6 @@ void OpenParEMg::finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2)
     setMenus();
 }
 
-//xxx
 void OpenParEMg::on_actionDrawingSetPlaneToXY_triggered ()
 {
     gp_Pnt origin(0,0,0);
@@ -6018,7 +6094,9 @@ void OpenParEMg::on_actionDrawRectangle_triggered ()
 
 void OpenParEMg::finishDrawLine (TopoDS_Wire wire)
 {
-    std::cout << "OpenParEMg::drawLineFinished  operation=" << operation << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishDrawLine  operation=" << operation << std::endl; std::cout.flush();
+
+    if (wire.IsNull()) return;
 
     if (isIntegrationPath) {
 
@@ -6306,7 +6384,7 @@ void OpenParEMg::closePolyline ()
 
 void OpenParEMg::startPickVertex ()
 {
-    std::cout << "OpenParEMg::startPickVertex  operation=" << operation  << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::startPickVertex  operation=" << operation  << std::endl; std::cout.flush();
 
     startOperation();
 
@@ -6328,7 +6406,7 @@ void OpenParEMg::startPickVertex ()
 
 void OpenParEMg::startOperation ()
 {
-    std::cout << "OpenParEMg::startOperation  operation=" << operation << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::startOperation  operation=" << operation << std::endl; std::cout.flush();
 
     // disable tree
     ui->drawingItemTree->setEnabled(false);
@@ -6346,11 +6424,11 @@ void OpenParEMg::startOperation ()
     selectedItemsList.clear();
 
     setMenus();
-    std::cout << "exit OpenParEMg::startOperation  operation=" << operation << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
 {
+    //std::cout << "OpenParEMg::getCurrentMousePosition  restrictToDrawingPlane=" << restrictToDrawingPlane << std::endl; std::cout.flush();
 
     if (polywire) {
         if (operation == 11 || operation == 12 || operation == 13 || operation == 14) {
@@ -6383,7 +6461,7 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
                 Polyline *polyline=dynamic_cast<Polyline *>(polywire);
                 if (polyline) {
                     polyline->setCurrentMousePosition(pnt);
-                    polyline->drawStretchRubberband();
+                    polyline->drawStretchRubberband(true);
                 }
 
                 Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
@@ -6407,14 +6485,13 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
 
 void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 {
-    std::cout << "OpenParEMg::getPickedVertex  cancel=" << cancel << "   operation=" << operation << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::getPickedVertex  cancel=" << cancel << "   operation=" << operation << std::endl; std::cout.flush();
 
     if (cancel) finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
 
-
     // restrict to the drawing plane
     if (restrictToDrawingPlane) {
-        gp_Pln plane=ui->drawingWindow->get_privilegedPlane();
+        gp_Pln plane=ui->drawingWindow->get_gridPlane();
         if (plane.Distance(pnt) > Precision::Confusion()) return;
     }
 
@@ -6422,7 +6499,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 
     if (operation == 11 || operation == 12 || operation == 13 || operation == 14) {
         if (polywire) {
-            if (polywire->isValidPoint(pnt)) {
+            if (polywire->isValidPoint(pnt,true)) {
                 polywire->addPoint(pnt);
                 if (polywire->isFinished()) {
                     finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
@@ -6440,6 +6517,11 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                 ui->drawingWindow->hideItem(selectedItemsList[i]);
                 i++;
             }
+
+            // Why is resetting the selection required?  It does not seem to have been reset anywhere.
+            ui->drawingWindow->Deactivate();
+            ui->drawingWindow->Activate(1,Standard_False);  // vertices
+            ui->drawingWindow->Activate(2,Standard_False);  // edges
         }
         if (vertexList.size() == 2) finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
     }
@@ -6455,21 +6537,35 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
             Polywire *polywire=static_cast<Polywire *>(selectedItemsList[i]->get_Polywire());
             if (polywire) {
                 if (vertexList.size() == 1) {
-                    gp_Pnt position=polywire->getPosition();
-                    polywire->setCurrentMousePosition(position);
-                    polywire->drawStretchRubberband();
+                    polywire->setEditIndex(pnt);
+                    polywire->setCurrentMousePosition(pnt);
+
+                    Line *line=static_cast<Line *>(polywire);
+                    if (line) line->drawStretchRubberband();
+
+                    Polyline *polyline=static_cast<Polyline *>(polywire);
+                    if (polyline) polyline->drawStretchRubberband(false);
+
+                    Rectangle *rectangle=static_cast<Rectangle *>(polywire);
+                    if (rectangle) rectangle->drawStretchRubberband();
+
+                    Polycircle *polycircle=static_cast<Polycircle *>(polywire);
+                    if (polycircle) polycircle->drawStretchRubberband();
 
                     ui->drawingWindow->hideItem(selectedItemsList[i]);
                     ui->drawingWindow->updateViewer();
-                    polywire->setEditIndex(pnt);
 
-                    // set to select on vertices and edges of all shapes
+                    // Why is resetting the selection required?  It does not seem to have been reset anywhere.
                     ui->drawingWindow->Deactivate();
                     ui->drawingWindow->Activate(1,Standard_False);  // vertices
                     ui->drawingWindow->Activate(2,Standard_False);  // edges
                 }
                 if (vertexList.size() == 2) {
-                    finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+                    if (polywire->isPointOnPlane(pnt)) {
+                        finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+                    } else {
+                        vertexList.pop_back();
+                    }
                 }
             }
             i++;
@@ -6482,7 +6578,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 // pass in variables needed by various operations; not all operations use all variables
 void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees, gp_Pnt p1, gp_Pnt p2, bool cancel)
 {
-    std::cout << "OpenParEMg::finishOperation  operation=" << operation  << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishOperation  operation=" << operation  << std::endl; std::cout.flush();
 
     if (cancel) {
 
@@ -6502,8 +6598,20 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
             }
         }
 
+        if (operation == 32) {
+            long unsigned int i=0;
+            while (i < selectedItemsList.size()) {
+                Polywire *polywire=static_cast<Polywire *>(selectedItemsList[i]->get_Polywire());
+                if (polywire) polywire->deleteRubberband();
+                ui->drawingWindow->showItem(selectedItemsList[i]);
+                i++;
+            }
+
+            ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+        }
+
         if (operation == 2) {
-            ui->drawingWindow->set_privilegedPlane(currentPrivilegedPlane);
+            ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
         }
 
         restrictToDrawingPlane=false;
@@ -6536,10 +6644,6 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
 
     // restore selection
     restoreSelection();
-    ui->drawingWindow->updateViewer();
-
-    // reset the vertex symbol
-    ui->drawingWindow->reset_vertexSymbol();
 
     // reset lists
     selectedItemsList.clear();
@@ -6549,6 +6653,8 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
     operation=0;
 
     clearTreeSelection();
+
+    ui->drawingWindow->updateViewer();
     setMenus();
 }
 

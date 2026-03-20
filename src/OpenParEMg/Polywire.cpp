@@ -31,6 +31,14 @@
 #include <TopoDS_Wire.hxx>
 #include <BRepTools.hxx>
 #include <BRep_Tool.hxx>
+#include <GC_MakeSegment.hxx>
+#include <GeomAPI_ExtremaCurveCurve.hxx>
+#include <Geom_Curve.hxx>
+#include <GC_MakeSegment.hxx>
+#include <GeomAPI_ExtremaCurveCurve.hxx>
+#include <Precision.hxx>
+#include <algorithm>
+
 
 Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
 {
@@ -46,10 +54,79 @@ Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
     return shape;
 }
 
+void printPnt (std::string &name, const gp_Pnt &p)
+{
+    std::cout << name << "=(" << p.X() << "," << p.Y() << "," << p.Z() << ")" << std::endl; std::cout.flush();
+}
+
+
+// DoSegmentsIntersectInterior courtesy of Google AI
+bool DoSegmentsIntersectInterior (const gp_Pnt& P1, const gp_Pnt& P2,
+                                  const gp_Pnt& P3, const gp_Pnt& P4,
+                                  double tol = Precision::Confusion())
+{
+    gp_Vec v1(P1, P2);
+    gp_Vec v2(P3, P4);
+
+    // Guard against zero-length segments
+    if (v1.SquareMagnitude() < tol * tol || v2.SquareMagnitude() < tol * tol)
+        return false;
+
+    // 1. Handle Parallel/Collinear case (Avoids the crash)
+    if (v1.IsParallel(v2, Precision::Angular())) {
+        // Check if they lie on the same line (cross product of P1P3 and v1)
+        gp_Vec v13(P1, P3);
+        if (v1.CrossSquareMagnitude(v13) > tol * tol)
+            return false; // Parallel but separate
+
+        // 1D overlap check: Project P3 and P4 onto segment P1-P2
+        auto getT = [&](const gp_Pnt& P) {
+            return gp_Vec(P1, P).Dot(v1) / v1.SquareMagnitude();
+        };
+        double t3 = getT(P3);
+        double t4 = getT(P4);
+
+        double min_t = std::min(t3, t4);
+        double max_t = std::max(t3, t4);
+
+        // Interior overlap: the intervals [0,1] and [min_t, max_t]
+        // must overlap by more than just a point at 0 or 1.
+        return (min_t < (1.0 - tol) && max_t > tol);
+    }
+
+    // 2. Non-parallel case: Safe to use Extrema
+    Handle(Geom_TrimmedCurve) seg1 = GC_MakeSegment(P1, P2).Value();
+    Handle(Geom_TrimmedCurve) seg2 = GC_MakeSegment(P3, P4).Value();
+
+    GeomAPI_ExtremaCurveCurve extrema(seg1, seg2);
+
+    // Instead of IsDone(), check NbExtrema()
+    Standard_Integer nb = extrema.NbExtrema();
+    if (nb == 0) return false;
+
+    for (int i = 1; i <= nb; ++i) {
+        if (extrema.Distance(i) <= tol) {
+            Standard_Real u, v;
+            extrema.Parameters(i, u, v);
+
+            // Convert parameters to 0-1 range for boundary checks
+            double u_norm = u / P1.Distance(P2);
+            double v_norm = v / P3.Distance(P4);
+
+            if (u_norm > tol && u_norm < (1.0 - tol) &&
+                v_norm > tol && v_norm < (1.0 - tol)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 Polywire::Polywire(QObject *parent)
     : QObject{parent}
 {
     modified=false;
+    closed=false;
 }
 
 void Polywire::deleteRubberband ()
@@ -57,15 +134,32 @@ void Polywire::deleteRubberband ()
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
 }
 
-bool Polywire::isValidPoint (gp_Pnt &pnt)
+bool Polywire::isValidPoint (gp_Pnt &pnt, bool zeroPntLogic)
 {
-    if (shapePoints.size() == 0) return true;
+    //std::cout << "Polywire::isValidPoint" << std::endl; std::cout.flush();
+
+    if (zeroPntLogic) {if (shapePoints.size() == 0) return true;}
+    else {if (shapePoints.size() == 0) return false;}
+
     if (shapePoints[shapePoints.size()-1].IsEqual(pnt,Precision::Confusion())) return false;
+
+    // check for intersections
+    long unsigned int i=0;
+    while (i < shapePoints.size()-1) {
+        if (DoSegmentsIntersectInterior(shapePoints[i], shapePoints[i+1],
+                                        shapePoints[shapePoints.size()-1],pnt,
+                                        1e-12)) return false;
+        i++;
+    }
+
     return true;
 }
 
 void Polywire::addPoint (gp_Pnt &pnt)
 {
+    if (shapePoints.size() > 0) {
+        if (shapePoints[0].IsEqual(pnt,Precision::Confusion())) closed=true;
+    }
     shapePoints.push_back(pnt);
 }
 
@@ -78,6 +172,7 @@ void Polywire::close ()
 {
     if (shapePoints.size() > 2) {
         shapePoints.push_back(shapePoints[0]);
+        closed=true;
     }
 }
 
@@ -86,6 +181,16 @@ gp_Pnt Polywire::getPosition ()
     gp_Pnt position(0,0,0);
     if (shapePoints.size() > 0) position=shapePoints[0];
     return position;
+}
+
+gp_Pln Polywire::getPlane ()
+{
+    gp_Pln plane;
+    if (shapePoints.size() > 0) {
+        gp_Pln tempPlane(shapePoints[0],normal);
+        plane=tempPlane;
+    }
+    return plane;
 }
 
 // assumes that pnt was picked from the AIS_Shape, so a very close match will be found
@@ -109,37 +214,50 @@ void Polywire::setEditPoint (gp_Pnt &pnt) {
 
 TopoDS_Wire Polywire::buildWire ()
 {
+    int count=0;
     BRepBuilderAPI_MakeWire wireBuilder;
     long unsigned int i=0;
     while (i < shapePoints.size()-1) {
         if (shapePoints[i].IsEqual(shapePoints[i+1],Precision::Confusion())) {
-            std::cout << "ASSERT: Polywire::buildWire found duplicate points" << std::endl; std::cout.flush();
+            //std::cout << "ASSERT: Polywire::buildWire found duplicate points" << std::endl; std::cout.flush();
         } else {
+            count++;
             TopoDS_Edge edge=BRepBuilderAPI_MakeEdge(shapePoints[i],shapePoints[i+1]);
             wireBuilder.Add(edge);
         }
         i++;
     }
 
-    return wireBuilder.Wire();
+    TopoDS_Wire wire;
+    if (count > 0) wire=wireBuilder.Wire();
+
+    return wire;
 }
 
-void Polywire::moveTo (gp_Pnt &pnt)
+bool Polywire::isPointOnPlane (gp_Pnt &pnt)
 {
-    std::cout << "Polywire::moveTo  pnt=(" << pnt.X() << "," << pnt.Y() << "," << pnt.Z() << ")" << std::endl; std::cout.flush();
-
-    if (shapePoints.size() == 0) return;
-    modified=true;
-
-    gp_Pnt offset;
-    offset=shapePoints[0].XYZ()-pnt.XYZ();
-
-    long unsigned int i=0;
-    while (i < shapePoints.size()) {
-        shapePoints[i]=shapePoints[i].XYZ()-offset.XYZ();
-        i++;
-    }
+    if (shapePoints.size() == 0) return false;
+    gp_Pln plane(shapePoints[0],normal);
+    if (plane.Distance(pnt) < Precision::Confusion()) return true;
+    return false;
 }
+
+// void Polywire::moveTo (gp_Pnt &pnt)
+// {
+//     std::cout << "Polywire::moveTo  pnt=(" << pnt.X() << "," << pnt.Y() << "," << pnt.Z() << ")" << std::endl; std::cout.flush();
+
+//     if (shapePoints.size() == 0) return;
+//     modified=true;
+
+//     gp_Pnt offset;
+//     offset=shapePoints[0].XYZ()-pnt.XYZ();
+
+//     long unsigned int i=0;
+//     while (i < shapePoints.size()) {
+//         shapePoints[i]=shapePoints[i].XYZ()-offset.XYZ();
+//         i++;
+//     }
+// }
 
 void Polywire::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
 {
@@ -181,7 +299,7 @@ void Line::drawRubberband ()
 {
     //std::cout << "Line::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
 
-    if (shapePoints.size() == 0) return;
+    if (!isValidPoint(currentMousePosition,false)) return;
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
     rubberband=CreateAISLineFromVertices(shapePoints[shapePoints.size()-1],currentMousePosition);
@@ -194,8 +312,6 @@ void Line::drawRubberband ()
 void Line::drawStretchRubberband ()
 {
     //std::cout << "Line::drawStretchRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
-
-    if (shapePoints.size() == 0) return;
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
 
@@ -212,11 +328,28 @@ void Line::drawStretchRubberband ()
     }
 }
 
+bool Polyline::canClose ()
+{
+    if (shapePoints.size() < 3) return false;
+
+    long unsigned int i=0;
+    while (i < shapePoints.size()-2) {
+        if (DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],
+                                        shapePoints[0],shapePoints[shapePoints.size()-1],
+                                        1e-12)) {
+            return false;
+        }
+        i++;
+    }
+
+    return true;
+}
+
 void Polyline::drawRubberband ()
 {
     //std::cout << "Polyline::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
 
-    if (shapePoints.size() == 0) return;
+    if (!isValidPoint(currentMousePosition,false)) return;
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
 
@@ -236,20 +369,49 @@ void Polyline::drawRubberband ()
     }
 }
 
-void Polyline::drawStretchRubberband ()
+void Polyline::drawStretchRubberband (bool checkIntersection)
 {
     //std::cout << "Polyline::drawStretchRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
 
-    if (shapePoints.size() == 0) return;
+    if (checkIntersection && shapePoints.size() > 2) {
+        gp_Pnt t1,t2;
+        if (closed) {
+            if (editIndex == 0) t1=shapePoints[shapePoints.size()-2];
+            else t1=shapePoints[editIndex-1];
+
+            if (editIndex == shapePoints.size()-1) t2=shapePoints[1];
+            else t2=shapePoints[editIndex+1];
+        } else {
+            if (editIndex == 0) t1=shapePoints[shapePoints.size()-1];
+            else t1=shapePoints[editIndex-1];
+
+            if (editIndex == shapePoints.size()-1) t2=shapePoints[0];
+            else t2=shapePoints[editIndex+1];
+        }
+
+        if (editIndex > 0) {
+            long unsigned int i=0;
+            while (i < editIndex-1) {
+                if (DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],t1,currentMousePosition,1e-12)) return;
+                if (DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],t2,currentMousePosition,1e-12)) return;
+                i++;
+            }
+        }
+
+        long unsigned int limit=shapePoints.size()-1;
+        if (closed) limit=shapePoints.size()-2;
+        long unsigned int i=editIndex+1;
+        while (i < limit) {
+            if (DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],t1,currentMousePosition,1e-12)) return;
+            if (DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],t2,currentMousePosition,1e-12)) return;
+            i++;
+        }
+    }
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
 
-    bool isClosed=false;
-    if (shapePoints[0].IsEqual(shapePoints[shapePoints.size()-1],Precision::Confusion())) isClosed=true;
-    //std::cout << "isClosed=" << isClosed << "  editIndex=" << editIndex << "  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
-
     BRepBuilderAPI_MakePolygon polyMaker;
-    if (isClosed) {
+    if (closed) {
         if (editIndex == 0) {
             long unsigned int i=0;
             while (i < shapePoints.size()-1) {
@@ -293,9 +455,13 @@ void Polyline::drawStretchRubberband ()
 
 void Polyline::setEditPoint (gp_Pnt &pnt)
 {
-    if (editIndex == 0 || editIndex == shapePoints.size()-1) {
-        shapePoints[0]=pnt;
-        shapePoints[shapePoints.size()-1]=pnt;
+    if (closed) {
+        if (editIndex == 0 || editIndex == shapePoints.size()-1) {
+            shapePoints[0]=pnt;
+            shapePoints[shapePoints.size()-1]=pnt;
+        } else {
+            shapePoints[editIndex]=pnt;
+        }
     } else {
         shapePoints[editIndex]=pnt;
     }
@@ -334,9 +500,11 @@ Rectangle::Rectangle (Rectangle *rectangle)
     modified=rectangle->modified;
 }
 
-bool Rectangle::isValidPoint (gp_Pnt &pnt)
+bool Rectangle::isValidPoint (gp_Pnt &pnt, bool zeroPntLogic)
 {
-    if (shapePoints.size() == 0) return true;
+    if (zeroPntLogic) {if (shapePoints.size() == 0) return true;}
+    else {if (shapePoints.size() == 0) return false;}
+
     if (shapePoints[0].IsEqual(pnt,Precision::Confusion())) return false;
     return true;
 }
@@ -355,7 +523,7 @@ void Rectangle::drawRubberband ()
 {
     //std::cout << "Rectangle::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
 
-    if (shapePoints.size() == 0) return;
+    if (!isValidPoint(currentMousePosition,false)) return;
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
 
@@ -377,11 +545,6 @@ void Rectangle::drawRubberband ()
 
     // v direction
     v=normal.Crossed(u).Normalized();
-
-    //xxx
-    std::cout << "u=(" << u.X() << "," << u.Y() << "," << u.Z() << ")" << std::endl; std::cout.flush();
-    std::cout << "v=(" << v.X() << "," << v.Y() << "," << v.Z() << ")" << std::endl; std::cout.flush();
-    std::cout << "normal=(" << normal.X() << "," << normal.Y() << "," << normal.Z() << ")" << std::endl; std::cout.flush();
 
     // the other two points
 
@@ -412,7 +575,7 @@ void Rectangle::drawStretchRubberband ()
 {
     //std::cout << "Rectangle::drawStretchedRubberband  editIndex=" << editIndex << std::endl; std::cout.flush();
 
-    if (shapePoints.size() == 0) return;
+    //if (!isValidPoint(currentMousePosition,false)) return;
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
 
@@ -527,7 +690,6 @@ void Rectangle::setEditPoint (gp_Pnt &pnt)
     }
 }
 
-// for change in width and/or height
 void Rectangle::recalculate ()
 {
     modified=true;
@@ -573,11 +735,30 @@ gp_Pnt Rectangle::getOppositeCorner ()
     return position;
 }
 
+void Rectangle::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
+{
+    modified=true;
+
+    gp_Dir dir(gp_Vec(p1,p2));
+    gp_Ax1 axis(p1,dir);
+
+    double angleRadians=angleDegrees*M_PI/180;
+
+    // u and v
+    u=u.Rotated(axis,angleRadians);
+    v=v.Rotated(axis,angleRadians);
+
+    // normal
+    normal=normal.Rotated(axis,angleRadians);
+
+    recalculate();
+}
+
 void Polycircle::drawRubberband ()
 {
     //std::cout << "Polycircle::drawRubberband" << std::endl; std::cout.flush();
 
-    if (!centerPointSet) return;
+    if (!isValidPoint(currentMousePosition,false)) return;
 
     // reset
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
@@ -625,11 +806,10 @@ void Polycircle::drawStretchRubberband ()
 {
     //std::cout << "Polycircle::drawRubberband" << std::endl; std::cout.flush();
 
-    if (!centerPointSet) return;
+    //if (!isValidPoint(currentMousePosition,false)) return;
 
     // reset
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
-    shapePoints.clear();
 
     // shape
 
@@ -672,6 +852,9 @@ void Polycircle::drawStretchRubberband ()
 
 void Polycircle::setEditPoint (gp_Pnt &pnt)
 {
+    // skip for invalid circle
+    if (centerPoint.IsEqual(pnt,Precision::Confusion())) return;
+
     gp_Ax1 axis(centerPoint,normal);
     firstPoint=pnt;
 
@@ -693,9 +876,11 @@ void Polycircle::setEditPoint (gp_Pnt &pnt)
     shapePoints.push_back(shapePoints[0]);
 }
 
-bool Polycircle::isValidPoint (gp_Pnt &pnt)
+bool Polycircle::isValidPoint (gp_Pnt &pnt, bool zeroPntLogic)
 {
-    if (!centerPointSet) return true;
+    if (zeroPntLogic) {if (!centerPointSet) return true;}
+    else {if (!centerPointSet) return false;}
+
     if (centerPoint.IsEqual(pnt,Precision::Confusion())) return false;
     return true;
 }
@@ -706,10 +891,12 @@ void Polycircle::addPoint (gp_Pnt &pnt)
         centerPoint=pnt;
         centerPointSet=true;
     } else {
-        firstPoint=pnt;
-        firstPointSet=true;
-        currentMousePosition=pnt;
-        drawRubberband();
+        if (isValidPoint(pnt,false)) {
+            firstPoint=pnt;
+            firstPointSet=true;
+            currentMousePosition=pnt;
+            drawRubberband();
+        }
     }
 }
 
@@ -733,4 +920,57 @@ void Polycircle::recalculate ()
         i++;
     }
     shapePoints.push_back(shapePoints[0]);
+}
+
+bool Polycircle::isPointOnPlane (gp_Pnt &pnt)
+{
+    if (centerPoint.Distance(pnt) < Precision::Confusion()) return true;
+
+    gp_Pln plane(centerPoint,normal);
+    if (plane.Distance(pnt) < Precision::Confusion()) return true;
+    return false;
+}
+
+void Polycircle::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
+{
+    modified=true;
+    if (!centerPointSet) return;
+    if (!firstPointSet) return;
+
+    gp_Pnt offset;
+    offset=pnt2.XYZ()-pnt1.XYZ();
+
+    centerPoint=centerPoint.XYZ()-offset.XYZ();
+    firstPoint=firstPoint.XYZ()-offset.XYZ();
+
+    recalculate();
+}
+
+gp_Pln Polycircle::getPlane ()
+{
+    gp_Pln plane;
+    if (centerPointSet) {
+        gp_Pln tempPlane(centerPoint,normal);
+        plane=tempPlane;
+    }
+    return plane;
+}
+
+void Polycircle::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
+{
+    modified=true;
+
+    gp_Dir dir(gp_Vec(p1,p2));
+    gp_Ax1 axis(p1,dir);
+
+    double angleRadians=angleDegrees*M_PI/180;
+
+    // points
+    centerPoint=centerPoint.Rotated(axis,angleRadians);
+    firstPoint=firstPoint.Rotated(axis,angleRadians);
+
+    // normal
+    normal=normal.Rotated(axis,angleRadians);
+
+    recalculate();
 }

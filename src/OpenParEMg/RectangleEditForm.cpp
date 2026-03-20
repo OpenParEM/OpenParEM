@@ -175,9 +175,11 @@ void RectangleEditForm::on_OkButton_clicked ()
     ui->OkButton->setChecked(true);
 
     gp_Pnt position(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
-    if (!position.IsEqual(polywire->getPosition(),Precision::Confusion())) {
-        polywire->moveTo(position);
-    }
+    //if (!position.IsEqual(polywire->getPosition(),Precision::Confusion())) {
+        //polywire->moveTo(position);
+    gp_Pnt originalPosition=polywire->getPosition();
+    polywire->shift(originalPosition,position);
+    //}
 
     bool recalculate=false;
 

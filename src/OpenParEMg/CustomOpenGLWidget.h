@@ -91,10 +91,16 @@ public:
     }
     void set_gridPlane (TopoDS_Face &face);
     void set_gridPlane (gp_Pnt &origin, gp_Dir &direction);
+    void set_gridPlane (gp_Pln &plane);
+    gp_Ax3 get_gridPlane () {return viewer->PrivilegedPlane();}
 
     void set_pickVertex (bool pickVertex_) {
         pickVertex=pickVertex_;
-        viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
+        if (pickVertex) {
+            viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
+        } else {
+            viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
+        }
     }
 
     void set_activeShape (Handle(AIS_Shape) shape) {
@@ -432,17 +438,31 @@ public:
 
     void set_selectedItemsList (std::vector<CustomTreeWidgetItem *> *selectedItemsList_) {selectedItemsList=selectedItemsList_;}
 
-    void reset_vertexSymbol ()
-    {
-        viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
-    }
-
     std::vector<CustomTreeWidgetItem *> getVisibleItems (){
         return drawingTracker->getVisibleItems();
     }
 
-    gp_Ax3 get_privilegedPlane () {return viewer->PrivilegedPlane();}
-    void set_privilegedPlane (gp_Pln &plane);
+
+    void PrintAllActiveModes () {
+        std::cout << "CustomOpenGLWidget:: PrintAllActiveModes" << std::endl; std::cout.flush();
+
+        AIS_ListOfInteractive aDisplayedObjects;
+        viewerContext->DisplayedObjects(aDisplayedObjects);
+
+        for (AIS_ListIteratorOfListOfInteractive anObjIt(aDisplayedObjects); anObjIt.More(); anObjIt.Next()) {
+            Handle(AIS_InteractiveObject) anObj = anObjIt.Value();
+            TColStd_ListOfInteger aModes;
+
+            viewerContext->ActivatedModes(anObj, aModes);
+
+            for (TColStd_ListIteratorOfListOfInteger aModeIt(aModes); aModeIt.More(); aModeIt.Next()) {
+                Standard_Integer aMode = aModeIt.Value();
+                std::cout << "   aMode=" << aMode << std::endl; std::cout.flush();
+            }
+        }
+    }
+
+
 
 protected:
     void initializeGL () override;

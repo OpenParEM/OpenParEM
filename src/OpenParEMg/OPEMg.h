@@ -448,7 +448,7 @@ private:
     RotateInputForm *rotateInputForm;
 
     // vertex pick
-    TopoDS_Face selectedFace;
+    //TopoDS_Face selectedFace;
     std::vector<gp_Pnt> vertexList;
 
     // drawing

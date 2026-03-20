@@ -124,9 +124,6 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
 
     // set a default so that all vertices highlight with a circle
     Handle(Prs3d_Drawer) drawer=viewerContext->DefaultDrawer();
-
-    //xxx
-    //viewerContext->SetAutoActivateSelection(false);
 }
 
 CustomOpenGLWidget::~CustomOpenGLWidget ()
@@ -221,11 +218,6 @@ void CustomOpenGLWidget::cancelDraw ()
 
     // clear detection
     viewerContext->ClearDetected(Standard_True);
-
-    //// clear polywire
-    //polywire=nullptr;
-
-    //std::cout << "exit CustomOpenGLWidget::cancelDraw" << std::endl; std::cout.flush();
 }
 
 void CustomOpenGLWidget::wheelEvent (QWheelEvent* event)
@@ -277,6 +269,7 @@ bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const
         return false;
     }
 
+    //std::cout << "CustomOpenGLWidget::PixelToPointOnPlane  return true" << std::endl; std::cout.flush();
     return true;
 }
 
@@ -494,8 +487,13 @@ void CustomOpenGLWidget::set_gridPlane (TopoDS_Face &face)
         Handle(Geom_Plane) plane=Handle(Geom_Plane)::DownCast(surface);
 
         // set
-        drawingPlane=plane->Pln();
-        viewer->SetPrivilegedPlane(drawingPlane.Position());
+        //drawingPlane=plane->Pln();
+        //viewer->SetPrivilegedPlane(drawingPlane.Position());
+
+        gp_Pnt origin=plane->Location();
+        gp_Dir axis=plane->Axis().Direction();
+
+        set_gridPlane(origin,axis);
     }
 }
 
@@ -503,13 +501,16 @@ void CustomOpenGLWidget::set_gridPlane (gp_Pnt &origin, gp_Dir &normal)
 {
     gp_Ax3 system(origin,normal);
     Handle(Geom_Plane) plane=new Geom_Plane(system);
-    drawingPlane=plane->Pln();
-    viewer->SetPrivilegedPlane(drawingPlane.Position());
+    //drawingPlane=plane->Pln();
+    //viewer->SetPrivilegedPlane(drawingPlane.Position());
+    gp_Pln barePlane=plane->Pln();
+    set_gridPlane(barePlane);
 }
 
-void CustomOpenGLWidget::set_privilegedPlane (gp_Pln &plane)
+void CustomOpenGLWidget::set_gridPlane (gp_Pln &plane)
 {
-    viewer->SetPrivilegedPlane(plane.Position());
+    drawingPlane=plane;
+    viewer->SetPrivilegedPlane(drawingPlane.Position());
 }
 
 void CustomOpenGLWidget::showGrid ()
