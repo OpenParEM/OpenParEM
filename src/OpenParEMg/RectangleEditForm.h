@@ -42,6 +42,7 @@ public:
     bool isValid ();
     void set_polywire (Rectangle *);
     void populate (Rectangle *);
+    void repopulateOffOrigin ();
     void repopulateOffPositions ();
     void repopulateOffSize ();
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}

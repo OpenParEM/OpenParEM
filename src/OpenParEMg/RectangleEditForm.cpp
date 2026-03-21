@@ -82,6 +82,14 @@ void RectangleEditForm::populate (Rectangle *polywire_)
     ui->height->setText(QString::number(polywire_->getHeight()));
 }
 
+void RectangleEditForm::repopulateOffOrigin ()
+{
+    Rectangle temp(polywire);
+    gp_Pnt p0(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
+    temp.recalculate(p0);
+    populate(&temp);
+}
+
 void RectangleEditForm::repopulateOffPositions ()
 {
     Rectangle temp(polywire);
@@ -102,19 +110,19 @@ void RectangleEditForm::repopulateOffSize ()
 
 void RectangleEditForm::on_positionX_returnPressed ()
 {
-    repopulateOffPositions();
+    repopulateOffOrigin();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_positionY_returnPressed ()
 {
-    repopulateOffPositions();
+    repopulateOffOrigin();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_positionZ_returnPressed ()
 {
-    repopulateOffPositions();
+    repopulateOffOrigin();
     ui->OkButton->setEnabled(isValid());
 }
 
@@ -174,26 +182,30 @@ void RectangleEditForm::on_OkButton_clicked ()
 {
     ui->OkButton->setChecked(true);
 
-    gp_Pnt position(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
-    //if (!position.IsEqual(polywire->getPosition(),Precision::Confusion())) {
-        //polywire->moveTo(position);
-    gp_Pnt originalPosition=polywire->getPosition();
-    polywire->shift(originalPosition,position);
-    //}
+    // gp_Pnt position(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
+    // //if (!position.IsEqual(polywire->getPosition(),Precision::Confusion())) {
+    //     //polywire->moveTo(position);
+    // gp_Pnt originalPosition=polywire->getPosition();
+    // polywire->shift(originalPosition,position);
+    // //}
 
-    bool recalculate=false;
+    // bool recalculate=false;
 
-    if (abs(ui->width->text().toDouble()-polywire->getWidth()) > Precision::Confusion()) {
-        polywire->setWidth(ui->width->text().toDouble());
-        recalculate=true;
-    }
+    // if (abs(ui->width->text().toDouble()-polywire->getWidth()) > Precision::Confusion()) {
+    //     polywire->setWidth(ui->width->text().toDouble());
+    //     recalculate=true;
+    // }
 
-    if (abs(ui->height->text().toDouble()-polywire->getHeight()) > Precision::Confusion()) {
-        polywire->setHeight(ui->height->text().toDouble());
-        recalculate=true;
-    }
+    // if (abs(ui->height->text().toDouble()-polywire->getHeight()) > Precision::Confusion()) {
+    //     polywire->setHeight(ui->height->text().toDouble());
+    //     recalculate=true;
+    // }
 
-    if (recalculate) polywire->recalculate();
+    // if (recalculate) polywire->recalculate();
+
+    gp_Pnt p0(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
+    gp_Pnt p1(ui->position2X->text().toDouble(),ui->position2Y->text().toDouble(),ui->position2Z->text().toDouble());
+    polywire->recalculate(p0,p1);
 
     emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
 
@@ -216,6 +228,7 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
         ui->positionX->setText(QString::number(point.X()));
         ui->positionY->setText(QString::number(point.Y()));
         ui->positionZ->setText(QString::number(point.Z()));
+        repopulateOffOrigin();
     }
 
     if (pickPoint2) {
@@ -223,9 +236,8 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
         ui->position2X->setText(QString::number(point.X()));
         ui->position2Y->setText(QString::number(point.Y()));
         ui->position2Z->setText(QString::number(point.Z()));
+        repopulateOffPositions();
     }
-
-    repopulateOffPositions();
 
     ui->pick->setChecked(false);
 

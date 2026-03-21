@@ -380,7 +380,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
             } else {
                 Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
                 if (!hasModifier) drawingTracker->unselectAllItems();
-                std::cout << "   drawingTracker->selectShape(shape)" << std::endl; std::cout.flush();
                 drawingTracker->selectShape(shape);
             }
         }

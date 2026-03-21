@@ -699,31 +699,29 @@ void Rectangle::recalculate ()
     shapePoints[4]=shapePoints[0];
 }
 
+// for change in origin
+void Rectangle::recalculate (gp_Pnt p0)
+{
+    shapePoints[0]=p0;
+
+    shapePoints[1]=shapePoints[0].Translated(u*width);
+    shapePoints[2]=shapePoints[0].Translated(u*width).Translated(v*height);
+    shapePoints[3]=shapePoints[0].Translated(v*height);
+    shapePoints[4]=shapePoints[0];
+}
+
 // for change in corner points
 void Rectangle::recalculate (gp_Pnt p0, gp_Pnt p1)
 {
     shapePoints[0]=p0;
-    shapePoints[2]=p1;
 
-    // diagonal vector
     gp_Vec d(p0,p1);
-
-    // u, v directions
-
-    u.SetCoord(1,0,0);
-    gp_Vec test=normal.Crossed(u);
-    if (test.IsEqual(gp_Vec(0,0,0),Precision::Confusion(),Precision::Confusion())) {
-        u.SetCoord(0,1,0);
-    }
-
-    v=normal.Crossed(u).Normalized();
-
-    // the other two points
 
     width=d.Dot(u);
     height=d.Dot(v);
 
     shapePoints[1]=shapePoints[0].Translated(u*width);
+    shapePoints[2]=shapePoints[0].Translated(u*width).Translated(v*height);
     shapePoints[3]=shapePoints[0].Translated(v*height);
     shapePoints[4]=shapePoints[0];
 }

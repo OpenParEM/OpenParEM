@@ -151,6 +151,7 @@ public:
     void setHeight (double height_) {height=height_;}
 
     void recalculate ();
+    void recalculate (gp_Pnt);
     void recalculate (gp_Pnt, gp_Pnt);
 
     gp_Pnt getOppositeCorner ();

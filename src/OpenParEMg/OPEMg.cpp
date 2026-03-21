@@ -2959,7 +2959,7 @@ bool OpenParEMg::isValidObjectEdit ()
 
 void OpenParEMg::editObject ()
 {
-    std::cout << "OpenParEMg::editObject" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::editObject" << std::endl; std::cout.flush();
 
     operation=31;
     startOperation();
@@ -3048,7 +3048,8 @@ void OpenParEMg::rebuildTopLevelShape ()
 
 void OpenParEMg::finishEditObject (double length, bool cancel)
 {
-    std::cout << "OpenParEMg::finishEditObject  length=" << length << "  cancel=" << cancel << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishEditObject  length=" << length << "  cancel=" << cancel << std::endl; std::cout.flush();
+
     QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
 
     if (!cancel) {
@@ -3269,18 +3270,14 @@ void printPnt (std::string &name, const gp_Pnt &p)
 
 void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item)
 {
-    std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
-    std::cout << "   vertexList.size()=" << vertexList.size() << std::endl; std::cout.flush();
-    std::string name="vertexList[0]"; printPnt(name,vertexList[0]);
-                name="vertexList[1]"; printPnt(name,vertexList[1]);
-
+    //std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
 
     item->unsetAnimate(ui->drawingWindow->get_viewerContext());
     item->reset_transformation();
 
     Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
     if (polywire) {
-        std::cout << "  place 1" << std::endl; std::cout.flush();
+
         Line *line=dynamic_cast<Line *>(polywire);
         if (line) line->shift(vertexList[1],vertexList[0]);
 
@@ -3315,8 +3312,6 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item)
         reprocess(item);
         brepChanged=true;
     }
-
-    std::cout << "  place 2" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::finishMoveObject ()
