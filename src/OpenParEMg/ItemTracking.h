@@ -15,11 +15,11 @@ public:
         pathSelectedCount=0;
         portSelectedCount=0;
 
-        showTracking=false;
-        hideTracking=false;
-        selectTracking=false;
-        unselectTracking=false;
-        deleteTracking=false;
+        showTracking=true;
+        hideTracking=true;
+        selectTracking=true;
+        unselectTracking=true;
+        deleteTracking=true;
     }
 
     ~ItemTracker() {}

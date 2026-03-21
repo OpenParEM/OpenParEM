@@ -313,6 +313,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     if (event->button() == Qt::LeftButton) {
 
         if (pickVertex /*&& clickPointValid*/) {
+            ignoreMouseRelease=true;
             if (owner.IsNull()) {
                 vertexPoint=clickPoint;
                 finishPickVertex(false);
@@ -348,7 +349,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
-    //std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickVertex=" << pickVertex << std::endl; std::cout.flush();
+    std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickVertex=" << pickVertex << std::endl; std::cout.flush();
 
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
@@ -356,7 +357,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     // process mouse buttons
     if (event->button() == Qt::LeftButton) {
 
-        if (!pickVertex) {
+        if (!ignoreMouseRelease /*&& !pickVertex*/) {
 
             bool hasModifier=false;
             if (event->button() == Qt::LeftButton) {
@@ -379,9 +380,11 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
             } else {
                 Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
                 if (!hasModifier) drawingTracker->unselectAllItems();
+                std::cout << "   drawingTracker->selectShape(shape)" << std::endl; std::cout.flush();
                 drawingTracker->selectShape(shape);
             }
         }
+        ignoreMouseRelease=false;
         updateViewer();
 
     } else if (event->button() == Qt::RightButton) {

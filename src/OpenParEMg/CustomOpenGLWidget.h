@@ -498,6 +498,7 @@ private:
     // all drawing
     Relay *relay;
     std::vector<CustomTreeWidgetItem *> *selectedItemsList;
+    bool ignoreMouseRelease;
 
     // vertex
     bool pickVertex;
