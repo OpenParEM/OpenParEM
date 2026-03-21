@@ -276,6 +276,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     lengthInputForm=nullptr;
     vectorInputForm=nullptr;
+    lineEditForm=nullptr;
     rectangleEditForm=nullptr;
     polycircleEditForm=nullptr;
     rotateInputForm=nullptr;
@@ -2971,9 +2972,20 @@ void OpenParEMg::editObject ()
         if (item && item->is_drawing()) {
             Polywire *polywire=static_cast<Polywire*>(item->get_Polywire());
 
+            Line *line=dynamic_cast<Line *>(polywire);
+            if (line) {
+                if (lineEditForm) delete lineEditForm;
+                lineEditForm=new LineEditForm();
+                lineEditForm->set_polywire(line);
+                lineEditForm->set_drawingWindow(ui->drawingWindow);
+                lineEditForm->set_relay(relay);
+                lineEditForm->setModal(false);
+                connect(this,&OpenParEMg::sendPnt,lineEditForm,&LineEditForm::pickVertexFinished);
+                lineEditForm->show();
+            }
+
             Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
             if (rectangle) {
-
                 if (rectangleEditForm) delete rectangleEditForm;
                 rectangleEditForm=new RectangleEditForm();
                 rectangleEditForm->set_polywire(rectangle);
@@ -3058,6 +3070,9 @@ void OpenParEMg::finishEditObject (double length, bool cancel)
             CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
             if (item->is_drawing()) {
                 Polywire *polywire=static_cast<Polywire*>(item->get_Polywire());
+
+                Line *line=dynamic_cast<Line *>(polywire);
+                if (line) reprocess(item);
 
                 Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
                 if (rectangle) reprocess(item);
@@ -5224,6 +5239,11 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
             vectorInputForm=nullptr;
         }
 
+        if (lineEditForm) {
+            lineEditForm->on_CancelButton_clicked();
+            lineEditForm=nullptr;
+        }
+
         if (rectangleEditForm) {
             rectangleEditForm->on_CancelButton_clicked();
             rectangleEditForm=nullptr;
@@ -6548,6 +6568,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     }
     if (operation == 25 && rotateInputForm) rotateInputForm->pickVertexFinished(pnt);
     if (operation == 31) {
+        if (lineEditForm) lineEditForm->pickVertexFinished(pnt);
         if (rectangleEditForm) rectangleEditForm->pickVertexFinished(pnt);
         if (lengthInputForm) lengthInputForm->pickVertexFinished(pnt);
         if (polycircleEditForm) polycircleEditForm->pickVertexFinished(pnt);
@@ -6653,6 +6674,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
 
     if (lengthInputForm) {lengthInputForm=nullptr;}
     if (vectorInputForm) {vectorInputForm=nullptr;}
+    if (lineEditForm) {lineEditForm=nullptr;}
     if (rectangleEditForm) {rectangleEditForm=nullptr;}
     if (polycircleEditForm) {polycircleEditForm=nullptr;}
     if (rotateInputForm) {rotateInputForm=nullptr;}
@@ -6672,8 +6694,6 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
 
     // set to no active operation
     operation=0;
-
-    //clearTreeSelection();
 
     ui->drawingWindow->updateViewer();
     setMenus();

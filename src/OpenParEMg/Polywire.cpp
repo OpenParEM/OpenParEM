@@ -59,7 +59,6 @@ Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
 //     std::cout << name << "=(" << p.X() << "," << p.Y() << "," << p.Z() << ")" << std::endl; std::cout.flush();
 // }
 
-
 // DoSegmentsIntersectInterior courtesy of Google AI
 bool DoSegmentsIntersectInterior (const gp_Pnt& P1, const gp_Pnt& P2,
                                   const gp_Pnt& P3, const gp_Pnt& P4,
@@ -120,6 +119,33 @@ bool DoSegmentsIntersectInterior (const gp_Pnt& P1, const gp_Pnt& P2,
         }
     }
     return false;
+}
+
+gp_Pnt Line::getP0 ()
+{
+    gp_Pnt P0;
+    if (shapePoints.size() > 0) P0=shapePoints[0];
+    return P0;
+}
+
+gp_Pnt Line::getP1 ()
+{
+    gp_Pnt P1;
+    if (shapePoints.size() > 1) P1=shapePoints[1];
+    return P1;
+}
+
+void Line::setP0 (gp_Pnt &P0)
+{
+    if (shapePoints.size() == 0) shapePoints.push_back(P0);
+    else shapePoints[0]=P0;
+}
+
+void Line::setP1 (gp_Pnt &P1)
+{
+    if (shapePoints.size() == 0) shapePoints.push_back(gp_Pnt(0,0,0));
+    if (shapePoints.size() == 1) shapePoints.push_back(P1);
+    else shapePoints[1]=P1;
 }
 
 Polywire::Polywire(QObject *parent)

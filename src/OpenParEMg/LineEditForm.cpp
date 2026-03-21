@@ -18,12 +18,13 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "RectangleEditForm.h"
-#include "ui_RectangleEditForm.h"
 
-RectangleEditForm::RectangleEditForm (QWidget *parent)
+#include "LineEditForm.h"
+#include "ui_LineEditForm.h"
+
+LineEditForm::LineEditForm (QWidget *parent)
     : QDialog(parent)
-    , ui(new Ui::RectangleEditForm)
+    , ui(new Ui::LineEditForm)
 {
     ui->setupUi(this);
 
@@ -40,9 +41,6 @@ RectangleEditForm::RectangleEditForm (QWidget *parent)
     ui->positionZ->setValidator(&validator);
     ui->pick->setCheckable(true);
 
-    ui->width->setValidator(&validator);
-    ui->height->setValidator(&validator);
-
     ui->position2X->setValidator(&validator);
     ui->position2Y->setValidator(&validator);
     ui->position2Z->setValidator(&validator);
@@ -54,83 +52,64 @@ RectangleEditForm::RectangleEditForm (QWidget *parent)
     ui->OkButton->setEnabled(false);
 }
 
-RectangleEditForm::~RectangleEditForm ()
+LineEditForm::~LineEditForm ()
 {
     delete ui;
 }
 
-bool RectangleEditForm::isValid ()
+bool LineEditForm::isValid ()
 {
-    if (abs(ui->width->text().toDouble()) < Precision::Confusion()) return false;
-    if (abs(ui->height->text().toDouble()) < Precision::Confusion()) return false;
+    gp_Pnt p0(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
+    gp_Pnt p1(ui->position2X->text().toDouble(),ui->position2Y->text().toDouble(),ui->position2Z->text().toDouble());
+
+    if (p0.IsEqual(p1,Precision::Confusion())) return false;
     return true;
 }
 
-void RectangleEditForm::set_polywire (Rectangle *polywire_)
+void LineEditForm::set_polywire (Line *polywire_)
 {
     polywire=polywire_;
     populate(polywire);
 }
 
-void RectangleEditForm::populate (Rectangle *polywire_)
+void LineEditForm::populate (Line *polywire_)
 {
-    ui->positionX->setText(QString::number(polywire_->getPosition().X()));
-    ui->positionY->setText(QString::number(polywire_->getPosition().Y()));
-    ui->positionZ->setText(QString::number(polywire_->getPosition().Z()));
+    if (polywire_) {
+        ui->positionX->setText(QString::number(polywire_->getP0().X()));
+        ui->positionY->setText(QString::number(polywire_->getP0().Y()));
+        ui->positionZ->setText(QString::number(polywire_->getP0().Z()));
 
-    ui->position2X->setText(QString::number(polywire_->getOppositeCorner().X()));
-    ui->position2Y->setText(QString::number(polywire_->getOppositeCorner().Y()));
-    ui->position2Z->setText(QString::number(polywire_->getOppositeCorner().Z()));
-
-    ui->width->setText(QString::number(polywire_->getWidth()));
-    ui->height->setText(QString::number(polywire_->getHeight()));
+        ui->position2X->setText(QString::number(polywire_->getP1().X()));
+        ui->position2Y->setText(QString::number(polywire_->getP1().Y()));
+        ui->position2Z->setText(QString::number(polywire_->getP1().Z()));
+    }
 }
 
-void RectangleEditForm::repopulateOffOrigin ()
+void LineEditForm::repopulate ()
 {
-    Rectangle temp(polywire);
-    gp_Pnt p0(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
-    temp.recalculate(p0);
-    populate(&temp);
-}
-
-void RectangleEditForm::repopulateOffPositions ()
-{
-    Rectangle temp(polywire);
     gp_Pnt p0(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
     gp_Pnt p1(ui->position2X->text().toDouble(),ui->position2Y->text().toDouble(),ui->position2Z->text().toDouble());
-    temp.recalculate(p0,p1);
-    populate(&temp);
+
+    polywire->setP0(p0);
+    polywire->setP1(p1);
 }
 
-void RectangleEditForm::repopulateOffSize ()
+void LineEditForm::on_positionX_returnPressed ()
 {
-    Rectangle temp(polywire);
-    temp.setWidth(ui->width->text().toDouble());
-    temp.setHeight(ui->height->text().toDouble());
-    temp.recalculate();
-    populate(&temp);
-}
-
-void RectangleEditForm::on_positionX_returnPressed ()
-{
-    repopulateOffOrigin();
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::on_positionY_returnPressed ()
+void LineEditForm::on_positionY_returnPressed ()
 {
-    repopulateOffOrigin();
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::on_positionZ_returnPressed ()
+void LineEditForm::on_positionZ_returnPressed ()
 {
-    repopulateOffOrigin();
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::on_pick_clicked ()
+void LineEditForm::on_pick_clicked ()
 {
     ui->pick->setChecked(true);
     this->setEnabled(false);
@@ -141,25 +120,22 @@ void RectangleEditForm::on_pick_clicked ()
     drawingWindow->updateViewer();
 }
 
-void RectangleEditForm::on_position2X_returnPressed ()
+void LineEditForm::on_position2X_returnPressed ()
 {
-    repopulateOffPositions();
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::on_position2Y_returnPressed ()
+void LineEditForm::on_position2Y_returnPressed ()
 {
-    repopulateOffPositions();
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::on_position2Z_returnPressed ()
+void LineEditForm::on_position2Z_returnPressed ()
 {
-    repopulateOffPositions();
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::on_pick2_clicked ()
+void LineEditForm::on_pick2_clicked ()
 {
     ui->pick2->setChecked(true);
     this->setEnabled(false);
@@ -168,41 +144,24 @@ void RectangleEditForm::on_pick2_clicked ()
 
     drawingWindow->set_pickVertex(true);
     drawingWindow->updateViewer();
+
 }
 
-void RectangleEditForm::on_width_returnPressed ()
+void LineEditForm::on_OkButton_clicked ()
 {
-    repopulateOffSize();
-    ui->OkButton->setEnabled(isValid());
-}
-
-void RectangleEditForm::on_height_returnPressed ()
-{
-    repopulateOffSize();
-    ui->OkButton->setEnabled(isValid());
-}
-
-void RectangleEditForm::on_OkButton_clicked ()
-{
-    ui->OkButton->setChecked(true);
-
-    gp_Pnt p0(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
-    gp_Pnt p1(ui->position2X->text().toDouble(),ui->position2Y->text().toDouble(),ui->position2Z->text().toDouble());
-    polywire->recalculate(p0,p1);
-
+    repopulate();
     emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
-
     QDialog::close();
 }
 
-void RectangleEditForm::on_CancelButton_clicked()
+void LineEditForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
     emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
     QDialog::close();
 }
 
-void RectangleEditForm::pickVertexFinished (gp_Pnt point)
+void LineEditForm::pickVertexFinished (gp_Pnt point)
 {
     this->setEnabled(true);
 
@@ -211,7 +170,6 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
         ui->positionX->setText(QString::number(point.X()));
         ui->positionY->setText(QString::number(point.Y()));
         ui->positionZ->setText(QString::number(point.Z()));
-        repopulateOffOrigin();
     }
 
     if (pickPoint2) {
@@ -219,7 +177,6 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
         ui->position2X->setText(QString::number(point.X()));
         ui->position2Y->setText(QString::number(point.Y()));
         ui->position2Z->setText(QString::number(point.Z()));
-        repopulateOffPositions();
     }
 
     ui->pick->setChecked(false);
@@ -227,13 +184,10 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::reject ()
+void LineEditForm::reject ()
 {
     ui->CancelButton->setChecked(true);
     emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
     QDialog::reject();
 }
-
-
-
 

@@ -28,6 +28,7 @@
 #include <QTimer>
 
 #include "LengthInputForm.h"
+#include "LineEditForm.h"
 #include "RotateInputForm.h"
 #include "Process.h"
 #include "RectangleEditForm.h"
@@ -443,6 +444,7 @@ private:
     // forms
     LengthInputForm *lengthInputForm;
     VectorInputForm *vectorInputForm;
+    LineEditForm *lineEditForm;
     RectangleEditForm *rectangleEditForm;
     PolycircleEditForm *polycircleEditForm;
     RotateInputForm *rotateInputForm;

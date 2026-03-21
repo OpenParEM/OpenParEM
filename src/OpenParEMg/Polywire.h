@@ -101,6 +101,10 @@ public:
     bool canFinish () override {return false;}
     bool canClose () override {return false;}
     bool isFinished () override {if (shapePoints.size() == 2) return true; return false;}
+    gp_Pnt getP0 ();
+    gp_Pnt getP1 ();
+    void setP0 (gp_Pnt &P0);
+    void setP1 (gp_Pnt &P1);
 };
 
 class Polyline : public Polywire
