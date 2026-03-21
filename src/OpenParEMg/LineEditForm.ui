@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Edit Line</string>
   </property>
   <widget class="QWidget" name="horizontalLayoutWidget_5">
    <property name="geometry">

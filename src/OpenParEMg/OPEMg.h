@@ -132,6 +132,12 @@ public:
     void startOperation ();
     void startPickVertex ();
 
+    bool isValidObjectEdit ();
+    bool isValidObjectStretch ();
+
+    bool isValidDeletePoint ();
+    void finishDeletePoint (gp_Pnt &pnt);
+
     bool isValidExtrudePolywire ();
     void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void finishExtrudePolywire (double, bool);
@@ -299,9 +305,8 @@ private slots:
     void editObject ();
     void moveObject ();
     void stretchObject ();
+    void deletePoint ();
     void rotateObject ();
-    bool isValidObjectEdit ();
-    bool isValidObjectStretch ();
     void createPort ();
     void createPath ();
     void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape);
@@ -390,6 +395,7 @@ private:
     QAction *selectAllAction;
     QAction *unselectAction;
     QAction *deleteAction;
+    QAction *deletePointAction;
     QAction *removeAction;
     QAction *assignAction;
     QAction *insertAction;
@@ -470,7 +476,8 @@ private:
                      // 1 - pick vertex; 2 - get local u vector
                      // 11 - draw line; 12 - draw polyline; 13 - draw rectangle; 14 - draw polycircle
                      // 21 - extrude;  22 - merge;  23 - subtract; 24 - move; 25 - rotate
-                     // 31 - edit; 32 - stretch
+                     // 31 - edit; 32 - stretch;
+                     // 41 - delete polyline point
 };
 
 #endif // OPEMG_H

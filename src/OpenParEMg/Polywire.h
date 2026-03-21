@@ -126,7 +126,8 @@ public:
     }
     void buildFromFace (TopoDS_Face &face);
     void setEditPoint (gp_Pnt &pnt) override;
-
+    bool canDeletePoint ();
+    void deletePoint (gp_Pnt &pnt);
 };
 
 class Rectangle : public Polywire

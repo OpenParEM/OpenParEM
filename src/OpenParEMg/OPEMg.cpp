@@ -160,6 +160,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(selectAllAction);
     QActionList.push_back(unselectAction);
     QActionList.push_back(deleteAction);
+    QActionList.push_back(deletePointAction);
     QActionList.push_back(removeAction);
     QActionList.push_back(assignAction);
     QActionList.push_back(insertAction);
@@ -1148,6 +1149,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             editAction=new QAction("Edit");
             moveAction=new QAction("Move");
             stretchAction=new QAction("Stretch");
+            deletePointAction=new QAction("Delete Point");
             rotateAction=new QAction("Rotate");
             unselectAction=new QAction("Unselect");
             deleteAction=new QAction("Delete");
@@ -1167,6 +1169,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             connect(editAction, &QAction::triggered, this, &OpenParEMg::editObject);
             connect(moveAction, &QAction::triggered, this, &OpenParEMg::moveObject);
             connect(stretchAction, &QAction::triggered, this, &OpenParEMg::stretchObject);
+            connect(deletePointAction, &QAction::triggered, this, &OpenParEMg::deletePoint);
             connect(rotateAction, &QAction::triggered, this, &OpenParEMg::rotateObject);
             connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
             connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
@@ -1194,6 +1197,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             modify.addAction(editAction);
             modify.addAction(moveAction);
             modify.addAction(stretchAction);
+            modify.addAction(deletePointAction);
             modify.addAction(rotateAction);
             modify.addAction(extrudeAction);
             modify.addAction(mergeAction);
@@ -1211,6 +1215,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             editAction->setEnabled(isValidObjectEdit());     // single object
             moveAction->setEnabled(true);
             stretchAction->setEnabled(isValidObjectStretch());  // single object
+            deletePointAction->setEnabled(isValidDeletePoint()); // single object
             rotateAction->setEnabled(true);
             extrudeAction->setEnabled(isValidExtrudePolywire());
             mergeAction->setEnabled(isValidMergeSolids());
@@ -3451,6 +3456,88 @@ void OpenParEMg::finishStretchObject (gp_Pnt &pnt)
 
             Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
             if (polycircle) polycircle->setEditPoint(pnt);
+
+            TopoDS_Wire wire=polywire->buildWire();
+            if (!wire.IsNull()) {
+                replaceItemShape(selectedItemsList[i],wire);  // inserts to item map
+                reprocess(selectedItemsList[i]);
+            }
+
+            ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+
+            ui->drawingWindow->set_allActiveShapes();
+            brepChanged=true;
+        }
+        i++;
+    }
+}
+
+bool OpenParEMg::isValidDeletePoint ()
+{
+    int count=0;
+    QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < selectedItems.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
+        if (item && item->is_drawing()) {
+            Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
+            if (polywire) {
+                Polyline *polyline=dynamic_cast<Polyline *>(polywire);
+                if (polyline && polyline->canDeletePoint()) count++;
+            }
+        }
+        i++;
+    }
+    if (count == 1 && count == selectedItems.count()) return true;
+    return false;
+}
+
+void OpenParEMg::deletePoint ()
+{
+    operation=41;
+    startPickVertex();
+
+    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < items.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        if (item && item->is_drawing()) {
+            Handle(AIS_Shape) shape=item->get_AIS_Shape();
+            if (!shape.IsNull()) {
+                // set the selected shape to be the only selectable shape
+                // includes selecting just on vertices of the shape and not midpoints
+                ui->drawingWindow->set_activeShape(shape);
+
+                // set the drawing plane
+                currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
+                //restrictToDrawingPlane=true;
+
+                Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
+                if (polywire) {
+                    Polyline *polyline=dynamic_cast<Polyline *>(polywire);
+                    if (polyline) {
+                        gp_Pln plane=polyline->getPlane();
+                        ui->drawingWindow->set_gridPlane(plane);
+                    }
+                }
+
+                // save it for processing
+                selectedItemsList.push_back(item);
+            }
+        }
+        i++;
+    }
+}
+
+void OpenParEMg::finishDeletePoint (gp_Pnt &pnt)
+{
+    long unsigned int i=0;
+    while (i < selectedItemsList.size()) {
+        Polywire *polywire=static_cast<Polywire *>(selectedItemsList[i]->get_Polywire());
+        if (polywire) {
+
+            Polyline *polyline=dynamic_cast<Polyline *>(polywire);
+            if (polyline) polyline->deletePoint(pnt);
 
             TopoDS_Wire wire=polywire->buildWire();
             if (!wire.IsNull()) {
@@ -6613,6 +6700,20 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
             i++;
         }
     }
+    if (operation == 41) {
+        long unsigned int i=0;
+        while (i < selectedItemsList.size()) {
+            Polywire *polywire=static_cast<Polywire *>(selectedItemsList[i]->get_Polywire());
+            if (polywire) {
+                if (vertexList.size() == 1) {
+                    if (polywire->isPointOnPlane(pnt)) {
+                        finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+                    }
+                }
+            }
+            i++;
+        }
+    }
 
     lastMousePosition=pnt;
 }
@@ -6668,6 +6769,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
         if (operation == 25) finishRotateObject(angleDegrees,p1,p2);
         if (operation == 31) finishEditObject(length,false);
         if (operation == 32) finishStretchObject(pnt);
+        if (operation == 41) finishDeletePoint(pnt);
     }
 
     ui->drawingWindow->set_pickVertex(false);

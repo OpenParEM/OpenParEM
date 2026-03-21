@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Polycircle Edit</string>
+   <string>Edit Polycircle</string>
   </property>
   <widget class="QWidget" name="horizontalLayoutWidget_8">
    <property name="geometry">
