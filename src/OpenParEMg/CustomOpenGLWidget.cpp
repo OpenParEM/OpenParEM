@@ -349,7 +349,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
-    std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickVertex=" << pickVertex << std::endl; std::cout.flush();
+    //std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickVertex=" << pickVertex << "  ignoreMouseRelease=" << ignoreMouseRelease << std::endl; std::cout.flush();
 
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;

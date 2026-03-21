@@ -218,7 +218,7 @@ public:
         }
 
         animateShape=new AIS_Shape(shape->Shape());
-        viewerContext->Display(animateShape,Standard_True);
+        viewerContext->Display(animateShape,AIS_WireFrame,-1,Standard_True);  // non-selectable
     }
 
     void unsetAnimate (Handle(AIS_InteractiveContext) viewerContext)

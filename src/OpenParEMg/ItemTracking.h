@@ -15,11 +15,11 @@ public:
         pathSelectedCount=0;
         portSelectedCount=0;
 
-        showTracking=true;
-        hideTracking=true;
-        selectTracking=true;
-        unselectTracking=true;
-        deleteTracking=true;
+        showTracking=false;
+        hideTracking=false;
+        selectTracking=false;
+        unselectTracking=false;
+        deleteTracking=false;
     }
 
     ~ItemTracker() {}
@@ -587,7 +587,16 @@ public:
     {
         if (selectTracking) {std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();}
 
-        if (item->isSelected()) return;
+        // see if the item is already selected
+        //if (item->isSelected()) return;
+        long unsigned int i=0;
+        while (i < selectedItems.size()) {
+            if (item == selectedItems[i]) {
+                std::cout << "   item already selected" << std::endl; std::cout.flush();
+                return;
+            }
+            i++;
+        }
 
         if (item->is_rootDrawing()) {
             item->setSelected(Standard_True);
@@ -682,29 +691,30 @@ public:
         long unsigned int i=0;
         while (i < selectedItems.size()) {
             CustomTreeWidgetItem *item=selectedItems[i];
-            if (item->is_mesh()) {
-                long unsigned int j=0;
-                while (j < item->get_meshEntitiesSize()) {
-                    UnselectShape(item->get_meshEntity(j));
-                    j++;
-                }
-            } else if (item->is_sportLabel()) {
-                // nothing to do
-            } else {
-                UnselectShape(item->get_AIS_Shape());
+            // if (item->is_mesh()) {
+            //     long unsigned int j=0;
+            //     while (j < item->get_meshEntitiesSize()) {
+            //         UnselectShape(item->get_meshEntity(j));
+            //         j++;
+            //     }
+            // } else if (item->is_sportLabel()) {
+            //     // nothing to do
+            // } else {
+            //     UnselectShape(item->get_AIS_Shape());
 
-                long unsigned int i=0;
-                while (i < item->get_arrowHeads_size()) {
-                    UnselectShape(item->get_arrowHead(i));
-                    i++;
-                }
-            }
-            item->setSelected(Standard_False);
+            //     long unsigned int i=0;
+            //     while (i < item->get_arrowHeads_size()) {
+            //         UnselectShape(item->get_arrowHead(i));
+            //         i++;
+            //     }
+            // }
+            // item->setSelected(Standard_False);
+            unselectItem(item);
             i++;
         }
-        pathSelectedCount=0;
-        portSelectedCount=0;
-        selectedItems.clear();
+        // pathSelectedCount=0;
+        // portSelectedCount=0;
+        // selectedItems.clear();
     }
 
     // void unselectShape (Handle(AIS_Shape) shape)

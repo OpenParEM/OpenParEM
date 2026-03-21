@@ -54,10 +54,10 @@ Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
     return shape;
 }
 
-void printPnt (std::string &name, const gp_Pnt &p)
-{
-    std::cout << name << "=(" << p.X() << "," << p.Y() << "," << p.Z() << ")" << std::endl; std::cout.flush();
-}
+// void printPnt (std::string &name, const gp_Pnt &p)
+// {
+//     std::cout << name << "=(" << p.X() << "," << p.Y() << "," << p.Z() << ")" << std::endl; std::cout.flush();
+// }
 
 
 // DoSegmentsIntersectInterior courtesy of Google AI

@@ -2706,7 +2706,7 @@ bool OpenParEMg::isValidExtrudePolywire ()
 
 void OpenParEMg::extrudePolywire ()
 {
-    std::cout << "OpenParEMg::extrudePolywire" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::extrudePolywire" << std::endl; std::cout.flush();
 
     operation=21;
     startOperation();
@@ -2730,7 +2730,7 @@ void OpenParEMg::extrudePolywire ()
 
 void OpenParEMg::finishExtrudePolywire (double length, bool cancel)
 {
-    std::cout << "OpenParEMg::finishExtrudeFace" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishExtrudeFace" << std::endl; std::cout.flush();
 
     if (!cancel && abs(length) > 1e-12) {
 
@@ -2765,6 +2765,9 @@ void OpenParEMg::finishExtrudePolywire (double length, bool cancel)
                         newItem->addChild(item);
 
                         brepChanged=true;
+
+                        ui->drawingItemTree->setCurrentItem(newItem);
+                        ui->drawingWindow->selectItem(newItem);  // doesn't actually select the item, but required for proper selection
                     }
                 }
             }
@@ -2778,7 +2781,7 @@ void OpenParEMg::finishExtrudePolywire (double length, bool cancel)
 
 void OpenParEMg::reextrudePolywire (CustomTreeWidgetItem *item, CustomTreeWidgetItem *child)
 {
-    std::cout << "OpenParEMg::reextrudeFace" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::reextrudePolywire" << std::endl; std::cout.flush();
 
     Process *process=static_cast<Process *>(item->get_Process());
 
@@ -2807,6 +2810,14 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 
     Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
     if (polywire) {
+
+        Line *line=dynamic_cast<Line *>(polywire);
+        if (line) {
+            TopoDS_Wire wire=line->buildWire();
+            if (!wire.IsNull()) {
+                replaceItemShape(item,wire);  // inserts to item map
+            }
+        }
 
         Polyline *polyline=dynamic_cast<Polyline *>(polywire);
         if (polyline) {
@@ -2918,6 +2929,7 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
         }
     }
 
+    // necessary?
     item->reset_transformation();
 
     // recursively work to the top of the tree
@@ -3152,6 +3164,9 @@ void OpenParEMg::finishMergeSolids ()
     // rebuild top level
     reprocess(&drawing);
 
+    ui->drawingItemTree->setCurrentItem(newItem);
+    ui->drawingWindow->selectItem(newItem);  // doesn't actually select the item, but required for proper selection
+
     brepChanged=true;
 }
 
@@ -3221,6 +3236,9 @@ void OpenParEMg::finishSubtractSolids ()
     // rebuild top level
     reprocess(&drawing);
 
+    ui->drawingItemTree->setCurrentItem(newItem);
+    ui->drawingWindow->selectItem(newItem);  // doesn't actually select the item, but required for proper selection
+
     brepChanged=true;
 }
 
@@ -3229,7 +3247,7 @@ void OpenParEMg::moveObject ()
     //std::cout << "OpenParEMg::moveObject" << std::endl; std::cout.flush();
 
     operation=24;
-    startOperation();
+    startPickVertex();
 
     QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
     int i=0;
@@ -3242,17 +3260,27 @@ void OpenParEMg::moveObject ()
         }
         i++;
     }
+}
 
-    ui->drawingWindow->set_pickVertex(true);
+void printPnt (std::string &name, const gp_Pnt &p)
+{
+    std::cout << name << "=(" << p.X() << "," << p.Y() << "," << p.Z() << ")" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item)
 {
+    std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
+    std::cout << "   vertexList.size()=" << vertexList.size() << std::endl; std::cout.flush();
+    std::string name="vertexList[0]"; printPnt(name,vertexList[0]);
+                name="vertexList[1]"; printPnt(name,vertexList[1]);
+
+
     item->unsetAnimate(ui->drawingWindow->get_viewerContext());
     item->reset_transformation();
 
     Polywire *polywire=static_cast<Polywire *>(item->get_Polywire());
     if (polywire) {
+        std::cout << "  place 1" << std::endl; std::cout.flush();
         Line *line=dynamic_cast<Line *>(polywire);
         if (line) line->shift(vertexList[1],vertexList[0]);
 
@@ -3287,6 +3315,8 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item)
         reprocess(item);
         brepChanged=true;
     }
+
+    std::cout << "  place 2" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::finishMoveObject ()
@@ -6020,11 +6050,14 @@ void OpenParEMg::cancelDraw ()
 
 void OpenParEMg::on_actionDrawLine_triggered ()
 {
-    std::cout << "OpenParEMg::on_actionDrawLine_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionDrawLine_triggered" << std::endl; std::cout.flush();
 
     operation=11;
     restrictToDrawingPlane=true;
     startPickVertex();
+
+    ui->drawingItemTree->setCurrentItem(nullptr);
+    ui->drawingWindow->unselectAllItems();
 
     if (!polywire) {
         polywire=new Line();
@@ -6042,13 +6075,15 @@ void OpenParEMg::on_actionDrawPolyline_triggered ()
     restrictToDrawingPlane=true;
     startPickVertex();
 
+    ui->drawingItemTree->setCurrentItem(nullptr);
+    ui->drawingWindow->unselectAllItems();
+
     if (!polywire) {
         polywire=new Polyline();
         gp_Dir normal=ui->drawingWindow->get_normal();
         polywire->setNormal(normal.X(),normal.Y(),normal.Z());
         polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
     }
-    //ui->drawingWindow->set_polywire(polywire);
 }
 
 void OpenParEMg::on_actionDrawPolycircle_triggered ()
@@ -6059,13 +6094,15 @@ void OpenParEMg::on_actionDrawPolycircle_triggered ()
     restrictToDrawingPlane=true;
     startPickVertex();
 
+    ui->drawingItemTree->setCurrentItem(nullptr);
+    ui->drawingWindow->unselectAllItems();
+
     if (!polywire) {
         polywire=new Polycircle();
         gp_Dir normal=ui->drawingWindow->get_normal();
         polywire->setNormal(normal.X(),normal.Y(),normal.Z());
         polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
     }
-
 }
 
 void OpenParEMg::on_actionDrawRectangle_triggered ()
@@ -6075,6 +6112,9 @@ void OpenParEMg::on_actionDrawRectangle_triggered ()
     operation=13;
     restrictToDrawingPlane=true;
     startPickVertex();
+
+    ui->drawingItemTree->setCurrentItem(nullptr);
+    ui->drawingWindow->unselectAllItems();
 
     if (!polywire) {
         polywire=new Rectangle();
@@ -6239,8 +6279,8 @@ void OpenParEMg::finishDrawLine (TopoDS_Wire wire)
         // put it on the Z-layer to get it higher selection priority
         newItem->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);
 
-        ui->drawingWindow->unselectAllItems();   // not working as expected
-        ui->drawingWindow->selectItem(newItem);  // item is not selected when completed
+        ui->drawingItemTree->setCurrentItem(newItem);
+        ui->drawingWindow->selectItem(newItem);  // doesn't actually select the item, but required for proper selection
     }
 
     restrictToDrawingPlane=false;
@@ -6392,17 +6432,8 @@ void OpenParEMg::startPickVertex ()
     ui->drawingWindow->set_pickVertex(true);
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    //setMenus();
 }
-
-// void OpenParEMg::finishPickVertex (gp_Pnt pnt)
-// {
-//     std::cout << "OpenParEMg::finishPickVertex  operation=" << operation  << std::endl; std::cout.flush();
-
-//     // pass along the vertex to the requesting operation
-//     if (operation == 1)
-//     setMenus();
-// }
 
 void OpenParEMg::startOperation ()
 {
@@ -6441,9 +6472,9 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
         long unsigned int i=0;
         while (i < selectedItemsList.size()) {
             selectedItemsList[i]->moveAnimateShape(lastMousePosition,pnt,ui->drawingWindow->get_viewerContext());
-            ui->drawingWindow->updateViewer();
             i++;
         }
+        ui->drawingWindow->updateViewer();
     }
 
     if (operation == 32 && vertexList.size() == 1) {
@@ -6485,7 +6516,7 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
 
 void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 {
-    //std::cout << "OpenParEMg::getPickedVertex  cancel=" << cancel << "   operation=" << operation << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::getPickedVertex  cancel=" << cancel << "   operation=" << operation << "  restrictToDrawingPlane=" << restrictToDrawingPlane << std::endl; std::cout.flush();
 
     if (cancel) finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
 
@@ -6517,11 +6548,6 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                 ui->drawingWindow->hideItem(selectedItemsList[i]);
                 i++;
             }
-
-            // Why is resetting the selection required?  It does not seem to have been reset anywhere.
-            ui->drawingWindow->Deactivate();
-            ui->drawingWindow->Activate(1,Standard_False);  // vertices
-            ui->drawingWindow->Activate(2,Standard_False);  // edges
         }
         if (vertexList.size() == 2) finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
     }
@@ -6578,7 +6604,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 // pass in variables needed by various operations; not all operations use all variables
 void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees, gp_Pnt p1, gp_Pnt p2, bool cancel)
 {
-    //std::cout << "OpenParEMg::finishOperation  operation=" << operation  << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishOperation  operation=" << operation << "  cancel=" << cancel << std::endl; std::cout.flush();
 
     if (cancel) {
 
@@ -6652,7 +6678,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
     // set to no active operation
     operation=0;
 
-    clearTreeSelection();
+    //clearTreeSelection();
 
     ui->drawingWindow->updateViewer();
     setMenus();

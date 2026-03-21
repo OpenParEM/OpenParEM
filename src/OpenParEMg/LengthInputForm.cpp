@@ -159,7 +159,7 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
 
 void LengthInputForm::reject ()
 {
-    std::cout << "LengthInputForm::reject" << std::endl; std::cout.flush();
+    //std::cout << "LengthInputForm::reject" << std::endl; std::cout.flush();
     ui->CancelButton->setChecked(true);
     emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
 
