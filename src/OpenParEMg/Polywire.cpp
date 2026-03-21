@@ -465,7 +465,7 @@ void Polyline::drawStretchRubberband (bool checkIntersection)
 void Polyline::setEditPoint (gp_Pnt &pnt)
 {
     if (closed) {
-        if ((editIndex == 0) || (editIndex == shapePoints.size()-1)) {
+        if (editIndex == 0 || editIndex == shapePoints.size()-1) {
             shapePoints[0]=pnt;
             shapePoints[shapePoints.size()-1]=pnt;
         } else {
@@ -488,9 +488,9 @@ bool Polyline::canDeletePoint ()
 
 void Polyline::deletePoint (gp_Pnt &pnt)
 {
-    long unsigned int deleteIndex;
+    long unsigned int deleteIndex=0;
     double closest=DBL_MAX;
-    long unsigned i=0;
+    long unsigned int i=0;
     while (i < shapePoints.size()) {
         double distance=shapePoints[i].Distance(pnt);
         if (distance < closest) {
@@ -501,7 +501,7 @@ void Polyline::deletePoint (gp_Pnt &pnt)
     }
 
     if (closed) {
-        if ((deleteIndex == 0) || (deleteIndex == shapePoints.size()-1)) {
+        if (deleteIndex == 0 || deleteIndex == shapePoints.size()-1) {
             shapePoints.erase(shapePoints.begin());
             shapePoints[shapePoints.size()-1]=shapePoints[0];
         } else {
