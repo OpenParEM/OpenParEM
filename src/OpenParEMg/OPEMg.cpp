@@ -143,6 +143,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     connect(relay,&Relay::getCurrentMousePosition,this,&OpenParEMg::getCurrentMousePosition);
     connect(relay,&Relay::getPickedVertex,this,&OpenParEMg::getPickedVertex);
     connect(relay,&Relay::setMenus,this,&OpenParEMg::setMenus);
+    connect(relay,&Relay::clearTreeSelection,this,&OpenParEMg::clearTreeSelection);
 
     /////////////////////////////////////////////////////////////////////////////
     // drawing window
