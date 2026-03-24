@@ -123,12 +123,6 @@ public:
         updateViewer();
     }
 
-    // void setDefaultSelection (Handle(AIS_Shape) shape)
-    // {
-    //     viewerContext->Deactivate(shape);
-    //     viewerContext->Activate(shape,0,Standard_False);
-    // }
-
     void reshowItems ()
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::reshowItems" << std::endl; std::cout.flush();
@@ -430,7 +424,6 @@ public:
     void clearSelected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearSelected(theToUpdateViewer);}
 
     void finishPickVertex (bool);
-    //void finishDrawLine ();
 
     Handle(AIS_InteractiveContext) get_viewerContext () {return viewerContext;}
 

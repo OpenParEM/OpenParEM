@@ -289,7 +289,7 @@ void CustomOpenGLWidget::finishPickVertex (bool cancel)
 
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
-    //std::cout << "CustomOpenGLWidget::mousePressEvent" << std::endl; std::cout.flush();
+    std::cout << "CustomOpenGLWidget::mousePressEvent   pickVertex=" << pickVertex << std::endl; std::cout.flush();
 
     QOpenGLWidget::mousePressEvent(event);
     if (view.IsNull()) return;
@@ -349,7 +349,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
-    //std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickVertex=" << pickVertex << "  ignoreMouseRelease=" << ignoreMouseRelease << std::endl; std::cout.flush();
+    std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickVertex=" << pickVertex << "  ignoreMouseRelease=" << ignoreMouseRelease << std::endl; std::cout.flush();
 
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
@@ -370,12 +370,14 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                     scheme=AIS_SelectionScheme_Replace;
                 }
 
+                std::cout << "viewerContext->SelectDetected(scheme)" << std::endl; std::cout.flush();
                 viewerContext->SelectDetected(scheme);
             }
 
             Handle(AIS_InteractiveObject) anIO=getLastSelected();
 
             if (anIO.IsNull()) {
+                std::cout << "CustomOpenGLWidget::mouseReleaseEvent  drawingTracker->unselectAllItems()" << std::endl; std::cout.flush();
                 drawingTracker->unselectAllItems();
             } else {
                 Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
@@ -387,7 +389,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         updateViewer();
 
     } else if (event->button() == Qt::RightButton) {
-        std::cout << "CustomOpenGLWidget::mouseReleaseEvent Qt::RightButton" << std::endl; std::cout.flush();
         if (viewerContext->NbSelected() > 0) {
             contextMenu->exec(QCursor::pos());
         }

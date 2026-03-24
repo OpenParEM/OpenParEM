@@ -592,7 +592,6 @@ public:
         long unsigned int i=0;
         while (i < selectedItems.size()) {
             if (item == selectedItems[i]) {
-                std::cout << "   item already selected" << std::endl; std::cout.flush();
                 return;
             }
             i++;

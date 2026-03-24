@@ -25,6 +25,9 @@ public:
     void pickVertexFinished (gp_Pnt);
     bool isValid ();
 
+    void populate (Polycircle *);
+    void repopulateOffCenter ();
+    void repopulateOffFirstPoint ();
     void reject () override;
 
 public slots:
@@ -46,7 +49,7 @@ private slots:
 private:
     Ui::PolycircleEditForm *ui;
 
-    Polycircle *polywire;
+    Polycircle *polycircle;
 
     bool pickCenterPoint;
     bool pickFirstPoint;

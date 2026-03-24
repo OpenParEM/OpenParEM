@@ -40,7 +40,7 @@ public:
     virtual ~Polywire() {}
 
     virtual void drawRubberband () = 0;         // while drawing - currentMousePosition is the next point
-    virtual void drawStretchRubberband () {}  // while stretching - currentMousePosition takes the editIndex place
+    virtual void drawStretchRubberband () = 0;  // while stretching - currentMousePosition takes the editIndex place
     void deleteRubberband ();
     virtual bool isValidPoint (gp_Pnt &pnt, bool);
     virtual bool canDeleteLastPoint () = 0;
@@ -51,6 +51,8 @@ public:
     void deleteLastPoint ();
     void close ();
     virtual bool isFinished () = 0;
+    virtual bool canDeletePoint () = 0;
+    virtual void deletePoint (gp_Pnt &pnt) = 0;
 
     virtual bool isPointOnPlane (gp_Pnt &pnt);
 
@@ -58,6 +60,8 @@ public:
     void setNormal (struct point normal_) {normal.SetCoord(normal_.x,normal_.y,normal_.z);}
     void setNormal (double x, double y, double z) {normal.SetCoord(x,y,z);}
     gp_Vec getNormal () {return normal;}
+
+    virtual void setU (gp_Vec u_) {std::cout << "Polywire setU" << std::endl; std::cout.flush(); return;}
 
     gp_Pnt getPosition ();
     virtual gp_Pln getPlane ();
@@ -68,7 +72,7 @@ public:
     virtual void setEditPoint (gp_Pnt &pnt);
 
     TopoDS_Wire buildWire();
-    //virtual void moveTo (gp_Pnt &pnt);
+    virtual TopoDS_Face buildFace (TopoDS_Wire &wire) {TopoDS_Face face; return face;}
     virtual void shift (gp_Pnt &pnt1, gp_Pnt &pnt2);
     virtual void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
 
@@ -76,6 +80,9 @@ public:
     void setModified (bool modified_) {modified=modified_;}
 
     bool isClosed () {return closed;}
+
+    void setDrawEnable (bool drawEnable_) {drawEnable=drawEnable_;}
+    bool getDrawEnable () {return drawEnable;}
 
 signals:
 
@@ -88,6 +95,7 @@ protected:
     Handle(AIS_Shape) rubberband;                   // rubberband for drawing - currentMousePosition is the next point
     Handle(AIS_InteractiveContext) viewerContext;   // drawing context
 
+    bool drawEnable;                                // flags for enabling drawing objects
     long unsigned int editIndex;                    // index into a completed shape outline for stretching
 };
 
@@ -101,6 +109,8 @@ public:
     bool canFinish () override {return false;}
     bool canClose () override {return false;}
     bool isFinished () override {if (shapePoints.size() == 2) return true; return false;}
+    bool canDeletePoint () override {return false;}
+    void deletePoint (gp_Pnt &gp_Pnt) override {return;}
     gp_Pnt getP0 ();
     gp_Pnt getP1 ();
     void setP0 (gp_Pnt &P0);
@@ -110,9 +120,12 @@ public:
 class Polyline : public Polywire
 {
 public:
-    Polyline () {}
+    Polyline ()
+    {
+        checkIntersection=true;
+    }
     void drawRubberband () override;
-    void drawStretchRubberband (bool);
+    void drawStretchRubberband () override;
     bool canDeleteLastPoint () override {if (shapePoints.size() > 1) return true; return false;}
     bool canFinish () override {if (shapePoints.size() > 1) return true; return false;}
     bool canClose () override;
@@ -125,9 +138,12 @@ public:
         return false;
     }
     void buildFromFace (TopoDS_Face &face);
+    TopoDS_Face buildFace (TopoDS_Wire &wire) override;
     void setEditPoint (gp_Pnt &pnt) override;
-    bool canDeletePoint ();
-    void deletePoint (gp_Pnt &pnt);
+    bool canDeletePoint () override;
+    void deletePoint (gp_Pnt &pnt) override;
+private:
+    bool checkIntersection;
 };
 
 class Rectangle : public Polywire
@@ -147,11 +163,13 @@ public:
     bool canClose () override {return false;}
     void addPoint (gp_Pnt &pnt) override;
     bool isFinished () override {if (shapePoints.size() == 5) return true; return false;}
+    bool canDeletePoint () override {return false;}
+    void deletePoint (gp_Pnt &gp_Pnt) override {return;}
 
     double getWidth () {return width;}
     double getHeight () {return height;}
 
-    void setU (gp_Vec u_) {u=u_;}
+    void setU (gp_Vec u_) override {u=u_;}
     void setWidth (double width_) {width=width_;}
     void setHeight (double height_) {height=height_;}
 
@@ -161,6 +179,7 @@ public:
 
     gp_Pnt getOppositeCorner ();
 
+    TopoDS_Face buildFace (TopoDS_Wire &wire) override;
     void setEditPoint (gp_Pnt &pnt) override;
 
     void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2) override;
@@ -180,6 +199,7 @@ public:
         vertexCount=12;
         closed=true;
     }
+    Polycircle (Polycircle *);
 
     void drawRubberband () override;
     void drawStretchRubberband () override;
@@ -189,6 +209,8 @@ public:
     bool canClose () override {return false;}
     void addPoint (gp_Pnt &pnt) override;
     bool isFinished () override {if (firstPointSet) return true; return false;}
+    bool canDeletePoint () override {return false;}
+    void deletePoint (gp_Pnt &gp_Pnt) override {return;}
 
     bool isPointOnPlane (gp_Pnt &pnt) override;
 
@@ -203,6 +225,7 @@ public:
 
     void recalculate ();
 
+    TopoDS_Face buildFace (TopoDS_Wire &wire) override;
     void setEditPoint (gp_Pnt &pnt) override;
 
     void shift (gp_Pnt &pnt1, gp_Pnt &pnt2) override;

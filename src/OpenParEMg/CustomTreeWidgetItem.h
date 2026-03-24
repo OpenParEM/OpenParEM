@@ -26,6 +26,8 @@
 #include "AIS_Shape.hxx"
 #include <AIS_InteractiveContext.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+#include "Polywire.h"
+#include "Process.h"
 
 class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
     Q_OBJECT
@@ -38,16 +40,27 @@ public:
         OPEMobject=nullptr;
         polywire=nullptr;
         process=nullptr;
+        p0set=false;
+        p1set=false;
+        enableMove=false;
+        enableStretch=false;
+        enableDeletePoint=false;
+    }
+
+    ~CustomTreeWidgetItem ()
+    {
+        if (polywire) delete polywire;
+        if (process) delete process;
     }
 
     void set_OPEMobject (void *pointer) {OPEMobject=pointer;}
     void* get_OPEMobject () {return OPEMobject;}
 
-    void set_Polywire (void *polywire_) {polywire=polywire_;}
-    void* get_Polywire () {return polywire;}
+    void set_Polywire (Polywire *polywire_) {polywire=polywire_;}
+    Polywire* get_Polywire () {return polywire;}
 
-    void set_Process (void *process_) {process=process_;}
-    void* get_Process () {return process;}
+    void set_Process (Process *process_) {process=process_;}
+    Process* get_Process () {return process;}
 
     long unsigned int linkedItems_size () {return linkedItems.size();}
     void push_linkedItem (CustomTreeWidgetItem *linkedItem) {linkedItems.push_back(linkedItem);}
@@ -223,10 +236,28 @@ public:
 
     void unsetAnimate (Handle(AIS_InteractiveContext) viewerContext)
     {
+        //std::cout << "unsetAnimate" << std::endl; std::cout.flush();
         if (animateShape.IsNull()) return;
         viewerContext->Remove(animateShape,Standard_True);
         animateShape.Nullify();
     }
+
+    void setP0 (gp_Pnt p0_) {p0=p0_; p0set=true;}
+    void setP1 (gp_Pnt p1_) {p1=p1_; p1set=true;}
+    bool hasP0 () {return p0set;}
+    bool hasP1 () {return p1set;}
+    gp_Pnt getP0 () {return p0;}
+    gp_Pnt getP1 () {return p1;}
+    void resetP0P1 () {p0set=false; p1set=false;}
+
+    void setEnableMove (bool enableMove_) {enableMove=enableMove_;}
+    bool getEnableMove () {return enableMove;}
+
+    void setEnableStretch (bool enableStretch_) {enableStretch=enableStretch_;}
+    bool getEnableStretch () {return enableStretch;}
+
+    void setEnableDeletePoint (bool enableDeletePoint_) {enableDeletePoint=enableDeletePoint_;}
+    bool getEnableDeletePoint () {return enableDeletePoint;}
 
     void print_itemType ()
     {
@@ -299,29 +330,6 @@ public:
         linkedItems.clear();
     }
 
-    // void drawRubberband ()
-    // {
-    //     if (polywire) {
-    //         Polywire *temp=static_cast<Polywire *>(polywire);
-
-    //         Polyline *polyline=dynamic_cast<Polyline *>(temp);
-    //         if (polyline) polyline->drawRubberband();
-
-    //         Rectangle *rectangle=dynamic_cast<Rectangle *>(temp);
-    //         if (temp) temp->drawRubberband();
-    //     }
-
-    //     if (process) {
-    //         Process *temp=static_cast<Process *>(process);
-
-    //         Extrude *extrude=dynamic_cast<Extrude *>(temp);
-    //         if (extrude) extrude->drawRubberband();
-    //     }
-
-    // }
-
-
-
 private slots:
 
 private:
@@ -346,11 +354,16 @@ private:
     void *OPEMobject;                                  // a pointer to an item in the boundary database
                                                        // *path, *mode, *boundary, etc
                                                        // cast to the correct object type
-    void *polywire;                                    // Polywire object for this item
-                                                       // cast to the correct object type
-    void *process;                                     // for drawing processing of children
+    Polywire *polywire;                                // Polywire object for this item
+    Process *process;                                  // for drawing processing of children
                                                        // cast tp the correct process type
     std::vector<CustomTreeWidgetItem *> linkedItems;   // link to path items, if any
+
+    gp_Pnt p0,p1;                                      // for move operations
+    bool p0set,p1set;
+    bool enableMove;
+    bool enableStretch;
+    bool enableDeletePoint;
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

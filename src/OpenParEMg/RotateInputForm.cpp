@@ -158,6 +158,7 @@ void RotateInputForm::on_CustomAxis_clicked ()
 
 void RotateInputForm::on_pickStart_clicked ()
 {
+    std::cout << "RotateInputForm::on_pickStart_clicked" << std::endl; std::cout.flush();
     pickStartPoint=true;
     pickEndPoint=false;
     this->setEnabled(false);
@@ -170,6 +171,7 @@ void RotateInputForm::on_pickStart_clicked ()
 
 void RotateInputForm::on_pickEnd_clicked ()
 {
+    std::cout << "RotateInputForm::on_pickEnd_clicked" << std::endl; std::cout.flush();
     pickStartPoint=false;
     pickEndPoint=true;
     this->setEnabled(false);
@@ -197,9 +199,14 @@ void RotateInputForm::on_CancelButton_clicked ()
 
 void RotateInputForm::pickVertexFinished (gp_Pnt point)
 {
+    std::cout << "RotateInputForm::pickVertexFinished" << std::endl; std::cout.flush();
+
     this->setEnabled(true);
 
+    std::cout << "place 1" << std::endl; std::cout.flush();
+
     if (pickStartPoint) {
+        std::cout << "place 2" << std::endl; std::cout.flush();
         hasStartPoint=true;
         startPoint=point;
         ui->startX->setText(QString::number(startPoint.X()));
@@ -209,6 +216,7 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
         raise();
         ui->pickStart->setChecked(false);
         ui->pickEnd->setFocus();
+        std::cout << "place 3" << std::endl; std::cout.flush();
     }
 
     if (pickEndPoint) {
@@ -223,6 +231,7 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
         ui->pickStart->setFocus();
     }
 
+    std::cout << "place 4" << std::endl; std::cout.flush();
     if (hasStartPoint && hasEndPoint) {
         Standard_Real distance=startPoint.Distance(endPoint);
         if (distance > 1e-12) {
@@ -232,6 +241,7 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
             ui->OkButton->setEnabled(false);
         }
     }
+    std::cout << "place 5" << std::endl; std::cout.flush();
 }
 
 void RotateInputForm::reject ()

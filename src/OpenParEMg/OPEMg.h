@@ -136,16 +136,16 @@ public:
     bool isValidObjectStretch ();
 
     bool isValidDeletePoint ();
-    void finishDeletePoint (gp_Pnt &pnt);
+    void finishDeletePoint (CustomTreeWidgetItem *);
 
     bool isValidExtrudePolywire ();
     void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void finishExtrudePolywire (double, bool);
 
-    void finishMoveObject (CustomTreeWidgetItem *);
-    void finishMoveObject ();
+    void finishMoveObject (CustomTreeWidgetItem *, gp_Pnt &p0, gp_Pnt &p1, bool);
+    //void finishMoveObject ();
 
-    void finishStretchObject (gp_Pnt &pnt);
+    void finishStretchObject (CustomTreeWidgetItem *);
 
     void finishRotateObject (CustomTreeWidgetItem *, double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
     void finishRotateObject (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
@@ -322,7 +322,7 @@ private slots:
     void on_actionDrawPolyline_triggered ();
     void on_actionDrawPolycircle_triggered ();
     void on_actionDrawRectangle_triggered ();
-    void finishDrawLine (TopoDS_Wire);
+    void finishDraw ();
     void drawPath ();
     void drawLinePath ();
     void drawPolylinePath ();
@@ -450,34 +450,22 @@ private:
     // forms
     LengthInputForm *lengthInputForm;
     VectorInputForm *vectorInputForm;
+    LengthInputForm *lengthEditForm;  // same form as for lengthInputForm
     LineEditForm *lineEditForm;
     RectangleEditForm *rectangleEditForm;
     PolycircleEditForm *polycircleEditForm;
     RotateInputForm *rotateInputForm;
-
-    // vertex pick
-    //TopoDS_Face selectedFace;
-    std::vector<gp_Pnt> vertexList;
 
     // drawing
     bool disableMenus;
     bool isIntegrationPath;
     bool restrictToDrawingPlane;
     gp_Pnt lastMousePosition;
-    Polywire *polywire;
-    gp_Vec u;  // local axis for transfer to rectangles
+    Polywire *activePolywire;  // when drawing
+    gp_Vec uLocalAxis;  // local axis for transfer to rectangles
     gp_Pln currentPrivilegedPlane;
     std::vector<CustomTreeWidgetItem *> selectedItemsList;
-    std::vector<Polywire *> polywireDatabase;
-    std::vector<Process *> processDatabase;
 
-    // operation
-    int operation;   // 0 - no operation defined
-                     // 1 - pick vertex; 2 - get local u vector
-                     // 11 - draw line; 12 - draw polyline; 13 - draw rectangle; 14 - draw polycircle
-                     // 21 - extrude;  22 - merge;  23 - subtract; 24 - move; 25 - rotate
-                     // 31 - edit; 32 - stretch;
-                     // 41 - delete polyline point
 };
 
 #endif // OPEMG_H
