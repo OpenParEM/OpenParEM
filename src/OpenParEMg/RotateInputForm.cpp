@@ -203,10 +203,7 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
 
     this->setEnabled(true);
 
-    std::cout << "place 1" << std::endl; std::cout.flush();
-
     if (pickStartPoint) {
-        std::cout << "place 2" << std::endl; std::cout.flush();
         hasStartPoint=true;
         startPoint=point;
         ui->startX->setText(QString::number(startPoint.X()));
@@ -216,7 +213,6 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
         raise();
         ui->pickStart->setChecked(false);
         ui->pickEnd->setFocus();
-        std::cout << "place 3" << std::endl; std::cout.flush();
     }
 
     if (pickEndPoint) {
@@ -231,7 +227,6 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
         ui->pickStart->setFocus();
     }
 
-    std::cout << "place 4" << std::endl; std::cout.flush();
     if (hasStartPoint && hasEndPoint) {
         Standard_Real distance=startPoint.Distance(endPoint);
         if (distance > 1e-12) {
@@ -241,7 +236,6 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
             ui->OkButton->setEnabled(false);
         }
     }
-    std::cout << "place 5" << std::endl; std::cout.flush();
 }
 
 void RotateInputForm::reject ()

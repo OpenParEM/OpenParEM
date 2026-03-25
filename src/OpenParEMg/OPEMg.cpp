@@ -3294,7 +3294,7 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
     if (!polywire && !process) {
         TopoDS_Shape newShape=item->moveShape(p0,p1,ui->drawingWindow->get_viewerContext());
         replaceItemShape(item,newShape);
-        //reprocess(item);
+        reprocess(item);
         brepChanged=true;
     }
 }
@@ -3523,7 +3523,7 @@ void OpenParEMg::rotateObject ()
 
 void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item, double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
 {
-    std::cout << "OpenParEMg::finishRotateObject" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishRotateObject" << std::endl; std::cout.flush();
 
     Polywire *polywire=item->get_Polywire();
     if (polywire) {
