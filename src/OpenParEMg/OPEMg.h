@@ -142,8 +142,8 @@ public:
     void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void finishExtrudePolywire (double, bool);
 
-    void finishMoveObject (CustomTreeWidgetItem *, gp_Pnt &p0, gp_Pnt &p1, bool);
-    //void finishMoveObject ();
+    void finishMoveObject (CustomTreeWidgetItem *, gp_Pnt p0, gp_Pnt p1, bool);
+    void finishMoveObject (CustomTreeWidgetItem *, gp_Pnt p0, gp_Pnt p1);
 
     void finishStretchObject (CustomTreeWidgetItem *);
 

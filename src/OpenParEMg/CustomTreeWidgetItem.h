@@ -177,6 +177,10 @@ public:
         return true;
     }
 
+    gp_Trsf getTrsf () {return aTrsf;}
+    void setTrsf (gp_Trsf aTrsf_) {aTrsf=aTrsf_;}
+
+
     TopoDS_Shape moveShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_InteractiveContext) viewerContext)
     {
         gp_Trsf step;

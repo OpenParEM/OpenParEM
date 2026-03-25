@@ -3266,14 +3266,11 @@ void OpenParEMg::moveObject ()
 //     std::cout << name << "=(" << p.X() << "," << p.Y() << "," << p.Z() << ")" << std::endl; std::cout.flush();
 // }
 
-void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt &p0, gp_Pnt &p1, bool isChild)
+void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt p1, bool isChild)
 {
-    //std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishMoveObject  isChild=" << isChild << std::endl; std::cout.flush();
 
-    //xxx
-    //item->unsetAnimate(ui->drawingWindow->get_viewerContext());
     item->reset_transformation();
-    item->setEnableMove(false);
 
     Polywire *polywire=item->get_Polywire();
     if (polywire) {
@@ -3287,7 +3284,8 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt &p0, gp_Pn
         int i=0;
         while (i < item->childCount()) {
             CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-            finishMoveObject(child,p0,p1,true);
+            finishMoveObject(child,p0,p1,false);
+            //reprocess(item);
             brepChanged=true;
             i++;
         }
@@ -3296,40 +3294,29 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt &p0, gp_Pn
     if (!polywire && !process) {
         TopoDS_Shape newShape=item->moveShape(p0,p1,ui->drawingWindow->get_viewerContext());
         replaceItemShape(item,newShape);
-        //ui->drawingWindow->showItem(item);
-        reprocess(item);
+        //reprocess(item);
         brepChanged=true;
-    }
-
-    //xxx
-    item->unsetAnimate(ui->drawingWindow->get_viewerContext());
-    //item->reset_transformation();
-    //item->setEnableMove(false);
-
-    //xxx
-    // finish up
-    if (!isChild) {
-        // find and show the top-level item
-        CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-        while (!parentItem->is_rootDrawing()) {
-            item=parentItem;
-            parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-        }
-        ui->drawingWindow->showItem(item);
-
-        finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
     }
 }
 
-// void OpenParEMg::finishMoveObject ()
-// {
-//     long unsigned int i=0;
-//     while (i < selectedItemsList.size()) {
-//         finishMoveObject(selectedItemsList[i]);
-//         i++;
-//     }
-//     finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
-// }
+void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt p1)
+{
+    //std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
+
+    finishMoveObject(item,p0,p1,false);
+
+    item->unsetAnimate(ui->drawingWindow->get_viewerContext());
+    item->reset_transformation();
+    item->setEnableMove(false);
+
+    // find and show the top-level item
+    CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    while (!parentItem->is_rootDrawing()) {
+        item=parentItem;
+        parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    }
+    ui->drawingWindow->showItem(item);
+}
 
 void PrintActiveSelectionModes(const Handle(AIS_InteractiveContext)& theContext,
                                const Handle(AIS_InteractiveObject)& theObject)
@@ -6577,6 +6564,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     if (rectangleEditForm) rectangleEditForm->pickVertexFinished(pnt);
     if (polycircleEditForm) polycircleEditForm->pickVertexFinished(pnt);
 
+    bool finishedMove=false;
     long unsigned int i=0;
     while (i < selectedItemsList.size()) {
 
@@ -6588,7 +6576,8 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
             } else {
                 //selectedItemsList[i]->setP1(pnt);
                 gp_Pnt p0=selectedItemsList[i]->getP0();
-                finishMoveObject(selectedItemsList[i],p0,pnt,false);
+                finishMoveObject(selectedItemsList[i],p0,pnt);
+                finishedMove=true;
             }
         }
 
@@ -6625,6 +6614,10 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
         }
 
         i++;
+    }
+
+    if (finishedMove) {
+        finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
     }
 
     lastMousePosition=pnt;
