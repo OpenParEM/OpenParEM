@@ -82,7 +82,7 @@ void LengthInputForm::on_pickStart_clicked ()
 
     ui->pickStart->setChecked(true);
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
 }
 
@@ -94,21 +94,21 @@ void LengthInputForm::on_pickEnd_clicked ()
 
     ui->pickEnd->setChecked(true);
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
 }
 
 void LengthInputForm::on_OkButton_clicked ()
 {
     ui->OkButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),length,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+    emit relay->finishOperation(gp_Pnt(0,0,0),length,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,71);
     QDialog::close();
 }
 
 void LengthInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,72);
     QDialog::close();
 }
 
@@ -161,7 +161,7 @@ void LengthInputForm::reject ()
 {
     //std::cout << "LengthInputForm::reject" << std::endl; std::cout.flush();
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,73);
 
     QDialog::reject();
 }

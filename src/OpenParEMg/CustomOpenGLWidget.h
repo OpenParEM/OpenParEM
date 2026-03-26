@@ -94,9 +94,20 @@ public:
     void set_gridPlane (gp_Pln &plane);
     gp_Ax3 get_gridPlane () {return viewer->PrivilegedPlane();}
 
-    void set_pickVertex (bool pickVertex_) {
-        pickVertex=pickVertex_;
-        if (pickVertex) {
+    void set_pickFirstVertex (bool pickFirstVertex_) {
+        pickFirstVertex=pickFirstVertex_;
+        pickSecondVertex=false;
+        if (pickFirstVertex) {
+            viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
+        } else {
+            viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
+        }
+    }
+
+    void set_pickSecondVertex (bool pickSecondVertex_) {
+        pickSecondVertex=pickSecondVertex_;
+        pickFirstVertex=false;
+        if (pickSecondVertex) {
             viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
         } else {
             viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
@@ -190,8 +201,31 @@ public:
 
     void selectItem (CustomTreeWidgetItem *item)
     {
-        if (showTracking) std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
+        //if (showTracking) std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
+        std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
         drawingTracker->selectItem(item);
+        bool isSelected=viewerContext->IsSelected(item->get_AIS_Shape());
+        std::cout << "viewerContext::selectItem  isSelected=" << isSelected << std::endl; std::cout.flush();
+    }
+
+    void activateSelectItem (CustomTreeWidgetItem *item)
+    {
+        //if (showTracking) std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
+        std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
+        drawingTracker->activateSelectItem(item);
+        bool isSelected=viewerContext->IsSelected(item->get_AIS_Shape());
+        std::cout << "viewerContext::selectItem  isSelected=" << isSelected << std::endl; std::cout.flush();
+    }
+
+    bool isSelectedItem (CustomTreeWidgetItem *item)
+    {
+        if (item->get_AIS_Shape().IsNull()) return false;
+        if (viewerContext->IsSelected(item->get_AIS_Shape())) {
+            std::cout << "CustomOpenGLWidget::isSelectedItem  true" << std::endl;
+            return true;
+        }
+        std::cout << "CustomOpenGLWidget::isSelectedItem  false" << std::endl;
+        return false;
     }
 
     // bool hasSelectedItems (int type)
@@ -275,6 +309,7 @@ public:
         if (showTracking) std::cout << "CustomOpenGLWidget::unselectAllItems" << std::endl; std::cout.flush();
         drawingTracker->unselectAllItems();  // items from the tree
         clearSelected(Standard_True);        // anything else that might be selected, such as an un-tracked edge or face
+        //clearDetected(Standard_True);
     }
 
     void deleteItem (CustomTreeWidgetItem *item) {
@@ -422,6 +457,7 @@ public:
     }
 
     void clearSelected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearSelected(theToUpdateViewer);}
+    void clearDetected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearDetected(theToUpdateViewer);}
 
     void finishPickVertex (bool);
 
@@ -429,7 +465,10 @@ public:
 
     gp_Dir get_normal () {return view->Viewer()->PrivilegedPlane().Direction();}
 
-    void set_selectedItemsList (std::vector<CustomTreeWidgetItem *> *selectedItemsList_) {selectedItemsList=selectedItemsList_;}
+    //void set_selectedItemsList (std::vector<CustomTreeWidgetItem *> *selectedItemsList_) {selectedItemsList=selectedItemsList_;}
+
+    long unsigned int get_selectedItems_size () {return drawingTracker->getSelectedItemsSize();}
+    CustomTreeWidgetItem* get_selectedItem (long unsigned int i) {return drawingTracker->getSelectedItem(i);}
 
     std::vector<CustomTreeWidgetItem *> getVisibleItems (){
         return drawingTracker->getVisibleItems();
@@ -455,7 +494,10 @@ public:
         }
     }
 
-
+    void printTrackerStats () {drawingTracker->printStats();}
+    void printDrawingSelectedCount () {
+        std::cout << "drawing selected count = " << viewerContext->NbSelected() << std::endl; std::cout.flush();
+    }
 
 protected:
     void initializeGL () override;
@@ -490,12 +532,15 @@ private:
 
     // all drawing
     Relay *relay;
-    std::vector<CustomTreeWidgetItem *> *selectedItemsList;
+    //std::vector<CustomTreeWidgetItem *> *selectedItemsList;
     bool ignoreMouseRelease;
+    gp_Pnt clickPoint;
+    bool clickPointValid;
 
     // vertex
-    bool pickVertex;
+    bool pickFirstVertex, pickSecondVertex;
     gp_Pnt vertexPoint;
+    Handle(SelectMgr_EntityOwner) owner;
 
     // filter
     Handle(VertexFilter) vertexFilter;

@@ -117,7 +117,7 @@ void PolycircleEditForm::on_pickCenter_clicked ()
 
     pickCenterPoint=true;
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
 }
 
@@ -186,7 +186,7 @@ void PolycircleEditForm::on_pickFirst_clicked ()
 
     pickFirstPoint=true;
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
 }
 
@@ -208,7 +208,7 @@ void PolycircleEditForm::on_OkButton_clicked ()
 
     polycircle->recalculate();
 
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,51);
 
     QDialog::close();
 }
@@ -244,13 +244,13 @@ void PolycircleEditForm::pickVertexFinished (gp_Pnt point)
 void PolycircleEditForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,52);
     QDialog::close();
 }
 
 void PolycircleEditForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,53);
     QDialog::reject();
 }

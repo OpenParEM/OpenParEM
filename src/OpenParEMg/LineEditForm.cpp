@@ -116,7 +116,7 @@ void LineEditForm::on_pick_clicked ()
 
     pickPoint=true;
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
 }
 
@@ -142,22 +142,21 @@ void LineEditForm::on_pick2_clicked ()
 
     pickPoint2=true;
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
-
 }
 
 void LineEditForm::on_OkButton_clicked ()
 {
     repopulate();
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,61);
     QDialog::close();
 }
 
 void LineEditForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,62);
     QDialog::close();
 }
 
@@ -187,7 +186,7 @@ void LineEditForm::pickVertexFinished (gp_Pnt point)
 void LineEditForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,63);
     QDialog::reject();
 }
 

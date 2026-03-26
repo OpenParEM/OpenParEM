@@ -321,6 +321,16 @@ public:
                   << "   dimTag.second=" << dimTag.second << std::endl;
     }
 
+    void resetOperation ()
+    {
+        aTrsf=gp_Trsf();
+        p0set=false;
+        p1set=false;
+        enableMove=false;
+        enableStretch=false;
+        enableDeletePoint=false;
+    }
+
     void reset ()
     {
         deleteChildren(this);

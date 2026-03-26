@@ -338,7 +338,7 @@ private slots:
     void on_actionMaterialsOptions_triggered();
 
     void getCurrentMousePosition (gp_Pnt);
-    void finishOperation (gp_Pnt, double, double, gp_Pnt, gp_Pnt, bool);
+    void finishOperation (gp_Pnt, double, double, gp_Pnt, gp_Pnt, bool, int);
     void getPickedVertex (gp_Pnt, bool);
 
     void on_actionDrawingSetPlaneToXY_triggered();
@@ -464,7 +464,7 @@ private:
     Polywire *activePolywire;  // when drawing
     gp_Vec uLocalAxis;  // local axis for transfer to rectangles
     gp_Pln currentPrivilegedPlane;
-    std::vector<CustomTreeWidgetItem *> selectedItemsList;
+    //std::vector<CustomTreeWidgetItem *> selectedItemsList;
 
 };
 

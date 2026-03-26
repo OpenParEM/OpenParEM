@@ -36,7 +36,7 @@ void VectorInputForm::on_pickOrigin_clicked ()
 
     ui->pickOrigin->setChecked(true);
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
 }
 
@@ -48,21 +48,21 @@ void VectorInputForm::on_pickTip_clicked ()
 
     ui->pickTip->setChecked(true);
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
 }
 
 void VectorInputForm::on_OkButton_clicked ()
 {
     ui->OkButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,startPoint,endPoint,false);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,startPoint,endPoint,false,31);
     QDialog::close();
 }
 
 void VectorInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,32);
     QDialog::close();
 }
 
@@ -103,7 +103,7 @@ void VectorInputForm::pickVertexFinished (gp_Pnt point)
 void VectorInputForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,33);
 
     QDialog::reject();
 }

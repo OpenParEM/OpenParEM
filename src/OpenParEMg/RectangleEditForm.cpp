@@ -137,7 +137,7 @@ void RectangleEditForm::on_pick_clicked ()
 
     pickPoint=true;
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
 }
 
@@ -166,7 +166,7 @@ void RectangleEditForm::on_pick2_clicked ()
 
     pickPoint2=true;
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
 }
 
@@ -190,7 +190,7 @@ void RectangleEditForm::on_OkButton_clicked ()
     gp_Pnt p1(ui->position2X->text().toDouble(),ui->position2Y->text().toDouble(),ui->position2Z->text().toDouble());
     polywire->recalculate(p0,p1);
 
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,41);
 
     QDialog::close();
 }
@@ -198,7 +198,7 @@ void RectangleEditForm::on_OkButton_clicked ()
 void RectangleEditForm::on_CancelButton_clicked()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,42);
     QDialog::close();
 }
 
@@ -230,7 +230,7 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
 void RectangleEditForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,43);
     QDialog::reject();
 }
 

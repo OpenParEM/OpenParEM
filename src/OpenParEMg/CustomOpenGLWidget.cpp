@@ -120,10 +120,13 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     viewer->SetGridEcho(Standard_False);
 
     rectSelect=nullptr;
-    pickVertex=false;
+    pickFirstVertex=false;
+    pickSecondVertex=false;
 
     // set a default so that all vertices highlight with a circle
     Handle(Prs3d_Drawer) drawer=viewerContext->DefaultDrawer();
+
+    viewerContext->SetAutoActivateSelection(Standard_False);
 }
 
 CustomOpenGLWidget::~CustomOpenGLWidget ()
@@ -205,7 +208,8 @@ void CustomOpenGLWidget::cancelDraw ()
     //std::cout << "CustomOpenGLWidget::cancelDraw" << std::endl; std::cout.flush();
 
     // invalidate flags
-    pickVertex=false;
+    pickFirstVertex=false;
+    pickSecondVertex=false;
 
     // remove temporaryVertex, if needed
     if (!temporaryVertex.IsNull()) {
@@ -289,7 +293,7 @@ void CustomOpenGLWidget::finishPickVertex (bool cancel)
 
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
-    std::cout << "CustomOpenGLWidget::mousePressEvent   pickVertex=" << pickVertex << std::endl; std::cout.flush();
+    std::cout << "CustomOpenGLWidget::mousePressEvent   pickFirstVertex=" << pickFirstVertex << std::endl; std::cout.flush();
 
     QOpenGLWidget::mousePressEvent(event);
     if (view.IsNull()) return;
@@ -297,9 +301,8 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     // point click position
     QPointF pos=event->position();
 
-    // Create a gp_Pnt
-    gp_Pnt clickPoint;
-    bool clickPointValid=false;
+    // get a gp_Pnt
+    clickPointValid=false;
     if (viewer->IsGridActive() && snapToGrid) {
         Standard_Real X,Y,Z;
         view->ConvertToGrid(pos.x(),pos.y(),X,Y,Z);
@@ -308,11 +311,11 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
         if (!PixelToPointOnPlane (pos.x(),pos.y(),clickPoint)) clickPointValid=true;
     }
 
-    Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
+    owner=viewerContext->DetectedOwner();
 
     if (event->button() == Qt::LeftButton) {
 
-        if (pickVertex /*&& clickPointValid*/) {
+        if (pickFirstVertex /*&& clickPointValid*/) {
             ignoreMouseRelease=true;
             if (owner.IsNull()) {
                 vertexPoint=clickPoint;
@@ -339,7 +342,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     // pass the mouse press from Qt to OCCT
     bool passClick=true;
     if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;            // a popup menu will appear
-    if (event->button() == Qt::RightButton && pickVertex) passClick=false;   // prevent right-click from zooming
+    if (event->button() == Qt::RightButton && pickFirstVertex) passClick=false;   // prevent right-click from zooming
     if (passClick) {
         const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
@@ -349,54 +352,10 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
-    std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickVertex=" << pickVertex << "  ignoreMouseRelease=" << ignoreMouseRelease << std::endl; std::cout.flush();
+    std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickSecondVertex=" << pickSecondVertex << "  ignoreMouseRelease=" << ignoreMouseRelease << std::endl; std::cout.flush();
 
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
-
-    // process mouse buttons
-    if (event->button() == Qt::LeftButton) {
-
-        if (!ignoreMouseRelease /*&& !pickVertex*/) {
-
-            bool hasModifier=false;
-            if (event->button() == Qt::LeftButton) {
-                AIS_SelectionScheme scheme;
-
-                if (event->modifiers() & Qt::ControlModifier) {
-                    hasModifier=true;
-                    scheme=AIS_SelectionScheme_Add;
-                } else {
-                    scheme=AIS_SelectionScheme_Replace;
-                }
-
-                std::cout << "viewerContext->SelectDetected(scheme)" << std::endl; std::cout.flush();
-                viewerContext->SelectDetected(scheme);
-            }
-
-            Handle(AIS_InteractiveObject) anIO=getLastSelected();
-
-            if (anIO.IsNull()) {
-                std::cout << "CustomOpenGLWidget::mouseReleaseEvent  drawingTracker->unselectAllItems()" << std::endl; std::cout.flush();
-                emit relay->clearTreeSelection();
-                //drawingTracker->unselectAllItems();
-            } else {
-                Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
-                if (!hasModifier) {
-                    emit relay->clearTreeSelection();
-                    //drawingTracker->unselectAllItems();
-                }
-                drawingTracker->selectShape(shape);
-            }
-        }
-        ignoreMouseRelease=false;
-        updateViewer();
-
-    } else if (event->button() == Qt::RightButton) {
-        if (viewerContext->NbSelected() > 0) {
-            contextMenu->exec(QCursor::pos());
-        }
-    }
 
     // pass the mouse release from Qt to OCCT
     bool passClick=true;
@@ -407,6 +366,159 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
         emit relay->setMenus();
     }
+
+    if (event->button() == Qt::LeftButton) {
+
+        if (pickSecondVertex /*&& clickPointValid*/) {
+            ignoreMouseRelease=true;
+            if (owner.IsNull()) {
+                vertexPoint=clickPoint;
+                finishPickVertex(false);
+            } else {
+                Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
+                if (!brepOwner.IsNull()) {
+                    TopoDS_Shape shape = brepOwner->Shape();
+                    if (!shape.IsNull()) {
+                        if (shape.ShapeType() == TopAbs_VERTEX) {
+                            TopoDS_Vertex vertex=TopoDS::Vertex(shape);
+                            gp_Pnt pnt=BRep_Tool::Pnt(vertex);
+                            if (!vertex.IsNull()) {
+                                vertexPoint=pnt;
+                                finishPickVertex(false);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // process mouse buttons
+    if (event->button() == Qt::LeftButton) {
+
+
+        if (!ignoreMouseRelease /*&& !pickVertex*/) {
+
+            bool hasModifier=false;
+            if (event->button() == Qt::LeftButton) {
+                AIS_SelectionScheme scheme;
+
+                if (event->modifiers() & Qt::ControlModifier) {
+                    hasModifier=true;
+                    scheme=AIS_SelectionScheme_Add;
+                } else if (event->modifiers() & Qt::ShiftModifier) {
+                    hasModifier=true;
+                    scheme=AIS_SelectionScheme_Add;
+                } else {
+                    scheme=AIS_SelectionScheme_Replace;
+                }
+
+                viewerContext->SelectDetected(scheme);
+            }
+
+            Handle(AIS_InteractiveObject) anIO=getLastSelected();
+
+            if (anIO.IsNull()) {
+                std::cout << "CustomOpenGLWidget::mouseReleaseEvent  drawingTracker->unselectAllItems()" << std::endl; std::cout.flush();
+                emit relay->clearTreeSelection();
+                //drawingTracker->unselectAllItems();
+            } else {
+
+                // *** important GUI functionality ***
+                // cross select into the tree menu from selected item in the drawing window
+
+
+                Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
+                if (hasModifier) {
+                    std::cout << "place a" << std::endl; std::cout.flush();
+
+                    std::vector<Handle(AIS_Shape)> selectedShapeList;
+                    for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected())
+                    {
+                        // 2. Get the selected interactive object
+                        Handle(AIS_InteractiveObject) anObject = viewerContext->SelectedInteractive();
+
+                        // 3. Downcast to AIS_Shape to check if it's a shape
+                        Handle(AIS_Shape) aShapePrs = Handle(AIS_Shape)::DownCast(anObject);
+
+                        if (!aShapePrs.IsNull())
+                        {
+                            // 4. Get the actual TopoDS_Shape
+                            //TopoDS_Shape aShape = aShapePrs->Shape();
+                            //drawingTracker->selectItemShape(aShapePrs);
+                            selectedShapeList.push_back(aShapePrs);
+
+                            // Do something with aShape
+                        }
+                    }
+
+                    emit relay->clearTreeSelection();
+
+                    std::cout << "Before: Nb selected shapes=" << viewerContext->NbSelected() << std::endl; std::cout.flush();
+                    long unsigned int i=0;
+                    while (i < selectedShapeList.size()) {
+                        std::cout << "   select shape from selectItemShapeList" << std::endl; std::cout.flush();
+                        drawingTracker->selectItemShape(selectedShapeList[i]);
+                        i++;
+                    }
+                    std::cout << "After: Nb selected shapes=" << viewerContext->NbSelected() << std::endl; std::cout.flush();
+
+
+                    //drawingTracker->selectItemShape(shape);
+
+                    // if (viewerContext->IsSelected(shape)) {
+                    //     std::cout << "place b" << std::endl; std::cout.flush();
+                    //     //drawingTracker->unselectItemShape(shape);
+                    // } else {
+                    //     std::cout << "place c" << std::endl; std::cout.flush();
+                    //     drawingTracker->selectItemShape(shape);
+                    // }
+
+
+                } else {
+                   emit relay->clearTreeSelection();
+
+                   std::cout << "place d" << std::endl; std::cout.flush();
+                   drawingTracker->selectItemShape(shape);
+                }
+
+                // *** important GUI functionality ***
+                // cross select into the tree menu from selected item in the drawing window
+                // if (event->modifiers() != Qt::ControlModifier) {
+                //     drawingTracker->unselectAllItems();
+                // }
+
+                // if (viewerContext->IsSelected(shape)) {
+                //     drawingTracker->unselectItemShape(shape);
+                // } else {
+                //     drawingTracker->selectItemShape(shape);
+                // }
+
+            }
+        }
+        //ignoreMouseRelease=false;
+        updateViewer();
+
+    } else if (event->button() == Qt::RightButton) {
+        if (viewerContext->NbSelected() > 0) {
+            contextMenu->exec(QCursor::pos());
+        }
+    }
+
+    ignoreMouseRelease=false;
+
+    // pass the mouse release from Qt to OCCT
+    // bool passClick=true;
+    // if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
+    // if (passClick) {
+    //     const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
+    //     const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
+    //     if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
+    //     emit relay->setMenus();
+    // }
+
+    std::cout << "exit CustomOpenGLWidget::mouseReleaseEvent   pickSecondVertex=" << pickSecondVertex << "  ignoreMouseRelease=" << ignoreMouseRelease << std::endl; std::cout.flush();
+
 }
 
 Handle(AIS_InteractiveObject) CustomOpenGLWidget::getLastSelected ()
@@ -558,7 +670,7 @@ void CustomOpenGLWidget::endSelectRectangle ()
     while (viewerContext->MoreSelected()) {
         Handle(AIS_InteractiveObject) anIO = viewerContext->SelectedInteractive();
         Handle(AIS_Shape) shape = Handle(AIS_Shape)::DownCast(anIO);
-        drawingTracker->selectShape(shape);
+        drawingTracker->selectItemShape(shape);
         viewerContext->NextSelected();
     }
 

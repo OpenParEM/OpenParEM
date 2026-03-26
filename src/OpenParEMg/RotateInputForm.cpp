@@ -165,7 +165,7 @@ void RotateInputForm::on_pickStart_clicked ()
 
     ui->pickStart->setChecked(true);
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
 }
 
@@ -178,7 +178,7 @@ void RotateInputForm::on_pickEnd_clicked ()
 
     ui->pickEnd->setChecked(true);
 
-    drawingWindow->set_pickVertex(true);
+    drawingWindow->set_pickFirstVertex(true);
     drawingWindow->updateViewer();
 }
 
@@ -186,14 +186,14 @@ void RotateInputForm::on_OkButton_clicked ()
 {
     ui->OkButton->setChecked(true);
     double angle=ui->angleDegrees->value();
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,angle,startPoint,endPoint,false);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,angle,startPoint,endPoint,false,20);
     QDialog::close();
 }
 
 void RotateInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,21);
     QDialog::close();
 }
 
@@ -241,7 +241,7 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
 void RotateInputForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true);
+    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,22);
     QDialog::reject();
 }
 
