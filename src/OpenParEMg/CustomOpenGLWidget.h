@@ -199,32 +199,38 @@ public:
     //     drawingTracker->hideItems();
     // }
 
+    void refreshSelectedItem (CustomTreeWidgetItem *item) {
+        drawingTracker->refreshSelectedItem(item);
+    }
+
     void selectItem (CustomTreeWidgetItem *item)
     {
         //if (showTracking) std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
-        std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
         drawingTracker->selectItem(item);
-        bool isSelected=viewerContext->IsSelected(item->get_AIS_Shape());
-        std::cout << "viewerContext::selectItem  isSelected=" << isSelected << std::endl; std::cout.flush();
     }
 
     void activateSelectItem (CustomTreeWidgetItem *item)
     {
-        //if (showTracking) std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
-        std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
         drawingTracker->activateSelectItem(item);
-        bool isSelected=viewerContext->IsSelected(item->get_AIS_Shape());
-        std::cout << "viewerContext::selectItem  isSelected=" << isSelected << std::endl; std::cout.flush();
+    }
+
+    void activateSelectShape (Handle(AIS_Shape) shape)
+    {
+        viewerContext->Display(shape,Standard_True);
+        viewerContext->Activate(shape);
+
+        if (viewerContext->IsSelected(shape)) {
+            return;
+        }
+        viewerContext->AddOrRemoveSelected(shape,Standard_True);
     }
 
     bool isSelectedItem (CustomTreeWidgetItem *item)
     {
         if (item->get_AIS_Shape().IsNull()) return false;
         if (viewerContext->IsSelected(item->get_AIS_Shape())) {
-            std::cout << "CustomOpenGLWidget::isSelectedItem  true" << std::endl;
             return true;
         }
-        std::cout << "CustomOpenGLWidget::isSelectedItem  false" << std::endl;
         return false;
     }
 
@@ -305,10 +311,16 @@ public:
         drawingTracker->unselectItem(item);
     }
 
+    void unselectItem (CustomTreeWidgetItem *item, long unsigned int index)
+    {
+        if (showTracking) std::cout << "CustomOpenGLWidget::unselectItem" << std::endl; std::cout.flush();
+        drawingTracker->unselectItem(item,index);
+    }
+
     void unselectAllItems () {
         if (showTracking) std::cout << "CustomOpenGLWidget::unselectAllItems" << std::endl; std::cout.flush();
         drawingTracker->unselectAllItems();  // items from the tree
-        clearSelected(Standard_True);        // anything else that might be selected, such as an un-tracked edge or face
+        clearSelected(Standard_False);        // anything else that might be selected, such as an un-tracked edge or face
         //clearDetected(Standard_True);
     }
 
@@ -474,7 +486,6 @@ public:
         return drawingTracker->getVisibleItems();
     }
 
-
     void PrintAllActiveModes () {
         std::cout << "CustomOpenGLWidget:: PrintAllActiveModes" << std::endl; std::cout.flush();
 
@@ -496,7 +507,7 @@ public:
 
     void printTrackerStats () {drawingTracker->printStats();}
     void printDrawingSelectedCount () {
-        std::cout << "drawing selected count = " << viewerContext->NbSelected() << std::endl; std::cout.flush();
+        std::cout << "      drawing selected count = " << viewerContext->NbSelected() << std::endl; std::cout.flush();
     }
 
 protected:

@@ -592,6 +592,11 @@ public:
         selectItem(item);
     }
 
+    // assumes it is already in the tracker
+    void refreshSelectedItem (CustomTreeWidgetItem *item) {
+        SelectShape(item->get_AIS_Shape());
+    }
+
     void selectItem (CustomTreeWidgetItem *item)
     {
         if (selectTracking) {std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();}
@@ -603,10 +608,9 @@ public:
             if (item == selectedItems[i]) {
                 // reselect the shape, if necessary
                 viewerContext->Display(item->get_AIS_Shape(),Standard_True);
+                // ToDo: need Load?
                 viewerContext->Load(item->get_AIS_Shape());
                 SelectShape(item->get_AIS_Shape());
-                bool isSelected=viewerContext->IsSelected(item->get_AIS_Shape());
-                std::cout << "tracker selectItem:: isSelected=" << isSelected << std::endl; std::cout.flush();
                 return;
             }
             i++;
@@ -712,34 +716,10 @@ public:
     {
         if (unselectTracking) {std::cout << "ItemTracker::unselectAllItems" << std::endl; std::cout.flush();}
 
-        // unselect all items from the list of selected items
-        long unsigned int i=0;
-        while (i < selectedItems.size()) {
-            CustomTreeWidgetItem *item=selectedItems[i];
-            // if (item->is_mesh()) {
-            //     long unsigned int j=0;
-            //     while (j < item->get_meshEntitiesSize()) {
-            //         UnselectShape(item->get_meshEntity(j));
-            //         j++;
-            //     }
-            // } else if (item->is_sportLabel()) {
-            //     // nothing to do
-            // } else {
-            //     UnselectShape(item->get_AIS_Shape());
-
-            //     long unsigned int i=0;
-            //     while (i < item->get_arrowHeads_size()) {
-            //         UnselectShape(item->get_arrowHead(i));
-            //         i++;
-            //     }
-            // }
-            // item->setSelected(Standard_False);
+        while (selectedItems.size() > 0) {
+            CustomTreeWidgetItem *item=selectedItems[0];
             unselectItem(item);
-            i++;
         }
-        // pathSelectedCount=0;
-        // portSelectedCount=0;
-        // selectedItems.clear();
     }
 
     // void unselectShape (Handle(AIS_Shape) shape)
@@ -780,6 +760,31 @@ public:
                 }
                 i++;
             }
+        }
+    }
+
+    void unselectItem (CustomTreeWidgetItem *item, long unsigned int index)
+    {
+        if (unselectTracking) {std::cout << "ItemTracker::unselectItem" << std::endl; std::cout.flush();}
+
+        if (!item) return;
+
+        if (item->is_rootDrawing()) {
+            item->setSelected(Standard_False);
+        } else {
+            UnselectShape(item->get_AIS_Shape());
+            item->setSelected(Standard_False);
+
+            long unsigned int i=0;
+            while (i <  item->get_arrowHeads_size()) {
+                UnselectShape(item->get_arrowHead(i));
+                i++;
+            }
+
+            // remove from the list of selected items
+            if (item->is_path()) pathSelectedCount--;
+            if (item->is_port()) portSelectedCount--;
+            selectedItems.erase(selectedItems.begin()+index);
         }
     }
 
@@ -920,9 +925,9 @@ public:
     CustomTreeWidgetItem* getSelectedItem (long unsigned int i) {return selectedItems[i];}
 
     void printStats () {
-        std::cout << "Tracker Stats:" << std::endl;
-        std::cout << "   visible count = " << visibleItems.size() << std::endl;
-        std::cout << "   selected count = " << selectedItems.size() << std::endl; std::cout.flush();
+        std::cout << "   Tracker Stats:" << std::endl;
+        std::cout << "      visible count = " << visibleItems.size() << std::endl;
+        std::cout << "      selected count = " << selectedItems.size() << std::endl; std::cout.flush();
     }
 
 private:
@@ -966,10 +971,7 @@ private:
         }
         viewerContext->Activate(shape);
         viewerContext->AddOrRemoveSelected(shape,Standard_True);
-
-        std::cout << "tracker::activateSelectShape isSelected=" << viewerContext->IsSelected(shape) << std::endl; std::cout.flush();
     }
-
 
     void UnselectShape (Handle(AIS_Shape) shape)
     {

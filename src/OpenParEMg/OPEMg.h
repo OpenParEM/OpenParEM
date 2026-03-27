@@ -115,7 +115,6 @@ public:
 
     bool isRootDrawingValidSelectAll ();
 
-    int treeSelectionCount ();
     bool hasSelectedPaths ();
     void clearTreeSelection ();
 
@@ -130,7 +129,6 @@ public:
     void reprocess (CustomTreeWidgetItem *);
 
     void startOperation ();
-    void startPickVertex ();
 
     bool isValidObjectEdit ();
     bool isValidObjectStretch ();
@@ -157,6 +155,8 @@ public:
     void finishSubtractSolids ();
 
     void finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2);
+
+    void debugPrintStats (int);
 
 private slots:
     // File
@@ -262,7 +262,6 @@ private slots:
     void deleteRootDrawingItems ();
     void deleteDrawingItems ();
     void insertModeItems ();
-    void unselectRootPortItems ();
     void unselectPortItems ();
     void renamePortItems ();
     void deletePortItem (CustomTreeWidgetItem *);
@@ -309,7 +308,7 @@ private slots:
     void rotateObject ();
     void createPort ();
     void createPath ();
-    void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape);
+    void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape, int);
     void extrudePolywire ();
     void mergeSolids ();
     void subtractSolids ();
