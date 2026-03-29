@@ -379,6 +379,8 @@ void OpenParEMg::setMenus ()
     //std::cout << "OpenParEMg::setMenus" << std::endl; std::cout.flush();
 
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
+    ui->drawingWindow->compactSelectedItems();
+    ui->drawingWindow->compactVisibleItems();
 
     //printLockouts();
     debugPrintStats(0);
@@ -3257,7 +3259,7 @@ void OpenParEMg::moveObject ()
 
 void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt p1, bool isChild)
 {
-    std::cout << "OpenParEMg::finishMoveObject  isChild=" << isChild << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishMoveObject  isChild=" << isChild << std::endl; std::cout.flush();
 
     if (!item) return;
 
@@ -3267,7 +3269,6 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
 
     Polywire *polywire=item->get_Polywire();
     if (polywire) {
-        std::cout << "  polywire" << std::endl; std::cout.flush();
         polywire->shift(p1,p0);
         reprocess(item);
         brepChanged=true;
@@ -3275,7 +3276,6 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
 
     Process *process=item->get_Process();
     if (process) {
-        std::cout << "  process" << std::endl; std::cout.flush();
         int i=0;
         while (i < item->childCount()) {
             CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
@@ -3287,7 +3287,6 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
     }
 
     if (!polywire && !process) {
-        std::cout << "  process" << std::endl; std::cout.flush();
         TopoDS_Shape newShape=item->moveShape(p0,p1,ui->drawingWindow->get_viewerContext());
         replaceItemShape(item,newShape,7);
         reprocess(item);
@@ -3299,7 +3298,7 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
 
 void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt p1)
 {
-    std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
 
     if (!item) return;
 

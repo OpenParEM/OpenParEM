@@ -53,8 +53,31 @@ public:
                 }
                 i++;
             }
-            std::cout << "ASSERT: ItemVector::nullify did not find item=" << item << std::endl; std::cout.flush();
+            //std::cout << "ASSERT: ItemVector::nullify did not find item=" << item << std::endl; std::cout.flush();
         }
+    }
+
+    void compact ()
+    {
+        long unsigned int i=0;
+        while (i < data.size()) {
+            if (!data[i]) {
+                bool found=false;
+                long unsigned int j=i+1;
+                while (j < data.size()) {
+                    if (data[j]) {
+                        data[i]=data[j];
+                        data[j]=nullptr;
+                        found=true;
+                        break;
+                    }
+                    j++;
+                }
+                if (!found) break;
+            }
+            i++;
+        }
+        data.resize(i);
     }
 
     void clear ()
@@ -1015,10 +1038,12 @@ public:
     long unsigned int getSelectedItemsSize () {return selectedItems.size();}
     CustomTreeWidgetItem* getSelectedItem (long unsigned int i) {return selectedItems[i];}
     long unsigned int getSelectedItemsCount () {return selectedItems.count();}
+    void compactSelectedItems () {selectedItems.compact();}
 
     long unsigned int getVisibleItemsSize () {return visibleItems.size();}
     CustomTreeWidgetItem* getVisibleItem (long unsigned int i) {return visibleItems[i];}
     long unsigned int getVisibleItemsCount () {return visibleItems.count();}
+    void compactVisibleItems () {visibleItems.compact();}
 
     void printStats () {
         std::cout << "   Tracker Stats:" << std::endl;

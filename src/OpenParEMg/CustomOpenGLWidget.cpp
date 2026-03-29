@@ -427,16 +427,28 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                 // *** important GUI functionality ***
                 // cross select into the tree menu from selected item in the drawing window
                 if (hasModifier) {
+
+                    // make a list of the selected shapes to enable clearing the tree of stale selects
+                    std::vector<Handle(AIS_Shape)> shapeList;
                     for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
                         Handle(AIS_InteractiveObject) object=viewerContext->SelectedInteractive();
                         Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(object);
-                        if (!shape.IsNull()) {
-                            drawingTracker->selectItemShape(shape);
-                        }
+                        if (!shape.IsNull()) {shapeList.push_back(shape);}
+                    }
+
+                    // clear the tree
+                    emit relay->clearTreeSelection();
+
+                    // add to the selection database
+                    long unsigned int i=0;
+                    while (i < shapeList.size()) {
+                        drawingTracker->selectItemShape(shapeList[i]);
+                        i++;
                     }
                 } else {
                     Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
                     if (!shape.IsNull()) {
+                        emit relay->clearTreeSelection();
                         drawingTracker->selectItemShape(shape);
                     }
                 }
