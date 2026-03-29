@@ -376,7 +376,12 @@ void OpenParEMg::debugPrintStats (int i)
 
 void OpenParEMg::setMenus ()
 {
-    //std::cout << "OpenParEMg::setMenus" << std::endl; std::cout.flush();
+    setMenusI(-1);
+}
+
+void OpenParEMg::setMenusI (int placeIndex)
+{
+    std::cout << "OpenParEMg::setMenusI  place=" << placeIndex << std::endl; std::cout.flush();
 
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
     ui->drawingWindow->compactSelectedItems();
@@ -612,8 +617,6 @@ void OpenParEMg::setMenus ()
     }
 
     boundaryDatabase->set_comboZdef();
-
-    //std::cout << "out OpenParEMg::setMenus" << std::endl; std::cout.flush();
 }
 
 
@@ -1341,7 +1344,7 @@ void OpenParEMg::showDrawingItems ()
 
     ui->drawingItemTree->setCurrentItem(nullptr);
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(1);
 }
 
 void OpenParEMg::hideRootDrawingItems ()
@@ -1352,7 +1355,7 @@ void OpenParEMg::hideRootDrawingItems ()
     drawing.setForeground(0,Qt::black);
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(2);
 }
 
 void OpenParEMg::hideDrawingItems ()
@@ -1371,7 +1374,7 @@ void OpenParEMg::hideDrawingItems ()
 
     ui->drawingItemTree->setCurrentItem(nullptr);
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(3);
 }
 
 void OpenParEMg::renamePathItems ()
@@ -1412,7 +1415,7 @@ void OpenParEMg::deletePathItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(4);
 }
 
 void OpenParEMg::showRootPathItems ()
@@ -1440,7 +1443,7 @@ void OpenParEMg::showRootPathItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(5);
 }
 
 bool OpenParEMg::rootPathValidShow ()
@@ -1480,7 +1483,7 @@ void OpenParEMg::hideRootPathItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(6);
 }
 
 bool OpenParEMg::isPathValidDelete ()
@@ -1513,7 +1516,7 @@ void OpenParEMg::showPathItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(7);
 }
 
 bool OpenParEMg::rootPathValidHide ()
@@ -1541,7 +1544,7 @@ void OpenParEMg::hidePathItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(8);
 }
 
 void OpenParEMg::showRootPortItems ()
@@ -1566,7 +1569,7 @@ void OpenParEMg::showRootPortItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(9);
 }
 
 void OpenParEMg::showPortItems ()
@@ -1583,7 +1586,7 @@ void OpenParEMg::showPortItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(10);
 }
 
 void OpenParEMg::hideRootPortItems ()
@@ -1607,7 +1610,7 @@ void OpenParEMg::hideRootPortItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(11);
 }
 
 void OpenParEMg::hidePortItems ()
@@ -1624,7 +1627,7 @@ void OpenParEMg::hidePortItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(12);
 }
 
 void OpenParEMg::showRootMeshItems ()
@@ -1650,7 +1653,7 @@ void OpenParEMg::showRootMeshItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(13);
 }
 
 bool OpenParEMg::rootMeshValidShow ()
@@ -1687,7 +1690,7 @@ void OpenParEMg::hideRootMeshItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(14);
 }
 
 void OpenParEMg::showMeshItems ()
@@ -1704,7 +1707,7 @@ void OpenParEMg::showMeshItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(15);
 }
 
 bool OpenParEMg::rootMeshValidHide ()
@@ -1732,7 +1735,7 @@ void OpenParEMg::hideMeshItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(16);
 }
 
 void OpenParEMg::renameSportNet ()
@@ -1992,7 +1995,7 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(17);
 }
 
 void OpenParEMg::rename_returnPressed ()
@@ -2039,7 +2042,7 @@ void OpenParEMg::rename_returnPressed ()
     renameItem->setExpanded(true);
     if (!isExpanded) renameItem->setExpanded(false);
 
-    setMenus();
+    setMenusI(18);
     ui->drawingWindow->updateViewer();
 }
 
@@ -2063,7 +2066,7 @@ void OpenParEMg::unselectRootDrawingItems()
     deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(19);
 }
 
 void OpenParEMg::unselectDrawingItems()
@@ -2081,7 +2084,7 @@ void OpenParEMg::unselectDrawingItems()
 
     ui->drawingItemTree->setCurrentItem(nullptr);
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(20);
 }
 
 void OpenParEMg::deleteDrawingItems()
@@ -2129,7 +2132,7 @@ void OpenParEMg::deleteDrawingItems()
     previousClickedItem=nullptr;
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(21);
 }
 
 void OpenParEMg::insertModeItems ()
@@ -2154,7 +2157,7 @@ void OpenParEMg::insertModeItems ()
         i++;
     }
 
-    setMenus();
+    setMenusI(22);
 }
 
 void OpenParEMg::unselectPortItems()
@@ -2171,7 +2174,7 @@ void OpenParEMg::unselectPortItems()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(23);
 }
 
 void OpenParEMg::renamePortItems ()
@@ -2242,7 +2245,7 @@ void OpenParEMg::deletePortItem (CustomTreeWidgetItem * item)
 
     ui->drawingWindow->deleteItem(item);
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(24);
 }
 
 void OpenParEMg::deleteRootPortItems ()
@@ -2265,7 +2268,7 @@ void OpenParEMg::deleteRootPortItems ()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
 
-    setMenus();
+    setMenusI(25);
     ui->drawingWindow->updateViewer();
 }
 
@@ -2286,7 +2289,7 @@ void OpenParEMg::deletePortItems ()
     previousClickedItem=nullptr;
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(26);
 }
 
 void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *item)
@@ -2326,7 +2329,7 @@ void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *item)
     }
 
     ui->drawingWindow->deleteItem(item);
-    setMenus();
+    setMenusI(27);
 }
 
 void OpenParEMg::deleteSportItems ()
@@ -2346,7 +2349,7 @@ void OpenParEMg::deleteSportItems ()
     previousClickedItem=nullptr;
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(28);
 }
 
 void OpenParEMg::showNetItems ()
@@ -2381,7 +2384,7 @@ void OpenParEMg::showNetItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(29);
 }
 
 void OpenParEMg::showVIItems ()
@@ -2398,7 +2401,7 @@ void OpenParEMg::showVIItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(30);
 }
 
 void OpenParEMg::removeIntegrationPathItems ()
@@ -2456,7 +2459,7 @@ void OpenParEMg::removeIntegrationPathItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(31);
 }
 
 void OpenParEMg::showIntegrationPathItems ()
@@ -2477,7 +2480,7 @@ void OpenParEMg::showIntegrationPathItems ()
     hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(32);
 }
 
 void OpenParEMg::hideNetItems ()
@@ -2510,7 +2513,7 @@ void OpenParEMg::hideNetItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(33);
 }
 
 void OpenParEMg::hideVIItems ()
@@ -2527,7 +2530,7 @@ void OpenParEMg::hideVIItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(34);
 }
 
 void OpenParEMg::hideIntegrationPathItems ()
@@ -2545,7 +2548,7 @@ void OpenParEMg::hideIntegrationPathItems ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(35);
 }
 
 void OpenParEMg::createPath ()
@@ -2606,7 +2609,7 @@ void OpenParEMg::createPath ()
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(36);
 }
 
 void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &shape, int i)
@@ -2675,7 +2678,7 @@ bool OpenParEMg::isValidExtrudePolywire ()
 
 void OpenParEMg::extrudePolywire ()
 {
-    std::cout << "OpenParEMg::extrudePolywire" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::extrudePolywire" << std::endl; std::cout.flush();
 
     startOperation();
 
@@ -2690,11 +2693,10 @@ void OpenParEMg::extrudePolywire ()
 
 void OpenParEMg::finishExtrudePolywire (double length, bool cancel)
 {
-    std::cout << "OpenParEMg::finishExtrudePolywire" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishExtrudePolywire" << std::endl; std::cout.flush();
 
     if (!cancel && abs(length) > 1e-12) {
 
-        std::cout << "OpenParEMg::finishExtrudePolywire  ui->drawingWindow->get_selectedItems_size()=" << ui->drawingWindow->get_selectedItems_size() << std::endl; std::cout.flush();
         int i=0;
         while (i < ui->drawingWindow->get_selectedItems_size()) {
             CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
@@ -2709,7 +2711,6 @@ void OpenParEMg::finishExtrudePolywire (double length, bool cancel)
                     // extrude it
                     BRepPrimAPI_MakePrism aPrism(item->get_AIS_Shape()->Shape(),scaledVec);
                     if (aPrism.IsDone()) {
-                        std::cout << "   prism is done" << std::endl; std::cout.flush();
 
                         // add it
                         CustomTreeWidgetItem *newItem=addItemShape(aPrism,&drawing);  // inserts to item map
@@ -3666,7 +3667,7 @@ void OpenParEMg::createPort ()
     // draw it
     boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
 
-    setMenus();
+    setMenusI(37);
     ui->drawingWindow->updateViewer();
 }
 
@@ -3798,7 +3799,7 @@ void OpenParEMg::assignMaterial ()
     if (selectedMaterial != "") {
         clickedItem->setText(0,selectedMaterial);
         projectChanged=true;
-        setMenus();
+        setMenusI(38);
     }
 }
 
@@ -3966,7 +3967,7 @@ void OpenParEMg::on_actionOpen_triggered ()
     }
 
     on_actionShape_triggered();  // required, but doesn't seem like it should be; something is probably off elsewhere
-    setMenus();
+    setMenusI(39);
 }
 
 void OpenParEMg::resetLockouts ()
@@ -3982,7 +3983,7 @@ void OpenParEMg::resetLockouts ()
     simulationRunning=false;
     simulationStopping=false;
     simulationAborting=false;
-    setMenus();
+    setMenusI(40);
 }
 
 void OpenParEMg::printLockouts ()
@@ -4068,7 +4069,7 @@ void OpenParEMg::resetProject ()
 
     resetLockouts();
 
-    setMenus();
+    setMenusI(41);
 }
 
 void OpenParEMg::on_actionNew_triggered ()
@@ -4079,7 +4080,7 @@ void OpenParEMg::on_actionNew_triggered ()
     projData.modified=0;
     projectFileLoaded=true;
     projectChanged=true;
-    setMenus();
+    setMenusI(42);
 }
 
 void OpenParEMg::on_actionClose_triggered()
@@ -4093,7 +4094,7 @@ void OpenParEMg::on_actionClose_triggered()
     }
 
     resetProject();
-    setMenus();
+    setMenusI(43);
 }
 
 void OpenParEMg::on_actionMeshOptions_triggered ()
@@ -4107,7 +4108,7 @@ void OpenParEMg::on_actionMeshOptions_triggered ()
     if (projData.modified) {
         projectChanged=true;
     }
-    setMenus();
+    setMenusI(44);
 }
 
 void OpenParEMg::on_actionSimulateOptions_triggered ()
@@ -4121,7 +4122,7 @@ void OpenParEMg::on_actionSimulateOptions_triggered ()
     if (projData.modified) {
         projectChanged=true;
     }
-    setMenus();
+    setMenusI(45);
 }
 
 void OpenParEMg::on_actionAbout_triggered ()
@@ -4152,7 +4153,7 @@ void OpenParEMg::on_actionFrequencyPlan_triggered ()
     if (projData.modified) {
         projectChanged=true;
     }
-    setMenus();
+    setMenusI(46);
 }
 
 void OpenParEMg::saveProject ()
@@ -4227,7 +4228,7 @@ void OpenParEMg::saveProject ()
         meshChanged=false;
     }
 
-    setMenus();
+    setMenusI(47);
 }
 
 void OpenParEMg::on_actionSave_triggered ()
@@ -4269,7 +4270,7 @@ void OpenParEMg::on_actionRefinement_triggered ()
     if (projData.modified) {
         projectChanged=true;
     }
-    setMenus();
+    setMenusI(48);
 }
 
 void OpenParEMg::on_actionMaterialsEditor_triggered ()
@@ -4281,7 +4282,7 @@ void OpenParEMg::on_actionMaterialsEditor_triggered ()
     if (projData.modified) {
         projectChanged=true;
     }
-    setMenus();
+    setMenusI(49);
 }
 
 void ListChildren (const TopoDS_Shape& theShape)
@@ -4774,7 +4775,7 @@ bool OpenParEMg::loadBrepFile (QString filePath, bool createName)
 
         } else retval=true;
     }
-    setMenus();
+    setMenusI(50);
     return retval;
 }
 
@@ -4809,7 +4810,7 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
 
         } else retval=true;
     }
-    setMenus();
+    setMenusI(51);
     return retval;
 }
 
@@ -4890,7 +4891,7 @@ void OpenParEMg::on_actionImportBrep_triggered ()
 
     ui->drawingWindow->fitAll();
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(52);
 }
 
 void OpenParEMg::on_actionImportStep_triggered()
@@ -4910,7 +4911,7 @@ void OpenParEMg::on_actionImportStep_triggered()
     ui->drawingWindow->fitAll();
     ui->drawingWindow->updateViewer();
 
-    setMenus();
+    setMenusI(53);
 }
 
 void OpenParEMg::on_actionExportStep_triggered()
@@ -4937,7 +4938,7 @@ void OpenParEMg::on_actionExportStep_triggered()
         mb.critical(nullptr, "Error",message);
         mb.setFixedSize(500, 200);
     }
-    setMenus();
+    setMenusI(54);
 }
 
 void OpenParEMg::on_actionExit_triggered ()
@@ -4963,7 +4964,7 @@ void OpenParEMg::on_actionSelectMaterialsDatabase_triggered ()
     if (projData.modified) {
         projectChanged=true;
     }
-    setMenus();
+    setMenusI(55);
 }
 
 void OpenParEMg::on_actionMaterialsOptions_triggered()
@@ -4979,7 +4980,7 @@ void OpenParEMg::on_actionMaterialsOptions_triggered()
     if (projData.modified) {
         projectChanged=true;
     }
-    setMenus();
+    setMenusI(56);
 }
 
 void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int column)
@@ -5046,7 +5047,7 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
         previousClickedItem=clickedItem;
     }
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(57);
 }
 
 void OpenParEMg::on_actionFitSelected_triggered ()
@@ -5180,7 +5181,7 @@ void OpenParEMg::clearTreeSelection ()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(58);
 }
 
 bool OpenParEMg::eventFilter (QObject *obj, QEvent *event)
@@ -5279,21 +5280,21 @@ void OpenParEMg::on_actionShowAll_triggered()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(59);
 }
 
 void OpenParEMg::on_actionHideAll_triggered ()
 {
     ui->drawingWindow->hideAllItems();
     clearTreeSelection();
-    setMenus();
+    setMenusI(60);
 }
 
 void OpenParEMg::on_actionUnselectAll_triggered ()
 {
     ui->drawingWindow->updateViewer();
     clearTreeSelection();
-    setMenus();
+    setMenusI(61);
 }
 
 void OpenParEMg::drawMesh()
@@ -5474,7 +5475,7 @@ void OpenParEMg::drawMesh()
         e++;
     }
 
-    setMenus();
+    setMenusI(62);
 }
 
 void OpenParEMg::deleteMesh (bool deleteMeshFile)
@@ -5551,7 +5552,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     ui->drawingWindow->showItem(&mesh);
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(63);
 }
 
 void OpenParEMg::loadMeshFile (QString meshfile)
@@ -5583,7 +5584,7 @@ void OpenParEMg::loadMeshFile (QString meshfile)
 
     }
 
-    setMenus();
+    setMenusI(64);
 }
 
 void OpenParEMg::on_actionMeshLoad_triggered ()
@@ -5596,7 +5597,7 @@ void OpenParEMg::on_actionMeshLoad_triggered ()
 
     loadMeshFile(meshfile);
     ui->drawingWindow->showItem(&mesh);
-    setMenus();
+    setMenusI(65);
 }
 
 void OpenParEMg::on_actionMeshSave_triggered ()
@@ -5607,7 +5608,7 @@ void OpenParEMg::on_actionMeshSave_triggered ()
     } else {
         on_actionMeshSaveAs_triggered();
     }
-    setMenus();
+    setMenusI(66);
 }
 
 void OpenParEMg::on_actionMeshSaveAs_triggered ()
@@ -5645,7 +5646,7 @@ void OpenParEMg::on_actionMeshSaveAs_triggered ()
         projectChanged=true;
     }
 
-    setMenus();
+    setMenusI(67);
 }
 
 void OpenParEMg::on_actionMeshDelete_triggered ()
@@ -5655,7 +5656,7 @@ void OpenParEMg::on_actionMeshDelete_triggered ()
     meshChanged=false;
     meshFileLoaded=false;
     projectChanged=true;
-    setMenus();
+    setMenusI(68);
 }
 
 void OpenParEMg::on_actionWireframe_triggered ()
@@ -5779,7 +5780,7 @@ void OpenParEMg::on_actionRun_triggered ()
     } else {
 
         simulationRunning=true;
-        setMenus();
+        setMenusI(69);
 
         timer->start(500);
 
@@ -5815,7 +5816,7 @@ void OpenParEMg::on_actionStop_triggered ()
 {
     MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);
     simulationStopping=true;
-    setMenus();
+    setMenusI(70);
 }
 
 void OpenParEMg::checkFinish ()
@@ -5831,7 +5832,7 @@ void OpenParEMg::checkFinish ()
         simulationRunning=false;
         simulationStopping=false;
         simulationAborting=false;
-        setMenus();
+        setMenusI(71);
 
         timer->stop();
 
@@ -5869,7 +5870,7 @@ void OpenParEMg::on_actionAbort_triggered ()
 
     simulationStopping=false;
     simulationAborting=true;
-    setMenus();
+    setMenusI(72);
 
     //timer->stop();
 
@@ -5922,7 +5923,7 @@ void OpenParEMg::on_actionDrawingPlaneShow_triggered ()
     drawingPlaneShown=true;
     ui->drawingWindow->showGrid();
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(73);
 }
 
 void OpenParEMg::on_actionDrawingPlaneHide_triggered ()
@@ -5932,7 +5933,7 @@ void OpenParEMg::on_actionDrawingPlaneHide_triggered ()
     drawingPlaneShown=false;
     ui->drawingWindow->hideGrid();
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(74);
 }
 
 void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered ()
@@ -5942,7 +5943,7 @@ void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered ()
     } else {
         ui->drawingWindow->set_snapToGrid(false);
     }
-    setMenus();
+    setMenusI(75);
 }
 
 void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
@@ -6004,7 +6005,7 @@ void OpenParEMg::on_actionDrawingSetPlaneToXY_triggered ()
     uLocalAxis.SetCoord(1,0,0);
     ui->drawingWindow->set_gridPlane(origin,direction);
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(76);
 }
 
 void OpenParEMg::on_actionDrawingSetPlaneToXZ_triggered ()
@@ -6014,7 +6015,7 @@ void OpenParEMg::on_actionDrawingSetPlaneToXZ_triggered ()
     uLocalAxis.SetCoord(1,0,0);
     ui->drawingWindow->set_gridPlane(origin,direction);
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(77);
 }
 
 void OpenParEMg::on_actionDrawingSetPlaneToYZ_triggered ()
@@ -6024,13 +6025,13 @@ void OpenParEMg::on_actionDrawingSetPlaneToYZ_triggered ()
     uLocalAxis.SetCoord(0,1,0);
     ui->drawingWindow->set_gridPlane(origin,normal);
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(78);
 }
 
 void OpenParEMg::on_actionSelectWithBox_triggered ()
 {
     ui->drawingWindow->selectRectangle();
-    setMenus();
+    setMenusI(79);
 }
 
 void OpenParEMg::cancelDraw ()
@@ -6123,7 +6124,7 @@ void OpenParEMg::on_actionDrawRectangle_triggered ()
 
 void OpenParEMg::finishDraw ()
 {
-    std::cout << "OpenParEMg::finishDraw" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishDraw" << std::endl; std::cout.flush();
 
     if (!activePolywire) return;
 
@@ -6299,9 +6300,6 @@ void OpenParEMg::startOperation ()
     ui->drawingWindow->Deactivate();
     ui->drawingWindow->Activate(1,Standard_False);  // vertices
     ui->drawingWindow->Activate(2,Standard_False);  // edges
-
-    // ToDo: delete this?
-    setMenus();
 }
 
 void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
@@ -6519,7 +6517,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
     }
 
     ui->drawingWindow->updateViewer();
-    setMenus();
+    setMenusI(0);
 }
 
 

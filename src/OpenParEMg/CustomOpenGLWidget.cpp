@@ -348,8 +348,6 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
         if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
     }
-
-    emit relay->setMenus();
 }
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
@@ -463,7 +461,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     }
 
     ignoreMouseRelease=false;
-    emit relay->setMenus();
 }
 
 Handle(AIS_InteractiveObject) CustomOpenGLWidget::getLastSelected ()

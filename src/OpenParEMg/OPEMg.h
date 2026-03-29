@@ -347,6 +347,7 @@ private slots:
 
 public slots:
     void setMenus ();
+    void setMenusI (int);
     void finishEditObject (double, bool);
 
 signals:
