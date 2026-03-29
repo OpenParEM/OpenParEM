@@ -259,7 +259,6 @@ private slots:
     //void selectItems ();
     void unselectRootDrawingItems ();
     void unselectDrawingItems ();
-    void deleteRootDrawingItems ();
     void deleteDrawingItems ();
     void insertModeItems ();
     void unselectPortItems ();

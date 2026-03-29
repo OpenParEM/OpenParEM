@@ -397,8 +397,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     owner=viewerContext->DetectedOwner();
 
-
-    std::cout << "place 1" << std::endl; std::cout.flush();
     if (event->button() == Qt::LeftButton) {
         if (pickSecondVertex /*&& clickPointValid*/) {
             ignoreMouseRelease=true;
@@ -406,19 +404,14 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                 vertexPoint=clickPoint;
                 finishPickVertex(false);
             } else {
-                std::cout << "place 2" << std::endl; std::cout.flush();
                 Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
                 if (!brepOwner.IsNull()) {
-                    std::cout << "place 3" << std::endl; std::cout.flush();
                     TopoDS_Shape shape = brepOwner->Shape();
                     if (!shape.IsNull()) {
-                        std::cout << "place 4" << std::endl; std::cout.flush();
                         if (shape.ShapeType() == TopAbs_VERTEX) {
-                            std::cout << "place 5" << std::endl; std::cout.flush();
                             TopoDS_Vertex vertex=TopoDS::Vertex(shape);
                             gp_Pnt pnt=BRep_Tool::Pnt(vertex);
                             if (!vertex.IsNull()) {
-                                std::cout << "place 6" << std::endl; std::cout.flush();
                                 vertexPoint=pnt;
                                 finishPickVertex(false);
                             }
@@ -461,7 +454,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
                 Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
                 if (hasModifier) {
-                    std::cout << "place a" << std::endl; std::cout.flush();
 
                     std::vector<Handle(AIS_Shape)> selectedShapeList;
                     for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected())
@@ -492,8 +484,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                     }
                 } else {
                    emit relay->clearTreeSelection();
-
-                   std::cout << "place d" << std::endl; std::cout.flush();
                    drawingTracker->selectItemShape(shape);
                 }
             }

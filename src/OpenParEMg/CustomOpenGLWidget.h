@@ -216,8 +216,10 @@ public:
 
     void activateSelectShape (Handle(AIS_Shape) shape)
     {
-        viewerContext->Display(shape,Standard_True);
-        viewerContext->Activate(shape);
+        //viewerContext->Display(shape,Standard_False);
+        //viewerContext->Load(shape); // new
+        viewerContext->Activate(shape,0,Standard_True);
+        viewerContext->UpdateCurrentViewer();
 
         if (viewerContext->IsSelected(shape)) {
             return;
@@ -317,16 +319,23 @@ public:
         drawingTracker->unselectItem(item,index);
     }
 
-    void unselectAllItems () {
+    void unselectAllItems ()
+    {
         if (showTracking) std::cout << "CustomOpenGLWidget::unselectAllItems" << std::endl; std::cout.flush();
         drawingTracker->unselectAllItems();  // items from the tree
         clearSelected(Standard_False);        // anything else that might be selected, such as an un-tracked edge or face
         //clearDetected(Standard_True);
     }
 
-    void deleteItem (CustomTreeWidgetItem *item) {
-        if (showTracking) std::cout << "CustomOpenGLWidget::deleteItem" << std::endl; std::cout.flush();
+    void deleteItem (CustomTreeWidgetItem *item)
+    {
+        if (showTracking) std::cout << "CustomOpenGLWidget::deleteItem  item=" << item << std::endl; std::cout.flush();
         drawingTracker->deleteItem(item);
+    }
+
+    bool isVisibleItem (CustomTreeWidgetItem *item)
+    {
+        return drawingTracker->isVisibleItem(item);
     }
 
     void insertItemToMap (Handle(AIS_Shape) shape, CustomTreeWidgetItem *item)
@@ -481,9 +490,14 @@ public:
 
     long unsigned int get_selectedItems_size () {return drawingTracker->getSelectedItemsSize();}
     CustomTreeWidgetItem* get_selectedItem (long unsigned int i) {return drawingTracker->getSelectedItem(i);}
+    long unsigned int get_selectedItems_count () {return drawingTracker->getSelectedItemsCount();}
 
-    std::vector<CustomTreeWidgetItem *> getVisibleItems (){
-        return drawingTracker->getVisibleItems();
+    long unsigned int get_visibleItems_size () {return drawingTracker->getVisibleItemsSize();}
+    CustomTreeWidgetItem* get_visibleItem (long unsigned int i) {return drawingTracker->getVisibleItem(i);}
+    long unsigned int get_visibleItems_count () {return drawingTracker->getVisibleItemsCount();}
+
+    std::vector<CustomTreeWidgetItem *> getVisibleDrawingItems (){
+        return drawingTracker->getVisibleDrawingItems();
     }
 
     void PrintAllActiveModes () {
