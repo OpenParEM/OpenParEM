@@ -311,7 +311,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
         if (!PixelToPointOnPlane (pos.x(),pos.y(),clickPoint)) clickPointValid=true;
     }
 
-    owner=viewerContext->DetectedOwner();
+    Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
 
     if (event->button() == Qt::LeftButton) {
 
@@ -325,7 +325,6 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
                 if (!brepOwner.IsNull()) {
                     TopoDS_Shape shape = brepOwner->Shape();
                     if (!shape.IsNull()) {
-                        //std::cout << "ShapeType=" << TopAbs::ShapeTypeToString(shape.ShapeType()) << std::endl; std::cout.flush();
                         if (shape.ShapeType() == TopAbs_VERTEX) {
                             TopoDS_Vertex vertex=TopoDS::Vertex(shape);
                             gp_Pnt pnt=BRep_Tool::Pnt(vertex);
@@ -336,39 +335,13 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
                         }
                     }
                 }
-                // for (viewerContext->InitDetected(); viewerContext->MoreDetected(); viewerContext->NextDetected()) {
-                //     Handle(SelectMgr_EntityOwner) owner = viewerContext->DetectedOwner();
-                //     if (!owner.IsNull()) {
-                //         Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
-                //         if (!brepOwner.IsNull()) {
-                //             TopoDS_Shape shape = brepOwner->Shape();
-                //             if (!shape.IsNull()) {
-                //                 std::cout << "ShapeType=" << TopAbs::ShapeTypeToString(shape.ShapeType()) << std::endl; std::cout.flush();
-                //                 if (shape.ShapeType() == TopAbs_VERTEX) {
-                //                     TopoDS_Vertex vertex=TopoDS::Vertex(shape);
-                //                     gp_Pnt pnt=BRep_Tool::Pnt(vertex);
-                //                     if (!vertex.IsNull()) {
-                //                         vertexPoint=pnt;
-                //                         finishPickVertex(false);
-                //                         break;
-                //                     }
-                //                 }
-                //             }
-                //         }
-
-                //     }
-                // }
-
-
-
-
             }
         }
     }
 
     // pass the mouse press from Qt to OCCT
     bool passClick=true;
-    if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;            // a popup menu will appear
+    if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
     if (event->button() == Qt::RightButton && pickFirstVertex) passClick=false;   // prevent right-click from zooming
     if (passClick) {
         const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
@@ -395,8 +368,9 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
     }
 
-    owner=viewerContext->DetectedOwner();
+    Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
 
+    // process for vertex click
     if (event->button() == Qt::LeftButton) {
         if (pickSecondVertex /*&& clickPointValid*/) {
             ignoreMouseRelease=true;
@@ -422,11 +396,11 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         }
     }
 
-    // process mouse buttons
+    // process for object selection
     if (event->button() == Qt::LeftButton) {
-
         if (!ignoreMouseRelease /*&& !pickVertex*/) {
 
+            // check for CTRL and SHIFT then select
             bool hasModifier=false;
             if (event->button() == Qt::LeftButton) {
                 AIS_SelectionScheme scheme;
@@ -444,6 +418,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                 viewerContext->SelectDetected(scheme);
             }
 
+            // clear or add to item tracking
             Handle(AIS_InteractiveObject) anIO=getLastSelected();
             if (anIO.IsNull()) {
                 emit relay->clearTreeSelection();
@@ -451,44 +426,22 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
                 // *** important GUI functionality ***
                 // cross select into the tree menu from selected item in the drawing window
-
-                Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
                 if (hasModifier) {
-
-                    std::vector<Handle(AIS_Shape)> selectedShapeList;
-                    for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected())
-                    {
-                        // 2. Get the selected interactive object
-                        Handle(AIS_InteractiveObject) anObject = viewerContext->SelectedInteractive();
-
-                        // 3. Downcast to AIS_Shape to check if it's a shape
-                        Handle(AIS_Shape) aShapePrs = Handle(AIS_Shape)::DownCast(anObject);
-
-                        if (!aShapePrs.IsNull())
-                        {
-                            // 4. Get the actual TopoDS_Shape
-                            //TopoDS_Shape aShape = aShapePrs->Shape();
-                            //drawingTracker->selectItemShape(aShapePrs);
-                            selectedShapeList.push_back(aShapePrs);
-
-                            // Do something with aShape
+                    for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
+                        Handle(AIS_InteractiveObject) object=viewerContext->SelectedInteractive();
+                        Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(object);
+                        if (!shape.IsNull()) {
+                            drawingTracker->selectItemShape(shape);
                         }
                     }
-
-                    emit relay->clearTreeSelection();
-
-                    long unsigned int i=0;
-                    while (i < selectedShapeList.size()) {
-                        drawingTracker->selectItemShape(selectedShapeList[i]);
-                        i++;
-                    }
                 } else {
-                   emit relay->clearTreeSelection();
-                   drawingTracker->selectItemShape(shape);
+                    Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
+                    if (!shape.IsNull()) {
+                        drawingTracker->selectItemShape(shape);
+                    }
                 }
             }
         }
-        //ignoreMouseRelease=false;
         updateViewer();
 
     } else if (event->button() == Qt::RightButton) {
@@ -497,8 +450,8 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         }
     }
 
-    emit relay->setMenus();
     ignoreMouseRelease=false;
+    emit relay->setMenus();
 }
 
 Handle(AIS_InteractiveObject) CustomOpenGLWidget::getLastSelected ()

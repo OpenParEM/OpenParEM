@@ -565,7 +565,6 @@ private:
     // vertex
     bool pickFirstVertex, pickSecondVertex;
     gp_Pnt vertexPoint;
-    Handle(SelectMgr_EntityOwner) owner;
 
     // filter
     Handle(VertexFilter) vertexFilter;
