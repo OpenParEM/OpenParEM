@@ -144,6 +144,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     connect(relay,&Relay::getPickedVertex,this,&OpenParEMg::getPickedVertex);
     connect(relay,&Relay::setMenus,this,&OpenParEMg::setMenus);
     connect(relay,&Relay::clearTreeSelection,this,&OpenParEMg::clearTreeSelection);
+    connect(relay,&Relay::startPlaneSetToFace,this,&OpenParEMg::startPlaneSetToFace);
 
     /////////////////////////////////////////////////////////////////////////////
     // drawing window
@@ -530,9 +531,8 @@ void OpenParEMg::setMenusI (int placeIndex)
         }
 
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
-        if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {
-            TopoDS_Face face=ui->drawingWindow->getSelectedFace();
-            if (!face.IsNull()) ui->actionDrawingPlaneSetToFace->setEnabled(true);
+        if (brepFileLoaded) {
+            ui->actionDrawingPlaneSetToFace->setEnabled(true);
         }
 
     } else {
@@ -3967,7 +3967,7 @@ void OpenParEMg::on_actionOpen_triggered ()
         mb.setFixedSize(500, 200);
     }
 
-    on_actionShape_triggered();  // required, but doesn't seem like it should be; something is probably off elsewhere
+    on_actionShape_triggered();  // ToDo: see if this is still required
     setMenusI(39);
 }
 
@@ -4711,10 +4711,6 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (TopoDS_Shape shape, CustomTreeWi
     newItem->set_dimTag(dimTag);
     parentItem->addChild(newItem);
 
-    //xxx
-    //ui->drawingWindow->showItem(newItem);
-    //ui->drawingWindow->unselectItem(newItem);
-
     return newItem;
 }
 
@@ -5063,7 +5059,7 @@ void OpenParEMg::on_actionFitAll_triggered ()
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::on_actionShape_triggered()
+void OpenParEMg::on_actionShape_triggered ()
 {
     //std::cout << "OpenParEMg::on_actionShape_triggered" << std::endl; std::cout.flush();
 
@@ -5077,7 +5073,7 @@ void OpenParEMg::on_actionShape_triggered()
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::on_actionVertex_triggered()
+void OpenParEMg::on_actionVertex_triggered ()
 {
     //std::cout << "OpenParEMg::on_actionVertex_triggered" << std::endl; std::cout.flush();
 
@@ -5091,7 +5087,7 @@ void OpenParEMg::on_actionVertex_triggered()
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::on_actionEdge_triggered()
+void OpenParEMg::on_actionEdge_triggered ()
 {
     //std::cout << "OpenParEMg::on_actionEdge_triggered" << std::endl; std::cout.flush();
 
@@ -5105,7 +5101,7 @@ void OpenParEMg::on_actionEdge_triggered()
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::on_actionWire_triggered()
+void OpenParEMg::on_actionWire_triggered ()
 {
     //std::cout << "OpenParEMg::on_actionWire_triggered" << std::endl; std::cout.flush();
 
@@ -5119,7 +5115,7 @@ void OpenParEMg::on_actionWire_triggered()
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::on_actionFace_triggered()
+void OpenParEMg::on_actionFace_triggered ()
 {
     //std::cout << "OpenParEMg::on_actionFace_triggered" << std::endl; std::cout.flush();
 
@@ -5133,7 +5129,7 @@ void OpenParEMg::on_actionFace_triggered()
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::on_actionShell_triggered()
+void OpenParEMg::on_actionShell_triggered ()
 {
     //std::cout << "OpenParEMg::on_actionShell_triggered" << std::endl; std::cout.flush();
 
@@ -5147,7 +5143,7 @@ void OpenParEMg::on_actionShell_triggered()
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::on_actionSolid_triggered()
+void OpenParEMg::on_actionSolid_triggered ()
 {
     //std::cout << "OpenParEMg::on_actionSolid_triggered" << std::endl; std::cout.flush();
 
@@ -5202,12 +5198,12 @@ bool OpenParEMg::eventFilter (QObject *obj, QEvent *event)
 
     if (event->type() == QEvent::Paint) {
 
-        // special processing for setting the drawing plane
-        if (drawingPlaneShown && brepFileLoaded) {
-            ui->actionDrawingPlaneSetToFace->setEnabled(false);
-            TopoDS_Face face=ui->drawingWindow->getSelectedFace();
-            if (!face.IsNull()) ui->actionDrawingPlaneSetToFace->setEnabled(true);
-        }
+        // // special processing for setting the drawing plane
+        // if (drawingPlaneShown && brepFileLoaded) {
+        //     ui->actionDrawingPlaneSetToFace->setEnabled(false);
+        //     TopoDS_Face face=ui->drawingWindow->getSelectedFace();
+        //     if (!face.IsNull()) ui->actionDrawingPlaneSetToFace->setEnabled(true);
+        // }
     }
 
     return QObject::eventFilter(obj, event);
@@ -5949,16 +5945,55 @@ void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered ()
 
 void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFace_triggered" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFace_triggered" << std::endl; std::cout.flush();
+
+    startOperation();
+
+    skipDrawingPlaneAxisForm=true;
+    on_actionFace_triggered();
+    ui->drawingWindow->setFaceSelection();
+}
+
+void OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered ()
+{
+    std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered" << std::endl; std::cout.flush();
 
     restrictToDrawingPlane=true;
     startOperation();
 
-    //currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
+    skipDrawingPlaneAxisForm=false;
+    on_actionFace_triggered();
+    ui->drawingWindow->setFaceSelection();
+}
 
+void OpenParEMg::startPlaneSetToFace ()
+{
+    std::cout << "OpenParEMg::startPlaneSetToFace" << std::endl; std::cout.flush();
+
+    // reset the selection
+    on_actionShape_triggered();
+
+    // set the plane
     TopoDS_Face selectedFace=ui->drawingWindow->getSelectedFace();
+    if (selectedFace.IsNull()) return;
     ui->drawingWindow->set_gridPlane(selectedFace);
+    ui->drawingWindow->clearSelected();
 
+    // skip the form
+    if (skipDrawingPlaneAxisForm) {
+        finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,8);
+        return;
+    }
+
+    // restrict
+    restrictToDrawingPlane=true;
+
+    // set to select on vertices and edges
+    ui->drawingWindow->Deactivate();
+    ui->drawingWindow->Activate(1,Standard_False);  // vertices
+    ui->drawingWindow->Activate(2,Standard_False);  // edges
+
+    // use a form to get the local x-direction
     if (vectorInputForm) delete vectorInputForm;
     vectorInputForm=new VectorInputForm();
     vectorInputForm->set_drawingWindow(ui->drawingWindow);
@@ -5970,7 +6005,10 @@ void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 
 void OpenParEMg::finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2)
 {
-    //std::cout << "OpenParEMg::finishPlaneSetToFace" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::finishPlaneSetToFace" << std::endl; std::cout.flush();
+
+    // put the selection back to shapes
+    on_actionShape_triggered();
 
     // u vector
     uLocalAxis=p2.XYZ()-p1.XYZ();
@@ -6138,7 +6176,6 @@ void OpenParEMg::finishDraw ()
     } else {
         newItem=addItemShape(newFace,&drawing);  // inserts to item map
     }
-    //xxx
 
     // put it on the Z-layer to get it higher selection priority
     newItem->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);
@@ -6355,7 +6392,6 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
         if (activePolywire->isValidPoint(pnt,true)) {
             activePolywire->addPoint(pnt);
 
-            //xxx
             Polywire *polyline=dynamic_cast<Polyline *>(activePolywire);
             if (!polyline) {
                  ui->drawingWindow->set_pickSecondVertex(true);
@@ -6521,10 +6557,5 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
     ui->drawingWindow->updateViewer();
     setMenusI(0);
 }
-
-
-
-
-
 
 

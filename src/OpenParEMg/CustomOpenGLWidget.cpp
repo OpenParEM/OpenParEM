@@ -123,6 +123,8 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     pickFirstVertex=false;
     pickSecondVertex=false;
 
+    isFaceSelection=false;
+
     // set a default so that all vertices highlight with a circle
     Handle(Prs3d_Drawer) drawer=viewerContext->DefaultDrawer();
 
@@ -351,16 +353,6 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
             }
         }
     }
-
-    // // pass the mouse press from Qt to OCCT
-    // bool passClick=true;
-    // if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
-    // if (event->button() == Qt::RightButton && pickFirstVertex) passClick=false;   // prevent right-click from zooming
-    // if (passClick) {
-    //     const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
-    //     const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
-    //     if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
-    // }
 }
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
@@ -369,7 +361,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
-    //if (ignoreMouseRelease) return;
 
     // pass the mouse release from Qt to OCCT
     bool passClick=true;
@@ -388,14 +379,13 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     // process for vertex click
     if (event->button() == Qt::LeftButton) {
         if (pickSecondVertex /*&& clickPointValid*/) {
-            ignoreMouseRelease=true;
             if (owner.IsNull()) {
                 vertexPoint=clickPoint;
                 finishPickVertex(false);
             } else {
                 Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
                 if (!brepOwner.IsNull()) {
-                    TopoDS_Shape shape = brepOwner->Shape();
+                    TopoDS_Shape shape=brepOwner->Shape();
                     if (!shape.IsNull()) {
                         if (shape.ShapeType() == TopAbs_VERTEX) {
                             TopoDS_Vertex vertex=TopoDS::Vertex(shape);
@@ -405,6 +395,40 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                                 finishPickVertex(false);
                                 return;
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // xxx
+    // process for selection on face
+    if (isFaceSelection && event->button() == Qt::LeftButton) {
+        if (!owner.IsNull()) {
+            Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
+            if (!brepOwner.IsNull()) {
+                TopoDS_Shape shape=brepOwner->Shape();
+                if (!shape.IsNull()) {
+                    if (shape.ShapeType() == TopAbs_FACE) {
+
+                        if (event->button() == Qt::LeftButton) {
+                            AIS_SelectionScheme scheme;
+
+                            // only allow one face to be selected
+                            if (event->modifiers() & Qt::ControlModifier) {
+                                scheme=AIS_SelectionScheme_Replace;
+                            } else if (event->modifiers() & Qt::ShiftModifier) {
+                                scheme=AIS_SelectionScheme_Replace;
+                            } else {
+                                scheme=AIS_SelectionScheme_Replace;
+                            }
+
+                            // select
+                            viewerContext->SelectDetected(scheme);
+                            isFaceSelection=false;
+                            emit relay->startPlaneSetToFace();
+                            return;
                         }
                     }
                 }
@@ -477,8 +501,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
             contextMenu->exec(QCursor::pos());
         }
     }
-
-    ignoreMouseRelease=false;
 }
 
 Handle(AIS_InteractiveObject) CustomOpenGLWidget::getLastSelected ()
@@ -569,9 +591,6 @@ void CustomOpenGLWidget::set_gridPlane (TopoDS_Face &face)
         Handle(Geom_Plane) plane=Handle(Geom_Plane)::DownCast(surface);
 
         // set
-        //drawingPlane=plane->Pln();
-        //viewer->SetPrivilegedPlane(drawingPlane.Position());
-
         gp_Pnt origin=plane->Location();
         gp_Dir axis=plane->Axis().Direction();
 

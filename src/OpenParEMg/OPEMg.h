@@ -173,17 +173,23 @@ private slots:
     // View
     void on_actionFitSelected_triggered ();
     void on_actionFitAll_triggered ();
-    void on_actionSelectWithBox_triggered();
+    void on_actionSelectWithBox_triggered ();
     void on_actionUnselectAll_triggered ();   // note similar functionality in CustomOpenGLWidget
-    void on_actionShowAll_triggered();
+    void on_actionShowAll_triggered ();
     void on_actionHideAll_triggered ();
     void on_actionWireframe_triggered();
 
     // Drawing
-    void on_actionDrawingPlaneShow_triggered();
-    void on_actionDrawingPlaneHide_triggered();
-    void on_actionDrawingPlaneSnapToGrid_triggered();
-    void on_actionDrawingPlaneSetToFace_triggered();
+    void on_actionDrawingPlaneShow_triggered ();
+    void on_actionDrawingPlaneHide_triggered ();
+    void on_actionDrawingPlaneSnapToGrid_triggered ();
+
+    // Drawing plane
+    void on_actionDrawingPlaneSetToFace_triggered ();
+    void on_actionDrawingPlaneSetToFaceAxis_triggered ();
+    void on_actionDrawingSetPlaneToXY_triggered ();
+    void on_actionDrawingSetPlaneToXZ_triggered ();
+    void on_actionDrawingSetPlaneToYZ_triggered ();
 
     // Materials
     void on_actionSelectMaterialsDatabase_triggered ();
@@ -339,16 +345,12 @@ private slots:
     void finishOperation (gp_Pnt, double, double, gp_Pnt, gp_Pnt, bool, int);
     void getPickedVertex (gp_Pnt, bool);
 
-    void on_actionDrawingSetPlaneToXY_triggered();
-
-    void on_actionDrawingSetPlaneToXZ_triggered();
-
-    void on_actionDrawingSetPlaneToYZ_triggered();
 
 public slots:
     void setMenus ();
     void setMenusI (int);
     void finishEditObject (double, bool);
+    void startPlaneSetToFace ();
 
 signals:
     void sendPnt (gp_Pnt);
@@ -459,11 +461,11 @@ private:
     bool disableMenus;
     bool isIntegrationPath;
     bool restrictToDrawingPlane;
+    bool skipDrawingPlaneAxisForm;
     gp_Pnt lastMousePosition;
     Polywire *activePolywire;  // when drawing
     gp_Vec uLocalAxis;  // local axis for transfer to rectangles
     gp_Pln currentPrivilegedPlane;
-    //std::vector<CustomTreeWidgetItem *> selectedItemsList;
 
 };
 

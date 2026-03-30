@@ -325,6 +325,12 @@ public:
         //clearDetected(Standard_True);
     }
 
+    // for bare shapes not in the item tracker
+    void clearSelected ()
+    {
+        viewerContext->ClearSelected(Standard_False);
+    }
+
     void deleteItem (CustomTreeWidgetItem *item)
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::deleteItem  item=" << item << std::endl; std::cout.flush();
@@ -494,6 +500,8 @@ public:
     CustomTreeWidgetItem* get_visibleItem (long unsigned int i) {return drawingTracker->getVisibleItem(i);}
     long unsigned int get_visibleItems_count () {return drawingTracker->getVisibleItemsCount();}
 
+    void setFaceSelection () {isFaceSelection=true;}
+
     std::vector<CustomTreeWidgetItem *> getVisibleDrawingItems (){
         return drawingTracker->getVisibleDrawingItems();
     }
@@ -559,6 +567,7 @@ private:
     Relay *relay;
     //std::vector<CustomTreeWidgetItem *> *selectedItemsList;
     bool ignoreMouseRelease;
+    bool isFaceSelection;
     gp_Pnt clickPoint;
     bool clickPointValid;
 

@@ -173,6 +173,7 @@
      <addaction name="actionDrawingPlaneHide"/>
      <addaction name="actionDrawingPlaneSnapToGrid"/>
      <addaction name="actionDrawingPlaneSetToFace"/>
+     <addaction name="actionDrawingPlaneSetToFaceAxis"/>
      <addaction name="actionDrawingSetPlaneToXY"/>
      <addaction name="actionDrawingSetPlaneToXZ"/>
      <addaction name="actionDrawingSetPlaneToYZ"/>
@@ -436,7 +437,7 @@
   </action>
   <action name="actionDrawingPlaneSetToFace">
    <property name="text">
-    <string>Set To Face</string>
+    <string>Set to Face</string>
    </property>
    <property name="toolTip">
     <string>Set the drawing plane to the selected face.</string>
@@ -542,6 +543,11 @@
    </property>
    <property name="toolTip">
     <string>Set the drawing plane to hte y-z plane.</string>
+   </property>
+  </action>
+  <action name="actionDrawingPlaneSetToFaceAxis">
+   <property name="text">
+    <string>Set to Face with Axis</string>
    </property>
   </action>
  </widget>
