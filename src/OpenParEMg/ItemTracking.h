@@ -692,14 +692,9 @@ public:
         if (!item) return;
 
         // see if the item is already selected
-        //if (item->isSelected()) return;
         long unsigned int i=0;
         while (i < selectedItems.size()) {
             if (item == selectedItems[i]) {
-                // reselect the shape, if necessary
-                viewerContext->Display(item->get_AIS_Shape(),Standard_True);
-                // ToDo: need Load?
-                viewerContext->Load(item->get_AIS_Shape());
                 SelectShape(item->get_AIS_Shape());
                 return;
             }

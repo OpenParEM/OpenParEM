@@ -216,15 +216,13 @@ public:
 
     void activateSelectShape (Handle(AIS_Shape) shape)
     {
-        //viewerContext->Display(shape,Standard_False);
-        //viewerContext->Load(shape); // new
-        viewerContext->Activate(shape,0,Standard_True);
-        viewerContext->UpdateCurrentViewer();
+        viewerContext->Display(shape,Standard_False);
+        viewerContext->Load(shape);
+        viewerContext->Activate(shape,0,Standard_False);
 
-        if (viewerContext->IsSelected(shape)) {
-            return;
+        if (!viewerContext->IsSelected(shape)) {
+            viewerContext->AddOrRemoveSelected(shape,Standard_True);
         }
-        viewerContext->AddOrRemoveSelected(shape,Standard_True);
     }
 
     bool isSelectedItem (CustomTreeWidgetItem *item)

@@ -2640,7 +2640,8 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &sha
 
     // install new shape
     Handle(AIS_Shape) AISshape=new AIS_Shape(shape);
-    //if (!item->is_rootDrawing()) ui->drawingWindow->activateSelectShape(AISshape);
+    // must activate for selection since SetAutoActivateSelection is set to false in CustomOpenGLWidget.cpp
+    if (!item->is_rootDrawing()) ui->drawingWindow->activateSelectShape(AISshape);
     item->set_AIS_Shape(AISshape);
     ui->drawingWindow->insertItemToMap(AISshape,item);
 

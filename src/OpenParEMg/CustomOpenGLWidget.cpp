@@ -523,7 +523,7 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
                 const gp_Pnt pnt2=BRep_Tool::Pnt(v2);
                 gp_Pnt pntmid((pnt1.X()+pnt2.X())/2.0,(pnt1.Y()+pnt2.Y())/2.0,(pnt1.Z()+pnt2.Z())/2.0);
 
-                // create vertex
+                // create vertex - must activate for selection since SetAutoActivateSelection is set to false in the constructor
                 TopoDS_Vertex newVertex=BRepBuilderAPI_MakeVertex(pntmid);
                 temporaryVertex=new AIS_Shape(newVertex);
                 viewerContext->Display(temporaryVertex,Standard_False);
