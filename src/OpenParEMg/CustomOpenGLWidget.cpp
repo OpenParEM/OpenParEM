@@ -379,6 +379,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     // process for vertex click
     if (event->button() == Qt::LeftButton) {
         if (pickSecondVertex /*&& clickPointValid*/) {
+            ignoreMouseRelease=true;  // required
             if (owner.IsNull()) {
                 vertexPoint=clickPoint;
                 finishPickVertex(false);
@@ -434,6 +435,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                 }
             }
         }
+        isFaceSelection=false;
     }
 
     // process for object selection
