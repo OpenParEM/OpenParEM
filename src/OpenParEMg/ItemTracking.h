@@ -686,6 +686,18 @@ public:
         SelectShape(item->get_AIS_Shape());
     }
 
+    void refreshSelectedItems ()
+    {
+        viewerContext->ClearSelected(Standard_False);
+        long unsigned int i=0;
+        while (i < selectedItems.size()) {
+            if (selectedItems[i]) {
+                SelectShape(selectedItems[i]->get_AIS_Shape());
+            }
+            i++;
+        }
+    }
+
     void selectItem (CustomTreeWidgetItem *item)
     {
         if (selectTracking) {std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();}

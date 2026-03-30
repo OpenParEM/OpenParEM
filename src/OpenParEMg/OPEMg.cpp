@@ -6378,7 +6378,11 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     // restrict to the drawing plane
     if (restrictToDrawingPlane) {
         gp_Pln plane=ui->drawingWindow->get_gridPlane();
-        if (plane.Distance(pnt) > Precision::Confusion()) return;
+        if (plane.Distance(pnt) > Precision::Confusion()) {
+            ui->drawingWindow->refreshSelectedItems();
+            ui->drawingWindow->updateViewer();
+            return;
+        }
     }
 
     // draw
@@ -6541,12 +6545,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
     restoreSelection();
 
     // refresh the selection to enable further operations on the selected items
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) ui->drawingWindow->refreshSelectedItem(item);
-        i++;
-    }
+    ui->drawingWindow->refreshSelectedItems();
 
     ui->drawingWindow->updateViewer();
     setMenusI(0);

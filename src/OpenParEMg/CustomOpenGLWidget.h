@@ -199,8 +199,14 @@ public:
     //     drawingTracker->hideItems();
     // }
 
-    void refreshSelectedItem (CustomTreeWidgetItem *item) {
+    void refreshSelectedItem (CustomTreeWidgetItem *item)
+    {
         drawingTracker->refreshSelectedItem(item);
+    }
+
+    void refreshSelectedItems ()
+    {
+        drawingTracker->refreshSelectedItems();
     }
 
     void selectItem (CustomTreeWidgetItem *item)
