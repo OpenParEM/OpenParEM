@@ -297,6 +297,17 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
     QOpenGLWidget::mousePressEvent(event);
     if (view.IsNull()) return;
+    ignoreMouseRelease=false;
+
+    // pass the mouse press from Qt to OCCT
+    bool passClick=true;
+    if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
+    if (event->button() == Qt::RightButton && pickFirstVertex) passClick=false;   // prevent right-click from zooming
+    if (passClick) {
+        const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
+        const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
+        if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
+    }
 
     // point click position
     QPointF pos=event->position();
@@ -320,6 +331,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
             if (owner.IsNull()) {
                 vertexPoint=clickPoint;
                 finishPickVertex(false);
+                return;
             } else {
                 Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
                 if (!brepOwner.IsNull()) {
@@ -331,6 +343,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
                             if (!vertex.IsNull()) {
                                 vertexPoint=pnt;
                                 finishPickVertex(false);
+                                return;
                             }
                         }
                     }
@@ -339,15 +352,15 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
         }
     }
 
-    // pass the mouse press from Qt to OCCT
-    bool passClick=true;
-    if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
-    if (event->button() == Qt::RightButton && pickFirstVertex) passClick=false;   // prevent right-click from zooming
-    if (passClick) {
-        const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
-        const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
-        if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
-    }
+    // // pass the mouse press from Qt to OCCT
+    // bool passClick=true;
+    // if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
+    // if (event->button() == Qt::RightButton && pickFirstVertex) passClick=false;   // prevent right-click from zooming
+    // if (passClick) {
+    //     const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
+    //     const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
+    //     if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
+    // }
 }
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
@@ -356,6 +369,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     QOpenGLWidget::mouseReleaseEvent(event);
     if (view.IsNull()) return;
+    //if (ignoreMouseRelease) return;
 
     // pass the mouse release from Qt to OCCT
     bool passClick=true;
@@ -365,6 +379,9 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
         if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
     }
+
+    if (ignoreMouseRelease) return;
+
 
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
 
@@ -386,6 +403,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                             if (!vertex.IsNull()) {
                                 vertexPoint=pnt;
                                 finishPickVertex(false);
+                                return;
                             }
                         }
                     }

@@ -6354,9 +6354,10 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
         if (activePolywire->isValidPoint(pnt,true)) {
             activePolywire->addPoint(pnt);
 
+            //xxx
             Polywire *polyline=dynamic_cast<Polyline *>(activePolywire);
             if (!polyline) {
-                ui->drawingWindow->set_pickSecondVertex(true);
+                 ui->drawingWindow->set_pickSecondVertex(true);
             }
             if (activePolywire->isFinished()) {
                 ui->drawingWindow->set_pickSecondVertex(false);
