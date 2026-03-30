@@ -5198,12 +5198,6 @@ bool OpenParEMg::eventFilter (QObject *obj, QEvent *event)
 
     if (event->type() == QEvent::Paint) {
 
-        // // special processing for setting the drawing plane
-        // if (drawingPlaneShown && brepFileLoaded) {
-        //     ui->actionDrawingPlaneSetToFace->setEnabled(false);
-        //     TopoDS_Face face=ui->drawingWindow->getSelectedFace();
-        //     if (!face.IsNull()) ui->actionDrawingPlaneSetToFace->setEnabled(true);
-        // }
     }
 
     return QObject::eventFilter(obj, event);
@@ -5981,6 +5975,9 @@ void OpenParEMg::startPlaneSetToFace ()
 
     // skip the form
     if (skipDrawingPlaneAxisForm) {
+        gp_Pln plane=ui->drawingWindow->get_gridPlane();
+        currentPrivilegedPlane=plane;
+        uLocalAxis.SetXYZ(plane.XAxis().Direction().XYZ());
         finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,8);
         return;
     }
@@ -6006,9 +6003,6 @@ void OpenParEMg::startPlaneSetToFace ()
 void OpenParEMg::finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2)
 {
     std::cout << "OpenParEMg::finishPlaneSetToFace" << std::endl; std::cout.flush();
-
-    // put the selection back to shapes
-    on_actionShape_triggered();
 
     // u vector
     uLocalAxis=p2.XYZ()-p1.XYZ();
