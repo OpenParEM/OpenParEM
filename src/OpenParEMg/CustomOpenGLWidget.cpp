@@ -403,7 +403,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         }
     }
 
-    // xxx
     // process for selection on face
     if (isFaceSelection && event->button() == Qt::LeftButton) {
         if (!owner.IsNull()) {

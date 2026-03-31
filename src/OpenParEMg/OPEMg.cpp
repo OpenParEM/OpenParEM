@@ -3299,8 +3299,6 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
         reprocess(item);
         brepChanged=true;
     }
-
-    //ui->drawingWindow->showItem(item);
 }
 
 void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt p1)
@@ -3434,7 +3432,7 @@ bool OpenParEMg::isValidDeletePoint ()
 void OpenParEMg::deletePoint ()
 {
     startOperation(false);
-    ui->drawingWindow->set_pickFirstVertex(true);
+    ui->drawingWindow->set_pickSecondVertex(true);
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -3553,13 +3551,8 @@ void OpenParEMg::finishInsertPoint (CustomTreeWidgetItem *item)
 
         brepChanged=true;
 
-        //finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,6);
-
-        //xxx
-
         // switch over to stretch behavior
         // set up the first point pick, then let the stretchObject code do the rest for the second pick
-
         startOperation(false);
 
         item->setEnableStretch(true);
@@ -6528,14 +6521,12 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                         polywire->setCurrentMousePosition(pnt);
                         polywire->drawStretchRubberband();
 
-                        //xxx
                         // switch to allowing selection on midpoints
                         startOperation(true);
 
                         ui->drawingWindow->hideItem(item);
                         ui->drawingWindow->updateViewer();
                     } else {
-                        //xxx
                         if (polywire->isPointOnPlane(pnt) && polywire->isValidInsertPoint(pnt)) {
                             item->setP1(pnt);
                             polywire->setCurrentMousePosition(pnt);

@@ -174,10 +174,6 @@ public:
                 i++;
             }
         } else if (item->is_drawing()) {
-            //std::cout << "   item=" << item << std::endl; std::cout.flush();
-            //item->print();
-            //xxx
-            //if (item->get_AIS_Shape().IsNull()) return;
 
             if (item->foreground(0) == Qt::gray) {
                 DisplayShape(item->get_AIS_Shape());

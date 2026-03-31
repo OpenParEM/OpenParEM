@@ -155,17 +155,10 @@ bool Polywire::isValidPoint (gp_Pnt &pnt, bool zeroPntLogic)
         long unsigned int index=shapePoints.size()-1;  // drawing
         if (!drawEnable) index=editIndex;              // stretching
 
-        //xxx
-        std::cout << "checking: " << i << "," << i+1 << " to " << index << ",pnt" << std::endl; std::cout.flush();
-        std::cout << "    editIndex=" << editIndex << std::endl; std::cout.flush();
-
-
         // check
         if (DoSegmentsIntersectInterior(shapePoints[i], shapePoints[i+1],
                                         shapePoints[index],pnt,
                                         1e-12)) {
-            //xxx
-            std::cout << "   fail" << std::endl;
             return false;
         }
         i++;
