@@ -150,9 +150,24 @@ bool Polywire::isValidPoint (gp_Pnt &pnt, bool zeroPntLogic)
     // check for intersections
     long unsigned int i=0;
     while (i < shapePoints.size()-1) {
+
+        // point to check
+        long unsigned int index=shapePoints.size()-1;  // drawing
+        if (!drawEnable) index=editIndex;              // stretching
+
+        //xxx
+        std::cout << "checking: " << i << "," << i+1 << " to " << index << ",pnt" << std::endl; std::cout.flush();
+        std::cout << "    editIndex=" << editIndex << std::endl; std::cout.flush();
+
+
+        // check
         if (DoSegmentsIntersectInterior(shapePoints[i], shapePoints[i+1],
-                                        shapePoints[shapePoints.size()-1],pnt,
-                                        1e-12)) return false;
+                                        shapePoints[index],pnt,
+                                        1e-12)) {
+            //xxx
+            std::cout << "   fail" << std::endl;
+            return false;
+        }
         i++;
     }
 
@@ -384,6 +399,60 @@ TopoDS_Face Polyline::buildFace (TopoDS_Wire &wire)
     return face;
 }
 
+bool Polyline::isValidInsertPoint (gp_Pnt &pnt)
+{
+    if (checkIntersection && shapePoints.size() > 2) {
+        long unsigned int i=0;
+        while (i < shapePoints.size()-1) {
+            if (i != editIndex) {
+
+                long unsigned int indexm1,indexp1;
+                bool skipm=false;
+                bool skipp=false;
+                if (closed) {
+                    if (editIndex == 0) {
+                        indexm1=shapePoints.size()-2;
+                        if (i == shapePoints.size()) {skipm=true;}
+                    } else {
+                        indexm1=editIndex-1;
+                    }
+
+                    if (editIndex == shapePoints.size()-1) {
+                        skipm=true;
+                        skipp=true;
+                    } else {
+                        indexp1=editIndex+1;
+                    }
+                } else {
+                    if (editIndex == 0) {
+                        skipm=true;
+                    } else {
+                        indexm1=editIndex-1;
+                    }
+
+                    if (editIndex == shapePoints.size()-1) {
+                        skipp=true;
+                    } else {
+                        indexp1=editIndex+1;
+                    }
+                }
+
+                if (!skipm && DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],
+                                                          shapePoints[indexm1],currentMousePosition,1e-12)) {
+                    return false;
+                }
+                if (!skipp && DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],
+                                                          shapePoints[indexp1],currentMousePosition,1e-12)) {
+                    return false;
+                }
+            }
+            i++;
+        }
+    }
+
+    return true;
+}
+
 void Polyline::drawRubberband ()
 {
     //std::cout << "Polyline::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
@@ -412,54 +481,49 @@ void Polyline::drawStretchRubberband ()
 {
     //std::cout << "Polyline::drawStretchRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
 
-    if (checkIntersection && shapePoints.size() > 2) {
-        bool skipTest=false;
+    // if (checkIntersection && shapePoints.size() > 2) {
+    //     long unsigned int i=0;
+    //     while (i < shapePoints.size()-1) {
+    //         if (i != editIndex) {
 
-        gp_Pnt t1,t2;
-        if (closed) {
-            if (editIndex == 0) t1=shapePoints[shapePoints.size()-2];
-            else t1=shapePoints[editIndex-1];
+    //             long unsigned int indexm1,indexp1;
+    //             bool skipm=false;
+    //             bool skipp=false;
+    //             if (closed) {
+    //                 if (editIndex == 0) {
+    //                     indexm1=shapePoints.size()-2;
+    //                     if (i == shapePoints.size()) {skipm=true;}
+    //                 } else {
+    //                     indexm1=editIndex-1;
+    //                 }
 
-            if (editIndex == shapePoints.size()-1) t2=shapePoints[1];
-            else t2=shapePoints[editIndex+1];
-        } else {
-            if (editIndex == 0) skipTest=true;
-            else t1=shapePoints[editIndex-1];
+    //                 if (editIndex == shapePoints.size()-1) {
+    //                     skipm=true;
+    //                     skipp=true;
+    //                 } else {
+    //                     indexp1=editIndex+1;
+    //                 }
+    //             } else {
+    //                 if (editIndex == 0) {
+    //                     skipm=true;
+    //                 } else {
+    //                     indexm1=editIndex-1;
+    //                 }
 
-            if (editIndex == shapePoints.size()-1) skipTest=true;
-            else t2=shapePoints[editIndex+1];
-        }
+    //                 if (editIndex == shapePoints.size()-1) {
+    //                     skipp=true;
+    //                 } else {
+    //                     indexp1=editIndex+1;
+    //                 }
+    //             }
 
-        if (editIndex > 0) {
-            long unsigned int i=0;
-            while (i < editIndex-1) {
-                if (DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],t1,currentMousePosition,1e-12)) {
-                    //std::cout << "Fail on test 1" << std::endl; std::cout.flush();
-                    return;
-                }
-                if (!skipTest && DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],t2,currentMousePosition,1e-12)) {
-                    //std::cout << "Fail on test 2" << std::endl; std::cout.flush();
-                    return;
-                }
-                i++;
-            }
-        }
-
-        long unsigned int limit=shapePoints.size()-1;
-        if (closed) limit=shapePoints.size()-2;
-        long unsigned int i=editIndex+1;
-        while (i < limit) {
-            if (!skipTest && DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],t1,currentMousePosition,1e-12)) {
-                //std::cout << "Fail on test 3" << std::endl; std::cout.flush();
-                return;
-            }
-            if (DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],t2,currentMousePosition,1e-12)) {
-                //std::cout << "Fail on test 4" << std::endl; std::cout.flush();
-                return;
-            }
-            i++;
-        }
-    }
+    //             if (!skipm && DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],shapePoints[indexm1],currentMousePosition,1e-12)) return;
+    //             if (!skipp && DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],shapePoints[indexp1],currentMousePosition,1e-12)) return;
+    //         }
+    //         i++;
+    //     }
+    // }
+    if (!isValidInsertPoint(currentMousePosition)) return;
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
 
@@ -553,6 +617,47 @@ void Polyline::deletePoint (gp_Pnt &pnt)
         }
     } else {
         shapePoints.erase(shapePoints.begin()+deleteIndex);
+    }
+}
+
+bool Polyline::canInsertPoint ()
+{
+    return true;
+}
+
+void Polyline::insertPoint (gp_Pnt &pnt)
+{
+    long unsigned int closestIndex=0;
+    double closest=DBL_MAX;
+
+    // closest point
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        double distance=shapePoints[i].Distance(pnt);
+        if (distance < closest) {
+            closest=distance;
+            closestIndex=i;
+        }
+        i++;
+    }
+
+    // next closest point on either side
+    if (closed) {
+        if (closestIndex == 0) {
+            shapePoints.insert(shapePoints.begin(),pnt);
+        } else if (closestIndex == shapePoints.size()-1) {
+            shapePoints.insert(shapePoints.begin(),pnt);
+        } else {
+            shapePoints.insert(shapePoints.begin()+closestIndex,pnt);
+        }
+    } else {
+        if (closestIndex == 0) {
+            shapePoints.insert(shapePoints.begin(),pnt);
+        } else if (closestIndex == shapePoints.size()-1) {
+            shapePoints.insert(shapePoints.begin()+shapePoints.size()-1,pnt);
+        } else {
+            shapePoints.insert(shapePoints.begin()+closestIndex,pnt);
+        }
     }
 }
 

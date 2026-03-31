@@ -45,6 +45,7 @@ public:
         enableMove=false;
         enableStretch=false;
         enableDeletePoint=false;
+        enableInsertPoint=false;
     }
 
     ~CustomTreeWidgetItem ()
@@ -263,6 +264,9 @@ public:
     void setEnableDeletePoint (bool enableDeletePoint_) {enableDeletePoint=enableDeletePoint_;}
     bool getEnableDeletePoint () {return enableDeletePoint;}
 
+    void setEnableInsertPoint (bool enableInsertPoint_) {enableInsertPoint=enableInsertPoint_;}
+    bool getEnableInsertPoint () {return enableInsertPoint;}
+
     void print_itemType ()
     {
         if (is_rootDrawing()) std::cout << "root drawing" << std::endl;
@@ -329,6 +333,7 @@ public:
         enableMove=false;
         enableStretch=false;
         enableDeletePoint=false;
+        enableInsertPoint=false;
     }
 
     void reset ()
@@ -378,6 +383,7 @@ private:
     bool enableMove;
     bool enableStretch;
     bool enableDeletePoint;
+    bool enableInsertPoint;
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

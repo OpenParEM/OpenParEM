@@ -43,6 +43,7 @@ public:
     virtual void drawStretchRubberband () = 0;  // while stretching - currentMousePosition takes the editIndex place
     void deleteRubberband ();
     virtual bool isValidPoint (gp_Pnt &pnt, bool);
+    virtual bool isValidInsertPoint (gp_Pnt &pnt) {return true;}
     virtual bool canDeleteLastPoint () = 0;
     virtual bool canFinish () = 0;
     virtual bool canClose () = 0;
@@ -53,6 +54,8 @@ public:
     virtual bool isFinished () = 0;
     virtual bool canDeletePoint () = 0;
     virtual void deletePoint (gp_Pnt &pnt) = 0;
+    virtual bool canInsertPoint () = 0;
+    virtual void insertPoint (gp_Pnt &pnt) = 0;
 
     virtual bool isPointOnPlane (gp_Pnt &pnt);
 
@@ -95,7 +98,7 @@ protected:
     Handle(AIS_Shape) rubberband;                   // rubberband for drawing - currentMousePosition is the next point
     Handle(AIS_InteractiveContext) viewerContext;   // drawing context
 
-    bool drawEnable;                                // flags for enabling drawing objects
+    bool drawEnable;                                // flag for enabling drawing objects
     long unsigned int editIndex;                    // index into a completed shape outline for stretching
 };
 
@@ -111,6 +114,8 @@ public:
     bool isFinished () override {if (shapePoints.size() == 2) return true; return false;}
     bool canDeletePoint () override {return false;}
     void deletePoint (gp_Pnt &gp_Pnt) override {return;}
+    bool canInsertPoint () override {return false;}
+    void insertPoint (gp_Pnt &pnt) override {return;}
     gp_Pnt getP0 ();
     gp_Pnt getP1 ();
     void setP0 (gp_Pnt &P0);
@@ -126,6 +131,7 @@ public:
     }
     void drawRubberband () override;
     void drawStretchRubberband () override;
+    bool isValidInsertPoint (gp_Pnt &pnt) override;
     bool canDeleteLastPoint () override {if (shapePoints.size() > 1) return true; return false;}
     bool canFinish () override {if (shapePoints.size() > 1) return true; return false;}
     bool canClose () override;
@@ -142,6 +148,8 @@ public:
     void setEditPoint (gp_Pnt &pnt) override;
     bool canDeletePoint () override;
     void deletePoint (gp_Pnt &pnt) override;
+    bool canInsertPoint () override;
+    void insertPoint (gp_Pnt &pnt) override;
 private:
     bool checkIntersection;
 };
@@ -165,6 +173,8 @@ public:
     bool isFinished () override {if (shapePoints.size() == 5) return true; return false;}
     bool canDeletePoint () override {return false;}
     void deletePoint (gp_Pnt &gp_Pnt) override {return;}
+    bool canInsertPoint () override {return false;}
+    void insertPoint (gp_Pnt &pnt) override {return;}
 
     double getWidth () {return width;}
     double getHeight () {return height;}
@@ -211,6 +221,8 @@ public:
     bool isFinished () override {if (firstPointSet) return true; return false;}
     bool canDeletePoint () override {return false;}
     void deletePoint (gp_Pnt &gp_Pnt) override {return;}
+    bool canInsertPoint () override {return false;}
+    void insertPoint (gp_Pnt &pnt) override {return;}
 
     bool isPointOnPlane (gp_Pnt &pnt) override;
 

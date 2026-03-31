@@ -163,6 +163,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(unselectAction);
     QActionList.push_back(deleteAction);
     QActionList.push_back(deletePointAction);
+    QActionList.push_back(insertPointAction);
     QActionList.push_back(removeAction);
     QActionList.push_back(assignAction);
     QActionList.push_back(insertAction);
@@ -1161,6 +1162,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             moveAction=new QAction("Move");
             stretchAction=new QAction("Stretch");
             deletePointAction=new QAction("Delete Point");
+            insertPointAction=new QAction("InsertPoint");
             rotateAction=new QAction("Rotate");
             unselectAction=new QAction("Unselect");
             deleteAction=new QAction("Delete");
@@ -1181,6 +1183,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             connect(moveAction, &QAction::triggered, this, &OpenParEMg::moveObject);
             connect(stretchAction, &QAction::triggered, this, &OpenParEMg::stretchObject);
             connect(deletePointAction, &QAction::triggered, this, &OpenParEMg::deletePoint);
+            connect(insertPointAction, &QAction::triggered, this, &OpenParEMg::insertPoint);
             connect(rotateAction, &QAction::triggered, this, &OpenParEMg::rotateObject);
             connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
             connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
@@ -1208,6 +1211,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             modify.addAction(editAction);
             modify.addAction(moveAction);
             modify.addAction(stretchAction);
+            modify.addAction(insertPointAction);
             modify.addAction(deletePointAction);
             modify.addAction(rotateAction);
             modify.addAction(extrudeAction);
@@ -1225,8 +1229,9 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 
             editAction->setEnabled(isValidObjectEdit());     // single object
             moveAction->setEnabled(true);
-            stretchAction->setEnabled(isValidObjectStretch());  // single object
+            stretchAction->setEnabled(isValidObjectStretch());   // single object
             deletePointAction->setEnabled(isValidDeletePoint()); // single object
+            insertPointAction->setEnabled(isValidInsertPoint());    // single object
             rotateAction->setEnabled(true);
             extrudeAction->setEnabled(isValidExtrudePolywire());
             mergeAction->setEnabled(isValidMergeSolids());
@@ -2681,7 +2686,7 @@ void OpenParEMg::extrudePolywire ()
 {
     //std::cout << "OpenParEMg::extrudePolywire" << std::endl; std::cout.flush();
 
-    startOperation();
+    startOperation(true);
 
     if (lengthInputForm) delete lengthInputForm;
     lengthInputForm=new LengthInputForm();
@@ -2896,7 +2901,7 @@ void OpenParEMg::editObject ()
 {
     //std::cout << "OpenParEMg::editObject" << std::endl; std::cout.flush();
 
-    startOperation();
+    startOperation(false);
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -3059,7 +3064,7 @@ bool OpenParEMg::isValidMergeSolids ()
 
 void OpenParEMg::mergeSolids ()
 {
-    startOperation();
+    startOperation(false);
     finishMergeSolids();
 }
 
@@ -3150,7 +3155,7 @@ bool OpenParEMg::isValidSubtractSolids ()
 
 void OpenParEMg::subtractSolids ()
 {
-    startOperation();
+    startOperation(false);
     finishSubtractSolids();
 }
 
@@ -3237,7 +3242,7 @@ void OpenParEMg::moveObject ()
 {
     //std::cout << "OpenParEMg::moveObject" << std::endl; std::cout.flush();
 
-    startOperation();
+    startOperation(true);
     ui->drawingWindow->set_pickSecondVertex(true);
 
     // set up for animation
@@ -3352,7 +3357,7 @@ void OpenParEMg::stretchObject ()
 {
     //std::cout << "OpenParEMg::stretchObject" << std::endl; std::cout.flush();
 
-    startOperation();
+    startOperation(false);
     ui->drawingWindow->set_pickSecondVertex(true);
 
     long unsigned int i=0;
@@ -3391,12 +3396,7 @@ void OpenParEMg::finishStretchObject (CustomTreeWidgetItem *item)
     item->setEnableStretch(false);
     gp_Pnt pnt=item->getP1();
     polywire->setEditPoint(pnt);
-
-    TopoDS_Wire wire=polywire->buildWire();
-    if (!wire.IsNull()) {
-        replaceItemShape(item,wire,8);  // inserts to item map
-        reprocess(item);
-    }
+    reprocess(item);
 
     polywire->deleteRubberband();
     ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
@@ -3433,7 +3433,7 @@ bool OpenParEMg::isValidDeletePoint ()
 
 void OpenParEMg::deletePoint ()
 {
-    startOperation();
+    startOperation(false);
     ui->drawingWindow->set_pickFirstVertex(true);
 
     long unsigned int i=0;
@@ -3444,7 +3444,7 @@ void OpenParEMg::deletePoint ()
             if (!shape.IsNull()) {
                 // set the selected shape to be the only selectable shape
                 // includes selecting just on vertices of the shape and not midpoints
-                ui->drawingWindow->set_activeShape(shape);
+                //ui->drawingWindow->set_activeShape(shape);
 
                 // set the drawing plane
                 currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
@@ -3468,22 +3468,113 @@ void OpenParEMg::finishDeletePoint (CustomTreeWidgetItem *item)
     if (!item) return;
 
     Polywire *polywire=item->get_Polywire();
+    if (!polywire) return;
+
+    gp_Pnt p0=item->getP0();
+    polywire->deletePoint(p0);
+    reprocess(item);
+    item->resetOperation();
+
+    ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+
+    brepChanged=true;
+
+    // find and show the top-level item
+    CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    while (!parentItem->is_rootDrawing()) {
+        item=parentItem;
+        parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    }
+    ui->drawingWindow->showItem(item);
+
+    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,6);
+}
+
+bool OpenParEMg::isValidInsertPoint ()
+{
+    int count=0;
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) {
+            Polywire *polywire=item->get_Polywire();
+            if (polywire && polywire->canInsertPoint()) count++;
+        }
+        i++;
+    }
+    if (count == 1 && count == ui->drawingWindow->get_selectedItems_count()) return true;
+    return false;
+}
+
+void OpenParEMg::insertPoint ()
+{
+    startOperation(false);
+    ui->drawingWindow->set_pickFirstVertex(true);
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) {
+            Handle(AIS_Shape) shape=item->get_AIS_Shape();
+            if (!shape.IsNull()) {
+                // set the selected shape to be the only selectable shape
+                // includes selecting just on vertices of the shape and not midpoints
+                //ui->drawingWindow->set_activeShape(shape);
+
+                // set the drawing plane
+                currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
+                //restrictToDrawingPlane=true;
+
+                Polywire *polywire=item->get_Polywire();
+                if (polywire) {
+                    item->setEnableInsertPoint(true);
+                    item->resetP0P1();
+                    gp_Pln plane=polywire->getPlane();
+                    ui->drawingWindow->set_gridPlane(plane);
+                }
+            }
+        }
+        i++;
+    }
+}
+
+void OpenParEMg::finishInsertPoint (CustomTreeWidgetItem *item)
+{
+    if (!item) return;
+
+    Polywire *polywire=item->get_Polywire();
     if (polywire) {
         gp_Pnt p0=item->getP0();
-        polywire->deletePoint(p0);
-
-        TopoDS_Wire wire=polywire->buildWire();
-        if (!wire.IsNull()) {
-            replaceItemShape(item,wire,9);  // inserts to item map
-            reprocess(item);
-        }
+        polywire->insertPoint(p0);
+        //reprocess(item);
+        item->resetOperation();
 
         ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
 
-        item->resetOperation();
         brepChanged=true;
 
-        finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,6);
+        //finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,6);
+
+        //xxx
+
+        // switch over to stretch behavior
+        // set up the first point pick, then let the stretchObject code do the rest for the second pick
+
+        startOperation(false);
+
+        item->setEnableStretch(true);
+        ui->drawingWindow->set_pickSecondVertex(true);
+
+        clearTreeSelection();
+        ui->drawingWindow->showItem(item);
+        ui->drawingWindow->selectItem(item);
+        item->setP0(p0);
+        polywire->setEditIndex(p0);
+        polywire->setCurrentMousePosition(p0);
+        polywire->drawStretchRubberband();
+
+        ui->drawingWindow->hideItem(item);
+        ui->drawingWindow->updateViewer();
     }
 }
 
@@ -3491,7 +3582,7 @@ void OpenParEMg::rotateObject ()
 {
     std::cout << "OpenParEMg::rotateObject" << std::endl; std::cout.flush();
 
-    startOperation();
+    startOperation(true);
 
     if (rotateInputForm) delete rotateInputForm;
     rotateInputForm=new RotateInputForm();
@@ -5941,7 +6032,7 @@ void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
     std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFace_triggered" << std::endl; std::cout.flush();
 
-    startOperation();
+    startOperation(false);
 
     skipDrawingPlaneAxisForm=true;
     on_actionFace_triggered();
@@ -5953,7 +6044,7 @@ void OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered ()
     std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered" << std::endl; std::cout.flush();
 
     restrictToDrawingPlane=true;
-    startOperation();
+    startOperation(true);
 
     skipDrawingPlaneAxisForm=false;
     on_actionFace_triggered();
@@ -6079,7 +6170,7 @@ void OpenParEMg::on_actionDrawLine_triggered ()
     //std::cout << "OpenParEMg::on_actionDrawLine_triggered" << std::endl; std::cout.flush();
 
     restrictToDrawingPlane=true;
-    startOperation();
+    startOperation(true);
     ui->drawingWindow->set_pickFirstVertex(true);
     clearTreeSelection();
 
@@ -6099,7 +6190,7 @@ void OpenParEMg::on_actionDrawPolyline_triggered ()
     //std::cout << "OpenParEMg::on_actionDrawPolyline_triggered" << std::endl; std::cout.flush();
 
     restrictToDrawingPlane=true;
-    startOperation();
+    startOperation(true);
     ui->drawingWindow->set_pickFirstVertex(true);
     clearTreeSelection();
 
@@ -6119,7 +6210,7 @@ void OpenParEMg::on_actionDrawPolycircle_triggered ()
     //std::cout << "OpenParEMg::on_actionDrawPolycircle_triggered" << std::endl; std::cout.flush();
 
     restrictToDrawingPlane=true;
-    startOperation();
+    startOperation(true);
     ui->drawingWindow->set_pickFirstVertex(true);
     clearTreeSelection();
 
@@ -6139,7 +6230,7 @@ void OpenParEMg::on_actionDrawRectangle_triggered ()
     //std::cout << "OpenParEMg::on_actionDrawRectangle_triggered" << std::endl; std::cout.flush();
 
     restrictToDrawingPlane=true;
-    startOperation();
+    startOperation(true);
     ui->drawingWindow->set_pickFirstVertex(true);
     clearTreeSelection();
 
@@ -6160,6 +6251,7 @@ void OpenParEMg::finishDraw ()
     //std::cout << "OpenParEMg::finishDraw" << std::endl; std::cout.flush();
 
     if (!activePolywire) return;
+    activePolywire->setDrawEnable(false);
 
     CustomTreeWidgetItem *newItem;
     TopoDS_Wire newWire=activePolywire->buildWire();
@@ -6318,7 +6410,7 @@ void OpenParEMg::closePolyline ()
     finishDraw();
 }
 
-void OpenParEMg::startOperation ()
+void OpenParEMg::startOperation (bool withMidPoints)
 {
     //std::cout << "OpenParEMg::startOperation  operation=" << operation << std::endl; std::cout.flush();
 
@@ -6330,8 +6422,8 @@ void OpenParEMg::startOperation ()
 
     // set to select on vertices and edges
     ui->drawingWindow->Deactivate();
-    ui->drawingWindow->Activate(1,Standard_False);  // vertices
-    ui->drawingWindow->Activate(2,Standard_False);  // edges
+    ui->drawingWindow->Activate(1,Standard_False);                     // vertices
+    if (withMidPoints) ui->drawingWindow->Activate(2,Standard_False);  // edges, to get midpoints
 }
 
 void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
@@ -6353,7 +6445,6 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
             if (item->getEnableMove() && item->hasP0()) {
                 item->moveAnimateShape(lastMousePosition,pnt,ui->drawingWindow->get_viewerContext());
             }
-
 
             Polywire *polywire=item->get_Polywire();
 
@@ -6378,7 +6469,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     // restrict to the drawing plane
     if (restrictToDrawingPlane) {
         gp_Pln plane=ui->drawingWindow->get_gridPlane();
-        if (plane.Distance(pnt) > Precision::Confusion()) {
+        if (plane.Distance(pnt) > 1e-12) {  // ToDo: set the tolerance to a preference setting?
             ui->drawingWindow->refreshSelectedItems();
             ui->drawingWindow->updateViewer();
             return;
@@ -6396,7 +6487,6 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
             }
             if (activePolywire->isFinished()) {
                 ui->drawingWindow->set_pickSecondVertex(false);
-                activePolywire->setDrawEnable(false);
                 finishDraw();
             }
         }
@@ -6419,7 +6509,6 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
             if (item->getEnableMove()) {
                 if (!item->hasP0()) {
                     item->setP0(pnt);
-                    //ui->drawingWindow->set_pickSecondVertex(true);  // new
                     ui->drawingWindow->hideItem(item);
                 } else {
                     gp_Pnt p0=item->getP0();
@@ -6439,10 +6528,15 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                         polywire->setCurrentMousePosition(pnt);
                         polywire->drawStretchRubberband();
 
+                        //xxx
+                        // switch to allowing selection on midpoints
+                        startOperation(true);
+
                         ui->drawingWindow->hideItem(item);
                         ui->drawingWindow->updateViewer();
                     } else {
-                        if (polywire->isPointOnPlane(pnt)) {
+                        //xxx
+                        if (polywire->isPointOnPlane(pnt) && polywire->isValidInsertPoint(pnt)) {
                             item->setP1(pnt);
                             polywire->setCurrentMousePosition(pnt);
                             polywire->drawStretchRubberband();
@@ -6456,6 +6550,14 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                     if (polywire->isPointOnPlane(pnt)) {
                         item->setP0(pnt);
                         finishDeletePoint(item);
+                    }
+                }
+
+                // insert point
+                if (item->getEnableInsertPoint()) {
+                    if (polywire->isPointOnPlane(pnt)) {
+                        item->setP0(pnt);
+                        finishInsertPoint(item);
                     }
                 }
             }
@@ -6478,6 +6580,7 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
     if (cancel) {
 
         if (activePolywire && activePolywire->getDrawEnable()) {
+            activePolywire->setDrawEnable(false);
             activePolywire->deleteRubberband();
             ui->drawingWindow->updateViewer();
             delete activePolywire;

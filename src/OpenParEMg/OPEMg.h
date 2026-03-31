@@ -128,13 +128,16 @@ public:
     void rebuildTopLevelShape ();
     void reprocess (CustomTreeWidgetItem *);
 
-    void startOperation ();
+    void startOperation (bool);
 
     bool isValidObjectEdit ();
     bool isValidObjectStretch ();
 
     bool isValidDeletePoint ();
     void finishDeletePoint (CustomTreeWidgetItem *);
+
+    bool isValidInsertPoint ();
+    void finishInsertPoint (CustomTreeWidgetItem *);
 
     bool isValidExtrudePolywire ();
     void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
@@ -310,6 +313,7 @@ private slots:
     void moveObject ();
     void stretchObject ();
     void deletePoint ();
+    void insertPoint ();
     void rotateObject ();
     void createPort ();
     void createPath ();
@@ -397,6 +401,7 @@ private:
     QAction *unselectAction;
     QAction *deleteAction;
     QAction *deletePointAction;
+    QAction *insertPointAction;
     QAction *removeAction;
     QAction *assignAction;
     QAction *insertAction;
