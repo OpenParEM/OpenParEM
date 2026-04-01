@@ -87,6 +87,8 @@ public:
     void setDrawEnable (bool drawEnable_) {drawEnable=drawEnable_;}
     bool getDrawEnable () {return drawEnable;}
 
+    virtual Polywire* copyCreate () = 0;
+
 signals:
 
 protected:
@@ -120,6 +122,7 @@ public:
     gp_Pnt getP1 ();
     void setP0 (gp_Pnt &P0);
     void setP1 (gp_Pnt &P1);
+    Line* copyCreate () override;
 };
 
 class Polyline : public Polywire
@@ -150,6 +153,7 @@ public:
     void deletePoint (gp_Pnt &pnt) override;
     bool canInsertPoint () override;
     void insertPoint (gp_Pnt &pnt) override;
+    Polyline* copyCreate () override;
 private:
     bool checkIntersection;
 };
@@ -193,6 +197,7 @@ public:
     void setEditPoint (gp_Pnt &pnt) override;
 
     void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2) override;
+    Rectangle* copyCreate () override;
 
 private:
     gp_Vec u,v;
@@ -245,6 +250,7 @@ public:
     gp_Pln getPlane () override;
 
     void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2) override;
+    Polycircle* copyCreate () override;
 
 private:
     bool centerPointSet;

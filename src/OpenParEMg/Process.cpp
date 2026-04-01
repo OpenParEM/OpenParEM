@@ -26,3 +26,18 @@
 Process::Process (QWidget *parent)
     : QWidget{parent}
 {}
+
+Process* Process::copyCreate ()
+{
+    Process* newProcess=new Process();
+    newProcess->modified=modified;
+    return newProcess;
+}
+
+Extrude* Extrude::copyCreate ()
+{
+    Extrude* newExtrude=new Extrude();
+    newExtrude->modified=modified;
+    newExtrude->length=length;
+    return newExtrude;
+}

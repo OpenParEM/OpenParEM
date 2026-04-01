@@ -267,6 +267,32 @@ public:
     void setEnableInsertPoint (bool enableInsertPoint_) {enableInsertPoint=enableInsertPoint_;}
     bool getEnableInsertPoint () {return enableInsertPoint;}
 
+    CustomTreeWidgetItem* copyCreate ()
+    {
+        std::cout << "CustomTreeWidgetItem::copyCreate()" << std::endl; std::cout.flush();
+        CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem();
+        if (!shape.IsNull()) {newItem->shape=new AIS_Shape(shape->Shape());}
+        newItem->setText(0,this->text(0));
+        long unsigned int i=0;
+        while (i < arrowHeads.size()) {
+            if (!arrowHeads[i].IsNull()) {newItem->arrowHeads.push_back(new AIS_Shape(arrowHeads[i]->Shape()));}
+            i++;
+        }
+        newItem->dimTag=dimTag;  // ToDo: rescan and set to unique value for meshing
+        newItem->forShowHide=forShowHide;
+        newItem->itemType=itemType;
+        newItem->OPEMobject=OPEMobject;
+        if (polywire) {newItem->polywire=polywire->copyCreate();}
+        if (process) {newItem->process=process->copyCreate();}
+        i=0;
+        while (i < linkedItems.size()) {
+            newItem->linkedItems.push_back(linkedItems[i]);
+            i++;
+        }
+        std::cout << "exit CustomTreeWidgetItem::copyCreate()" << std::endl; std::cout.flush();
+        return newItem;
+    }
+
     void print_itemType ()
     {
         if (is_rootDrawing()) std::cout << "root drawing" << std::endl;

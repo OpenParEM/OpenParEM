@@ -31,21 +31,12 @@ class Process : public QWidget
 public:
     explicit Process (QWidget *parent = nullptr);
     bool isModified () {return modified;}
-    //void setCurrentMousePosition (gp_Pnt &currentMousePosition_) {currentMousePosition=currentMousePosition_;}
-    //void setRubberband (TopoDS_Shape &shape) {rubberband=new AIS_Shape(shape);}
-    //void moveRubberband (gp_Pnt &pnt);
-    //virtual void drawRubberband (gp_Pnt &pnt) = 0;
-    //void deleteRubberband ();
-    //void set_viewerContext (Handle(AIS_InteractiveContext) viewerContext_) {viewerContext=viewerContext_;}
+    virtual Process* copyCreate ();
 
 signals:
 
 protected:
     bool modified;
-    //gp_Pnt startingPosition;              // starting position of the rubberband
-    //gp_Pnt currentMousePosition;          // mouse position for moving the rubberband
-    //Handle(AIS_Shape) rubberband;
-    //Handle(AIS_InteractiveContext) viewerContext;
 };
 
 class Extrude : public Process
@@ -53,6 +44,7 @@ class Extrude : public Process
 public:
     void set_length (double length_) {length=length_;}
     double get_length () {return length;}
+    Extrude* copyCreate () override;
 private:
     double length;       // length of the extrusion
 };

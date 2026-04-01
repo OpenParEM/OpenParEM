@@ -355,6 +355,24 @@ void Line::drawStretchRubberband ()
     }
 }
 
+Line* Line::copyCreate ()
+{
+    Line *newLine=new Line();
+    newLine->modified=modified;
+    newLine->closed=closed;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        newLine->shapePoints.push_back(shapePoints[i]);
+        i++;
+    }
+    newLine->normal=normal;
+    newLine->currentMousePosition=currentMousePosition;
+    newLine->viewerContext=viewerContext;
+    newLine->drawEnable=drawEnable;
+    newLine->editIndex=editIndex;
+    return newLine;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Polyline
 ////////////////////////////////////////////////////////////////////////////////
@@ -444,6 +462,25 @@ bool Polyline::isValidInsertPoint (gp_Pnt &pnt)
     }
 
     return true;
+}
+
+Polyline* Polyline::copyCreate ()
+{
+    Polyline *newPolyline=new Polyline();
+    newPolyline->modified=modified;
+    newPolyline->closed=closed;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        newPolyline->shapePoints.push_back(shapePoints[i]);
+        i++;
+    }
+    newPolyline->normal=normal;
+    newPolyline->currentMousePosition=currentMousePosition;
+    newPolyline->viewerContext=viewerContext;
+    newPolyline->drawEnable=drawEnable;
+    newPolyline->editIndex=editIndex;
+    newPolyline->checkIntersection=checkIntersection;
+    return newPolyline;
 }
 
 void Polyline::drawRubberband ()
@@ -959,6 +996,30 @@ void Rectangle::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
     recalculate();
 }
 
+Rectangle* Rectangle::copyCreate ()
+{
+    //std::cout << "Rectangle::copyCreate" << std::endl; std::cout.flush();
+    Rectangle *newRectangle=new Rectangle();
+    newRectangle->modified=modified;
+    newRectangle->closed=closed;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        newRectangle->shapePoints.push_back(shapePoints[i]);
+        i++;
+    }
+    newRectangle->normal=normal;
+    newRectangle->currentMousePosition=currentMousePosition;
+    newRectangle->viewerContext=viewerContext;
+    newRectangle->drawEnable=drawEnable;
+    newRectangle->editIndex=editIndex;
+    newRectangle->u=u;
+    newRectangle->v=v;
+    newRectangle->width=width;
+    newRectangle->height=height;
+    return newRectangle;
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Polycircle
 ////////////////////////////////////////////////////////////////////////////////
@@ -1220,4 +1281,27 @@ void Polycircle::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
     normal=normal.Rotated(axis,angleRadians);
 
     recalculate();
+}
+
+Polycircle* Polycircle::copyCreate ()
+{
+    Polycircle *newPolycircle=new Polycircle();
+    newPolycircle->modified=modified;
+    newPolycircle->closed=closed;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        newPolycircle->shapePoints.push_back(shapePoints[i]);
+        i++;
+    }
+    newPolycircle->normal=normal;
+    newPolycircle->currentMousePosition=currentMousePosition;
+    newPolycircle->viewerContext=viewerContext;
+    newPolycircle->drawEnable=drawEnable;
+    newPolycircle->editIndex=editIndex;
+    newPolycircle->centerPointSet=centerPointSet;
+    newPolycircle->centerPoint=centerPoint;
+    newPolycircle->firstPointSet=firstPointSet;
+    newPolycircle->firstPoint=firstPoint;
+    newPolycircle->vertexCount=vertexCount;
+    return newPolycircle;
 }

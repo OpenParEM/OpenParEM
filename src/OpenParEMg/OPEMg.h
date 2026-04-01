@@ -133,6 +133,11 @@ public:
     bool isValidObjectEdit ();
     bool isValidObjectStretch ();
 
+    bool isValidCopy ();
+    void copyItem (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+    void copyDrawingItems ();
+    void finishCopyDrawingItems();
+
     bool isValidDeletePoint ();
     void finishDeletePoint (CustomTreeWidgetItem *);
 
@@ -399,6 +404,7 @@ private:
     QAction *hideAction;
     QAction *selectAllAction;
     QAction *unselectAction;
+    QAction *copyAction;
     QAction *deleteAction;
     QAction *deletePointAction;
     QAction *insertPointAction;

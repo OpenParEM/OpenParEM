@@ -231,6 +231,15 @@ public:
         }
     }
 
+    void activateItem (CustomTreeWidgetItem *item)
+    {
+        if (!item) return;
+        if (item->get_AIS_Shape().IsNull()) return;
+        viewerContext->Display(item->get_AIS_Shape(),Standard_False);
+        viewerContext->Load(item->get_AIS_Shape());
+        viewerContext->Activate(item->get_AIS_Shape(),0,Standard_False);
+    }
+
     bool isSelectedItem (CustomTreeWidgetItem *item)
     {
         if (item->get_AIS_Shape().IsNull()) return false;

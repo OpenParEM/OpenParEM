@@ -161,6 +161,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(hideAction);
     QActionList.push_back(selectAllAction);
     QActionList.push_back(unselectAction);
+    QActionList.push_back(copyAction);
     QActionList.push_back(deleteAction);
     QActionList.push_back(deletePointAction);
     QActionList.push_back(insertPointAction);
@@ -1165,6 +1166,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             insertPointAction=new QAction("InsertPoint");
             rotateAction=new QAction("Rotate");
             unselectAction=new QAction("Unselect");
+            copyAction=new QAction("Copy");
             deleteAction=new QAction("Delete");
             createPortAction=new QAction("Create Port");
             createPortAction->setToolTip("Copy the selected face and create a port.");
@@ -1187,6 +1189,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             connect(rotateAction, &QAction::triggered, this, &OpenParEMg::rotateObject);
             connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
             connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
+            connect(copyAction, &QAction::triggered, this, &OpenParEMg::copyDrawingItems);
             connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
             connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
             connect(extrudeAction, &QAction::triggered, this, &OpenParEMg::extrudePolywire);
@@ -1198,6 +1201,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             menu.addAction(showAction);
             menu.addAction(hideAction);
             menu.addAction(unselectAction);
+            menu.addAction(copyAction);
             menu.addAction(deleteAction);
             //menu.addAction(createPortAction);
             //menu.addAction(createPathAction);
@@ -1236,6 +1240,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             extrudeAction->setEnabled(isValidExtrudePolywire());
             mergeAction->setEnabled(isValidMergeSolids());
             subtractAction->setEnabled(isValidSubtractSolids());
+            copyAction->setEnabled(isValidCopy());
             deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
             menu.exec(ui->drawingWindow->mapToGlobal(pnt));
@@ -3317,6 +3322,58 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
         parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
     }
     ui->drawingWindow->showItem(item);
+}
+
+bool OpenParEMg::isValidCopy ()
+{
+    //std::cout << "OpenParEMg::isValidCopy" << std::endl; std::cout.flush();
+
+    if (ui->drawingWindow->NbSelected() == 0) return false;
+    return true;
+}
+
+void OpenParEMg::copyItem (CustomTreeWidgetItem *item, CustomTreeWidgetItem *newItemParent)
+{
+    std::cout << "OpenParEMg::copyItem" << std::endl; std::cout.flush();
+
+    if (!item) return;
+
+    //xxx
+    CustomTreeWidgetItem *newItem=item->copyCreate();
+    newItem->setForeground(0,Qt::black);
+    ui->drawingWindow->activateItem(newItem);
+    newItemParent->addChild(newItem);
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        if (child) copyItem(child,newItem);
+        i++;
+    }
+}
+
+void OpenParEMg::copyDrawingItems ()
+{
+    std::cout << "OpenParEMg::copyDrawingItems" << std::endl; std::cout.flush();
+
+    startOperation(true);
+    ui->drawingWindow->set_pickSecondVertex(true);
+
+    // set up for animation
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) {
+            copyItem(item,&drawing);
+        }
+        i++;
+    }
+    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,100);
+}
+
+void OpenParEMg::finishCopyDrawingItems ()
+{
+
 }
 
 void PrintActiveSelectionModes(const Handle(AIS_InteractiveContext)& theContext,
