@@ -27,17 +27,24 @@ Process::Process (QWidget *parent)
     : QWidget{parent}
 {}
 
-Process* Process::copyCreate ()
-{
-    Process* newProcess=new Process();
-    newProcess->modified=modified;
-    return newProcess;
-}
-
 Extrude* Extrude::copyCreate ()
 {
     Extrude* newExtrude=new Extrude();
     newExtrude->modified=modified;
     newExtrude->length=length;
     return newExtrude;
+}
+
+Merge* Merge::copyCreate ()
+{
+    Merge* newMerge=new Merge();
+    newMerge->modified=modified;
+    return newMerge;
+}
+
+Subtract* Subtract::copyCreate ()
+{
+    Subtract* newSubtract=new Subtract();
+    newSubtract->modified=modified;
+    return newSubtract;
 }

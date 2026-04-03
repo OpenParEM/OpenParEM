@@ -271,8 +271,9 @@ public:
     {
         std::cout << "CustomTreeWidgetItem::copyCreate()" << std::endl; std::cout.flush();
         CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem();
+        newItem->setText(0,this->text(0).append("_copy"));
         if (!shape.IsNull()) {newItem->shape=new AIS_Shape(shape->Shape());}
-        newItem->setText(0,this->text(0));
+        newItem->aTrsf=aTrsf;
         long unsigned int i=0;
         while (i < arrowHeads.size()) {
             if (!arrowHeads[i].IsNull()) {newItem->arrowHeads.push_back(new AIS_Shape(arrowHeads[i]->Shape()));}

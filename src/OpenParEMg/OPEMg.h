@@ -134,9 +134,8 @@ public:
     bool isValidObjectStretch ();
 
     bool isValidCopy ();
-    void copyItem (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+    CustomTreeWidgetItem * copyItem (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void copyDrawingItems ();
-    void finishCopyDrawingItems();
 
     bool isValidDeletePoint ();
     void finishDeletePoint (CustomTreeWidgetItem *);

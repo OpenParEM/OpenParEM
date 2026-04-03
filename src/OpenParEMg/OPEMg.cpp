@@ -3245,7 +3245,7 @@ void OpenParEMg::finishSubtractSolids ()
 
 void OpenParEMg::moveObject ()
 {
-    //std::cout << "OpenParEMg::moveObject" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::moveObject" << std::endl; std::cout.flush();
 
     startOperation(true);
     ui->drawingWindow->set_pickSecondVertex(true);
@@ -3271,7 +3271,7 @@ void OpenParEMg::moveObject ()
 
 void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt p1, bool isChild)
 {
-    //std::cout << "OpenParEMg::finishMoveObject  isChild=" << isChild << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::finishMoveObject  isChild=" << isChild << std::endl; std::cout.flush();
 
     if (!item) return;
 
@@ -3308,7 +3308,7 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
 
 void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt p1)
 {
-    //std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
 
     if (!item) return;
 
@@ -3332,16 +3332,16 @@ bool OpenParEMg::isValidCopy ()
     return true;
 }
 
-void OpenParEMg::copyItem (CustomTreeWidgetItem *item, CustomTreeWidgetItem *newItemParent)
+CustomTreeWidgetItem* OpenParEMg::copyItem (CustomTreeWidgetItem *item, CustomTreeWidgetItem *newItemParent)
 {
-    std::cout << "OpenParEMg::copyItem" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::copyItem" << std::endl; std::cout.flush();
 
-    if (!item) return;
+    if (!item) return nullptr;
 
-    //xxx
     CustomTreeWidgetItem *newItem=item->copyCreate();
     newItem->setForeground(0,Qt::black);
     ui->drawingWindow->activateItem(newItem);
+    ui->drawingWindow->insertItemToMap(newItem->get_AIS_Shape(),newItem);
     newItemParent->addChild(newItem);
 
     int i=0;
@@ -3350,30 +3350,43 @@ void OpenParEMg::copyItem (CustomTreeWidgetItem *item, CustomTreeWidgetItem *new
         if (child) copyItem(child,newItem);
         i++;
     }
+
+    return newItem;
 }
 
 void OpenParEMg::copyDrawingItems ()
 {
-    std::cout << "OpenParEMg::copyDrawingItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::copyDrawingItems" << std::endl; std::cout.flush();
 
     startOperation(true);
     ui->drawingWindow->set_pickSecondVertex(true);
 
-    // set up for animation
+    // list of items to copy
+    std::vector<CustomTreeWidgetItem *> copyList;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            copyItem(item,&drawing);
+            copyList.push_back(item);
         }
         i++;
     }
+
+    // copy
+    i=0;
+    while (i < copyList.size()) {
+        CustomTreeWidgetItem *item=copyList[i];
+        if (item && item->is_drawing()) {
+            CustomTreeWidgetItem *newItem=copyItem(item,&drawing);
+            ui->drawingWindow->unselectItem(item);
+            ui->drawingWindow->hideItem(newItem);
+            ui->drawingWindow->showItem(newItem);
+            ui->drawingWindow->selectItem(newItem);
+        }
+        i++;
+    }
+
     finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,100);
-}
-
-void OpenParEMg::finishCopyDrawingItems ()
-{
-
 }
 
 void PrintActiveSelectionModes(const Handle(AIS_InteractiveContext)& theContext,

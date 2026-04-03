@@ -31,7 +31,7 @@ class Process : public QWidget
 public:
     explicit Process (QWidget *parent = nullptr);
     bool isModified () {return modified;}
-    virtual Process* copyCreate ();
+    virtual Process* copyCreate () = 0;
 
 signals:
 
@@ -51,12 +51,12 @@ private:
 
 class Merge : public Process
 {
-
+    Merge* copyCreate () override;
 };
 
 class Subtract : public Process
 {
-
+    Subtract* copyCreate () override;
 };
 
 #endif // PROCESS_H
