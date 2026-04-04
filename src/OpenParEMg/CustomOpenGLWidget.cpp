@@ -125,8 +125,8 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
 
     isFaceSelection=false;
 
-    // set a default so that all vertices highlight with a circle
-    Handle(Prs3d_Drawer) drawer=viewerContext->DefaultDrawer();
+    // set a default so that all bare vertices highlight with a yellow plus sign
+    viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
 
     viewerContext->SetAutoActivateSelection(Standard_False);
 }
@@ -220,7 +220,7 @@ void CustomOpenGLWidget::cancelDraw ()
     }
 
     // reset point selection symbol
-    viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
+    //viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
 
     // clear detection
     viewerContext->ClearDetected(Standard_True);

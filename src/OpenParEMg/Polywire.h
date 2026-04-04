@@ -88,6 +88,7 @@ public:
     bool getDrawEnable () {return drawEnable;}
 
     virtual Polywire* copyCreate () = 0;
+    virtual Handle(AIS_Shape) get_AIS_Shape () = 0;
 
 signals:
 
@@ -123,6 +124,7 @@ public:
     void setP0 (gp_Pnt &P0);
     void setP1 (gp_Pnt &P1);
     Line* copyCreate () override;
+    Handle(AIS_Shape) get_AIS_Shape () override;
 };
 
 class Polyline : public Polywire
@@ -154,6 +156,7 @@ public:
     bool canInsertPoint () override;
     void insertPoint (gp_Pnt &pnt) override;
     Polyline* copyCreate () override;
+    Handle(AIS_Shape) get_AIS_Shape () override;
 private:
     bool checkIntersection;
 };
@@ -198,6 +201,7 @@ public:
 
     void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2) override;
     Rectangle* copyCreate () override;
+    Handle(AIS_Shape) get_AIS_Shape () override;
 
 private:
     gp_Vec u,v;
@@ -251,6 +255,7 @@ public:
 
     void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2) override;
     Polycircle* copyCreate () override;
+    Handle(AIS_Shape) get_AIS_Shape () override;
 
 private:
     bool centerPointSet;

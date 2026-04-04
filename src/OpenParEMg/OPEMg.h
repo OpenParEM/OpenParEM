@@ -30,7 +30,6 @@
 #include "LengthInputForm.h"
 #include "LineEditForm.h"
 #include "RotateInputForm.h"
-#include "Process.h"
 #include "RectangleEditForm.h"
 #include "PolycircleEditForm.h"
 #include "Relay.h"
@@ -97,6 +96,7 @@ public:
     void addRootDisplayShape (TopoDS_Shape);
     void addItemWithShape (CustomTreeWidgetItem *);
     CustomTreeWidgetItem* addItemShape (TopoDS_Shape, CustomTreeWidgetItem *);
+    CustomTreeWidgetItem* addItemShape (Polywire *, CustomTreeWidgetItem *);
     bool loadBrepFile (QString, bool);
     bool loadStepFile (QString, bool);
     bool saveBrepFile (char *);
@@ -322,6 +322,7 @@ private slots:
     void createPort ();
     void createPath ();
     void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape, int);
+    void replaceItemShape (CustomTreeWidgetItem *, Polywire *, int);
     void extrudePolywire ();
     void mergeSolids ();
     void subtractSolids ();

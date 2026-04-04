@@ -97,21 +97,11 @@ public:
     void set_pickFirstVertex (bool pickFirstVertex_) {
         pickFirstVertex=pickFirstVertex_;
         pickSecondVertex=false;
-        if (pickFirstVertex) {
-            viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
-        } else {
-            viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
-        }
     }
 
     void set_pickSecondVertex (bool pickSecondVertex_) {
         pickSecondVertex=pickSecondVertex_;
         pickFirstVertex=false;
-        if (pickSecondVertex) {
-            viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_O,Quantity_NOC_CYAN1,2));
-        } else {
-            viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
-        }
     }
 
     void set_activeShape (Handle(AIS_Shape) shape) {

@@ -21,14 +21,17 @@
 #include "Polywire.h"
 #include <AIS_InteractiveContext.hxx>
 #include "Precision.hxx"
+#include <AIS_ViewController.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepTools_WireExplorer.hxx>
+#include <BRep_Builder.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
+#include <TopoDS_Compound.hxx>
 #include <TopoDS_Wire.hxx>
 #include <BRepTools.hxx>
 #include <BRep_Tool.hxx>
@@ -373,6 +376,16 @@ Line* Line::copyCreate ()
     return newLine;
 }
 
+Handle(AIS_Shape) Line::get_AIS_Shape ()
+{
+    Handle(AIS_Shape) shape;
+    TopoDS_Wire wire=buildWire();
+    if (!wire.IsNull()) {
+        shape=new AIS_Shape(wire);
+    }
+    return shape;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Polyline
 ////////////////////////////////////////////////////////////////////////////////
@@ -481,6 +494,23 @@ Polyline* Polyline::copyCreate ()
     newPolyline->editIndex=editIndex;
     newPolyline->checkIntersection=checkIntersection;
     return newPolyline;
+}
+
+Handle(AIS_Shape) Polyline::get_AIS_Shape ()
+{
+    Handle(AIS_Shape) shape;
+    TopoDS_Wire wire=buildWire();
+    if (!wire.IsNull()) {
+        if (closed) {
+            TopoDS_Face face=buildFace(wire);
+            if (!face.IsNull()) {
+                shape=new AIS_Shape(face);
+            }
+        } else {
+            shape=new AIS_Shape(wire);
+        }
+    }
+    return shape;
 }
 
 void Polyline::drawRubberband ()
@@ -1020,6 +1050,19 @@ Rectangle* Rectangle::copyCreate ()
 
 }
 
+Handle(AIS_Shape) Rectangle::get_AIS_Shape ()
+{
+    Handle(AIS_Shape) shape;
+    TopoDS_Wire wire=buildWire();
+    if (!wire.IsNull()) {
+        TopoDS_Face face=buildFace(wire);
+        if (!face.IsNull()) {
+            shape=new AIS_Shape(face);
+        }
+    }
+    return shape;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Polycircle
 ////////////////////////////////////////////////////////////////////////////////
@@ -1096,7 +1139,7 @@ void Polycircle::drawStretchRubberband ()
 {
     //std::cout << "Polycircle::drawRubberband" << std::endl; std::cout.flush();
 
-    //if (!isValidPoint(currentMousePosition,false)) return;
+    if (currentMousePosition.IsEqual(centerPoint,Precision::Confusion())) return;
 
     // reset
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
@@ -1304,4 +1347,28 @@ Polycircle* Polycircle::copyCreate ()
     newPolycircle->firstPoint=firstPoint;
     newPolycircle->vertexCount=vertexCount;
     return newPolycircle;
+}
+
+Handle(AIS_Shape) Polycircle::get_AIS_Shape ()
+{
+    Handle(AIS_Shape) shape;
+    TopoDS_Wire wire=buildWire();
+    if (!wire.IsNull()) {
+        TopoDS_Face face=buildFace(wire);
+        if (!face.IsNull()) {
+
+            // for center selection
+            TopoDS_Vertex vertex=BRepBuilderAPI_MakeVertex(centerPoint);
+
+            // combined shape
+            TopoDS_Compound compound;
+            BRep_Builder builder;
+            builder.MakeCompound(compound);
+            builder.Add(compound,face);
+            builder.Add(compound,vertex);
+
+            shape=new AIS_Shape(compound);
+        }
+    }
+    return shape;
 }
