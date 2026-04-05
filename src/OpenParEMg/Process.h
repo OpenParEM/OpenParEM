@@ -24,6 +24,7 @@
 //#include "Polywire.h"
 #include <QWidget>
 #include <gp_Pnt.hxx>
+#include "ObjectCounts.h"
 
 class Process : public QWidget
 {
@@ -33,6 +34,7 @@ public:
     bool isModified () {return modified;}
     virtual Process* copyCreate () = 0;
     virtual bool canEdit () = 0;
+    virtual QString getName (ObjectCounts *objectCounts) = 0;
 
 signals:
 
@@ -47,6 +49,7 @@ public:
     double get_length () {return length;}
     Extrude* copyCreate () override;
     bool canEdit () override {return true;}
+    QString getName (ObjectCounts *objectCounts) override;
 private:
     double length;       // length of the extrusion
 };
@@ -56,6 +59,7 @@ class Merge : public Process
 public:
     Merge* copyCreate () override;
     bool canEdit () override {return false;}
+    QString getName (ObjectCounts *objectCounts) override;
 };
 
 class Subtract : public Process
@@ -63,6 +67,7 @@ class Subtract : public Process
 public:
     Subtract* copyCreate () override;
     bool canEdit () override {return false;}
+    QString getName (ObjectCounts *objectCounts) override;
 };
 
 #endif // PROCESS_H

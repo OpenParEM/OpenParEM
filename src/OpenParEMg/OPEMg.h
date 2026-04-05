@@ -40,6 +40,7 @@
 #include "port.hpp"
 #include "CustomTreeWidgetItem.h"
 #include "gmsh.h"
+#include "ObjectCounts.h"
 
 
 extern "C" void init_project (struct projectData *);
@@ -489,7 +490,7 @@ private:
     Polywire *activePolywire;  // when drawing
     gp_Vec uLocalAxis;  // local axis for transfer to rectangles
     gp_Pln currentPrivilegedPlane;
-
+    ObjectCounts objectCounts;  // for uniquely numbering objects in their item names
 };
 
 #endif // OPEMG_H

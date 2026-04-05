@@ -28,6 +28,7 @@
 #include <TopoDS_Wire.hxx>
 #include <gp_Pnt.hxx>
 #include "keywordPair.hpp"
+#include "ObjectCounts.h"
 
 class OpenParEMg;
 
@@ -96,6 +97,7 @@ public:
 
     virtual Polywire* copyCreate () = 0;
     virtual Handle(AIS_Shape) get_AIS_Shape () = 0;
+    virtual QString getName (ObjectCounts *objectCounts) = 0;
 
 signals:
 
@@ -138,6 +140,7 @@ public:
     void setP1 (gp_Pnt &P1);
     Line* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;
+    QString getName (ObjectCounts *objectCounts) override;
 };
 
 class Polyline : public Polywire
@@ -176,6 +179,7 @@ public:
     void insertPoint (gp_Pnt &pnt) override;
     Polyline* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;
+    QString getName (ObjectCounts *objectCounts) override;
 private:
     bool checkIntersection;
 
@@ -230,7 +234,7 @@ public:
     void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2) override;
     Rectangle* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;
-
+    QString getName (ObjectCounts *objectCounts) override;
 private:
     gp_Vec u,v;
     double width,height;
@@ -290,7 +294,7 @@ public:
     void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2) override;
     Polycircle* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;
-
+    QString getName (ObjectCounts *objectCounts) override;
 private:
     bool centerPointSet;
     gp_Pnt centerPoint;

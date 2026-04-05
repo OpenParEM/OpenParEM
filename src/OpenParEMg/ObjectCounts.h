@@ -18,54 +18,30 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "Process.h"
-#include <AIS_InteractiveContext.hxx>
-#include <BRepBuilderAPI_MakeFace.hxx>
-#include <BRepPrimAPI_MakePrism.hxx>
 
-Process::Process (QWidget *parent)
-    : QWidget{parent}
-{}
+#ifndef OBJECTCOUNTS_H
+#define OBJECTCOUNTS_H
 
-Extrude* Extrude::copyCreate ()
+// class to keep track of the counts of the various types of objects in a drawing
+// Uniqueness is not required, but unique numbering may help when discussing drawings.
+class ObjectCounts
 {
-    Extrude* newExtrude=new Extrude();
-    newExtrude->modified=modified;
-    newExtrude->length=length;
-    return newExtrude;
-}
+public:
+    ObjectCounts () {
+        line=0;
+        polyline=0;
+        rectangle=0;
+        polycircle=0;
+        extrude=0;
+        merge=0;
+        subtract=0;
+        solid=0;
+        compsolid=0;
+        compound=0;
+    }
 
-QString Extrude::getName (ObjectCounts *objectCounts) {
-    objectCounts->extrude++;
-    QString name="Extrude";
-    name.append(QString::number(objectCounts->extrude));
-    return name;
-}
-
-Merge* Merge::copyCreate ()
-{
-    Merge* newMerge=new Merge();
-    newMerge->modified=modified;
-    return newMerge;
-}
-
-QString Merge::getName (ObjectCounts *objectCounts) {
-    objectCounts->merge++;
-    QString name="Merge";
-    name.append(QString::number(objectCounts->merge));
-    return name;
-}
-
-Subtract* Subtract::copyCreate ()
-{
-    Subtract* newSubtract=new Subtract();
-    newSubtract->modified=modified;
-    return newSubtract;
-}
-
-QString Subtract::getName (ObjectCounts *objectCounts) {
-    objectCounts->subtract++;
-    QString name="Subtract";
-    name.append(QString::number(objectCounts->subtract));
-    return name;
-}
+    long unsigned int line,polyline,rectangle,polycircle;  // polywire objects
+    long unsigned int extrude,merge,subtract;              // operation objects
+    long unsigned int solid,compsolid,compound;            // general AIS shapes
+};
+#endif // OBJECTCOUNTS_H

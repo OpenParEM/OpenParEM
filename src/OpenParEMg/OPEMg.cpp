@@ -2804,6 +2804,7 @@ void OpenParEMg::finishExtrudePolywire (double length, bool cancel)
                         Extrude *extrude=new Extrude();
                         extrude->set_length(length);
                         newItem->set_Process(extrude);
+                        newItem->setText(0,newItem->get_Process()->getName(&objectCounts));
 
                         // save the process
                         extrude=nullptr;
@@ -3221,6 +3222,7 @@ void OpenParEMg::finishMergeSolids ()
     // define the process
     Merge *merge=new Merge();
     newItem->set_Process(merge);
+    newItem->setText(0,newItem->get_Process()->getName(&objectCounts));
 
     // save the process
     merge=nullptr;
@@ -3312,6 +3314,7 @@ void OpenParEMg::finishSubtractSolids ()
     // define the process
     Subtract *subtract=new Subtract();
     newItem->set_Process(subtract);
+    newItem->setText(0,newItem->get_Process()->getName(&objectCounts));
 
     // save the process
     subtract=nullptr;
@@ -3773,7 +3776,8 @@ void OpenParEMg::closeExistingPolyline ()
             if (polywire) {
                 polywire->close();
                 reprocess(item);
-                item->setText(0,"FACE");
+                //item->setText(0,"FACE");
+                item->setText(0,polywire->getName(&objectCounts));
                 item->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);
                 ui->drawingWindow->showItem(item);
                 ui->drawingWindow->activateSelectItem(item);
@@ -3814,7 +3818,8 @@ void OpenParEMg::openExistingPolyline ()
             if (polywire) {
                 polywire->open();
                 reprocess(item);
-                item->setText(0,"WIRE");
+                //item->setText(0,"WIRE");
+                item->setText(0,polywire->getName(&objectCounts));
                 item->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);
                 ui->drawingWindow->showItem(item);
                 ui->drawingWindow->activateSelectItem(item);
@@ -4900,9 +4905,22 @@ void OpenParEMg::addChildDisplayShape (CustomTreeWidgetItem *item, std::pair<int
             CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
             Handle(AIS_Shape) drawingShape=new AIS_Shape(child);
             newItem->set_AIS_Shape(drawingShape);
-            if (shapeType == TopAbs_COMPSOLID) newItem->setText(0,"COMPSOLID");
-            else if (shapeType == TopAbs_SOLID) newItem->setText(0,"SOLID");
-            else if (shapeType == TopAbs_COMPOUND) newItem->setText(0,"COMPOUND");
+            if (shapeType == TopAbs_COMPSOLID) {
+                objectCounts.compsolid++;
+                QString name="COMPSOLID";
+                name.append(QString::number(objectCounts.compsolid));
+                newItem->setText(0,name);
+            } else if (shapeType == TopAbs_SOLID) {
+                objectCounts.solid++;
+                QString name="SOLID";
+                name.append(QString::number(objectCounts.solid));
+                newItem->setText(0,name);
+            } else if (shapeType == TopAbs_COMPOUND) {
+                objectCounts.compound++;
+                QString name="COMPOUND";
+                name.append(QString::number(objectCounts.compound));
+                newItem->setText(0,name);
+            }
             newItem->set_itemType(0);  // a drawing item
             newItem->setForeground(0,Qt::gray);
             newItem->set_dimTag(dimTag);
@@ -4953,8 +4971,17 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
             Handle(AIS_Shape) drawingShape=new AIS_Shape(child);
             ui->drawingWindow->insertItemToMap(drawingShape,newItem);
             newItem->set_AIS_Shape(drawingShape);
-            if (shapeType == TopAbs_COMPSOLID) newItem->setText(0,"COMPSOLID");
-            else if (shapeType == TopAbs_SOLID) newItem->setText(0,"SOLID");
+            if (shapeType == TopAbs_COMPSOLID) {
+                objectCounts.compsolid++;
+                QString name="COMPSOLID";
+                name.append(QString::number(objectCounts.compsolid));
+                newItem->setText(0,name);
+            } else if (shapeType == TopAbs_SOLID) {
+                objectCounts.solid++;
+                QString name="SOLID";
+                name.append(QString::number(objectCounts.solid));
+                newItem->setText(0,name);
+            }
             newItem->set_itemType(0);  // a drawing item
             newItem->setForeground(0,Qt::gray);
             newItem->set_Polywire(nullptr);
@@ -6602,6 +6629,7 @@ void OpenParEMg::finishDraw ()
 
     CustomTreeWidgetItem *newItem;
     newItem=addItemShape(activePolywire,&drawing); // inserts to item map
+    newItem->setText(0,activePolywire->getName(&objectCounts));
 
     // put it on the Z-layer to get it higher selection priority
     newItem->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);

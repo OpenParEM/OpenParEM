@@ -378,6 +378,13 @@ Handle(AIS_Shape) Line::get_AIS_Shape ()
     return shape;
 }
 
+QString Line::getName (ObjectCounts *objectCounts) {
+    objectCounts->line++;
+    QString name="Line";
+    name.append(QString::number(objectCounts->line));
+    return name;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Polyline
 ////////////////////////////////////////////////////////////////////////////////
@@ -703,6 +710,13 @@ void Polyline::buildFromFace (TopoDS_Face &face)
         shapePoints.push_back(point);
         wireExp.Next();
     }
+}
+
+QString Polyline::getName (ObjectCounts *objectCounts) {
+    objectCounts->polyline++;
+    QString name="Polyline";
+    name.append(QString::number(objectCounts->polyline));
+    return name;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1047,6 +1061,13 @@ Polyline* Rectangle::convert ()
     return polyline;
 }
 
+QString Rectangle::getName (ObjectCounts *objectCounts) {
+    objectCounts->rectangle++;
+    QString name="Rectangle";
+    name.append(QString::number(objectCounts->rectangle));
+    return name;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Polycircle
 ////////////////////////////////////////////////////////////////////////////////
@@ -1371,4 +1392,11 @@ Polyline* Polycircle::convert ()
     polyline->normal=normal;
     polyline->viewerContext=viewerContext;
     return polyline;
+}
+
+QString Polycircle::getName (ObjectCounts *objectCounts) {
+    objectCounts->polycircle++;
+    QString name="Polycircle";
+    name.append(QString::number(objectCounts->polycircle));
+    return name;
 }
