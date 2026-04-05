@@ -3137,7 +3137,27 @@ bool OpenParEMg::isValidMergeSolids ()
             if (parent && parent == &drawing) {
                 Handle(AIS_Shape) shape=item->get_AIS_Shape();
                 if (!shape.IsNull()) {
-                    if (shape->Shape().ShapeType() == TopAbs_SOLID || shape->Shape().ShapeType() == TopAbs_COMPOUND) solidCount++;
+                    //xxx
+
+                    // check for SOLID
+                    if (shape->Shape().ShapeType() == TopAbs_SOLID) solidCount++;
+
+                    // check for COMPOUND, where it might be a polycircle (due to the center vertex), which is invalid for merging
+                    if (shape->Shape().ShapeType() == TopAbs_COMPOUND) {
+                        bool foundPolycircle=false;
+                        TopoDS_Shape testShape=shape->Shape();
+                        if (testShape.ShapeType() == TopAbs_COMPOUND) {
+                            TopoDS_Iterator it(testShape);
+                            for (; it.More(); it.Next()) {
+                                TopoDS_Shape subShape=it.Value();
+                                if (subShape.ShapeType () == TopAbs_FACE) {
+                                    foundPolycircle=true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!foundPolycircle) solidCount++;
+                    }
                 }
             }
         }
