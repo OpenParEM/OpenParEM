@@ -49,6 +49,7 @@ public:
     void reject () override;
 
 private slots:
+    void on_length_returnPressed ();
     void on_positionX_returnPressed ();
     void on_positionY_returnPressed ();
     void on_positionZ_returnPressed ();
@@ -65,6 +66,7 @@ public slots:
 private:
     Ui::LineEditForm *ui;
 
+    gp_Pnt p0,p1;   // store in variable to avoid losing precision in the form
     bool pickPoint;
     bool pickPoint2;
     Line *polywire;

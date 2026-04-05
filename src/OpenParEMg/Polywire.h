@@ -54,6 +54,7 @@ public:
     virtual void open () = 0;
     virtual bool canConvert () = 0;
     virtual Polyline* convert () = 0;
+    virtual bool canEdit () = 0;
     virtual void addPoint (gp_Pnt &pnt);
     void setCurrentMousePosition (gp_Pnt &currentMousePosition_) {currentMousePosition=currentMousePosition_;}
     void deleteLastPoint ();
@@ -124,7 +125,8 @@ public:
     bool canOpen () override {return false;}
     void open () override {return;}
     bool canConvert () override {return false;}
-    Polyline* convert () override {return nullptr;;}
+    Polyline* convert () override {return nullptr;}
+    bool canEdit () override {return true;}
     bool isFinished () override {if (shapePoints.size() == 2) return true; return false;}
     bool canDeletePoint () override {return false;}
     void deletePoint (gp_Pnt &gp_Pnt) override {return;}
@@ -155,6 +157,7 @@ public:
     bool canOpen () override;
     void open () override;
     bool canConvert () override {return false;}
+    bool canEdit () override {return false;}
     Polyline* convert () override {return nullptr;}
     bool isFinished () override {
         if (shapePoints.size() > 1) {
@@ -200,6 +203,7 @@ public:
     void open () override {return;}
     bool canConvert () override {return true;}
     Polyline* convert () override;
+    bool canEdit () override {return true;}
     void addPoint (gp_Pnt &pnt) override;
     bool isFinished () override {if (shapePoints.size() == 5) return true; return false;}
     bool canDeletePoint () override {return false;}
@@ -256,6 +260,7 @@ public:
     bool canConvert () override {return true;}
     Polyline* convert () override;
     void addPoint (gp_Pnt &pnt) override;
+    bool canEdit () override {return true;}
     bool isFinished () override {if (firstPointSet) return true; return false;}
     bool canDeletePoint () override {return false;}
     void deletePoint (gp_Pnt &gp_Pnt) override {return;}

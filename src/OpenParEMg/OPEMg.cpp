@@ -2971,7 +2971,7 @@ bool OpenParEMg::isValidObjectEdit ()
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
             Polywire *polywire=item->get_Polywire();
-            if (polywire) count++;
+            if (polywire && polywire->canEdit()) count++;
 
             Process *process=item->get_Process();
             if (process && process->canEdit()) count++;

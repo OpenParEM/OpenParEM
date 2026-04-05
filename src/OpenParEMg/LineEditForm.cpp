@@ -41,6 +41,8 @@ LineEditForm::LineEditForm (QWidget *parent)
     ui->positionZ->setValidator(&validator);
     ui->pick->setCheckable(true);
 
+    ui->length->setValidator(&validator);
+
     ui->position2X->setValidator(&validator);
     ui->position2Y->setValidator(&validator);
     ui->position2Z->setValidator(&validator);
@@ -59,9 +61,6 @@ LineEditForm::~LineEditForm ()
 
 bool LineEditForm::isValid ()
 {
-    gp_Pnt p0(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
-    gp_Pnt p1(ui->position2X->text().toDouble(),ui->position2Y->text().toDouble(),ui->position2Z->text().toDouble());
-
     if (p0.IsEqual(p1,Precision::Confusion())) return false;
     return true;
 }
@@ -75,23 +74,41 @@ void LineEditForm::set_polywire (Line *polywire_)
 void LineEditForm::populate (Line *polywire_)
 {
     if (polywire_) {
-        ui->positionX->setText(QString::number(polywire_->getP0().X()));
-        ui->positionY->setText(QString::number(polywire_->getP0().Y()));
-        ui->positionZ->setText(QString::number(polywire_->getP0().Z()));
+        p0=polywire_->getP0();
+        p1=polywire_->getP1();
 
-        ui->position2X->setText(QString::number(polywire_->getP1().X()));
-        ui->position2Y->setText(QString::number(polywire_->getP1().Y()));
-        ui->position2Z->setText(QString::number(polywire_->getP1().Z()));
+        ui->positionX->setText(QString::number(p0.X()));
+        ui->positionY->setText(QString::number(p0.Y()));
+        ui->positionZ->setText(QString::number(p0.Z()));
+
+        ui->position2X->setText(QString::number(p1.X()));
+        ui->position2Y->setText(QString::number(p1.Y()));
+        ui->position2Z->setText(QString::number(p1.Z()));
+
+        ui->length->setText(QString::number(p0.Distance(p1)));
     }
 }
 
 void LineEditForm::repopulate ()
 {
-    gp_Pnt p0(ui->positionX->text().toDouble(),ui->positionY->text().toDouble(),ui->positionZ->text().toDouble());
-    gp_Pnt p1(ui->position2X->text().toDouble(),ui->position2Y->text().toDouble(),ui->position2Z->text().toDouble());
-
     polywire->setP0(p0);
     polywire->setP1(p1);
+}
+
+void LineEditForm::on_length_returnPressed ()
+{
+    if (ui->length->text().toDouble() == 0) return;
+
+    gp_Vec dir(p0,p1);
+    dir.Normalize();
+    dir*=ui->length->text().toDouble();
+    p1=p0.Translated(dir);
+
+    ui->position2X->setText(QString::number(p1.X()));
+    ui->position2Y->setText(QString::number(p1.Y()));
+    ui->position2Z->setText(QString::number(p1.Z()));
+
+    ui->OkButton->setEnabled(isValid());
 }
 
 void LineEditForm::on_positionX_returnPressed ()
@@ -166,17 +183,21 @@ void LineEditForm::pickVertexFinished (gp_Pnt point)
 
     if (pickPoint) {
         pickPoint=false;
-        ui->positionX->setText(QString::number(point.X()));
-        ui->positionY->setText(QString::number(point.Y()));
-        ui->positionZ->setText(QString::number(point.Z()));
+        p0=point;
+        ui->positionX->setText(QString::number(p0.X()));
+        ui->positionY->setText(QString::number(p0.Y()));
+        ui->positionZ->setText(QString::number(p0.Z()));
     }
 
     if (pickPoint2) {
         pickPoint2=false;
-        ui->position2X->setText(QString::number(point.X()));
-        ui->position2Y->setText(QString::number(point.Y()));
-        ui->position2Z->setText(QString::number(point.Z()));
+        p1=point;
+        ui->position2X->setText(QString::number(p1.X()));
+        ui->position2Y->setText(QString::number(p1.Y()));
+        ui->position2Z->setText(QString::number(p1.Z()));
     }
+
+    ui->length->setText(QString::number(p0.Distance(p1)));
 
     ui->pick->setChecked(false);
 

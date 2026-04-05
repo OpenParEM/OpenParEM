@@ -72,6 +72,8 @@ public slots:
 private:
     Ui::RectangleEditForm *ui;
 
+    gp_Pnt p0, p1;          // store in variables to avoid loss of precision with the form
+    double width, height;   // store in variables to avoid loss of precision with the form
     bool pickPoint;
     bool pickPoint2;
     Rectangle *polywire;

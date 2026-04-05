@@ -63,8 +63,6 @@ PolycircleEditForm::~PolycircleEditForm ()
 
 bool PolycircleEditForm::isValid ()
 {
-    gp_Pnt centerPoint(ui->centerPositionX->text().toDouble(),ui->centerPositionY->text().toDouble(),ui->centerPositionZ->text().toDouble());
-    gp_Pnt firstPoint(ui->firstPositionX->text().toDouble(),ui->firstPositionY->text().toDouble(),ui->firstPositionZ->text().toDouble());
     double radius=centerPoint.Distance(firstPoint);
     if (radius < Precision::Confusion()) return false;
     return true;
@@ -72,18 +70,22 @@ bool PolycircleEditForm::isValid ()
 
 void PolycircleEditForm::populate (Polycircle *polycircle_)
 {
-    ui->centerPositionX->setText(QString::number(polycircle_->getCenterPoint().X()));
-    ui->centerPositionY->setText(QString::number(polycircle_->getCenterPoint().Y()));
-    ui->centerPositionZ->setText(QString::number(polycircle_->getCenterPoint().Z()));
+    centerPoint=polycircle_->getCenterPoint();
+    firstPoint=polycircle_->getFirstPoint();
+    vertexCount=polycircle_->getVertexCount();
 
-    ui->firstPositionX->setText(QString::number(polycircle_->getFirstPoint().X()));
-    ui->firstPositionY->setText(QString::number(polycircle_->getFirstPoint().Y()));
-    ui->firstPositionZ->setText(QString::number(polycircle_->getFirstPoint().Z()));
+    ui->centerPositionX->setText(QString::number(centerPoint.X()));
+    ui->centerPositionY->setText(QString::number(centerPoint.Y()));
+    ui->centerPositionZ->setText(QString::number(centerPoint.Z()));
 
-    double radius=polycircle_->getCenterPoint().Distance(polycircle_->getFirstPoint());
+    ui->firstPositionX->setText(QString::number(firstPoint.X()));
+    ui->firstPositionY->setText(QString::number(firstPoint.Y()));
+    ui->firstPositionZ->setText(QString::number(firstPoint.Z()));
+
+    double radius=centerPoint.Distance(firstPoint);
     ui->radius->setText(QString::number(radius));
 
-    ui->vertexCount->setText(QString::number(polycircle_->getVertexCount()));
+    ui->vertexCount->setText(QString::number(vertexCount));
 }
 
 void PolycircleEditForm::set_Polycircle (Polycircle *polycircle_)
@@ -94,18 +96,21 @@ void PolycircleEditForm::set_Polycircle (Polycircle *polycircle_)
 
 void PolycircleEditForm::on_centerPositionX_returnPressed ()
 {
+    centerPoint.SetX(ui->centerPositionX->text().toDouble());
     repopulateOffCenter();
     ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_centerPositionY_returnPressed ()
 {
+    centerPoint.SetY(ui->centerPositionY->text().toDouble());
     repopulateOffCenter();
     ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_centerPositionZ_returnPressed ()
 {
+    centerPoint.SetZ(ui->centerPositionZ->text().toDouble());
     repopulateOffCenter();
     ui->OkButton->setEnabled(isValid());
 }
@@ -124,17 +129,15 @@ void PolycircleEditForm::on_pickCenter_clicked ()
 void PolycircleEditForm::repopulateOffCenter ()
 {
     Polycircle temp(polycircle);
-    gp_Pnt newCenter(ui->centerPositionX->text().toDouble(),ui->centerPositionY->text().toDouble(),ui->centerPositionZ->text().toDouble());
     gp_Pnt oldCenter=temp.getCenterPoint();
-    temp.shift(newCenter,oldCenter);
+    temp.shift(centerPoint,oldCenter);
     populate(&temp);
 }
 
 void PolycircleEditForm::repopulateOffFirstPoint ()
 {
     Polycircle temp(polycircle);
-    gp_Pnt newFirstPoint(ui->firstPositionX->text().toDouble(),ui->firstPositionY->text().toDouble(),ui->firstPositionZ->text().toDouble());
-    temp.setFirstPoint(newFirstPoint);
+    temp.setFirstPoint(firstPoint);
     temp.recalculate();
     populate(&temp);
 }
@@ -144,9 +147,6 @@ void PolycircleEditForm::on_radius_returnPressed ()
     if (ui->radius->text().toDouble() < Precision::Confusion()) return;
 
     Polycircle temp(polycircle);
-
-    gp_Pnt centerPoint(ui->centerPositionX->text().toDouble(),ui->centerPositionY->text().toDouble(),ui->centerPositionZ->text().toDouble());
-    gp_Pnt firstPoint(ui->firstPositionX->text().toDouble(),ui->firstPositionY->text().toDouble(),ui->firstPositionZ->text().toDouble());
 
     if (centerPoint.Distance(firstPoint) < Precision::Confusion()) return;
 
@@ -163,18 +163,21 @@ void PolycircleEditForm::on_radius_returnPressed ()
 
 void PolycircleEditForm::on_firstPositionX_returnPressed ()
 {
+    firstPoint.SetX(ui->firstPositionX->text().toDouble());
     repopulateOffFirstPoint();
     ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_firstPositionY_returnPressed ()
 {
+    firstPoint.SetY(ui->firstPositionY->text().toDouble());
     repopulateOffFirstPoint();
     ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_firstPositionZ_returnPressed ()
 {
+    firstPoint.SetZ(ui->firstPositionZ->text().toDouble());
     repopulateOffFirstPoint();
     ui->OkButton->setEnabled(isValid());
 }
@@ -192,18 +195,14 @@ void PolycircleEditForm::on_pickFirst_clicked ()
 
 void PolycircleEditForm::on_vertexCount_returnPressed ()
 {
+    vertexCount=ui->vertexCount->text().toInt();
     ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_OkButton_clicked ()
 {
-    gp_Pnt centerPoint(ui->centerPositionX->text().toDouble(),ui->centerPositionY->text().toDouble(),ui->centerPositionZ->text().toDouble());
-    gp_Pnt firstPoint(ui->firstPositionX->text().toDouble(),ui->firstPositionY->text().toDouble(),ui->firstPositionZ->text().toDouble());
-
     polycircle->setCenterPoint(centerPoint);
     polycircle->setFirstPoint(firstPoint);
-
-    int vertexCount=ui->vertexCount->text().toInt();
     polycircle->setVertexCount(vertexCount);
 
     polycircle->recalculate();
@@ -218,22 +217,21 @@ void PolycircleEditForm::pickVertexFinished (gp_Pnt point)
     this->setEnabled(true);
 
     if (pickCenterPoint) {
-
-        gp_Pnt oldCenterPoint(ui->centerPositionX->text().toDouble(),ui->centerPositionY->text().toDouble(),ui->centerPositionZ->text().toDouble());
-
         pickCenterPoint=false;
-        ui->centerPositionX->setText(QString::number(point.X()));
-        ui->centerPositionY->setText(QString::number(point.Y()));
-        ui->centerPositionZ->setText(QString::number(point.Z()));
+        centerPoint=point;
+        ui->centerPositionX->setText(QString::number(centerPoint.X()));
+        ui->centerPositionY->setText(QString::number(centerPoint.Y()));
+        ui->centerPositionZ->setText(QString::number(centerPoint.Z()));
         ui->pickCenter->setChecked(false);
         repopulateOffCenter();
     }
 
     if (pickFirstPoint) {
         pickFirstPoint=false;
-        ui->firstPositionX->setText(QString::number(point.X()));
-        ui->firstPositionY->setText(QString::number(point.Y()));
-        ui->firstPositionZ->setText(QString::number(point.Z()));
+        firstPoint=point;
+        ui->firstPositionX->setText(QString::number(firstPoint.X()));
+        ui->firstPositionY->setText(QString::number(firstPoint.Y()));
+        ui->firstPositionZ->setText(QString::number(firstPoint.Z()));
         ui->pickFirst->setChecked(false);
         repopulateOffFirstPoint();
     }

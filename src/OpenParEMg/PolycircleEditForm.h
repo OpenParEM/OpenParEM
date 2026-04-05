@@ -51,6 +51,8 @@ private:
 
     Polycircle *polycircle;
 
+    gp_Pnt centerPoint, firstPoint;  // store in variables to avoid precision loss in the form
+    int vertexCount;
     bool pickCenterPoint;
     bool pickFirstPoint;
     QDoubleValidator doubleValidator;
