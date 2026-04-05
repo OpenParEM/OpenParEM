@@ -143,6 +143,12 @@ public:
     bool isValidInsertPoint ();
     void finishInsertPoint (CustomTreeWidgetItem *);
 
+    bool isValidCloseExistingPolyline ();
+    void closeExistingPolyline ();
+
+    bool isValidOpenExistingPolyline ();
+    void openExistingPolyline ();
+
     bool isValidExtrudePolywire ();
     void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void finishExtrudePolywire (double, bool);
@@ -408,6 +414,8 @@ private:
     QAction *deleteAction;
     QAction *deletePointAction;
     QAction *insertPointAction;
+    QAction *closePolylineAction;
+    QAction *openPolylineAction;
     QAction *removeAction;
     QAction *assignAction;
     QAction *insertAction;

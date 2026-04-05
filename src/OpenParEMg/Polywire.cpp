@@ -183,14 +183,6 @@ void Polywire::deleteLastPoint ()
     shapePoints.pop_back();
 }
 
-void Polywire::close ()
-{
-    if (shapePoints.size() > 2) {
-        shapePoints.push_back(shapePoints[0]);
-        closed=true;
-    }
-}
-
 gp_Pnt Polywire::getPosition ()
 {
     gp_Pnt position(0,0,0);
@@ -393,6 +385,7 @@ Handle(AIS_Shape) Line::get_AIS_Shape ()
 bool Polyline::canClose ()
 {
     if (shapePoints.size() < 3) return false;
+    if (closed) return false;
 
     long unsigned int i=0;
     while (i < shapePoints.size()-2) {
@@ -405,6 +398,26 @@ bool Polyline::canClose ()
     }
 
     return true;
+}
+
+void Polyline::close ()
+{
+    if (shapePoints.size() > 2) {
+        shapePoints.push_back(shapePoints[0]);
+        closed=true;
+    }
+}
+
+bool Polyline::canOpen ()
+{
+    if (closed) return true;
+    return false;
+}
+
+void Polyline::open ()
+{
+    shapePoints.pop_back();
+    closed=false;
 }
 
 TopoDS_Face Polyline::buildFace (TopoDS_Wire &wire)

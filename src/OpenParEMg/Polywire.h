@@ -47,10 +47,12 @@ public:
     virtual bool canDeleteLastPoint () = 0;
     virtual bool canFinish () = 0;
     virtual bool canClose () = 0;
+    virtual bool canOpen () = 0;
     virtual void addPoint (gp_Pnt &pnt);
     void setCurrentMousePosition (gp_Pnt &currentMousePosition_) {currentMousePosition=currentMousePosition_;}
     void deleteLastPoint ();
-    void close ();
+    virtual void close () = 0;
+    virtual void open () = 0;
     virtual bool isFinished () = 0;
     virtual bool canDeletePoint () = 0;
     virtual void deletePoint (gp_Pnt &pnt) = 0;
@@ -114,6 +116,9 @@ public:
     bool canDeleteLastPoint () override {return false;}
     bool canFinish () override {return false;}
     bool canClose () override {return false;}
+    void close () override {return;}
+    bool canOpen () override {return false;}
+    void open () override {return;}
     bool isFinished () override {if (shapePoints.size() == 2) return true; return false;}
     bool canDeletePoint () override {return false;}
     void deletePoint (gp_Pnt &gp_Pnt) override {return;}
@@ -140,6 +145,9 @@ public:
     bool canDeleteLastPoint () override {if (shapePoints.size() > 1) return true; return false;}
     bool canFinish () override {if (shapePoints.size() > 1) return true; return false;}
     bool canClose () override;
+    void close () override;
+    bool canOpen () override;
+    void open () override;
     bool isFinished () override {
         if (shapePoints.size() > 1) {
             if (shapePoints[shapePoints.size()-1].IsEqual(shapePoints[0],Precision::Confusion())) {
@@ -176,6 +184,9 @@ public:
     bool canDeleteLastPoint () override {return false;}
     bool canFinish () override {return false;}
     bool canClose () override {return false;}
+    void close () override {return;}
+    bool canOpen () override {return false;}
+    void open () override {return;}
     void addPoint (gp_Pnt &pnt) override;
     bool isFinished () override {if (shapePoints.size() == 5) return true; return false;}
     bool canDeletePoint () override {return false;}
@@ -226,6 +237,9 @@ public:
     bool canDeleteLastPoint () override {return false;}
     bool canFinish () override {return false;}
     bool canClose () override {return false;}
+    void close () override {return;}
+    bool canOpen () override {return false;}
+    void open () override {return;}
     void addPoint (gp_Pnt &pnt) override;
     bool isFinished () override {if (firstPointSet) return true; return false;}
     bool canDeletePoint () override {return false;}

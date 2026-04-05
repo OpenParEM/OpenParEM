@@ -165,6 +165,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(deleteAction);
     QActionList.push_back(deletePointAction);
     QActionList.push_back(insertPointAction);
+    QActionList.push_back(closePolylineAction);
+    QActionList.push_back(openPolylineAction);
     QActionList.push_back(removeAction);
     QActionList.push_back(assignAction);
     QActionList.push_back(insertAction);
@@ -182,7 +184,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(doneAction);
     QActionList.push_back(cancelAction);
     QActionList.push_back(deleteLastPointAction);
-    QActionList.push_back(closeAction);
     QActionList.push_back(extrudeAction);
     QActionList.push_back(mergeAction);
     QActionList.push_back(subtractAction);
@@ -1163,7 +1164,9 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             moveAction=new QAction("Move");
             stretchAction=new QAction("Stretch");
             deletePointAction=new QAction("Delete Point");
-            insertPointAction=new QAction("InsertPoint");
+            insertPointAction=new QAction("Insert Point");
+            closePolylineAction=new QAction("Close Polyline");
+            openPolylineAction=new QAction("Open Polyline");
             rotateAction=new QAction("Rotate");
             unselectAction=new QAction("Unselect");
             copyAction=new QAction("Copy");
@@ -1186,6 +1189,8 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             connect(stretchAction, &QAction::triggered, this, &OpenParEMg::stretchObject);
             connect(deletePointAction, &QAction::triggered, this, &OpenParEMg::deletePoint);
             connect(insertPointAction, &QAction::triggered, this, &OpenParEMg::insertPoint);
+            connect(closePolylineAction, &QAction::triggered, this, &OpenParEMg::closeExistingPolyline);
+            connect(openPolylineAction, &QAction::triggered, this, &OpenParEMg::openExistingPolyline);
             connect(rotateAction, &QAction::triggered, this, &OpenParEMg::rotateObject);
             connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
             connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
@@ -1217,6 +1222,8 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             modify.addAction(stretchAction);
             modify.addAction(insertPointAction);
             modify.addAction(deletePointAction);
+            modify.addAction(closePolylineAction);
+            modify.addAction(openPolylineAction);
             modify.addAction(rotateAction);
             modify.addAction(extrudeAction);
             modify.addAction(mergeAction);
@@ -1236,6 +1243,8 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             stretchAction->setEnabled(isValidObjectStretch());   // single object
             deletePointAction->setEnabled(isValidDeletePoint()); // single object
             insertPointAction->setEnabled(isValidInsertPoint());    // single object
+            closePolylineAction->setEnabled(isValidCloseExistingPolyline());
+            openPolylineAction->setEnabled(isValidOpenExistingPolyline());
             rotateAction->setEnabled(true);
             extrudeAction->setEnabled(isValidExtrudePolywire());
             mergeAction->setEnabled(isValidMergeSolids());
@@ -2722,7 +2731,7 @@ bool OpenParEMg::isValidExtrudePolywire ()
             CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
             if (parent && parent->is_rootDrawing()) {
                 Polywire *polywire=item->get_Polywire();
-                if (polywire) polywireCount++;
+                if (polywire && polywire->isClosed()) polywireCount++;
             }
         }
         i++;
@@ -2870,15 +2879,6 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 
     Polywire *polywire=item->get_Polywire();
     if (polywire) {
-        // TopoDS_Wire wire=polywire->buildWire();
-        // if (!wire.IsNull()) {
-        //     TopoDS_Face face=polywire->buildFace(wire);
-        //     if (face.IsNull()) {
-        //         replaceItemShape(item,wire,2);  // inserts to item map
-        //     } else {
-        //         replaceItemShape(item,face,3);  // inserts to item map
-        //     }
-        // }
         replaceItemShape(item,polywire,2);
     }
 
@@ -3716,6 +3716,88 @@ void OpenParEMg::finishInsertPoint (CustomTreeWidgetItem *item)
 
         ui->drawingWindow->hideItem(item);
         ui->drawingWindow->updateViewer();
+    }
+}
+
+bool OpenParEMg::isValidCloseExistingPolyline ()
+{
+    int count=0;
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) {
+            CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            if (parentItem->is_rootDrawing()) {
+                Polywire *polywire=item->get_Polywire();
+                if (polywire && polywire->canClose()) count++;
+            }
+        }
+        i++;
+    }
+    if (count == 1 && count == ui->drawingWindow->get_selectedItems_count()) return true;
+    return false;
+}
+
+void OpenParEMg::closeExistingPolyline ()
+{
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) {
+            Polywire *polywire=item->get_Polywire();
+            if (polywire) {
+                polywire->close();
+                reprocess(item);
+                item->setText(0,"FACE");
+                item->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);
+                ui->drawingWindow->showItem(item);
+                ui->drawingWindow->activateSelectItem(item);
+                ui->drawingWindow->updateViewer();
+                brepChanged=true;
+            }
+        }
+        i++;
+    }
+}
+
+bool OpenParEMg::isValidOpenExistingPolyline ()
+{
+    int count=0;
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) {
+            CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            if (parentItem->is_rootDrawing()) {
+                Polywire *polywire=item->get_Polywire();
+                if (polywire && polywire->canOpen()) count++;
+            }
+        }
+        i++;
+    }
+    if (count == 1 && count == ui->drawingWindow->get_selectedItems_count()) return true;
+    return false;
+}
+
+void OpenParEMg::openExistingPolyline ()
+{
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) {
+            Polywire *polywire=item->get_Polywire();
+            if (polywire) {
+                polywire->open();
+                reprocess(item);
+                item->setText(0,"WIRE");
+                item->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);
+                ui->drawingWindow->showItem(item);
+                ui->drawingWindow->activateSelectItem(item);
+                ui->drawingWindow->updateViewer();
+                brepChanged=true;
+            }
+        }
+        i++;
     }
 }
 
