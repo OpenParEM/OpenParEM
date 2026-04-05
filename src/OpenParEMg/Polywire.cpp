@@ -552,50 +552,6 @@ void Polyline::drawRubberband ()
 
 void Polyline::drawStretchRubberband ()
 {
-    //std::cout << "Polyline::drawStretchRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
-
-    // if (checkIntersection && shapePoints.size() > 2) {
-    //     long unsigned int i=0;
-    //     while (i < shapePoints.size()-1) {
-    //         if (i != editIndex) {
-
-    //             long unsigned int indexm1,indexp1;
-    //             bool skipm=false;
-    //             bool skipp=false;
-    //             if (closed) {
-    //                 if (editIndex == 0) {
-    //                     indexm1=shapePoints.size()-2;
-    //                     if (i == shapePoints.size()) {skipm=true;}
-    //                 } else {
-    //                     indexm1=editIndex-1;
-    //                 }
-
-    //                 if (editIndex == shapePoints.size()-1) {
-    //                     skipm=true;
-    //                     skipp=true;
-    //                 } else {
-    //                     indexp1=editIndex+1;
-    //                 }
-    //             } else {
-    //                 if (editIndex == 0) {
-    //                     skipm=true;
-    //                 } else {
-    //                     indexm1=editIndex-1;
-    //                 }
-
-    //                 if (editIndex == shapePoints.size()-1) {
-    //                     skipp=true;
-    //                 } else {
-    //                     indexp1=editIndex+1;
-    //                 }
-    //             }
-
-    //             if (!skipm && DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],shapePoints[indexm1],currentMousePosition,1e-12)) return;
-    //             if (!skipp && DoSegmentsIntersectInterior(shapePoints[i],shapePoints[i+1],shapePoints[indexp1],currentMousePosition,1e-12)) return;
-    //         }
-    //         i++;
-    //     }
-    // }
     if (!isValidInsertPoint(currentMousePosition)) return;
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
@@ -1076,6 +1032,21 @@ Handle(AIS_Shape) Rectangle::get_AIS_Shape ()
     return shape;
 }
 
+Polyline* Rectangle::convert ()
+{
+    Polyline* polyline=new Polyline();
+    polyline->modified=true;
+    polyline->closed=true;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        polyline->shapePoints.push_back(shapePoints[i]);
+        i++;
+    }
+    polyline->normal=normal;
+    polyline->viewerContext=viewerContext;
+    return polyline;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Polycircle
 ////////////////////////////////////////////////////////////////////////////////
@@ -1384,4 +1355,20 @@ Handle(AIS_Shape) Polycircle::get_AIS_Shape ()
         }
     }
     return shape;
+}
+
+
+Polyline* Polycircle::convert ()
+{
+    Polyline* polyline=new Polyline();
+    polyline->modified=true;
+    polyline->closed=true;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        polyline->shapePoints.push_back(shapePoints[i]);
+        i++;
+    }
+    polyline->normal=normal;
+    polyline->viewerContext=viewerContext;
+    return polyline;
 }

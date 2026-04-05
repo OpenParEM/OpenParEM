@@ -149,6 +149,9 @@ public:
     bool isValidOpenExistingPolyline ();
     void openExistingPolyline ();
 
+    bool isValidConvertToPolyline ();
+    void convertToPolyline ();
+
     bool isValidExtrudePolywire ();
     void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void finishExtrudePolywire (double, bool);
@@ -438,6 +441,7 @@ private:
     QAction *extrudeAction;
     QAction *mergeAction;
     QAction *subtractAction;
+    QAction *convertAction;
     std::vector<QAction *> QActionList;
 
     // gmsh
