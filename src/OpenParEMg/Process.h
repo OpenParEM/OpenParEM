@@ -32,6 +32,7 @@ public:
     explicit Process (QWidget *parent = nullptr);
     bool isModified () {return modified;}
     virtual Process* copyCreate () = 0;
+    virtual bool canEdit () = 0;
 
 signals:
 
@@ -45,18 +46,23 @@ public:
     void set_length (double length_) {length=length_;}
     double get_length () {return length;}
     Extrude* copyCreate () override;
+    bool canEdit () override {return true;}
 private:
     double length;       // length of the extrusion
 };
 
 class Merge : public Process
 {
+public:
     Merge* copyCreate () override;
+    bool canEdit () override {return false;}
 };
 
 class Subtract : public Process
 {
+public:
     Subtract* copyCreate () override;
+    bool canEdit () override {return false;}
 };
 
 #endif // PROCESS_H

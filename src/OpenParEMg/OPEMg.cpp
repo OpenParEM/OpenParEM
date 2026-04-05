@@ -2974,7 +2974,7 @@ bool OpenParEMg::isValidObjectEdit ()
             if (polywire) count++;
 
             Process *process=item->get_Process();
-            if (process) count++;
+            if (process && process->canEdit()) count++;
         }
         i++;
     }
@@ -3813,7 +3813,6 @@ bool OpenParEMg::isValidConvertToPolyline ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
             Polywire *polywire=item->get_Polywire();
             if (polywire && polywire->canConvert()) count++;
         }
