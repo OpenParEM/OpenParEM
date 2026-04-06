@@ -2754,6 +2754,8 @@ void OpenParEMg::extrudePolywire ()
     if (lengthInputForm) delete lengthInputForm;
     lengthInputForm=new LengthInputForm();
     lengthInputForm->set_drawingWindow(ui->drawingWindow);
+    extrusionDirection.SetCoord(0,0,0);
+    lengthInputForm->set_extrusionDirection(&extrusionDirection);
     lengthInputForm->set_relay(relay);
     lengthInputForm->setModal(false);
     connect(this,&OpenParEMg::sendPnt,lengthInputForm,&LengthInputForm::pickVertexFinished);
@@ -2790,8 +2792,17 @@ void OpenParEMg::finishExtrudePolywire (double length, bool cancel)
                 Polywire *polywire=item->get_Polywire();
                 if (polywire) {
 
+                    // set direction
+                    polywire->setReverseExtrusionDirection(false);
+                    if (extrusionDirection.Magnitude() > 1e-12) {
+                        if (polywire->getNormal().IsOpposite(extrusionDirection,1.5)) {
+                            polywire->setReverseExtrusionDirection(true);
+                        }
+                    }
+
                     // scale it
                     gp_Vec scaledVec=gp_Vec(polywire->getNormal())*length;
+                    if (polywire->getReverseExtrusionDirection()) scaledVec=-scaledVec;
 
                     // extrude it
                     BRepPrimAPI_MakePrism aPrism(extrudeShape,scaledVec);
@@ -2849,6 +2860,7 @@ void OpenParEMg::reextrudePolywire (CustomTreeWidgetItem *item, CustomTreeWidget
             Polywire *polywire=child->get_Polywire();
             if (polywire) {
                 gp_Vec scaledVec=gp_Vec(polywire->getNormal())*extrude->get_length();
+                if (polywire->getReverseExtrusionDirection()) scaledVec=-scaledVec;
 
                 // see finishExtrudePolywire for comments
                 TopoDS_Shape extrudeShape=child->get_AIS_Shape()->Shape();
@@ -3049,7 +3061,6 @@ void OpenParEMg::editObject ()
                         lengthEditForm=new LengthInputForm();
                         lengthEditForm->set_Extrude(extrude);
                         lengthEditForm->set_length(extrude->get_length());
-                        lengthEditForm->set_normal(polywire->getNormal());
                         lengthEditForm->set_drawingWindow(ui->drawingWindow);
                         lengthEditForm->set_relay(relay);
                         lengthEditForm->setModal(false);
@@ -3138,7 +3149,6 @@ bool OpenParEMg::isValidMergeSolids ()
             if (parent && parent == &drawing) {
                 Handle(AIS_Shape) shape=item->get_AIS_Shape();
                 if (!shape.IsNull()) {
-                    //xxx
 
                     // check for SOLID
                     if (shape->Shape().ShapeType() == TopAbs_SOLID) solidCount++;

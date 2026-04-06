@@ -144,9 +144,7 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
         Standard_Real distance=startPoint.Distance(endPoint);
         length=distance;
         if (length > 1e-13) {
-            gp_Dir selectionDir;
-            selectionDir.SetCoord(endPoint.X()-startPoint.X(),endPoint.Y()-startPoint.Y(),endPoint.Z()-startPoint.Z());
-            if (normal.IsOpposite(selectionDir,1.5)) length=-length;
+            extrusionDirection->SetCoord(endPoint.X()-startPoint.X(),endPoint.Y()-startPoint.Y(),endPoint.Z()-startPoint.Z());
             ui->OkButton->setEnabled(true);
             ui->OkButton->setFocus();
         } else {

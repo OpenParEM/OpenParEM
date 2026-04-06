@@ -99,6 +99,9 @@ public:
     virtual Handle(AIS_Shape) get_AIS_Shape () = 0;
     virtual QString getName (ObjectCounts *objectCounts) = 0;
 
+    void setReverseExtrusionDirection (bool reverseExtrusionDirection_) {reverseExtrusionDirection=reverseExtrusionDirection_;}
+    bool getReverseExtrusionDirection () {return reverseExtrusionDirection;}
+
 signals:
 
 protected:
@@ -112,6 +115,7 @@ protected:
 
     bool drawEnable;                                // flag for enabling drawing objects
     long unsigned int editIndex;                    // index into a completed shape outline for stretching
+    bool reverseExtrusionDirection;                 // to line up with the direction selected using the LengthInputForm
 };
 
 class Line : public Polywire

@@ -487,6 +487,7 @@ private:
     bool restrictToDrawingPlane;
     bool skipDrawingPlaneAxisForm;
     gp_Pnt lastMousePosition;
+    gp_Vec extrusionDirection;   // use (0,0,0) as the "unset" state
     Polywire *activePolywire;  // when drawing
     gp_Vec uLocalAxis;  // local axis for transfer to rectangles
     gp_Pln currentPrivilegedPlane;

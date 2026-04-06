@@ -134,6 +134,7 @@ Polywire::Polywire(QObject *parent)
 {
     modified=false;
     closed=false;
+    reverseExtrusionDirection=false;
 }
 
 void Polywire::deleteRubberband ()

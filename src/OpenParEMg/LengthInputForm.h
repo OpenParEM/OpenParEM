@@ -41,7 +41,7 @@ public:
     ~LengthInputForm();
 
     void set_length (double length_);
-    void set_normal (gp_Dir normal_) {normal=normal_;}
+    void set_extrusionDirection (gp_Vec *extrusionDirection_) {extrusionDirection=extrusionDirection_;}
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
     void set_relay (Relay *relay_) {relay=relay_;}
     void set_Extrude (Extrude *extrude_) {extrude=extrude_;}
@@ -63,7 +63,7 @@ public slots:
 private:
     Ui::LengthInputForm *ui;
 
-    gp_Dir normal;
+    gp_Vec *extrusionDirection;
     double length;
     bool pickStartPoint;
     bool pickEndPoint;
