@@ -289,7 +289,11 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     polycircleEditForm=nullptr;
     rotateInputForm=nullptr;
 
-    uLocalAxis.SetCoord(1,0,0);
+    uLocalAxis.SetCoord(1,0,0);  // rectangles
+    length=0;                    // extrusion
+    angle=90;                    // rotation
+    startPoint.SetCoord(0,0,0);  // rotating and vector input
+    endPoint.SetCoord(0,0,1);    // rotation and vector input
 
     restrictToDrawingPlane=false;
 
@@ -2756,15 +2760,16 @@ void OpenParEMg::extrudePolywire ()
     lengthInputForm->set_drawingWindow(ui->drawingWindow);
     extrusionDirection.SetCoord(0,0,0);
     lengthInputForm->set_extrusionDirection(&extrusionDirection);
+    lengthInputForm->set_length(&length);
     lengthInputForm->set_relay(relay);
     lengthInputForm->setModal(false);
     connect(this,&OpenParEMg::sendPnt,lengthInputForm,&LengthInputForm::pickVertexFinished);
     lengthInputForm->show();
 }
 
-void OpenParEMg::finishExtrudePolywire (double length, bool cancel)
+void OpenParEMg::finishExtrudePolywire (bool cancel)
 {
-    //std::cout << "OpenParEMg::finishExtrudePolywire" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::finishExtrudePolywire" << std::endl; std::cout.flush();
 
     if (!cancel && abs(length) > 1e-12) {
 
@@ -2844,7 +2849,7 @@ void OpenParEMg::finishExtrudePolywire (double length, bool cancel)
     }
 
     if (lengthInputForm) {lengthInputForm=nullptr;}
-    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,1);
+    finishOperation(false,1);
 }
 
 void OpenParEMg::reextrudePolywire (CustomTreeWidgetItem *item, CustomTreeWidgetItem *child)
@@ -3060,7 +3065,8 @@ void OpenParEMg::editObject ()
                         if (lengthEditForm) delete lengthEditForm;
                         lengthEditForm=new LengthInputForm();
                         lengthEditForm->set_Extrude(extrude);
-                        lengthEditForm->set_length(extrude->get_length());
+                        length=extrude->get_length();
+                        lengthEditForm->set_length(&length);
                         lengthEditForm->set_drawingWindow(ui->drawingWindow);
                         lengthEditForm->set_relay(relay);
                         lengthEditForm->setModal(false);
@@ -3093,7 +3099,7 @@ void OpenParEMg::rebuildTopLevelShape ()
     replaceItemShape(&drawing,compound,6);  // inserts to item map
 }
 
-void OpenParEMg::finishEditObject (double length, bool cancel)
+void OpenParEMg::finishEditObject (bool cancel)
 {
     //std::cout << "OpenParEMg::finishEditObject  length=" << length << "  cancel=" << cancel << std::endl; std::cout.flush();
 
@@ -3133,7 +3139,7 @@ void OpenParEMg::finishEditObject (double length, bool cancel)
     if (rectangleEditForm) {rectangleEditForm=nullptr;}
     if (polycircleEditForm) {polycircleEditForm=nullptr;}
 
-    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,2);
+    finishOperation(false,2);
 }
 
 bool OpenParEMg::isValidMergeSolids ()
@@ -3261,7 +3267,7 @@ void OpenParEMg::finishMergeSolids ()
 
     brepChanged=true;
 
-    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,3);
+    finishOperation(false,3);
 }
 
 bool OpenParEMg::isValidSubtractSolids ()
@@ -3353,7 +3359,7 @@ void OpenParEMg::finishSubtractSolids ()
 
     brepChanged=true;
 
-    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,4);
+    finishOperation(false,4);
 }
 
 void OpenParEMg::moveObject ()
@@ -3437,7 +3443,7 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
     ui->drawingWindow->showItem(item);
 
     // finishOperation called elsewhere
-    // finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,5);
+    // finishOperation(false,5);
 }
 
 bool OpenParEMg::isValidCopy ()
@@ -3502,7 +3508,7 @@ void OpenParEMg::copyDrawingItems ()
         i++;
     }
 
-    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,6);
+    finishOperation(false,6);
 }
 
 void PrintActiveSelectionModes(const Handle(AIS_InteractiveContext)& theContext,
@@ -3596,7 +3602,7 @@ void OpenParEMg::finishStretchObject (CustomTreeWidgetItem *item)
     }
     ui->drawingWindow->showItem(item);
 
-    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,7);
+    finishOperation(false,7);
 }
 
 bool OpenParEMg::isValidDeletePoint ()
@@ -3671,7 +3677,7 @@ void OpenParEMg::finishDeletePoint (CustomTreeWidgetItem *item)
     }
     ui->drawingWindow->showItem(item);
 
-    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,8);
+    finishOperation(false,8);
 }
 
 bool OpenParEMg::isValidInsertPoint ()
@@ -3896,13 +3902,16 @@ void OpenParEMg::rotateObject ()
     if (rotateInputForm) delete rotateInputForm;
     rotateInputForm=new RotateInputForm();
     rotateInputForm->set_drawingWindow(ui->drawingWindow);
+    rotateInputForm->set_angle(&angle);
+    rotateInputForm->set_startPoint(&startPoint);
+    rotateInputForm->set_endPoint(&endPoint);
     rotateInputForm->set_relay(relay);
     rotateInputForm->setModal(false);
     connect(this,&OpenParEMg::sendPnt,rotateInputForm,&RotateInputForm::pickVertexFinished);
     rotateInputForm->show();
 }
 
-void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item, double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
+void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item)
 {
     //std::cout << "OpenParEMg::finishRotateObject" << std::endl; std::cout.flush();
 
@@ -3910,7 +3919,7 @@ void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item, double &angleDe
 
     Polywire *polywire=item->get_Polywire();
     if (polywire) {
-        polywire->rotate(angleDegrees,p1,p2);
+        polywire->rotate(angle,startPoint,endPoint);
         reprocess(item);
         brepChanged=true;
     }
@@ -3920,13 +3929,13 @@ void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item, double &angleDe
         int i=0;
         while (i < item->childCount()) {
             CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-            finishRotateObject(child,angleDegrees,p1,p2);
+            finishRotateObject(child);
             i++;
         }
     }
 
     if (!polywire && !process) {
-        TopoDS_Shape newShape=item->rotateShape(angleDegrees,p1,p2,ui->drawingWindow->get_viewerContext());
+        TopoDS_Shape newShape=item->rotateShape(angle,startPoint,endPoint,ui->drawingWindow->get_viewerContext());
         replaceItemShape(item,newShape,10);
         //ui->drawingWindow->showItem(item);
         reprocess(item);
@@ -3934,13 +3943,13 @@ void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item, double &angleDe
     }
 }
 
-void OpenParEMg::finishRotateObject (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
+void OpenParEMg::finishRotateObject ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
-            finishRotateObject(item,angleDegrees,p1,p2);
+            finishRotateObject(item);
 
             item->resetOperation();
 
@@ -3955,7 +3964,7 @@ void OpenParEMg::finishRotateObject (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p
         i++;
     }
     if (rotateInputForm) {rotateInputForm=nullptr;}
-    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,9);
+    finishOperation(false,9);
 }
 
 void OpenParEMg::createPort ()
@@ -6453,7 +6462,7 @@ void OpenParEMg::startPlaneSetToFace ()
         gp_Pln plane=ui->drawingWindow->get_gridPlane();
         currentPrivilegedPlane=plane;
         uLocalAxis.SetXYZ(plane.XAxis().Direction().XYZ());
-        finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,10);
+        finishOperation(false,10);
         return;
     }
 
@@ -6468,6 +6477,8 @@ void OpenParEMg::startPlaneSetToFace ()
     // use a form to get the local x-direction
     if (vectorInputForm) delete vectorInputForm;
     vectorInputForm=new VectorInputForm();
+    vectorInputForm->set_startPoint(&startPoint);
+    vectorInputForm->set_endPoint(&endPoint);
     vectorInputForm->set_drawingWindow(ui->drawingWindow);
     vectorInputForm->set_relay(relay);
     vectorInputForm->setModal(false);
@@ -6475,18 +6486,18 @@ void OpenParEMg::startPlaneSetToFace ()
     vectorInputForm->show();
 }
 
-void OpenParEMg::finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2)
+void OpenParEMg::finishPlaneSetToFace ()
 {
     std::cout << "OpenParEMg::finishPlaneSetToFace" << std::endl; std::cout.flush();
 
     // u vector
-    uLocalAxis=p2.XYZ()-p1.XYZ();
+    uLocalAxis=endPoint.XYZ()-startPoint.XYZ();
     uLocalAxis.Normalize();
 
     // origin
 
     gp_Pln plane=ui->drawingWindow->get_gridPlane();
-    plane.SetLocation(p1);
+    plane.SetLocation(startPoint);
 
     // x-axis
     gp_Ax3 newAxis=plane.Position();
@@ -6503,7 +6514,7 @@ void OpenParEMg::finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2)
     restrictToDrawingPlane=false;
 
     if (vectorInputForm) {vectorInputForm=nullptr;}
-    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,11);
+    finishOperation(false,11);
 }
 
 void OpenParEMg::on_actionDrawingSetPlaneToXY_triggered ()
@@ -6546,7 +6557,7 @@ void OpenParEMg::cancelDraw ()
 {
     std::cout << "OpenParEMg::cancelDraw" << std::endl; std::cout.flush();
 
-    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,12);
+    finishOperation(true,12);
 }
 
 void OpenParEMg::on_actionDrawLine_triggered ()
@@ -6659,7 +6670,7 @@ void OpenParEMg::finishDraw ()
     workingItem=nullptr;
     ui->drawingWindow->removeSelectOnVertex();
 
-    finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,13);
+    finishOperation(false,13);
 }
 
 void OpenParEMg::drawPath ()
@@ -6776,8 +6787,6 @@ void OpenParEMg::deleteLastPoint ()
 
 void OpenParEMg::finishPolyline ()
 {
-    //std::cout << "OpenParEMg::finishPolyline  operation=" << operation  << std::endl; std::cout.flush();
-    //finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false);
     finishDraw();
 }
 
@@ -6842,7 +6851,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 {
     std::cout << "OpenParEMg::getPickedVertex  cancel=" << cancel << "  restrictToDrawingPlane=" << restrictToDrawingPlane << std::endl; std::cout.flush();
 
-    if (cancel) finishOperation(pnt,0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,14);
+    if (cancel) finishOperation(true,14);
 
     // restrict to the drawing plane
     if (restrictToDrawingPlane) {
@@ -6942,14 +6951,13 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     }
 
     if (finishedMove) {
-        finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,15);
+        finishOperation(false,15);
     }
 
     lastMousePosition=pnt;
 }
 
-// pass in variables needed by various operations; not all operations use all variables
-void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees, gp_Pnt p1, gp_Pnt p2, bool cancel, int source)
+void OpenParEMg::finishOperation (bool cancel, int source)
 {
     std::cout << "OpenParEMg::finishOperation  cancel=" << cancel << "  source=" << source << std::endl; std::cout.flush();
 
@@ -6997,10 +7005,10 @@ void OpenParEMg::finishOperation (gp_Pnt pnt, double length, double angleDegrees
         restrictToDrawingPlane=false;
 
     } else {
-        if (lengthInputForm) finishExtrudePolywire(length,false);
-        if (vectorInputForm) finishPlaneSetToFace(p1,p2);
-        if (rotateInputForm) finishRotateObject(angleDegrees,p1,p2);
-        if (lineEditForm || rectangleEditForm || polycircleEditForm || lengthEditForm) finishEditObject(length,false);
+        if (lengthInputForm) finishExtrudePolywire(false);
+        if (vectorInputForm) finishPlaneSetToFace();
+        if (rotateInputForm) finishRotateObject();
+        if (lineEditForm || rectangleEditForm || polycircleEditForm || lengthEditForm) finishEditObject(false);
     }
 
     ui->drawingWindow->set_pickFirstVertex(false);

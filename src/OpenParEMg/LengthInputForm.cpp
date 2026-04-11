@@ -41,7 +41,8 @@ LengthInputForm::LengthInputForm (QWidget *parent)
 
     ui->OkButton->setEnabled(false);
 
-    length=0;
+    localLength=0;
+    transferLength=0;
     pickStartPoint=false;
     pickEndPoint=false;
     hasStartPoint=false;
@@ -55,17 +56,18 @@ LengthInputForm::~LengthInputForm ()
     delete ui;
 }
 
-void LengthInputForm::set_length (double length_)
+void LengthInputForm::set_length (double *length_)
 {
-    length=length_;
-    ui->lineEdit->setText(QString::number(length));
+    transferLength=length_;
+    localLength=*transferLength;
+    ui->lineEdit->setText(QString::number(localLength));
 }
 
 void LengthInputForm::on_lineEdit_returnPressed ()
 {
-    length=ui->lineEdit->text().toDouble();
+    localLength=ui->lineEdit->text().toDouble();
     ui->OkButton->setEnabled(true);
-    if (abs(length) < 1e-12) {
+    if (abs(localLength) < 1e-12) {
         activateWindow();
         raise();
         ui->lineEdit->clearFocus();
@@ -100,15 +102,19 @@ void LengthInputForm::on_pickEnd_clicked ()
 
 void LengthInputForm::on_OkButton_clicked ()
 {
+    std::cout << "LengthInputForm::on_OkButton_clicked" << std::endl; std::cout.flush();
     ui->OkButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),length,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,71);
+    *transferLength=localLength;
+    std::cout << "place 1" << std::endl; std::cout.flush();
+    emit relay->finishOperation(false,71);
+    std::cout << "place 2" << std::endl; std::cout.flush();
     QDialog::close();
 }
 
 void LengthInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,72);
+    emit relay->finishOperation(true,72);
     QDialog::close();
 }
 
@@ -142,8 +148,8 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
 
     if (hasStartPoint && hasEndPoint) {
         Standard_Real distance=startPoint.Distance(endPoint);
-        length=distance;
-        if (length > 1e-13) {
+        localLength=distance;
+        if (localLength > 1e-13) {
             extrusionDirection->SetCoord(endPoint.X()-startPoint.X(),endPoint.Y()-startPoint.Y(),endPoint.Z()-startPoint.Z());
             ui->OkButton->setEnabled(true);
             ui->OkButton->setFocus();
@@ -151,7 +157,7 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
             ui->OkButton->setEnabled(false);
         }
 
-        ui->lineEdit->setText(QString::number(length));
+        ui->lineEdit->setText(QString::number(localLength));
     }
 }
 
@@ -159,7 +165,7 @@ void LengthInputForm::reject ()
 {
     //std::cout << "LengthInputForm::reject" << std::endl; std::cout.flush();
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,73);
+    emit relay->finishOperation(true,73);
 
     QDialog::reject();
 }

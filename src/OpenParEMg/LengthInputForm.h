@@ -40,7 +40,7 @@ public:
     explicit LengthInputForm(QWidget *parent = nullptr);
     ~LengthInputForm();
 
-    void set_length (double length_);
+    void set_length (double *);
     void set_extrusionDirection (gp_Vec *extrusionDirection_) {extrusionDirection=extrusionDirection_;}
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
     void set_relay (Relay *relay_) {relay=relay_;}
@@ -64,7 +64,7 @@ private:
     Ui::LengthInputForm *ui;
 
     gp_Vec *extrusionDirection;
-    double length;
+    double *transferLength, localLength;
     bool pickStartPoint;
     bool pickEndPoint;
     bool hasStartPoint;

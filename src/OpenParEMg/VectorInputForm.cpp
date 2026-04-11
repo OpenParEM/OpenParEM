@@ -28,6 +28,26 @@ VectorInputForm::~VectorInputForm ()
     delete ui;
 }
 
+void VectorInputForm::set_startPoint (gp_Pnt *startPoint)
+{
+    transferStartPoint=startPoint;
+    localStartPoint=*transferStartPoint;
+
+    ui->startX->setText(QString::number(localStartPoint.X()));
+    ui->startY->setText(QString::number(localStartPoint.Y()));
+    ui->startZ->setText(QString::number(localStartPoint.Z()));
+}
+
+void VectorInputForm::set_endPoint (gp_Pnt *endPoint)
+{
+    transferEndPoint=endPoint;
+    localEndPoint=*transferEndPoint;
+
+    ui->endX->setText(QString::number(localEndPoint.X()));
+    ui->endY->setText(QString::number(localEndPoint.Y()));
+    ui->endZ->setText(QString::number(localEndPoint.Z()));
+}
+
 void VectorInputForm::on_pickOrigin_clicked ()
 {
     pickStartPoint=true;
@@ -55,14 +75,16 @@ void VectorInputForm::on_pickTip_clicked ()
 void VectorInputForm::on_OkButton_clicked ()
 {
     ui->OkButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,startPoint,endPoint,false,31);
+    *transferStartPoint=localStartPoint;
+    *transferEndPoint=localEndPoint;
+    emit relay->finishOperation(false,31);
     QDialog::close();
 }
 
 void VectorInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,32);
+    emit relay->finishOperation(true,32);
     QDialog::close();
 }
 
@@ -72,10 +94,10 @@ void VectorInputForm::pickVertexFinished (gp_Pnt point)
 
     if (pickStartPoint) {
         hasStartPoint=true;
-        startPoint=point;
-        ui->startX->setText(QString::number(startPoint.X()));
-        ui->startY->setText(QString::number(startPoint.Y()));
-        ui->startZ->setText(QString::number(startPoint.Z()));
+        localStartPoint=point;
+        ui->startX->setText(QString::number(localStartPoint.X()));
+        ui->startY->setText(QString::number(localStartPoint.Y()));
+        ui->startZ->setText(QString::number(localStartPoint.Z()));
         activateWindow();
         raise();
         ui->pickOrigin->setChecked(false);
@@ -84,10 +106,10 @@ void VectorInputForm::pickVertexFinished (gp_Pnt point)
 
     if (pickEndPoint) {
         hasEndPoint=true;
-        endPoint=point;
-        ui->endX->setText(QString::number(endPoint.X()));
-        ui->endY->setText(QString::number(endPoint.Y()));
-        ui->endZ->setText(QString::number(endPoint.Z()));
+        localEndPoint=point;
+        ui->endX->setText(QString::number(localEndPoint.X()));
+        ui->endY->setText(QString::number(localEndPoint.Y()));
+        ui->endZ->setText(QString::number(localEndPoint.Z()));
         activateWindow();
         raise();
         ui->pickTip->setChecked(false);
@@ -103,7 +125,7 @@ void VectorInputForm::pickVertexFinished (gp_Pnt point)
 void VectorInputForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,33);
+    emit relay->finishOperation(true,33);
 
     QDialog::reject();
 }

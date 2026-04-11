@@ -48,22 +48,39 @@ RotateInputForm::RotateInputForm(QWidget *parent)
     ui->Zaxis->setChecked(false);
     ui->CustomAxis->setChecked(true);
 
-    ui->startX->setText("0");
-    ui->startY->setText("0");
-    ui->startZ->setText("0");
-    startPoint.SetCoord(0,0,0);
-
-    ui->endX->setText("1");
-    ui->endY->setText("0");
-    ui->endZ->setText("0");
-    endPoint.SetCoord(1,0,0);
-
-    // default angle is set to 90 degrees in the forms editor
+    on_Zaxis_clicked();
 }
 
 RotateInputForm::~RotateInputForm ()
 {
     delete ui;
+}
+
+void RotateInputForm::set_angle (double *angle)
+{
+    transferAngle=angle;
+    localAngle=*transferAngle;
+    ui->angleDegrees->setValue(localAngle);
+}
+
+void RotateInputForm::set_startPoint (gp_Pnt *startPoint)
+{
+    transferStartPoint=startPoint;
+    localStartPoint=*transferStartPoint;
+
+    ui->startX->setText(QString::number(localStartPoint.X()));
+    ui->startY->setText(QString::number(localStartPoint.Y()));
+    ui->startZ->setText(QString::number(localStartPoint.Z()));
+}
+
+void RotateInputForm::set_endPoint (gp_Pnt *endPoint)
+{
+    transferEndPoint=endPoint;
+    localEndPoint=*transferEndPoint;
+
+    ui->endX->setText(QString::number(localEndPoint.X()));
+    ui->endY->setText(QString::number(localEndPoint.Y()));
+    ui->endZ->setText(QString::number(localEndPoint.Z()));
 }
 
 void RotateInputForm::on_Xaxis_clicked ()
@@ -76,12 +93,12 @@ void RotateInputForm::on_Xaxis_clicked ()
     ui->startX->setText("0");
     ui->startY->setText("0");
     ui->startZ->setText("0");
-    startPoint.SetCoord(0,0,0);
+    localStartPoint.SetCoord(0,0,0);
 
     ui->endX->setText("1");
     ui->endY->setText("0");
     ui->endZ->setText("0");
-    endPoint.SetCoord(1,0,0);
+    localEndPoint.SetCoord(1,0,0);
 
     ui->pickStart->setEnabled(false);
     ui->pickEnd->setEnabled(false);
@@ -99,12 +116,12 @@ void RotateInputForm::on_Yaxis_clicked ()
     ui->startX->setText("0");
     ui->startY->setText("0");
     ui->startZ->setText("0");
-    startPoint.SetCoord(0,0,0);
+    localStartPoint.SetCoord(0,0,0);
 
     ui->endX->setText("0");
     ui->endY->setText("1");
     ui->endZ->setText("0");
-    endPoint.SetCoord(0,1,0);
+    localEndPoint.SetCoord(0,1,0);
 
     ui->pickStart->setEnabled(false);
     ui->pickEnd->setEnabled(false);
@@ -122,12 +139,12 @@ void RotateInputForm::on_Zaxis_clicked ()
     ui->startX->setText("0");
     ui->startY->setText("0");
     ui->startZ->setText("0");
-    startPoint.SetCoord(0,0,0);
+    localStartPoint.SetCoord(0,0,0);
 
     ui->endX->setText("0");
     ui->endY->setText("0");
     ui->endZ->setText("1");
-    endPoint.SetCoord(0,0,1);
+    localEndPoint.SetCoord(0,0,1);
 
     ui->pickStart->setEnabled(false);
     ui->pickEnd->setEnabled(false);
@@ -158,7 +175,7 @@ void RotateInputForm::on_CustomAxis_clicked ()
 
 void RotateInputForm::on_pickStart_clicked ()
 {
-    std::cout << "RotateInputForm::on_pickStart_clicked" << std::endl; std::cout.flush();
+    //std::cout << "RotateInputForm::on_pickStart_clicked" << std::endl; std::cout.flush();
     pickStartPoint=true;
     pickEndPoint=false;
     this->setEnabled(false);
@@ -171,7 +188,7 @@ void RotateInputForm::on_pickStart_clicked ()
 
 void RotateInputForm::on_pickEnd_clicked ()
 {
-    std::cout << "RotateInputForm::on_pickEnd_clicked" << std::endl; std::cout.flush();
+    //std::cout << "RotateInputForm::on_pickEnd_clicked" << std::endl; std::cout.flush();
     pickStartPoint=false;
     pickEndPoint=true;
     this->setEnabled(false);
@@ -185,15 +202,18 @@ void RotateInputForm::on_pickEnd_clicked ()
 void RotateInputForm::on_OkButton_clicked ()
 {
     ui->OkButton->setChecked(true);
-    double angle=ui->angleDegrees->value();
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,angle,startPoint,endPoint,false,20);
+    localAngle=ui->angleDegrees->value();
+    *transferAngle=localAngle;
+    *transferStartPoint=localStartPoint;
+    *transferEndPoint=localEndPoint;
+    emit relay->finishOperation(false,20);
     QDialog::close();
 }
 
 void RotateInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,21);
+    emit relay->finishOperation(true,21);
     QDialog::close();
 }
 
@@ -205,10 +225,10 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
 
     if (pickStartPoint) {
         hasStartPoint=true;
-        startPoint=point;
-        ui->startX->setText(QString::number(startPoint.X()));
-        ui->startY->setText(QString::number(startPoint.Y()));
-        ui->startZ->setText(QString::number(startPoint.Z()));
+        localStartPoint=point;
+        ui->startX->setText(QString::number(localStartPoint.X()));
+        ui->startY->setText(QString::number(localStartPoint.Y()));
+        ui->startZ->setText(QString::number(localStartPoint.Z()));
         activateWindow();
         raise();
         ui->pickStart->setChecked(false);
@@ -217,10 +237,10 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
 
     if (pickEndPoint) {
         hasEndPoint=true;
-        endPoint=point;
-        ui->endX->setText(QString::number(endPoint.X()));
-        ui->endY->setText(QString::number(endPoint.Y()));
-        ui->endZ->setText(QString::number(endPoint.Z()));
+        localEndPoint=point;
+        ui->endX->setText(QString::number(localEndPoint.X()));
+        ui->endY->setText(QString::number(localEndPoint.Y()));
+        ui->endZ->setText(QString::number(localEndPoint.Z()));
         activateWindow();
         raise();
         ui->pickEnd->setChecked(false);
@@ -228,7 +248,7 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
     }
 
     if (hasStartPoint && hasEndPoint) {
-        Standard_Real distance=startPoint.Distance(endPoint);
+        Standard_Real distance=localStartPoint.Distance(localEndPoint);
         if (distance > 1e-12) {
             ui->OkButton->setEnabled(true);
             ui->OkButton->setFocus();
@@ -241,7 +261,7 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
 void RotateInputForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,22);
+    emit relay->finishOperation(true,22);
     QDialog::reject();
 }
 

@@ -17,6 +17,8 @@ public:
     explicit VectorInputForm(QWidget *parent = nullptr);
     ~VectorInputForm();
 
+    void set_startPoint (gp_Pnt *);
+    void set_endPoint (gp_Pnt *);
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
     void set_relay (Relay *relay_) {relay=relay_;}
 
@@ -38,7 +40,7 @@ private:
     bool pickEndPoint;
     bool hasStartPoint;
     bool hasEndPoint;
-    gp_Pnt startPoint, endPoint;
+    gp_Pnt *transferStartPoint, *transferEndPoint, localStartPoint, localEndPoint;
 
     CustomOpenGLWidget *drawingWindow;
     Relay *relay;

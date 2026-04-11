@@ -155,15 +155,15 @@ public:
 
     bool isValidExtrudePolywire ();
     void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
-    void finishExtrudePolywire (double, bool);
+    void finishExtrudePolywire (bool);
 
     void finishMoveObject (CustomTreeWidgetItem *, gp_Pnt p0, gp_Pnt p1, bool);
     void finishMoveObject (CustomTreeWidgetItem *, gp_Pnt p0, gp_Pnt p1);
 
     void finishStretchObject (CustomTreeWidgetItem *);
 
-    void finishRotateObject (CustomTreeWidgetItem *, double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
-    void finishRotateObject (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
+    void finishRotateObject (CustomTreeWidgetItem *);
+    void finishRotateObject ();
 
     bool isValidMergeSolids ();
     void finishMergeSolids ();
@@ -171,7 +171,7 @@ public:
     bool isValidSubtractSolids ();
     void finishSubtractSolids ();
 
-    void finishPlaneSetToFace (gp_Pnt &p1, gp_Pnt &p2);
+    void finishPlaneSetToFace ();
 
     void debugPrintStats (int);
 
@@ -361,14 +361,14 @@ private slots:
     void on_actionMaterialsOptions_triggered();
 
     void getCurrentMousePosition (gp_Pnt);
-    void finishOperation (gp_Pnt, double, double, gp_Pnt, gp_Pnt, bool, int);
+    void finishOperation (bool, int);
     void getPickedVertex (gp_Pnt, bool);
 
 
 public slots:
     void setMenus ();
     void setMenusI (int);
-    void finishEditObject (double, bool);
+    void finishEditObject (bool);
     void startPlaneSetToFace ();
 
 signals:
@@ -491,7 +491,10 @@ private:
     Polywire *activePolywire;  // when drawing
     gp_Vec uLocalAxis;  // local axis for transfer to rectangles
     gp_Pln currentPrivilegedPlane;
-    ObjectCounts objectCounts;  // for uniquely numbering objects in their item names
+    ObjectCounts objectCounts;    // for uniquely numbering objects in their item names
+    double length;                // extrusion
+    double angle;                 // rotation
+    gp_Pnt startPoint, endPoint;  // rotation and vector input
 };
 
 #endif // OPEMG_H

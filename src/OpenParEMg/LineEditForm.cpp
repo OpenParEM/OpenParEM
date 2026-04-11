@@ -166,14 +166,14 @@ void LineEditForm::on_pick2_clicked ()
 void LineEditForm::on_OkButton_clicked ()
 {
     repopulate();
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,61);
+    emit relay->finishOperation(false,61);
     QDialog::close();
 }
 
 void LineEditForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,62);
+    emit relay->finishOperation(true,62);
     QDialog::close();
 }
 
@@ -207,7 +207,7 @@ void LineEditForm::pickVertexFinished (gp_Pnt point)
 void LineEditForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,63);
+    emit relay->finishOperation(true,63);
     QDialog::reject();
 }
 

@@ -15,7 +15,7 @@ public:
 signals:
     void setMenus ();
     void clearTreeSelection ();
-    void finishOperation (gp_Pnt, double, double, gp_Pnt, gp_Pnt, bool, int);
+    void finishOperation (bool, int);
     void getCurrentMousePosition (gp_Pnt);
     void getPickedVertex (gp_Pnt, bool);
     void startPlaneSetToFace ();

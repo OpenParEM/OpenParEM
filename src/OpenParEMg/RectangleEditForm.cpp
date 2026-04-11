@@ -198,7 +198,7 @@ void RectangleEditForm::on_OkButton_clicked ()
 
     polywire->recalculate(p0,p1);
 
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),false,41);
+    emit relay->finishOperation(false,41);
 
     QDialog::close();
 }
@@ -206,7 +206,7 @@ void RectangleEditForm::on_OkButton_clicked ()
 void RectangleEditForm::on_CancelButton_clicked()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,42);
+    emit relay->finishOperation(true,42);
     QDialog::close();
 }
 
@@ -240,7 +240,7 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
 void RectangleEditForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(gp_Pnt(0,0,0),0,0,gp_Pnt(0,0,0),gp_Pnt(0,0,0),true,43);
+    emit relay->finishOperation(true,43);
     QDialog::reject();
 }
 
