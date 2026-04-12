@@ -791,7 +791,6 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
     }
 
     if (clickedItem->is_drawing()) {
-        //xxx
         if (ui->drawingWindow->get_NbSelected()) {
             buildDrawingMenu(menu);
         }
@@ -1181,7 +1180,6 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             menu.addAction(cancelAction);
         }
     } else {
-        //xxx
         if (ui->drawingWindow->get_NbSelected()) {
             buildDrawingMenu(menu);
         }
@@ -1288,7 +1286,6 @@ void OpenParEMg::showDrawingItems ()
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
             ui->drawingWindow->showItem(item);
-            ui->drawingWindow->unselectItem(item,i);
         }
         i++;
     }
@@ -2936,7 +2933,7 @@ bool OpenParEMg::isValidObjectShow ()
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item->isValidHide()) return true;
+        if (item->isValidShow()) return true;
         i++;
     }
     return false;
@@ -2947,7 +2944,7 @@ bool OpenParEMg::isValidObjectHide ()
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item->isValidShow()) return true;
+        if (item->isValidHide()) return true;
         i++;
     }
     return false;
