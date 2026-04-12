@@ -123,7 +123,9 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     pickFirstVertex=false;
     pickSecondVertex=false;
 
-    isFaceSelection=false;
+    isSubshapeSelection=false;
+    isSingleSelection=false;
+    isSetToPlane=false;
 
     // set a default so that all bare vertices highlight with a yellow plus sign
     viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
@@ -373,7 +375,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     if (ignoreMouseRelease) return;
 
-
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
 
     // process for vertex click
@@ -403,38 +404,41 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         }
     }
 
-    // process for selection on face
-    if (isFaceSelection && event->button() == Qt::LeftButton) {
+    // process for selection on edges, faces, etc; selection filter set in OPEMg determines selection
+    if (isSubshapeSelection && event->button() == Qt::LeftButton) {
         if (!owner.IsNull()) {
             Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
             if (!brepOwner.IsNull()) {
                 TopoDS_Shape shape=brepOwner->Shape();
                 if (!shape.IsNull()) {
-                    if (shape.ShapeType() == TopAbs_FACE) {
+                    if (event->button() == Qt::LeftButton) {
+                        AIS_SelectionScheme scheme;
 
-                        if (event->button() == Qt::LeftButton) {
-                            AIS_SelectionScheme scheme;
+                        if (event->modifiers() & Qt::ControlModifier) {
+                            if (isSingleSelection) scheme=AIS_SelectionScheme_Replace;
+                            else scheme=AIS_SelectionScheme_Add;
+                        } else if (event->modifiers() & Qt::ShiftModifier) {
+                            if (isSingleSelection) scheme=AIS_SelectionScheme_Replace;
+                            else scheme=AIS_SelectionScheme_Add;
+                        } else {
+                            scheme=AIS_SelectionScheme_Replace;
+                        }
 
-                            // only allow one face to be selected
-                            if (event->modifiers() & Qt::ControlModifier) {
-                                scheme=AIS_SelectionScheme_Replace;
-                            } else if (event->modifiers() & Qt::ShiftModifier) {
-                                scheme=AIS_SelectionScheme_Replace;
-                            } else {
-                                scheme=AIS_SelectionScheme_Replace;
-                            }
+                        viewerContext->SelectDetected(scheme);
 
-                            // select
-                            viewerContext->SelectDetected(scheme);
-                            isFaceSelection=false;
+                        if (isSetToPlane) {
+                            isSubshapeSelection=false;
+                            isSingleSelection=false;
+                            isSetToPlane=false;
                             emit relay->startPlaneSetToFace();
                             return;
                         }
+
+                        return;
                     }
                 }
             }
         }
-        isFaceSelection=false;
     }
 
     // process for object selection

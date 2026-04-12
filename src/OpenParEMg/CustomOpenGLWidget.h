@@ -505,7 +505,9 @@ public:
     CustomTreeWidgetItem* get_visibleItem (long unsigned int i) {return drawingTracker->getVisibleItem(i);}
     long unsigned int get_visibleItems_count () {return drawingTracker->getVisibleItemsCount();}
 
-    void setFaceSelection () {isFaceSelection=true;}
+    void setSubshapeSelection (bool isSubshapeSelection_) {isSubshapeSelection=isSubshapeSelection_;}
+    void setSingleSelection () {isSingleSelection=true;}
+    void setSetToPlane () {isSetToPlane=true;}
 
     std::vector<CustomTreeWidgetItem *> getVisibleDrawingItems (){
         return drawingTracker->getVisibleDrawingItems();
@@ -572,7 +574,9 @@ private:
     Relay *relay;
     //std::vector<CustomTreeWidgetItem *> *selectedItemsList;
     bool ignoreMouseRelease;
-    bool isFaceSelection;
+    bool isSubshapeSelection;
+    bool isSingleSelection;
+    bool isSetToPlane;
     gp_Pnt clickPoint;
     bool clickPointValid;
 

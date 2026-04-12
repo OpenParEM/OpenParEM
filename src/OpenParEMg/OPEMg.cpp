@@ -1215,51 +1215,26 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             menu.addAction(unselectAction);
             menu.addAction(copyAction);
             menu.addAction(deleteAction);
-            //menu.addAction(createPortAction);
-            //menu.addAction(createPathAction);
 
             QMenu setup("Setup");
-            setup.addAction(createPortAction);
-            setup.addAction(createPathAction);
-            menu.addMenu(&setup);
+            if (isValidCreatePort()) setup.addAction(createPortAction);
+            if (isValidCreatePath()) setup.addAction(createPathAction);
+            if (isValidCreatePort() || isValidCreatePath()) menu.addMenu(&setup);
 
             QMenu modify("Modify");
-            modify.addAction(editAction);
+            if (isValidObjectEdit()) modify.addAction(editAction);
             modify.addAction(moveAction);
-            modify.addAction(stretchAction);
-            modify.addAction(insertPointAction);
-            modify.addAction(deletePointAction);
-            modify.addAction(closePolylineAction);
-            modify.addAction(openPolylineAction);
-            modify.addAction(convertAction);
+            if (isValidObjectStretch()) modify.addAction(stretchAction);
+            if (isValidInsertPoint()) modify.addAction(insertPointAction);
+            if (isValidDeletePoint()) modify.addAction(deletePointAction);
+            if (isValidCloseExistingPolyline()) modify.addAction(closePolylineAction);
+            if (isValidOpenExistingPolyline()) modify.addAction(openPolylineAction);
+            if (isValidConvertToPolyline()) modify.addAction(convertAction);
             modify.addAction(rotateAction);
-            modify.addAction(extrudeAction);
-            modify.addAction(mergeAction);
-            modify.addAction(subtractAction);
+            if (isValidExtrudePolywire()) modify.addAction(extrudeAction);
+            if (isValidMergeSolids()) modify.addAction(mergeAction);
+            if (isValidSubtractSolids()) modify.addAction(subtractAction);
             menu.addMenu(&modify);
-
-            createPortAction->setEnabled(false);
-            if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {
-                createPortAction->setEnabled(true);
-            }
-
-            createPathAction->setEnabled(false);
-            if (ui->drawingWindow->numberDrawingFaceSelected() > 0) {createPathAction->setEnabled(true);}
-
-            editAction->setEnabled(isValidObjectEdit());     // single object
-            moveAction->setEnabled(true);
-            stretchAction->setEnabled(isValidObjectStretch());   // single object
-            deletePointAction->setEnabled(isValidDeletePoint()); // single object
-            insertPointAction->setEnabled(isValidInsertPoint());    // single object
-            closePolylineAction->setEnabled(isValidCloseExistingPolyline());
-            openPolylineAction->setEnabled(isValidOpenExistingPolyline());
-            convertAction->setEnabled(isValidConvertToPolyline());
-            rotateAction->setEnabled(true);
-            extrudeAction->setEnabled(isValidExtrudePolywire());
-            mergeAction->setEnabled(isValidMergeSolids());
-            subtractAction->setEnabled(isValidSubtractSolids());
-            copyAction->setEnabled(isValidCopy());
-            deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
 
             menu.exec(ui->drawingWindow->mapToGlobal(pnt));
 
@@ -2729,8 +2704,6 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywir
 
 bool OpenParEMg::isValidExtrudePolywire ()
 {
-    //std::cout << "OpenParEMg::isValidExtrudePolywire" << std::endl; std::cout.flush();
-
     int polywireCount=0;
     QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
     int i=0;
@@ -2979,6 +2952,18 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
     // recursively work to the top of the tree
     CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
     reprocess(parentItem);
+}
+
+bool OpenParEMg::isValidCreatePort ()
+{
+    if (ui->drawingWindow->numberDrawingFaceSelected() == 1) return true;
+    return false;
+}
+
+bool OpenParEMg::isValidCreatePath ()
+{
+    if (ui->drawingWindow->numberDrawingFaceSelected() > 0) return true;
+    return false;
 }
 
 bool OpenParEMg::isValidObjectEdit ()
@@ -4346,9 +4331,6 @@ void OpenParEMg::on_actionOpen_triggered ()
                 }
                 i++;
             }
-
-            // cross link paths to ports
-            boundaryDatabase->crossLink();
         }
 
         // load mesh, if any, and draw
@@ -5680,9 +5662,8 @@ bool OpenParEMg::eventFilter (QObject *obj, QEvent *event)
         }
     }
 
-    if (event->type() == QEvent::Paint) {
-
-    }
+    // if (event->type() == QEvent::Paint) {
+    // }
 
     return QObject::eventFilter(obj, event);
 }
@@ -6393,6 +6374,34 @@ void OpenParEMg::on_actionAbortAndExit_triggered ()
     QApplication::quit();
 }
 
+//xxx
+
+void OpenParEMg::finishSelect ()
+{
+    std::cout << "OpenParEMg::finishSelect" << std::endl; std::cout.flush();
+
+    on_actionShape_triggered();
+    ui->drawingWindow->setSubshapeSelection(false);
+}
+
+void OpenParEMg::on_actionSelectEdge_triggered ()
+{
+    on_actionEdge_triggered();
+    ui->drawingWindow->setSubshapeSelection(true);
+}
+
+void OpenParEMg::on_actionSelectFace_triggered ()
+{
+    on_actionFace_triggered();
+    ui->drawingWindow->setSubshapeSelection(true);
+}
+
+void OpenParEMg::on_actionSelectWithBox2_triggered ()
+{
+    ui->drawingWindow->selectRectangle();
+    setMenusI(79);
+}
+
 void OpenParEMg::on_actionDrawingPlaneShow_triggered ()
 {
     drawingPlaneShown=true;
@@ -6429,7 +6438,8 @@ void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 
     skipDrawingPlaneAxisForm=true;
     on_actionFace_triggered();
-    ui->drawingWindow->setFaceSelection();
+    ui->drawingWindow->setSubshapeSelection(true);
+    ui->drawingWindow->setSetToPlane();
 }
 
 void OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered ()
@@ -6441,7 +6451,7 @@ void OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered ()
 
     skipDrawingPlaneAxisForm=false;
     on_actionFace_triggered();
-    ui->drawingWindow->setFaceSelection();
+    ui->drawingWindow->setSubshapeSelection(true);
 }
 
 void OpenParEMg::startPlaneSetToFace ()
@@ -6545,12 +6555,6 @@ void OpenParEMg::on_actionDrawingSetPlaneToYZ_triggered ()
     ui->drawingWindow->set_gridPlane(origin,normal);
     ui->drawingWindow->updateViewer();
     setMenusI(78);
-}
-
-void OpenParEMg::on_actionSelectWithBox_triggered ()
-{
-    ui->drawingWindow->selectRectangle();
-    setMenusI(79);
 }
 
 void OpenParEMg::cancelDraw ()
@@ -7040,5 +7044,8 @@ void OpenParEMg::finishOperation (bool cancel, int source)
     ui->drawingWindow->updateViewer();
     setMenusI(0);
 }
+
+
+
 
 

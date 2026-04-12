@@ -131,7 +131,11 @@ public:
 
     void startOperation (bool);
 
+    bool isValidCreatePort ();
+    bool isValidCreatePath ();
+
     bool isValidObjectEdit ();
+
     bool isValidObjectStretch ();
 
     bool isValidCopy ();
@@ -190,11 +194,16 @@ private slots:
     // View
     void on_actionFitSelected_triggered ();
     void on_actionFitAll_triggered ();
-    void on_actionSelectWithBox_triggered ();
     void on_actionUnselectAll_triggered ();   // note similar functionality in CustomOpenGLWidget
     void on_actionShowAll_triggered ();
     void on_actionHideAll_triggered ();
     void on_actionWireframe_triggered();
+
+    // Select
+    void finishSelect ();
+    void on_actionSelectEdge_triggered ();
+    void on_actionSelectFace_triggered ();
+    void on_actionSelectWithBox2_triggered ();
 
     // Drawing
     void on_actionDrawingPlaneShow_triggered ();
@@ -363,7 +372,6 @@ private slots:
     void getCurrentMousePosition (gp_Pnt);
     void finishOperation (bool, int);
     void getPickedVertex (gp_Pnt, bool);
-
 
 public slots:
     void setMenus ();

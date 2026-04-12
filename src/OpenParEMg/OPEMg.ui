@@ -146,7 +146,6 @@
     <addaction name="actionFitSelected"/>
     <addaction name="actionFitAll"/>
     <addaction name="actionMenuSelection"/>
-    <addaction name="actionSelectWithBox"/>
     <addaction name="actionUnselectAll"/>
     <addaction name="actionShowAll"/>
     <addaction name="actionHideAll"/>
@@ -184,8 +183,17 @@
     <addaction name="actionDrawPolycircle"/>
     <addaction name="actionDrawRectangle"/>
    </widget>
+   <widget class="QMenu" name="menuSelect">
+    <property name="title">
+     <string>Select</string>
+    </property>
+    <addaction name="actionSelectEdge"/>
+    <addaction name="actionSelectFace"/>
+    <addaction name="actionSelectWithBox2"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
+   <addaction name="menuSelect"/>
    <addaction name="menuDraw"/>
    <addaction name="menuMaterials"/>
    <addaction name="menuMesh"/>
@@ -548,6 +556,21 @@
   <action name="actionDrawingPlaneSetToFaceAxis">
    <property name="text">
     <string>Set to Face with Axis</string>
+   </property>
+  </action>
+  <action name="actionSelectEdge">
+   <property name="text">
+    <string>Edge</string>
+   </property>
+  </action>
+  <action name="actionSelectFace">
+   <property name="text">
+    <string>Face</string>
+   </property>
+  </action>
+  <action name="actionSelectWithBox2">
+   <property name="text">
+    <string>Select with Box</string>
    </property>
   </action>
  </widget>
