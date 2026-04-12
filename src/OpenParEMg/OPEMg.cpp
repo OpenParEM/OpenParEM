@@ -393,8 +393,6 @@ void OpenParEMg::setMenusI (int placeIndex)
 {
     std::cout << "OpenParEMg::setMenusI  place=" << placeIndex << std::endl; std::cout.flush();
 
-    on_actionShape_triggered();
-
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
     ui->drawingWindow->compactSelectedItems();
     ui->drawingWindow->compactVisibleItems();
@@ -2423,6 +2421,8 @@ void OpenParEMg::createPath ()
         count++;
     }
 
+    ui->drawingWindow->setSubshapeSelection(false);
+    on_actionShape_triggered();
     ui->drawingWindow->updateViewer();
     setMenusI(36);
 }
@@ -3937,6 +3937,8 @@ void OpenParEMg::createPort ()
         count++;
     }
 
+    ui->drawingWindow->setSubshapeSelection(false);
+    on_actionShape_triggered();
     setMenusI(37);
     ui->drawingWindow->updateViewer();
 }
@@ -5587,7 +5589,7 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
             rotateInputForm=nullptr;
         }
 
-        setMenusI(2000);
+        ui->drawingWindow->setSubshapeSelection(false);
     }
     QWidget::keyPressEvent(event);
 }

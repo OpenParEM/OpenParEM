@@ -501,11 +501,8 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         }
         updateViewer();
 
-    } else if (event->button() == Qt::RightButton) {
-        // if (viewerContext->NbSelected() > 0) {
-        //     contextMenu->exec(QCursor::pos());
-        // }
-    }
+    } //else if (event->button() == Qt::RightButton) {
+    //}
 }
 
 Handle(AIS_InteractiveObject) CustomOpenGLWidget::getLastSelected ()
