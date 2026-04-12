@@ -2074,48 +2074,40 @@ TopoDS_Wire Path::create_TopoDS_Wire ()
 }
 
 // create path from face
-void Path::addFacePoints (TopoDS_Shape shape, bool setClosed, bool calcNormal)
+void Path::addFacePoints (TopoDS_Face face)
 {
-    TopExp_Explorer faceExplorer(shape,TopAbs_FACE);
-    while (faceExplorer.More()) {
-        const TopoDS_Shape& subShape=faceExplorer.Current();
-        TopoDS_Face face=TopoDS::Face(subShape);
+    TopTools_MapOfShape seen;
+    std::vector<TopoDS_Vertex> orderedVertices;
 
-        TopTools_MapOfShape seen;
-        std::vector<TopoDS_Vertex> orderedVertices;
+    TopoDS_Wire outerWire=BRepTools::OuterWire(face);
+    BRepTools_WireExplorer wireExplorer(outerWire,face);
 
-        TopoDS_Wire outerWire=BRepTools::OuterWire(face);
-        BRepTools_WireExplorer wireExplorer(outerWire,face);
+    while (wireExplorer.More()) {
+        TopoDS_Vertex vertex=wireExplorer.CurrentVertex();
 
-        while (wireExplorer.More()) {
-            TopoDS_Vertex vertex=wireExplorer.CurrentVertex();
-
-            // avoid duplicates from shared edges / seam edges
-            if (!seen.Contains(vertex)) {
-                seen.Add(vertex);
-                orderedVertices.push_back(vertex);
-            }
-
-            wireExplorer.Next();
+        // avoid duplicates from shared edges / seam edges
+        if (!seen.Contains(vertex)) {
+            seen.Add(vertex);
+            orderedVertices.push_back(vertex);
         }
 
-        long unsigned int i=0;
-        while (i < orderedVertices.size()) {
-            gp_Pnt pnt=BRep_Tool::Pnt(orderedVertices[i]);
-
-            keywordPair *point=new keywordPair();
-            point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
-
-            points.push_back(point);
-
-            i++;
-        }
-
-        set_closed(setClosed);
-        if (calcNormal) calculateNormal();
-
-        faceExplorer.Next();  // should not be a second face
+        wireExplorer.Next();
     }
+
+    long unsigned int i=0;
+    while (i < orderedVertices.size()) {
+        gp_Pnt pnt=BRep_Tool::Pnt(orderedVertices[i]);
+
+        keywordPair *point=new keywordPair();
+        point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
+
+        points.push_back(point);
+
+        i++;
+    }
+
+    set_closed(true);
+    calculateNormal();
 }
 
 // create path from wire
@@ -2157,6 +2149,25 @@ void Path::addWirePoints (TopoDS_Wire wire)
 
         i++;
     }
+}
+
+// create path from edge
+void Path::addEdgePoints (TopoDS_Edge edge)
+{
+    TopoDS_Vertex v1,v2;
+    TopExp::Vertices(edge,v1,v2);
+
+    // v1
+    gp_Pnt pnt=BRep_Tool::Pnt(v1);
+    keywordPair *point=new keywordPair();
+    point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
+    points.push_back(point);
+
+    // v2
+    pnt=BRep_Tool::Pnt(v2);
+    point=new keywordPair();
+    point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
+    points.push_back(point);
 }
 
 void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)

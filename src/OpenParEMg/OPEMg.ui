@@ -188,6 +188,7 @@
      <string>Select</string>
     </property>
     <addaction name="actionSelectEdge"/>
+    <addaction name="actionSelectWire"/>
     <addaction name="actionSelectFace"/>
     <addaction name="actionSelectWithBox2"/>
    </widget>
@@ -571,6 +572,11 @@
   <action name="actionSelectWithBox2">
    <property name="text">
     <string>Select with Box</string>
+   </property>
+  </action>
+  <action name="actionSelectWire">
+   <property name="text">
+    <string>Wire</string>
    </property>
   </action>
  </widget>

@@ -921,7 +921,11 @@ public:
     {
         if (deleteTracking) {std::cout << "ItemTracker::isValidDelete" << std::endl; std::cout.flush();}
 
+        // do not enable deletion of subshapes
+        if (selectedItems.size() == 0) return false;
+
         bool performCheck=true;
+
         // count the items
         long unsigned int i=0;
         while (i < selectedItems.size()) {

@@ -188,6 +188,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(extrudeAction);
     QActionList.push_back(mergeAction);
     QActionList.push_back(subtractAction);
+    QActionList.push_back(assignMaterialAction);
     initQActionList();
 
 
@@ -424,6 +425,10 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionUnselectAll->setEnabled(true);
         ui->actionShowAll->setEnabled(true);
         ui->actionHideAll->setEnabled(true);
+        ui->actionSelectEdge->setEnabled(false);
+        ui->actionSelectWire->setEnabled(false);
+        ui->actionSelectFace->setEnabled(false);
+        ui->actionSelectWithBox->setEnabled(false);
         ui->actionDrawLine->setEnabled(true);
         ui->actionDrawPolyline->setEnabled(true);
         ui->actionDrawPolycircle->setEnabled(true);
@@ -455,6 +460,9 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionFitSelected->setEnabled(true);
             ui->actionFitAll->setEnabled(true);
             ui->actionMenuSelection->setEnabled(true);
+            ui->actionSelectEdge->setEnabled(true);
+            ui->actionSelectWire->setEnabled(true);
+            ui->actionSelectFace->setEnabled(true);
             ui->actionSelectWithBox->setEnabled(true);
             ui->actionWireframe->setEnabled(true);
 
@@ -467,6 +475,9 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionFitSelected->setEnabled(false);
             ui->actionFitAll->setEnabled(false);
             ui->actionMenuSelection->setEnabled(false);
+            ui->actionSelectEdge->setEnabled(false);
+            ui->actionSelectWire->setEnabled(false);
+            ui->actionSelectFace->setEnabled(false);
             ui->actionSelectWithBox->setEnabled(false);
             ui->actionUnselectAll->setEnabled(false);
             ui->actionHideAll->setEnabled(false);
@@ -557,6 +568,9 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionFitSelected->setEnabled(false);
         ui->actionFitAll->setEnabled(false);
         ui->actionMenuSelection->setEnabled(false);
+        ui->actionSelectEdge->setEnabled(false);
+        ui->actionSelectWire->setEnabled(false);
+        ui->actionSelectFace->setEnabled(false);
         ui->actionSelectWithBox->setEnabled(false);
         ui->actionUnselectAll->setEnabled(false);
         ui->actionShowAll->setEnabled(false);
@@ -672,6 +686,77 @@ void OpenParEMg::collapseAllItems ()
     }
 }
 
+void OpenParEMg::buildDrawingMenu (QMenu &menu)
+{
+    assignMaterialAction=new QAction("Assign Material");
+    showAction=new QAction("Show");
+    hideAction=new QAction("Hide");
+    editAction=new QAction("Edit");
+    moveAction=new QAction("Move");
+    stretchAction=new QAction("Stretch");
+    deletePointAction=new QAction("Delete Point");
+    insertPointAction=new QAction("Insert Point");
+    closePolylineAction=new QAction("Close Polyline");
+    openPolylineAction=new QAction("Open Polyline");
+    convertAction=new QAction("Convert to Polyline");
+    rotateAction=new QAction("Rotate");
+    unselectAction=new QAction("Unselect");
+    copyAction=new QAction("Copy");
+    deleteAction=new QAction("Delete");
+    createPortAction=new QAction("Create Port");
+    createPortAction->setToolTip("Copy the selected face and create a port.");
+    createPathAction=new QAction("Create Path");
+    createPathAction->setToolTip("Copy the selected face and create a path.");
+    extrudeAction=new QAction("Extrude");
+    extrudeAction->setToolTip("Extrude the selected polywires along each normal.");
+    mergeAction=new QAction("Merge");
+    mergeAction->setToolTip("Merge two solid objects.");
+    subtractAction=new QAction("Subtract");
+    subtractAction->setToolTip("Subtract the second selected solid object from the first selected solid object.");
+
+    connect(assignMaterialAction, &QAction::triggered, this, &OpenParEMg::assignMaterial);
+    connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
+    connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
+    connect(editAction, &QAction::triggered, this, &OpenParEMg::editObject);
+    connect(moveAction, &QAction::triggered, this, &OpenParEMg::moveObject);
+    connect(stretchAction, &QAction::triggered, this, &OpenParEMg::stretchObject);
+    connect(deletePointAction, &QAction::triggered, this, &OpenParEMg::deletePoint);
+    connect(insertPointAction, &QAction::triggered, this, &OpenParEMg::insertPoint);
+    connect(closePolylineAction, &QAction::triggered, this, &OpenParEMg::closeExistingPolyline);
+    connect(openPolylineAction, &QAction::triggered, this, &OpenParEMg::openExistingPolyline);
+    connect(convertAction, &QAction::triggered, this, &OpenParEMg::convertToPolyline);
+    connect(rotateAction, &QAction::triggered, this, &OpenParEMg::rotateObject);
+    connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
+    connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
+    connect(copyAction, &QAction::triggered, this, &OpenParEMg::copyDrawingItems);
+    connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
+    connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
+    connect(extrudeAction, &QAction::triggered, this, &OpenParEMg::extrudePolywire);
+    connect(mergeAction, &QAction::triggered, this, &OpenParEMg::mergeSolids);
+    connect(subtractAction, &QAction::triggered, this, &OpenParEMg::subtractSolids);
+
+    if (isValidAssignMaterial()) menu.addAction(assignMaterialAction);
+    if (isValidObjectShow()) menu.addAction(showAction);
+    if (isValidObjectHide()) menu.addAction(hideAction);
+    //menu.addAction(unselectAction);
+    if (isValidCopy()) menu.addAction(copyAction);
+    if (isValidObjectDelete()) menu.addAction(deleteAction);
+    if (isValidCreatePort()) menu.addAction(createPortAction);
+    if (isValidCreatePath()) menu.addAction(createPathAction);
+    if (isValidObjectEdit()) menu.addAction(editAction);
+    if (isValidObjectMove()) menu.addAction(moveAction);
+    if (isValidObjectStretch()) menu.addAction(stretchAction);
+    if (isValidInsertPoint()) menu.addAction(insertPointAction);
+    if (isValidDeletePoint()) menu.addAction(deletePointAction);
+    if (isValidCloseExistingPolyline()) menu.addAction(closePolylineAction);
+    if (isValidOpenExistingPolyline()) menu.addAction(openPolylineAction);
+    if (isValidConvertToPolyline()) menu.addAction(convertAction);
+    if (isValidRotateObject()) menu.addAction(rotateAction);
+    if (isValidExtrudePolywire()) menu.addAction(extrudeAction);
+    if (isValidMergeSolids()) menu.addAction(mergeAction);
+    if (isValidSubtractSolids()) menu.addAction(subtractAction);
+}
+
 void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
 {
     //std::cout << "OpenParEMg::itemTreeContextMenu_triggered" << std::endl; std::cout.flush();
@@ -706,57 +791,10 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
     }
 
     if (clickedItem->is_drawing()) {
-        showAction=new QAction("Show",this);
-        hideAction=new QAction("Hide",this);
-        //QAction *selectAction=new QAction("Select",this);
-        unselectAction=new QAction("Unselect",this);
-        deleteAction=new QAction("Delete",this);
-        assignAction=new QAction("Assign Material");
-        createPortAction=new QAction("Create Port");
-        createPortAction->setToolTip("Copy the selected face and create a port.");
-        createPathAction=new QAction("Create Path");
-        createPathAction->setToolTip("Copy the selected face and create a path.");
-
-        connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
-        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
-        //connect(selectAction, &QAction::triggered, this, &OpenParEMg::selectItems);
-        connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
-        connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
-        connect(assignAction, &QAction::triggered, this, &OpenParEMg::assignMaterial);
-        connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
-        connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
-
-        showAction->setEnabled(false);
-        hideAction->setEnabled(false);
-        unselectAction->setEnabled(false);
-        deleteAction->setEnabled(false);
-        assignAction->setEnabled(false);
-        createPortAction->setEnabled(false);
-        createPathAction->setEnabled(false);
-        if (!clickedItem->is_root()) {
-            showAction->setEnabled(isDrawingValidShow());
-            hideAction->setEnabled(ui->drawingWindow->isValidHide());
-            unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-            deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
-
-            assignAction->setEnabled(false);
-            if (clickedItem->is_solid()) assignAction->setEnabled(true);
-
-            createPortAction->setEnabled(false);
-            if (ui->drawingWindow->numberDrawingFaceSelected() == 1) {createPortAction->setEnabled(true);}
-
-            createPathAction->setEnabled(false);
-            if (ui->drawingWindow->numberDrawingFaceSelected() > 0) {createPathAction->setEnabled(true);}
+        //xxx
+        if (ui->drawingWindow->get_NbSelected()) {
+            buildDrawingMenu(menu);
         }
-
-        menu.addAction(showAction);
-        menu.addAction(hideAction);
-        //menu.addAction(selectAction);
-        menu.addAction(unselectAction);
-        menu.addAction(deleteAction);
-        menu.addAction(assignAction);
-        menu.addAction(createPortAction);
-        menu.addAction(createPathAction);
     }
 
     if (clickedItem->is_rootPath()) {
@@ -1101,17 +1139,14 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 {
     //std::cout << "OpenParEMg::drawingWindowContextMenu_triggered" << std::endl; std::cout.flush();
 
+    QMenu menu(this);
+
     if (activePolywire) {
 
         if (dynamic_cast<Line *>(activePolywire)) {
             cancelAction=new QAction("Cancel");
             connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDraw);
-
-            QMenu menu(this);
             menu.addAction(cancelAction);
-
-            menu.exec(ui->drawingWindow->mapToGlobal(pnt));
-            freeQActionList();
         } else if (dynamic_cast<Polyline *>(activePolywire)) {
             deleteLastPointAction=new QAction("Delete Point");
             doneAction=new QAction("Finished");
@@ -1132,115 +1167,28 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             closeAction->setEnabled(false);
             if (activePolywire->canClose()) closeAction->setEnabled(true);
 
-            QMenu menu(this);
             menu.addAction(deleteLastPointAction);
             menu.addAction(doneAction);
             menu.addAction(closeAction);
             menu.addAction(cancelAction);
-
-            menu.exec(ui->drawingWindow->mapToGlobal(pnt));
-
-            freeQActionList();
         } else if (dynamic_cast<Rectangle *>(activePolywire)){
             cancelAction=new QAction("Cancel");
             connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDraw);
-
-            QMenu menu(this);
             menu.addAction(cancelAction);
-
-            menu.exec(ui->drawingWindow->mapToGlobal(pnt));
-            freeQActionList();
         } else if (dynamic_cast<Polycircle *>(activePolywire)) {
             cancelAction=new QAction("Cancel");
             connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDraw);
-
-            QMenu menu(this);
             menu.addAction(cancelAction);
-
-            menu.exec(ui->drawingWindow->mapToGlobal(pnt));
-            freeQActionList();
         }
     } else {
+        //xxx
         if (ui->drawingWindow->get_NbSelected()) {
-
-            showAction=new QAction("Show");
-            hideAction=new QAction("Hide");
-            editAction=new QAction("Edit");
-            moveAction=new QAction("Move");
-            stretchAction=new QAction("Stretch");
-            deletePointAction=new QAction("Delete Point");
-            insertPointAction=new QAction("Insert Point");
-            closePolylineAction=new QAction("Close Polyline");
-            openPolylineAction=new QAction("Open Polyline");
-            convertAction=new QAction("Convert to Polyline");
-            rotateAction=new QAction("Rotate");
-            unselectAction=new QAction("Unselect");
-            copyAction=new QAction("Copy");
-            deleteAction=new QAction("Delete");
-            createPortAction=new QAction("Create Port");
-            createPortAction->setToolTip("Copy the selected face and create a port.");
-            createPathAction=new QAction("Create Path");
-            createPathAction->setToolTip("Copy the selected face and create a path.");
-            extrudeAction=new QAction("Extrude");
-            extrudeAction->setToolTip("Extrude the selected polywires along each normal.");
-            mergeAction=new QAction("Merge");
-            mergeAction->setToolTip("Merge two solid objects.");
-            subtractAction=new QAction("Subtract");
-            subtractAction->setToolTip("Subtract the second selected solid object from the first selected solid object.");
-
-            connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
-            connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideDrawingItems);
-            connect(editAction, &QAction::triggered, this, &OpenParEMg::editObject);
-            connect(moveAction, &QAction::triggered, this, &OpenParEMg::moveObject);
-            connect(stretchAction, &QAction::triggered, this, &OpenParEMg::stretchObject);
-            connect(deletePointAction, &QAction::triggered, this, &OpenParEMg::deletePoint);
-            connect(insertPointAction, &QAction::triggered, this, &OpenParEMg::insertPoint);
-            connect(closePolylineAction, &QAction::triggered, this, &OpenParEMg::closeExistingPolyline);
-            connect(openPolylineAction, &QAction::triggered, this, &OpenParEMg::openExistingPolyline);
-            connect(convertAction, &QAction::triggered, this, &OpenParEMg::convertToPolyline);
-            connect(rotateAction, &QAction::triggered, this, &OpenParEMg::rotateObject);
-            connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
-            connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
-            connect(copyAction, &QAction::triggered, this, &OpenParEMg::copyDrawingItems);
-            connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
-            connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
-            connect(extrudeAction, &QAction::triggered, this, &OpenParEMg::extrudePolywire);
-            connect(mergeAction, &QAction::triggered, this, &OpenParEMg::mergeSolids);
-            connect(subtractAction, &QAction::triggered, this, &OpenParEMg::subtractSolids);
-
-
-            QMenu menu(this);
-            menu.addAction(showAction);
-            menu.addAction(hideAction);
-            menu.addAction(unselectAction);
-            menu.addAction(copyAction);
-            menu.addAction(deleteAction);
-
-            QMenu setup("Setup");
-            if (isValidCreatePort()) setup.addAction(createPortAction);
-            if (isValidCreatePath()) setup.addAction(createPathAction);
-            if (isValidCreatePort() || isValidCreatePath()) menu.addMenu(&setup);
-
-            QMenu modify("Modify");
-            if (isValidObjectEdit()) modify.addAction(editAction);
-            modify.addAction(moveAction);
-            if (isValidObjectStretch()) modify.addAction(stretchAction);
-            if (isValidInsertPoint()) modify.addAction(insertPointAction);
-            if (isValidDeletePoint()) modify.addAction(deletePointAction);
-            if (isValidCloseExistingPolyline()) modify.addAction(closePolylineAction);
-            if (isValidOpenExistingPolyline()) modify.addAction(openPolylineAction);
-            if (isValidConvertToPolyline()) modify.addAction(convertAction);
-            modify.addAction(rotateAction);
-            if (isValidExtrudePolywire()) modify.addAction(extrudeAction);
-            if (isValidMergeSolids()) modify.addAction(mergeAction);
-            if (isValidSubtractSolids()) modify.addAction(subtractAction);
-            menu.addMenu(&modify);
-
-            menu.exec(ui->drawingWindow->mapToGlobal(pnt));
-
-            freeQActionList();
+            buildDrawingMenu(menu);
         }
     }
+
+    menu.exec(ui->drawingWindow->mapToGlobal(pnt));
+    freeQActionList();
 }
 
 bool OpenParEMg::isRootDrawingValidShow ()
@@ -2558,8 +2506,8 @@ void OpenParEMg::createPath ()
 {
     std::cout << "OpenParEMg::createPath" << std::endl; std::cout.flush();
 
-    int faceCount=0;
-    while (faceCount < ui->drawingWindow->numberDrawingFaceSelected()) {
+    int count=0;
+    while (count < ui->drawingWindow->NbSelected()) {
 
         // default path name
 
@@ -2585,7 +2533,10 @@ void OpenParEMg::createPath ()
         Path *newPath=new Path(0,0);
         newPath->set_name(pathName);
         newPath->is_modified();
-        newPath->addFacePoints(ui->drawingWindow->get_selectedFace(faceCount),true,true);
+        TopoDS_Shape subshape=ui->drawingWindow->get_selectedSubshape(count);
+        if (subshape.ShapeType() == TopAbs_FACE) newPath->addFacePoints(TopoDS::Face(subshape));
+        else if (subshape.ShapeType() == TopAbs_WIRE) newPath->addWirePoints(TopoDS::Wire(subshape));
+        else if (subshape.ShapeType () == TopAbs_EDGE) newPath->addEdgePoints(TopoDS::Edge(subshape));
         newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
 
         boundaryDatabase->push_path(newPath);
@@ -2608,7 +2559,7 @@ void OpenParEMg::createPath ()
         Port *port=boundaryDatabase->get_matchingPort(newPath);
         if (port) newPath->set_portItem(port->get_item());
 
-        faceCount++;
+        count++;
     }
 
     ui->drawingWindow->updateViewer();
@@ -2759,7 +2710,7 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
                     TopoDS_Iterator it(extrudeShape);
                     for (; it.More(); it.Next()) {
                         TopoDS_Shape subShape=it.Value();
-                        if (subShape.ShapeType () == TopAbs_FACE) {
+                        if (subShape.ShapeType() == TopAbs_FACE) {
                             extrudeShape=subShape;
                             break;
                         }
@@ -2956,7 +2907,7 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 
 bool OpenParEMg::isValidCreatePort ()
 {
-    if (ui->drawingWindow->numberDrawingFaceSelected() == 1) return true;
+    if (ui->drawingWindow->numberDrawingFaceSelected() > 0) return true;
     return false;
 }
 
@@ -2966,8 +2917,51 @@ bool OpenParEMg::isValidCreatePath ()
     return false;
 }
 
+bool OpenParEMg::isValidAssignMaterial ()
+{
+    if (ui->drawingWindow->get_selectedItems_size() != 1) return false;
+    CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(0);
+    if (item && item->is_drawing()) {
+        CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+        if (parentItem && parentItem->is_rootDrawing() && item->is_solid()) {
+            clickedItem=item;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool OpenParEMg::isValidObjectShow ()
+{
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item->isValidHide()) return true;
+        i++;
+    }
+    return false;
+}
+
+bool OpenParEMg::isValidObjectHide ()
+{
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item->isValidShow()) return true;
+        i++;
+    }
+    return false;
+}
+
+bool OpenParEMg::isValidObjectDelete ()
+{
+    return ui->drawingWindow->isValidDelete();
+}
+
 bool OpenParEMg::isValidObjectEdit ()
 {
+    //std::cout << "OpenParEMg::isValidObjectEdit" << std::endl; std::cout.flush();
+
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -3347,6 +3341,12 @@ void OpenParEMg::finishSubtractSolids ()
     finishOperation(false,4);
 }
 
+bool OpenParEMg::isValidObjectMove ()
+{
+    if (ui->drawingWindow->get_selectedItems_count() > 0) return true;
+    return false;
+}
+
 void OpenParEMg::moveObject ()
 {
     std::cout << "OpenParEMg::moveObject" << std::endl; std::cout.flush();
@@ -3435,7 +3435,8 @@ bool OpenParEMg::isValidCopy ()
 {
     //std::cout << "OpenParEMg::isValidCopy" << std::endl; std::cout.flush();
 
-    if (ui->drawingWindow->NbSelected() == 0) return false;
+    //if (ui->drawingWindow->NbSelected() == 0) return false;
+    if (ui->drawingWindow->get_selectedItems_count() == 0) return false;
     return true;
 }
 
@@ -3878,6 +3879,12 @@ void OpenParEMg::convertToPolyline ()
     }
 }
 
+bool OpenParEMg::isValidRotateObject ()
+{
+    if (ui->drawingWindow->get_selectedItems_count() > 0) return true;
+    return false;
+}
+
 void OpenParEMg::rotateObject ()
 {
     std::cout << "OpenParEMg::rotateObject" << std::endl; std::cout.flush();
@@ -3956,111 +3963,118 @@ void OpenParEMg::createPort ()
 {
     std::cout << "OpenParEMg::createPortFromDrawing" << std::endl; std::cout.flush();
 
-    // next available s-port number
-    int sport=boundaryDatabase->get_SportCount()+1;
+    int count=0;
+    while (count < ui->drawingWindow->NbSelected()) {
 
-    // default port name
 
-    std::string portName="port";
-    portName.append(std::to_string(sport));
+        // next available s-port number
+        int sport=boundaryDatabase->get_SportCount()+1;
 
-    int i=1;
-    while (boundaryDatabase->portNameExists(portName)) {
-        std::string testName=portName;
-        testName.append("_").append(std::to_string(i));
-        if (boundaryDatabase->portNameExists(testName)) {i++;}
-        else {portName=testName; break;}
-    }
+        // default port name
 
-    // default net name
+        std::string portName="port";
+        portName.append(std::to_string(sport));
 
-    std::string netName="net";
-    netName.append(std::to_string(sport));
-
-    i=1;
-    while (boundaryDatabase->netNameExists(netName)) {
-        std::string testName=netName;
-        testName.append("_").append(std::to_string(i));
-        if (boundaryDatabase->netNameExists(testName)) {i++;}
-        else {netName=testName; break;}
-    }
-
-    // default path name
-
-    std::string pathName="port";
-    pathName.append(std::to_string(sport));
-
-    i=1;
-    while (boundaryDatabase->pathNameExists(pathName)) {
-        std::string testName=pathName;
-        testName.append("_").append(std::to_string(i));
-        if (boundaryDatabase->pathNameExists(testName)) {i++;}
-        else {pathName=testName; break;}
-    }
-
-    // path name placed in a keywordPair
-    keywordPair *kwPathName=new keywordPair();
-    kwPathName->set_keyword("path");
-    kwPathName->set_value(pathName);
-    kwPathName->set_lineNumber(0);
-    kwPathName->set_loaded(true);
-
-    // path
-
-    Path *newPath=new Path(0,0);
-    newPath->set_name(pathName);
-    newPath->is_modified();
-
-    TopoDS_Shape selectedShape=ui->drawingWindow->get_selectedFace();
-    newPath->addFacePoints(selectedShape,true,true);
-    newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
-
-    boundaryDatabase->push_path(newPath);
-
-    // add new path to the drawing
-    CustomTreeWidgetItem *item=newPath->get_item();
-    if (item) {
-        addItemWithShape(item);
-
-        long unsigned int j=0;
-        while (j < item->get_arrowHeads_size()) {
-            //ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
-            ui->drawingWindow->displayShape(item->get_arrowHead(j));
-            ui->drawingWindow->insertItemToMap(item->get_arrowHead(j),item);
-            j++;
+        int i=1;
+        while (boundaryDatabase->portNameExists(portName)) {
+            std::string testName=portName;
+            testName.append("_").append(std::to_string(i));
+            if (boundaryDatabase->portNameExists(testName)) {i++;}
+            else {portName=testName; break;}
         }
+
+        // default net name
+
+        std::string netName="net";
+        netName.append(std::to_string(sport));
+
+        i=1;
+        while (boundaryDatabase->netNameExists(netName)) {
+            std::string testName=netName;
+            testName.append("_").append(std::to_string(i));
+            if (boundaryDatabase->netNameExists(testName)) {i++;}
+            else {netName=testName; break;}
+        }
+
+        // default path name
+
+        std::string pathName="port";
+        pathName.append(std::to_string(sport));
+
+        i=1;
+        while (boundaryDatabase->pathNameExists(pathName)) {
+            std::string testName=pathName;
+            testName.append("_").append(std::to_string(i));
+            if (boundaryDatabase->pathNameExists(testName)) {i++;}
+            else {pathName=testName; break;}
+        }
+
+        // path name placed in a keywordPair
+        keywordPair *kwPathName=new keywordPair();
+        kwPathName->set_keyword("path");
+        kwPathName->set_value(pathName);
+        kwPathName->set_lineNumber(0);
+        kwPathName->set_loaded(true);
+
+        // path
+
+        Path *newPath=new Path(0,0);
+        newPath->set_name(pathName);
+        newPath->is_modified();
+
+        TopoDS_Shape selectedShape=ui->drawingWindow->get_selectedSubshape(count);
+        newPath->addFacePoints(TopoDS::Face(selectedShape));
+        newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
+
+        boundaryDatabase->push_path(newPath);
+
+        // add new path to the drawing
+        CustomTreeWidgetItem *item=newPath->get_item();
+        if (item) {
+            addItemWithShape(item);
+
+            long unsigned int j=0;
+            while (j < item->get_arrowHeads_size()) {
+                //ui->drawingWindow->displayShape(item->get_arrowHead(j),item->get_displayMode(),item->get_selectionMode());
+                ui->drawingWindow->displayShape(item->get_arrowHead(j));
+                ui->drawingWindow->insertItemToMap(item->get_arrowHead(j),item);
+                j++;
+            }
+        }
+
+        // port
+
+        Port *newPort=new Port(0,0);
+        newPort->set_name(portName);
+        newPort->set_outline(newPath);
+
+        // path info
+
+        newPort->push_path(kwPathName,boundaryDatabase->get_pathList_size()-1,false);
+
+        // impedance
+        if (boundaryDatabase->get_portList_size() == 0) {
+            newPort->set_impedance_definition("PV");
+            newPort->set_impedance_calculation("line");
+        } else {
+            newPort->set_impedance_definition(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_definition());
+            newPort->set_impedance_calculation(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_calculation());
+        }
+
+        // must have at least one mode per port - default to sensible assumptions
+        Mode *newMode=new Mode(0,0,newPort->get_impedance_calculation());
+        newMode->set_net(netName);
+        newMode->set_Sport(sport);
+        newPort->push_mode(newMode);
+
+        // add to boundary database
+        boundaryDatabase->push_port(newPort);
+
+        // draw it
+        boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+
+        count++;
     }
-
-    // port
-
-    Port *newPort=new Port(0,0);
-    newPort->set_name(portName);
-    newPort->set_outline(newPath);
-
-    // path info
-
-    newPort->push_path(kwPathName,boundaryDatabase->get_pathList_size()-1,false);
-
-    // impedance
-    if (boundaryDatabase->get_portList_size() == 0) {
-        newPort->set_impedance_definition("PV");
-        newPort->set_impedance_calculation("line");
-    } else {
-        newPort->set_impedance_definition(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_definition());
-        newPort->set_impedance_calculation(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_calculation());
-    }
-
-    // must have at least one mode per port - default to sensible assumptions
-    Mode *newMode=new Mode(0,0,newPort->get_impedance_calculation());
-    newMode->set_net(netName);
-    newMode->set_Sport(sport);
-    newPort->push_mode(newMode);
-
-    // add to boundary database
-    boundaryDatabase->push_port(newPort);
-
-    // draw it
-    boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
 
     setMenusI(37);
     ui->drawingWindow->updateViewer();
@@ -6374,19 +6388,15 @@ void OpenParEMg::on_actionAbortAndExit_triggered ()
     QApplication::quit();
 }
 
-//xxx
-
-void OpenParEMg::finishSelect ()
-{
-    std::cout << "OpenParEMg::finishSelect" << std::endl; std::cout.flush();
-
-    on_actionShape_triggered();
-    ui->drawingWindow->setSubshapeSelection(false);
-}
-
 void OpenParEMg::on_actionSelectEdge_triggered ()
 {
     on_actionEdge_triggered();
+    ui->drawingWindow->setSubshapeSelection(true);
+}
+
+void OpenParEMg::on_actionSelectWire_triggered()
+{
+    on_actionWire_triggered();
     ui->drawingWindow->setSubshapeSelection(true);
 }
 

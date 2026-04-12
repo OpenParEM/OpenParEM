@@ -131,8 +131,16 @@ public:
 
     void startOperation (bool);
 
+    bool isValidAssignMaterial ();
+    bool isValidObjectShow ();
+    bool isValidObjectHide ();
+    bool isValidObjectDelete ();
+
     bool isValidCreatePort ();
     bool isValidCreatePath ();
+
+    bool isValidObjectMove ();
+    bool isValidRotateObject ();
 
     bool isValidObjectEdit ();
 
@@ -200,7 +208,7 @@ private slots:
     void on_actionWireframe_triggered();
 
     // Select
-    void finishSelect ();
+    //void finishSelect ();
     void on_actionSelectEdge_triggered ();
     void on_actionSelectFace_triggered ();
     void on_actionSelectWithBox2_triggered ();
@@ -314,6 +322,7 @@ private slots:
 
     void assignMaterial ();
 
+    void buildDrawingMenu (QMenu &menu);
     void itemTreeContextMenu_triggered (const QPoint& pnt);
     void drawingWindowContextMenu_triggered (const QPoint& pnt);
 
@@ -372,6 +381,8 @@ private slots:
     void getCurrentMousePosition (gp_Pnt);
     void finishOperation (bool, int);
     void getPickedVertex (gp_Pnt, bool);
+
+    void on_actionSelectWire_triggered();
 
 public slots:
     void setMenus ();
@@ -451,6 +462,7 @@ private:
     QAction *mergeAction;
     QAction *subtractAction;
     QAction *convertAction;
+    QAction *assignMaterialAction;
     std::vector<QAction *> QActionList;
 
     // gmsh

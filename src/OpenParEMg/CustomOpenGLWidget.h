@@ -443,17 +443,15 @@ public:
         return pickedShape;
     }
 
-    // get the selected face by index; max available verified elsewhere
-    TopoDS_Shape get_selectedFace (int index)
+    // get the selected subshape by index; max available verified elsewhere
+    TopoDS_Shape get_selectedSubshape (int index)
     {
         int count=0;
         TopoDS_Shape pickedShape;
         for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
             pickedShape=viewerContext->SelectedShape();
-            if (pickedShape.ShapeType() == TopAbs_FACE) {
-                if (count == index) break;
-                count++;
-            }
+            if (count == index) break;
+            count++;
         }
         return pickedShape;
     }

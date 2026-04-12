@@ -154,8 +154,9 @@ class Path {
       void set_portItem (CustomTreeWidgetItem *portItem_) {portItem=portItem_;}
       CustomTreeWidgetItem* get_portItem () {return portItem;}
       TopoDS_Wire create_TopoDS_Wire ();
-      void addFacePoints (TopoDS_Shape, bool, bool);
+      void addFacePoints (TopoDS_Face);
       void addWirePoints (TopoDS_Wire);
+      void addEdgePoints (TopoDS_Edge);
 #endif
 };
 
