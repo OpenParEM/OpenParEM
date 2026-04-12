@@ -502,9 +502,9 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         updateViewer();
 
     } else if (event->button() == Qt::RightButton) {
-        if (viewerContext->NbSelected() > 0) {
-            contextMenu->exec(QCursor::pos());
-        }
+        // if (viewerContext->NbSelected() > 0) {
+        //     contextMenu->exec(QCursor::pos());
+        // }
     }
 }
 

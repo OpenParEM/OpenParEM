@@ -393,6 +393,8 @@ void OpenParEMg::setMenusI (int placeIndex)
 {
     std::cout << "OpenParEMg::setMenusI  place=" << placeIndex << std::endl; std::cout.flush();
 
+    on_actionShape_triggered();
+
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
     ui->drawingWindow->compactSelectedItems();
     ui->drawingWindow->compactVisibleItems();
@@ -776,18 +778,9 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideRootDrawingItems);
         connect(selectAllAction, &QAction::triggered, this, &OpenParEMg::selectAllRootDrawingItems);
 
-        showAction->setEnabled(false);
-        hideAction->setEnabled(false);
-        selectAllAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            showAction->setEnabled(isRootDrawingValidShow());
-            hideAction->setEnabled(isRootDrawingValidHide());
-            selectAllAction->setEnabled(isRootDrawingValidSelectAll());
-        }
-
-        menu.addAction(showAction);
-        menu.addAction(hideAction);
-        menu.addAction(selectAllAction);
+        if (isRootDrawingValidShow()) menu.addAction(showAction);
+        if (isRootDrawingValidHide()) menu.addAction(hideAction);
+        if (isRootDrawingValidSelectAll()) menu.addAction(selectAllAction);
     }
 
     if (clickedItem->is_drawing()) {
@@ -808,21 +801,10 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        showAction->setEnabled(false);
-        hideAction->setEnabled(false);
-        expandAllAction->setEnabled(false);
-        collapseAllAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            showAction->setEnabled(rootPathValidShow());
-            hideAction->setEnabled(rootPathValidHide());
-            expandAllAction->setEnabled(true);
-            collapseAllAction->setEnabled(true);
-        }
-
-        menu.addAction(showAction);
-        menu.addAction(hideAction);
-        menu.addAction(expandAllAction);
-        menu.addAction(collapseAllAction);
+        if (rootPathValidShow()) menu.addAction(showAction);
+        if (rootPathValidHide()) menu.addAction(hideAction);
+        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
     if (clickedItem->is_path()) {
@@ -837,23 +819,10 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showPathItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePathItems);
 
-        renameAction->setEnabled(false);
-        deleteAction->setEnabled(false);
-        showAction->setEnabled(false);
-        hideAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            renameAction->setEnabled(false);
-            if (ui->drawingWindow->get_pathSelectedCount() == 1) renameAction->setEnabled(true);
-
-            deleteAction->setEnabled(isPathValidDelete());
-            showAction->setEnabled(ui->drawingWindow->isValidShow());
-            hideAction->setEnabled(ui->drawingWindow->isValidHide());
-        }
-
-        menu.addAction(renameAction);
-        menu.addAction(deleteAction);
-        menu.addAction(showAction);
-        menu.addAction(hideAction);
+        if (isValidObjectShow()) menu.addAction(showAction);
+        if (isValidObjectHide()) menu.addAction(hideAction);
+        if (ui->drawingWindow->get_pathSelectedCount() == 1) menu.addAction(renameAction);
+        if (isPathValidDelete()) menu.addAction(deleteAction);
     }
 
     if (clickedItem->is_rootPort()) {
@@ -868,21 +837,10 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        showAction->setEnabled(false);
-        hideAction->setEnabled(false);
-        expandAllAction->setEnabled(false);
-        collapseAllAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            showAction->setEnabled(ui->drawingWindow->isValidShow());
-            hideAction->setEnabled(ui->drawingWindow->isValidHide());
-            expandAllAction->setEnabled(true);
-            collapseAllAction->setEnabled(true);
-        }
-
-        menu.addAction(showAction);
-        menu.addAction(hideAction);
-        menu.addAction(expandAllAction);
-        menu.addAction(collapseAllAction);
+        if (isValidObjectShow()) menu.addAction(showAction);
+        if (isValidObjectHide()) menu.addAction(hideAction);
+        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
     if (clickedItem->is_port()) {
@@ -905,36 +863,14 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        showAction->setEnabled(false);
-        hideAction->setEnabled(false);
-        unselectAction->setEnabled(false);
-        renameAction->setEnabled(false);
-        insertAction->setEnabled(false);
-        deleteAction->setEnabled(false);
-        expandAllAction->setEnabled(false);
-        collapseAllAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            showAction->setEnabled(ui->drawingWindow->isValidShow());
-            hideAction->setEnabled(ui->drawingWindow->isValidHide());
-            unselectAction->setEnabled(ui->drawingWindow->hasPortSelectedItems());
-
-            renameAction->setEnabled(false);
-            if (ui->drawingWindow->get_portSelectedCount() == 1) renameAction->setEnabled(true);
-
-            insertAction->setEnabled(true);
-            deleteAction->setEnabled(true);
-            expandAllAction->setEnabled(true);
-            collapseAllAction->setEnabled(true);
-        }
-
-        menu.addAction(showAction);
-        menu.addAction(hideAction);
-        menu.addAction(unselectAction);
-        menu.addAction(renameAction);
+        if (isValidObjectShow()) menu.addAction(showAction);
+        if (isValidObjectHide()) menu.addAction(hideAction);
+        if (ui->drawingWindow->hasPortSelectedItems()) menu.addAction(unselectAction);
+        if (ui->drawingWindow->get_portSelectedCount() == 1) menu.addAction(renameAction);
         menu.addAction(insertAction);
         menu.addAction(deleteAction);
-        menu.addAction(expandAllAction);
-        menu.addAction(collapseAllAction);
+        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
     // ToDo: boundary
@@ -951,21 +887,10 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        showAction->setEnabled(false);
-        hideAction->setEnabled(false);
-        expandAllAction->setEnabled(false);
-        collapseAllAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            showAction->setEnabled(rootMeshValidShow());
-            hideAction->setEnabled(rootMeshValidHide());
-            expandAllAction->setEnabled(true);
-            collapseAllAction->setEnabled(true);
-        }
-
-        menu.addAction(showAction);
-        menu.addAction(hideAction);
-        menu.addAction(expandAllAction);
-        menu.addAction(collapseAllAction);
+        if (rootMeshValidShow()) menu.addAction(showAction);
+        if (rootMeshValidHide()) menu.addAction(hideAction);
+        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
     if (clickedItem->is_mesh()) {
@@ -976,11 +901,8 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showMeshItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideMeshItems);
 
-        showAction->setEnabled(ui->drawingWindow->isValidShow());
-        hideAction->setEnabled(ui->drawingWindow->isValidHide());
-
-        menu.addAction(showAction);
-        menu.addAction(hideAction);
+        if (isValidObjectShow()) menu.addAction(showAction);
+        if (isValidObjectHide()) menu.addAction(hideAction);
     }
 
     if (clickedItem->is_sportLabel()) {
@@ -990,15 +912,8 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        expandAllAction->setEnabled(false);
-        collapseAllAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            expandAllAction->setEnabled(true);
-            collapseAllAction->setEnabled(true);
-        }
-
-        menu.addAction(expandAllAction);
-        menu.addAction(collapseAllAction);
+        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
     if (clickedItem->is_sport()) {
@@ -1017,30 +932,12 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        showAction->setEnabled(false);
-        hideAction->setEnabled(false);
-        renameAction->setEnabled(false);
-        deleteAction->setEnabled(false);
-        expandAllAction->setEnabled(false);
-        collapseAllAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            showAction->setEnabled(ui->drawingWindow->isNetValidShow());
-            hideAction->setEnabled(ui->drawingWindow->isNetValidHide());
-
-            renameAction->setEnabled(false);
-            if (ui->drawingWindow->get_selectedItems_count() == 1) renameAction->setEnabled(true);
-
-            deleteAction->setEnabled(deleteSportValid());
-            expandAllAction->setEnabled(true);
-            collapseAllAction->setEnabled(true);
-        }
-
-        menu.addAction(showAction);
-        menu.addAction(hideAction);
-        menu.addAction(renameAction);
-        menu.addAction(deleteAction);
-        menu.addAction(expandAllAction);
-        menu.addAction(collapseAllAction);
+        if (ui->drawingWindow->isNetValidShow()) menu.addAction(showAction);
+        if (ui->drawingWindow->isNetValidHide()) menu.addAction(hideAction);
+        if (ui->drawingWindow->get_selectedItems_count() == 1) menu.addAction(renameAction);
+        if (deleteSportValid()) menu.addAction(deleteAction);
+        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
     if (clickedItem->is_voltage() || clickedItem->is_current()) {
@@ -1061,35 +958,13 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        showAction->setEnabled(false);
-        hideAction->setEnabled(false);
-        drawPathAction->setEnabled(true);
-        drawPolylineAction->setEnabled(true);
-        insertAction->setEnabled(true);
-        expandAllAction->setEnabled(false);
-        collapseAllAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            showAction->setEnabled(ui->drawingWindow->isValidShow());
-            hideAction->setEnabled(ui->drawingWindow->isValidHide());
-
-            drawPathAction->setEnabled(false);
-            if (ui->drawingWindow->get_selectedItems_count() == 1 && clickedItem->foreground(0) == Qt::black) drawPathAction->setEnabled(true);
-
-            drawPolylineAction->setEnabled(false);
-            if (ui->drawingWindow->get_selectedItems_count() == 1 && clickedItem->foreground(0) == Qt::black) drawPolylineAction->setEnabled(true);
-
-            insertAction->setEnabled(insertActionValid());
-            expandAllAction->setEnabled(true);
-            collapseAllAction->setEnabled(true);
-        }
-
-        menu.addAction(showAction);
-        menu.addAction(hideAction);
-        menu.addAction(drawPathAction);
-        menu.addAction(drawPolylineAction);
-        menu.addAction(insertAction);
-        menu.addAction(expandAllAction);
-        menu.addAction(collapseAllAction);
+        if (isValidObjectShow()) menu.addAction(showAction);
+        if (isValidObjectHide()) menu.addAction(hideAction);
+        if (ui->drawingWindow->get_selectedItems_count() == 1 && clickedItem->foreground(0) == Qt::black) menu.addAction(drawPathAction);
+        if (ui->drawingWindow->get_selectedItems_count() == 1 && clickedItem->foreground(0) == Qt::black) menu.addAction(drawPolylineAction);
+        if (insertActionValid()) menu.addAction(insertAction);
+        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
     if (clickedItem->is_integrationPathSegment()) {
@@ -1102,13 +977,9 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showIntegrationPathItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideIntegrationPathItems);
 
-        removeAction->setEnabled(true);
-        showAction->setEnabled(ui->drawingWindow->isValidShow());
-        hideAction->setEnabled(ui->drawingWindow->isValidHide());
-
+        if (isValidObjectShow()) menu.addAction(showAction);
+        if (isValidObjectHide()) menu.addAction(hideAction);
         menu.addAction(removeAction);
-        menu.addAction(showAction);
-        menu.addAction(hideAction);
     }
 
     if (clickedItem->is_scale()) {
@@ -1118,15 +989,8 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        expandAllAction->setEnabled(false);
-        collapseAllAction->setEnabled(false);
-        if (clickedItem->childCount() > 0) {
-            expandAllAction->setEnabled(true);
-            collapseAllAction->setEnabled(true);
-        }
-
-        menu.addAction(expandAllAction);
-        menu.addAction(collapseAllAction);
+        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
     menu.exec(ui->drawingItemTree->mapToGlobal(pnt));
@@ -5722,6 +5586,8 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
             rotateInputForm->on_CancelButton_clicked();
             rotateInputForm=nullptr;
         }
+
+        setMenusI(2000);
     }
     QWidget::keyPressEvent(event);
 }
