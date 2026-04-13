@@ -206,6 +206,10 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     path.set_itemType(104);
 
     ui->drawingItemTree->setHeaderHidden(true);
+    ui->drawingItemTree->setColumnCount(2);
+    ui->drawingItemTree->header()->setStretchLastSection(false);
+    ui->drawingItemTree->header()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+    ui->drawingItemTree->header()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
 
     // five base list items: drawing, path, port, boundary, and mesh
 
@@ -4154,7 +4158,7 @@ void OpenParEMg::setPhysicalGroups ()
     while (i < drawing.childCount()) {
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
         if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_SOLID) {
-            QString itemMaterial=child->text(0);
+            QString itemMaterial=child->text(1);
             char *material=nullptr;
             cstrFromQString (&material,itemMaterial);
             add_physicalGroupMaterial(&projData,-1,child->get_dimTag().first,child->get_dimTag().second,material);
@@ -4205,7 +4209,8 @@ void OpenParEMg::assignMaterial ()
     delete materialSelection;
 
     if (selectedMaterial != "") {
-        clickedItem->setText(0,selectedMaterial);
+        clickedItem->set_Material(selectedMaterial);
+        clickedItem->setText(1,selectedMaterial);
         projectChanged=true;
         setMenusI(38);
     }
@@ -4993,12 +4998,12 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
             newItem->set_dimTag(dimTag);
             drawing.addChild(newItem);
 
-            // set materials through the name
+            // set materials
             if (shapeType == TopAbs_SOLID) {
                 int i=0;
                 while (i < projData.physicalGroupMaterialCount) {
                     if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
-                        newItem->setText(0,projData.physicalGroupMaterials[i].materialName);
+                        newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
                         break;
                     }
                     i++;
@@ -5116,12 +5121,12 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (TopoDS_Shape shape, CustomTreeWi
         volumeCount++;
         dimTag.first=3; dimTag.second=volumeCount;
 
-        // set materials through the name
+        // set materials
         if (shapeType == TopAbs_SOLID) {
             int i=0;
             while (i < projData.physicalGroupMaterialCount) {
                 if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
-                    newItem->setText(0,projData.physicalGroupMaterials[i].materialName);
+                    newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
                     break;
                 }
                 i++;
@@ -5169,12 +5174,12 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (Polywire *polywire, CustomTreeWi
         volumeCount++;
         dimTag.first=3; dimTag.second=volumeCount;
 
-        // set materials through the name
+        // set materials
         if (shapeType == TopAbs_SOLID) {
             int i=0;
             while (i < projData.physicalGroupMaterialCount) {
                 if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
-                    newItem->setText(0,projData.physicalGroupMaterials[i].materialName);
+                    newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
                     break;
                 }
                 i++;

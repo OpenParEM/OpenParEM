@@ -7334,6 +7334,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     else if (impedance_definition.get_value().compare("PI") == 0) comboZdef->setCurrentIndex(2);
     else comboZdef->setCurrentIndex(3);
     drawingItemTree->setItemWidget(itemImpedanceDefinition,0,comboZdef);
+    itemImpedanceDefinition->setSizeHint(0,comboZdef->sizeHint());  // size hint for scaling; do not need to do the other combobox
 
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::setMenus);

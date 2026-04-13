@@ -63,6 +63,9 @@ public:
     void set_Process (Process *process_) {process=process_;}
     Process* get_Process () {return process;}
 
+    void set_Material (QString material_) {material=material_;}
+    QString get_Material () {return material;}
+
     long unsigned int linkedItems_size () {return linkedItems.size();}
     void push_linkedItem (CustomTreeWidgetItem *linkedItem) {linkedItems.push_back(linkedItem);}
     CustomTreeWidgetItem* get_linkedItem (long unsigned int i) {return linkedItems[i];}
@@ -327,6 +330,8 @@ public:
         std::cout << "   forShowHide=" << forShowHide << std::endl;
         std::cout << "   OPEMobject=" << OPEMobject << std::endl;
         std::cout << "   polywire=" << polywire << std::endl;
+        if (material.isNull()) std::cout << "   material=null" << std::endl;
+        else std::cout << "   material=" << material.toStdString() << std::endl;
         std::cout << "   itemType=" << itemType << std::endl;
         if (is_rootDrawing()) std::cout << "   itemType=rootDrawing" << std::endl;
         if (is_rootPort()) std::cout << "   itemType=rootPort" << std::endl;
@@ -373,6 +378,7 @@ public:
         meshEntities.clear();
         OPEMobject=nullptr;
         polywire=nullptr;
+        material.clear();
         linkedItems.clear();
     }
 
@@ -402,7 +408,7 @@ private:
                                                        // cast to the correct object type
     Polywire *polywire;                                // Polywire object for this item
     Process *process;                                  // for drawing processing of children
-                                                       // cast tp the correct process type
+    QString material;                                  // material for this item - only valid for top-level SOLID and COMPOUND
     std::vector<CustomTreeWidgetItem *> linkedItems;   // link to path items, if any
 
     gp_Pnt p0,p1;                                      // for move operations
