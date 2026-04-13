@@ -504,7 +504,7 @@ public:
 
     void setSubshapeSelection (bool isSubshapeSelection_) {isSubshapeSelection=isSubshapeSelection_;}
     void setSingleSelection () {isSingleSelection=true;}
-    void setSetToPlane () {isSetToPlane=true;}
+    void setSetToPlane (bool isSetToPlane_) {isSetToPlane=isSetToPlane_;}
 
     std::vector<CustomTreeWidgetItem *> getVisibleDrawingItems (){
         return drawingTracker->getVisibleDrawingItems();

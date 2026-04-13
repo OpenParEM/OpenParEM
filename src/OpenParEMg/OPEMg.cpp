@@ -174,6 +174,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(renameAction);
     QActionList.push_back(expandAllAction);
     QActionList.push_back(collapseAllAction);
+    QActionList.push_back(setPlaneAction);
+    QActionList.push_back(setPlaneAxisAction);
     QActionList.push_back(createPortAction);
     QActionList.push_back(createPathAction);
     QActionList.push_back(drawPathAction);
@@ -703,6 +705,8 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     unselectAction=new QAction("Unselect");
     copyAction=new QAction("Copy");
     deleteAction=new QAction("Delete");
+    setPlaneAction=new QAction("Set Drawing Plane");
+    setPlaneAxisAction=new QAction("Set Drawing Plane with Axis");
     createPortAction=new QAction("Create Port");
     createPortAction->setToolTip("Copy the selected face and create a port.");
     createPathAction=new QAction("Create Path");
@@ -713,6 +717,7 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     mergeAction->setToolTip("Merge two solid objects.");
     subtractAction=new QAction("Subtract");
     subtractAction->setToolTip("Subtract the second selected solid object from the first selected solid object.");
+    cancelAction=new QAction("Cancel");
 
     connect(assignMaterialAction, &QAction::triggered, this, &OpenParEMg::assignMaterial);
     connect(showAction, &QAction::triggered, this, &OpenParEMg::showDrawingItems);
@@ -729,11 +734,14 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
     connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
     connect(copyAction, &QAction::triggered, this, &OpenParEMg::copyDrawingItems);
+    connect(setPlaneAction, &QAction::triggered, this, &OpenParEMg::setPlaneToFace);
+    connect(setPlaneAxisAction, &QAction::triggered, this, &OpenParEMg::setPlaneToFaceAxis);
     connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
     connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
     connect(extrudeAction, &QAction::triggered, this, &OpenParEMg::extrudePolywire);
     connect(mergeAction, &QAction::triggered, this, &OpenParEMg::mergeSolids);
     connect(subtractAction, &QAction::triggered, this, &OpenParEMg::subtractSolids);
+    connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDrawingMenu);
 
     if (isValidAssignMaterial()) menu.addAction(assignMaterialAction);
     if (isValidObjectShow()) menu.addAction(showAction);
@@ -741,6 +749,8 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     //menu.addAction(unselectAction);
     if (isValidCopy()) menu.addAction(copyAction);
     if (isValidObjectDelete()) menu.addAction(deleteAction);
+    if (isValidSetPlane()) menu.addAction(setPlaneAction);
+    if (isValidSetPlane()) menu.addAction(setPlaneAxisAction);
     if (isValidCreatePort()) menu.addAction(createPortAction);
     if (isValidCreatePath()) menu.addAction(createPathAction);
     if (isValidObjectEdit()) menu.addAction(editAction);
@@ -755,6 +765,14 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     if (isValidExtrudePolywire()) menu.addAction(extrudeAction);
     if (isValidMergeSolids()) menu.addAction(mergeAction);
     if (isValidSubtractSolids()) menu.addAction(subtractAction);
+    menu.addAction(cancelAction);
+}
+
+void OpenParEMg::cancelDrawingMenu ()
+{
+    on_actionShape_triggered();
+    ui->drawingWindow->setSubshapeSelection(false);
+    ui->drawingWindow->setSetToPlane(false);
 }
 
 void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
@@ -2766,14 +2784,23 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
     reprocess(parentItem);
 }
 
+bool OpenParEMg::isValidSetPlane ()
+{
+    if (ui->drawingWindow->get_selectedItems_size() > 0) return false;
+    if (ui->drawingWindow->numberDrawingFaceSelected() == 1) return true;
+    return false;
+}
+
 bool OpenParEMg::isValidCreatePort ()
 {
+    if (ui->drawingWindow->get_selectedItems_size() > 0) return false;
     if (ui->drawingWindow->numberDrawingFaceSelected() > 0) return true;
     return false;
 }
 
 bool OpenParEMg::isValidCreatePath ()
 {
+    if (ui->drawingWindow->get_selectedItems_size() > 0) return false;
     if (ui->drawingWindow->numberDrawingFaceSelected() > 0) return true;
     return false;
 }
@@ -5534,6 +5561,7 @@ bool OpenParEMg::eventFilter (QObject *obj, QEvent *event)
         if (obj == ui->drawingItemTree->viewport()) {
             QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
             if (ui->drawingItemTree->indexAt(mouseEvent->pos()).isValid() == false) {
+                on_actionShape_triggered();
                 clearTreeSelection();
             }
         }
@@ -5589,7 +5617,9 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
             rotateInputForm=nullptr;
         }
 
+        on_actionShape_triggered();
         ui->drawingWindow->setSubshapeSelection(false);
+        ui->drawingWindow->setSetToPlane(false);
     }
     QWidget::keyPressEvent(event);
 }
@@ -6267,6 +6297,7 @@ void OpenParEMg::on_actionSelectWire_triggered()
 
 void OpenParEMg::on_actionSelectFace_triggered ()
 {
+    clearTreeSelection();
     on_actionFace_triggered();
     ui->drawingWindow->setSubshapeSelection(true);
 }
@@ -6305,6 +6336,19 @@ void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered ()
     setMenusI(75);
 }
 
+//xxx
+void OpenParEMg::setPlaneToFace ()
+{
+    skipDrawingPlaneAxisForm=true;
+    startPlaneSetToFace();
+}
+
+void OpenParEMg::setPlaneToFaceAxis ()
+{
+    skipDrawingPlaneAxisForm=false;
+    startPlaneSetToFace();
+}
+
 void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
     std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFace_triggered" << std::endl; std::cout.flush();
@@ -6314,7 +6358,7 @@ void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
     skipDrawingPlaneAxisForm=true;
     on_actionFace_triggered();
     ui->drawingWindow->setSubshapeSelection(true);
-    ui->drawingWindow->setSetToPlane();
+    ui->drawingWindow->setSetToPlane(true);
 }
 
 void OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered ()
@@ -6909,6 +6953,8 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
     // restore selection
     restoreSelection();
+    ui->drawingWindow->setSubshapeSelection(false);
+    ui->drawingWindow->setSetToPlane(false);
 
     // reset the vertex symbol
     //ui->drawingWindow->set_pickFirstVertex(false);  // also sets the second vertex

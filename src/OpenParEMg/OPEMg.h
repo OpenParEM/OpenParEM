@@ -136,6 +136,10 @@ public:
     bool isValidObjectHide ();
     bool isValidObjectDelete ();
 
+    bool isValidSetPlane ();
+    void setPlaneToFace ();
+    void setPlaneToFaceAxis ();
+
     bool isValidCreatePort ();
     bool isValidCreatePath ();
 
@@ -322,6 +326,7 @@ private slots:
 
     void assignMaterial ();
 
+    void cancelDrawingMenu ();
     void buildDrawingMenu (QMenu &menu);
     void itemTreeContextMenu_triggered (const QPoint& pnt);
     void drawingWindowContextMenu_triggered (const QPoint& pnt);
@@ -462,6 +467,8 @@ private:
     QAction *mergeAction;
     QAction *subtractAction;
     QAction *convertAction;
+    QAction *setPlaneAction;
+    QAction *setPlaneAxisAction;
     QAction *assignMaterialAction;
     std::vector<QAction *> QActionList;
 
