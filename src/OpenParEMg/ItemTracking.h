@@ -671,8 +671,22 @@ public:
 
     void activateSelectItem (CustomTreeWidgetItem *item)
     {
+        //std::cout << "ItemTracking::activateSelectItem" << std::endl; std::cout.flush();
+
         if (!item) return;
-        viewerContext->Activate(item->get_AIS_Shape());
+
+        if (!item->get_AIS_Shape().IsNull()) {
+            viewerContext->Activate(item->get_AIS_Shape());
+        }
+
+        long unsigned int i=0;
+        while (i < item->get_arrowHeads_size()) {
+            if (!item->get_arrowHead(i).IsNull()) {
+                viewerContext->Activate(item->get_arrowHead(i));
+            }
+            i++;
+        }
+
         selectItem(item);
     }
 
@@ -704,6 +718,19 @@ public:
         while (i < selectedItems.size()) {
             if (item == selectedItems[i]) {
                 SelectShape(item->get_AIS_Shape());
+
+                long unsigned int j=0;
+                while (j < item->get_arrowHeads_size()) {
+                    SelectShape(item->get_arrowHead(j));
+                    j++;
+                }
+
+                // j=0;
+                // while (j < item->linkedItems_size()) {
+                //     selectItem(item->get_linkedItem(j));
+                //     j++;
+                // }
+
                 return;
             }
             i++;
@@ -718,16 +745,16 @@ public:
             item->setSelected(Standard_True);
             selectedItems.push_back(item);
 
-            int i=0;
+            long unsigned int i=0;
             while (i < item->get_arrowHeads_size()) {
                 SelectShape(item->get_arrowHead(i));
                 i++;
             }
 
-            long unsigned int j=0;
-            while (j < item->linkedItems_size()) {
-                selectItem(item->get_linkedItem(j));
-                j++;
+            i=0;
+            while (i < item->linkedItems_size()) {
+                selectItem(item->get_linkedItem(i));
+                i++;
             }
         }
     }

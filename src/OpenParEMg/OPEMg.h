@@ -169,6 +169,9 @@ public:
     bool isValidConvertToPolyline ();
     void convertToPolyline ();
 
+    bool isValidConvertToPath ();
+    void convertToPath ();
+
     bool isValidExtrudePolywire ();
     void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void finishExtrudePolywire (bool);
@@ -466,7 +469,8 @@ private:
     QAction *extrudeAction;
     QAction *mergeAction;
     QAction *subtractAction;
-    QAction *convertAction;
+    QAction *convertToPolylineAction;
+    QAction *convertToPathAction;
     QAction *setPlaneAction;
     QAction *setPlaneAxisAction;
     QAction *assignMaterialAction;
