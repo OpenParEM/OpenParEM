@@ -304,6 +304,8 @@ private slots:
     bool hasCurrent ();
     void insertPath (CustomTreeWidgetItem *);
     //void selectItems ();
+    bool isValidRenameDrawingItems ();
+    void renameDrawingItems ();
     void unselectRootDrawingItems ();
     void unselectDrawingItems ();
     void deleteDrawingItems ();

@@ -706,6 +706,7 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     rotateAction=new QAction("Rotate");
     unselectAction=new QAction("Unselect");
     copyAction=new QAction("Copy");
+    renameAction=new QAction("Rename",this);
     deleteAction=new QAction("Delete");
     setPlaneAction=new QAction("Set Drawing Plane");
     setPlaneAxisAction=new QAction("Set Drawing Plane with Axis");
@@ -735,6 +736,7 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     connect(convertToPathAction, &QAction::triggered, this, &OpenParEMg::convertToPath);
     connect(rotateAction, &QAction::triggered, this, &OpenParEMg::rotateObject);
     connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectDrawingItems);
+    connect(renameAction, &QAction::triggered, this, &OpenParEMg::renameDrawingItems);
     connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteDrawingItems);
     connect(copyAction, &QAction::triggered, this, &OpenParEMg::copyDrawingItems);
     connect(setPlaneAction, &QAction::triggered, this, &OpenParEMg::setPlaneToFace);
@@ -751,6 +753,7 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     if (isValidObjectHide()) menu.addAction(hideAction);
     //menu.addAction(unselectAction);
     if (isValidCopy()) menu.addAction(copyAction);
+    if (isValidRenameDrawingItems()) menu.addAction(renameAction);
     if (isValidObjectDelete()) menu.addAction(deleteAction);
     if (isValidSetPlane()) menu.addAction(setPlaneAction);
     if (isValidSetPlane()) menu.addAction(setPlaneAxisAction);
@@ -1834,8 +1837,12 @@ void OpenParEMg::rename_returnPressed ()
     std::cout << "OpenParEMg::rename_returnPressed" << std::endl; std::cout.flush();
 
     // new text
-    QString net=renameEdit->text();
-    if (originalText.compare(net) != 0) {
+    QString newText=renameEdit->text();
+    if (originalText.compare(newText) != 0) {
+        if (renameItem->is_drawing()) {
+            // nothing to do
+        }
+
         if (renameItem->is_path()) {
 
             // item itself is now changed
@@ -1844,28 +1851,28 @@ void OpenParEMg::rename_returnPressed ()
             long unsigned int i=0;
             while (i < renameItem->linkedItems_size()) {
                 CustomTreeWidgetItem *item=renameItem->get_linkedItem(i);
-                if (item->is_integrationPathSegment()) item->setText(0,net);
+                if (item->is_integrationPathSegment()) item->setText(0,newText);
                 i++;
             }
 
             // change the database
-            boundaryDatabase->renamePath(originalText.toStdString(),net.toStdString());
+            boundaryDatabase->renamePath(originalText.toStdString(),newText.toStdString());
         }
 
         if (renameItem->is_port()) {
             Port *port=(Port *)renameItem->get_OPEMobject();
-            if (port) port->set_name(net.toStdString());
+            if (port) port->set_name(newText.toStdString());
         }
 
         if (renameItem->is_sport()) {
             Mode *mode=(Mode *)renameItem->get_OPEMobject();
-            if (mode) mode->set_net(net.toStdString());
+            if (mode) mode->set_net(newText.toStdString());
         }
     }
 
     // replace
     ui->drawingItemTree->removeItemWidget(renameItem,0);
-    renameItem->setText(0,net);
+    renameItem->setText(0,newText);
 
     // update
     bool isExpanded=renameItem->isExpanded();
@@ -1918,7 +1925,43 @@ void OpenParEMg::unselectDrawingItems()
     setMenusI(20);
 }
 
-void OpenParEMg::deleteDrawingItems()
+//xxx
+bool OpenParEMg::isValidRenameDrawingItems ()
+{
+    int count=0;
+    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < items.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        if (item && item->is_drawing()) count++;
+        i++;
+    }
+    if (count == 1 && items.count() == count) return true;
+    return false;
+}
+
+void OpenParEMg::renameDrawingItems ()
+{
+    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    int i=0;
+    while (i < items.count()) {
+        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        if (item && item->is_drawing()) {
+            CustomLineEdit *name=new CustomLineEdit();
+            name->setText(item->text(0));
+            originalText=item->text(0);
+            name->set_rxValidator();
+            ui->drawingItemTree->setItemWidget(item,0,name);
+
+            renameItem=item;
+            renameEdit=name;
+            connect(name,&CustomLineEdit::returnPressed,this,&OpenParEMg::rename_returnPressed);
+        }
+        i++;
+    }
+}
+
+void OpenParEMg::deleteDrawingItems ()
 {
     //std::cout << "OpenParEMg::deleteDrawingItems" << std::endl; std::cout.flush();
 
