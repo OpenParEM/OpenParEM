@@ -482,11 +482,7 @@ private:
     std::vector<QAction *> QActionList;
 
     // gmsh
-    gmsh::vectorpair drawingEntities;
-    int pointCount;
-    int curveCount;
-    int surfaceCount;
-    int volumeCount;
+    gmsh::vectorpair drawingEntities;  // only used for debug
 
     // lockouts
     bool projectFileLoaded;  // project setup variable including paths

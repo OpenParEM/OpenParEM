@@ -267,7 +267,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     gmsh::initialize();
     gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
-    pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
 
     /////////////////////////////////////////////////////////////////////////////
     // timer or checking when OpenParEM3D finishes
@@ -3187,6 +3186,10 @@ void OpenParEMg::finishMergeSolids ()
     }
     if (!item1->text(1).isNull()) item1->setText(1,nullMaterial);
 
+    // reset dimTags
+    item0->set_dimTag(-1,-1);
+    item1->set_dimTag(-1,-1);
+
     // rebuild top level
     reprocess(&drawing);
 
@@ -3286,6 +3289,10 @@ void OpenParEMg::finishSubtractSolids ()
         item0->setText(1,nullMaterial);
     }
     if (!item1->text(1).isNull()) item1->setText(1,nullMaterial);
+
+    // reset dimTags
+    item0->set_dimTag(-1,-1);
+    item1->set_dimTag(-1,-1);
 
     // rebuild top level
     reprocess(&drawing);
@@ -4466,7 +4473,7 @@ void OpenParEMg::on_actionOpen_triggered ()
         }
 
         // set dimTag and material
-        resetDimTag(&drawing);
+        //resetDimTag(&drawing);
         renumberDimTag();
         setMaterials();
 
@@ -4532,12 +4539,6 @@ void OpenParEMg::printLockouts ()
 void OpenParEMg::resetDrawing ()
 {
     //std::cout << "OpenParEMg::resetDrawing" << std::endl; std::cout.flush();
-
-    // counts
-    pointCount=0;
-    curveCount=0;
-    surfaceCount=0;
-    volumeCount=0;
 
     // mesh
     deleteMesh(false);
@@ -4895,180 +4896,6 @@ void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
         topoIterator.Next();
     }
 }
-
-// recursively fill out the whole tree
-// void OpenParEMg::addShape (TopoDS_Shape shape, CustomTreeWidgetItem *item, bool isRoot, bool itemHasAISShape)
-// {
-//     if (shape.IsNull()) return;
-
-//     // ensure the root item is a compound
-//     if (isRoot && shape.ShapeType() != TopAbs_COMPOUND) {
-//         BRep_Builder builder;
-//         TopoDS_Compound compound;
-//         builder.MakeCompound(compound);
-//         builder.Add(compound,shape);
-//         shape=compound;
-//     }
-
-//     // tree item name
-
-//     QString name="";
-
-//     std::pair<int,int> dimTag;
-//     dimTag.first=-1; dimTag.second=-1;
-
-//     TopAbs_ShapeEnum shapeType=shape.ShapeType();
-//     switch (shapeType) {
-//     case TopAbs_COMPOUND:
-//         name="COMPOUND";
-//         break;
-//     case TopAbs_COMPSOLID:
-//         name="COMPSOLID";
-//         volumeCount++;   // a guess
-//         dimTag.first=3; dimTag.second=volumeCount;
-//         break;
-//     case TopAbs_SOLID:
-//         name="SOLID";
-//         volumeCount++;
-//         dimTag.first=3; dimTag.second=volumeCount;
-//         break;
-//     case TopAbs_SHELL:
-//         name="SHELL";
-//         surfaceCount++;  // a guess
-//         dimTag.first=2; dimTag.second=surfaceCount;
-//         break;
-//     case TopAbs_FACE:
-//         name="FACE";
-//         surfaceCount++;  // aguess
-//         dimTag.first=2; dimTag.second=surfaceCount;
-//         break;
-//     case TopAbs_WIRE:
-//         name="WIRE";
-//         curveCount++;    // a guess
-//         dimTag.first=2; dimTag.second=surfaceCount;
-//         break;
-//     case TopAbs_EDGE:
-//         name="EDGE";
-//         curveCount++;
-//         dimTag.first=2; dimTag.second=surfaceCount;
-//         break;
-//     case TopAbs_VERTEX:
-//         name="VERTEX";
-//         pointCount++;
-//         dimTag.first=1; dimTag.second=pointCount;
-//         break;
-//     case TopAbs_SHAPE:
-//         name="SHAPE";
-//         break;
-//     default:
-//         std::cout << "ASSERT:: Unknown shape type." << std::endl;  std::cout.flush();
-//         break;
-//     }
-
-//     // item entry
-
-//     Handle(AIS_Shape) drawingShape;
-//     if (itemHasAISShape) drawingShape=item->get_AIS_Shape();  // reuse AIS_Shape
-//     else drawingShape=new AIS_Shape(shape);                   // create new AIS_Shape
-//     CustomTreeWidgetItem *newItem;
-
-//     // only drawing can have isRoot=true
-//     if (isRoot) {
-//         ui->drawingWindow->insertItemToMap(drawingShape,&drawing);
-//         drawing.set_AIS_Shape(drawingShape);
-//         //ui->drawingWindow->showItem(&drawing);
-//         showRootDrawingItems();
-//         ui->drawingWindow->unselectItem(&drawing);
-//         newItem=&drawing;
-//     } else {
-//         newItem=new CustomTreeWidgetItem(0);
-//         if (!itemHasAISShape) newItem->set_AIS_Shape(drawingShape);
-//         newItem->setText(0,name);
-//         newItem->set_type(0);  // default value
-//         newItem->setForeground(0,Qt::gray);
-//         item->addChild(newItem);
-//         ui->drawingWindow->insertItemToMap(drawingShape,newItem);
-//     }
-
-//     // properties for the CustomTreeWidgetItem
-//     newItem->set_Polywire(polywire);
-//     newItem->set_dimTag(dimTag);
-//     if (name.compare("SOLID") == 0) {
-//         int i=0;
-//         while (i < projData.physicalGroupMaterialCount) {
-//             if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
-//                 newItem->setText(0,projData.physicalGroupMaterials[i].materialName);
-//                 break;
-//             }
-//             i++;
-//         }
-//     }
-
-//     // children
-//     TopoDS_Iterator topoIterator(shape);
-//     while (topoIterator.More()) {
-//         const TopoDS_Shape& child=topoIterator.Value();
-//         addShape(child,newItem,false,false);
-//         topoIterator.Next();
-//     }
-// }
-
-
-// void OpenParEMg::addChildDisplayShape (CustomTreeWidgetItem *item, std::pair<int,int> &dimTag)
-// {
-//     if (!item) return;
-
-//     // item must be display for now
-//     if (item != &drawing) return;
-
-//     Handle(AIS_Shape) shape=item->get_AIS_Shape();
-//     if (shape.IsNull()) return;
-
-//     // add the shape
-//     //TopoDS_Compound compound=TopoDS::Compound(shape->Shape());
-//     //BRep_Builder builder;
-
-//     TopoDS_Iterator topoIterator(shape->Shape());
-//     while (topoIterator.More()) {
-//         const TopoDS_Shape& child=topoIterator.Value();
-//         TopAbs_ShapeEnum shapeType=child.ShapeType();
-//         // TopAbs_COMPSOLID may not be needed
-//         if (shapeType == TopAbs_COMPSOLID || shapeType == TopAbs_SOLID || shapeType == TopAbs_COMPOUND) {
-//             volumeCount++;
-//             dimTag.first=3; dimTag.second=volumeCount;
-
-//             CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
-//             Handle(AIS_Shape) drawingShape=new AIS_Shape(child);
-//             newItem->set_AIS_Shape(drawingShape);
-//             if (shapeType == TopAbs_COMPSOLID) {
-//                 objectCounts.compsolid++;
-//                 QString name="COMPSOLID";
-//                 name.append(QString::number(objectCounts.compsolid));
-//                 newItem->setText(0,name);
-//             } else if (shapeType == TopAbs_SOLID) {
-//                 objectCounts.solid++;
-//                 QString name="SOLID";
-//                 name.append(QString::number(objectCounts.solid));
-//                 newItem->setText(0,name);
-//             } else if (shapeType == TopAbs_COMPOUND) {
-//                 objectCounts.compound++;
-//                 QString name="COMPOUND";
-//                 name.append(QString::number(objectCounts.compound));
-//                 newItem->setText(0,name);
-//             }
-//             newItem->set_itemType(0);  // a drawing item
-//             newItem->setForeground(0,Qt::gray);
-//             newItem->set_dimTag(dimTag);
-//             item->addChild(newItem);
-//             addItemWithShape(newItem);
-
-//             //builder.Add(compound,child);
-//         }
-//         topoIterator.Next();
-//     }
-
-//     //shape->Redisplay(true);
-// }
 
 void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
 {
@@ -6121,7 +5948,6 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
     mesh.deleteChildren(&mesh);
     drawingEntities.clear();
     gmsh::clear();
-    pointCount=0; curveCount=0; surfaceCount=0; volumeCount=0;
 }
 
 void OpenParEMg::on_actionMeshGenerate_triggered ()
@@ -6135,7 +5961,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     }
 
     // reset dimTags
-    resetDimTag(&drawing);
+    //resetDimTag(&drawing);
     renumberDimTag();
 
     // generate mesh
