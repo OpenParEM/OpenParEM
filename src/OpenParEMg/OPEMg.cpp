@@ -1731,6 +1731,7 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
         return;
     }
 
+    //xxx
     // ToDo: add a physical check
     // long unsigned int j=0;
     // while (j < pathsToAdd.size()) {
@@ -1976,7 +1977,7 @@ void OpenParEMg::deleteDrawingItems ()
             // parentItem
             CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
 
-            if (parentItem) {
+            if (parentItem && parentItem->is_rootDrawing()) {
                 int insertIndex=parentItem->indexOfChild(item);
 
                 // move children to parent
@@ -1984,7 +1985,11 @@ void OpenParEMg::deleteDrawingItems ()
                     CustomTreeWidgetItem* child=(CustomTreeWidgetItem *)item->takeChild(0);
                     parentItem->insertChild(insertIndex++,child);
                     ui->drawingWindow->showItem(child);
-                    //ui->drawingItemTree->setCurrentItem(nullptr);
+
+                    // set the materials
+                    if (!item->text(1).isNull()) {
+                        if (!child->get_Polywire()) child->setText(1,item->text(1));
+                    }
                 }
 
                 parentItem->removeChild(item);
@@ -2848,7 +2853,6 @@ bool OpenParEMg::isValidCreatePath ()
     return false;
 }
 
-//xxx
 bool OpenParEMg::isValidAssignMaterial ()
 {
     if (ui->drawingWindow->get_selectedItems_size() != 1) return false;
@@ -3175,6 +3179,14 @@ void OpenParEMg::finishMergeSolids ()
     drawing.removeChild(item1);
     newItem->addChild(item1);
 
+    // reset materials
+    QString nullMaterial;
+    if (!item0->text(1).isNull()) {
+        newItem->setText(1,item0->text(1));
+        item0->setText(1,nullMaterial);
+    }
+    if (!item1->text(1).isNull()) item1->setText(1,nullMaterial);
+
     // rebuild top level
     reprocess(&drawing);
 
@@ -3266,6 +3278,14 @@ void OpenParEMg::finishSubtractSolids ()
 
     drawing.removeChild(item1);
     newItem->addChild(item1);
+
+    // reset materials
+    QString nullMaterial;
+    if (!item0->text(1).isNull()) {
+        newItem->setText(1,item0->text(1));
+        item0->setText(1,nullMaterial);
+    }
+    if (!item1->text(1).isNull()) item1->setText(1,nullMaterial);
 
     // rebuild top level
     reprocess(&drawing);
@@ -4169,7 +4189,6 @@ void OpenParEMg::resetDimTag (CustomTreeWidgetItem *item)
     }
 }
 
-//xxx
 void OpenParEMg::renumberDimTag ()
 {
     double count=1;
@@ -4251,6 +4270,38 @@ void OpenParEMg::setPhysicalGroups ()
         groupName.append(std::to_string(projData.physicalGroupMaterials[i].tag));
 
         gmsh::model::addPhysicalGroup(projData.physicalGroupMaterials[i].dim,physicalGroupList,-1,groupName.c_str());
+        i++;
+    }
+}
+
+void OpenParEMg::setMaterials ()
+{
+    int i=0;
+    while (i < drawing.childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+
+        bool processMaterial=false;
+        // SOLID
+        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_SOLID) processMaterial=true;
+
+        // COMPOUND
+        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_COMPOUND) {
+            // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
+            if (!child->get_Polywire()) processMaterial=true;
+        }
+
+        // set materials
+        if (processMaterial) {
+            int j=0;
+            while (j < projData.physicalGroupMaterialCount) {
+                if (projData.physicalGroupMaterials[j].tag == child->get_dimTag().second) {
+                    child->setText(1,projData.physicalGroupMaterials[j].materialName);
+                    break;
+                }
+                j++;
+            }
+        }
+
         i++;
     }
 }
@@ -4357,6 +4408,7 @@ void OpenParEMg::on_actionOpen_triggered ()
         // exit(1);
 
         // load materials
+        bool materialsLoaded=false;
         if (strcmp(projData.materials_global_name,"") != 0 || strcmp(projData.materials_local_name,"") != 0) {
             if (materialDatabase->load_materials(projData.materials_global_path,projData.materials_global_name,
                                                  projData.materials_local_path,projData.materials_local_name,
@@ -4364,10 +4416,11 @@ void OpenParEMg::on_actionOpen_triggered ()
                 QMessageBox mb;
                 mb.critical(nullptr, "Error", "Unable to load the specified materials files.");
                 mb.setFixedSize(500, 200);
-            }
+            } else materialsLoaded=true;
         }
 
         // load brep file, if defined
+        bool brepLoaded=false;
         if (strcmp(projData.gui_brep_file,"") != 0) {
 
             QString filePath=projData.gui_brep_file;
@@ -4379,7 +4432,7 @@ void OpenParEMg::on_actionOpen_triggered ()
                 QMessageBox mb;
                 mb.critical(nullptr, "Error",message);
                 mb.setFixedSize(500, 200);
-            }
+            } else brepLoaded=true;
         }
 
         // load boundaries, if any, and draw
@@ -4411,6 +4464,12 @@ void OpenParEMg::on_actionOpen_triggered ()
         if (strcmp(projData.mesh_file,"") != 0) {
             loadMeshFile(QString::fromStdString(projData.mesh_file));
         }
+
+        // set dimTag and material
+        resetDimTag(&drawing);
+        renumberDimTag();
+        setMaterials();
+
 
         ui->drawingWindow->fitAll();
         ui->drawingWindow->updateViewer();
@@ -5024,9 +5083,9 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
         shape=compound;
     }
 
-    // variable to support meshing
-    std::pair<int,int> dimTag;
-    dimTag.first=-1; dimTag.second=-1;
+    // // variable to support meshing
+    // std::pair<int,int> dimTag;
+    // dimTag.first=-1; dimTag.second=-1;
 
     // drawing item
     Handle(AIS_Shape) drawingShape=new AIS_Shape(shape);
@@ -5040,8 +5099,8 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
         TopAbs_ShapeEnum shapeType=child.ShapeType();
         // TopAbs_COMPSOLID may not be needed
         if (shapeType == TopAbs_COMPSOLID || shapeType == TopAbs_SOLID) {
-            volumeCount++;
-            dimTag.first=3; dimTag.second=volumeCount;
+            // volumeCount++;
+            // dimTag.first=3; dimTag.second=volumeCount;
 
             CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
             Handle(AIS_Shape) drawingShape=new AIS_Shape(child);
@@ -5061,20 +5120,20 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
             newItem->set_itemType(0);  // a drawing item
             newItem->setForeground(0,Qt::gray);
             newItem->set_Polywire(nullptr);
-            newItem->set_dimTag(dimTag);
+            //newItem->set_dimTag(dimTag);
             drawing.addChild(newItem);
 
-            // set materials
-            if (shapeType == TopAbs_SOLID) {
-                int i=0;
-                while (i < projData.physicalGroupMaterialCount) {
-                    if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
-                        newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
-                        break;
-                    }
-                    i++;
-                }
-            }
+            // // set materials
+            // if (shapeType == TopAbs_SOLID) {
+            //     int i=0;
+            //     while (i < projData.physicalGroupMaterialCount) {
+            //         if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
+            //             newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
+            //             break;
+            //         }
+            //         i++;
+            //     }
+            // }
         }
         topoIterator.Next();
     }
@@ -5165,9 +5224,9 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (TopoDS_Shape shape, CustomTreeWi
     if (shape.IsNull()) return nullptr;
     if (!parentItem) return nullptr;
 
-    // variable to support meshing
-    std::pair<int,int> dimTag;
-    dimTag.first=-1; dimTag.second=-1;
+    // // variable to support meshing
+    // std::pair<int,int> dimTag;
+    // dimTag.first=-1; dimTag.second=-1;
 
     // new item
     CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
@@ -5184,20 +5243,20 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (TopoDS_Shape shape, CustomTreeWi
     // process for SOLID
     TopAbs_ShapeEnum shapeType=shape.ShapeType();
     if (shapeType == TopAbs_COMPSOLID || shapeType == TopAbs_SOLID) {
-        volumeCount++;
-        dimTag.first=3; dimTag.second=volumeCount;
+        // volumeCount++;
+        // dimTag.first=3; dimTag.second=volumeCount;
 
-        // set materials
-        if (shapeType == TopAbs_SOLID) {
-            int i=0;
-            while (i < projData.physicalGroupMaterialCount) {
-                if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
-                    newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
-                    break;
-                }
-                i++;
-            }
-        }
+        // // set materials
+        // if (shapeType == TopAbs_SOLID) {
+        //     int i=0;
+        //     while (i < projData.physicalGroupMaterialCount) {
+        //         if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
+        //             newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
+        //             break;
+        //         }
+        //         i++;
+        //     }
+        // }
     }
 
     // set variables
@@ -5205,7 +5264,7 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (TopoDS_Shape shape, CustomTreeWi
     newItem->set_itemType(0);  // default to drawing, but generally need to change elsewhere
     newItem->setForeground(0,Qt::gray);
     newItem->set_Polywire(activePolywire);
-    newItem->set_dimTag(dimTag);
+    // newItem->set_dimTag(dimTag);
     parentItem->addChild(newItem);
 
     return newItem;
@@ -5218,9 +5277,9 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (Polywire *polywire, CustomTreeWi
     if (!polywire) return nullptr;
     if (!parentItem) return nullptr;
 
-    // variable to support meshing
-    std::pair<int,int> dimTag;
-    dimTag.first=-1; dimTag.second=-1;
+    // // variable to support meshing
+    // std::pair<int,int> dimTag;
+    // dimTag.first=-1; dimTag.second=-1;
 
     // new item
     CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
@@ -5237,20 +5296,20 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (Polywire *polywire, CustomTreeWi
     // process for SOLID
     TopAbs_ShapeEnum shapeType=newItem->get_AIS_Shape()->Shape().ShapeType();
     if (shapeType == TopAbs_COMPSOLID || shapeType == TopAbs_SOLID) {
-        volumeCount++;
-        dimTag.first=3; dimTag.second=volumeCount;
+        // volumeCount++;
+        // dimTag.first=3; dimTag.second=volumeCount;
 
-        // set materials
-        if (shapeType == TopAbs_SOLID) {
-            int i=0;
-            while (i < projData.physicalGroupMaterialCount) {
-                if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
-                    newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
-                    break;
-                }
-                i++;
-            }
-        }
+        // // set materials
+        // if (shapeType == TopAbs_SOLID) {
+        //     int i=0;
+        //     while (i < projData.physicalGroupMaterialCount) {
+        //         if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
+        //             newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
+        //             break;
+        //         }
+        //         i++;
+        //     }
+        // }
     }
 
     // set variables
@@ -5258,7 +5317,7 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (Polywire *polywire, CustomTreeWi
     newItem->set_itemType(0);  // default to drawing, but generally need to change elsewhere
     newItem->setForeground(0,Qt::gray);
     newItem->set_Polywire(activePolywire);
-    newItem->set_dimTag(dimTag);
+    // newItem->set_dimTag(dimTag);
     parentItem->addChild(newItem);
 
     return newItem;
@@ -6075,7 +6134,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         deleteMesh(true);
     }
 
-    //xxx
     // reset dimTags
     resetDimTag(&drawing);
     renumberDimTag();

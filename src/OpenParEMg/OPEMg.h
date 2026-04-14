@@ -124,6 +124,7 @@ public:
     void resetDimTag (CustomTreeWidgetItem *);
     void renumberDimTag ();
     void setPhysicalGroups ();
+    void setMaterials ();
 
     void clearSelection ();
     void restoreSelection ();
