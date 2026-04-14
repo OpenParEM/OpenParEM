@@ -281,9 +281,11 @@ private slots:
     void deletePathItems ();
     void showRootPathItems ();
     bool isPathValidDelete ();
+    bool isValidShowPath ();
     void showPathItems ();
     bool rootPathValidShow ();
     void hideRootPathItems ();
+    bool isValidHidePath ();
     void hidePathItems ();
     bool rootPathValidHide ();
     void showRootPortItems ();
@@ -336,6 +338,8 @@ private slots:
 
     void cancelDrawingMenu ();
     void buildDrawingMenu (QMenu &menu);
+    void cancelPathMenu ();
+    void buildPathMenu (QMenu &menu);
     void itemTreeContextMenu_triggered (const QPoint& pnt);
     void drawingWindowContextMenu_triggered (const QPoint& pnt);
 

@@ -778,11 +778,37 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     menu.addAction(cancelAction);
 }
 
+void OpenParEMg::buildPathMenu (QMenu &menu)
+{
+    renameAction=new QAction("Rename",this);
+    deleteAction=new QAction("Delete",this);
+    showAction=new QAction("Show",this);
+    hideAction=new QAction("Hide",this);
+    cancelAction=new QAction("Cancel");
+
+    connect(renameAction, &QAction::triggered, this, &OpenParEMg::renamePathItems);
+    connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deletePathItems);
+    connect(showAction, &QAction::triggered, this, &OpenParEMg::showPathItems);
+    connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePathItems);
+    connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelPathMenu);
+
+    if (isValidShowPath()) menu.addAction(showAction);
+    if (isValidHidePath()) menu.addAction(hideAction);
+    if (ui->drawingWindow->get_pathSelectedCount() == 1) menu.addAction(renameAction);
+    if (isPathValidDelete()) menu.addAction(deleteAction);
+    menu.addAction(cancelAction);
+}
+
 void OpenParEMg::cancelDrawingMenu ()
 {
     on_actionShape_triggered();
     ui->drawingWindow->setSubshapeSelection(false);
     ui->drawingWindow->setSetToPlane(false);
+}
+
+void OpenParEMg::cancelPathMenu ()
+{
+    // nothing to do
 }
 
 void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
@@ -834,21 +860,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
     }
 
     if (clickedItem->is_path()) {
-
-        renameAction=new QAction("Rename",this);
-        deleteAction=new QAction("Delete",this);
-        showAction=new QAction("Show",this);
-        hideAction=new QAction("Hide",this);
-
-        connect(renameAction, &QAction::triggered, this, &OpenParEMg::renamePathItems);
-        connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deletePathItems);
-        connect(showAction, &QAction::triggered, this, &OpenParEMg::showPathItems);
-        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePathItems);
-
-        if (isValidObjectShow()) menu.addAction(showAction);
-        if (isValidObjectHide()) menu.addAction(hideAction);
-        if (ui->drawingWindow->get_pathSelectedCount() == 1) menu.addAction(renameAction);
-        if (isPathValidDelete()) menu.addAction(deleteAction);
+        buildPathMenu(menu);
     }
 
     if (clickedItem->is_rootPort()) {
@@ -889,8 +901,8 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
         connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        if (isValidObjectShow()) menu.addAction(showAction);
-        if (isValidObjectHide()) menu.addAction(hideAction);
+        if (isValidShowPath()) menu.addAction(showAction);
+        if (isValidHidePath()) menu.addAction(hideAction);
         if (ui->drawingWindow->hasPortSelectedItems()) menu.addAction(unselectAction);
         if (ui->drawingWindow->get_portSelectedCount() == 1) menu.addAction(renameAction);
         menu.addAction(insertAction);
@@ -1003,8 +1015,8 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         connect(showAction, &QAction::triggered, this, &OpenParEMg::showIntegrationPathItems);
         connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideIntegrationPathItems);
 
-        if (isValidObjectShow()) menu.addAction(showAction);
-        if (isValidObjectHide()) menu.addAction(hideAction);
+        if (isValidShowPath()) menu.addAction(showAction);
+        if (isValidHidePath()) menu.addAction(hideAction);
         menu.addAction(removeAction);
     }
 
@@ -1070,8 +1082,26 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             menu.addAction(cancelAction);
         }
     } else {
-        if (ui->drawingWindow->get_NbSelected()) {
+        // check for selected subshape
+        if (ui->drawingWindow->get_selectedItems_size() == 0 && ui->drawingWindow->get_NbSelected()) {
             buildDrawingMenu(menu);
+        }
+
+        // check for selected items
+        long unsigned int i=0;
+        while (i < ui->drawingWindow->get_selectedItems_size()) {
+            CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+            if (item) {
+                if (item->is_drawing()) {
+                    buildDrawingMenu(menu);
+                    break;
+                }
+                if (item->is_path() || item->is_port() || item->is_integrationPathSegment()) {
+                    buildPathMenu(menu);
+                    break;
+                }
+            }
+            i++;
         }
     }
 
@@ -1247,7 +1277,6 @@ void OpenParEMg::deletePathItems ()
         if (item && item->is_path()) {
             boundaryDatabase->deletePath((Path *)item->get_OPEMobject());
             ui->drawingWindow->deleteItem(item);
-            //path.removeChild(item);  // ToDo:: fix since now item=nullptr
         }
         i++;
     }
@@ -1332,12 +1361,27 @@ bool OpenParEMg::isPathValidDelete ()
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_path()) {
-            if (item->linkedItems_size() > 0) return false;
+        if (item) {
+            if (item->is_path() || item->is_port() || item->is_integrationPathSegment()) {
+                if (item->linkedItems_size() > 0) return false;
+            }
         }
         i++;
     }
     return true;
+}
+
+bool OpenParEMg::isValidShowPath ()
+{
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->isValidShow()) {
+            if (item->is_path() || item->is_port() || item->is_integrationPathSegment()) return true;
+        }
+        i++;
+    }
+    return false;
 }
 
 void OpenParEMg::showPathItems ()
@@ -1363,6 +1407,19 @@ bool OpenParEMg::rootPathValidHide ()
     while (i < path.childCount()) {
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) path.child(i);
         if (child && child->foreground(0) == Qt::black) return true;
+        i++;
+    }
+    return false;
+}
+
+bool OpenParEMg::isValidHidePath ()
+{
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->isValidHide()) {
+            if (item->is_path() || item->is_port() || item->is_integrationPathSegment()) return true;
+        }
         i++;
     }
     return false;
@@ -1725,26 +1782,27 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
     CustomTreeWidgetItem *modeParentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
     CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)modeParentItem->QTreeWidgetItem::parent();
 
-    if (!modeParentItem->get_OPEMobject()) {
-        std::cout << "ASSERT: OpenParEMg::insertPath found mode item without attached object." << std::endl; std::cout.flush();
-        return;
-    }
-
     //xxx
-    // ToDo: add a physical check
-    // long unsigned int j=0;
-    // while (j < pathsToAdd.size()) {
-    //     if (pathsToAdd[j]->get_portItem() != portParentItem) {
-    //         QString message="Path \"";
-    //         message.append(pathsToAdd[j]->get_name());
-    //         message.append("\" cannot be assigned to the selected port.");
-    //         QMessageBox mb;
-    //         mb.critical(nullptr, "Error", message);
-    //         mb.setFixedSize(500, 200);
-    //         return;
-    //     }
-    //     j++;
-    // }
+
+    // port outline
+    if (portParentItem->linkedItems_size() != 1) return;
+    CustomTreeWidgetItem *linkedItem=portParentItem->get_linkedItem(0);
+    Path *portPath=static_cast<Path *>(linkedItem->get_OPEMobject());
+    if (!portPath) return;
+
+    long unsigned int j=0;
+    while (j < pathsToAdd.size()) {
+        if (!portPath->is_path_inside(pathsToAdd[j])) {
+            QString message="Path \"";
+            message.append(pathsToAdd[j]->get_name());
+            message.append("\" cannot be assigned to the selected port.");
+            QMessageBox mb;
+            mb.critical(nullptr, "Error", message);
+            mb.setFixedSize(500, 200);
+            return;
+        }
+        j++;
+    }
 
     // add an integration path
     std::vector<Path *> *pathList=boundaryDatabase->get_pathList_ptr();
@@ -2884,7 +2942,7 @@ bool OpenParEMg::isValidObjectShow ()
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item->isValidShow()) return true;
+        if (item && item->is_drawing() && item->isValidShow()) return true;
         i++;
     }
     return false;
@@ -2895,7 +2953,7 @@ bool OpenParEMg::isValidObjectHide ()
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item->isValidHide()) return true;
+        if (item && item->is_drawing() && item->isValidHide()) return true;
         i++;
     }
     return false;
@@ -3315,7 +3373,14 @@ void OpenParEMg::finishSubtractSolids ()
 
 bool OpenParEMg::isValidObjectMove ()
 {
-    if (ui->drawingWindow->get_selectedItems_count() > 0) return true;
+    int count=0;
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) count++;
+        i++;
+    }
+    if (count == ui->drawingWindow->get_selectedItems_count()) return true;
     return false;
 }
 
@@ -3405,11 +3470,15 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
 
 bool OpenParEMg::isValidCopy ()
 {
-    //std::cout << "OpenParEMg::isValidCopy" << std::endl; std::cout.flush();
-
-    //if (ui->drawingWindow->NbSelected() == 0) return false;
-    if (ui->drawingWindow->get_selectedItems_count() == 0) return false;
-    return true;
+    int count=0;
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) count++;
+        i++;
+    }
+    if (count == ui->drawingWindow->get_selectedItems_count()) return true;
+    return false;
 }
 
 CustomTreeWidgetItem* OpenParEMg::copyItem (CustomTreeWidgetItem *item, CustomTreeWidgetItem *newItemParent)
@@ -3911,7 +3980,10 @@ void OpenParEMg::convertToPath ()
 
                 // add new path to the drawing
                 CustomTreeWidgetItem *pathItem=newPath->get_item();
-                if (pathItem) addItemWithShape(pathItem);
+                if (pathItem) {
+                    addItemWithShape(pathItem);
+                    pathItem->set_itemType(4);
+                }
 
                 // see if the path is within an existing port
                 Port *port=boundaryDatabase->get_matchingPort(newPath);
@@ -3931,7 +4003,14 @@ void OpenParEMg::convertToPath ()
 
 bool OpenParEMg::isValidRotateObject ()
 {
-    if (ui->drawingWindow->get_selectedItems_count() > 0) return true;
+    int count=0;
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) count++;
+        i++;
+    }
+    if (count == ui->drawingWindow->get_selectedItems_count()) return true;
     return false;
 }
 
@@ -4473,9 +4552,11 @@ void OpenParEMg::on_actionOpen_triggered ()
         }
 
         // set dimTag and material
-        //resetDimTag(&drawing);
-        renumberDimTag();
-        setMaterials();
+        if (brepLoaded && materialsLoaded) {
+            //resetDimTag(&drawing);
+            renumberDimTag();
+            setMaterials();
+        }
 
 
         ui->drawingWindow->fitAll();
@@ -5425,50 +5506,83 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
     std::cout << "   SHIFTpressed=" << SHIFTpressed << std::endl;
 
     clickedItem=(CustomTreeWidgetItem *)item;
-    ui->drawingItemTree->setCurrentItem(clickedItem);
+
+    // allow multiple selection on matched types only
+    bool matchedType=false;
+    if (previousClickedItem) {
+        if (clickedItem->get_itemType() == previousClickedItem->get_itemType()) {
+            matchedType=true;
+        }
+    }
+
+    // allow multiple selection only at the same level
+    bool matchedLevel=false;
+    if (previousClickedItem) {
+        if (clickedItem->QTreeWidgetItem::parent() == previousClickedItem->QTreeWidgetItem::parent()) {
+            matchedLevel=true;
+        }
+    }
+
+    // exception: allow path + (voltage or current) for assigning paths
+    if (previousClickedItem) {
+        if ((clickedItem->is_path() && previousClickedItem->is_voltage() || previousClickedItem->is_current()) ||
+            (previousClickedItem->is_path() && clickedItem->is_voltage() || clickedItem->is_current())) {
+            matchedType=true;  // not really
+            matchedLevel=true; // not really
+        }
+    }
 
     if (CTRLpressed) {
         if (SHIFTpressed) {
         } else {
-            ui->drawingWindow->selectItem(clickedItem);
-            previousClickedItem=clickedItem;
+            if (matchedType && matchedLevel) {
+                ui->drawingItemTree->setCurrentItem(clickedItem);
+                ui->drawingWindow->selectItem(clickedItem);
+                previousClickedItem=clickedItem;
+            } else {
+                clickedItem->setSelected(false);
+                ui->drawingItemTree->setCurrentItem(nullptr);
+            }
         }
     } else if (SHIFTpressed) {
         if (CTRLpressed) {
         } else {
-            if (previousClickedItem) {
-                if (clickedItem->QTreeWidgetItem::parent() == previousClickedItem->QTreeWidgetItem::parent()) {
+            if (matchedType && matchedLevel) {
 
-                    // select the end item
+                ui->drawingItemTree->setCurrentItem(clickedItem);
 
-                    //ui->drawingWindow->selectItem(previousClickedItem);
-                    ui->drawingWindow->selectItem(clickedItem);
+                // select the end item
 
-                    // select the middle items
+                //ui->drawingWindow->selectItem(previousClickedItem);
+                ui->drawingWindow->selectItem(clickedItem);
 
-                    int count=ui->drawingItemTree->indexFromItem(clickedItem,0).row()-
-                              ui->drawingItemTree->indexFromItem(previousClickedItem,0).row();
+                // select the middle items
 
-                    if (count > 1) {  // forward
-                        CustomTreeWidgetItem *nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(previousClickedItem);
-                        while (nextItem != clickedItem) {
-                            if (nextItem->QTreeWidgetItem::parent() == clickedItem->QTreeWidgetItem::parent()) {
-                                ui->drawingWindow->selectItem(nextItem);
-                            }
-                            nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(nextItem);
+                int count=ui->drawingItemTree->indexFromItem(clickedItem,0).row()-
+                        ui->drawingItemTree->indexFromItem(previousClickedItem,0).row();
+
+                if (count > 1) {  // forward
+                    CustomTreeWidgetItem *nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(previousClickedItem);
+                    while (nextItem != clickedItem) {
+                        if (nextItem->QTreeWidgetItem::parent() == clickedItem->QTreeWidgetItem::parent()) {
+                            ui->drawingWindow->selectItem(nextItem);
                         }
-                    } else if (-count > 1) {  // reversed
-                        CustomTreeWidgetItem *nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(clickedItem);
-                        while (nextItem != previousClickedItem) {
-                            if (nextItem->QTreeWidgetItem::parent() == previousClickedItem->QTreeWidgetItem::parent()) {
-                                ui->drawingWindow->selectItem(nextItem);
-                            }
-                            nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(nextItem);
-                        }
+                        nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(nextItem);
                     }
-
-                    previousClickedItem=clickedItem;
+                } else if (-count > 1) {  // reversed
+                    CustomTreeWidgetItem *nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(clickedItem);
+                    while (nextItem != previousClickedItem) {
+                        if (nextItem->QTreeWidgetItem::parent() == previousClickedItem->QTreeWidgetItem::parent()) {
+                            ui->drawingWindow->selectItem(nextItem);
+                        }
+                        nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(nextItem);
+                    }
                 }
+
+                previousClickedItem=clickedItem;
+            } else {
+                clickedItem->setSelected(false);
+                ui->drawingItemTree->setCurrentItem(nullptr);
             }
         }
     } else {
@@ -5476,6 +5590,7 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
         clearTreeSelection();
         clickedItem=clickedItemKeep;
 
+        ui->drawingItemTree->setCurrentItem(clickedItem);
         ui->drawingWindow->selectItem(clickedItem);
         previousClickedItem=clickedItem;
     }
@@ -6674,7 +6789,10 @@ void OpenParEMg::finishDraw ()
 
         // add new path to the drawing
         CustomTreeWidgetItem *pathItem=newPath->get_item();
-        if (pathItem) addItemWithShape(pathItem);
+        if (pathItem) {
+            addItemWithShape(pathItem);
+            pathItem->set_itemType(4);
+        }
 
         // see if the path is within an existing port
         Port *port=boundaryDatabase->get_matchingPort(newPath);
@@ -6744,6 +6862,7 @@ void OpenParEMg::drawPath ()
                     Path *portPath=(Path *)portItem->get_OPEMobject();
 
                     // select on vertices within the port path
+                    std::cout << "selectOnVertex  portPath=" << portPath << std::endl; std::cout.flush();
                     ui->drawingWindow->selectOnVertex(portPath);
 
                     // get the normal to apply to the drawn Path
@@ -6803,25 +6922,31 @@ bool OpenParEMg::insertActionValid ()
     if (VIcount != 1) return false;
     if (pathCount == 0) return false;
 
+    //xxx
     // check that the paths are within the port
 
     CustomTreeWidgetItem *modeParentItem=(CustomTreeWidgetItem *)VIitem->QTreeWidgetItem::parent();
     CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)modeParentItem->QTreeWidgetItem::parent();
 
-    // ToDo: do a physical check
-    // i=0;
-    // while (i < ui->drawingWindow->get_selectedItems_size()) {
-    //     CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-    //     if (item && item->is_path()) {
-    //         Path *path=(Path *)item->get_OPEMobject();
-    //         if (path->get_portItem() != portParentItem) {
-    //             //xxx
-    //             std::cout << "   fail on port alignment" << std::endl; std::cout.flush();
-    //             return false;
-    //         }
-    //     }
-    //     i++;
-    // }
+    // port outline
+    if (portParentItem->linkedItems_size() != 1) return false;
+    CustomTreeWidgetItem *linkedItem=portParentItem->get_linkedItem(0);
+    Path *portPath=static_cast<Path *>(linkedItem->get_OPEMobject());
+    if (!portPath) return false;
+
+    i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_path()) {
+            Path *itemPath=static_cast<Path *>(item->get_OPEMobject());
+            portPath->print("parent: ");
+            itemPath->print("item: ");
+            if (!portPath->is_path_inside(itemPath)) {
+                return false;
+            }
+        }
+        i++;
+    }
 
     return true;
 }
