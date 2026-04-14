@@ -1929,7 +1929,6 @@ void OpenParEMg::unselectDrawingItems()
     setMenusI(20);
 }
 
-//xxx
 bool OpenParEMg::isValidRenameDrawingItems ()
 {
     int count=0;
@@ -2849,15 +2848,29 @@ bool OpenParEMg::isValidCreatePath ()
     return false;
 }
 
+//xxx
 bool OpenParEMg::isValidAssignMaterial ()
 {
     if (ui->drawingWindow->get_selectedItems_size() != 1) return false;
     CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(0);
     if (item && item->is_drawing()) {
         CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-        if (parentItem && parentItem->is_rootDrawing() && item->is_solid()) {
-            clickedItem=item;
-            return true;
+        if (parentItem && parentItem->is_rootDrawing()) {
+
+            // SOLID
+            if (item->get_AIS_Shape()->Shape().ShapeType() == TopAbs_SOLID) {
+                clickedItem=item;
+                return true;
+            }
+
+            // COMPOUND
+            if (item->get_AIS_Shape()->Shape().ShapeType() == TopAbs_COMPOUND) {
+                // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
+                if (!item->get_Polywire()) {
+                    clickedItem=item;
+                    return true;
+                }
+            }
         }
     }
     return false;
@@ -3830,7 +3843,6 @@ bool OpenParEMg::isValidConvertToPath ()
     return false;
 }
 
-//xxx
 void OpenParEMg::convertToPath ()
 {
     long unsigned int i=0;
@@ -4145,6 +4157,45 @@ void OpenParEMg::createPort ()
 //     }
 // }
 
+void OpenParEMg::resetDimTag (CustomTreeWidgetItem *item)
+{
+    item->set_dimTag(-1,-1);
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        resetDimTag(child);
+        i++;
+    }
+}
+
+//xxx
+void OpenParEMg::renumberDimTag ()
+{
+    double count=1;
+    int i=0;
+    while (i < drawing.childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
+
+        // SOLID
+        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_SOLID) {
+            child->set_dimTag(3,count);
+            count++;
+        }
+
+        // COMPOUND
+        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_COMPOUND) {
+            // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
+            if (!child->get_Polywire()) {
+                child->set_dimTag(3,count);
+                count++;
+            }
+        }
+
+        i++;
+    }
+}
+
 void OpenParEMg::setPhysicalGroups ()
 {
     //std::cout << "OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
@@ -4153,10 +4204,12 @@ void OpenParEMg::setPhysicalGroups ()
 
     clear_physicalGroupMaterials (&projData);
 
-    // check the first-level children for SOLID
+    // check the first-level children for SOLID or COMPOUND
     int i=0;
     while (i < drawing.childCount()) {
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
+
+        // SOLID
         if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_SOLID) {
             QString itemMaterial=child->text(1);
             char *material=nullptr;
@@ -4164,6 +4217,19 @@ void OpenParEMg::setPhysicalGroups ()
             add_physicalGroupMaterial(&projData,-1,child->get_dimTag().first,child->get_dimTag().second,material);
             if (material) {free(material);}
         }
+
+        // COMPOUND
+        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_COMPOUND) {
+            // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
+            if (!child->get_Polywire()) {
+                QString itemMaterial=child->text(1);
+                char *material=nullptr;
+                cstrFromQString (&material,itemMaterial);
+                add_physicalGroupMaterial(&projData,-1,child->get_dimTag().first,child->get_dimTag().second,material);
+                if (material) {free(material);}
+            }
+        }
+
         i++;
     }
 
@@ -4889,61 +4955,61 @@ void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
 // }
 
 
-void OpenParEMg::addChildDisplayShape (CustomTreeWidgetItem *item, std::pair<int,int> &dimTag)
-{
-    if (!item) return;
+// void OpenParEMg::addChildDisplayShape (CustomTreeWidgetItem *item, std::pair<int,int> &dimTag)
+// {
+//     if (!item) return;
 
-    // item must be display for now
-    if (item != &drawing) return;
+//     // item must be display for now
+//     if (item != &drawing) return;
 
-    Handle(AIS_Shape) shape=item->get_AIS_Shape();
-    if (shape.IsNull()) return;
+//     Handle(AIS_Shape) shape=item->get_AIS_Shape();
+//     if (shape.IsNull()) return;
 
-    // add the shape
-    //TopoDS_Compound compound=TopoDS::Compound(shape->Shape());
-    //BRep_Builder builder;
+//     // add the shape
+//     //TopoDS_Compound compound=TopoDS::Compound(shape->Shape());
+//     //BRep_Builder builder;
 
-    TopoDS_Iterator topoIterator(shape->Shape());
-    while (topoIterator.More()) {
-        const TopoDS_Shape& child=topoIterator.Value();
-        TopAbs_ShapeEnum shapeType=child.ShapeType();
-        // TopAbs_COMPSOLID may not be needed
-        if (shapeType == TopAbs_COMPSOLID || shapeType == TopAbs_SOLID || shapeType == TopAbs_COMPOUND) {
-            volumeCount++;
-            dimTag.first=3; dimTag.second=volumeCount;
+//     TopoDS_Iterator topoIterator(shape->Shape());
+//     while (topoIterator.More()) {
+//         const TopoDS_Shape& child=topoIterator.Value();
+//         TopAbs_ShapeEnum shapeType=child.ShapeType();
+//         // TopAbs_COMPSOLID may not be needed
+//         if (shapeType == TopAbs_COMPSOLID || shapeType == TopAbs_SOLID || shapeType == TopAbs_COMPOUND) {
+//             volumeCount++;
+//             dimTag.first=3; dimTag.second=volumeCount;
 
-            CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
-            Handle(AIS_Shape) drawingShape=new AIS_Shape(child);
-            newItem->set_AIS_Shape(drawingShape);
-            if (shapeType == TopAbs_COMPSOLID) {
-                objectCounts.compsolid++;
-                QString name="COMPSOLID";
-                name.append(QString::number(objectCounts.compsolid));
-                newItem->setText(0,name);
-            } else if (shapeType == TopAbs_SOLID) {
-                objectCounts.solid++;
-                QString name="SOLID";
-                name.append(QString::number(objectCounts.solid));
-                newItem->setText(0,name);
-            } else if (shapeType == TopAbs_COMPOUND) {
-                objectCounts.compound++;
-                QString name="COMPOUND";
-                name.append(QString::number(objectCounts.compound));
-                newItem->setText(0,name);
-            }
-            newItem->set_itemType(0);  // a drawing item
-            newItem->setForeground(0,Qt::gray);
-            newItem->set_dimTag(dimTag);
-            item->addChild(newItem);
-            addItemWithShape(newItem);
+//             CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
+//             Handle(AIS_Shape) drawingShape=new AIS_Shape(child);
+//             newItem->set_AIS_Shape(drawingShape);
+//             if (shapeType == TopAbs_COMPSOLID) {
+//                 objectCounts.compsolid++;
+//                 QString name="COMPSOLID";
+//                 name.append(QString::number(objectCounts.compsolid));
+//                 newItem->setText(0,name);
+//             } else if (shapeType == TopAbs_SOLID) {
+//                 objectCounts.solid++;
+//                 QString name="SOLID";
+//                 name.append(QString::number(objectCounts.solid));
+//                 newItem->setText(0,name);
+//             } else if (shapeType == TopAbs_COMPOUND) {
+//                 objectCounts.compound++;
+//                 QString name="COMPOUND";
+//                 name.append(QString::number(objectCounts.compound));
+//                 newItem->setText(0,name);
+//             }
+//             newItem->set_itemType(0);  // a drawing item
+//             newItem->setForeground(0,Qt::gray);
+//             newItem->set_dimTag(dimTag);
+//             item->addChild(newItem);
+//             addItemWithShape(newItem);
 
-            //builder.Add(compound,child);
-        }
-        topoIterator.Next();
-    }
+//             //builder.Add(compound,child);
+//         }
+//         topoIterator.Next();
+//     }
 
-    //shape->Redisplay(true);
-}
+//     //shape->Redisplay(true);
+// }
 
 void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
 {
@@ -6009,6 +6075,11 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         deleteMesh(true);
     }
 
+    //xxx
+    // reset dimTags
+    resetDimTag(&drawing);
+    renumberDimTag();
+
     // generate mesh
     TopoDS_Shape shape=drawing.get_AIS_Shape()->Shape();
     gmsh::model::occ::importShapesNativePointer((void *) &shape,drawingEntities,false);
@@ -6684,7 +6755,6 @@ void OpenParEMg::finishDraw ()
     if (!activePolywire) return;
     activePolywire->setDrawEnable(false);
 
-    //xxx
     if (isIntegrationPath) {
         std::cout << "   isIntegrationPath" << std::endl; std::cout.flush();
 
@@ -6759,7 +6829,6 @@ void OpenParEMg::finishDraw ()
     finishOperation(false,13);
 }
 
-//xxx
 void OpenParEMg::drawPath ()
 {
     std::cout << "OpenParEMg::drawPath" << std::endl; std::cout.flush();
@@ -6809,7 +6878,6 @@ void OpenParEMg::drawPath ()
     isIntegrationPath=true;
 }
 
-//xxx
 void OpenParEMg::drawLinePath ()
 {
     std::cout << "OpenParEMg::drawLinePath" << std::endl; std::cout.flush();

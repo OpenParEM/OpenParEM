@@ -93,7 +93,7 @@ public:
     ~OpenParEMg ();
 
     void saveProject ();
-    void addChildDisplayShape (CustomTreeWidgetItem *, std::pair<int,int> &dimTag);
+    //void addChildDisplayShape (CustomTreeWidgetItem *, std::pair<int,int> &dimTag);
     void addRootDisplayShape (TopoDS_Shape);
     void addItemWithShape (CustomTreeWidgetItem *);
     CustomTreeWidgetItem* addItemShape (TopoDS_Shape, CustomTreeWidgetItem *);
@@ -121,6 +121,8 @@ public:
 
     void dumpDrawingEntities ();
     void shapeCount (TopoDS_Shape, int *);
+    void resetDimTag (CustomTreeWidgetItem *);
+    void renumberDimTag ();
     void setPhysicalGroups ();
 
     void clearSelection ();
