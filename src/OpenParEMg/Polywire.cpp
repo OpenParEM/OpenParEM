@@ -386,6 +386,39 @@ QString Line::getName (ObjectCounts *objectCounts) {
     return name;
 }
 
+void Line::save (std::ofstream *out, QString name, int level)
+{
+    if (shapePoints.size() != 2) return;
+
+    std::string space;
+    long unsigned int i=0;
+    while (i < level) {
+        space.append("   ");
+        i++;
+    }
+
+    *out << space << "Line" << std::endl;
+    if (!name.isEmpty()) {
+        *out << space << "   name=" << name.toStdString() << std::endl;
+    }
+    *out << space << "   point1=("
+         << shapePoints[0].X() << ","
+         << shapePoints[0].Y() << ","
+         << shapePoints[0].Z() << ")" << std::endl;
+
+    *out << space << "   point2=("
+         << shapePoints[1].X() << ","
+         << shapePoints[1].Y() << ","
+         << shapePoints[1].Z() << ")" << std::endl;
+
+    *out << space << "   normal=("
+         << normal.X() << ","
+         << normal.Y() << ","
+         << normal.Z() << ")" << std::endl;
+
+    *out << space << "EndLine" << std::endl;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Polyline
 ////////////////////////////////////////////////////////////////////////////////
@@ -718,6 +751,40 @@ QString Polyline::getName (ObjectCounts *objectCounts) {
     QString name="Polyline";
     name.append(QString::number(objectCounts->polyline));
     return name;
+}
+
+void Polyline::save (std::ofstream *out, QString name, int level)
+{
+    if (shapePoints.size() < 2) return;
+
+    std::string space;
+    long unsigned int i=0;
+    while (i < level) {
+        space.append("   ");
+        i++;
+    }
+
+    *out << space << "Polyline" << std::endl;
+    if (!name.isEmpty()) {
+        *out << space << "   name=" << name.toStdString() << std::endl;
+    }
+    *out << space << "   N=" << shapePoints.size() << std::endl;
+
+    i=0;
+    while (i < shapePoints.size()) {
+        *out << space << "   point=("
+             << shapePoints[i].X() << ","
+             << shapePoints[i].Y() << ","
+             << shapePoints[i].Z() << ")" << std::endl;
+        i++;
+    }
+
+    *out << space << "   normal=("
+         << normal.X() << ","
+         << normal.Y() << ","
+         << normal.Z() << ")" << std::endl;
+
+    *out << space << "EndPolyline" << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1069,6 +1136,48 @@ QString Rectangle::getName (ObjectCounts *objectCounts) {
     return name;
 }
 
+void Rectangle::save (std::ofstream *out, QString name, int level)
+{
+    if (shapePoints.size() == 0) return;
+
+    std::string space;
+    long unsigned int i=0;
+    while (i < level) {
+        space.append("   ");
+        i++;
+    }
+
+    *out << space << "Rectangle" << std::endl;
+    if (!name.isEmpty()) {
+        *out << space << "   name=" << name.toStdString() << std::endl;
+    }
+
+    *out << space << "   origin=("
+         << shapePoints[0].X() << ","
+         << shapePoints[0].Y() << ","
+         << shapePoints[0].Z() << ")" << std::endl;
+
+    *out << space << "   width=" << width << std::endl;
+    *out << space << "   height=" << height << std::endl;
+
+    *out << space << "   u=("
+         << u.X() << ","
+         << u.Y() << ","
+         << u.Z() << ")" << std::endl;
+
+    *out << space << "   v=("
+         << v.X() << ","
+         << v.Y() << ","
+         << v.Z() << ")" << std::endl;
+
+    *out << space << "   normal=("
+         << normal.X() << ","
+         << normal.Y() << ","
+         << normal.Z() << ")" << std::endl;
+
+    *out << space << "EndRectangle" << std::endl;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Polycircle
 ////////////////////////////////////////////////////////////////////////////////
@@ -1400,4 +1509,39 @@ QString Polycircle::getName (ObjectCounts *objectCounts) {
     QString name="Polycircle";
     name.append(QString::number(objectCounts->polycircle));
     return name;
+}
+
+void Polycircle::save (std::ofstream *out, QString name, int level)
+{
+    if (shapePoints.size() < 2) return;
+
+    std::string space;
+    long unsigned int i=0;
+    while (i < level) {
+        space.append("   ");
+        i++;
+    }
+
+    *out << space << "Polycircle" << std::endl;
+    if (!name.isEmpty()) {
+        *out << space << "   name=" << name.toStdString() << std::endl;
+    }
+    *out << space << "   N=" << vertexCount << std::endl;
+
+    *out << space << "   center=("
+         << centerPoint.X() << ","
+         << centerPoint.Y() << ","
+         << centerPoint.Z() << ")" << std::endl;
+
+    *out << space << "   point=("
+         << firstPoint.X() << ","
+         << firstPoint.Y() << ","
+         << firstPoint.Z() << ")" << std::endl;
+
+    *out << space << "   normal=("
+         << normal.X() << ","
+         << normal.Y() << ","
+         << normal.Z() << ")" << std::endl;
+
+    *out << space << "EndPolycircle" << std::endl;
 }

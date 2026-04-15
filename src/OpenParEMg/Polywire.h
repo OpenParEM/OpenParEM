@@ -102,6 +102,8 @@ public:
     void setReverseExtrusionDirection (bool reverseExtrusionDirection_) {reverseExtrusionDirection=reverseExtrusionDirection_;}
     bool getReverseExtrusionDirection () {return reverseExtrusionDirection;}
 
+    virtual void save (std::ofstream *, QString, int) = 0;
+
 signals:
 
 protected:
@@ -145,6 +147,7 @@ public:
     Line* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
+    void save (std::ofstream *, QString, int) override;
 };
 
 class Polyline : public Polywire
@@ -184,6 +187,7 @@ public:
     Polyline* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
+    void save (std::ofstream *, QString, int) override;
 private:
     bool checkIntersection;
 
@@ -239,6 +243,7 @@ public:
     Rectangle* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
+    void save (std::ofstream *, QString, int) override;
 private:
     gp_Vec u,v;
     double width,height;
@@ -299,6 +304,7 @@ public:
     Polycircle* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
+    void save (std::ofstream *, QString, int) override;
 private:
     bool centerPointSet;
     gp_Pnt centerPoint;

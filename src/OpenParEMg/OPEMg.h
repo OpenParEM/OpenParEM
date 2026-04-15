@@ -103,6 +103,10 @@ public:
     bool saveBrepFile (char *);
     bool saveStepFile (QString);
     bool saveBoundaryDatabase ();
+    void increase_depth (CustomTreeWidgetItem *);
+    void decrease_depth (CustomTreeWidgetItem *);
+    void saveItem (std::ofstream *, CustomTreeWidgetItem *);
+    bool saveDrawingFile ();
     //bool menuAllHidden (CustomTreeWidgetItem *);
     //bool menuAllShown (CustomTreeWidgetItem *);
     //void meshShowEntities ();

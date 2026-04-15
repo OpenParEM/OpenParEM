@@ -1941,7 +1941,6 @@ void OpenParEMg::rename_returnPressed ()
     renameItem->setExpanded(false);
     renameItem->setExpanded(true);
     if (!isExpanded) renameItem->setExpanded(false);
-    //xxx
     renameItem=nullptr;
 
     setMenusI(18);
@@ -2049,6 +2048,9 @@ void OpenParEMg::deleteDrawingItems ()
                     if (!item->text(1).isNull()) {
                         if (!child->get_Polywire()) child->setText(1,item->text(1));
                     }
+
+                    // adjust the depth
+                    decrease_depth(child);
                 }
 
                 parentItem->removeChild(item);
@@ -2731,8 +2733,6 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
                         extrude->set_length(length);
                         newItem->set_Process(extrude);
                         newItem->setText(0,newItem->get_Process()->getName(&objectCounts));
-
-                        // save the process
                         extrude=nullptr;
 
                         // move the object
@@ -2746,6 +2746,7 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
                         ui->drawingWindow->showItem(newItem);
                         ui->drawingWindow->selectItem(newItem);
 
+                        increase_depth(item);
                         previousClickedItem=clickedItem;
                         clickedItem=newItem;
 
@@ -3226,8 +3227,6 @@ void OpenParEMg::finishMergeSolids ()
     Merge *merge=new Merge();
     newItem->set_Process(merge);
     newItem->setText(0,newItem->get_Process()->getName(&objectCounts));
-
-    // save the process
     merge=nullptr;
 
     // move the items in the tree
@@ -3249,6 +3248,10 @@ void OpenParEMg::finishMergeSolids ()
     // reset dimTags
     item0->set_dimTag(-1,-1);
     item1->set_dimTag(-1,-1);
+
+    // adjust depth
+    increase_depth(item0);
+    increase_depth(item1);
 
     // rebuild top level
     reprocess(&drawing);
@@ -3330,8 +3333,6 @@ void OpenParEMg::finishSubtractSolids ()
     Subtract *subtract=new Subtract();
     newItem->set_Process(subtract);
     newItem->setText(0,newItem->get_Process()->getName(&objectCounts));
-
-    // save the process
     subtract=nullptr;
 
     // move the items in the tree
@@ -3353,6 +3354,10 @@ void OpenParEMg::finishSubtractSolids ()
     // reset dimTags
     item0->set_dimTag(-1,-1);
     item1->set_dimTag(-1,-1);
+
+    // adjust depth
+    increase_depth(item0);
+    increase_depth(item1);
 
     // rebuild top level
     reprocess(&drawing);
@@ -4821,21 +4826,28 @@ void OpenParEMg::saveProject ()
     }
 
     // Brep
-    if (brepChanged) {
-        std::cout << "Saved Brep file" << std::endl; std::cout.flush();
-        if (saveBrepFile(projData.gui_brep_file)) {
-            QString message="Error in saving the drawing file.";
-            QMessageBox mb;
-            mb.critical(nullptr, "Error",message);
-            mb.setFixedSize(500, 200);
-        } else brepChanged=0;
-    }
+    // if (brepChanged) {
+    //     std::cout << "Saved Brep file" << std::endl; std::cout.flush();
+    //     if (saveBrepFile(projData.gui_brep_file)) {
+    //         QString message="Error in saving the drawing file.";
+    //         QMessageBox mb;
+    //         mb.critical(nullptr, "Error",message);
+    //         mb.setFixedSize(500, 200);
+    //     } else brepChanged=0;
+    // }
 
     // mesh
     if (meshFileLoaded && meshChanged) {
         std::cout << "Saved mesh file" << std::endl; std::cout.flush();
         on_actionMeshSave_triggered();
         meshChanged=false;
+    }
+
+    // drawing
+    if (brepChanged) {
+        std::cout << "Saved drawing file" << std::endl; std::cout.flush();
+        saveDrawingFile();
+        brepChanged=false;
     }
 
     setMenusI(47);
@@ -5384,6 +5396,113 @@ bool OpenParEMg::saveBoundaryDatabase ()
     std::ofstream outputFile(filename.toStdString());
     if (outputFile.is_open()) {
         boundaryDatabase->save(&outputFile);
+        outputFile.close();
+        return false;
+    }
+    return true;
+}
+
+void OpenParEMg::increase_depth (CustomTreeWidgetItem *item)
+{
+    if (!item) return;
+
+    item->increase_depth();
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+        increase_depth(child);
+        i++;
+    }
+}
+
+void OpenParEMg::decrease_depth (CustomTreeWidgetItem *item)
+{
+    if (!item) return;
+
+    item->decrease_depth();
+
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+        decrease_depth(child);
+        i++;
+    }
+}
+
+void OpenParEMg::saveItem (std::ofstream *out, CustomTreeWidgetItem *item)
+{
+    if (!item) return;
+
+    if (item->is_drawing()) {
+
+        Polywire *polywire=item->get_Polywire();
+        if (polywire) {
+            polywire->save(out,item->get_name(),item->get_depth());
+        }
+
+        Process *process=item->get_Process();
+        if (process) {
+            process->startSave(out,item->get_name(),item->get_material(),item->get_depth());
+
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                saveItem(out,child);
+                i++;
+            }
+
+            process->endSave(out,item->get_depth());
+        }
+
+        // Brep
+        if (!polywire && !process) {
+            std::string space;
+            long unsigned int i=0;
+            while (i < item->get_depth()) {
+                space.append("   ");
+                i++;
+            }
+
+            *out << space << "BRep" << std::endl;
+            if (!item->get_name().isEmpty()) {
+                *out << space << "   name=" << item->get_name().toStdString() << std::endl;
+            }
+            if (!item->get_material().isEmpty()) {
+                *out << space << "   material=" << item->get_material().toStdString() << std::endl;
+            }
+
+            // uses TopTools_FormatVersion_VERSION_1
+            BRepTools::Write(item->get_AIS_Shape()->Shape(),*out);
+
+            *out << std::endl;
+            *out << space << "EndBRep" << std::endl;
+        }
+    } else {
+        int i=0;
+        while (i < item->childCount()) {
+            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+            saveItem(out,child);
+            i++;
+        }
+    }
+}
+
+bool OpenParEMg::saveDrawingFile ()
+{
+    if (!brepChanged) return false;
+
+    QString filename=absolutePath;
+    filename.append("/").append(projData.project_name);
+    filename.append(".opd");
+    std::cout << "Saving the drawing file to to " << filename.toStdString() << std::endl; std::cout.flush();
+
+    std::ofstream outputFile(filename.toStdString());
+    if (outputFile.is_open()) {
+        outputFile << std::setprecision(15);
+        outputFile << "#OpenParEMgDrawing 1.0" << std::endl;
+        outputFile << std::endl;
+        saveItem(&outputFile,&drawing);
         outputFile.close();
         return false;
     }

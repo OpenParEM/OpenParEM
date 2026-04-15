@@ -46,6 +46,7 @@ public:
         enableStretch=false;
         enableDeletePoint=false;
         enableInsertPoint=false;
+        depth=0;
     }
 
     ~CustomTreeWidgetItem ()
@@ -53,6 +54,12 @@ public:
         if (polywire) delete polywire;
         if (process) delete process;
     }
+
+    QString get_name () {return text(0);}
+    QString get_material () {return text(1);}
+    int get_depth () {return depth;}
+    void increase_depth () {depth++;}
+    void decrease_depth () {depth--;}
 
     void set_OPEMobject (void *pointer) {OPEMobject=pointer;}
     void* get_OPEMobject () {return OPEMobject;}
@@ -417,6 +424,8 @@ private:
     bool enableStretch;
     bool enableDeletePoint;
     bool enableInsertPoint;
+
+    int depth;                                         // item depth in the tree for saving formatted drawing files
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

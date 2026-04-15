@@ -35,6 +35,8 @@ public:
     virtual Process* copyCreate () = 0;
     virtual bool canEdit () = 0;
     virtual QString getName (ObjectCounts *objectCounts) = 0;
+    virtual void startSave (std::ofstream *, QString, QString, int) = 0;
+    virtual void endSave (std::ofstream *, int) = 0;
 
 signals:
 
@@ -50,6 +52,8 @@ public:
     Extrude* copyCreate () override;
     bool canEdit () override {return true;}
     QString getName (ObjectCounts *objectCounts) override;
+    void startSave (std::ofstream *, QString, QString, int) override;
+    void endSave (std::ofstream *, int) override;
 private:
     double length;       // length of the extrusion
 };
@@ -60,6 +64,8 @@ public:
     Merge* copyCreate () override;
     bool canEdit () override {return false;}
     QString getName (ObjectCounts *objectCounts) override;
+    void startSave (std::ofstream *, QString, QString, int) override;
+    void endSave (std::ofstream *, int) override;
 };
 
 class Subtract : public Process
@@ -68,6 +74,8 @@ public:
     Subtract* copyCreate () override;
     bool canEdit () override {return false;}
     QString getName (ObjectCounts *objectCounts) override;
+    void startSave (std::ofstream *, QString, QString, int) override;
+    void endSave (std::ofstream *, int) override;
 };
 
 #endif // PROCESS_H

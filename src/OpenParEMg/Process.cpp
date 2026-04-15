@@ -42,6 +42,37 @@ QString Extrude::getName (ObjectCounts *objectCounts) {
     return name;
 }
 
+void Extrude::startSave (std::ofstream *out, QString name, QString material, int level)
+{
+    std::string space;
+    long unsigned int i=0;
+    while (i < level) {
+        space.append("   ");
+        i++;
+    }
+
+    *out << space << "Extrude" << std::endl;
+    if (!name.isEmpty()) {
+        *out << space << "   name=" << name.toStdString() << std::endl;
+    }
+    if (!material.isEmpty()) {
+        *out << space << "   material=" << material.toStdString() << std::endl;
+    }
+    *out << space << "   length=" << length << std::endl;
+}
+
+void Extrude::endSave (std::ofstream *out, int level)
+{
+    std::string space;
+    long unsigned int i=0;
+    while (i < level) {
+        space.append("   ");
+        i++;
+    }
+
+    *out << space << "EndExtrude" << std::endl;
+}
+
 Merge* Merge::copyCreate ()
 {
     Merge* newMerge=new Merge();
@@ -56,6 +87,36 @@ QString Merge::getName (ObjectCounts *objectCounts) {
     return name;
 }
 
+void Merge::startSave (std::ofstream *out, QString name, QString material, int level)
+{
+    std::string space;
+    long unsigned int i=0;
+    while (i < level) {
+        space.append("   ");
+        i++;
+    }
+
+    *out << space << "Merge" << std::endl;
+    if (!name.isEmpty()) {
+        *out << space << "   name=" << name.toStdString() << std::endl;
+    }
+    if (!material.isEmpty()) {
+        *out << space << "   material=" << material.toStdString() << std::endl;
+    }
+}
+
+void Merge::endSave (std::ofstream *out, int level)
+{
+    std::string space;
+    long unsigned int i=0;
+    while (i < level) {
+        space.append("   ");
+        i++;
+    }
+
+    *out << space << "EndMerge" << std::endl;
+}
+
 Subtract* Subtract::copyCreate ()
 {
     Subtract* newSubtract=new Subtract();
@@ -68,4 +129,34 @@ QString Subtract::getName (ObjectCounts *objectCounts) {
     QString name="Subtract";
     name.append(QString::number(objectCounts->subtract));
     return name;
+}
+
+void Subtract::startSave (std::ofstream *out, QString name, QString material, int level)
+{
+    std::string space;
+    long unsigned int i=0;
+    while (i < level) {
+        space.append("   ");
+        i++;
+    }
+
+    *out << space << "Subtract" << std::endl;
+    if (!name.isEmpty()) {
+        *out << space << "   name=" << name.toStdString() << std::endl;
+    }
+    if (!material.isEmpty()) {
+        *out << space << "   material=" << material.toStdString() << std::endl;
+    }
+}
+
+void Subtract::endSave (std::ofstream *out, int level)
+{
+    std::string space;
+    long unsigned int i=0;
+    while (i < level) {
+        space.append("   ");
+        i++;
+    }
+
+    *out << space << "EndSubtract" << std::endl;
 }
