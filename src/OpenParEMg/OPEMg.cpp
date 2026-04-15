@@ -1941,6 +1941,8 @@ void OpenParEMg::rename_returnPressed ()
     renameItem->setExpanded(false);
     renameItem->setExpanded(true);
     if (!isExpanded) renameItem->setExpanded(false);
+    //xxx
+    renameItem=nullptr;
 
     setMenusI(18);
     ui->drawingWindow->updateViewer();
@@ -5801,6 +5803,11 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
         on_actionShape_triggered();
         ui->drawingWindow->setSubshapeSelection(false);
         ui->drawingWindow->setSetToPlane(false);
+
+        if (renameItem) {
+            ui->drawingItemTree->removeItemWidget(renameItem,0);
+            renameItem=nullptr;
+        }
     }
     QWidget::keyPressEvent(event);
 }
