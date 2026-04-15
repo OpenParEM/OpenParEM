@@ -102,6 +102,58 @@ bool cstrFromQString (char **aCstr, QString& aQString)
     return false;
 }
 
+// trim and readFileToVector courtesy of ChatGPT
+// Prompt: In c++, I would like a subroutine that reads a text file and puts each line of text into a std::vector<std::string>.
+//         All text at and after the comment characters "//" are omitted. Leading and trailing white space are removed.
+//         Empty lines are ignored. Use while loops instead of for loops.
+
+// Helper function to trim leading and trailing whitespace
+std::string trim(const std::string& str) {
+    size_t start = 0;
+    while (start < str.size() && std::isspace(static_cast<unsigned char>(str[start]))) {
+        start++;
+    }
+
+    if (start == str.size()) return "";
+
+    size_t end = str.size() - 1;
+    while (end > start && std::isspace(static_cast<unsigned char>(str[end]))) {
+        end--;
+    }
+
+    return str.substr(start, end - start + 1);
+}
+
+std::vector<std::string> readFileToVector(const std::string& filename) {
+    std::vector<std::string> result;
+    std::ifstream file(filename);
+
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file\n";
+        return result;
+    }
+
+    std::string line;
+
+    while (std::getline(file, line)) {
+        // Remove comments starting with //
+        size_t commentPos = line.find("//");
+        if (commentPos != std::string::npos) {
+            line = line.substr(0, commentPos);
+        }
+
+        // Trim whitespace
+        line = trim(line);
+
+        // Ignore empty lines
+        if (!line.empty()) {
+            result.push_back(line);
+        }
+    }
+
+    return result;
+}
+
 OpenParEMg::OpenParEMg (QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::OpenParEMg)
@@ -1782,8 +1834,6 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
     CustomTreeWidgetItem *modeParentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
     CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)modeParentItem->QTreeWidgetItem::parent();
 
-    //xxx
-
     // port outline
     if (portParentItem->linkedItems_size() != 1) return;
     CustomTreeWidgetItem *linkedItem=portParentItem->get_linkedItem(0);
@@ -2599,7 +2649,7 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &sha
 
 void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywire, int i)
 {
-    //std:: cout << "OpenParEMg::replaceItemShape  item=" << item << "  polywire=" << polywire << "  place=" << i << std::endl; std::cout.flush();
+    std:: cout << "OpenParEMg::replaceItemShape  item=" << item << "  polywire=" << polywire << "  place=" << i << std::endl; std::cout.flush();
 
     if (!item) return;
     if (!polywire) return;
@@ -4512,21 +4562,21 @@ void OpenParEMg::on_actionOpen_triggered ()
             } else materialsLoaded=true;
         }
 
-        // load brep file, if defined
-        bool brepLoaded=false;
-        if (strcmp(projData.gui_brep_file,"") != 0) {
+        // // load brep file, if defined
+        // bool brepLoaded=false;
+        // if (strcmp(projData.gui_brep_file,"") != 0) {
 
-            QString filePath=projData.gui_brep_file;
+        //     QString filePath=projData.gui_brep_file;
 
-            if (loadBrepFile(filePath,false)) {
-                QString message="Unable to load Brep file \"";
-                message.append(filePath);
-                message.append("\".");
-                QMessageBox mb;
-                mb.critical(nullptr, "Error",message);
-                mb.setFixedSize(500, 200);
-            } else brepLoaded=true;
-        }
+        //     if (loadBrepFile(filePath,false)) {
+        //         QString message="Unable to load Brep file \"";
+        //         message.append(filePath);
+        //         message.append("\".");
+        //         QMessageBox mb;
+        //         mb.critical(nullptr, "Error",message);
+        //         mb.setFixedSize(500, 200);
+        //     } else brepLoaded=true;
+        // }
 
         // load boundaries, if any, and draw
         if (strcmp(projData.port_definition_file,"") != 0) {
@@ -4556,6 +4606,13 @@ void OpenParEMg::on_actionOpen_triggered ()
         // load mesh, if any, and draw
         if (strcmp(projData.mesh_file,"") != 0) {
             loadMeshFile(QString::fromStdString(projData.mesh_file));
+        }
+
+        // load file
+        bool brepLoaded=false;
+        if (loadDrawingFile()) {
+        } else {
+            brepLoaded=true;
         }
 
         // set dimTag and material
@@ -5194,7 +5251,7 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (TopoDS_Shape shape, CustomTreeWi
 
 CustomTreeWidgetItem* OpenParEMg::addItemShape (Polywire *polywire, CustomTreeWidgetItem *parentItem)
 {
-    //std::cout << "CustomTreeWidgetItem* OpenParEMg::addItemShape" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::addItemShape" << std::endl; std::cout.flush();
 
     if (!polywire) return nullptr;
     if (!parentItem) return nullptr;
@@ -5209,6 +5266,17 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (Polywire *polywire, CustomTreeWi
 
     // add to top-level COMPOUND if parent is drawing
     if (parentItem == &drawing) {
+
+        // create a COMPOUND if one is not present
+        if (parentItem->get_AIS_Shape().IsNull()) {
+            BRep_Builder builder;
+            TopoDS_Compound compound;
+            builder.MakeCompound(compound);
+            Handle(AIS_Shape) newShape=new AIS_Shape(compound);
+            parentItem->set_AIS_Shape(newShape);
+        }
+
+        // add to the COMPOUND
         TopoDS_Compound compound=TopoDS::Compound(parentItem->get_AIS_Shape()->Shape());
         BRep_Builder builder;
         builder.Add(compound,newItem->get_AIS_Shape()->Shape());
@@ -5495,7 +5563,7 @@ bool OpenParEMg::saveDrawingFile ()
     QString filename=absolutePath;
     filename.append("/").append(projData.project_name);
     filename.append(".opd");
-    std::cout << "Saving the drawing file to to " << filename.toStdString() << std::endl; std::cout.flush();
+    std::cout << "Saving the drawing file to " << filename.toStdString() << std::endl; std::cout.flush();
 
     std::ofstream outputFile(filename.toStdString());
     if (outputFile.is_open()) {
@@ -5507,6 +5575,28 @@ bool OpenParEMg::saveDrawingFile ()
         return false;
     }
     return true;
+}
+
+bool OpenParEMg::loadDrawingFile ()
+{
+    QString filename=absolutePath;
+    filename.append("/").append(projData.project_name);
+    filename.append(".opd");
+    std::cout << "Loading the drawing file from " << filename.toStdString() << std::endl; std::cout.flush();
+
+    //xxx
+
+    std::vector<std::string> inputData=readFileToVector(filename.toStdString());
+    if (inputData.size() == 0) return true;
+
+    size_t i = 0;
+    while (i < inputData.size()) {
+        std::cout << inputData[i] << std::endl;
+        i++;
+    }
+
+
+    return false;
 }
 
 void OpenParEMg::on_actionImportBrep_triggered ()

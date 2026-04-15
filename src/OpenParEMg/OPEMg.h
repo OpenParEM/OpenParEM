@@ -107,6 +107,7 @@ public:
     void decrease_depth (CustomTreeWidgetItem *);
     void saveItem (std::ofstream *, CustomTreeWidgetItem *);
     bool saveDrawingFile ();
+    bool loadDrawingFile ();
     //bool menuAllHidden (CustomTreeWidgetItem *);
     //bool menuAllShown (CustomTreeWidgetItem *);
     //void meshShowEntities ();
