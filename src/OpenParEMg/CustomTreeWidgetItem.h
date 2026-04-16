@@ -35,7 +35,8 @@ class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
 public:
     CustomTreeWidgetItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type)
     {
-        itemType=0;
+        itemType=0;         // default to drawing
+        forShowHide=true;
         set_dimTag(-1,-1);  // for mesh items; invalid initialization
         OPEMobject=nullptr;
         polywire=nullptr;

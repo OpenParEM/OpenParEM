@@ -1121,7 +1121,10 @@ int save_project (const char *filename, struct projectData *data, struct project
     char* logic[2];
     char* comment[2];
 
-    if (data == NULL) return 0;
+    if (data == NULL) {
+        fclose(fptr);
+        return 0;
+    }
 
     logic[0]=allocCopyString("false");
     logic[1]=allocCopyString("true");
@@ -1443,6 +1446,14 @@ char* get_project_name (const char *filename) {
    }
 
    return b;
+}
+
+void set_project_name (struct projectData *data, const char *filename) {
+    if (data->project_name) free(data->project_name);
+    data->project_name=(char *)malloc((strlen(filename)+1)*sizeof(char));
+    if (data->project_name) {
+        strcpy(data->project_name,filename);
+    }
 }
 
 int has_refinementFrequencyPlan (struct projectData *data) {

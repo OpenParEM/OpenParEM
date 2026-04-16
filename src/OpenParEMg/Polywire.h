@@ -70,6 +70,7 @@ public:
     void setNormal (gp_Vec normal_) {normal=normal_;}
     void setNormal (struct point normal_) {normal.SetCoord(normal_.x,normal_.y,normal_.z);}
     void setNormal (double x, double y, double z) {normal.SetCoord(x,y,z);}
+    void setNormal (gp_Pnt pnt) {normal.SetCoord(pnt.X(),pnt.Y(),pnt.Z());}
     gp_Vec getNormal () {return normal;}
 
     virtual void setU (gp_Vec u_) {std::cout << "Polywire setU" << std::endl; std::cout.flush(); return;}
@@ -103,6 +104,9 @@ public:
     bool getReverseExtrusionDirection () {return reverseExtrusionDirection;}
 
     virtual void save (std::ofstream *, QString, int) = 0;
+    virtual bool load (std::vector<std::string> &inputData, long unsigned int, long unsigned int, std::string& name) = 0;
+
+    virtual void print () = 0;
 
 signals:
 
@@ -148,6 +152,8 @@ public:
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
     void save (std::ofstream *, QString, int) override;
+    bool load (std::vector<std::string> &inputData, long unsigned int, long unsigned int, std::string& name) override;
+    void print () override;
 };
 
 class Polyline : public Polywire
@@ -188,6 +194,8 @@ public:
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
     void save (std::ofstream *, QString, int) override;
+    bool load (std::vector<std::string> &inputData, long unsigned int, long unsigned int, std::string& name) override;
+    void print () override;
 private:
     bool checkIntersection;
 
@@ -244,6 +252,8 @@ public:
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
     void save (std::ofstream *, QString, int) override;
+    bool load (std::vector<std::string> &inputData, long unsigned int, long unsigned int, std::string& name) override;
+    void print () override;
 private:
     gp_Vec u,v;
     double width,height;
@@ -305,6 +315,8 @@ public:
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
     void save (std::ofstream *, QString, int) override;
+    bool load (std::vector<std::string> &inputData, long unsigned int, long unsigned int, std::string& name) override;
+    void print () override;
 private:
     bool centerPointSet;
     gp_Pnt centerPoint;

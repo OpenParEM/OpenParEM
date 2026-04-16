@@ -27,7 +27,22 @@
 class ObjectCounts
 {
 public:
-    ObjectCounts () {
+    ObjectCounts ()
+    {
+        line=0;
+        polyline=0;
+        rectangle=0;
+        polycircle=0;
+        extrude=0;
+        merge=0;
+        subtract=0;
+        solid=0;
+        compsolid=0;
+        compound=0;
+    }
+
+    void reset ()
+    {
         line=0;
         polyline=0;
         rectangle=0;

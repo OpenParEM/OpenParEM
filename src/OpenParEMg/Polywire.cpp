@@ -58,10 +58,15 @@ Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
     return shape;
 }
 
-// void printPnt (std::string &name, const gp_Pnt &p)
-// {
-//     std::cout << name << "=(" << p.X() << "," << p.Y() << "," << p.Z() << ")" << std::endl; std::cout.flush();
-// }
+void printPnt (std::string &name, const gp_Pnt &p)
+{
+    std::cout << "   " << name << "=(" << p.X() << "," << p.Y() << "," << p.Z() << ")" << std::endl;  std::cout.flush();
+}
+
+void printVec (std::string &name, const gp_Vec &p)
+{
+    std::cout << "   " << name << "=(" << p.X() << "," << p.Y() << "," << p.Z() << ")" << std::endl;  std::cout.flush();
+}
 
 // DoSegmentsIntersectInterior courtesy of Google AI
 bool DoSegmentsIntersectInterior (const gp_Pnt& P1, const gp_Pnt& P2,
@@ -123,6 +128,108 @@ bool DoSegmentsIntersectInterior (const gp_Pnt& P1, const gp_Pnt& P2,
         }
     }
     return false;
+}
+
+
+
+// courtesy of ChatGPT
+std::string trim(const std::string& str) {
+    size_t start = 0;
+    while (start < str.size() && std::isspace(static_cast<unsigned char>(str[start]))) {
+        start++;
+    }
+
+    if (start == str.size()) return "";
+
+    size_t end = str.size() - 1;
+    while (end > start && std::isspace(static_cast<unsigned char>(str[end]))) {
+        end--;
+    }
+
+    return str.substr(start, end - start + 1);
+}
+
+// based on routine provided by ChatGPT
+// parse keyword=text
+// return true on success
+bool extractText(const std::string& input, std::string& keyword, std::string& value) {
+    size_t pos = input.find('=');
+
+    // Must contain '=' and not at beginning
+    if (pos == std::string::npos || pos == 0) return false;
+
+    std::string name=input.substr(0,pos);
+    std::string text=input.substr(pos+1);
+
+    name=trim(name);
+    text=trim(text);
+
+    if (name.empty()) return false;
+    if (name.compare(keyword) != 0) return false;
+
+    value=text;
+    return true;
+}
+
+// based on routine provided by ChatGPT
+// Parse keyword=(x,y,z)
+// return true on success
+bool extractPoint(const std::string& input, std::string& keyword, gp_Pnt& point) {
+    size_t eqPos = input.find('=');
+    if (eqPos == std::string::npos || eqPos == 0) {
+        return false;
+    }
+
+    std::string name = trim(input.substr(0, eqPos));
+    std::string rhs  = trim(input.substr(eqPos + 1));
+
+    if (name.empty()) return false;
+    if (name.compare(keyword) != 0) return false;
+
+    // Must start with '(' and end with ')'
+    if (rhs.size() < 5 || rhs.front() != '(' || rhs.back() != ')') {
+        return false;
+    }
+
+    // Remove parentheses
+    rhs = rhs.substr(1, rhs.size() - 2);
+
+    // Parse three comma-separated values
+    double values[3];
+    size_t start = 0;
+    int count = 0;
+
+    while (start < rhs.size() && count < 3) {
+        size_t comma = rhs.find(',', start);
+        std::string token;
+
+        if (comma == std::string::npos) {
+            token = rhs.substr(start);
+            start = rhs.size();
+        } else {
+            token = rhs.substr(start, comma - start);
+            start = comma + 1;
+        }
+
+        token = trim(token);
+        if (token.empty()) return false;
+
+        try {
+            values[count] = std::stod(token);
+        } catch (...) {
+            return false;
+        }
+
+        count++;
+    }
+
+    // Must have exactly 3 values and no extra data
+    if (count != 3 || start < rhs.size()) {
+        return false;
+    }
+
+    point = gp_Pnt(values[0], values[1], values[2]);
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -221,18 +328,20 @@ void Polywire::setEditPoint (gp_Pnt &pnt) {
 
 TopoDS_Wire Polywire::buildWire ()
 {
-    int count=0;
     BRepBuilderAPI_MakeWire wireBuilder;
-    long unsigned int i=0;
-    while (i < shapePoints.size()-1) {
-        if (shapePoints[i].IsEqual(shapePoints[i+1],Precision::Confusion())) {
-            //std::cout << "ASSERT: Polywire::buildWire found duplicate points" << std::endl; std::cout.flush();
-        } else {
-            count++;
-            TopoDS_Edge edge=BRepBuilderAPI_MakeEdge(shapePoints[i],shapePoints[i+1]);
-            wireBuilder.Add(edge);
+    int count=0;
+    if (shapePoints.size() > 0) {
+        long unsigned int i=0;
+        while (i < shapePoints.size()-1) {
+            if (shapePoints[i].IsEqual(shapePoints[i+1],Precision::Confusion())) {
+                //std::cout << "ASSERT: Polywire::buildWire found duplicate points" << std::endl; std::cout.flush();
+            } else {
+                count++;
+                TopoDS_Edge edge=BRepBuilderAPI_MakeEdge(shapePoints[i],shapePoints[i+1]);
+                wireBuilder.Add(edge);
+            }
+            i++;
         }
-        i++;
     }
 
     TopoDS_Wire wire;
@@ -371,11 +480,14 @@ Line* Line::copyCreate ()
 
 Handle(AIS_Shape) Line::get_AIS_Shape ()
 {
+    //xxx
+    print();
     Handle(AIS_Shape) shape;
     TopoDS_Wire wire=buildWire();
     if (!wire.IsNull()) {
         shape=new AIS_Shape(wire);
     }
+    std::cout << "Line::get_AIS_Shape  isNull()=" << shape.IsNull() << std::endl; std::cout.flush();
     return shape;
 }
 
@@ -401,12 +513,12 @@ void Line::save (std::ofstream *out, QString name, int level)
     if (!name.isEmpty()) {
         *out << space << "   name=" << name.toStdString() << std::endl;
     }
-    *out << space << "   point1=("
+    *out << space << "   point=("
          << shapePoints[0].X() << ","
          << shapePoints[0].Y() << ","
          << shapePoints[0].Z() << ")" << std::endl;
 
-    *out << space << "   point2=("
+    *out << space << "   point=("
          << shapePoints[1].X() << ","
          << shapePoints[1].Y() << ","
          << shapePoints[1].Z() << ")" << std::endl;
@@ -417,6 +529,69 @@ void Line::save (std::ofstream *out, QString name, int level)
          << normal.Z() << ")" << std::endl;
 
     *out << space << "EndLine" << std::endl;
+}
+
+bool Line::load (std::vector<std::string> &inputData, long unsigned int start, long unsigned int end, std::string& name)
+{
+    bool foundName=false;
+    bool foundNormal=false;
+
+    long unsigned int i=start;
+    while (i <= end) {
+
+        gp_Pnt pnt;
+        std::string keyword;
+
+        // name
+        keyword="name";
+        std::string testName;
+        if (extractText(inputData[i],keyword,testName)) {
+            name=testName;
+            foundName=true;
+            i++;
+            continue;
+        }
+
+        // point
+        keyword="point";
+        if (extractPoint(inputData[i],keyword,pnt)) {
+            shapePoints.push_back(pnt);
+            i++;
+            continue;
+        }
+
+        // normal
+        keyword="normal";
+        if (extractPoint(inputData[i],keyword,pnt)) {
+            setNormal(pnt);
+            foundNormal=true;
+            i++;
+            continue;
+        }
+
+        i++;
+    }
+
+    // check for completeness
+    if (shapePoints.size() != 2) return true;
+    if (!foundName) return true;
+    if (!foundNormal) return true;
+
+    return false;
+}
+
+void Line::print ()
+{
+    std::cout << "Line:" << std::endl;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        std::string name="point";
+        printPnt(name,shapePoints[i]);
+        i++;
+    }
+
+    std::string name="normal";
+    printVec(name,normal);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -768,7 +943,6 @@ void Polyline::save (std::ofstream *out, QString name, int level)
     if (!name.isEmpty()) {
         *out << space << "   name=" << name.toStdString() << std::endl;
     }
-    *out << space << "   N=" << shapePoints.size() << std::endl;
 
     i=0;
     while (i < shapePoints.size()) {
@@ -785,6 +959,71 @@ void Polyline::save (std::ofstream *out, QString name, int level)
          << normal.Z() << ")" << std::endl;
 
     *out << space << "EndPolyline" << std::endl;
+}
+
+bool Polyline::load (std::vector<std::string> &inputData, long unsigned int start, long unsigned int end, std::string& name)
+{
+    bool foundName=false;
+    bool foundNormal=false;
+
+    long unsigned int i=start;
+    while (i <= end) {
+
+        gp_Pnt pnt;
+        std::string keyword;
+
+        // name
+        keyword="name";
+        std::string testName;
+        if (extractText(inputData[i],keyword,testName)) {
+            name=testName;
+            foundName=true;
+            i++;
+            continue;
+        }
+
+        // point
+        keyword="point";
+        if (extractPoint(inputData[i],keyword,pnt)) {
+            shapePoints.push_back(pnt);
+            i++;
+            continue;
+        }
+
+        // normal
+        keyword="normal";
+        if (extractPoint(inputData[i],keyword,pnt)) {
+            setNormal(pnt);
+            foundNormal=true;
+            i++;
+            continue;
+        }
+
+        i++;
+    }
+
+    // check for completeness
+    if (shapePoints.size() < 2) return true;
+    if (!foundName) return true;
+    if (!foundNormal) return true;
+
+    if (shapePoints[0].IsEqual(shapePoints[shapePoints.size()-1],Precision::Confusion())) closed=true;
+
+    return false;
+}
+
+void Polyline::print ()
+{
+    std::cout << "Line:" << std::endl;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        std::string name="point";
+        printPnt(name,shapePoints[i]);
+        i++;
+    }
+
+    std::string name="normal";
+    printVec(name,normal);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1178,6 +1417,126 @@ void Rectangle::save (std::ofstream *out, QString name, int level)
     *out << space << "EndRectangle" << std::endl;
 }
 
+bool Rectangle::load (std::vector<std::string> &inputData, long unsigned int start, long unsigned int end, std::string& name)
+{
+    bool foundName=false;
+    bool foundOrigin=false;
+    bool foundWidth=false;
+    bool foundHeight=false;
+    bool foundu=false;
+    bool foundv=false;
+    bool foundNormal=false;
+
+    long unsigned int i=start;
+    while (i <= end) {
+
+        gp_Pnt pnt;
+        std::string keyword;
+
+        // name
+        keyword="name";
+        std::string testName;
+        if (extractText(inputData[i],keyword,testName)) {
+            name=testName;
+            foundName=true;
+            i++;
+            continue;
+        }
+
+        // origin
+        keyword="origin";
+        if (extractPoint(inputData[i],keyword,pnt)) {
+            shapePoints.push_back(pnt);
+            foundOrigin=true;
+            i++;
+            continue;
+        }
+
+        // width
+        keyword="width";
+        std::string testWidth;
+        if (extractText(inputData[i],keyword,testWidth)) {
+            width=std::stod(testWidth);
+            foundWidth=true;
+            i++;
+            continue;
+        }
+
+        // height
+        keyword="height";
+        std::string testHeight;
+        if (extractText(inputData[i],keyword,testHeight)) {
+            height=std::stod(testHeight);
+            foundHeight=true;
+            i++;
+            continue;
+        }
+
+        // u
+        keyword="u";
+        if (extractPoint(inputData[i],keyword,pnt)) {
+            u.SetCoord(pnt.X(),pnt.Y(),pnt.Z());
+            foundu=true;
+            i++;
+            continue;
+        }
+
+        // v
+        keyword="v";
+        if (extractPoint(inputData[i],keyword,pnt)) {
+            v.SetCoord(pnt.X(),pnt.Y(),pnt.Z());
+            foundv=true;
+            i++;
+            continue;
+        }
+
+        // normal
+        keyword="normal";
+        if (extractPoint(inputData[i],keyword,pnt)) {
+            setNormal(pnt);
+            foundNormal=true;
+            i++;
+            continue;
+        }
+
+        i++;
+    }
+
+    // check for completeness
+    if (!foundOrigin) return true;
+    if (!foundName) return true;
+    if (!foundWidth) return true;
+    if (!foundHeight) return true;
+    if (!foundu) return true;
+    if (!foundv) return true;
+    if (!foundNormal) return true;
+
+    // create space for the other points
+    i=0;
+    while (i < 4) {
+        shapePoints.push_back(shapePoints[0]);
+        i++;
+    }
+
+    recalculate();
+
+    return false;
+}
+
+void Rectangle::print ()
+{
+    std::cout << "Line:" << std::endl;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        std::string name="point";
+        printPnt(name,shapePoints[i]);
+        i++;
+    }
+
+    std::string name="normal";
+    printVec(name,normal);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Polycircle
 ////////////////////////////////////////////////////////////////////////////////
@@ -1544,4 +1903,94 @@ void Polycircle::save (std::ofstream *out, QString name, int level)
          << normal.Z() << ")" << std::endl;
 
     *out << space << "EndPolycircle" << std::endl;
+}
+
+bool Polycircle::load (std::vector<std::string> &inputData, long unsigned int start, long unsigned int end, std::string& name)
+{
+    bool foundName=false;
+    bool foundCenter=false;
+    bool foundPoint=false;
+    bool foundCount=false;
+    bool foundNormal=false;
+
+    long unsigned int i=start;
+    while (i <= end) {
+
+        gp_Pnt pnt;
+        std::string keyword;
+
+        // name
+        keyword="name";
+        std::string testName;
+        if (extractText(inputData[i],keyword,testName)) {
+            name=testName;
+            foundName=true;
+            i++;
+            continue;
+        }
+
+        // count
+        keyword="N";
+        std::string testCount;
+        if (extractText(inputData[i],keyword,testCount)) {
+            vertexCount=stoi(testCount);
+            foundCount=true;
+            i++;
+            continue;
+        }
+
+        // center
+        keyword="center";
+        if (extractPoint(inputData[i],keyword,pnt)) {
+            centerPoint=pnt;
+            foundCenter=true;
+            i++;
+            continue;
+        }
+
+        // firstPoint
+        keyword="point";
+        if (extractPoint(inputData[i],keyword,pnt)) {
+            firstPoint=pnt;
+            foundPoint=true;
+            i++;
+            continue;
+        }
+
+        // normal
+        keyword="normal";
+        if (extractPoint(inputData[i],keyword,pnt)) {
+            setNormal(pnt);
+            foundNormal=true;
+            i++;
+            continue;
+        }
+
+        i++;
+    }
+
+    // check for completeness
+    if (!foundName) return true;
+    if (!foundCount) return true;
+    if (!foundCenter) return true;
+    if (!foundPoint) return true;
+    if (!foundNormal) return true;
+
+    recalculate();
+
+    return false;
+}
+
+void Polycircle::print ()
+{
+    std::cout << "Line:" << std::endl;
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        std::string name="point";
+        printPnt(name,shapePoints[i]);
+        i++;
+    }
+
+    std::string name="normal";
+    printVec(name,normal);
 }

@@ -46,6 +46,7 @@
 extern "C" void init_project (struct projectData *);
 extern "C" void free_project (struct projectData *);
 extern "C" PetscErrorCode load_project_file (const char *, struct projectData *, const char *);
+extern "C" void set_project_name (struct projectData *, const char *);
 extern "C" int save_project (const char *, struct projectData *, struct projectData *, const char *);
 extern "C" void clear_physicalGroupMaterials (struct projectData *);
 extern "C" void add_physicalGroupMaterial (struct projectData *, int, int, int, char *);
@@ -106,7 +107,10 @@ public:
     void increase_depth (CustomTreeWidgetItem *);
     void decrease_depth (CustomTreeWidgetItem *);
     void saveItem (std::ofstream *, CustomTreeWidgetItem *);
-    bool saveDrawingFile ();
+    int findStartNextBlock (std::vector<std::string> &inputData, long unsigned int &startBlockIndex);
+    int findEndNextBlock (std::vector<std::string> &inputData, long unsigned int &endBlockIndex);
+    bool loadItem (std::vector<std::string> &inputData, long unsigned int &startBlockIndex, long unsigned int &endBlockIndex);
+    bool saveDrawingFile (QString);
     bool loadDrawingFile ();
     //bool menuAllHidden (CustomTreeWidgetItem *);
     //bool menuAllShown (CustomTreeWidgetItem *);
@@ -496,9 +500,10 @@ private:
     // lockouts
     bool projectFileLoaded;  // project setup variable including paths
     bool projectChanged;
-    bool brepFileLoaded;     // drawing (brep or step)
-    bool brepChanged;
-    bool meshFileLoaded;     // mesh
+    // bool brepFileLoaded;     // drawing (brep or step)
+    // bool brepChanged;
+    bool drawingChanged;
+    //bool meshFileLoaded;     // mesh
     bool meshChanged;
     bool drawingPlaneShown;
     bool simulationRunning;
