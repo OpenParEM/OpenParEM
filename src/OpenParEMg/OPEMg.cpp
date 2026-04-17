@@ -5672,7 +5672,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
     std::string name;
     if (polywire) {
          std::cout << "****** found polywire  typeStart=" << typeStart << std::endl; std::cout.flush();
-        polywire->load(inputData,startBlockIndex,endBlockIndex,name);
+        polywire->load(inputData,startBlockIndex,endBlockIndex,name,&objectCounts);
         polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
         CustomTreeWidgetItem *newItem=addItemShape(polywire,parent);
         if (newItem) {
@@ -5707,7 +5707,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
             std::string name;
             if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
                 newItem->setText(0,QString::fromStdString(name));
-                std::cout << "name=" << name << std::endl; std::cout.flush();
+                objectCounts.extrude++;
             }
 
             // length
@@ -5742,6 +5742,8 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
             std::string name;
             if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
                 newItem->setText(0,QString::fromStdString(name));
+                if (typeStart == 6) objectCounts.merge++;
+                if (typeStart == 7) objectCounts.subtract++;
             }
 
             // get two children
@@ -5785,6 +5787,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
                 std::string name;
                 if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
                     newItem->setText(0,QString::fromStdString(name));
+                    objectCounts.solid++;
                 }
 
                 reprocess(newItem);

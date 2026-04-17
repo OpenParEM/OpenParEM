@@ -531,7 +531,8 @@ void Line::save (std::ofstream *out, QString name, int level)
     *out << space << "EndLine" << std::endl;
 }
 
-bool Line::load (std::vector<std::string> &inputData, long unsigned int start, long unsigned int end, std::string& name)
+bool Line::load (std::vector<std::string> &inputData, long unsigned int start,
+                long unsigned int end, std::string& name, ObjectCounts *objectCounts)
 {
     bool foundName=false;
     bool foundNormal=false;
@@ -576,6 +577,8 @@ bool Line::load (std::vector<std::string> &inputData, long unsigned int start, l
     if (shapePoints.size() != 2) return true;
     if (!foundName) return true;
     if (!foundNormal) return true;
+
+    objectCounts->line++;
 
     return false;
 }
@@ -961,7 +964,8 @@ void Polyline::save (std::ofstream *out, QString name, int level)
     *out << space << "EndPolyline" << std::endl;
 }
 
-bool Polyline::load (std::vector<std::string> &inputData, long unsigned int start, long unsigned int end, std::string& name)
+bool Polyline::load (std::vector<std::string> &inputData, long unsigned int start,
+                    long unsigned int end, std::string& name, ObjectCounts *objectCounts)
 {
     bool foundName=false;
     bool foundNormal=false;
@@ -1008,6 +1012,8 @@ bool Polyline::load (std::vector<std::string> &inputData, long unsigned int star
     if (!foundNormal) return true;
 
     if (shapePoints[0].IsEqual(shapePoints[shapePoints.size()-1],Precision::Confusion())) closed=true;
+
+    objectCounts->polyline++;
 
     return false;
 }
@@ -1417,7 +1423,8 @@ void Rectangle::save (std::ofstream *out, QString name, int level)
     *out << space << "EndRectangle" << std::endl;
 }
 
-bool Rectangle::load (std::vector<std::string> &inputData, long unsigned int start, long unsigned int end, std::string& name)
+bool Rectangle::load (std::vector<std::string> &inputData, long unsigned int start,
+                     long unsigned int end, std::string& name, ObjectCounts *objectCounts)
 {
     bool foundName=false;
     bool foundOrigin=false;
@@ -1519,6 +1526,8 @@ bool Rectangle::load (std::vector<std::string> &inputData, long unsigned int sta
     }
 
     recalculate();
+
+    objectCounts->rectangle++;
 
     return false;
 }
@@ -1905,7 +1914,8 @@ void Polycircle::save (std::ofstream *out, QString name, int level)
     *out << space << "EndPolycircle" << std::endl;
 }
 
-bool Polycircle::load (std::vector<std::string> &inputData, long unsigned int start, long unsigned int end, std::string& name)
+bool Polycircle::load (std::vector<std::string> &inputData, long unsigned int start,
+                      long unsigned int end, std::string& name, ObjectCounts *objectCounts)
 {
     bool foundName=false;
     bool foundCenter=false;
@@ -1977,6 +1987,8 @@ bool Polycircle::load (std::vector<std::string> &inputData, long unsigned int st
     if (!foundNormal) return true;
 
     recalculate();
+
+    objectCounts->polycircle++;
 
     return false;
 }

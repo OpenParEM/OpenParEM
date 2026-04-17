@@ -104,7 +104,8 @@ public:
     bool getReverseExtrusionDirection () {return reverseExtrusionDirection;}
 
     virtual void save (std::ofstream *, QString, int) = 0;
-    virtual bool load (std::vector<std::string> &inputData, long unsigned int, long unsigned int, std::string& name) = 0;
+    virtual bool load (std::vector<std::string> &inputData, long unsigned int,
+                      long unsigned int, std::string& name, ObjectCounts *objectCounts) = 0;
 
     virtual void print () = 0;
 
@@ -152,7 +153,8 @@ public:
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
     void save (std::ofstream *, QString, int) override;
-    bool load (std::vector<std::string> &inputData, long unsigned int, long unsigned int, std::string& name) override;
+    bool load (std::vector<std::string> &inputData, long unsigned int,
+              long unsigned int, std::string& name, ObjectCounts *objectCounts) override;
     void print () override;
 };
 
@@ -194,7 +196,8 @@ public:
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
     void save (std::ofstream *, QString, int) override;
-    bool load (std::vector<std::string> &inputData, long unsigned int, long unsigned int, std::string& name) override;
+    bool load (std::vector<std::string> &inputData, long unsigned int,
+              long unsigned int, std::string& name, ObjectCounts *objectCounts) override;
     void print () override;
 private:
     bool checkIntersection;
@@ -252,7 +255,8 @@ public:
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
     void save (std::ofstream *, QString, int) override;
-    bool load (std::vector<std::string> &inputData, long unsigned int, long unsigned int, std::string& name) override;
+    bool load (std::vector<std::string> &inputData, long unsigned int,
+              long unsigned int, std::string& name, ObjectCounts *objectCounts) override;
     void print () override;
 private:
     gp_Vec u,v;
@@ -315,7 +319,8 @@ public:
     Handle(AIS_Shape) get_AIS_Shape () override;
     QString getName (ObjectCounts *objectCounts) override;
     void save (std::ofstream *, QString, int) override;
-    bool load (std::vector<std::string> &inputData, long unsigned int, long unsigned int, std::string& name) override;
+    bool load (std::vector<std::string> &inputData, long unsigned int,
+              long unsigned int, std::string& name, ObjectCounts *objectCounts) override;
     void print () override;
 private:
     bool centerPointSet;
