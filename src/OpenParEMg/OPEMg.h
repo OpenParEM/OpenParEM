@@ -107,9 +107,16 @@ public:
     void increase_depth (CustomTreeWidgetItem *);
     void decrease_depth (CustomTreeWidgetItem *);
     void saveItem (std::ofstream *, CustomTreeWidgetItem *);
+
+    int isStartBlock (std::vector<std::string> &inputData, long unsigned int);
+    int isEndBlock (std::vector<std::string> &inputData, long unsigned int);
+    bool getBlockKeywordValue (std::vector<std::string> &inputData, int,
+                              long unsigned int &startBlockIndex, long unsigned int &endBlockIndex,
+                              std::string &keyword, std::string &value);
     int findStartNextBlock (std::vector<std::string> &inputData, long unsigned int &startBlockIndex);
-    int findEndNextBlock (std::vector<std::string> &inputData, long unsigned int &endBlockIndex);
-    bool loadItem (std::vector<std::string> &inputData, long unsigned int &startBlockIndex, long unsigned int &endBlockIndex);
+    int findEndNextBlock (std::vector<std::string> &inputData, int, long unsigned int &endBlockIndex);
+    bool loadItem (std::vector<std::string> &inputData, long unsigned int &startBlockIndex,
+                  long unsigned int &endBlockIndex, CustomTreeWidgetItem *);
     bool saveDrawingFile (QString);
     bool loadDrawingFile ();
     //bool menuAllHidden (CustomTreeWidgetItem *);

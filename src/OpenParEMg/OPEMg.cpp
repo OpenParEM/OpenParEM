@@ -89,6 +89,7 @@
 #include <TopoDS_Shape.hxx>
 
 std::string trim(const std::string& str);
+bool extractText(const std::string& input, std::string& keyword, std::string& value);
 
 bool cstrFromQString (char **aCstr, QString& aQString)
 {
@@ -5566,34 +5567,73 @@ void OpenParEMg::saveItem (std::ofstream *out, CustomTreeWidgetItem *item)
     }
 }
 
+int OpenParEMg::isStartBlock (std::vector<std::string> &inputData, long unsigned int index)
+{
+    if (inputData[index].compare("Line") == 0) return 1;
+    if (inputData[index].compare("Polyline") == 0) return 2;
+    if (inputData[index].compare("Polycircle") == 0) return 3;
+    if (inputData[index].compare("Rectangle") == 0) return 4;
+    if (inputData[index].compare("Extrude") == 0) return 5;
+    if (inputData[index].compare("Merge") == 0) return 6;
+    if (inputData[index].compare("Subtract") == 0) return 7;
+    if (inputData[index].compare("BRep") == 0) return 8;
+    return 0;
+}
+
+int OpenParEMg::isEndBlock (std::vector<std::string> &inputData, long unsigned int index)
+{
+    if (inputData[index].compare("EndLine") == 0) return 1;
+    if (inputData[index].compare("EndPolyline") == 0) return 2;
+    if (inputData[index].compare("EndPolycircle") == 0) return 3;
+    if (inputData[index].compare("EndRectangle") == 0) return 4;
+    if (inputData[index].compare("EndExtrude") == 0) return 5;
+    if (inputData[index].compare("EndMerge") == 0) return 6;
+    if (inputData[index].compare("EndSubtract") == 0) return 7;
+    if (inputData[index].compare("EndBRep") == 0) return 8;
+    return 0;
+}
+
+//xxx
+bool OpenParEMg::getBlockKeywordValue (std::vector<std::string> &inputData, int type,
+                                       long unsigned int &startBlockIndex, long unsigned int &endBlockIndex,
+                                       std::string &keyword, std::string &value)
+{
+    std::cout << "OpenParEMg::getBlockKeywordValue" << std::endl; std::cout.flush();
+
+    int level=0;  // keeping track of levels in the hierarchy
+    long unsigned int index=startBlockIndex;
+    while (index <= endBlockIndex) {
+        int startType=isStartBlock(inputData,index);
+        if (startType == type) level++;
+
+        int endType=isEndBlock(inputData,index);
+        if (endType == type) level--;
+
+        if (level == 0 && extractText(inputData[index],keyword,value)) {
+            return true;
+        }
+
+        index++;
+    }
+
+    return false;  // failed to find the keyword
+}
+
 int OpenParEMg::findStartNextBlock (std::vector<std::string> &inputData, long unsigned int &startBlockIndex)
 {
     while (startBlockIndex < inputData.size()) {
-        std::cout << "inputData[startBlockIndex]" << inputData[startBlockIndex] << std::endl; std::cout.flush();
-        if (inputData[startBlockIndex].compare("Line") == 0) return 1;
-        if (inputData[startBlockIndex].compare("Polyline") == 0) return 2;
-        if (inputData[startBlockIndex].compare("Polycircle") == 0) return 3;
-        if (inputData[startBlockIndex].compare("Rectangle") == 0) return 4;
-        if (inputData[startBlockIndex].compare("Extrude") == 0) return 5;
-        if (inputData[startBlockIndex].compare("Merge") == 0) return 6;
-        if (inputData[startBlockIndex].compare("Subtract") == 0) return 7;
-        if (inputData[startBlockIndex].compare("BRep") == 0) return 8;
+        int type=isStartBlock(inputData,startBlockIndex);
+        if (type) return type;
         startBlockIndex++;
     }
     return 0;  // failed to find a block
 }
 
-int OpenParEMg::findEndNextBlock (std::vector<std::string> &inputData, long unsigned int &endBlockIndex)
+int OpenParEMg::findEndNextBlock (std::vector<std::string> &inputData, int type, long unsigned int &endBlockIndex)
 {
     while (endBlockIndex < inputData.size()) {
-        if (inputData[endBlockIndex].compare("EndLine") == 0) return 1;
-        if (inputData[endBlockIndex].compare("EndPolyline") == 0) return 2;
-        if (inputData[endBlockIndex].compare("EndPolycircle") == 0) return 3;
-        if (inputData[endBlockIndex].compare("EndRectangle") == 0) return 4;
-        if (inputData[endBlockIndex].compare("EndExtrude") == 0) return 5;
-        if (inputData[endBlockIndex].compare("EndMerge") == 0) return 6;
-        if (inputData[endBlockIndex].compare("EndSubtract") == 0) return 7;
-        if (inputData[endBlockIndex].compare("EndBRep") == 0) return 8;
+        int endType=isEndBlock(inputData,endBlockIndex);
+        if (endType == type) return type;
         endBlockIndex++;
     }
     return 0;  // failed to find a block terminator
@@ -5601,7 +5641,7 @@ int OpenParEMg::findEndNextBlock (std::vector<std::string> &inputData, long unsi
 
 
 bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
-                           long unsigned int &startBlockIndex, long unsigned int &endBlockIndex)
+                           long unsigned int &startBlockIndex, long unsigned int &endBlockIndex, CustomTreeWidgetItem *parent)
 {
     std::cout << "OpenParEMg::loadItem" << "  startBlockIndex=" << startBlockIndex << "  endBlockIndex=" << endBlockIndex << std::endl; std::cout.flush();
 
@@ -5611,7 +5651,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
     if (typeStart == 0) {return false;}
 
     endBlockIndex=startBlockIndex;
-    int typeEnd=findEndNextBlock (inputData,endBlockIndex);
+    int typeEnd=findEndNextBlock (inputData,typeStart,endBlockIndex);
 
     // missing block terminator
     if (typeEnd == 0) {
@@ -5623,19 +5663,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
         return false;
     }
 
-    // std::string name;
-    // if (typeStart == 1) {
-    //     Line *newLine=new Line();
-    //     newLine->load(inputData,startBlockIndex,endBlockIndex,name);
-    //     CustomTreeWidgetItem *newItem=addItemShape(newLine,&drawing);
-    //     if (newItem) {
-    //         newItem->set_Polywire(newLine);
-    //         newItem->setText(0,QString::fromStdString(name));
-    //     }
-    //     drawingChanged=true;
-    // }
-
-    Polywire *polywire;
+    Polywire *polywire=nullptr;
     if (typeStart == 1) polywire=new Line();
     else if (typeStart == 2) polywire=new Polyline();
     else if (typeStart == 3) polywire=new Polycircle();
@@ -5643,14 +5671,129 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
 
     std::string name;
     if (polywire) {
+         std::cout << "****** found polywire  typeStart=" << typeStart << std::endl; std::cout.flush();
         polywire->load(inputData,startBlockIndex,endBlockIndex,name);
         polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
-        CustomTreeWidgetItem *newItem=addItemShape(polywire,&drawing);
+        CustomTreeWidgetItem *newItem=addItemShape(polywire,parent);
         if (newItem) {
             newItem->setText(0,QString::fromStdString(name));
+            reprocess(newItem);
+            drawingChanged=true;
             ui->drawingWindow->showItem(newItem);
         }
-        drawingChanged=true;
+        startBlockIndex=endBlockIndex;
+    }
+
+    bool loadBrep=false;
+    Process *process=nullptr;
+    if (typeStart == 5) process=new Extrude();
+    if (typeStart == 6) process=new Merge();
+    if (typeStart == 7) process=new Subtract();
+    if (typeStart == 8) loadBrep=true;
+
+    if (process) {
+        std::cout << "****** found process  typeStart=" << typeStart << std::endl; std::cout.flush();
+        CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem();
+        newItem->set_Process(process);
+        parent->addChild(newItem);
+
+        // extrude
+        if (typeStart == 5) {
+
+            // name
+            long unsigned int localStartBlockIndex=startBlockIndex+1;
+            long unsigned int localEndBlockIndex=endBlockIndex-1;
+            std::string keyword="name";
+            std::string name;
+            if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
+                newItem->setText(0,QString::fromStdString(name));
+                std::cout << "name=" << name << std::endl; std::cout.flush();
+            }
+
+            // length
+            localStartBlockIndex=startBlockIndex+1;
+            localEndBlockIndex=endBlockIndex-1;
+            keyword="length";
+            std::string length;
+            if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,length)) {
+                Extrude *extrude=dynamic_cast<Extrude *>(process);
+                if (extrude) {
+                    extrude->set_length(stod(length));
+                }
+            }
+
+            // get one child
+            localStartBlockIndex=startBlockIndex+1;
+            localEndBlockIndex=startBlockIndex+1;
+            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem);
+
+            reprocess(newItem);
+            drawingChanged=true;
+            ui->drawingWindow->showItem(newItem);
+        }
+
+        // merge and subtract
+        if (typeStart == 6 || typeStart == 7) {
+
+            // name
+            long unsigned int localStartBlockIndex=startBlockIndex+1;
+            long unsigned int localEndBlockIndex=endBlockIndex-1;
+            std::string keyword="name";
+            std::string name;
+            if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
+                newItem->setText(0,QString::fromStdString(name));
+            }
+
+            // get two children
+
+            localStartBlockIndex=startBlockIndex+1;
+            localEndBlockIndex=startBlockIndex+1;
+            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem);
+
+            localStartBlockIndex=localEndBlockIndex+1;
+            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem);
+
+            reprocess(newItem);
+            drawingChanged=true;
+            ui->drawingWindow->showItem(newItem);
+        }
+
+        startBlockIndex=endBlockIndex;
+    }
+
+    if (loadBrep) {
+        std::stringstream ss;
+
+        long unsigned int i=startBlockIndex+1;
+        while (i < endBlockIndex) {
+            ss << inputData[i] << std::endl;
+            i++;
+        }
+
+        TopoDS_Shape shape;
+        BRep_Builder builder;
+        BRepTools::Read(shape,ss,builder);
+
+        if (!shape.IsNull()) {
+            CustomTreeWidgetItem *newItem=addItemShape(shape,parent);
+            if (newItem) {
+
+                // name
+                long unsigned int localStartBlockIndex=startBlockIndex+1;
+                long unsigned int localEndBlockIndex=endBlockIndex-1;
+                std::string keyword="name";
+                std::string name;
+                if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
+                    newItem->setText(0,QString::fromStdString(name));
+                }
+
+                reprocess(newItem);
+                drawingChanged=true;
+                ui->drawingWindow->showItem(newItem);
+            }
+        }
+
+        startBlockIndex=endBlockIndex;
     }
 
     return true;
@@ -5685,8 +5828,8 @@ bool OpenParEMg::loadDrawingFile ()
 
     long unsigned int startBlockIndex=0;
     long unsigned int endBlockIndex=0;
-    while (loadItem(inputData,startBlockIndex,endBlockIndex)) {
-        startBlockIndex=endBlockIndex;
+    while (loadItem(inputData,startBlockIndex,endBlockIndex,&drawing)) {
+        //startBlockIndex=endBlockIndex;
     }
 
     return false;
