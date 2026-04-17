@@ -116,7 +116,7 @@ public:
     int findStartNextBlock (std::vector<std::string> &inputData, long unsigned int &startBlockIndex);
     int findEndNextBlock (std::vector<std::string> &inputData, int, long unsigned int &endBlockIndex);
     bool loadItem (std::vector<std::string> &inputData, long unsigned int &startBlockIndex,
-                  long unsigned int &endBlockIndex, CustomTreeWidgetItem *);
+                  long unsigned int &endBlockIndex, CustomTreeWidgetItem *, bool);
     bool saveDrawingFile (QString);
     bool loadDrawingFile ();
     //bool menuAllHidden (CustomTreeWidgetItem *);

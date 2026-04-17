@@ -2689,9 +2689,11 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywir
     if (!item) return;
     if (!polywire) return;
 
+    std::cout << "place a" << std::endl; std::cout.flush();
     // save for later restoration since the operations will modify the visible item list
     std::vector<CustomTreeWidgetItem *> displayedItems=ui->drawingWindow->getVisibleDrawingItems();
 
+    std::cout << "place b" << std::endl; std::cout.flush();
     // remove old shape
     if (!item->get_AIS_Shape().IsNull()) {
         ui->drawingWindow->hideItem(item);
@@ -2699,6 +2701,7 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywir
         ui->drawingWindow->deleteShape(item->get_AIS_Shape());  // lose selection
     }
 
+    std::cout << "place c" << std::endl; std::cout.flush();
     // refresh selection: Processing on rootDrawing deselects all but 1 item, so reselect here.
     if (item->is_rootDrawing()) {
         long unsigned int i=0;
@@ -2709,16 +2712,19 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywir
         }
     }
 
+    std::cout << "place d" << std::endl; std::cout.flush();
     // get a new shape
     Handle(AIS_Shape) AISshape=polywire->get_AIS_Shape();
     if (AISshape.IsNull()) return;
 
+    std::cout << "place e" << std::endl; std::cout.flush();
     // install new shape
     // must activate for selection since SetAutoActivateSelection is set to false in CustomOpenGLWidget.cpp
     if (!item->is_rootDrawing()) ui->drawingWindow->activateSelectShape(AISshape);
     item->set_AIS_Shape(AISshape);
     ui->drawingWindow->insertItemToMap(AISshape,item);
 
+    std::cout << "place f" << std::endl; std::cout.flush();
     // redisplay
     if (item->is_rootDrawing()) {
         long unsigned int i=0;
@@ -2727,6 +2733,7 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywir
             i++;
         }
     }
+    std::cout << "place g" << std::endl; std::cout.flush();
 }
 
 bool OpenParEMg::isValidExtrudePolywire ()
@@ -2888,9 +2895,13 @@ void OpenParEMg::reextrudePolywire (CustomTreeWidgetItem *item, CustomTreeWidget
     }
 }
 
+// stop on incomplete structures - happens while loading a drawing
+// eventually, everything loads and the reprocess completes
 void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 {
-    //std::cout << "OpenParEMg::reprocess" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::reprocess" << std::endl; std::cout.flush();
+
+    bool stop=false;
 
     if (!item) return;
 
@@ -2909,11 +2920,15 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 
         Extrude *extrude=dynamic_cast<Extrude *>(process);
         if (extrude) {
-            int i=0;
-            while (i < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-                reextrudePolywire(item,child);
-                i++;
+            if (item->childCount() > 0) {
+                int i=0;
+                while (i < item->childCount()) {
+                    CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+                    reextrudePolywire(item,child);
+                    i++;
+                }
+            } else {
+                stop=true;
             }
         }
 
@@ -2941,6 +2956,8 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 
                 replaceItemShape(item,mergedShape,4);  // inserts to item map
                 drawingChanged=true;
+            } else {
+                stop=true;
             }
         }
 
@@ -2968,6 +2985,8 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 
                 replaceItemShape(item,subtractedShape,5);  // inserts to item map
                 drawingChanged=true;
+            } else {
+                stop=true;
             }
         }
     }
@@ -2976,8 +2995,10 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
     item->reset_transformation();
 
     // recursively work to the top of the tree
-    CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-    reprocess(parentItem);
+    if (!stop) {
+        CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+        reprocess(parentItem);
+    }
 }
 
 bool OpenParEMg::isValidSetPlane ()
@@ -5281,18 +5302,19 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (Polywire *polywire, CustomTreeWi
     if (!polywire) return nullptr;
     if (!parentItem) return nullptr;
 
-    // // variable to support meshing
-    // std::pair<int,int> dimTag;
-    // dimTag.first=-1; dimTag.second=-1;
-
+    std::cout << "place x1" << std::endl; std::cout.flush();
     // new item
     CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
+    std::cout << "place x2" << std::endl; std::cout.flush();
     replaceItemShape(newItem,polywire,11);  // inserts to item map
+    std::cout << "place x3" << std::endl; std::cout.flush();
     if (!newItem) return newItem;
     if (newItem->get_AIS_Shape().IsNull()) return newItem;
 
+    std::cout << "place x4" << std::endl; std::cout.flush();
     // add to top-level COMPOUND if parent is drawing
     if (parentItem == &drawing) {
+        std::cout << "place x5" << std::endl; std::cout.flush();
         //xxx
         // // create a COMPOUND if one is not present
         // if (parentItem->get_AIS_Shape().IsNull()) {
@@ -5309,25 +5331,7 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (Polywire *polywire, CustomTreeWi
         builder.Add(compound,newItem->get_AIS_Shape()->Shape());
         parentItem->get_AIS_Shape()->Redisplay(true);
     }
-
-    // process for SOLID
-    TopAbs_ShapeEnum shapeType=newItem->get_AIS_Shape()->Shape().ShapeType();
-    if (shapeType == TopAbs_COMPSOLID || shapeType == TopAbs_SOLID) {
-        // volumeCount++;
-        // dimTag.first=3; dimTag.second=volumeCount;
-
-        // // set materials
-        // if (shapeType == TopAbs_SOLID) {
-        //     int i=0;
-        //     while (i < projData.physicalGroupMaterialCount) {
-        //         if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
-        //             newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
-        //             break;
-        //         }
-        //         i++;
-        //     }
-        // }
-    }
+    std::cout << "place x6" << std::endl; std::cout.flush();
 
     // set variables
     newItem->setText(0,TopAbs::ShapeTypeToString(newItem->get_AIS_Shape()->Shape().ShapeType()));
@@ -5335,6 +5339,7 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (Polywire *polywire, CustomTreeWi
     newItem->setForeground(0,Qt::gray);
     newItem->set_Polywire(polywire);  // xxx activePolywire
     parentItem->addChild(newItem);
+    std::cout << "place x7" << std::endl; std::cout.flush();
 
     return newItem;
 }
@@ -5631,17 +5636,26 @@ int OpenParEMg::findStartNextBlock (std::vector<std::string> &inputData, long un
 
 int OpenParEMg::findEndNextBlock (std::vector<std::string> &inputData, int type, long unsigned int &endBlockIndex)
 {
+    int level=0;
     while (endBlockIndex < inputData.size()) {
+
+        // keep track of nested blocks of the same type
+        int startType=isStartBlock(inputData,endBlockIndex);
+        if (startType == type) level++;
+
         int endType=isEndBlock(inputData,endBlockIndex);
-        if (endType == type) return type;
+        if (level == 0 && endType == type) return type;
+
+        if (endType == type) level--;
+
         endBlockIndex++;
     }
     return 0;  // failed to find a block terminator
 }
 
 
-bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
-                           long unsigned int &startBlockIndex, long unsigned int &endBlockIndex, CustomTreeWidgetItem *parent)
+bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned int &startBlockIndex,
+                           long unsigned int &endBlockIndex, CustomTreeWidgetItem *parent, bool increaseDepth)
 {
     std::cout << "OpenParEMg::loadItem" << "  startBlockIndex=" << startBlockIndex << "  endBlockIndex=" << endBlockIndex << std::endl; std::cout.flush();
 
@@ -5650,7 +5664,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
     // check to see if done
     if (typeStart == 0) {return false;}
 
-    endBlockIndex=startBlockIndex;
+    endBlockIndex=startBlockIndex+1;
     int typeEnd=findEndNextBlock (inputData,typeStart,endBlockIndex);
 
     // missing block terminator
@@ -5671,12 +5685,13 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
 
     std::string name;
     if (polywire) {
-         std::cout << "****** found polywire  typeStart=" << typeStart << std::endl; std::cout.flush();
         polywire->load(inputData,startBlockIndex,endBlockIndex,name,&objectCounts);
         polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
         CustomTreeWidgetItem *newItem=addItemShape(polywire,parent);
         if (newItem) {
             newItem->setText(0,QString::fromStdString(name));
+            if (!parent->is_rootDrawing()) newItem->copy_depth(parent);
+            if (increaseDepth) newItem->increase_depth();
             reprocess(newItem);
             drawingChanged=true;
             ui->drawingWindow->showItem(newItem);
@@ -5692,7 +5707,6 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
     if (typeStart == 8) loadBrep=true;
 
     if (process) {
-        std::cout << "****** found process  typeStart=" << typeStart << std::endl; std::cout.flush();
         CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem();
         newItem->set_Process(process);
         parent->addChild(newItem);
@@ -5707,7 +5721,11 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
             std::string name;
             if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
                 newItem->setText(0,QString::fromStdString(name));
+                if (!parent->is_rootDrawing()) newItem->copy_depth(parent);
+                if (increaseDepth) newItem->increase_depth();
                 objectCounts.extrude++;
+
+                std::cout << "***************** new Extrude: name=" << name << std::endl; std::cout.flush();
             }
 
             // length
@@ -5725,7 +5743,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
             // get one child
             localStartBlockIndex=startBlockIndex+1;
             localEndBlockIndex=startBlockIndex+1;
-            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem);
+            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem,true);
 
             reprocess(newItem);
             drawingChanged=true;
@@ -5742,6 +5760,8 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
             std::string name;
             if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
                 newItem->setText(0,QString::fromStdString(name));
+                if (!parent->is_rootDrawing()) newItem->copy_depth(parent);
+                if (increaseDepth) newItem->increase_depth();
                 if (typeStart == 6) objectCounts.merge++;
                 if (typeStart == 7) objectCounts.subtract++;
             }
@@ -5750,10 +5770,10 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
 
             localStartBlockIndex=startBlockIndex+1;
             localEndBlockIndex=startBlockIndex+1;
-            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem);
+            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem,true);
 
             localStartBlockIndex=localEndBlockIndex+1;
-            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem);
+            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem,true);
 
             reprocess(newItem);
             drawingChanged=true;
@@ -5787,6 +5807,8 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData,
                 std::string name;
                 if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
                     newItem->setText(0,QString::fromStdString(name));
+                    if (!parent->is_rootDrawing()) newItem->copy_depth(parent);
+                    if (increaseDepth) newItem->increase_depth();
                     objectCounts.solid++;
                 }
 
@@ -5831,7 +5853,7 @@ bool OpenParEMg::loadDrawingFile ()
 
     long unsigned int startBlockIndex=0;
     long unsigned int endBlockIndex=0;
-    while (loadItem(inputData,startBlockIndex,endBlockIndex,&drawing)) {
+    while (loadItem(inputData,startBlockIndex,endBlockIndex,&drawing,false)) {
         //startBlockIndex=endBlockIndex;
     }
 

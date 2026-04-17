@@ -85,7 +85,7 @@ public:
 
     TopoDS_Wire buildWire();
     virtual TopoDS_Face buildFace (TopoDS_Wire &wire) {TopoDS_Face face; return face;}
-    virtual void shift (gp_Pnt &pnt1, gp_Pnt &pnt2);
+    virtual void shift (gp_Pnt &pnt1, gp_Pnt &pnt2) = 0;
     virtual void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
 
     bool isModified () {return modified;}
@@ -151,6 +151,7 @@ public:
     void setP1 (gp_Pnt &P1);
     Line* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;
+    void shift (gp_Pnt &pnt1, gp_Pnt &pnt2) override;
     QString getName (ObjectCounts *objectCounts) override;
     void save (std::ofstream *, QString, int) override;
     bool load (std::vector<std::string> &inputData, long unsigned int,
@@ -194,6 +195,7 @@ public:
     void insertPoint (gp_Pnt &pnt) override;
     Polyline* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;
+    void shift (gp_Pnt &pnt1, gp_Pnt &pnt2) override;
     QString getName (ObjectCounts *objectCounts) override;
     void save (std::ofstream *, QString, int) override;
     bool load (std::vector<std::string> &inputData, long unsigned int,
@@ -250,6 +252,7 @@ public:
     TopoDS_Face buildFace (TopoDS_Wire &wire) override;
     void setEditPoint (gp_Pnt &pnt) override;
 
+    void shift (gp_Pnt &pnt1, gp_Pnt &pnt2) override;
     void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2) override;
     Rectangle* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;

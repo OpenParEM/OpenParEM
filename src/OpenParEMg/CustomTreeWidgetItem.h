@@ -58,6 +58,7 @@ public:
 
     QString get_name () {return text(0);}
     QString get_material () {return text(1);}
+    void copy_depth (CustomTreeWidgetItem *item) {depth=item->depth;}
     int get_depth () {return depth;}
     void increase_depth () {depth++;}
     void decrease_depth () {depth--;}

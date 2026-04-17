@@ -358,23 +358,6 @@ bool Polywire::isPointOnPlane (gp_Pnt &pnt)
     return false;
 }
 
-void Polywire::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
-{
-    //std::cout << "Polywire::shift" << std::endl; std::cout.flush();
-
-    if (shapePoints.size() == 0) return;
-    modified=true;
-
-    gp_Pnt offset;
-    offset=pnt2.XYZ()-pnt1.XYZ();
-
-    long unsigned int i=0;
-    while (i < shapePoints.size()) {
-        shapePoints[i]=shapePoints[i].XYZ()-offset.XYZ();
-        i++;
-    }
-}
-
 void Polywire::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
 {
     if (shapePoints.size() == 0) return;
@@ -496,6 +479,21 @@ QString Line::getName (ObjectCounts *objectCounts) {
     QString name="Line";
     name.append(QString::number(objectCounts->line));
     return name;
+}
+
+void Line::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
+{
+    if (shapePoints.size() == 0) return;
+    modified=true;
+
+    gp_Pnt offset;
+    offset=pnt2.XYZ()-pnt1.XYZ();
+
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        shapePoints[i]=shapePoints[i].XYZ()-offset.XYZ();
+        i++;
+    }
 }
 
 void Line::save (std::ofstream *out, QString name, int level)
@@ -931,6 +929,23 @@ QString Polyline::getName (ObjectCounts *objectCounts) {
     return name;
 }
 
+void Polyline::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
+{
+    std::cout << "Polyline::shift" << std::endl; std::cout.flush();
+
+    if (shapePoints.size() == 0) return;
+    modified=true;
+
+    gp_Pnt offset;
+    offset=pnt2.XYZ()-pnt1.XYZ();
+
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        shapePoints[i]=shapePoints[i].XYZ()-offset.XYZ();
+        i++;
+    }
+}
+
 void Polyline::save (std::ofstream *out, QString name, int level)
 {
     if (shapePoints.size() < 2) return;
@@ -1299,6 +1314,20 @@ gp_Pnt Rectangle::getOppositeCorner ()
     gp_Pnt position(0,0,0);
     if (shapePoints.size() > 3) position=shapePoints[2];
     return position;
+}
+
+void Rectangle::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
+{
+    std::cout << "Rectangle::shift" << std::endl; std::cout.flush();
+
+    if (shapePoints.size() == 0) return;
+    modified=true;
+
+    gp_Pnt offset;
+    offset=pnt2.XYZ()-pnt1.XYZ();
+
+    shapePoints[0]=shapePoints[0].XYZ()-offset.XYZ();
+    recalculate();
 }
 
 void Rectangle::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
@@ -1765,7 +1794,7 @@ bool Polycircle::isPointOnPlane (gp_Pnt &pnt)
 
 void Polycircle::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
 {
-    //std::cout << "Polycircle::shift" << std::endl; std::cout.flush();
+    std::cout << "Polycircle::shift" << std::endl; std::cout.flush();
 
     modified=true;
     if (!centerPointSet) return;
@@ -1953,6 +1982,7 @@ bool Polycircle::load (std::vector<std::string> &inputData, long unsigned int st
         keyword="center";
         if (extractPoint(inputData[i],keyword,pnt)) {
             centerPoint=pnt;
+            centerPointSet=true;
             foundCenter=true;
             i++;
             continue;
@@ -1962,6 +1992,7 @@ bool Polycircle::load (std::vector<std::string> &inputData, long unsigned int st
         keyword="point";
         if (extractPoint(inputData[i],keyword,pnt)) {
             firstPoint=pnt;
+            firstPointSet=true;
             foundPoint=true;
             i++;
             continue;
