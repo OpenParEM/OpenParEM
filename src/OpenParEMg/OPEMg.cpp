@@ -567,6 +567,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionHideAll->setEnabled(false);
         ui->actionWireframe->setEnabled(false);
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
+        ui->actionMeshGenerate->setEnabled(false);
         if (drawing.childCount() > 0) {
             ui->actionExportStep->setEnabled(true);
             ui->actionExportStep->setEnabled(true);
@@ -581,9 +582,9 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionHideAll->setEnabled(true);
             ui->actionWireframe->setEnabled(true);
             ui->actionDrawingPlaneSetToFace->setEnabled(true);
+            ui->actionMeshGenerate->setEnabled(true);
         }
 
-        ui->actionMeshGenerate->setEnabled(false);
         if (mesh.childCount() > 0) {
             ui->actionFitAll->setEnabled(true);
             ui->actionMenuSelection->setEnabled(true);
