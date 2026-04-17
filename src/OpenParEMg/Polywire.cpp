@@ -130,8 +130,6 @@ bool DoSegmentsIntersectInterior (const gp_Pnt& P1, const gp_Pnt& P2,
     return false;
 }
 
-
-
 // courtesy of ChatGPT
 std::string trim(const std::string& str) {
     size_t start = 0;
@@ -458,6 +456,7 @@ Line* Line::copyCreate ()
     newLine->viewerContext=viewerContext;
     newLine->drawEnable=drawEnable;
     newLine->editIndex=editIndex;
+    newLine->reverseExtrusionDirection=reverseExtrusionDirection;
     return newLine;
 }
 
@@ -526,6 +525,10 @@ void Line::save (std::ofstream *out, QString name, int level)
          << normal.Y() << ","
          << normal.Z() << ")" << std::endl;
 
+    *out << space << "   reverse=";
+    if (reverseExtrusionDirection) *out << "true" << std::endl;
+    else *out << "false" << std::endl;
+
     *out << space << "EndLine" << std::endl;
 }
 
@@ -534,6 +537,7 @@ bool Line::load (std::vector<std::string> &inputData, long unsigned int start,
 {
     bool foundName=false;
     bool foundNormal=false;
+    bool foundReverse=false;
 
     long unsigned int i=start;
     while (i <= end) {
@@ -568,6 +572,18 @@ bool Line::load (std::vector<std::string> &inputData, long unsigned int start,
             continue;
         }
 
+        // reverse
+        keyword="reverse";
+        std::string testReverse;
+        if (extractText(inputData[i],keyword,testReverse)) {
+            // expect true/false, otherwise no change from the default
+            if (testReverse.compare("true") == 0) reverseExtrusionDirection=true;
+            else if (testReverse.compare("false") == 0) reverseExtrusionDirection=false;
+            foundReverse=true;
+            i++;
+            continue;
+        }
+
         i++;
     }
 
@@ -575,6 +591,7 @@ bool Line::load (std::vector<std::string> &inputData, long unsigned int start,
     if (shapePoints.size() != 2) return true;
     if (!foundName) return true;
     if (!foundNormal) return true;
+    if (!foundReverse) return true;
 
     objectCounts->line++;
 
@@ -723,6 +740,7 @@ Polyline* Polyline::copyCreate ()
     newPolyline->drawEnable=drawEnable;
     newPolyline->editIndex=editIndex;
     newPolyline->checkIntersection=checkIntersection;
+    newPolyline->reverseExtrusionDirection=reverseExtrusionDirection;
     return newPolyline;
 }
 
@@ -976,6 +994,10 @@ void Polyline::save (std::ofstream *out, QString name, int level)
          << normal.Y() << ","
          << normal.Z() << ")" << std::endl;
 
+    *out << space << "   reverse=";
+    if (reverseExtrusionDirection) *out << "true" << std::endl;
+    else *out << "false" << std::endl;
+
     *out << space << "EndPolyline" << std::endl;
 }
 
@@ -984,6 +1006,7 @@ bool Polyline::load (std::vector<std::string> &inputData, long unsigned int star
 {
     bool foundName=false;
     bool foundNormal=false;
+    bool foundReverse=false;
 
     long unsigned int i=start;
     while (i <= end) {
@@ -1018,6 +1041,18 @@ bool Polyline::load (std::vector<std::string> &inputData, long unsigned int star
             continue;
         }
 
+        // reverse
+        keyword="reverse";
+        std::string testReverse;
+        if (extractText(inputData[i],keyword,testReverse)) {
+            // expect true/false, otherwise no change from the default
+            if (testReverse.compare("true") == 0) reverseExtrusionDirection=true;
+            else if (testReverse.compare("false") == 0) reverseExtrusionDirection=false;
+            foundReverse=true;
+            i++;
+            continue;
+        }
+
         i++;
     }
 
@@ -1025,6 +1060,7 @@ bool Polyline::load (std::vector<std::string> &inputData, long unsigned int star
     if (shapePoints.size() < 2) return true;
     if (!foundName) return true;
     if (!foundNormal) return true;
+    if (!foundReverse) return true;
 
     if (shapePoints[0].IsEqual(shapePoints[shapePoints.size()-1],Precision::Confusion())) closed=true;
 
@@ -1371,6 +1407,7 @@ Rectangle* Rectangle::copyCreate ()
     newRectangle->v=v;
     newRectangle->width=width;
     newRectangle->height=height;
+    newRectangle->reverseExtrusionDirection=reverseExtrusionDirection;
     return newRectangle;
 
 }
@@ -1449,6 +1486,10 @@ void Rectangle::save (std::ofstream *out, QString name, int level)
          << normal.Y() << ","
          << normal.Z() << ")" << std::endl;
 
+    *out << space << "   reverse=";
+    if (reverseExtrusionDirection) *out << "true" << std::endl;
+    else *out << "false" << std::endl;
+
     *out << space << "EndRectangle" << std::endl;
 }
 
@@ -1462,6 +1503,7 @@ bool Rectangle::load (std::vector<std::string> &inputData, long unsigned int sta
     bool foundu=false;
     bool foundv=false;
     bool foundNormal=false;
+    bool foundReverse=false;
 
     long unsigned int i=start;
     while (i <= end) {
@@ -1535,6 +1577,18 @@ bool Rectangle::load (std::vector<std::string> &inputData, long unsigned int sta
             continue;
         }
 
+        // reverse
+        keyword="reverse";
+        std::string testReverse;
+        if (extractText(inputData[i],keyword,testReverse)) {
+            // expect true/false, otherwise no change from the default
+            if (testReverse.compare("true") == 0) reverseExtrusionDirection=true;
+            else if (testReverse.compare("false") == 0) reverseExtrusionDirection=false;
+            foundReverse=true;
+            i++;
+            continue;
+        }
+
         i++;
     }
 
@@ -1546,6 +1600,7 @@ bool Rectangle::load (std::vector<std::string> &inputData, long unsigned int sta
     if (!foundu) return true;
     if (!foundv) return true;
     if (!foundNormal) return true;
+    if (!foundReverse) return true;
 
     // create space for the other points
     i=0;
@@ -1858,6 +1913,7 @@ Polycircle* Polycircle::copyCreate ()
     newPolycircle->firstPointSet=firstPointSet;
     newPolycircle->firstPoint=firstPoint;
     newPolycircle->vertexCount=vertexCount;
+    newPolycircle->reverseExtrusionDirection=reverseExtrusionDirection;
     return newPolycircle;
 }
 
@@ -1940,6 +1996,10 @@ void Polycircle::save (std::ofstream *out, QString name, int level)
          << normal.Y() << ","
          << normal.Z() << ")" << std::endl;
 
+    *out << space << "   reverse=";
+    if (reverseExtrusionDirection) *out << "true" << std::endl;
+    else *out << "false" << std::endl;
+
     *out << space << "EndPolycircle" << std::endl;
 }
 
@@ -1951,6 +2011,7 @@ bool Polycircle::load (std::vector<std::string> &inputData, long unsigned int st
     bool foundPoint=false;
     bool foundCount=false;
     bool foundNormal=false;
+    bool foundReverse=false;
 
     long unsigned int i=start;
     while (i <= end) {
@@ -2007,6 +2068,18 @@ bool Polycircle::load (std::vector<std::string> &inputData, long unsigned int st
             continue;
         }
 
+        // reverse
+        keyword="reverse";
+        std::string testReverse;
+        if (extractText(inputData[i],keyword,testReverse)) {
+            // expect true/false, otherwise no change from the default
+            if (testReverse.compare("true") == 0) reverseExtrusionDirection=true;
+            else if (testReverse.compare("false") == 0) reverseExtrusionDirection=false;
+            foundReverse=true;
+            i++;
+            continue;
+        }
+
         i++;
     }
 
@@ -2016,6 +2089,7 @@ bool Polycircle::load (std::vector<std::string> &inputData, long unsigned int st
     if (!foundCenter) return true;
     if (!foundPoint) return true;
     if (!foundNormal) return true;
+    if (!foundReverse) return true;
 
     recalculate();
 

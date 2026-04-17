@@ -137,35 +137,39 @@ Line
    name=text
    point=(double,double,double)     // (x,y,z) coordinate in m
    point=(double,double,double)     // (x,y,z) coordinate in m
-   normal=(double,double,double)     // normal to the line (i.e. normal to the drawing plane)
+   normal=(double,double,double)    // normal to the line (i.e. normal to the drawing plane)
+   reverse={true|false}             // reverse the direction for extrusion
 EndLine
 
 // polylines must lie on a plane
 // a closed polyline has point[0]=point[N-1]
 Polyline
    name=text
-   point=(double,double,double)      // (x,y,z) coordinate in m
+   point=(double,double,double)     // (x,y,z) coordinate in m
       ...
-   point=(double,double,double)      // (x,y,z) coordinate in m
-   normal=(double,double,double)     // normal to the polyline (i.e. normal to the drawing plane)
+   point=(double,double,double)     // (x,y,z) coordinate in m
+   normal=(double,double,double)    // normal to the polyline (i.e. normal to the drawing plane)
+   reverse={true|false}             // reverse the direction for extrusion of closed polylines
 EndPolyline
 
 Polycircle
    name=text
-   N=integer                         // number of vertices
-   center=(double,double,double)     // (x,y,z) coordinate of the center in m
-   point=(double,double,double)      // (x,y,z) coordinate of the first point on the circle in m
-   normal=(double,double,double)     // normal to the polycircle (i.e. normal to the drawing plane)
+   N=integer                        // number of vertices
+   center=(double,double,double)    // (x,y,z) coordinate of the center in m
+   point=(double,double,double)     // (x,y,z) coordinate of the first point on the circle in m
+   normal=(double,double,double)    // normal to the polycircle (i.e. normal to the drawing plane)
+   reverse={true|false}             // reverse the direction for extrusion
 EndPolycircle
 
 Rectangle
    name=text
-   origin=(double,double,double)     // (x,y,z) coordinate in m
-   width=double                      // width in m
-   height=double                     // height in m
-   u=(double,double,double)          // (x,y,z) vector direction for u
-   v=(double,double,double)          // (x,y,z) vector direction for v
-   normal=(double,double,double)     // normal to the rectangle (i.e. normal to the drawing plane)
+   origin=(double,double,double)    // (x,y,z) coordinate in m
+   width=double                     // width in m
+   height=double                    // height in m
+   u=(double,double,double)         // (x,y,z) vector direction for u
+   v=(double,double,double)         // (x,y,z) vector direction for v
+   normal=(double,double,double)    // normal to the rectangle (i.e. normal to the drawing plane)
+   reverse={true|false}             // reverse the direction for extrusion
 EndRectangle
 
 // 3D operations 
