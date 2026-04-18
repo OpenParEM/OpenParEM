@@ -156,6 +156,36 @@ std::vector<std::string> readFileToVector(const std::string& filename) {
     return result;
 }
 
+// courtesy of ChatGPT
+std::vector<std::string> splitWhitespace(const std::string& input) {
+    std::vector<std::string> result;
+
+    size_t i = 0;
+    size_t n = input.size();
+
+    while (i < n) {
+        // Skip leading whitespace
+        while (i < n && std::isspace(static_cast<unsigned char>(input[i]))) {
+            i++;
+        }
+
+        if (i >= n) break;
+
+        // Start of a token
+        size_t start = i;
+
+        // Consume non-whitespace
+        while (i < n && !std::isspace(static_cast<unsigned char>(input[i]))) {
+            i++;
+        }
+
+        // Extract token
+        result.push_back(input.substr(start, i - start));
+    }
+
+    return result;
+}
+
 OpenParEMg::OpenParEMg (QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::OpenParEMg)
@@ -734,7 +764,6 @@ void OpenParEMg::setMenusI (int placeIndex)
 
     boundaryDatabase->set_comboZdef();
 }
-
 
 void OpenParEMg::expand (CustomTreeWidgetItem *item)
 {
@@ -5847,11 +5876,30 @@ bool OpenParEMg::loadDrawingFile ()
     filename.append(".opd");
     std::cout << "Loading the drawing file from " << filename.toStdString() << std::endl; std::cout.flush();
 
-    //xxx
-
+    // put the data in the file into a string vector
     std::vector<std::string> inputData=readFileToVector(filename.toStdString());
     if (inputData.size() == 0) return true;
 
+    // check the format
+    bool found=false;
+    long unsigned int i=0;
+    while (i < inputData.size()) {
+        std::vector<std::string> tokens=splitWhitespace(inputData[i]);
+        if (tokens.size() == 2) {
+            if (tokens[0].compare("#OpenParEMgDrawing") == 0) {
+                if (tokens[1].compare("1.0") == 0) {found=true; break;}
+            }
+        }
+        i++;
+    }
+    if (!found) {
+        QMessageBox mb;
+        mb.critical(nullptr, "Error","Drawing file format not recognized.");
+        mb.setFixedSize(500, 200);
+        return true;
+    }
+
+    // load
     long unsigned int startBlockIndex=0;
     long unsigned int endBlockIndex=0;
     while (loadItem(inputData,startBlockIndex,endBlockIndex,&drawing,false)) {
