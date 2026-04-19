@@ -140,8 +140,8 @@ public:
                         j++;
                     }
                 } else {
-                    EraseShape(item->get_AIS_Shape());
-                    DisplayShape(item->get_AIS_Shape());
+                    EraseShape(item->getShape());
+                    DisplayShape(item->getShape());
                 }
             }
             i++;
@@ -176,7 +176,7 @@ public:
         } else if (item->is_drawing()) {
 
             if (item->foreground(0) == Qt::gray) {
-                DisplayShape(item->get_AIS_Shape());
+                DisplayShape(item->getShape());
                 item->setForeground(0,Qt::black);
                 visibleItems.push_back(item);
                 //selectItem(item);
@@ -199,13 +199,13 @@ public:
         } else if (item->is_path()) {
             if (item->foreground(0) == Qt::black) return;
 
-            DisplayShape(item->get_AIS_Shape());
+            DisplayShape(item->getShape());
             item->setForeground(0,Qt::black);
             visibleItems.push_back(item);
 
             long unsigned int i=0;
-            while (i < item->get_arrowHeads_size()) {
-                DisplayShape(item->get_arrowHead(i));
+            while (i < item->getArrowHeadsSize()) {
+                DisplayShape(item->getArrowHead(i));
                 i++;
             }
 
@@ -399,7 +399,7 @@ public:
 
         // custom hide
         if (item->is_rootDrawing()) {
-            EraseShape(item->get_AIS_Shape());
+            EraseShape(item->getShape());
             nullifyVisibleItem(item);
 
             int i=0;
@@ -411,7 +411,7 @@ public:
         } else if (item->is_drawing()) {
 
             // hide item
-            EraseShape(item->get_AIS_Shape());
+            EraseShape(item->getShape());
             item->setForeground(0,Qt::gray);
             nullifyVisibleItem(item);
 
@@ -432,13 +432,13 @@ public:
         } else if (item->is_path()) {
             if (item->foreground(0) == Qt::gray) return;  // avoid infinite loop due to crosslinking of paths
 
-            EraseShape(item->get_AIS_Shape());
+            EraseShape(item->getShape());
             item->setForeground(0,Qt::gray);
             nullifyVisibleItem(item);
 
             long unsigned int i=0;
-            while (i < item->get_arrowHeads_size()) {
-                EraseShape(item->get_arrowHead(i));
+            while (i < item->getArrowHeadsSize()) {
+                EraseShape(item->getArrowHead(i));
                 nullifyVisibleItem(item);
                 i++;
             }
@@ -675,14 +675,14 @@ public:
 
         if (!item) return;
 
-        if (!item->get_AIS_Shape().IsNull()) {
-            viewerContext->Activate(item->get_AIS_Shape());
+        if (!item->getShape().IsNull()) {
+            viewerContext->Activate(item->getShape());
         }
 
         long unsigned int i=0;
-        while (i < item->get_arrowHeads_size()) {
-            if (!item->get_arrowHead(i).IsNull()) {
-                viewerContext->Activate(item->get_arrowHead(i));
+        while (i < item->getArrowHeadsSize()) {
+            if (!item->getArrowHead(i).IsNull()) {
+                viewerContext->Activate(item->getArrowHead(i));
             }
             i++;
         }
@@ -693,7 +693,7 @@ public:
     // assumes it is already in the tracker
     void refreshSelectedItem (CustomTreeWidgetItem *item) {
         if (!item) return;
-        SelectShape(item->get_AIS_Shape());
+        SelectShape(item->getShape());
     }
 
     void refreshSelectedItems ()
@@ -702,7 +702,7 @@ public:
         long unsigned int i=0;
         while (i < selectedItems.size()) {
             if (selectedItems[i]) {
-                SelectShape(selectedItems[i]->get_AIS_Shape());
+                SelectShape(selectedItems[i]->getShape());
             }
             i++;
         }
@@ -717,11 +717,11 @@ public:
         long unsigned int i=0;
         while (i < selectedItems.size()) {
             if (item == selectedItems[i]) {
-                SelectShape(item->get_AIS_Shape());
+                SelectShape(item->getShape());
 
                 long unsigned int j=0;
-                while (j < item->get_arrowHeads_size()) {
-                    SelectShape(item->get_arrowHead(j));
+                while (j < item->getArrowHeadsSize()) {
+                    SelectShape(item->getArrowHead(j));
                     j++;
                 }
 
@@ -739,15 +739,15 @@ public:
         if (item->is_rootDrawing()) {
             item->setSelected(Standard_True);
         } else {
-            if (!item->get_AIS_Shape().IsNull()) {
-                SelectShape(item->get_AIS_Shape());
+            if (!item->getShape().IsNull()) {
+                SelectShape(item->getShape());
             }
             item->setSelected(Standard_True);
             selectedItems.push_back(item);
 
             long unsigned int i=0;
-            while (i < item->get_arrowHeads_size()) {
-                SelectShape(item->get_arrowHead(i));
+            while (i < item->getArrowHeadsSize()) {
+                SelectShape(item->getArrowHead(i));
                 i++;
             }
 
@@ -796,7 +796,7 @@ public:
         long unsigned int i=0;
         while (i < selectedItems.size()) {
             if (selectedItems[i]) {
-                Handle(AIS_Shape) shape=selectedItems[i]->get_AIS_Shape();
+                Handle(AIS_Shape) shape=selectedItems[i]->getShape();
                 if (!shape.IsNull()) {
                     TopAbs_ShapeEnum shapeType=shape->Shape().ShapeType();
                     if (shapeType == TopAbs_FACE) {
@@ -809,7 +809,7 @@ public:
         }
 
         if (count == 1) {
-            Handle(AIS_Shape) shape=selectedItems[index]->get_AIS_Shape();
+            Handle(AIS_Shape) shape=selectedItems[index]->getShape();
             if (!shape.IsNull()) {
                 TopAbs_ShapeEnum shapeType=shape->Shape().ShapeType();
                 if (shapeType == TopAbs_FACE) return true;
@@ -863,12 +863,12 @@ public:
         if (item->is_rootDrawing()) {
             item->setSelected(Standard_False);
         } else {
-            UnselectShape(item->get_AIS_Shape());
+            UnselectShape(item->getShape());
             item->setSelected(Standard_False);
 
             long unsigned int i=0;
-            while (i <  item->get_arrowHeads_size()) {
-                UnselectShape(item->get_arrowHead(i));
+            while (i <  item->getArrowHeadsSize()) {
+                UnselectShape(item->getArrowHead(i));
                 i++;
             }
 
@@ -886,12 +886,12 @@ public:
         if (item->is_rootDrawing()) {
             item->setSelected(Standard_False);
         } else {
-            UnselectShape(item->get_AIS_Shape());
+            UnselectShape(item->getShape());
             item->setSelected(Standard_False);
 
             long unsigned int i=0;
-            while (i <  item->get_arrowHeads_size()) {
-                UnselectShape(item->get_arrowHead(i));
+            while (i <  item->getArrowHeadsSize()) {
+                UnselectShape(item->getArrowHead(i));
                 i++;
             }
 
@@ -910,12 +910,12 @@ public:
         if (item->is_rootDrawing()) {
             item->setSelected(Standard_False);
         } else {
-            UnselectShape(item->get_AIS_Shape());
+            UnselectShape(item->getShape());
             item->setSelected(Standard_False);
 
             long unsigned int i=0;
-            while (i <  item->get_arrowHeads_size()) {
-                UnselectShape(item->get_arrowHead(i));
+            while (i <  item->getArrowHeadsSize()) {
+                UnselectShape(item->getArrowHead(i));
                 i++;
             }
 
@@ -961,17 +961,17 @@ public:
                 if (item->is_mesh()) {
                     // nothing to do
                 } else if (item->is_port() || item->is_boundary()) {
-                    if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) performCheck=false;
+                    if (!viewerContext->IsDisplayed(item->getShape())) performCheck=false;
                 } else if (item->is_sportLabel()) {
                     // nothing to do
                 } else {
                     // drawing
-                    if (viewerContext->IsDisplayed(item->get_AIS_Shape())) {
+                    if (viewerContext->IsDisplayed(item->getShape())) {
 
                         CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
                         if (parent) {
                             // parent must be a COMPOUND
-                            //if (parent->get_AIS_Shape()->Shape().ShapeType() == TopAbs_COMPOUND) count++;
+                            //if (parent->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) count++;
 
                             // parent must be the item Drawing
                             if (parent->text(0).compare("Drawing") != 0) performCheck=false;
@@ -992,12 +992,12 @@ public:
                 if (item->is_mesh()) {
                     // nothing to do
                 } else if (item->is_port() || item->is_boundary()) {
-                    if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) return false;
+                    if (!viewerContext->IsDisplayed(item->getShape())) return false;
                 } else if (item->is_sportLabel()) {
                     // nothing to do
                 } else {
                     // drawing
-                    if (!viewerContext->IsDisplayed(item->get_AIS_Shape())) return false;
+                    if (!viewerContext->IsDisplayed(item->getShape())) return false;
 
                     CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
                     if (parent) {
@@ -1036,7 +1036,7 @@ public:
     void removeItemFromMap (CustomTreeWidgetItem *item)
     {
         if (!item) return;
-        Handle(AIS_Shape) shape=item->get_AIS_Shape();
+        Handle(AIS_Shape) shape=item->getShape();
         if (shape.IsNull()) return;
         if (viewerContext->IsDisplayed(shape)) viewerContext->Erase(shape,Standard_False);
         shapeToItemMap.erase(shape);
@@ -1145,16 +1145,16 @@ private:
         hideItem(item);
 
         // remove the AIS_Shape
-        viewerContext->Remove(item->get_AIS_Shape(),Standard_False);
-        shapeToItemMap.erase(item->get_AIS_Shape());
-        item->get_AIS_Shape().Nullify();
+        viewerContext->Remove(item->getShape(),Standard_False);
+        shapeToItemMap.erase(item->getShape());
+        item->getShape().Nullify();
 
         // remove arrow heads
         long unsigned int j=0;
-        while (j < item->get_arrowHeads_size()) {
-            viewerContext->Remove(item->get_arrowHead(j),Standard_False);
-            shapeToItemMap.erase(item->get_arrowHead(j));
-            item->get_arrowHead(j).Nullify();
+        while (j < item->getArrowHeadsSize()) {
+            viewerContext->Remove(item->getArrowHead(j),Standard_False);
+            shapeToItemMap.erase(item->getArrowHead(j));
+            item->getArrowHead(j).Nullify();
             j++;
         }
 

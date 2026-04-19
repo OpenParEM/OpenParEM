@@ -343,7 +343,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     TopoDS_Compound compound;
     builder.MakeCompound(compound);
     Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-    drawing.set_AIS_Shape(newShape);
+    ShapeData *newShapeData=new ShapeData(nullptr,nullptr,newShape);
+    drawing.addShapeData(newShapeData);
 
     /////////////////////////////////////////////////////////////////////////////
     // context menu for drawingWindow
@@ -2161,7 +2162,7 @@ void OpenParEMg::deleteDrawingItems ()
 
                     // set the materials
                     if (!item->text(1).isNull()) {
-                        if (!child->get_Polywire()) child->setText(1,item->text(1));
+                        if (!child->getPolywire()) child->setText(1,item->text(1));
                     }
 
                     // adjust the depth
@@ -2679,10 +2680,10 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &sha
     std::vector<CustomTreeWidgetItem *> displayedItems=ui->drawingWindow->getVisibleDrawingItems();
 
     // remove old shape
-    if (!item->get_AIS_Shape().IsNull()) {
+    if (!item->getShape().IsNull()) {
         ui->drawingWindow->hideItem(item);
         ui->drawingWindow->removeItemFromMap(item);
-        ui->drawingWindow->deleteShape(item->get_AIS_Shape());  // lose selection
+        ui->drawingWindow->deleteShape(item->getShape());  // lose selection
     }
 
     // refresh selection: Processing on rootDrawing deselects all but 1 item, so reselect here.
@@ -2699,7 +2700,7 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &sha
     Handle(AIS_Shape) AISshape=new AIS_Shape(shape);
     // must activate for selection since SetAutoActivateSelection is set to false in CustomOpenGLWidget.cpp
     if (!item->is_rootDrawing()) ui->drawingWindow->activateSelectShape(AISshape);
-    item->set_AIS_Shape(AISshape);
+    item->setShape(AISshape);
     ui->drawingWindow->insertItemToMap(AISshape,item);
 
     // redisplay
@@ -2719,19 +2720,16 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywir
     if (!item) return;
     if (!polywire) return;
 
-    std::cout << "place a" << std::endl; std::cout.flush();
     // save for later restoration since the operations will modify the visible item list
     std::vector<CustomTreeWidgetItem *> displayedItems=ui->drawingWindow->getVisibleDrawingItems();
 
-    std::cout << "place b" << std::endl; std::cout.flush();
     // remove old shape
-    if (!item->get_AIS_Shape().IsNull()) {
+    if (!item->getShape().IsNull()) {
         ui->drawingWindow->hideItem(item);
         ui->drawingWindow->removeItemFromMap(item);
-        ui->drawingWindow->deleteShape(item->get_AIS_Shape());  // lose selection
+        ui->drawingWindow->deleteShape(item->getShape());  // lose selection
     }
 
-    std::cout << "place c" << std::endl; std::cout.flush();
     // refresh selection: Processing on rootDrawing deselects all but 1 item, so reselect here.
     if (item->is_rootDrawing()) {
         long unsigned int i=0;
@@ -2742,19 +2740,22 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywir
         }
     }
 
-    std::cout << "place d" << std::endl; std::cout.flush();
     // get a new shape
     Handle(AIS_Shape) AISshape=polywire->get_AIS_Shape();
     if (AISshape.IsNull()) return;
 
-    std::cout << "place e" << std::endl; std::cout.flush();
     // install new shape
     // must activate for selection since SetAutoActivateSelection is set to false in CustomOpenGLWidget.cpp
     if (!item->is_rootDrawing()) ui->drawingWindow->activateSelectShape(AISshape);
-    item->set_AIS_Shape(AISshape);
+    if (item->getShapeData()) {
+        item->getShapeData()->setShape(AISshape);
+    } else {
+        //xxx
+        ShapeData *newShapeData=new ShapeData (nullptr,nullptr,AISshape);
+        item->addShapeData(newShapeData);
+    }
     ui->drawingWindow->insertItemToMap(AISshape,item);
 
-    std::cout << "place f" << std::endl; std::cout.flush();
     // redisplay
     if (item->is_rootDrawing()) {
         long unsigned int i=0;
@@ -2763,7 +2764,6 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywir
             i++;
         }
     }
-    std::cout << "place g" << std::endl; std::cout.flush();
 }
 
 bool OpenParEMg::isValidExtrudePolywire ()
@@ -2776,7 +2776,7 @@ bool OpenParEMg::isValidExtrudePolywire ()
         if (item && item->is_drawing()) {
             CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
             if (parent && parent->is_rootDrawing()) {
-                Polywire *polywire=item->get_Polywire();
+                Polywire *polywire=item->getPolywire();
                 if (polywire && polywire->isClosed()) polywireCount++;
             }
         }
@@ -2814,9 +2814,9 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
         while (i < ui->drawingWindow->get_selectedItems_size()) {
             CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
 
-            if (item && !item->get_AIS_Shape().IsNull()) {
+            if (item && !item->getShape().IsNull()) {
 
-                TopoDS_Shape extrudeShape=item->get_AIS_Shape()->Shape();
+                TopoDS_Shape extrudeShape=item->getShape()->Shape();
 
                 // pick off the face to exclude any extra vertices added for selection convenience
                 if (extrudeShape.ShapeType() == TopAbs_COMPOUND) {
@@ -2831,7 +2831,7 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
                 }
 
                 // extrude
-                Polywire *polywire=item->get_Polywire();
+                Polywire *polywire=item->getPolywire();
                 if (polywire) {
 
                     // set direction
@@ -2856,8 +2856,8 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
                         // define the process
                         Extrude *extrude=new Extrude();
                         extrude->set_length(length);
-                        newItem->set_Process(extrude);
-                        newItem->setText(0,newItem->get_Process()->getName(&objectCounts));
+                        newItem->setProcess(extrude);
+                        newItem->setText(0,newItem->getProcess()->getName(&objectCounts));
                         extrude=nullptr;
 
                         // move the object
@@ -2894,17 +2894,17 @@ void OpenParEMg::reextrudePolywire (CustomTreeWidgetItem *item, CustomTreeWidget
 
     if (!item) return;
 
-    Process *process=item->get_Process();
+    Process *process=item->getProcess();
     if (process) {
         Extrude *extrude=dynamic_cast<Extrude *>(process);
         if (extrude) {
-            Polywire *polywire=child->get_Polywire();
+            Polywire *polywire=child->getPolywire();
             if (polywire) {
                 gp_Vec scaledVec=gp_Vec(polywire->getNormal())*extrude->get_length();
                 if (polywire->getReverseExtrusionDirection()) scaledVec=-scaledVec;
 
                 // see finishExtrudePolywire for comments
-                TopoDS_Shape extrudeShape=child->get_AIS_Shape()->Shape();
+                TopoDS_Shape extrudeShape=child->getShape()->Shape();
                 if (extrudeShape.ShapeType() == TopAbs_COMPOUND) {
                     TopoDS_Iterator it(extrudeShape);
                     for (; it.More(); it.Next()) {
@@ -2940,12 +2940,12 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
         return;
     }
 
-    Polywire *polywire=item->get_Polywire();
+    Polywire *polywire=item->getPolywire();
     if (polywire) {
         replaceItemShape(item,polywire,2);
     }
 
-    Process *process=item->get_Process();
+    Process *process=item->getProcess();
     if (process) {
 
         Extrude *extrude=dynamic_cast<Extrude *>(process);
@@ -2970,8 +2970,8 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
                 CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
 
                 // get shapes
-                TopoDS_Shape shape1=child1->get_AIS_Shape()->Shape();
-                TopoDS_Shape shape2=child2->get_AIS_Shape()->Shape();
+                TopoDS_Shape shape1=child1->getShape()->Shape();
+                TopoDS_Shape shape2=child2->getShape()->Shape();
 
                 // build merged shape
                 BRepAlgoAPI_Fuse fuse(shape1,shape2);
@@ -2999,8 +2999,8 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
                 CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
 
                 // get shapes
-                TopoDS_Shape shape1=child1->get_AIS_Shape()->Shape();
-                TopoDS_Shape shape2=child2->get_AIS_Shape()->Shape();
+                TopoDS_Shape shape1=child1->getShape()->Shape();
+                TopoDS_Shape shape2=child2->getShape()->Shape();
 
                 // build subtracted shape
                 BRepAlgoAPI_Cut cut(shape1,shape2);
@@ -3061,15 +3061,15 @@ bool OpenParEMg::isValidAssignMaterial ()
         if (parentItem && parentItem->is_rootDrawing()) {
 
             // SOLID
-            if (item->get_AIS_Shape()->Shape().ShapeType() == TopAbs_SOLID) {
+            if (item->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
                 clickedItem=item;
                 return true;
             }
 
             // COMPOUND
-            if (item->get_AIS_Shape()->Shape().ShapeType() == TopAbs_COMPOUND) {
+            if (item->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) {
                 // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
-                if (!item->get_Polywire()) {
+                if (!item->getPolywire()) {
                     clickedItem=item;
                     return true;
                 }
@@ -3115,10 +3115,10 @@ bool OpenParEMg::isValidObjectEdit ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
             if (polywire && polywire->canEdit()) count++;
 
-            Process *process=item->get_Process();
+            Process *process=item->getProcess();
             if (process && process->canEdit()) count++;
         }
         i++;
@@ -3137,7 +3137,7 @@ void OpenParEMg::editObject ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
 
             Line *line=dynamic_cast<Line *>(polywire);
             if (line) {
@@ -3175,7 +3175,7 @@ void OpenParEMg::editObject ()
                 polycircleEditForm->show();
             }
 
-            Process *process=item->get_Process();
+            Process *process=item->getProcess();
             if (process) {
                 Extrude *extrude=dynamic_cast<Extrude *>(process);
                 if (extrude) {
@@ -3183,7 +3183,7 @@ void OpenParEMg::editObject ()
                     int i=0;
                     while (i < item->childCount()) {
                         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-                        polywire=child->get_Polywire();
+                        polywire=child->getPolywire();
                         if (polywire) break;
                         i++;
                     }
@@ -3218,8 +3218,8 @@ void OpenParEMg::rebuildTopLevelShape ()
     int i=0;
     while (i < drawing.childCount()) {
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
-        if (child && !child->get_AIS_Shape().IsNull()) {
-            builder.Add(compound,child->get_AIS_Shape()->Shape());
+        if (child && !child->getShape().IsNull()) {
+            builder.Add(compound,child->getShape()->Shape());
         }
         i++;
     }
@@ -3235,10 +3235,10 @@ void OpenParEMg::finishEditObject (bool cancel)
         while (i < ui->drawingWindow->get_selectedItems_size()) {
             CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
             if (item && item->is_drawing()) {
-                Polywire *polywire=item->get_Polywire();
+                Polywire *polywire=item->getPolywire();
                 if (polywire) reprocess(item);
 
-                Process *process=item->get_Process();
+                Process *process=item->getProcess();
                 if (process) {
                     Extrude *extrude=dynamic_cast<Extrude *>(process);
                     if (extrude) {
@@ -3280,7 +3280,7 @@ bool OpenParEMg::isValidMergeSolids ()
         if (item && item->is_drawing()) {
             CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
             if (parent && parent == &drawing) {
-                Handle(AIS_Shape) shape=item->get_AIS_Shape();
+                Handle(AIS_Shape) shape=item->getShape();
                 if (!shape.IsNull()) {
 
                     // check for SOLID
@@ -3345,8 +3345,8 @@ void OpenParEMg::finishMergeSolids ()
     if (!item1) return;
 
     // shapes
-    TopoDS_Shape shape1=item0->get_AIS_Shape()->Shape();
-    TopoDS_Shape shape2=item1->get_AIS_Shape()->Shape();
+    TopoDS_Shape shape1=item0->getShape()->Shape();
+    TopoDS_Shape shape2=item1->getShape()->Shape();
 
     // build merged shape
     BRepAlgoAPI_Fuse fuse(shape1,shape2);
@@ -3364,8 +3364,8 @@ void OpenParEMg::finishMergeSolids ()
 
     // define the process
     Merge *merge=new Merge();
-    newItem->set_Process(merge);
-    newItem->setText(0,newItem->get_Process()->getName(&objectCounts));
+    newItem->setProcess(merge);
+    newItem->setText(0,newItem->getProcess()->getName(&objectCounts));
     merge=nullptr;
 
     // move the items in the tree
@@ -3451,8 +3451,8 @@ void OpenParEMg::finishSubtractSolids ()
     if (!item1) return;
 
     // shapes
-    TopoDS_Shape shape1=item0->get_AIS_Shape()->Shape();
-    TopoDS_Shape shape2=item1->get_AIS_Shape()->Shape();
+    TopoDS_Shape shape1=item0->getShape()->Shape();
+    TopoDS_Shape shape2=item1->getShape()->Shape();
 
     // build subtacted shape
     BRepAlgoAPI_Cut cut(shape1,shape2);
@@ -3470,8 +3470,8 @@ void OpenParEMg::finishSubtractSolids ()
 
     // define the process
     Subtract *subtract=new Subtract();
-    newItem->set_Process(subtract);
-    newItem->setText(0,newItem->get_Process()->getName(&objectCounts));
+    newItem->setProcess(subtract);
+    newItem->setText(0,newItem->getProcess()->getName(&objectCounts));
     subtract=nullptr;
 
     // move the items in the tree
@@ -3562,18 +3562,18 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
 
     if (!item) return;
 
-    item->setEnableMove(false);
+    //item->setEnableMove(false);
     item->unsetAnimate(ui->drawingWindow->get_viewerContext());
-    item->reset_transformation();
+    //item->reset_transformation();
 
-    Polywire *polywire=item->get_Polywire();
+    Polywire *polywire=item->getPolywire();
     if (polywire) {
         polywire->shift(p1,p0);
         reprocess(item);
         drawingChanged=true;
     }
 
-    Process *process=item->get_Process();
+    Process *process=item->getProcess();
     if (process) {
         int i=0;
         while (i < item->childCount()) {
@@ -3636,7 +3636,7 @@ CustomTreeWidgetItem* OpenParEMg::copyItem (CustomTreeWidgetItem *item, CustomTr
     CustomTreeWidgetItem *newItem=item->copyCreate();
     newItem->setForeground(0,Qt::black);
     ui->drawingWindow->activateItem(newItem);
-    ui->drawingWindow->insertItemToMap(newItem->get_AIS_Shape(),newItem);
+    ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
     newItemParent->addChild(newItem);
 
     int i=0;
@@ -3707,7 +3707,7 @@ bool OpenParEMg::isValidObjectStretch ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
             if (polywire) count++;
         }
         i++;
@@ -3727,14 +3727,14 @@ void OpenParEMg::stretchObject ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Handle(AIS_Shape) shape=item->get_AIS_Shape();
+            Handle(AIS_Shape) shape=item->getShape();
             if (!shape.IsNull()) {
 
                 // set the drawing plane
                 currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
                 //restrictToDrawingPlane=true;
 
-                Polywire *polywire=item->get_Polywire();
+                Polywire *polywire=item->getPolywire();
                 if (polywire) {
                     item->setEnableStretch(true);
                     item->resetP0P1();
@@ -3753,7 +3753,7 @@ void OpenParEMg::finishStretchObject (CustomTreeWidgetItem *item)
 
     if (!item) return;
 
-    Polywire *polywire=item->get_Polywire();
+    Polywire *polywire=item->getPolywire();
     if (!polywire) return;
 
     item->setEnableStretch(false);
@@ -3785,7 +3785,7 @@ bool OpenParEMg::isValidDeletePoint ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
             if (polywire && polywire->canDeletePoint()) count++;
         }
         i++;
@@ -3803,7 +3803,7 @@ void OpenParEMg::deletePoint ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Handle(AIS_Shape) shape=item->get_AIS_Shape();
+            Handle(AIS_Shape) shape=item->getShape();
             if (!shape.IsNull()) {
                 // set the selected shape to be the only selectable shape
                 // includes selecting just on vertices of the shape and not midpoints
@@ -3813,7 +3813,7 @@ void OpenParEMg::deletePoint ()
                 currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
                 //restrictToDrawingPlane=true;
 
-                Polywire *polywire=item->get_Polywire();
+                Polywire *polywire=item->getPolywire();
                 if (polywire) {
                     item->setEnableDeletePoint(true);
                     item->resetP0P1();
@@ -3830,7 +3830,7 @@ void OpenParEMg::finishDeletePoint (CustomTreeWidgetItem *item)
 {
     if (!item) return;
 
-    Polywire *polywire=item->get_Polywire();
+    Polywire *polywire=item->getPolywire();
     if (!polywire) return;
 
     gp_Pnt p0=item->getP0();
@@ -3860,7 +3860,7 @@ bool OpenParEMg::isValidInsertPoint ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
             if (polywire && polywire->canInsertPoint()) count++;
         }
         i++;
@@ -3878,7 +3878,7 @@ void OpenParEMg::insertPoint ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Handle(AIS_Shape) shape=item->get_AIS_Shape();
+            Handle(AIS_Shape) shape=item->getShape();
             if (!shape.IsNull()) {
                 // set the selected shape to be the only selectable shape
                 // includes selecting just on vertices of the shape and not midpoints
@@ -3888,7 +3888,7 @@ void OpenParEMg::insertPoint ()
                 currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
                 //restrictToDrawingPlane=true;
 
-                Polywire *polywire=item->get_Polywire();
+                Polywire *polywire=item->getPolywire();
                 if (polywire) {
                     item->setEnableInsertPoint(true);
                     item->resetP0P1();
@@ -3905,7 +3905,7 @@ void OpenParEMg::finishInsertPoint (CustomTreeWidgetItem *item)
 {
     if (!item) return;
 
-    Polywire *polywire=item->get_Polywire();
+    Polywire *polywire=item->getPolywire();
     if (polywire) {
         gp_Pnt p0=item->getP0();
         polywire->insertPoint(p0);
@@ -3945,7 +3945,7 @@ bool OpenParEMg::isValidCloseExistingPolyline ()
         if (item && item->is_drawing()) {
             CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
             if (parentItem->is_rootDrawing()) {
-                Polywire *polywire=item->get_Polywire();
+                Polywire *polywire=item->getPolywire();
                 if (polywire && polywire->canClose()) count++;
             }
         }
@@ -3961,13 +3961,13 @@ void OpenParEMg::closeExistingPolyline ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
             if (polywire) {
                 polywire->close();
                 reprocess(item);
                 //item->setText(0,"FACE");
                 item->setText(0,polywire->getName(&objectCounts));
-                item->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);
+                item->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
                 ui->drawingWindow->showItem(item);
                 ui->drawingWindow->activateSelectItem(item);
                 ui->drawingWindow->updateViewer();
@@ -3987,7 +3987,7 @@ bool OpenParEMg::isValidOpenExistingPolyline ()
         if (item && item->is_drawing()) {
             CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
             if (parentItem->is_rootDrawing()) {
-                Polywire *polywire=item->get_Polywire();
+                Polywire *polywire=item->getPolywire();
                 if (polywire && polywire->canOpen()) count++;
             }
         }
@@ -4003,13 +4003,13 @@ void OpenParEMg::openExistingPolyline ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
             if (polywire) {
                 polywire->open();
                 reprocess(item);
                 //item->setText(0,"WIRE");
                 item->setText(0,polywire->getName(&objectCounts));
-                item->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);
+                item->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
                 ui->drawingWindow->showItem(item);
                 ui->drawingWindow->activateSelectItem(item);
                 ui->drawingWindow->updateViewer();
@@ -4027,7 +4027,7 @@ bool OpenParEMg::isValidConvertToPolyline ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
             if (polywire && polywire->canConvert()) count++;
         }
         i++;
@@ -4042,13 +4042,13 @@ void OpenParEMg::convertToPolyline ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
             if (polywire) {
                 Polyline *newPolyline=polywire->convert();
                 delete polywire; polywire=nullptr;
-                item->set_Polywire(newPolyline);
+                item->setPolywire(newPolyline);
                 reprocess(item);
-                item->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);
+                item->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
                 ui->drawingWindow->activateSelectItem(item);
                 drawingChanged=true;
 
@@ -4073,7 +4073,7 @@ bool OpenParEMg::isValidConvertToPath ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
             if (polywire) {
                 CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
                 if (parentItem->is_rootDrawing()) count++;
@@ -4091,7 +4091,7 @@ void OpenParEMg::convertToPath ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
             if (polywire) {
 
                 // default path name
@@ -4184,14 +4184,14 @@ void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item)
 
     if (!item) return;
 
-    Polywire *polywire=item->get_Polywire();
+    Polywire *polywire=item->getPolywire();
     if (polywire) {
         polywire->rotate(angle,startPoint,endPoint);
         reprocess(item);
         drawingChanged=true;
     }
 
-    Process *process=item->get_Process();
+    Process *process=item->getProcess();
     if (process) {
         int i=0;
         while (i < item->childCount()) {
@@ -4429,15 +4429,15 @@ void OpenParEMg::renumberDimTag ()
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
 
         // SOLID
-        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_SOLID) {
+        if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
             child->set_dimTag(3,count);
             count++;
         }
 
         // COMPOUND
-        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_COMPOUND) {
+        if (child->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) {
             // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
-            if (!child->get_Polywire()) {
+            if (!child->getPolywire()) {
                 child->set_dimTag(3,count);
                 count++;
             }
@@ -4461,7 +4461,7 @@ void OpenParEMg::setPhysicalGroups ()
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
 
         // SOLID
-        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_SOLID) {
+        if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
             QString itemMaterial=child->text(1);
             char *material=nullptr;
             cstrFromQString (&material,itemMaterial);
@@ -4470,9 +4470,9 @@ void OpenParEMg::setPhysicalGroups ()
         }
 
         // COMPOUND
-        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_COMPOUND) {
+        if (child->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) {
             // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
-            if (!child->get_Polywire()) {
+            if (!child->getPolywire()) {
                 QString itemMaterial=child->text(1);
                 char *material=nullptr;
                 cstrFromQString (&material,itemMaterial);
@@ -4514,12 +4514,12 @@ void OpenParEMg::setMaterials ()
 
         bool processMaterial=false;
         // SOLID
-        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_SOLID) processMaterial=true;
+        if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) processMaterial=true;
 
         // COMPOUND
-        if (child->get_AIS_Shape()->Shape().ShapeType() == TopAbs_COMPOUND) {
+        if (child->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) {
             // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
-            if (!child->get_Polywire()) processMaterial=true;
+            if (!child->getPolywire()) processMaterial=true;
         }
 
         // set materials
@@ -4769,7 +4769,7 @@ void OpenParEMg::printLockouts ()
 
 void OpenParEMg::resetDrawing ()
 {
-    //std::cout << "OpenParEMg::resetDrawing" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::resetDrawing" << std::endl; std::cout.flush();
 
     // mesh
     deleteMesh(false);
@@ -4779,14 +4779,17 @@ void OpenParEMg::resetDrawing ()
     ui->drawingWindow->updateViewer();
 
     // selection tree
+    std::cout << "place 1" << std::endl; std::cout.flush();
     drawing.reset();
+    std::cout << "place 1" << std::endl; std::cout.flush();
 
     // drawing is always a COMPOUND
     BRep_Builder builder;
     TopoDS_Compound compound;
     builder.MakeCompound(compound);
     Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-    drawing.set_AIS_Shape(newShape);
+    ShapeData *newShapeData=new ShapeData(nullptr,nullptr,newShape);
+    drawing.addShapeData(newShapeData);
 
     //reset the tracking
     ui->drawingWindow->reset();
@@ -4800,11 +4803,13 @@ void OpenParEMg::resetDrawing ()
     drawingChanged=true;
 
     on_actionShape_triggered();
+
+    std::cout << "exit OpenParEMg::resetDrawing" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::resetProject ()
 {
-    //std::cout << "OpenParEMg::resetProject" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::resetProject" << std::endl; std::cout.flush();
 
     if (!projectFileLoaded) return;
 
@@ -5149,7 +5154,7 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
     // drawing item
     Handle(AIS_Shape) drawingShape=new AIS_Shape(shape);
     ui->drawingWindow->insertItemToMap(drawingShape,&drawing);
-    drawing.set_AIS_Shape(drawingShape);
+    drawing.setShape(drawingShape);
 
     // pick off solids that are included in the compound and add below drawing
     TopoDS_Iterator topoIterator(shape);
@@ -5164,7 +5169,7 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
             CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
             Handle(AIS_Shape) drawingShape=new AIS_Shape(child);
             ui->drawingWindow->insertItemToMap(drawingShape,newItem);
-            newItem->set_AIS_Shape(drawingShape);
+            newItem->setShape(drawingShape);
             if (shapeType == TopAbs_COMPSOLID) {
                 objectCounts.compsolid++;
                 QString name="COMPSOLID";
@@ -5178,7 +5183,7 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
             }
             newItem->set_itemType(0);  // a drawing item
             newItem->setForeground(0,Qt::gray);
-            newItem->set_Polywire(nullptr);
+            newItem->setPolywire(nullptr);
             //newItem->set_dimTag(dimTag);
             drawing.addChild(newItem);
 
@@ -5263,12 +5268,12 @@ void OpenParEMg::addItemWithShape (CustomTreeWidgetItem *item)
 
     if (!item) return;
 
-    Handle(AIS_Shape) drawingShape=item->get_AIS_Shape();
+    Handle(AIS_Shape) drawingShape=item->getShape();
     ui->drawingWindow->insertItemToMap(drawingShape,item);
 
     long unsigned int i=0;
-    while (i < item->get_arrowHeads_size()) {
-        ui->drawingWindow->insertItemToMap(item->get_arrowHead(i),item);
+    while (i < item->getArrowHeadsSize()) {
+        ui->drawingWindow->insertItemToMap(item->getArrowHead(i),item);
         i++;
     }
 
@@ -5285,41 +5290,23 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (TopoDS_Shape shape, CustomTreeWi
 
     // new item
     CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
+    Handle(AIS_Shape) dummy;
+    ShapeData *newShapeData=new ShapeData(activePolywire,nullptr,dummy);
+    newItem->addShapeData(newShapeData);
     replaceItemShape(newItem,shape,11);  // inserts to item map
 
     // add to top-level COMPOUND if parent is drawing
     if (parentItem == &drawing) {
-        TopoDS_Compound compound=TopoDS::Compound(parentItem->get_AIS_Shape()->Shape());
+        TopoDS_Compound compound=TopoDS::Compound(parentItem->getShape()->Shape());
         BRep_Builder builder;
         builder.Add(compound,shape);
-        parentItem->get_AIS_Shape()->Redisplay(true);
-    }
-
-    // process for SOLID
-    TopAbs_ShapeEnum shapeType=shape.ShapeType();
-    if (shapeType == TopAbs_COMPSOLID || shapeType == TopAbs_SOLID) {
-        // volumeCount++;
-        // dimTag.first=3; dimTag.second=volumeCount;
-
-        // // set materials
-        // if (shapeType == TopAbs_SOLID) {
-        //     int i=0;
-        //     while (i < projData.physicalGroupMaterialCount) {
-        //         if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
-        //             newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
-        //             break;
-        //         }
-        //         i++;
-        //     }
-        // }
+        parentItem->getShape()->Redisplay(true);
     }
 
     // set variables
     newItem->setText(0,TopAbs::ShapeTypeToString(shape.ShapeType()));
     newItem->set_itemType(0);  // default to drawing, but generally need to change elsewhere
     newItem->setForeground(0,Qt::gray);
-    newItem->set_Polywire(activePolywire);
-    // newItem->set_dimTag(dimTag);
     parentItem->addChild(newItem);
 
     return newItem;
@@ -5332,44 +5319,28 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (Polywire *polywire, CustomTreeWi
     if (!polywire) return nullptr;
     if (!parentItem) return nullptr;
 
-    std::cout << "place x1" << std::endl; std::cout.flush();
     // new item
     CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
-    std::cout << "place x2" << std::endl; std::cout.flush();
     replaceItemShape(newItem,polywire,11);  // inserts to item map
-    std::cout << "place x3" << std::endl; std::cout.flush();
     if (!newItem) return newItem;
-    if (newItem->get_AIS_Shape().IsNull()) return newItem;
+    if (newItem->getShape().IsNull()) return newItem;
 
-    std::cout << "place x4" << std::endl; std::cout.flush();
     // add to top-level COMPOUND if parent is drawing
     if (parentItem == &drawing) {
-        std::cout << "place x5" << std::endl; std::cout.flush();
-        //xxx
-        // // create a COMPOUND if one is not present
-        // if (parentItem->get_AIS_Shape().IsNull()) {
-        //     BRep_Builder builder;
-        //     TopoDS_Compound compound;
-        //     builder.MakeCompound(compound);
-        //     Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-        //     parentItem->set_AIS_Shape(newShape);
-        // }
 
         // add to the COMPOUND
-        TopoDS_Compound compound=TopoDS::Compound(parentItem->get_AIS_Shape()->Shape());
+        TopoDS_Compound compound=TopoDS::Compound(parentItem->getShape()->Shape());
         BRep_Builder builder;
-        builder.Add(compound,newItem->get_AIS_Shape()->Shape());
-        parentItem->get_AIS_Shape()->Redisplay(true);
+        builder.Add(compound,newItem->getShape()->Shape());
+        parentItem->getShape()->Redisplay(true);
     }
-    std::cout << "place x6" << std::endl; std::cout.flush();
 
     // set variables
-    newItem->setText(0,TopAbs::ShapeTypeToString(newItem->get_AIS_Shape()->Shape().ShapeType()));
+    newItem->setText(0,TopAbs::ShapeTypeToString(newItem->getShape()->Shape().ShapeType()));
     newItem->set_itemType(0);  // default to drawing, but generally need to change elsewhere
     newItem->setForeground(0,Qt::gray);
-    newItem->set_Polywire(polywire);  // xxx activePolywire
+    newItem->setPolywire(polywire);  // xxx activePolywire
     parentItem->addChild(newItem);
-    std::cout << "place x7" << std::endl; std::cout.flush();
 
     return newItem;
 }
@@ -5463,7 +5434,7 @@ CustomTreeWidgetItem* get_vertexItem (CustomTreeWidgetItem *item)
 {
     if (!item) return nullptr;;
 
-    Handle(AIS_Shape) shape=item->get_AIS_Shape();
+    Handle(AIS_Shape) shape=item->getShape();
     if (shape.IsNull()) return nullptr;
     if (shape->Shape().ShapeType() == TopAbs_VERTEX) return item;
 
@@ -5481,8 +5452,8 @@ bool OpenParEMg::saveBrepFile (char *filePath)
 {
     std::cout << "OpenParEMg::saveBrepFile" << std::endl; std::cout.flush();
 
-    if (drawing.get_AIS_Shape()->Shape().IsNull()) return true;
-    if (!BRepTools::Write(drawing.get_AIS_Shape()->Shape(),filePath)) return true;
+    if (drawing.getShape()->Shape().IsNull()) return true;
+    if (!BRepTools::Write(drawing.getShape()->Shape(),filePath)) return true;
     return false;
 }
 
@@ -5490,7 +5461,7 @@ bool OpenParEMg::saveStepFile (QString filePath)
 {
     if (!filePath.isEmpty()) {
         STEPControl_Writer writer;
-        writer.Transfer(drawing.get_AIS_Shape()->Shape(),STEPControl_ManifoldSolidBrep,Standard_True);
+        writer.Transfer(drawing.getShape()->Shape(),STEPControl_ManifoldSolidBrep,Standard_True);
 
         IFSelect_ReturnStatus status=writer.Write(filePath.toStdString().c_str());
         if (status == IFSelect_RetDone) {
@@ -5555,12 +5526,12 @@ void OpenParEMg::saveItem (std::ofstream *out, CustomTreeWidgetItem *item)
         }
     } else if (item->is_drawing()) {
 
-        Polywire *polywire=item->get_Polywire();
+        Polywire *polywire=item->getPolywire();
         if (polywire) {
             polywire->save(out,item->get_name(),item->get_depth());
         }
 
-        Process *process=item->get_Process();
+        Process *process=item->getProcess();
         if (process) {
             process->startSave(out,item->get_name(),item->get_material(),item->get_depth());
 
@@ -5594,7 +5565,7 @@ void OpenParEMg::saveItem (std::ofstream *out, CustomTreeWidgetItem *item)
             }
 
             // uses TopTools_FormatVersion_VERSION_1
-            BRepTools::Write(item->get_AIS_Shape()->Shape(),*out);
+            BRepTools::Write(item->getShape()->Shape(),*out);
 
             *out << std::endl;
             *out << space << "EndBRep" << std::endl;
@@ -5713,6 +5684,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     else if (typeStart == 3) polywire=new Polycircle();
     else if (typeStart == 4) polywire=new Rectangle();
 
+    std::cout << "place 1" << std::endl; std::cout.flush();
     std::string name;
     if (polywire) {
         polywire->load(inputData,startBlockIndex,endBlockIndex,name,&objectCounts);
@@ -5738,7 +5710,9 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
 
     if (process) {
         CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem();
-        newItem->set_Process(process);
+        Handle(AIS_Shape) dummy;
+        ShapeData *newShapeData=new ShapeData(nullptr,process,dummy);
+        newItem->addShapeData(newShapeData);
         parent->addChild(newItem);
 
         // extrude
@@ -6604,7 +6578,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     renumberDimTag();
 
     // generate mesh
-    TopoDS_Shape shape=drawing.get_AIS_Shape()->Shape();
+    TopoDS_Shape shape=drawing.getShape()->Shape();
     gmsh::model::occ::importShapesNativePointer((void *) &shape,drawingEntities,false);
     gmsh::model::occ::synchronize();
     gmsh::model::mesh::generate();
@@ -7331,7 +7305,7 @@ void OpenParEMg::finishDraw ()
         newItem->setText(0,activePolywire->getName(&objectCounts));
 
         // put it on the Z-layer to get it higher selection priority
-        newItem->get_AIS_Shape()->SetZLayer(Graphic3d_ZLayerId_Top);
+        newItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
 
         //ui->drawingItemTree->setCurrentItem(newItem);
         ui->drawingWindow->showItem(newItem);
@@ -7377,7 +7351,7 @@ void OpenParEMg::drawPath ()
 
                     // port shape
                     CustomTreeWidgetItem *portItem=portParentItem->get_linkedItem(0);  // should just be one linked item to the port outline
-                    Handle(AIS_Shape) portShape=portItem->get_AIS_Shape();
+                    Handle(AIS_Shape) portShape=portItem->getShape();
 
                     // port path
                     Path *portPath=(Path *)portItem->get_OPEMobject();
@@ -7539,7 +7513,7 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
                 item->moveAnimateShape(lastMousePosition,pnt,ui->drawingWindow->get_viewerContext());
             }
 
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
 
             // stretch
             if (polywire && item->getEnableStretch() && item->hasP0()) {
@@ -7610,7 +7584,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                 }
             }
 
-            Polywire *polywire=item->get_Polywire();
+            Polywire *polywire=item->getPolywire();
             if (polywire) {
 
                 // stretch
@@ -7689,7 +7663,7 @@ void OpenParEMg::finishOperation (bool cancel, int source)
                     ui->drawingWindow->showItem(item);
                 }
 
-                Polywire *polywire=item->get_Polywire();
+                Polywire *polywire=item->getPolywire();
                 if (polywire) {
 
                     // stretch

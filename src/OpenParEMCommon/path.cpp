@@ -2181,7 +2181,8 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
     // shape
     TopoDS_Wire wire=create_TopoDS_Wire();
     Handle(AIS_Shape) shape=new AIS_Shape(wire);
-    item->set_AIS_Shape(shape);
+    ShapeData *newShapeData=new ShapeData(nullptr,nullptr,shape);
+    item->addShapeData(newShapeData);
 
     // arrow heads
 
@@ -2238,7 +2239,7 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
             arrowHead.push_point(p2);
 
             Handle(AIS_Shape) arrowDrawingShape=new AIS_Shape (arrowHead.create_TopoDS_Wire());
-            item->push_arrowHead(arrowDrawingShape);
+            item->pushArrowHead(arrowDrawingShape);
         }
         i++;
     }

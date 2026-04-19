@@ -29,18 +29,334 @@
 #include "Polywire.h"
 #include "Process.h"
 
+// shape data with history for undo/redo
+
+class ShapeData
+{
+public:
+
+    ShapeData ()
+    {
+        polywire=nullptr;
+        process=nullptr;
+    }
+
+    ShapeData (Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    {
+        polywire=nullptr;
+        process=nullptr;
+
+        setPolywire(polywire_);
+        setProcess(process_);
+        setShape(shape_);
+    }
+
+    ShapeData (ShapeData *shapeData)
+    {
+        polywire=nullptr;
+        process=nullptr;
+
+        setPolywire(shapeData->getPolywire());
+        setProcess(shapeData->getProcess());
+        setShape(shapeData->getShape());
+    }
+
+    ~ShapeData ()
+    {
+        if (polywire) {delete polywire; polywire=nullptr;}
+        if (process) {delete process; process=nullptr;}
+        if (!shape.IsNull()) {shape.Nullify();}
+
+        long unsigned int i=0;
+        while (i < arrowHeads.size()) {
+            if (!arrowHeads[i].IsNull()) arrowHeads[i].Nullify();
+            i++;
+        }
+    }
+
+    ShapeData* copyCreate ()
+    {
+        ShapeData *newShapeData=new ShapeData();
+        if (newShapeData) {
+            if (polywire) newShapeData->polywire=polywire->copyCreate();
+            if (process) newShapeData->process=process->copyCreate();
+            if (!shape.IsNull()) newShapeData->shape=new AIS_Shape(shape->Shape());
+            long unsigned int i=0;
+            while (i < arrowHeads.size()) {
+                if (!arrowHeads[i].IsNull()) {
+                    Handle(AIS_Shape) arrowHead=new AIS_Shape(arrowHeads[i]->Shape());
+                    newShapeData->arrowHeads.push_back(arrowHead);
+                }
+                i++;
+            }
+        }
+        return newShapeData;
+    }
+
+    void setShape (Handle(AIS_Shape) shape_)
+    {
+        if (shape.IsNull()) {
+            shape.Nullify();
+        }
+        shape=shape_;
+    }
+
+    void setPolywire (Polywire *polywire_) {
+        if (polywire) delete polywire;
+        polywire=polywire_;
+    }
+    void setProcess (Process *process_) {
+        if (process) delete process;
+        process=process_;
+    }
+
+    void set (Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    {
+        setPolywire(polywire_);
+        setProcess(process_);
+        setShape(shape_);
+    }
+
+    void set (ShapeData *shapeData)
+    {
+        if (!shapeData) return;
+        setPolywire(shapeData->getPolywire());
+        setProcess(shapeData->getProcess());
+        setShape(shapeData->getShape());
+    }
+
+    void set (Handle(AIS_Shape) shape_)
+    {
+        if (shape_.IsNull()) return;
+        setShape(shape_);
+    }
+
+    void pushArrowHead (Handle(AIS_Shape) arrowHead) {arrowHeads.push_back(arrowHead);}
+
+    Polywire* getPolywire () {return polywire;}
+    Process* getProcess () {return process;}
+    Handle(AIS_Shape) getShape () {return shape;}
+    long unsigned int getArrowHeadsSize () {return arrowHeads.size();}
+    Handle(AIS_Shape) getArrowHead (long unsigned int i) {return arrowHeads[i];}
+
+    void print ()
+    {
+        std::cout << "      ShapeData:" << std::endl;
+        if (shape.IsNull()) std::cout << "         shape=null" << std::endl;
+        else std::cout << "         shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
+        std::cout << "         arrowHeadCount=" << arrowHeads.size() << std::endl;
+        std::cout << "         polywire=" << polywire << std::endl;
+        std::cout << "         process=" << process << std::endl;
+    }
+
+private:
+    Handle(AIS_Shape) shape;                           // for drawing
+    std::vector<Handle(AIS_Shape)> arrowHeads;         // for integration lines to show direction
+    Polywire *polywire;                                // Polywire object for this item
+    Process *process;                                  // for drawing processing of children
+};
+
+class ShapeDataStack
+{
+public:
+    ShapeDataStack ()
+    {
+        current=0;
+    }
+
+    ~ShapeDataStack ()
+    {
+        long unsigned int i=0;
+        while (i < shapeDataList.size()) {
+            if (shapeDataList[i]) delete shapeDataList[i];
+            i++;
+        }
+    }
+
+    void add (Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    {
+        ShapeData *shapeData=new ShapeData(polywire_,process_,shape_);
+        shapeDataList.push_back(shapeData);
+        current=shapeDataList.size()-1;
+        historyList.push_back(current);
+    }
+
+    void add (ShapeData *shapeData)
+    {
+        if (!shapeData) return;
+        shapeDataList.push_back(shapeData);
+        current=shapeDataList.size()-1;
+        historyList.push_back(current);
+    }
+
+    // at current location
+
+    void set (Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    {
+        ShapeData *shapeData=shapeDataList[historyList[current]];
+        shapeData->set(polywire_,process_,shape_);
+    }
+
+    void set (ShapeData *shapeData_)
+    {
+        if (!shapeData_) return;
+        ShapeData *shapeData=shapeDataList[historyList[current]];
+        shapeData->set(shapeData_);
+    }
+
+    void setShape (Handle(AIS_Shape) shape_)
+    {
+        if (shape_.IsNull()) return;
+        ShapeData *shapeData=shapeDataList[historyList[current]];
+        shapeData->set(shape_);
+    }
+
+    void setPolywire (Polywire *polywire_)
+    {
+        if (!polywire_) return;
+        ShapeData *shapeData=shapeDataList[historyList[current]];
+        shapeData->setPolywire(polywire_);
+    }
+
+    void setProcess (Process *process_)
+    {
+        if (!process_) return;
+        ShapeData *shapeData=shapeDataList[historyList[current]];
+        shapeData->setProcess(process_);
+    }
+
+    void pushArrowHead (Handle(AIS_Shape) arrowHead)
+    {
+        ShapeData *shapeData=shapeDataList[historyList[current]];
+        shapeData->pushArrowHead(arrowHead);
+    }
+
+    // from current location
+
+    ShapeData* getShapeData ()
+    {
+        if (shapeDataList.size() == 0) return nullptr;
+        return shapeDataList[historyList[current]];
+    }
+
+    Polywire* getPolywire ()
+    {
+        if (shapeDataList.size() == 0) return nullptr;
+        return shapeDataList[historyList[current]]->getPolywire();
+    }
+
+    Process* getProcess ()
+    {
+        if (shapeDataList.size() == 0) return nullptr;
+        return shapeDataList[historyList[current]]->getProcess();
+    }
+
+    Handle(AIS_Shape) getShape ()
+    {
+        if (shapeDataList.size() == 0) return nullptr;
+        return shapeDataList[historyList[current]]->getShape();
+    }
+
+    long unsigned int getArrowHeadsSize ()
+    {
+        if (shapeDataList.size() == 0) return 0;
+        return shapeDataList[historyList[current]]->getArrowHeadsSize();
+    }
+
+    Handle(AIS_Shape) getArrowHead (long unsigned int i)
+    {
+        Handle(AIS_Shape) arrowHead;
+        if (shapeDataList.size() == 0) return arrowHead;
+        arrowHead=shapeDataList[historyList[current]]->getArrowHead(i);
+        return arrowHead;
+    }
+
+    void undo ()
+    {
+        if (current > 0) current--;
+    }
+
+    void redo ()
+    {
+        if (current < historyList.size()-2) current++;
+    }
+
+    void resetHistory ()
+    {
+        if (shapeDataList.size() == 0) return;
+
+        // swap current into the 0 location
+        ShapeData *temp=shapeDataList[historyList[current]];
+        shapeDataList[historyList[current]]=shapeDataList[0];
+        shapeDataList[0]=temp;
+
+        // free everything else
+        long unsigned int i=1;
+        while (i < shapeDataList.size()) {
+            delete shapeDataList[i];
+            i++;
+        }
+
+        // clear the list and add back in temp
+        shapeDataList.clear();
+        shapeDataList.push_back(temp);
+
+        // clear history and add back current
+        historyList.clear();
+        historyList.push_back(0);
+        current=0;
+    }
+
+    void reset ()
+    {
+        std::cout << "ShapeDataStack::reset" << std::endl; std::cout.flush();
+        long unsigned int i=0;
+        while (i < shapeDataList.size()) {
+            if (shapeDataList[i]) delete shapeDataList[i];
+            i++;
+        }
+        shapeDataList.clear();
+
+        historyList.clear();
+        current=0;
+        std::cout << "exit ShapeDataStack::reset" << std::endl; std::cout.flush();
+    }
+
+    void print ()
+    {
+        std::cout << "   ShapeData:" << std::endl;
+        long unsigned int i=0;
+        while (i < shapeDataList.size()) {
+            shapeDataList[i]->print();
+            i++;
+        }
+
+        std::cout << "   history:" << std::endl;
+        i=0;
+        while (i < historyList.size()) {
+            std::cout << "      " << historyList[i] << std::endl;
+            i++;
+        }
+
+        std::cout << "      current=" << current << std::endl;
+    }
+
+private:
+    std::vector<ShapeData *> shapeDataList;
+    std::vector<long unsigned int> historyList;
+    long unsigned int current;                          // index to current item
+};
+
 class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
     Q_OBJECT
 
 public:
     CustomTreeWidgetItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type)
     {
-        itemType=0;         // default to drawing
+        itemType=0;                 // default to drawing
         forShowHide=true;
-        set_dimTag(-1,-1);  // for mesh items; invalid initialization
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         OPEMobject=nullptr;
-        polywire=nullptr;
-        process=nullptr;
         p0set=false;
         p1set=false;
         enableMove=false;
@@ -48,12 +364,6 @@ public:
         enableDeletePoint=false;
         enableInsertPoint=false;
         depth=0;
-    }
-
-    ~CustomTreeWidgetItem ()
-    {
-        if (polywire) delete polywire;
-        if (process) delete process;
     }
 
     QString get_name () {return text(0);}
@@ -66,11 +376,16 @@ public:
     void set_OPEMobject (void *pointer) {OPEMobject=pointer;}
     void* get_OPEMobject () {return OPEMobject;}
 
-    void set_Polywire (Polywire *polywire_) {polywire=polywire_;}
-    Polywire* get_Polywire () {return polywire;}
 
-    void set_Process (Process *process_) {process=process_;}
-    Process* get_Process () {return process;}
+    void addShapeData (ShapeData *shapeData_) {dataStack.add(shapeData_);}
+    void setShape (Handle(AIS_Shape) shape_) {dataStack.setShape(shape_);}
+    void setPolywire (Polywire *polywire_) {dataStack.setPolywire(polywire_);}
+    void setProcess (Process *process_) {dataStack.setProcess(process_);}
+
+    ShapeData* getShapeData () {return dataStack.getShapeData();}
+    Polywire* getPolywire () {return dataStack.getPolywire();}
+    Process* getProcess () {return dataStack.getProcess();}
+    Handle(AIS_Shape) getShape () {return dataStack.getShape();}
 
     void set_Material (QString material_) {material=material_;}
     QString get_Material () {return material;}
@@ -126,18 +441,6 @@ public:
         return false;
     }
 
-    void set_AIS_Shape (Handle(AIS_Shape) shape_) {shape=shape_;}
-    Handle(AIS_Shape) get_AIS_Shape () {return shape;}
-    void delete_AIS_Shape (Handle(AIS_InteractiveContext) viewerContext)
-    {
-        if (shape.IsNull()) return;
-        viewerContext->Remove(shape,Standard_True);
-        shape.Nullify();
-    }
-
-    void push_arrowHead (Handle(AIS_Shape) arrowHead) {arrowHeads.push_back(arrowHead);}
-    long unsigned int get_arrowHeads_size () {return arrowHeads.size();}
-    Handle(AIS_Shape) get_arrowHead (long unsigned int i) {return arrowHeads[i];}
 
     void set_dimTag (int dim, int tag) {dimTag.first=dim; dimTag.second=tag;}
     void set_dimTag (std::pair<int,int> dimTag_) {dimTag=dimTag_;}
@@ -196,6 +499,8 @@ public:
 
     TopoDS_Shape moveShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_InteractiveContext) viewerContext)
     {
+        Handle(AIS_Shape) shape=getShape();
+
         gp_Trsf step;
         step.SetTranslation(p1,p2);
         aTrsf=step*aTrsf;
@@ -229,7 +534,7 @@ public:
         gp_Trsf rotate;
         rotate.SetRotation(axis,angleRadians);
 
-        BRepBuilderAPI_Transform transformer(shape->Shape(),rotate);
+        BRepBuilderAPI_Transform transformer(dataStack.getShapeData()->getShape()->Shape(),rotate);
         return transformer.Shape();
     }
 
@@ -240,6 +545,7 @@ public:
 
     void setAnimate (Handle(AIS_InteractiveContext) viewerContext)
     {
+        Handle(AIS_Shape) shape=dataStack.getShapeData()->getShape();
         if (shape.IsNull()) return;
 
         if (!animateShape.IsNull()) {
@@ -283,28 +589,29 @@ public:
     {
         std::cout << "CustomTreeWidgetItem::copyCreate()" << std::endl; std::cout.flush();
         CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem();
+
+        // copy just the current data
+
+        ShapeData *copyShapeData=dataStack.getShapeData()->copyCreate();
+        newItem->dataStack.add(copyShapeData);
         newItem->setText(0,this->text(0).append("_copy"));
-        if (!shape.IsNull()) {newItem->shape=new AIS_Shape(shape->Shape());}
         newItem->aTrsf=aTrsf;
-        long unsigned int i=0;
-        while (i < arrowHeads.size()) {
-            if (!arrowHeads[i].IsNull()) {newItem->arrowHeads.push_back(new AIS_Shape(arrowHeads[i]->Shape()));}
-            i++;
-        }
-        newItem->dimTag=dimTag;  // ToDo: rescan and set to unique value for meshing
+        newItem->dimTag=dimTag;
         newItem->forShowHide=forShowHide;
         newItem->itemType=itemType;
         newItem->OPEMobject=OPEMobject;
-        if (polywire) {newItem->polywire=polywire->copyCreate();}
-        if (process) {newItem->process=process->copyCreate();}
-        i=0;
+        newItem->depth=depth;
+        long unsigned int i=0;
         while (i < linkedItems.size()) {
             newItem->linkedItems.push_back(linkedItems[i]);
             i++;
         }
-        std::cout << "exit CustomTreeWidgetItem::copyCreate()" << std::endl; std::cout.flush();
         return newItem;
     }
+
+    long unsigned int getArrowHeadsSize () {return dataStack.getArrowHeadsSize();}
+    Handle(AIS_Shape) getArrowHead (long unsigned int i) {return dataStack.getArrowHead(i);}
+    void pushArrowHead (Handle(AIS_Shape) arrowHead) {dataStack.pushArrowHead(arrowHead);}
 
     void print_itemType ()
     {
@@ -333,12 +640,9 @@ public:
     void print ()
     {
         std::cout << "CustomTreeWidgetItem:" << std::endl;
-        if (shape.IsNull()) std::cout << "   shape=null" << std::endl;
-        else std::cout << "   shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
-        //else std::cout << "   shape type=" << shape->Type() << std::endl;
+        dataStack.print();
         std::cout << "   forShowHide=" << forShowHide << std::endl;
         std::cout << "   OPEMobject=" << OPEMobject << std::endl;
-        std::cout << "   polywire=" << polywire << std::endl;
         if (material.isNull()) std::cout << "   material=null" << std::endl;
         else std::cout << "   material=" << material.toStdString() << std::endl;
         std::cout << "   itemType=" << itemType << std::endl;
@@ -379,25 +683,24 @@ public:
 
     void reset ()
     {
+        std::cout << "CustomTreeWidgetItem::reset" << std::endl; std::cout.flush();
+        dataStack.reset();
         deleteChildren(this);
-        set_AIS_Shape(nullptr);
         setForeground(0,Qt::black);
         setExpanded(Standard_False);
-        arrowHeads.clear();
         meshEntities.clear();
         OPEMobject=nullptr;
-        polywire=nullptr;
         material.clear();
         linkedItems.clear();
+        std::cout << "exit CustomTreeWidgetItem::reset" << std::endl; std::cout.flush();
     }
 
 private slots:
 
 private:
-    Handle(AIS_Shape) shape;                           // for drawing
+    ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
     Handle(AIS_Shape) animateShape;                    // temporary shape for animation during moving
     gp_Trsf aTrsf;
-    std::vector<Handle(AIS_Shape)> arrowHeads;         // for integration lines to show direction
     std::vector<Handle(AIS_Shape)> meshEntities;       // for mesh
     std::pair<int,int> dimTag;                         //
     bool forShowHide;                                  // false - does not participate in item tree show/hide operations; true - does participate
@@ -415,8 +718,6 @@ private:
     void *OPEMobject;                                  // a pointer to an item in the boundary database
                                                        // *path, *mode, *boundary, etc
                                                        // cast to the correct object type
-    Polywire *polywire;                                // Polywire object for this item
-    Process *process;                                  // for drawing processing of children
     QString material;                                  // material for this item - only valid for top-level SOLID and COMPOUND
     std::vector<CustomTreeWidgetItem *> linkedItems;   // link to path items, if any
 
