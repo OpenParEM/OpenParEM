@@ -57,6 +57,100 @@ class OpenParEMg;
 }
 QT_END_NAMESPACE
 
+class ItemChanges
+{
+public:
+    long unsigned int getChangeListSize () {return changeList.size();}
+    CustomTreeWidgetItem* getItem (long unsigned int i) {return changeList[i];}
+    void push_back (CustomTreeWidgetItem *item) {changeList.push_back(item);}
+    void clear () {changeList.clear();}
+private:
+    std::vector<CustomTreeWidgetItem *> changeList;
+};
+
+class ItemChangesStack
+{
+public:
+    void startNew ()
+    {
+        ItemChanges *newItemChanges=new ItemChanges();
+        itemChangesList.push_back(newItemChanges);
+        current=itemChangesList.size()-1;
+        historyList.push_back(current);
+    }
+
+    void add (CustomTreeWidgetItem *item) {itemChangesList[historyList[current]]->push_back(item);}
+
+    bool hasUndo ()
+    {
+        if (historyList.size() > 0 && current > 0) {
+            // if (itemChangesList[historyList[current]]->getChangeListSize() > 0) {
+            //     CustomTreeWidgetItem *item=itemChangesList[historyList[current]]->getItem(0);
+            //     if (item) return item->hasUndo();
+            // }
+            return true;
+        }
+        return false;
+    }
+
+    bool hasRedo ()
+    {
+        if (historyList.size() > 0 && current < historyList.size()-1) {
+            // if (itemChangesList[historyList[current]]->getChangeListSize() > 0) {
+            //     CustomTreeWidgetItem *item=itemChangesList[historyList[current]]->getItem(0);
+            //     if (item) return item->hasRedo();
+            // }
+            return true;
+        }
+        return false;
+    }
+
+    void undo ()
+    {
+        if (hasUndo()) current--;
+        readIndex=0;
+    }
+
+    void redo ()
+    {
+        if (hasRedo()) current++;
+        readIndex=0;
+    }
+
+    CustomTreeWidgetItem* getItem ()
+    {
+        if (readIndex < itemChangesList[historyList[current]]->getChangeListSize()) {
+            CustomTreeWidgetItem *item=itemChangesList[historyList[current]]->getItem(readIndex);
+            readIndex++;
+            return item;
+        }
+        return nullptr;
+    }
+
+    void clear ()
+    {
+        long unsigned int i=0;
+        while (i < itemChangesList.size()) {
+            if (itemChangesList[i]) {
+                itemChangesList[i]->clear();
+                delete itemChangesList[i];
+            }
+            i++;
+        }
+        itemChangesList.clear();
+        historyList.clear();
+        current=0;
+        readIndex=0;
+    }
+
+private:
+    std::vector<ItemChanges *> itemChangesList;
+    std::vector<long unsigned int> historyList;
+    long unsigned int current;
+
+    long unsigned int readIndex;
+};
+
 class CustomStyledItemDelegate : public QStyledItemDelegate
 {
 public:
@@ -417,6 +511,10 @@ private slots:
 
     void on_actionSelectWire_triggered();
 
+    void on_actionUndo_triggered();
+
+    void on_actionRedo_triggered();
+
 public slots:
     void setMenus ();
     void setMenusI (int);
@@ -548,6 +646,9 @@ private:
     double length;                // extrusion
     double angle;                 // rotation
     gp_Pnt startPoint, endPoint;  // rotation and vector input
+
+    // for undo/redo
+    ItemChangesStack itemChangesStack;
 };
 
 #endif // OPEMG_H

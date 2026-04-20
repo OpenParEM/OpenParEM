@@ -763,6 +763,9 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionFrequencyPlan->setEnabled(true);
     }
 
+    ui->actionUndo->setEnabled(itemChangesStack.hasUndo());
+    ui->actionRedo->setEnabled(itemChangesStack.hasRedo());
+
     boundaryDatabase->set_comboZdef();
 }
 
@@ -3562,9 +3565,13 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
 
     if (!item) return;
 
-    //item->setEnableMove(false);
     item->unsetAnimate(ui->drawingWindow->get_viewerContext());
-    //item->reset_transformation();
+
+    // clone the item onto itself
+    ShapeData *newShapeData=item->getShapeData()->copyCreate();
+    item->addShapeData(newShapeData);
+
+    // modify the clone
 
     Polywire *polywire=item->getPolywire();
     if (polywire) {
@@ -7570,8 +7577,13 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     bool finishedMove=false;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
+        itemChangesStack.startNew();
+
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
+            // for undo/redo
+            itemChangesStack.add(item);
+
             // move
             if (item->getEnableMove()) {
                 if (!item->hasP0()) {
@@ -7724,7 +7736,47 @@ void OpenParEMg::finishOperation (bool cancel, int source)
     setMenusI(0);
 }
 
+void OpenParEMg::on_actionUndo_triggered ()
+{
+    itemChangesStack.undo();
+    CustomTreeWidgetItem *item=itemChangesStack.getItem();
+    if (item) {
 
+        // remove old shape
+        if (!item->getShape().IsNull()) {
+            ui->drawingWindow->hideItem(item);
+            ui->drawingWindow->removeItemFromMap(item);
+            ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+        }
 
+        item->undo();
+        reprocess(item);
+        ui->drawingWindow->showItem(item);
+        ui->drawingWindow->updateViewer();
+        setMenusI(3000);
+    }
+    ui->actionUndo->setEnabled(itemChangesStack.hasUndo());
+}
 
+void OpenParEMg::on_actionRedo_triggered ()
+{
+    itemChangesStack.redo();
+    CustomTreeWidgetItem *item=itemChangesStack.getItem();
+    if (item) {
+
+        // remove old shape
+        if (!item->getShape().IsNull()) {
+            ui->drawingWindow->hideItem(item);
+            ui->drawingWindow->removeItemFromMap(item);
+            ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+        }
+
+        item->redo();
+        reprocess(item);
+        ui->drawingWindow->showItem(item);
+        ui->drawingWindow->updateViewer();
+        setMenusI(3000);
+    }
+    ui->actionRedo->setEnabled(itemChangesStack.hasRedo());
+}
 

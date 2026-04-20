@@ -271,14 +271,26 @@ public:
         return arrowHead;
     }
 
+    bool hasUndo ()
+    {
+        if (historyList.size() > 0 && current > 0) return true;
+        return false;
+    }
+
+    bool hasRedo ()
+    {
+        if (historyList.size() > 0 && current < historyList.size()-1) return true;
+        return false;
+    }
+
     void undo ()
     {
-        if (current > 0) current--;
+        if (hasUndo()) current--;
     }
 
     void redo ()
     {
-        if (current < historyList.size()-2) current++;
+        if (hasRedo()) current++;
     }
 
     void resetHistory ()
@@ -386,6 +398,9 @@ public:
     Polywire* getPolywire () {return dataStack.getPolywire();}
     Process* getProcess () {return dataStack.getProcess();}
     Handle(AIS_Shape) getShape () {return dataStack.getShape();}
+
+    void undo () {dataStack.undo();}
+    void redo () {dataStack.redo();}
 
     void set_Material (QString material_) {material=material_;}
     QString get_Material () {return material;}
@@ -660,7 +675,7 @@ public:
         if (is_impedanceDefinition()) std::cout << "   itemType=impedanceDefinition" << std::endl;
         if (is_impedanceCalculation()) std::cout << "   itemType=impedanceCalculation" << std::endl;
         if (is_sportNumber()) std::cout << "   itemType=sportNumber" << std::endl;
-        if (is_sport()) std::cout << "   itemType=sportNet" << std::endl;
+        if (is_sport()) std::cout << "   item=sportNet" << std::endl;
         if (is_voltage()) std::cout << "   itemType=voltage" << std::endl;
         if (is_current()) std::cout << "   itemType=current" << std::endl;
         if (is_scale()) std::cout << "   itemType=scale" << std::endl;
@@ -694,6 +709,9 @@ public:
         linkedItems.clear();
         std::cout << "exit CustomTreeWidgetItem::reset" << std::endl; std::cout.flush();
     }
+
+    bool hasUndo () {return dataStack.hasUndo();}
+    bool hasRedo () {return dataStack.hasRedo();}
 
 private slots:
 

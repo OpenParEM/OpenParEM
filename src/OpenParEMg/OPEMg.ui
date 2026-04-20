@@ -177,6 +177,8 @@
      <addaction name="actionDrawingSetPlaneToXZ"/>
      <addaction name="actionDrawingSetPlaneToYZ"/>
     </widget>
+    <addaction name="actionUndo"/>
+    <addaction name="actionRedo"/>
     <addaction name="menuDrawing_Plane"/>
     <addaction name="actionDrawLine"/>
     <addaction name="actionDrawPolyline"/>
@@ -577,6 +579,22 @@
   <action name="actionSelectWire">
    <property name="text">
     <string>Wire</string>
+   </property>
+  </action>
+  <action name="actionUndo">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditUndo"/>
+   </property>
+   <property name="text">
+    <string>Undo</string>
+   </property>
+  </action>
+  <action name="actionRedo">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditRedo"/>
+   </property>
+   <property name="text">
+    <string>Redo</string>
    </property>
   </action>
  </widget>
