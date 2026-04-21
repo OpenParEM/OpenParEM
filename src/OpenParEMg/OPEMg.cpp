@@ -3856,6 +3856,7 @@ bool OpenParEMg::isValidDeletePoint ()
 void OpenParEMg::deletePoint ()
 {
     startOperation(false);
+    itemChangesStack.startNew();
     ui->drawingWindow->set_pickSecondVertex(true);
 
     long unsigned int i=0;
@@ -3878,6 +3879,8 @@ void OpenParEMg::deletePoint ()
                     item->resetP0P1();
                     gp_Pln plane=polywire->getPlane();
                     ui->drawingWindow->set_gridPlane(plane);
+                    itemChangesStack.add(item);
+                    activeAction=true;
                 }
             }
         }
@@ -3889,12 +3892,27 @@ void OpenParEMg::finishDeletePoint (CustomTreeWidgetItem *item)
 {
     if (!item) return;
 
+    // remove the old version from display and tracking
+    ui->drawingWindow->hideItem(item);
+    ui->drawingWindow->removeItemFromMap(item);
+    ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+
+    // clone the item onto itself for undo/redo
+    ShapeData *newShapeData=item->getShapeData()->copyCreate();
+    newShapeData->setAction(0);
+    item->addShapeData(newShapeData);
+
+    // add the new item back to the display and tracking
+    ui->drawingWindow->insertItemToMap(item->getShape(),item);
+    ui->drawingWindow->showItem(item);
+
     Polywire *polywire=item->getPolywire();
     if (!polywire) return;
 
     gp_Pnt p0=item->getP0();
     polywire->deletePoint(p0);
     reprocess(item);
+    activeAction=false;
     item->resetOperation();
 
     ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
@@ -3931,6 +3949,7 @@ bool OpenParEMg::isValidInsertPoint ()
 void OpenParEMg::insertPoint ()
 {
     startOperation(false);
+    itemChangesStack.startNew();
     ui->drawingWindow->set_pickFirstVertex(true);
 
     long unsigned int i=0;
@@ -3949,10 +3968,30 @@ void OpenParEMg::insertPoint ()
 
                 Polywire *polywire=item->getPolywire();
                 if (polywire) {
+
+                    // remove the old version from display and tracking
+                    ui->drawingWindow->hideItem(item);
+                    ui->drawingWindow->removeItemFromMap(item);
+                    ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+
+                    // clone the item onto itself for undo/redo
+                    ShapeData *newShapeData=item->getShapeData()->copyCreate();
+                    newShapeData->setAction(0);
+                    item->addShapeData(newShapeData);
+
+                    // add the new item back to the display and tracking
+                    ui->drawingWindow->insertItemToMap(item->getShape(),item);
+                    ui->drawingWindow->showItem(item);
+
+                    // modify the clone
+
+                    polywire=item->getPolywire();
                     item->setEnableInsertPoint(true);
                     item->resetP0P1();
                     gp_Pln plane=polywire->getPlane();
                     ui->drawingWindow->set_gridPlane(plane);
+                    itemChangesStack.add(item);
+                    activeAction=true;
                 }
             }
         }
@@ -4022,6 +4061,29 @@ void OpenParEMg::closeExistingPolyline ()
         if (item && item->is_drawing()) {
             Polywire *polywire=item->getPolywire();
             if (polywire) {
+
+                // for undo/redo
+
+                itemChangesStack.startNew();
+
+                // remove the old version from display and tracking
+                ui->drawingWindow->hideItem(item);
+                ui->drawingWindow->removeItemFromMap(item);
+                ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+
+                // clone the item onto itself for undo/redo
+                ShapeData *newShapeData=item->getShapeData()->copyCreate();
+                newShapeData->setAction(0);
+                item->addShapeData(newShapeData);
+                itemChangesStack.add(item);
+
+                // add the new item back to the display and tracking
+                ui->drawingWindow->insertItemToMap(item->getShape(),item);
+                ui->drawingWindow->showItem(item);
+
+                // modify the clone
+
+                polywire=item->getPolywire();
                 polywire->close();
                 reprocess(item);
                 //item->setText(0,"FACE");
@@ -4031,6 +4093,8 @@ void OpenParEMg::closeExistingPolyline ()
                 ui->drawingWindow->activateSelectItem(item);
                 ui->drawingWindow->updateViewer();
                 drawingChanged=true;
+
+                finishOperation(false,10);
             }
         }
         i++;
@@ -4064,6 +4128,28 @@ void OpenParEMg::openExistingPolyline ()
         if (item && item->is_drawing()) {
             Polywire *polywire=item->getPolywire();
             if (polywire) {
+                // for undo/redo
+
+                itemChangesStack.startNew();
+
+                // remove the old version from display and tracking
+                ui->drawingWindow->hideItem(item);
+                ui->drawingWindow->removeItemFromMap(item);
+                ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+
+                // clone the item onto itself for undo/redo
+                ShapeData *newShapeData=item->getShapeData()->copyCreate();
+                newShapeData->setAction(0);
+                item->addShapeData(newShapeData);
+                itemChangesStack.add(item);
+
+                // add the new item back to the display and tracking
+                ui->drawingWindow->insertItemToMap(item->getShape(),item);
+                ui->drawingWindow->showItem(item);
+
+                // modify the clone
+
+                polywire=item->getPolywire();
                 polywire->open();
                 reprocess(item);
                 //item->setText(0,"WIRE");
@@ -4073,6 +4159,8 @@ void OpenParEMg::openExistingPolyline ()
                 ui->drawingWindow->activateSelectItem(item);
                 ui->drawingWindow->updateViewer();
                 drawingChanged=true;
+
+                finishOperation(false,11);
             }
         }
         i++;
@@ -7814,9 +7902,8 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
 void OpenParEMg::on_actionUndo_triggered ()
 {
-    std::cout << "OpenParEMg::on_actionUndo_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionUndo_triggered" << std::endl; std::cout.flush();
 
-    std::cout << "place 1" << std::endl; std::cout.flush();
     itemChangesStack.readNew();
     long unsigned int i=0;
     while (CustomTreeWidgetItem *item=itemChangesStack.getItem()) {
@@ -7827,14 +7914,10 @@ void OpenParEMg::on_actionUndo_triggered ()
             ui->drawingWindow->deleteShape(item->getShape());  // lose selection
         }
 
-        std::cout << "place 2" << std::endl; std::cout.flush();
         item->undo();
-        std::cout << "place 3" << std::endl; std::cout.flush();
         reprocess(item);
-        std::cout << "place 4" << std::endl; std::cout.flush();
         ui->drawingWindow->showItem(item);
     }
-    std::cout << "place 5" << std::endl; std::cout.flush();
 
     itemChangesStack.undo();
     ui->drawingWindow->updateViewer();
