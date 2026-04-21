@@ -57,6 +57,7 @@ class OpenParEMg;
 }
 QT_END_NAMESPACE
 
+// list of items for a change in a single operation, such as a single edit or a multi-select move
 class ItemChanges
 {
 public:
@@ -64,63 +65,80 @@ public:
     CustomTreeWidgetItem* getItem (long unsigned int i) {return changeList[i];}
     void push_back (CustomTreeWidgetItem *item) {changeList.push_back(item);}
     void clear () {changeList.clear();}
+    void setPrior (ItemChanges *prior_) {prior=prior_;}
+    void setNext (ItemChanges *next_) {next=next_;}
+    ItemChanges *getPrior () {return prior;}
+    ItemChanges *getNext () {return next;}
+    void print ()
+    {
+        long unsigned int i=0;
+        while (i < changeList.size()) {
+            std::cout << "         item=" << changeList[i] << "  prior=" << prior << "  next=" << next << std::endl;
+            i++;
+        }
+        std::cout.flush();
+    }
 private:
-    std::vector<CustomTreeWidgetItem *> changeList;
+    std::vector<CustomTreeWidgetItem *> changeList;  // change list for a single operation
+    ItemChanges *prior;                              // prior item in ItemChangesStack
+    ItemChanges *next;                               // next item in ItemChangesStack
 };
 
+// list of ItemChanges, where each change is a different operation
 class ItemChangesStack
 {
 public:
-    void startNew ()
+    ItemChangesStack ()
     {
-        ItemChanges *newItemChanges=new ItemChanges();
-        itemChangesList.push_back(newItemChanges);
-        current=itemChangesList.size()-1;
-        historyList.push_back(current);
+        current=nullptr;
     }
 
-    void add (CustomTreeWidgetItem *item) {itemChangesList[historyList[current]]->push_back(item);}
+    void startNew ()
+    {
+        ItemChanges *itemChanges=new ItemChanges();
+        itemChangesList.push_back(itemChanges);
+        if (current) {
+            itemChanges->setPrior(current);
+            current->setNext(itemChanges);
+        }
+        current=itemChanges;
+    }
+
+    void readNew () {readIndex=0;}
+
+    void add (CustomTreeWidgetItem *item)
+    {
+        current->push_back(item);
+    }
 
     bool hasUndo ()
     {
-        if (historyList.size() > 0 && current > 0) {
-            // if (itemChangesList[historyList[current]]->getChangeListSize() > 0) {
-            //     CustomTreeWidgetItem *item=itemChangesList[historyList[current]]->getItem(0);
-            //     if (item) return item->hasUndo();
-            // }
-            return true;
-        }
+        if (current && current->getPrior()) return true;
         return false;
     }
 
     bool hasRedo ()
     {
-        if (historyList.size() > 0 && current < historyList.size()-1) {
-            // if (itemChangesList[historyList[current]]->getChangeListSize() > 0) {
-            //     CustomTreeWidgetItem *item=itemChangesList[historyList[current]]->getItem(0);
-            //     if (item) return item->hasRedo();
-            // }
-            return true;
-        }
+        if (current && current->getNext()) return true;
         return false;
     }
 
     void undo ()
     {
-        if (hasUndo()) current--;
+        if (current && hasUndo()) current=current->getPrior();
         readIndex=0;
     }
 
     void redo ()
     {
-        if (hasRedo()) current++;
+        if (current && hasRedo()) current=current->getNext();
         readIndex=0;
     }
 
     CustomTreeWidgetItem* getItem ()
     {
-        if (readIndex < itemChangesList[historyList[current]]->getChangeListSize()) {
-            CustomTreeWidgetItem *item=itemChangesList[historyList[current]]->getItem(readIndex);
+        if (readIndex < current->getChangeListSize()) {
+            CustomTreeWidgetItem *item=current->getItem(readIndex);
             readIndex++;
             return item;
         }
@@ -138,17 +156,49 @@ public:
             i++;
         }
         itemChangesList.clear();
-        historyList.clear();
-        current=0;
+        current=nullptr;
         readIndex=0;
     }
 
-private:
-    std::vector<ItemChanges *> itemChangesList;
-    std::vector<long unsigned int> historyList;
-    long unsigned int current;
+    void pop_back ()
+    {
+        if (itemChangesList.size() == 0) return;
 
-    long unsigned int readIndex;
+        // item to delete
+        ItemChanges *toDelete=itemChangesList[itemChangesList.size()-1];
+
+        // reset current
+        current=toDelete->getPrior();
+
+        // reset next
+        long unsigned int i=0;
+        while (i < itemChangesList.size()) {
+            if (itemChangesList[i]->getNext() == toDelete) {
+                itemChangesList[i]->setNext(nullptr);
+            }
+            i++;
+        }
+
+        // remove
+        if (itemChangesList.size() > 0) itemChangesList.pop_back();
+    }
+
+    void print ()
+    {
+        std::cout << "ItemChangesStack:" << std::endl;
+        long unsigned int i=0;
+        while (i < itemChangesList.size()) {
+            std::cout << "   ItemChanges: " << itemChangesList[i] << std::endl;
+            itemChangesList[i]->print();
+            i++;
+        }
+        std::cout << "   current=" << current << std::endl;
+    }
+
+private:
+    std::vector<ItemChanges *> itemChangesList;   // list of operations, where each one might be single- or multi- select operations
+    ItemChanges *current;                         // current location
+    long unsigned int readIndex;                  // index for reading out of itemChangesList
 };
 
 class CustomStyledItemDelegate : public QStyledItemDelegate
@@ -509,11 +559,9 @@ private slots:
     void finishOperation (bool, int);
     void getPickedVertex (gp_Pnt, bool);
 
-    void on_actionSelectWire_triggered();
-
-    void on_actionUndo_triggered();
-
-    void on_actionRedo_triggered();
+    void on_actionSelectWire_triggered ();
+    void on_actionUndo_triggered ();
+    void on_actionRedo_triggered ();
 
 public slots:
     void setMenus ();
@@ -648,6 +696,7 @@ private:
     gp_Pnt startPoint, endPoint;  // rotation and vector input
 
     // for undo/redo
+    bool activeAction;            // shows whether a current action is active, such as move, stretch, edit, etc.
     ItemChangesStack itemChangesStack;
 };
 

@@ -343,7 +343,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     TopoDS_Compound compound;
     builder.MakeCompound(compound);
     Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-    ShapeData *newShapeData=new ShapeData(nullptr,nullptr,newShape);
+    ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,newShape);
     drawing.addShapeData(newShapeData);
 
     /////////////////////////////////////////////////////////////////////////////
@@ -395,6 +395,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     endPoint.SetCoord(0,0,1);    // rotation and vector input
 
     restrictToDrawingPlane=false;
+    activeAction=false;
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -489,13 +490,15 @@ void OpenParEMg::setMenus ()
 
 void OpenParEMg::setMenusI (int placeIndex)
 {
-    std::cout << "OpenParEMg::setMenusI  place=" << placeIndex << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::setMenusI  place=" << placeIndex << std::endl; std::cout.flush();
 
     bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
     ui->drawingWindow->compactSelectedItems();
     ui->drawingWindow->compactVisibleItems();
 
-    printLockouts();
+    // debug options
+    itemChangesStack.print();
+    //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
 
@@ -2718,7 +2721,7 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &sha
 
 void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywire, int i)
 {
-    std:: cout << "OpenParEMg::replaceItemShape  item=" << item << "  polywire=" << polywire << "  place=" << i << std::endl; std::cout.flush();
+    //std:: cout << "OpenParEMg::replaceItemShape  item=" << item << "  polywire=" << polywire << "  place=" << i << std::endl; std::cout.flush();
 
     if (!item) return;
     if (!polywire) return;
@@ -2754,7 +2757,7 @@ void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywir
         item->getShapeData()->setShape(AISshape);
     } else {
         //xxx
-        ShapeData *newShapeData=new ShapeData (nullptr,nullptr,AISshape);
+        ShapeData *newShapeData=new ShapeData (0,nullptr,nullptr,AISshape);
         item->addShapeData(newShapeData);
     }
     ui->drawingWindow->insertItemToMap(AISshape,item);
@@ -2932,7 +2935,7 @@ void OpenParEMg::reextrudePolywire (CustomTreeWidgetItem *item, CustomTreeWidget
 // eventually, everything loads and the reprocess completes
 void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 {
-    std::cout << "OpenParEMg::reprocess" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::reprocess" << std::endl; std::cout.flush();
 
     bool stop=false;
 
@@ -3135,11 +3138,31 @@ void OpenParEMg::editObject ()
     //std::cout << "OpenParEMg::editObject" << std::endl; std::cout.flush();
 
     startOperation(false);
+    itemChangesStack.startNew();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
+
+            // remove the old version from display and tracking
+            ui->drawingWindow->hideItem(item);
+            ui->drawingWindow->removeItemFromMap(item);
+            ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+
+            // clone the item onto itself for undo/redo
+            ShapeData *newShapeData=item->getShapeData()->copyCreate();
+            newShapeData->setAction(0);
+            item->addShapeData(newShapeData);
+            itemChangesStack.add(item);
+            activeAction=true;
+
+            // add the new item back to the display and tracking
+            ui->drawingWindow->insertItemToMap(item->getShape(),item);
+            ui->drawingWindow->showItem(item);
+
+            // modify the clone
+
             Polywire *polywire=item->getPolywire();
 
             Line *line=dynamic_cast<Line *>(polywire);
@@ -3238,6 +3261,7 @@ void OpenParEMg::finishEditObject (bool cancel)
         while (i < ui->drawingWindow->get_selectedItems_size()) {
             CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
             if (item && item->is_drawing()) {
+
                 Polywire *polywire=item->getPolywire();
                 if (polywire) reprocess(item);
 
@@ -3257,6 +3281,8 @@ void OpenParEMg::finishEditObject (bool cancel)
                     parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
                 }
                 ui->drawingWindow->showItem(item);
+
+                activeAction=false;
             }
             i++;
         }
@@ -3538,9 +3564,11 @@ void OpenParEMg::moveObject ()
     std::cout << "OpenParEMg::moveObject" << std::endl; std::cout.flush();
 
     startOperation(true);
+    activeAction=true;
+    itemChangesStack.startNew();
     ui->drawingWindow->set_pickSecondVertex(true);
 
-    // set up for animation
+    // set up for animation and undo/redo
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
@@ -3549,6 +3577,7 @@ void OpenParEMg::moveObject ()
             item->resetP0P1();
             item->reset_transformation();
             item->setEnableMove(true);
+            itemChangesStack.add(item);
         }
         i++;
     }
@@ -3567,8 +3596,9 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
 
     item->unsetAnimate(ui->drawingWindow->get_viewerContext());
 
-    // clone the item onto itself
+    // clone the item onto itself for undo/redo
     ShapeData *newShapeData=item->getShapeData()->copyCreate();
+    newShapeData->setAction(0);
     item->addShapeData(newShapeData);
 
     // modify the clone
@@ -3641,6 +3671,8 @@ CustomTreeWidgetItem* OpenParEMg::copyItem (CustomTreeWidgetItem *item, CustomTr
     if (!item) return nullptr;
 
     CustomTreeWidgetItem *newItem=item->copyCreate();
+    ShapeData *shapeData=newItem->getShapeData();
+    shapeData->setAction(1);
     newItem->setForeground(0,Qt::black);
     ui->drawingWindow->activateItem(newItem);
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
@@ -3728,12 +3760,31 @@ void OpenParEMg::stretchObject ()
     //std::cout << "OpenParEMg::stretchObject" << std::endl; std::cout.flush();
 
     startOperation(false);
+    itemChangesStack.startNew();
     ui->drawingWindow->set_pickSecondVertex(true);
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
+
+            // remove the old version from display and tracking
+            ui->drawingWindow->hideItem(item);
+            ui->drawingWindow->removeItemFromMap(item);
+            ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+
+            // clone the item onto itself for undo/redo
+            ShapeData *newShapeData=item->getShapeData()->copyCreate();
+            newShapeData->setAction(0);
+            item->addShapeData(newShapeData);
+            itemChangesStack.add(item);
+            activeAction=true;
+
+            // add the new item back to the display and tracking
+            ui->drawingWindow->insertItemToMap(item->getShape(),item);
+            ui->drawingWindow->showItem(item);
+
+            // modify the clone
             Handle(AIS_Shape) shape=item->getShape();
             if (!shape.IsNull()) {
 
@@ -3767,6 +3818,7 @@ void OpenParEMg::finishStretchObject (CustomTreeWidgetItem *item)
     gp_Pnt pnt=item->getP1();
     polywire->setEditPoint(pnt);
     reprocess(item);
+    activeAction=false;
 
     polywire->deleteRubberband();
     ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
@@ -4172,6 +4224,18 @@ void OpenParEMg::rotateObject ()
     std::cout << "OpenParEMg::rotateObject" << std::endl; std::cout.flush();
 
     startOperation(true);
+    activeAction=true;
+    itemChangesStack.startNew();
+
+    // set up for undo/redo
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) {
+            itemChangesStack.add(item);
+        }
+        i++;
+    }
 
     if (rotateInputForm) delete rotateInputForm;
     rotateInputForm=new RotateInputForm();
@@ -4190,6 +4254,23 @@ void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item)
     //std::cout << "OpenParEMg::finishRotateObject" << std::endl; std::cout.flush();
 
     if (!item) return;
+
+    // remove the old version from display and tracking
+    ui->drawingWindow->hideItem(item);
+    ui->drawingWindow->removeItemFromMap(item);
+    ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+
+    // clone the item onto itself for undo/redo
+    ShapeData *newShapeData=item->getShapeData()->copyCreate();
+    newShapeData->setAction(0);
+    item->addShapeData(newShapeData);
+    activeAction=false;
+
+    // add the new item back to the display and tracking
+    ui->drawingWindow->insertItemToMap(item->getShape(),item);
+    ui->drawingWindow->showItem(item);
+
+    // modify the clone
 
     Polywire *polywire=item->getPolywire();
     if (polywire) {
@@ -4776,7 +4857,7 @@ void OpenParEMg::printLockouts ()
 
 void OpenParEMg::resetDrawing ()
 {
-    std::cout << "OpenParEMg::resetDrawing" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::resetDrawing" << std::endl; std::cout.flush();
 
     // mesh
     deleteMesh(false);
@@ -4786,23 +4867,27 @@ void OpenParEMg::resetDrawing ()
     ui->drawingWindow->updateViewer();
 
     // selection tree
-    std::cout << "place 1" << std::endl; std::cout.flush();
     drawing.reset();
-    std::cout << "place 1" << std::endl; std::cout.flush();
 
     // drawing is always a COMPOUND
     BRep_Builder builder;
     TopoDS_Compound compound;
     builder.MakeCompound(compound);
     Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-    ShapeData *newShapeData=new ShapeData(nullptr,nullptr,newShape);
+    ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,newShape);
     drawing.addShapeData(newShapeData);
 
     //reset the tracking
     ui->drawingWindow->reset();
 
+    // undo/redo
+    itemChangesStack.clear();
+
+    // for uniquifying names
     objectCounts.reset();
 
+
+    // selection
     clickedItem=nullptr;
     previousClickedItem=nullptr;
     workingItem=nullptr;
@@ -4810,8 +4895,6 @@ void OpenParEMg::resetDrawing ()
     drawingChanged=true;
 
     on_actionShape_triggered();
-
-    std::cout << "exit OpenParEMg::resetDrawing" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::resetProject ()
@@ -5145,6 +5228,7 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
 {
     if (shape.IsNull()) return;
 
+    // ToDo: delete this?
     // ensure the root item is a compound
     if (shape.ShapeType() != TopAbs_COMPOUND) {
         BRep_Builder builder;
@@ -5153,10 +5237,6 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
         builder.Add(compound,shape);
         shape=compound;
     }
-
-    // // variable to support meshing
-    // std::pair<int,int> dimTag;
-    // dimTag.first=-1; dimTag.second=-1;
 
     // drawing item
     Handle(AIS_Shape) drawingShape=new AIS_Shape(shape);
@@ -5170,9 +5250,6 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
         TopAbs_ShapeEnum shapeType=child.ShapeType();
         // TopAbs_COMPSOLID may not be needed
         if (shapeType == TopAbs_COMPSOLID || shapeType == TopAbs_SOLID) {
-            // volumeCount++;
-            // dimTag.first=3; dimTag.second=volumeCount;
-
             CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
             Handle(AIS_Shape) drawingShape=new AIS_Shape(child);
             ui->drawingWindow->insertItemToMap(drawingShape,newItem);
@@ -5193,18 +5270,6 @@ void OpenParEMg::addRootDisplayShape (TopoDS_Shape shape)
             newItem->setPolywire(nullptr);
             //newItem->set_dimTag(dimTag);
             drawing.addChild(newItem);
-
-            // // set materials
-            // if (shapeType == TopAbs_SOLID) {
-            //     int i=0;
-            //     while (i < projData.physicalGroupMaterialCount) {
-            //         if (projData.physicalGroupMaterials[i].tag == dimTag.second) {
-            //             newItem->setText(1,projData.physicalGroupMaterials[i].materialName);
-            //             break;
-            //         }
-            //         i++;
-            //     }
-            // }
         }
         topoIterator.Next();
     }
@@ -5298,7 +5363,7 @@ CustomTreeWidgetItem* OpenParEMg::addItemShape (TopoDS_Shape shape, CustomTreeWi
     // new item
     CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
     Handle(AIS_Shape) dummy;
-    ShapeData *newShapeData=new ShapeData(activePolywire,nullptr,dummy);
+    ShapeData *newShapeData=new ShapeData(1,activePolywire,nullptr,dummy);
     newItem->addShapeData(newShapeData);
     replaceItemShape(newItem,shape,11);  // inserts to item map
 
@@ -5691,7 +5756,6 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     else if (typeStart == 3) polywire=new Polycircle();
     else if (typeStart == 4) polywire=new Rectangle();
 
-    std::cout << "place 1" << std::endl; std::cout.flush();
     std::string name;
     if (polywire) {
         polywire->load(inputData,startBlockIndex,endBlockIndex,name,&objectCounts);
@@ -5718,7 +5782,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     if (process) {
         CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem();
         Handle(AIS_Shape) dummy;
-        ShapeData *newShapeData=new ShapeData(nullptr,process,dummy);
+        ShapeData *newShapeData=new ShapeData(1,nullptr,process,dummy);
         newItem->addShapeData(newShapeData);
         parent->addChild(newItem);
 
@@ -7174,6 +7238,8 @@ void OpenParEMg::on_actionDrawLine_triggered ()
 
     restrictToDrawingPlane=true;
     startOperation(true);
+    activeAction=true;
+    itemChangesStack.startNew();
     ui->drawingWindow->set_pickFirstVertex(true);
     clearTreeSelection();
 
@@ -7194,6 +7260,8 @@ void OpenParEMg::on_actionDrawPolyline_triggered ()
 
     restrictToDrawingPlane=true;
     startOperation(true);
+    activeAction=true;
+    itemChangesStack.startNew();
     ui->drawingWindow->set_pickFirstVertex(true);
     clearTreeSelection();
 
@@ -7214,6 +7282,8 @@ void OpenParEMg::on_actionDrawPolycircle_triggered ()
 
     restrictToDrawingPlane=true;
     startOperation(true);
+    activeAction=true;
+    itemChangesStack.startNew();
     ui->drawingWindow->set_pickFirstVertex(true);
     clearTreeSelection();
 
@@ -7234,6 +7304,8 @@ void OpenParEMg::on_actionDrawRectangle_triggered ()
 
     restrictToDrawingPlane=true;
     startOperation(true);
+    activeAction=true;
+    itemChangesStack.startNew();
     ui->drawingWindow->set_pickFirstVertex(true);
     clearTreeSelection();
 
@@ -7310,6 +7382,8 @@ void OpenParEMg::finishDraw ()
 
         newItem=addItemShape(activePolywire,&drawing); // inserts to item map
         newItem->setText(0,activePolywire->getName(&objectCounts));
+        itemChangesStack.add(newItem);
+        activeAction=false;
 
         // put it on the Z-layer to get it higher selection priority
         newItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
@@ -7577,12 +7651,9 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     bool finishedMove=false;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        itemChangesStack.startNew();
 
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
-            // for undo/redo
-            itemChangesStack.add(item);
 
             // move
             if (item->getEnableMove()) {
@@ -7654,6 +7725,11 @@ void OpenParEMg::finishOperation (bool cancel, int source)
     std::cout << "OpenParEMg::finishOperation  cancel=" << cancel << "  source=" << source << std::endl; std::cout.flush();
 
     if (cancel) {
+
+        if (activeAction) {
+            itemChangesStack.pop_back();
+            activeAction=false;
+        }
 
         if (activePolywire && activePolywire->getDrawEnable()) {
             activePolywire->setDrawEnable(false);
@@ -7738,10 +7814,12 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
 void OpenParEMg::on_actionUndo_triggered ()
 {
-    itemChangesStack.undo();
-    CustomTreeWidgetItem *item=itemChangesStack.getItem();
-    if (item) {
+    std::cout << "OpenParEMg::on_actionUndo_triggered" << std::endl; std::cout.flush();
 
+    std::cout << "place 1" << std::endl; std::cout.flush();
+    itemChangesStack.readNew();
+    long unsigned int i=0;
+    while (CustomTreeWidgetItem *item=itemChangesStack.getItem()) {
         // remove old shape
         if (!item->getShape().IsNull()) {
             ui->drawingWindow->hideItem(item);
@@ -7749,21 +7827,29 @@ void OpenParEMg::on_actionUndo_triggered ()
             ui->drawingWindow->deleteShape(item->getShape());  // lose selection
         }
 
+        std::cout << "place 2" << std::endl; std::cout.flush();
         item->undo();
+        std::cout << "place 3" << std::endl; std::cout.flush();
         reprocess(item);
+        std::cout << "place 4" << std::endl; std::cout.flush();
         ui->drawingWindow->showItem(item);
-        ui->drawingWindow->updateViewer();
-        setMenusI(3000);
     }
-    ui->actionUndo->setEnabled(itemChangesStack.hasUndo());
+    std::cout << "place 5" << std::endl; std::cout.flush();
+
+    itemChangesStack.undo();
+    ui->drawingWindow->updateViewer();
+    setMenusI(3000);
 }
 
 void OpenParEMg::on_actionRedo_triggered ()
 {
-    itemChangesStack.redo();
-    CustomTreeWidgetItem *item=itemChangesStack.getItem();
-    if (item) {
+    //std::cout << "OpenParEMg::on_actionRedo_triggered" << std::endl; std::cout.flush();
 
+    itemChangesStack.readNew();
+    itemChangesStack.redo();
+
+    long unsigned int i=0;
+    while (CustomTreeWidgetItem *item=itemChangesStack.getItem()) {
         // remove old shape
         if (!item->getShape().IsNull()) {
             ui->drawingWindow->hideItem(item);
@@ -7774,9 +7860,9 @@ void OpenParEMg::on_actionRedo_triggered ()
         item->redo();
         reprocess(item);
         ui->drawingWindow->showItem(item);
-        ui->drawingWindow->updateViewer();
-        setMenusI(3000);
     }
-    ui->actionRedo->setEnabled(itemChangesStack.hasRedo());
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(3000);
 }
 

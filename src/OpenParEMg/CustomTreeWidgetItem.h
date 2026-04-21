@@ -39,13 +39,15 @@ public:
     {
         polywire=nullptr;
         process=nullptr;
+        action=0;
     }
 
-    ShapeData (Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    ShapeData (int action_,Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
     {
         polywire=nullptr;
         process=nullptr;
 
+        action=action_;
         setPolywire(polywire_);
         setProcess(process_);
         setShape(shape_);
@@ -56,6 +58,7 @@ public:
         polywire=nullptr;
         process=nullptr;
 
+        action=shapeData->action;
         setPolywire(shapeData->getPolywire());
         setProcess(shapeData->getProcess());
         setShape(shapeData->getShape());
@@ -78,6 +81,7 @@ public:
     {
         ShapeData *newShapeData=new ShapeData();
         if (newShapeData) {
+            newShapeData->action=action;
             if (polywire) newShapeData->polywire=polywire->copyCreate();
             if (process) newShapeData->process=process->copyCreate();
             if (!shape.IsNull()) newShapeData->shape=new AIS_Shape(shape->Shape());
@@ -91,6 +95,11 @@ public:
             }
         }
         return newShapeData;
+    }
+
+    void setAction (int action_)
+    {
+        action=action_;
     }
 
     void setShape (Handle(AIS_Shape) shape_)
@@ -110,8 +119,9 @@ public:
         process=process_;
     }
 
-    void set (Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    void set (int action_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
     {
+        action=action_;
         setPolywire(polywire_);
         setProcess(process_);
         setShape(shape_);
@@ -120,6 +130,7 @@ public:
     void set (ShapeData *shapeData)
     {
         if (!shapeData) return;
+        action=shapeData->action;
         setPolywire(shapeData->getPolywire());
         setProcess(shapeData->getProcess());
         setShape(shapeData->getShape());
@@ -133,27 +144,46 @@ public:
 
     void pushArrowHead (Handle(AIS_Shape) arrowHead) {arrowHeads.push_back(arrowHead);}
 
+    int getAction () {return action;}
     Polywire* getPolywire () {return polywire;}
     Process* getProcess () {return process;}
     Handle(AIS_Shape) getShape () {return shape;}
     long unsigned int getArrowHeadsSize () {return arrowHeads.size();}
     Handle(AIS_Shape) getArrowHead (long unsigned int i) {return arrowHeads[i];}
 
+    bool isEdit () {if (action == 0) return true; return false;}
+    bool isCreate () {if (action == 1) return true; return false;}
+    bool isDelete () {if (action == 2) return true; return false;}
+
+    void setPrior (ShapeData *prior_) {prior=prior_;}
+    void setNext (ShapeData *next_) {next=next_;}
+
+    ShapeData* getPrior () {return prior;}
+    ShapeData* getNext () {return next;}
+
     void print ()
     {
         std::cout << "      ShapeData:" << std::endl;
+        if (isEdit()) std:: cout << "        action=edit" << std::endl;
+        if (isCreate()) std:: cout << "        action=create" << std::endl;
+        if (isDelete()) std:: cout << "        action=delete" << std::endl;
         if (shape.IsNull()) std::cout << "         shape=null" << std::endl;
         else std::cout << "         shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
         std::cout << "         arrowHeadCount=" << arrowHeads.size() << std::endl;
         std::cout << "         polywire=" << polywire << std::endl;
         std::cout << "         process=" << process << std::endl;
+        std::cout << "         prior=" << prior << std::endl;
+        std::cout << "         next=" << next << std::endl;
     }
 
 private:
+    int action;                                        // 0 - edit; 1 - create; 2 - delete
     Handle(AIS_Shape) shape;                           // for drawing
     std::vector<Handle(AIS_Shape)> arrowHeads;         // for integration lines to show direction
     Polywire *polywire;                                // Polywire object for this item
     Process *process;                                  // for drawing processing of children
+    ShapeData *prior;                                  // prior ShapeData in ShapeDataStack
+    ShapeData *next;                                   // next ShapeData in ShapeDataStack
 };
 
 class ShapeDataStack
@@ -161,7 +191,7 @@ class ShapeDataStack
 public:
     ShapeDataStack ()
     {
-        current=0;
+        current=nullptr;
     }
 
     ~ShapeDataStack ()
@@ -173,165 +203,141 @@ public:
         }
     }
 
-    void add (Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    void add (int action_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
     {
-        ShapeData *shapeData=new ShapeData(polywire_,process_,shape_);
-        shapeDataList.push_back(shapeData);
-        current=shapeDataList.size()-1;
-        historyList.push_back(current);
+        ShapeData *shapeData=new ShapeData(action_,polywire_,process_,shape_);
+        add(shapeData);
     }
 
     void add (ShapeData *shapeData)
     {
         if (!shapeData) return;
         shapeDataList.push_back(shapeData);
-        current=shapeDataList.size()-1;
-        historyList.push_back(current);
+        if (current) {
+            shapeData->setPrior(current);
+            current->setNext(shapeData);
+        }
+        current=shapeData;
     }
 
     // at current location
 
-    void set (Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    void set (int action_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
     {
-        ShapeData *shapeData=shapeDataList[historyList[current]];
-        shapeData->set(polywire_,process_,shape_);
+        current->set(action_,polywire_,process_,shape_);
     }
 
     void set (ShapeData *shapeData_)
     {
         if (!shapeData_) return;
-        ShapeData *shapeData=shapeDataList[historyList[current]];
-        shapeData->set(shapeData_);
+        current->set(shapeData_);
+    }
+
+    void setAction (int action_)
+    {
+        current->setAction(action_);
     }
 
     void setShape (Handle(AIS_Shape) shape_)
     {
         if (shape_.IsNull()) return;
-        ShapeData *shapeData=shapeDataList[historyList[current]];
-        shapeData->set(shape_);
+        current->set(shape_);
     }
 
     void setPolywire (Polywire *polywire_)
     {
         if (!polywire_) return;
-        ShapeData *shapeData=shapeDataList[historyList[current]];
-        shapeData->setPolywire(polywire_);
+        current->setPolywire(polywire_);
     }
 
     void setProcess (Process *process_)
     {
         if (!process_) return;
-        ShapeData *shapeData=shapeDataList[historyList[current]];
-        shapeData->setProcess(process_);
+        current->setProcess(process_);
     }
 
     void pushArrowHead (Handle(AIS_Shape) arrowHead)
     {
-        ShapeData *shapeData=shapeDataList[historyList[current]];
-        shapeData->pushArrowHead(arrowHead);
+        current->pushArrowHead(arrowHead);
     }
 
     // from current location
 
     ShapeData* getShapeData ()
     {
-        if (shapeDataList.size() == 0) return nullptr;
-        return shapeDataList[historyList[current]];
+        return current;
     }
 
     Polywire* getPolywire ()
     {
-        if (shapeDataList.size() == 0) return nullptr;
-        return shapeDataList[historyList[current]]->getPolywire();
+        if (current) return current->getPolywire();
+        return nullptr;
     }
 
     Process* getProcess ()
     {
-        if (shapeDataList.size() == 0) return nullptr;
-        return shapeDataList[historyList[current]]->getProcess();
+        if (current) return current->getProcess();
+        return nullptr;
     }
 
     Handle(AIS_Shape) getShape ()
     {
-        if (shapeDataList.size() == 0) return nullptr;
-        return shapeDataList[historyList[current]]->getShape();
+        Handle(AIS_Shape) shape;
+        if (current) return current->getShape();
+        return shape;
     }
 
     long unsigned int getArrowHeadsSize ()
     {
-        if (shapeDataList.size() == 0) return 0;
-        return shapeDataList[historyList[current]]->getArrowHeadsSize();
+        if (current) return current->getArrowHeadsSize();
+        return 0;
     }
 
     Handle(AIS_Shape) getArrowHead (long unsigned int i)
     {
         Handle(AIS_Shape) arrowHead;
-        if (shapeDataList.size() == 0) return arrowHead;
-        arrowHead=shapeDataList[historyList[current]]->getArrowHead(i);
+        if (current) return current->getArrowHead(i);
         return arrowHead;
     }
 
     bool hasUndo ()
     {
-        if (historyList.size() > 0 && current > 0) return true;
+        if (current && current->getPrior()) return true;
         return false;
     }
 
     bool hasRedo ()
     {
-        if (historyList.size() > 0 && current < historyList.size()-1) return true;
+        if (current && current->getNext()) return true;
         return false;
     }
 
     void undo ()
     {
-        if (hasUndo()) current--;
+        if (current && hasUndo()) current=current->getPrior();
     }
 
     void redo ()
     {
-        if (hasRedo()) current++;
+        if (current && hasRedo()) current=current->getNext();
     }
 
-    void resetHistory ()
+    // must call undo() before pop_back()
+    void pop_back ()
     {
-        if (shapeDataList.size() == 0) return;
-
-        // swap current into the 0 location
-        ShapeData *temp=shapeDataList[historyList[current]];
-        shapeDataList[historyList[current]]=shapeDataList[0];
-        shapeDataList[0]=temp;
-
-        // free everything else
-        long unsigned int i=1;
-        while (i < shapeDataList.size()) {
-            delete shapeDataList[i];
-            i++;
-        }
-
-        // clear the list and add back in temp
-        shapeDataList.clear();
-        shapeDataList.push_back(temp);
-
-        // clear history and add back current
-        historyList.clear();
-        historyList.push_back(0);
-        current=0;
+        if (shapeDataList.size() > 0) shapeDataList.pop_back();
     }
 
     void reset ()
     {
-        std::cout << "ShapeDataStack::reset" << std::endl; std::cout.flush();
+        //std::cout << "ShapeDataStack::reset" << std::endl; std::cout.flush();
         long unsigned int i=0;
         while (i < shapeDataList.size()) {
             if (shapeDataList[i]) delete shapeDataList[i];
             i++;
         }
         shapeDataList.clear();
-
-        historyList.clear();
-        current=0;
-        std::cout << "exit ShapeDataStack::reset" << std::endl; std::cout.flush();
+        current=nullptr;
     }
 
     void print ()
@@ -342,21 +348,12 @@ public:
             shapeDataList[i]->print();
             i++;
         }
-
-        std::cout << "   history:" << std::endl;
-        i=0;
-        while (i < historyList.size()) {
-            std::cout << "      " << historyList[i] << std::endl;
-            i++;
-        }
-
-        std::cout << "      current=" << current << std::endl;
+        std::cout << "   current=" << current << std::endl;
     }
 
 private:
     std::vector<ShapeData *> shapeDataList;
-    std::vector<long unsigned int> historyList;
-    long unsigned int current;                          // index to current item
+    ShapeData *current;
 };
 
 class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
@@ -388,8 +385,8 @@ public:
     void set_OPEMobject (void *pointer) {OPEMobject=pointer;}
     void* get_OPEMobject () {return OPEMobject;}
 
-
     void addShapeData (ShapeData *shapeData_) {dataStack.add(shapeData_);}
+    void pop_back () {dataStack.pop_back();}
     void setShape (Handle(AIS_Shape) shape_) {dataStack.setShape(shape_);}
     void setPolywire (Polywire *polywire_) {dataStack.setPolywire(polywire_);}
     void setProcess (Process *process_) {dataStack.setProcess(process_);}
@@ -716,6 +713,7 @@ public:
 private slots:
 
 private:
+    bool activeAction;                                 // for undo/redo, an active operation such as move, edit, stretch, etc. is in progress
     ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
     Handle(AIS_Shape) animateShape;                    // temporary shape for animation during moving
     gp_Trsf aTrsf;
