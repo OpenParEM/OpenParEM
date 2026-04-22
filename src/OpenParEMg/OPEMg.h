@@ -74,6 +74,7 @@ public:
         long unsigned int i=0;
         while (i < changeList.size()) {
             std::cout << "         item=" << changeList[i] << "  prior=" << prior << "  next=" << next << std::endl;
+            changeList[i]->print();
             i++;
         }
         std::cout.flush();

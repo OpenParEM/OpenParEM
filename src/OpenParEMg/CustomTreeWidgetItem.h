@@ -163,17 +163,17 @@ public:
 
     void print ()
     {
-        std::cout << "      ShapeData:" << std::endl;
-        if (isEdit()) std:: cout << "        action=edit" << std::endl;
-        if (isCreate()) std:: cout << "        action=create" << std::endl;
-        if (isDelete()) std:: cout << "        action=delete" << std::endl;
-        if (shape.IsNull()) std::cout << "         shape=null" << std::endl;
-        else std::cout << "         shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
-        std::cout << "         arrowHeadCount=" << arrowHeads.size() << std::endl;
-        std::cout << "         polywire=" << polywire << std::endl;
-        std::cout << "         process=" << process << std::endl;
-        std::cout << "         prior=" << prior << std::endl;
-        std::cout << "         next=" << next << std::endl;
+        std::cout << "               ShapeData: " << this << std::endl;
+        if (isEdit()) std:: cout << "                  action=edit" << std::endl;
+        if (isCreate()) std:: cout << "                  action=create" << std::endl;
+        if (isDelete()) std:: cout << "                  action=delete" << std::endl;
+        if (shape.IsNull()) std::cout << "                  shape=null" << std::endl;
+        else std::cout << "                  shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
+        std::cout << "                  arrowHeadCount=" << arrowHeads.size() << std::endl;
+        std::cout << "                  polywire=" << polywire << std::endl;
+        std::cout << "                  process=" << process << std::endl;
+        std::cout << "                  prior=" << prior << std::endl;
+        std::cout << "                  next=" << next << std::endl;
     }
 
 private:
@@ -322,7 +322,6 @@ public:
         if (current && hasRedo()) current=current->getNext();
     }
 
-    // must call undo() before pop_back()
     void pop_back ()
     {
         if (shapeDataList.size() > 0) shapeDataList.pop_back();
@@ -342,13 +341,13 @@ public:
 
     void print ()
     {
-        std::cout << "   ShapeData:" << std::endl;
+        std::cout << "            ShapeDataStack: " << this << std::endl;
         long unsigned int i=0;
         while (i < shapeDataList.size()) {
             shapeDataList[i]->print();
             i++;
         }
-        std::cout << "   current=" << current << std::endl;
+        std::cout << "            current=" << current << std::endl;
     }
 
 private:
@@ -651,35 +650,35 @@ public:
 
     void print ()
     {
-        std::cout << "CustomTreeWidgetItem:" << std::endl;
+        // std::cout << "CustomTreeWidgetItem:" << std::endl;
         dataStack.print();
-        std::cout << "   forShowHide=" << forShowHide << std::endl;
-        std::cout << "   OPEMobject=" << OPEMobject << std::endl;
-        if (material.isNull()) std::cout << "   material=null" << std::endl;
-        else std::cout << "   material=" << material.toStdString() << std::endl;
-        std::cout << "   itemType=" << itemType << std::endl;
-        if (is_rootDrawing()) std::cout << "   itemType=rootDrawing" << std::endl;
-        if (is_rootPort()) std::cout << "   itemType=rootPort" << std::endl;
-        if (is_rootBoundary()) std::cout << "   itemType=rootBoundary" << std::endl;
-        if (is_rootMesh()) std::cout << "   itemType=rootMesh" << std::endl;
-        if (is_rootPath()) std::cout << "   itemType=rootPath" << std::endl;
-        if (is_drawing()) std::cout << "   itemType=drawing" << std::endl;
-        if (is_port()) std::cout << "   itemType=port" << std::endl;
-        if (is_boundary()) std::cout << "   itemType=boundary" << std::endl;
-        if (is_mesh()) std::cout << "   itemType=mesh" << std::endl;
-        if (is_path()) std::cout << "   itemType=path" << std::endl;
-        if (is_sportLabel()) std::cout << "   itemType=sport" << std::endl;
-        if (is_impedanceDefinition()) std::cout << "   itemType=impedanceDefinition" << std::endl;
-        if (is_impedanceCalculation()) std::cout << "   itemType=impedanceCalculation" << std::endl;
-        if (is_sportNumber()) std::cout << "   itemType=sportNumber" << std::endl;
-        if (is_sport()) std::cout << "   item=sportNet" << std::endl;
-        if (is_voltage()) std::cout << "   itemType=voltage" << std::endl;
-        if (is_current()) std::cout << "   itemType=current" << std::endl;
-        if (is_scale()) std::cout << "   itemType=scale" << std::endl;
-        if (is_scaleValue()) std::cout << "   itemType=scaleValue" << std::endl;
-        if (is_integrationPathSegment()) std::cout << "   itemType=integrationPathSegment" << std::endl;
-        std::cout << "   dimTag.first=" << dimTag.first << std::endl
-                  << "   dimTag.second=" << dimTag.second << std::endl;
+        // std::cout << "   forShowHide=" << forShowHide << std::endl;
+        // std::cout << "   OPEMobject=" << OPEMobject << std::endl;
+        // if (material.isNull()) std::cout << "   material=null" << std::endl;
+        // else std::cout << "   material=" << material.toStdString() << std::endl;
+        // std::cout << "   itemType=" << itemType << std::endl;
+        // if (is_rootDrawing()) std::cout << "   itemType=rootDrawing" << std::endl;
+        // if (is_rootPort()) std::cout << "   itemType=rootPort" << std::endl;
+        // if (is_rootBoundary()) std::cout << "   itemType=rootBoundary" << std::endl;
+        // if (is_rootMesh()) std::cout << "   itemType=rootMesh" << std::endl;
+        // if (is_rootPath()) std::cout << "   itemType=rootPath" << std::endl;
+        // if (is_drawing()) std::cout << "   itemType=drawing" << std::endl;
+        // if (is_port()) std::cout << "   itemType=port" << std::endl;
+        // if (is_boundary()) std::cout << "   itemType=boundary" << std::endl;
+        // if (is_mesh()) std::cout << "   itemType=mesh" << std::endl;
+        // if (is_path()) std::cout << "   itemType=path" << std::endl;
+        // if (is_sportLabel()) std::cout << "   itemType=sport" << std::endl;
+        // if (is_impedanceDefinition()) std::cout << "   itemType=impedanceDefinition" << std::endl;
+        // if (is_impedanceCalculation()) std::cout << "   itemType=impedanceCalculation" << std::endl;
+        // if (is_sportNumber()) std::cout << "   itemType=sportNumber" << std::endl;
+        // if (is_sport()) std::cout << "   item=sportNet" << std::endl;
+        // if (is_voltage()) std::cout << "   itemType=voltage" << std::endl;
+        // if (is_current()) std::cout << "   itemType=current" << std::endl;
+        // if (is_scale()) std::cout << "   itemType=scale" << std::endl;
+        // if (is_scaleValue()) std::cout << "   itemType=scaleValue" << std::endl;
+        // if (is_integrationPathSegment()) std::cout << "   itemType=integrationPathSegment" << std::endl;
+        // std::cout << "   dimTag.first=" << dimTag.first << std::endl
+        //           << "   dimTag.second=" << dimTag.second << std::endl;
     }
 
     void resetOperation ()

@@ -1071,7 +1071,7 @@ bool Polyline::load (std::vector<std::string> &inputData, long unsigned int star
 
 void Polyline::print ()
 {
-    std::cout << "Line:" << std::endl;
+    std::cout << "Polyline:" << std::endl;
     long unsigned int i=0;
     while (i < shapePoints.size()) {
         std::string name="point";
@@ -1618,7 +1618,7 @@ bool Rectangle::load (std::vector<std::string> &inputData, long unsigned int sta
 
 void Rectangle::print ()
 {
-    std::cout << "Line:" << std::endl;
+    std::cout << "Rectangle:" << std::endl;
     long unsigned int i=0;
     while (i < shapePoints.size()) {
         std::string name="point";
@@ -2100,7 +2100,7 @@ bool Polycircle::load (std::vector<std::string> &inputData, long unsigned int st
 
 void Polycircle::print ()
 {
-    std::cout << "Line:" << std::endl;
+    std::cout << "Polycircle:" << std::endl;
     long unsigned int i=0;
     while (i < shapePoints.size()) {
         std::string name="point";
