@@ -37,17 +37,21 @@ public:
 
     ShapeData ()
     {
+        // default to noop
+        type=0;
         polywire=nullptr;
         process=nullptr;
-        action=0;
+        prior=nullptr;
+        next=nullptr;
     }
 
-    ShapeData (int action_,Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    ShapeData (int type_,Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
     {
+        type=type_;
         polywire=nullptr;
         process=nullptr;
-
-        action=action_;
+        prior=nullptr;
+        next=nullptr;
         setPolywire(polywire_);
         setProcess(process_);
         setShape(shape_);
@@ -55,10 +59,11 @@ public:
 
     ShapeData (ShapeData *shapeData)
     {
+        type=shapeData->type;
         polywire=nullptr;
         process=nullptr;
-
-        action=shapeData->action;
+        prior=shapeData->prior;
+        next=shapeData->next;
         setPolywire(shapeData->getPolywire());
         setProcess(shapeData->getProcess());
         setShape(shapeData->getShape());
@@ -75,13 +80,18 @@ public:
             if (!arrowHeads[i].IsNull()) arrowHeads[i].Nullify();
             i++;
         }
+        arrowHeads.clear();
     }
 
     ShapeData* copyCreate ()
     {
         ShapeData *newShapeData=new ShapeData();
         if (newShapeData) {
-            newShapeData->action=action;
+            newShapeData->type=type;
+            newShapeData->polywire=nullptr;
+            newShapeData->process=nullptr;
+            newShapeData->prior=prior;
+            newShapeData->next=next;
             if (polywire) newShapeData->polywire=polywire->copyCreate();
             if (process) newShapeData->process=process->copyCreate();
             if (!shape.IsNull()) newShapeData->shape=new AIS_Shape(shape->Shape());
@@ -97,10 +107,12 @@ public:
         return newShapeData;
     }
 
-    void setAction (int action_)
+    void setType (int type_)
     {
-        action=action_;
+        type=type_;
     }
+
+    int getType () {return type;}
 
     void setShape (Handle(AIS_Shape) shape_)
     {
@@ -119,9 +131,9 @@ public:
         process=process_;
     }
 
-    void set (int action_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    void set (int type_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
     {
-        action=action_;
+        type=type_;
         setPolywire(polywire_);
         setProcess(process_);
         setShape(shape_);
@@ -130,7 +142,9 @@ public:
     void set (ShapeData *shapeData)
     {
         if (!shapeData) return;
-        action=shapeData->action;
+        type=shapeData->type;
+        prior=shapeData->prior;
+        next=shapeData->next;
         setPolywire(shapeData->getPolywire());
         setProcess(shapeData->getProcess());
         setShape(shapeData->getShape());
@@ -144,16 +158,21 @@ public:
 
     void pushArrowHead (Handle(AIS_Shape) arrowHead) {arrowHeads.push_back(arrowHead);}
 
-    int getAction () {return action;}
     Polywire* getPolywire () {return polywire;}
     Process* getProcess () {return process;}
     Handle(AIS_Shape) getShape () {return shape;}
     long unsigned int getArrowHeadsSize () {return arrowHeads.size();}
     Handle(AIS_Shape) getArrowHead (long unsigned int i) {return arrowHeads[i];}
 
-    bool isEdit () {if (action == 0) return true; return false;}
-    bool isCreate () {if (action == 1) return true; return false;}
-    bool isDelete () {if (action == 2) return true; return false;}
+    bool isNoop () {if (type == 0) return true; return false;}
+    bool isCreate () {if (type == 1) return true; return false;}
+    bool isEdit () {if (type == 2) return true; return false;}
+    bool isDelete () {if (type == 3) return true; return false;}
+
+    void setNoop () {type=0;}
+    void setCreate () {type=1;}
+    void setEdit () {type=2;}
+    void setDelete () {type=3;}
 
     void setPrior (ShapeData *prior_) {prior=prior_;}
     void setNext (ShapeData *next_) {next=next_;}
@@ -164,9 +183,10 @@ public:
     void print ()
     {
         std::cout << "               ShapeData: " << this << std::endl;
-        if (isEdit()) std:: cout << "                  action=edit" << std::endl;
-        if (isCreate()) std:: cout << "                  action=create" << std::endl;
-        if (isDelete()) std:: cout << "                  action=delete" << std::endl;
+        if (isNoop()) std:: cout << "                  type=noop" << std::endl;
+        if (isCreate()) std:: cout << "                  type=create" << std::endl;
+        if (isEdit()) std:: cout << "                  type=edit" << std::endl;
+        if (isDelete()) std::cout << "                  type=delete" << std::endl;
         if (shape.IsNull()) std::cout << "                  shape=null" << std::endl;
         else std::cout << "                  shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
         std::cout << "                  arrowHeadCount=" << arrowHeads.size() << std::endl;
@@ -177,7 +197,7 @@ public:
     }
 
 private:
-    int action;                                        // 0 - edit; 1 - create; 2 - delete
+    int type;                                          // 0 - noop; 1 - create; 2 - edit; 3 - delete
     Handle(AIS_Shape) shape;                           // for drawing
     std::vector<Handle(AIS_Shape)> arrowHeads;         // for integration lines to show direction
     Polywire *polywire;                                // Polywire object for this item
@@ -191,17 +211,23 @@ class ShapeDataStack
 public:
     ShapeDataStack ()
     {
-        current=nullptr;
+        // always put a noop at the bottom of the stack
+        ShapeData *noop=new ShapeData();
+        current=noop;
+        shapeDataList.push_back(noop);
     }
 
     ~ShapeDataStack ()
     {
         long unsigned int i=0;
         while (i < shapeDataList.size()) {
-            if (shapeDataList[i]) delete shapeDataList[i];
+            if (shapeDataList[i]) {delete shapeDataList[i]; shapeDataList[i]=nullptr;}
             i++;
         }
+        shapeDataList.clear();
     }
+
+    long unsigned int getSize () {return shapeDataList.size();}
 
     void add (int action_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
     {
@@ -211,13 +237,18 @@ public:
 
     void add (ShapeData *shapeData)
     {
+        std::cout << "CustomTreeWidgetItem::add  shapeData=" << shapeData << std::endl; std::cout.flush();
         if (!shapeData) return;
+        if (current) {std::cout << "      enter add:  current=" << current << "  current->prior()=" << current->getPrior() << "  current->next()=" << current->getNext() << std::endl; std::cout.flush();}
+        else {std::cout << "      enter add: current=nullptr" << std::endl; std::cout.flush();}
         shapeDataList.push_back(shapeData);
         if (current) {
             shapeData->setPrior(current);
             current->setNext(shapeData);
         }
         current=shapeData;
+        if (current) {std::cout << "      exit add:  current=" << current << "  current->prior()=" << current->getPrior() << "  current->next()=" << current->getNext() << std::endl; std::cout.flush();}
+        else {std::cout << "      exit add: current=nullptr" << std::endl; std::cout.flush();}
     }
 
     // at current location
@@ -233,9 +264,9 @@ public:
         current->set(shapeData_);
     }
 
-    void setAction (int action_)
+    void setType (int type_)
     {
-        current->setAction(action_);
+        current->setType(type_);
     }
 
     void setShape (Handle(AIS_Shape) shape_)
@@ -258,10 +289,12 @@ public:
 
     void pushArrowHead (Handle(AIS_Shape) arrowHead)
     {
+        if (arrowHead.IsNull()) return;
         current->pushArrowHead(arrowHead);
     }
 
     // from current location
+
 
     ShapeData* getShapeData ()
     {
@@ -283,7 +316,7 @@ public:
     Handle(AIS_Shape) getShape ()
     {
         Handle(AIS_Shape) shape;
-        if (current) return current->getShape();
+        if (current) shape=current->getShape();
         return shape;
     }
 
@@ -296,47 +329,55 @@ public:
     Handle(AIS_Shape) getArrowHead (long unsigned int i)
     {
         Handle(AIS_Shape) arrowHead;
-        if (current) return current->getArrowHead(i);
+        if (current) arrowHead=current->getArrowHead(i);
         return arrowHead;
     }
 
     bool hasUndo ()
     {
-        if (current && current->getPrior()) return true;
-        return false;
+        bool retval=false;
+        if (current && !current->isNoop()) retval=true;
+        //std::cout << "CustomTreeWidgetItem::hasUndo  retval=" << retval << std::endl; std::cout.flush();
+        return retval;
     }
 
     bool hasRedo ()
     {
-        if (current && current->getNext()) return true;
-        return false;
+        bool retval=false;
+        if (current) {
+            if (current->getNext() && !current->getNext()->isNoop()) retval=true;
+        } else {
+            if (shapeDataList.size() >0) retval=true;
+        }
+        //std::cout << "CustomTreeWidgetItem::hasRedo  retval=" << retval << std::endl; std::cout.flush();
+        return retval;
     }
 
     void undo ()
     {
-        if (current && hasUndo()) current=current->getPrior();
+        std::cout << "undo: current=" << current << std::endl; std::cout.flush();
+        if (current) {
+            std::cout << "      current->getPrior=" << current->getPrior() << std::endl; std::cout.flush();
+            current=current->getPrior();
+        }
     }
 
     void redo ()
     {
-        if (current && hasRedo()) current=current->getNext();
-    }
-
-    void pop_back ()
-    {
-        if (shapeDataList.size() > 0) shapeDataList.pop_back();
+        if (current) current=current->getNext();
     }
 
     void reset ()
     {
-        //std::cout << "ShapeDataStack::reset" << std::endl; std::cout.flush();
+        std::cout << "ShapeDataStack::reset" << std::endl; std::cout.flush();
         long unsigned int i=0;
         while (i < shapeDataList.size()) {
-            if (shapeDataList[i]) delete shapeDataList[i];
+            if (shapeDataList[i]) {delete shapeDataList[i]; shapeDataList[i]=nullptr;}
             i++;
         }
         shapeDataList.clear();
         current=nullptr;
+        std::cout << "exit ShapeDataStack::reset" << std::endl; std::cout.flush();
     }
 
     void print ()
@@ -385,7 +426,6 @@ public:
     void* get_OPEMobject () {return OPEMobject;}
 
     void addShapeData (ShapeData *shapeData_) {dataStack.add(shapeData_);}
-    void pop_back () {dataStack.pop_back();}
     void setShape (Handle(AIS_Shape) shape_) {dataStack.setShape(shape_);}
     void setPolywire (Polywire *polywire_) {dataStack.setPolywire(polywire_);}
     void setProcess (Process *process_) {dataStack.setProcess(process_);}
@@ -464,10 +504,13 @@ public:
 
     void deleteChildren (QTreeWidgetItem *item)
     {
+        if (!item) return;
         QList<QTreeWidgetItem*> children=item->takeChildren();
         for (QTreeWidgetItem* child : children) {
-            deleteChildren(child);
-            delete child;
+            if (child) {
+                deleteChildren(child);
+                delete child;
+            }
         }
     }
 
@@ -650,35 +693,35 @@ public:
 
     void print ()
     {
-        // std::cout << "CustomTreeWidgetItem:" << std::endl;
+        std::cout << "CustomTreeWidgetItem:" << std::endl;
         dataStack.print();
-        // std::cout << "   forShowHide=" << forShowHide << std::endl;
-        // std::cout << "   OPEMobject=" << OPEMobject << std::endl;
-        // if (material.isNull()) std::cout << "   material=null" << std::endl;
-        // else std::cout << "   material=" << material.toStdString() << std::endl;
-        // std::cout << "   itemType=" << itemType << std::endl;
-        // if (is_rootDrawing()) std::cout << "   itemType=rootDrawing" << std::endl;
-        // if (is_rootPort()) std::cout << "   itemType=rootPort" << std::endl;
-        // if (is_rootBoundary()) std::cout << "   itemType=rootBoundary" << std::endl;
-        // if (is_rootMesh()) std::cout << "   itemType=rootMesh" << std::endl;
-        // if (is_rootPath()) std::cout << "   itemType=rootPath" << std::endl;
-        // if (is_drawing()) std::cout << "   itemType=drawing" << std::endl;
-        // if (is_port()) std::cout << "   itemType=port" << std::endl;
-        // if (is_boundary()) std::cout << "   itemType=boundary" << std::endl;
-        // if (is_mesh()) std::cout << "   itemType=mesh" << std::endl;
-        // if (is_path()) std::cout << "   itemType=path" << std::endl;
-        // if (is_sportLabel()) std::cout << "   itemType=sport" << std::endl;
-        // if (is_impedanceDefinition()) std::cout << "   itemType=impedanceDefinition" << std::endl;
-        // if (is_impedanceCalculation()) std::cout << "   itemType=impedanceCalculation" << std::endl;
-        // if (is_sportNumber()) std::cout << "   itemType=sportNumber" << std::endl;
-        // if (is_sport()) std::cout << "   item=sportNet" << std::endl;
-        // if (is_voltage()) std::cout << "   itemType=voltage" << std::endl;
-        // if (is_current()) std::cout << "   itemType=current" << std::endl;
-        // if (is_scale()) std::cout << "   itemType=scale" << std::endl;
-        // if (is_scaleValue()) std::cout << "   itemType=scaleValue" << std::endl;
-        // if (is_integrationPathSegment()) std::cout << "   itemType=integrationPathSegment" << std::endl;
-        // std::cout << "   dimTag.first=" << dimTag.first << std::endl
-        //           << "   dimTag.second=" << dimTag.second << std::endl;
+        std::cout << "   forShowHide=" << forShowHide << std::endl;
+        std::cout << "   OPEMobject=" << OPEMobject << std::endl;
+        if (material.isNull()) std::cout << "   material=null" << std::endl;
+        else std::cout << "   material=" << material.toStdString() << std::endl;
+        std::cout << "   itemType=" << itemType << std::endl;
+        if (is_rootDrawing()) std::cout << "   itemType=rootDrawing" << std::endl;
+        if (is_rootPort()) std::cout << "   itemType=rootPort" << std::endl;
+        if (is_rootBoundary()) std::cout << "   itemType=rootBoundary" << std::endl;
+        if (is_rootMesh()) std::cout << "   itemType=rootMesh" << std::endl;
+        if (is_rootPath()) std::cout << "   itemType=rootPath" << std::endl;
+        if (is_drawing()) std::cout << "   itemType=drawing" << std::endl;
+        if (is_port()) std::cout << "   itemType=port" << std::endl;
+        if (is_boundary()) std::cout << "   itemType=boundary" << std::endl;
+        if (is_mesh()) std::cout << "   itemType=mesh" << std::endl;
+        if (is_path()) std::cout << "   itemType=path" << std::endl;
+        if (is_sportLabel()) std::cout << "   itemType=sport" << std::endl;
+        if (is_impedanceDefinition()) std::cout << "   itemType=impedanceDefinition" << std::endl;
+        if (is_impedanceCalculation()) std::cout << "   itemType=impedanceCalculation" << std::endl;
+        if (is_sportNumber()) std::cout << "   itemType=sportNumber" << std::endl;
+        if (is_sport()) std::cout << "   item=sportNet" << std::endl;
+        if (is_voltage()) std::cout << "   itemType=voltage" << std::endl;
+        if (is_current()) std::cout << "   itemType=current" << std::endl;
+        if (is_scale()) std::cout << "   itemType=scale" << std::endl;
+        if (is_scaleValue()) std::cout << "   itemType=scaleValue" << std::endl;
+        if (is_integrationPathSegment()) std::cout << "   itemType=integrationPathSegment" << std::endl;
+        std::cout << "   dimTag.first=" << dimTag.first << std::endl
+                  << "   dimTag.second=" << dimTag.second << std::endl;
     }
 
     void resetOperation ()

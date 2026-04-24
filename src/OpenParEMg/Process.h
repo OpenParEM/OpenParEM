@@ -26,11 +26,14 @@
 #include <gp_Pnt.hxx>
 #include "ObjectCounts.h"
 
+class CustomTreeWidgetItem;
+
 class Process : public QWidget
 {
     Q_OBJECT
 public:
     explicit Process (QWidget *parent = nullptr);
+    //~Process ();
     bool isModified () {return modified;}
     virtual Process* copyCreate () = 0;
     virtual bool canEdit () = 0;
@@ -38,10 +41,16 @@ public:
     virtual void startSave (std::ofstream *, QString, QString, int) = 0;
     virtual void endSave (std::ofstream *, int) = 0;
 
+    //void addChild (CustomTreeWidgetItem *item) {childList.push_back(item);}
+    //void clearChildren () {childList.clear();}
+    //CustomTreeWidgetItem* getFirstChild ();
+    //CustomTreeWidgetItem* getSecondChild ();
+
 signals:
 
 protected:
     bool modified;
+    //std::vector<CustomTreeWidgetItem *> childList;
 };
 
 class Extrude : public Process

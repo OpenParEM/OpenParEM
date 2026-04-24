@@ -73,8 +73,12 @@ public:
     {
         long unsigned int i=0;
         while (i < changeList.size()) {
-            std::cout << "         item=" << changeList[i] << "  prior=" << prior << "  next=" << next << std::endl;
-            changeList[i]->print();
+            std::cout << "         item=" << changeList[i]
+                      //<< "  type=" << changeList[i]->getShapeData()->getType()
+                      << "  prior=" << prior
+                      << "  next=" << next
+                      << std::endl;
+            //changeList[i]->print();
             i++;
         }
         std::cout.flush();
@@ -114,13 +118,16 @@ public:
 
     bool hasUndo ()
     {
-        if (current && current->getPrior()) return true;
+        if (current) return true;
         return false;
+        // if (current && current->getPrior()) return true;
+        // return false;
     }
 
     bool hasRedo ()
     {
         if (current && current->getNext()) return true;
+        if (itemChangesList.size() > 0) return true;
         return false;
     }
 
@@ -132,12 +139,22 @@ public:
 
     void redo ()
     {
-        if (current && hasRedo()) current=current->getNext();
+        if (current) {
+            if (current->getNext()) {
+                current=current->getNext();
+            }
+        } else {
+            if (itemChangesList.size() > 0) {
+                current=itemChangesList[0];
+            }
+        }
         readIndex=0;
     }
 
     CustomTreeWidgetItem* getItem ()
     {
+        if (!current) return nullptr;
+
         if (readIndex < current->getChangeListSize()) {
             CustomTreeWidgetItem *item=current->getItem(readIndex);
             readIndex++;
@@ -240,10 +257,10 @@ public:
 
     void saveProject ();
     //void addChildDisplayShape (CustomTreeWidgetItem *, std::pair<int,int> &dimTag);
-    void addRootDisplayShape (TopoDS_Shape);
+    void addRootDisplayShapeCreate (TopoDS_Shape);
     void addItemWithShape (CustomTreeWidgetItem *);
-    CustomTreeWidgetItem* addItemShape (TopoDS_Shape, CustomTreeWidgetItem *);
-    CustomTreeWidgetItem* addItemShape (Polywire *, CustomTreeWidgetItem *);
+    CustomTreeWidgetItem* addItemShapeCreate (TopoDS_Shape, CustomTreeWidgetItem *);
+    CustomTreeWidgetItem* addItemShapeCreate (Polywire *, CustomTreeWidgetItem *);
     bool loadBrepFile (QString, bool);
     bool loadStepFile (QString, bool);
     bool saveBrepFile (char *);
@@ -357,6 +374,9 @@ public:
     void finishPlaneSetToFace ();
 
     void debugPrintStats (int);
+
+    void undoItem (CustomTreeWidgetItem *);
+    void redoItem (CustomTreeWidgetItem *);
 
 private slots:
     // File

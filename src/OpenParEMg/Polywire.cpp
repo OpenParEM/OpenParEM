@@ -469,7 +469,6 @@ Handle(AIS_Shape) Line::get_AIS_Shape ()
     if (!wire.IsNull()) {
         shape=new AIS_Shape(wire);
     }
-    std::cout << "Line::get_AIS_Shape  isNull()=" << shape.IsNull() << std::endl; std::cout.flush();
     return shape;
 }
 
@@ -949,8 +948,6 @@ QString Polyline::getName (ObjectCounts *objectCounts) {
 
 void Polyline::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
 {
-    std::cout << "Polyline::shift" << std::endl; std::cout.flush();
-
     if (shapePoints.size() == 0) return;
     modified=true;
 
@@ -1354,8 +1351,6 @@ gp_Pnt Rectangle::getOppositeCorner ()
 
 void Rectangle::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
 {
-    std::cout << "Rectangle::shift" << std::endl; std::cout.flush();
-
     if (shapePoints.size() == 0) return;
     modified=true;
 
@@ -1849,8 +1844,6 @@ bool Polycircle::isPointOnPlane (gp_Pnt &pnt)
 
 void Polycircle::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
 {
-    std::cout << "Polycircle::shift" << std::endl; std::cout.flush();
-
     modified=true;
     if (!centerPointSet) return;
     if (!firstPointSet) return;

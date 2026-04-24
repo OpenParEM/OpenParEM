@@ -73,7 +73,7 @@ public:
     void setNormal (gp_Pnt pnt) {normal.SetCoord(pnt.X(),pnt.Y(),pnt.Z());}
     gp_Vec getNormal () {return normal;}
 
-    virtual void setU (gp_Vec u_) {std::cout << "Polywire setU" << std::endl; std::cout.flush(); return;}
+    virtual void setU (gp_Vec u_) {return;}
 
     gp_Pnt getPosition ();
     virtual gp_Pln getPlane ();
