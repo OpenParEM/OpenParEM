@@ -739,7 +739,7 @@ public:
     {
         std::cout << "CustomTreeWidgetItem::reset" << std::endl; std::cout.flush();
         dataStack.reset();
-        deleteChildren(this);
+        children.clear();
         setForeground(0,Qt::black);
         setExpanded(Standard_False);
         meshEntities.clear();
@@ -752,11 +752,17 @@ public:
     bool hasUndo () {return dataStack.hasUndo();}
     bool hasRedo () {return dataStack.hasRedo();}
 
+    void clearChildren () {children.clear();}
+    void push_child (CustomTreeWidgetItem *child) {children.push_back(child);}
+    long unsigned int getChildrenSize () {return children.size();}
+    CustomTreeWidgetItem* getChild (long unsigned int i) {return children[i];}
+
 private slots:
 
 private:
     bool activeAction;                                 // for undo/redo, an active operation such as move, edit, stretch, etc. is in progress
     ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
+    std::vector<CustomTreeWidgetItem *> children;      // temporary storage for children at undo for redo
     Handle(AIS_Shape) animateShape;                    // temporary shape for animation during moving
     gp_Trsf aTrsf;
     std::vector<Handle(AIS_Shape)> meshEntities;       // for mesh

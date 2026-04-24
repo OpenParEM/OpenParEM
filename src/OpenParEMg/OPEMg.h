@@ -712,6 +712,11 @@ private:
     gp_Vec uLocalAxis;  // local axis for transfer to rectangles
     gp_Pln currentPrivilegedPlane;
     ObjectCounts objectCounts;    // for uniquely numbering objects in their item names
+
+    // for edit forms
+    Line *lineEdit;               // polywires
+    Rectangle *rectangleEdit;
+    Polycircle *polycircleEdit;
     double length;                // extrusion
     double angle;                 // rotation
     gp_Pnt startPoint, endPoint;  // rotation and vector input

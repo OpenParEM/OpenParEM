@@ -2149,6 +2149,7 @@ void OpenParEMg::deleteDrawingItems ()
 {
     std::cout << "OpenParEMg::deleteDrawingItems" << std::endl; std::cout.flush();
 
+    //activeAction=true;  // no need since there is not a cancel option
     itemChangesStack.startNew();
 
     long unsigned int i=0;
@@ -2815,6 +2816,15 @@ void OpenParEMg::extrudePolywire ()
     activeAction=true;
     itemChangesStack.startNew();
 
+    // long unsigned int i=0;
+    // while (i < ui->drawingWindow->get_selectedItems_size()) {
+    //     CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+    //     if (item && item->is_drawing()) {
+    //         itemChangesStack.add(item);
+    //     }
+    //     i++;
+    // }
+
     // user input form
     if (lengthInputForm) delete lengthInputForm;
     lengthInputForm=new LengthInputForm();
@@ -2840,6 +2850,8 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
             if (item && !item->getShape().IsNull()) {
                 std::cout << "   item to extrude=" << item << std::endl; std::cout.flush();
 
+                // don't clone; a new item will be created
+
                 TopoDS_Shape extrudeShape=item->getShape()->Shape();
 
                 // pick off the face to exclude any extra vertices added for selection convenience
@@ -2855,7 +2867,7 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
                 }
 
                 // extrude
-                Polywire *polywire=item->getPolywire();
+                Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
                 if (polywire) {
 
                     // set direction
@@ -2877,6 +2889,8 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
 
                         // add it
                         CustomTreeWidgetItem *newItem=addItemShapeCreate(aPrism,&drawing);  // inserts to item map
+                        ShapeData *shapeData=item->getShapeData();
+                        shapeData->setCreate();
                         itemChangesStack.add(newItem);
 
                         // define the process
@@ -2888,9 +2902,10 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
                         extrude=nullptr;
 
                         // move the object in the selection tree
-                        drawing.removeChild(item);
+                        //xxx
+                        int index=drawing.indexOfChild(item);
+                        drawing.takeChild(index);
                         newItem->addChild(item);
-                        activeAction=false;
 
                         // hide/show
                         ui->drawingWindow->hideItem(item);
@@ -3163,6 +3178,7 @@ void OpenParEMg::editObject ()
     //std::cout << "OpenParEMg::editObject" << std::endl; std::cout.flush();
 
     startOperation(false);
+    activeAction=true;
     itemChangesStack.startNew();
 
     long unsigned int i=0;
@@ -3170,31 +3186,18 @@ void OpenParEMg::editObject ()
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
 
-            // remove the old version from display and tracking
-            ui->drawingWindow->hideItem(item);
-            ui->drawingWindow->removeItemFromMap(item);
-            ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
 
-            // clone the item onto itself for undo/redo
-            ShapeData *newShapeData=item->getShapeData()->copyCreate();
-            newShapeData->setEdit();
-            item->addShapeData(newShapeData);
-            itemChangesStack.add(item);
-            activeAction=true;
-
-            // add the new item back to the display and tracking
-            ui->drawingWindow->insertItemToMap(item->getShape(),item);
-            ui->drawingWindow->showItem(item);
-
-            // modify the clone
-
-            Polywire *polywire=item->getPolywire();
+            lineEdit=nullptr;
+            rectangleEdit=nullptr;
+            polycircleEdit=nullptr;
 
             Line *line=dynamic_cast<Line *>(polywire);
             if (line) {
+                lineEdit=line->copyCreate();
                 if (lineEditForm) delete lineEditForm;
                 lineEditForm=new LineEditForm();
-                lineEditForm->set_polywire(line);
+                lineEditForm->set_polywire(lineEdit);
                 lineEditForm->set_drawingWindow(ui->drawingWindow);
                 lineEditForm->set_relay(relay);
                 lineEditForm->setModal(false);
@@ -3204,9 +3207,10 @@ void OpenParEMg::editObject ()
 
             Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
             if (rectangle) {
+                rectangleEdit=rectangle->copyCreate();
                 if (rectangleEditForm) delete rectangleEditForm;
                 rectangleEditForm=new RectangleEditForm();
-                rectangleEditForm->set_polywire(rectangle);
+                rectangleEditForm->set_polywire(rectangleEdit);
                 rectangleEditForm->set_drawingWindow(ui->drawingWindow);
                 rectangleEditForm->set_relay(relay);
                 rectangleEditForm->setModal(false);
@@ -3216,9 +3220,10 @@ void OpenParEMg::editObject ()
 
             Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
             if (polycircle) {
+                polycircleEdit=polycircle->copyCreate();
                 if (polycircleEditForm) delete polycircleEditForm;
                 polycircleEditForm=new PolycircleEditForm();
-                polycircleEditForm->set_Polycircle(polycircle);
+                polycircleEditForm->set_Polycircle(polycircleEdit);
                 polycircleEditForm->set_drawingWindow(ui->drawingWindow);
                 polycircleEditForm->set_relay(relay);
                 polycircleEditForm->setModal(false);
@@ -3226,7 +3231,7 @@ void OpenParEMg::editObject ()
                 polycircleEditForm->show();
             }
 
-            Process *process=item->getProcess();
+            Process *process=static_cast<Process *>(item->getProcess());
             if (process) {
                 Extrude *extrude=dynamic_cast<Extrude *>(process);
                 if (extrude) {
@@ -3252,6 +3257,8 @@ void OpenParEMg::editObject ()
                     }
                 }
             }
+
+            itemChangesStack.add(item);
         }
         i++;
     }
@@ -3287,10 +3294,35 @@ void OpenParEMg::finishEditObject (bool cancel)
             CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
             if (item && item->is_drawing()) {
 
-                Polywire *polywire=item->getPolywire();
-                if (polywire) reprocess(item);
+                // remove the old version from display and tracking
+                ui->drawingWindow->hideItem(item);
+                ui->drawingWindow->removeItemFromMap(item);
+                ui->drawingWindow->deleteShape(item->getShape());  // lose selection
 
-                Process *process=item->getProcess();
+                // clone the item onto itself for undo/redo
+                ShapeData *newShapeData=item->getShapeData()->copyCreate();
+                newShapeData->setEdit();
+                item->addShapeData(newShapeData);
+
+                // add the new item back to the display and tracking
+                ui->drawingWindow->insertItemToMap(item->getShape(),item);
+                ui->drawingWindow->showItem(item);
+
+                // modify the clone
+
+                Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
+                if (polywire) {
+                    Line *line=dynamic_cast<Line *>(polywire);
+                    Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+                    Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+                    if (line) item->setPolywire(lineEdit);
+                    else if (rectangle) item->setPolywire(rectangleEdit);
+                    else if (polycircle) item->setPolywire(polycircleEdit);
+
+                    reprocess(item);
+                }
+
+                Process *process=static_cast<Process *>(item->getProcess());
                 if (process) {
                     Extrude *extrude=dynamic_cast<Extrude *>(process);
                     if (extrude) {
@@ -3368,6 +3400,7 @@ bool OpenParEMg::isValidMergeSolids ()
 void OpenParEMg::mergeSolids ()
 {
     startOperation(false);
+    //activeAction=true;  // no need since there is no cancel option
     itemChangesStack.startNew();
     finishMergeSolids();
 }
@@ -3482,6 +3515,7 @@ bool OpenParEMg::isValidSubtractSolids ()
 void OpenParEMg::subtractSolids ()
 {
     startOperation(false);
+    //activeAction=true;  // no need since there is no cancel option
     itemChangesStack.startNew();
     finishSubtractSolids();
 }
@@ -3668,6 +3702,8 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
         reprocess(item);
         drawingChanged=true;
     }
+
+    activeAction=false;
 }
 
 void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt p1)
@@ -3741,6 +3777,7 @@ void OpenParEMg::copyDrawingItems ()
     //std::cout << "OpenParEMg::copyDrawingItems" << std::endl; std::cout.flush();
 
     startOperation(true);
+    //activeAction=true;  // no need since there is not a cancel option
     itemChangesStack.startNew();
     ui->drawingWindow->set_pickSecondVertex(true);
 
@@ -3821,6 +3858,7 @@ void OpenParEMg::stretchObject ()
     //std::cout << "OpenParEMg::stretchObject" << std::endl; std::cout.flush();
 
     startOperation(false);
+    activeAction=true;
     itemChangesStack.startNew();
     ui->drawingWindow->set_pickSecondVertex(true);
 
@@ -3909,6 +3947,7 @@ bool OpenParEMg::isValidDeletePoint ()
 void OpenParEMg::deletePoint ()
 {
     startOperation(false);
+    activeAction=true;
     itemChangesStack.startNew();
     ui->drawingWindow->set_pickSecondVertex(true);
 
@@ -3933,7 +3972,6 @@ void OpenParEMg::deletePoint ()
                     gp_Pln plane=polywire->getPlane();
                     ui->drawingWindow->set_gridPlane(plane);
                     itemChangesStack.add(item);
-                    activeAction=true;
                 }
             }
         }
@@ -4002,6 +4040,7 @@ bool OpenParEMg::isValidInsertPoint ()
 void OpenParEMg::insertPoint ()
 {
     startOperation(false);
+    activeAction=true;
     itemChangesStack.startNew();
     ui->drawingWindow->set_pickFirstVertex(true);
 
@@ -4044,7 +4083,6 @@ void OpenParEMg::insertPoint ()
                     gp_Pln plane=polywire->getPlane();
                     ui->drawingWindow->set_gridPlane(plane);
                     itemChangesStack.add(item);
-                    activeAction=true;
                 }
             }
         }
@@ -4084,6 +4122,8 @@ void OpenParEMg::finishInsertPoint (CustomTreeWidgetItem *item)
 
         ui->drawingWindow->hideItem(item);
         ui->drawingWindow->updateViewer();
+
+        activeAction=false;
     }
 }
 
@@ -4117,6 +4157,7 @@ void OpenParEMg::closeExistingPolyline ()
 
                 // for undo/redo
 
+                // activeAction=true;  // no need since there is no cancel option
                 itemChangesStack.startNew();
 
                 // remove the old version from display and tracking
@@ -4183,6 +4224,7 @@ void OpenParEMg::openExistingPolyline ()
             if (polywire) {
                 // for undo/redo
 
+                //activeAction=true;  // no need since there is no cancel option
                 itemChangesStack.startNew();
 
                 // remove the old version from display and tracking
@@ -7970,6 +8012,15 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
     if (!shapeData) return;
     std::cout << "   undo enter shapeData=" << shapeData << "  shapeData->getType()=" << shapeData->getType() << std::endl; std::cout.flush();
 
+    // save the children for redo
+    item->clearChildren();
+    int i=0;
+    while (i < item->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        item->push_child(child);
+        i++;
+    }
+
     // go through the cases
     if (shapeData->isNoop()) {
         std::cout << "      process noop" << std::endl; std::cout.flush();
@@ -8097,19 +8148,15 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
         ui->drawingWindow->insertItemToMap(item->getShape(),item);
         ui->drawingWindow->showItem(item);
 
-        Process *process=item->getProcess();
-        if (process) {
-            int i=0;
-            while (i < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
-                if (child) {
-                    int index=parentItem->indexOfChild(child);
-                    parentItem->takeChild(index);
-                    item->addChild(child);
-                }
-
-                i++;
+        long unsigned int i=0;
+        while (i < item->getChildrenSize()) {
+            CustomTreeWidgetItem *child=item->getChild(i);
+            if (child) {
+                int index=parentItem->indexOfChild(child);
+                parentItem->takeChild(index);
+                item->addChild(child);
             }
+            i++;
         }
 
         reprocess(item);
