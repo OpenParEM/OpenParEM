@@ -2889,7 +2889,7 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
 
                         // add it
                         CustomTreeWidgetItem *newItem=addItemShapeCreate(aPrism,&drawing);  // inserts to item map
-                        ShapeData *shapeData=item->getShapeData();
+                        ShapeData *shapeData=newItem->getShapeData();
                         shapeData->setCreate();
                         itemChangesStack.add(newItem);
 
@@ -2898,7 +2898,7 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
                         extrude->set_length(length);
                         newItem->setProcess(extrude);
                         newItem->setText(0,newItem->getProcess()->getName(&objectCounts));
-                        newItem->addChild(item);
+                        drawing.addChild(newItem);
                         extrude=nullptr;
 
                         // move the object in the selection tree
@@ -5547,7 +5547,7 @@ CustomTreeWidgetItem* OpenParEMg::addItemShapeCreate (TopoDS_Shape shape, Custom
     // new item
     CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
     Handle(AIS_Shape) dummy;
-    ShapeData *newShapeData=new ShapeData(1,activePolywire,nullptr,dummy);
+    ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,dummy);
     newItem->addShapeData(newShapeData);
     replaceItemShape(newItem,shape,11);  // inserts to item map
 
