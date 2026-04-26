@@ -497,7 +497,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    itemChangesStack.print();
+    //itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
@@ -3115,6 +3115,9 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 
                 if (child1 && child2) {
 
+                    ui->drawingWindow->hideItem(child1);
+                    ui->drawingWindow->hideItem(child2);
+
                     // get shapes
 
                     Handle(AIS_Shape) AISshape1=child1->getShape();
@@ -3172,6 +3175,9 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
                 CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
 
                 if (child1 && child2) {
+
+                    ui->drawingWindow->hideItem(child1);
+                    ui->drawingWindow->hideItem(child2);
 
                     Handle(AIS_Shape) AISshape1=child1->getShape();
                     Handle(AIS_Shape) AISshape2=child2->getShape();
@@ -3882,7 +3888,7 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
 
         // add the new item back to the display and tracking
         ui->drawingWindow->insertItemToMap(item->getShape(),item);
-        ui->drawingWindow->showItem(item);
+        //ui->drawingWindow->showItem(item);
 
         reprocess(item);
         drawingChanged=true;
@@ -3901,6 +3907,7 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
     item->resetOperation();
 
     // find and show the top-level item
+    ui->drawingWindow->hideItem(item);
     CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
     while (!parentItem->is_rootDrawing()) {
         item=parentItem;
@@ -8085,7 +8092,7 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
 void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
 {
-    std::cout << "OpenParEMg::undoItem  item=" << item << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::undoItem  item=" << item << std::endl; std::cout.flush();
 
     if (!item) return;
 
@@ -8167,7 +8174,7 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
             }
         }
 
-        ui->drawingWindow->showItem(item);
+        //ui->drawingWindow->showItem(item);
     } else if (shapeData->isDelete()) {
 
         // recreate
@@ -8196,11 +8203,23 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
         reprocess(item);
         ui->drawingWindow->showItem(item);
     }
+
+    // find and show the top-level item
+    ui->drawingWindow->hideItem(item);
+    CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    if (parentItem) {
+        while (!parentItem->is_rootDrawing()) {
+            item=parentItem;
+            parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            if (!parentItem) break;
+        }
+    }
+    ui->drawingWindow->showItem(item);
 }
 
 void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
 {
-    std::cout << "OpenParEMg::redoItem  item=" << item << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::redoItem  item=" << item << std::endl; std::cout.flush();
 
     if (!item) return;
 
@@ -8237,7 +8256,7 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
         }
 
         reprocess(item);
-        ui->drawingWindow->showItem(item);
+        //ui->drawingWindow->showItem(item);
     } else if (next->isEdit()) {
         ui->drawingWindow->hideItem(item);
         ui->drawingWindow->removeItemFromMap(item);
@@ -8260,7 +8279,7 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
 
         reprocess(item);
         insertToMapActivateItem(item);
-        ui->drawingWindow->unselectItem(item);
+        //ui->drawingWindow->unselectItem(item);
     } else if (next->isDelete()) {
 
         // remove
@@ -8300,6 +8319,18 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
             i++;
         }
     }
+
+    // find and show the top-level item
+    ui->drawingWindow->hideItem(item);
+    CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    if (parentItem) {
+        while (!parentItem->is_rootDrawing()) {
+            item=parentItem;
+            parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            if (!parentItem) break;
+        }
+    }
+    ui->drawingWindow->showItem(item);
 }
 
 void OpenParEMg::on_actionUndo_triggered ()
