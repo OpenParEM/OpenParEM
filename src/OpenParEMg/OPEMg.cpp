@@ -8051,17 +8051,15 @@ void OpenParEMg::finishOperation (bool cancel, int source)
     setMenusI(0);
 }
 
-//zzz
 void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
 {
-    std::cout << "OpenParEMg::undoItem  item=" << item << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::undoItem  item=" << item << std::endl; std::cout.flush();
 
     if (!item) return;
 
     // must have ShapeData
     ShapeData *shapeData=item->getShapeData();
     if (!shapeData) return;
-    std::cout << "   undo enter shapeData=" << shapeData << "  shapeData->getType()=" << shapeData->getType() << std::endl; std::cout.flush();
 
     // save the children for redo
     item->clearChildren();
@@ -8074,16 +8072,13 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
 
     // go through the cases
     if (shapeData->isNoop()) {
-        std::cout << "      process noop" << std::endl; std::cout.flush();
         return;
     } else if (shapeData->isCreate()) {
-        std::cout << "      process create" << std::endl; std::cout.flush();
 
         // remove
 
         CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
         if (!parentItem) {
-            std::cout << "         return early on void parent" << std::endl; std::cout.flush();
             return;
         }
 
@@ -8114,12 +8109,8 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
             i++;
         }
 
-        std::cout << "      before: shapeData=" << item->getShapeData() << std::endl; std::cout.flush();
         item->undo();
-        std::cout << "      after: shapeData=" << item->getShapeData() << std::endl; std::cout.flush();
-        //reprocess(item);
     } else if (shapeData->isEdit()) {
-        std::cout << "      process edit" << std::endl; std::cout.flush();
 
         ui->drawingWindow->hideItem(item);
         ui->drawingWindow->removeItemFromMap(item);
@@ -8135,39 +8126,24 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
                 while (i < item->childCount()) {
                     CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
                     undoItem(child);
-                    // if (child) {
-                    //     child->undo();
-                    //     reprocess(child);
-                    // }
                     i++;
                 }
-                //reprocess(item);
             } else {
                 reprocess(item);
             }
         }
-
-        //reprocess(item);
-        //addItemWithShape (item);
     } else if (shapeData->isDelete()) {
-        std::cout << "      process delete" << std::endl; std::cout.flush();
 
         // recreate
 
         // ToDo
     }
 
-    shapeData=item->getShapeData();
-    if (shapeData) {
-        std::cout << "   undo exit shapeData=" << shapeData << "  shapeData->getType()=" << shapeData->getType() << std::endl; std::cout.flush();
-    } else {
-        std::cout << "   undo exit shapeData=nullptr" << std::endl; std::cout.flush();
-    }
 }
 
 void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
 {
-    std::cout << "OpenParEMg::redoItem  item=" << item << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::redoItem  item=" << item << std::endl; std::cout.flush();
 
     if (!item) return;
 
@@ -8226,14 +8202,13 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
 
         reprocess(item);
         insertToMapActivateItem (item);
+        ui->drawingWindow->unselectItem(item);
     } else if (next->isDelete()) {
 
         // recreate
 
         // ToDo
     }
-
-    shapeData=item->getShapeData();
 }
 
 void OpenParEMg::on_actionUndo_triggered ()
