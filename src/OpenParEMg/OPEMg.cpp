@@ -3047,28 +3047,94 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
                 int i=0;
                 while (i < item->childCount()) {
                     CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+                    if (child) {
 
-                    Polywire *polywire=static_cast<Polywire *>(child->getPolywire());
-                    if (polywire) {
-                        gp_Vec scaledVec=gp_Vec(polywire->getNormal())*extrude->get_length();
-                        if (polywire->getReverseExtrusionDirection()) scaledVec=-scaledVec;
+                        Polywire *polywire=static_cast<Polywire *>(child->getPolywire());
+                        if (polywire) {
+                            gp_Vec scaledVec=gp_Vec(polywire->getNormal())*extrude->get_length();
+                            if (polywire->getReverseExtrusionDirection()) scaledVec=-scaledVec;
 
-                        // see finishExtrudePolywire for comments
-                        TopoDS_Shape extrudeShape=child->getShape()->Shape();
-                        if (extrudeShape.ShapeType() == TopAbs_COMPOUND) {
-                            TopoDS_Iterator it(extrudeShape);
-                            for (; it.More(); it.Next()) {
-                                TopoDS_Shape subShape=it.Value();
-                                if (subShape.ShapeType () == TopAbs_FACE) {
-                                    extrudeShape=subShape;
-                                    break;
+                            Handle(AIS_Shape) AISextrudeShape=child->getShape();
+                            if (!AISextrudeShape.IsNull()) {
+
+                                // see finishExtrudePolywire for comments
+                                TopoDS_Shape extrudeShape=AISextrudeShape->Shape();
+                                if (extrudeShape.ShapeType() == TopAbs_COMPOUND) {
+                                    TopoDS_Iterator it(extrudeShape);
+                                    for (; it.More(); it.Next()) {
+                                        TopoDS_Shape subShape=it.Value();
+                                        if (subShape.ShapeType () == TopAbs_FACE) {
+                                            extrudeShape=subShape;
+                                            break;
+                                        }
+                                    }
                                 }
+
+                                BRepPrimAPI_MakePrism aPrism(extrudeShape,scaledVec);
+                                TopoDS_Shape newShape=aPrism;
+                                Handle(AIS_Shape) newAISshape=new AIS_Shape(newShape);
+
+                                if (!item->getShape().IsNull()) {
+                                    ui->drawingWindow->hideItem(item);
+                                    ui->drawingWindow->removeItemFromMap(item);
+                                    ui->drawingWindow->deleteShape(item->getShape());
+                                }
+
+                                ShapeData *shapeData=item->getShapeData();
+                                shapeData->setShape(newAISshape);
+
+                                ui->drawingWindow->insertItemToMap(item->getShape(),item);
+                                //ui->drawingWindow->displayShape(item->getShape());
+                                ui->drawingWindow->activateItem(item);
+                                //ui->drawingWindow->selectItem(item);
+                                //ui->drawingWindow->showItem(item);
+
+                                drawingChanged=true;
+
+                                //reextrudePolywire(item,child);
+                            } else {
+                                stop=true;
                             }
                         }
+                    } else {
+                        stop=true;
+                    }
+                    i++;
+                }
+            } else {
+                stop=true;
+            }
+        }
 
-                        BRepPrimAPI_MakePrism aPrism(extrudeShape,scaledVec);
-                        TopoDS_Shape newShape=aPrism;
-                        Handle(AIS_Shape) newAISshape=new AIS_Shape(newShape);
+        Merge *merge=dynamic_cast<Merge *>(process);
+        if (merge) {
+            if (item->childCount() == 2) {
+
+                CustomTreeWidgetItem *child1=(CustomTreeWidgetItem *)item->child(0);
+                CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
+
+                if (child1 && child2) {
+
+                    // get shapes
+
+                    Handle(AIS_Shape) AISshape1=child1->getShape();
+                    Handle(AIS_Shape) AISshape2=child2->getShape();
+
+                    if (!AISshape1.IsNull() && !AISshape2.IsNull()) {
+                        TopoDS_Shape shape1=AISshape1->Shape();
+                        TopoDS_Shape shape2=AISshape2->Shape();
+
+                        // build merged shape
+                        BRepAlgoAPI_Fuse fuse(shape1,shape2);
+                        fuse.Build();
+                        if (!fuse.IsDone()) return;
+
+                        TopoDS_Shape mergedShape=fuse.Shape();
+
+                        ShapeUpgrade_UnifySameDomain unify(mergedShape);
+                        unify.Build();
+                        mergedShape=unify.Shape();
+                        Handle(AIS_Shape) newAISshape=new AIS_Shape(mergedShape);
 
                         if (!item->getShape().IsNull()) {
                             ui->drawingWindow->hideItem(item);
@@ -3085,57 +3151,14 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
                         //ui->drawingWindow->selectItem(item);
                         //ui->drawingWindow->showItem(item);
 
+                        //replaceItemShape(item,mergedShape,4);  // inserts to item map
                         drawingChanged=true;
-
-                        //reextrudePolywire(item,child);
+                    } else {
+                        stop=true;
                     }
-                    i++;
+                } else {
+                    stop=true;
                 }
-            } else {
-                stop=true;
-            }
-        }
-
-        Merge *merge=dynamic_cast<Merge *>(process);
-        if (merge) {
-            if (item->childCount() == 2) {
-
-                CustomTreeWidgetItem *child1=(CustomTreeWidgetItem *)item->child(0);
-                CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
-
-                // get shapes
-                TopoDS_Shape shape1=child1->getShape()->Shape();
-                TopoDS_Shape shape2=child2->getShape()->Shape();
-
-                // build merged shape
-                BRepAlgoAPI_Fuse fuse(shape1,shape2);
-                fuse.Build();
-                if (!fuse.IsDone()) return;
-
-                TopoDS_Shape mergedShape=fuse.Shape();
-
-                ShapeUpgrade_UnifySameDomain unify(mergedShape);
-                unify.Build();
-                mergedShape=unify.Shape();
-                Handle(AIS_Shape) newAISshape=new AIS_Shape(mergedShape);
-
-                if (!item->getShape().IsNull()) {
-                    ui->drawingWindow->hideItem(item);
-                    ui->drawingWindow->removeItemFromMap(item);
-                    ui->drawingWindow->deleteShape(item->getShape());
-                }
-
-                ShapeData *shapeData=item->getShapeData();
-                shapeData->setShape(newAISshape);
-
-                ui->drawingWindow->insertItemToMap(item->getShape(),item);
-                //ui->drawingWindow->displayShape(item->getShape());
-                ui->drawingWindow->activateItem(item);
-                //ui->drawingWindow->selectItem(item);
-                //ui->drawingWindow->showItem(item);
-
-                //replaceItemShape(item,mergedShape,4);  // inserts to item map
-                drawingChanged=true;
             } else {
                 stop=true;
             }
@@ -3148,39 +3171,52 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
                 CustomTreeWidgetItem *child1=(CustomTreeWidgetItem *)item->child(0);
                 CustomTreeWidgetItem *child2=(CustomTreeWidgetItem *)item->child(1);
 
-                // get shapes
-                TopoDS_Shape shape1=child1->getShape()->Shape();
-                TopoDS_Shape shape2=child2->getShape()->Shape();
+                if (child1 && child2) {
 
-                // build subtracted shape
-                BRepAlgoAPI_Cut cut(shape1,shape2);
-                cut.Build();
-                if (!cut.IsDone()) return;
+                    Handle(AIS_Shape) AISshape1=child1->getShape();
+                    Handle(AIS_Shape) AISshape2=child2->getShape();
 
-                TopoDS_Shape subtractedShape=cut.Shape();
+                    if (!AISshape1.IsNull() && !AISshape2.IsNull()) {
 
-                ShapeUpgrade_UnifySameDomain unify(subtractedShape);
-                unify.Build();
-                subtractedShape=unify.Shape();
-                Handle(AIS_Shape) newAISshape=new AIS_Shape(subtractedShape);
+                        // get shapes
+                        TopoDS_Shape shape1=AISshape1->Shape();
+                        TopoDS_Shape shape2=AISshape2->Shape();
 
-                if (!item->getShape().IsNull()) {
-                    ui->drawingWindow->hideItem(item);
-                    ui->drawingWindow->removeItemFromMap(item);
-                    ui->drawingWindow->deleteShape(item->getShape());
+                        // build subtracted shape
+                        BRepAlgoAPI_Cut cut(shape1,shape2);
+                        cut.Build();
+                        if (!cut.IsDone()) return;
+
+                        TopoDS_Shape subtractedShape=cut.Shape();
+
+                        ShapeUpgrade_UnifySameDomain unify(subtractedShape);
+                        unify.Build();
+                        subtractedShape=unify.Shape();
+                        Handle(AIS_Shape) newAISshape=new AIS_Shape(subtractedShape);
+
+                        if (!item->getShape().IsNull()) {
+                            ui->drawingWindow->hideItem(item);
+                            ui->drawingWindow->removeItemFromMap(item);
+                            ui->drawingWindow->deleteShape(item->getShape());
+                        }
+
+                        ShapeData *shapeData=item->getShapeData();
+                        shapeData->setShape(newAISshape);
+
+                        ui->drawingWindow->insertItemToMap(item->getShape(),item);
+                        //ui->drawingWindow->displayShape(item->getShape());
+                        ui->drawingWindow->activateItem(item);
+                        //ui->drawingWindow->selectItem(item);
+                        //ui->drawingWindow->showItem(item);
+
+                        //replaceItemShape(item,subtractedShape,5);  // inserts to item map
+                        drawingChanged=true;
+                    } else {
+                        stop=true;
+                    }
+                } else {
+                    stop=true;
                 }
-
-                ShapeData *shapeData=item->getShapeData();
-                shapeData->setShape(newAISshape);
-
-                ui->drawingWindow->insertItemToMap(item->getShape(),item);
-                //ui->drawingWindow->displayShape(item->getShape());
-                ui->drawingWindow->activateItem(item);
-                //ui->drawingWindow->selectItem(item);
-                //ui->drawingWindow->showItem(item);
-
-                //replaceItemShape(item,subtractedShape,5);  // inserts to item map
-                drawingChanged=true;
             } else {
                 stop=true;
             }
@@ -5904,7 +5940,7 @@ bool OpenParEMg::getBlockKeywordValue (std::vector<std::string> &inputData, int 
                                        long unsigned int &startBlockIndex, long unsigned int &endBlockIndex,
                                        std::string &keyword, std::string &value)
 {
-    std::cout << "OpenParEMg::getBlockKeywordValue" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::getBlockKeywordValue" << std::endl; std::cout.flush();
 
     int level=0;  // keeping track of levels in the hierarchy
     long unsigned int index=startBlockIndex;
@@ -5958,7 +5994,7 @@ int OpenParEMg::findEndNextBlock (std::vector<std::string> &inputData, int type,
 bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned int &startBlockIndex,
                            long unsigned int &endBlockIndex, CustomTreeWidgetItem *parent, bool increaseDepth)
 {
-    std::cout << "OpenParEMg::loadItem" << "  startBlockIndex=" << startBlockIndex << "  endBlockIndex=" << endBlockIndex << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::loadItem" << "  startBlockIndex=" << startBlockIndex << "  endBlockIndex=" << endBlockIndex << std::endl; std::cout.flush();
 
     int typeStart=findStartNextBlock (inputData,startBlockIndex);
 
@@ -5996,6 +6032,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
         newItem->setText(0,QString::fromStdString(name));
         if (!parent->is_rootDrawing()) newItem->copy_depth(parent);
         if (increaseDepth) newItem->increase_depth();
+        parent->addChild(newItem);
         reprocess(newItem);
         drawingChanged=true;
         ui->drawingWindow->showItem(newItem);
@@ -6029,8 +6066,6 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
                 if (!parent->is_rootDrawing()) newItem->copy_depth(parent);
                 if (increaseDepth) newItem->increase_depth();
                 objectCounts.extrude++;
-
-                std::cout << "***************** new Extrude: name=" << name << std::endl; std::cout.flush();
             }
 
             // length
@@ -6120,6 +6155,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
                 objectCounts.solid++;
             }
 
+            parent->addChild(newItem);
             reprocess(newItem);
             drawingChanged=true;
             ui->drawingWindow->showItem(newItem);
@@ -6151,7 +6187,6 @@ bool OpenParEMg::loadDrawingFile ()
     QString filename=absolutePath;
     filename.append("/").append(projData.project_name);
     filename.append(".opd");
-    std::cout << "Loading the drawing file from " << filename.toStdString() << std::endl; std::cout.flush();
 
     // put the data in the file into a string vector
     std::vector<std::string> inputData=readFileToVector(filename.toStdString());
