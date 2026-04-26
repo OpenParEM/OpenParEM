@@ -3495,14 +3495,26 @@ void OpenParEMg::finishEditObject (bool cancel)
                 }
 
                 // find and show the top-level item
-                CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-                while (!parentItem->is_rootDrawing()) {
-                    item=parentItem;
-                    parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-                }
-                ui->drawingWindow->showItem(item);
+                // CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                // while (!parentItem->is_rootDrawing()) {
+                //     item=parentItem;
+                //     parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                // }
+                //ui->drawingWindow->showItem(item);
 
                 activeAction=false;
+
+                // find and show the top-level item
+                ui->drawingWindow->hideItem(item);
+                CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                if (parentItem) {
+                    while (!parentItem->is_rootDrawing()) {
+                        item=parentItem;
+                        parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                        if (!parentItem) break;
+                    }
+                }
+                ui->drawingWindow->showItem(item);
             }
             i++;
         }
@@ -3909,9 +3921,12 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
     // find and show the top-level item
     ui->drawingWindow->hideItem(item);
     CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-    while (!parentItem->is_rootDrawing()) {
-        item=parentItem;
-        parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    if (parentItem) {
+        while (!parentItem->is_rootDrawing()) {
+            item=parentItem;
+            parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            if (!parentItem) break;
+        }
     }
     ui->drawingWindow->showItem(item);
 }
@@ -4107,12 +4122,16 @@ void OpenParEMg::finishStretchObject (CustomTreeWidgetItem *item)
     drawingChanged=true;
 
     // find and show the top-level item
-    // CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-    // while (!parentItem->is_rootDrawing()) {
-    //     item=parentItem;
-    //     parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-    // }
-    // ui->drawingWindow->showItem(item);
+    ui->drawingWindow->hideItem(item);
+    CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    if (parentItem) {
+        while (!parentItem->is_rootDrawing()) {
+            item=parentItem;
+            parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            if (!parentItem) break;
+        }
+    }
+    ui->drawingWindow->showItem(item);
 
     finishOperation(false,7);
 }
@@ -4200,10 +4219,14 @@ void OpenParEMg::finishDeletePoint (CustomTreeWidgetItem *item)
     drawingChanged=true;
 
     // find and show the top-level item
+    ui->drawingWindow->hideItem(item);
     CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-    while (!parentItem->is_rootDrawing()) {
-        item=parentItem;
-        parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    if (parentItem) {
+        while (!parentItem->is_rootDrawing()) {
+            item=parentItem;
+            parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            if (!parentItem) break;
+        }
     }
     ui->drawingWindow->showItem(item);
 
@@ -4698,10 +4721,14 @@ void OpenParEMg::finishRotateObject ()
             item->resetOperation();
 
             // find and show the top-level item
+            ui->drawingWindow->hideItem(item);
             CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-            while (!parentItem->is_rootDrawing()) {
-                item=parentItem;
-                parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            if (parentItem) {
+                while (!parentItem->is_rootDrawing()) {
+                    item=parentItem;
+                    parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                    if (!parentItem) break;
+                }
             }
             ui->drawingWindow->showItem(item);
         }
