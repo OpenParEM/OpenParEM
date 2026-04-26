@@ -120,14 +120,16 @@ public:
     {
         if (current) return true;
         return false;
-        // if (current && current->getPrior()) return true;
-        // return false;
     }
 
     bool hasRedo ()
     {
-        if (current && current->getNext()) return true;
-        if (itemChangesList.size() > 0) return true;
+        if (current) {
+            if (current->getNext()) return true;
+        } else {
+            if (itemChangesList.size() > 0) return true;
+        }
+
         return false;
     }
 

@@ -237,18 +237,15 @@ public:
 
     void add (ShapeData *shapeData)
     {
-        std::cout << "CustomTreeWidgetItem::add  shapeData=" << shapeData << std::endl; std::cout.flush();
+        //std::cout << "CustomTreeWidgetItem::add  shapeData=" << shapeData << std::endl; std::cout.flush();
         if (!shapeData) return;
-        if (current) {std::cout << "      enter add:  current=" << current << "  current->prior()=" << current->getPrior() << "  current->next()=" << current->getNext() << std::endl; std::cout.flush();}
-        else {std::cout << "      enter add: current=nullptr" << std::endl; std::cout.flush();}
+
         shapeDataList.push_back(shapeData);
         if (current) {
             shapeData->setPrior(current);
             current->setNext(shapeData);
         }
         current=shapeData;
-        if (current) {std::cout << "      exit add:  current=" << current << "  current->prior()=" << current->getPrior() << "  current->next()=" << current->getNext() << std::endl; std::cout.flush();}
-        else {std::cout << "      exit add: current=nullptr" << std::endl; std::cout.flush();}
     }
 
     // at current location
@@ -337,7 +334,6 @@ public:
     {
         bool retval=false;
         if (current && !current->isNoop()) retval=true;
-        //std::cout << "CustomTreeWidgetItem::hasUndo  retval=" << retval << std::endl; std::cout.flush();
         return retval;
     }
 
@@ -347,15 +343,13 @@ public:
         if (current) {
             if (current->getNext() && !current->getNext()->isNoop()) retval=true;
         } else {
-            if (shapeDataList.size() >0) retval=true;
+            if (shapeDataList.size() > 0) retval=true;
         }
-        //std::cout << "CustomTreeWidgetItem::hasRedo  retval=" << retval << std::endl; std::cout.flush();
         return retval;
     }
 
     void undo ()
     {
-        std::cout << "undo: current=" << current << std::endl; std::cout.flush();
         if (current) {
             std::cout << "      current->getPrior=" << current->getPrior() << std::endl; std::cout.flush();
             current=current->getPrior();
@@ -369,7 +363,6 @@ public:
 
     void reset ()
     {
-        std::cout << "ShapeDataStack::reset" << std::endl; std::cout.flush();
         long unsigned int i=0;
         while (i < shapeDataList.size()) {
             if (shapeDataList[i]) {delete shapeDataList[i]; shapeDataList[i]=nullptr;}
@@ -377,7 +370,6 @@ public:
         }
         shapeDataList.clear();
         current=nullptr;
-        std::cout << "exit ShapeDataStack::reset" << std::endl; std::cout.flush();
     }
 
     void print ()
