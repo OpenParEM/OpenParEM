@@ -256,11 +256,8 @@ public:
     ~OpenParEMg ();
 
     void saveProject ();
-    //void addChildDisplayShape (CustomTreeWidgetItem *, std::pair<int,int> &dimTag);
     void addRootDisplayShapeCreate (TopoDS_Shape);
-    void addItemWithShape (CustomTreeWidgetItem *);
-    CustomTreeWidgetItem* addItemShapeCreate (TopoDS_Shape, CustomTreeWidgetItem *);
-    CustomTreeWidgetItem* addItemShapeCreate (Polywire *, CustomTreeWidgetItem *);
+    void insertToMapActivateItem (CustomTreeWidgetItem *);
     bool loadBrepFile (QString, bool);
     bool loadStepFile (QString, bool);
     bool saveBrepFile (char *);
@@ -307,7 +304,7 @@ public:
     void clearSelection ();
     void restoreSelection ();
 
-    void rebuildTopLevelShape ();
+    //void rebuildTopLevelShape ();
     void reprocess (CustomTreeWidgetItem *);
 
     void startOperation (bool);
@@ -354,7 +351,7 @@ public:
     void convertToPath ();
 
     bool isValidExtrudePolywire ();
-    void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+    // void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void finishExtrudePolywire (bool);
 
     void finishMoveObject (CustomTreeWidgetItem *, gp_Pnt p0, gp_Pnt p1, bool);
@@ -547,8 +544,8 @@ private slots:
     void rotateObject ();
     void createPort ();
     void createPath ();
-    void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape, int);
-    void replaceItemShape (CustomTreeWidgetItem *, Polywire *, int);
+    //void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape, int);
+    //void replaceItemShape (CustomTreeWidgetItem *, Polywire *, int);
     void extrudePolywire ();
     void mergeSolids ();
     void subtractSolids ();

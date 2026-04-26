@@ -48,7 +48,7 @@ LengthInputForm::LengthInputForm (QWidget *parent)
     hasStartPoint=false;
     hasEndPoint=false;
 
-    extrude=nullptr;
+    //extrude=nullptr;
 }
 
 LengthInputForm::~LengthInputForm ()

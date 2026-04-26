@@ -44,7 +44,7 @@ public:
     void set_extrusionDirection (gp_Vec *extrusionDirection_) {extrusionDirection=extrusionDirection_;}
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
     void set_relay (Relay *relay_) {relay=relay_;}
-    void set_Extrude (Extrude *extrude_) {extrude=extrude_;}
+    //void set_Extrude (Extrude *extrude_) {extrude=extrude_;}
 
     void reject () override;
 
@@ -71,7 +71,7 @@ private:
     bool hasEndPoint;
     gp_Pnt startPoint, endPoint;
     QDoubleValidator validator;
-    Extrude *extrude;
+    //Extrude *extrude;
 
     CustomOpenGLWidget *drawingWindow;
     Relay *relay;
