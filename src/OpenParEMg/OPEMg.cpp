@@ -2195,8 +2195,6 @@ void OpenParEMg::deleteDrawingItems ()
             newShapeData->setDelete();
             item->addShapeData(newShapeData);
 
-            // modify the clone
-
             // reset the top-level compound
             reprocess(&drawing);
 
@@ -2206,7 +2204,7 @@ void OpenParEMg::deleteDrawingItems ()
     }
 
     // see if everything has been deleted
-    if (drawing.childCount() == 0) resetDrawing();
+    //if (drawing.childCount() == 0) resetDrawing();
 
     restoreSelection();
     clickedItem=nullptr;
@@ -2214,7 +2212,6 @@ void OpenParEMg::deleteDrawingItems ()
 
     ui->drawingWindow->updateViewer();
     setMenusI(21);
-    std::cout << "OpenParEMg::deleteDrawingItems" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::insertModeItems ()
@@ -8053,7 +8050,7 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
 void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
 {
-    //std::cout << "OpenParEMg::undoItem  item=" << item << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::undoItem  item=" << item << std::endl; std::cout.flush();
 
     if (!item) return;
 
@@ -8106,6 +8103,7 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
         i=0;
         while (i < childList.size()) {
             ui->drawingWindow->showItem(childList[i]);
+            childList[i]->decrease_depth();
             i++;
         }
 
@@ -8126,24 +8124,48 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
                 while (i < item->childCount()) {
                     CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
                     undoItem(child);
+                    ui->drawingWindow->hideItem(child);
                     i++;
                 }
             } else {
                 reprocess(item);
             }
         }
+
+        ui->drawingWindow->showItem(item);
     } else if (shapeData->isDelete()) {
 
         // recreate
 
-        // ToDo
-    }
+        CustomTreeWidgetItem *parentItem=&drawing;
 
+        parentItem->addChild(item);
+        //ui->drawingWindow->insertItemToMap(item->getShape(),item);
+        //ui->drawingWindow->showItem(item);
+
+        std::cout << "   item->getChildrenSize()=" << item->getChildrenSize() << std::endl; std::cout.flush();
+        long unsigned int i=0;
+        while (i < item->getChildrenSize()) {
+            CustomTreeWidgetItem *child=item->getChild(i);
+            if (child) {
+                int index=parentItem->indexOfChild(child);
+                parentItem->takeChild(index);
+                item->addChild(child);
+                child->increase_depth();
+            }
+            i++;
+        }
+
+        item->undo();
+
+        reprocess(item);
+        ui->drawingWindow->showItem(item);
+    }
 }
 
 void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
 {
-    //std::cout << "OpenParEMg::redoItem  item=" << item << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::redoItem  item=" << item << std::endl; std::cout.flush();
 
     if (!item) return;
 
@@ -8165,9 +8187,8 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
         CustomTreeWidgetItem *parentItem=&drawing;
 
         parentItem->addChild(item);
-        ui->drawingWindow->insertItemToMap(item->getShape(),item);
-        ui->drawingWindow->showItem(item);
 
+        std::cout << "   item->getChildrenSize()=" << item->getChildrenSize() << std::endl; std::cout.flush();
         long unsigned int i=0;
         while (i < item->getChildrenSize()) {
             CustomTreeWidgetItem *child=item->getChild(i);
@@ -8175,11 +8196,13 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
                 int index=parentItem->indexOfChild(child);
                 parentItem->takeChild(index);
                 item->addChild(child);
+                child->increase_depth();
             }
             i++;
         }
 
         reprocess(item);
+        ui->drawingWindow->showItem(item);
     } else if (next->isEdit()) {
         ui->drawingWindow->hideItem(item);
         ui->drawingWindow->removeItemFromMap(item);
@@ -8201,13 +8224,46 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
         }
 
         reprocess(item);
-        insertToMapActivateItem (item);
+        insertToMapActivateItem(item);
         ui->drawingWindow->unselectItem(item);
     } else if (next->isDelete()) {
 
-        // recreate
+        // remove
 
-        // ToDo
+        item->redo();
+
+        CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+        if (!parentItem) {
+            return;
+        }
+
+        // collect children
+        std::vector<CustomTreeWidgetItem *> childList;
+        int i=0;
+        while (i < item->childCount()) {
+            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+            childList.push_back(child);
+            i++;
+        }
+
+        // promote children
+        QList<QTreeWidgetItem*> children=item->takeChildren();
+        int index=parentItem->indexOfChild(item);
+        parentItem->insertChildren(index,children);
+
+        // remove the item
+        ui->drawingWindow->hideItem(item);
+        ui->drawingWindow->removeItemFromMap(item);
+        ui->drawingWindow->deleteShape(item->getShape());
+        parentItem->removeChild(item);
+
+        // process the children
+        i=0;
+        while (i < childList.size()) {
+            ui->drawingWindow->showItem(childList[i]);
+            childList[i]->decrease_depth();
+            i++;
+        }
     }
 }
 

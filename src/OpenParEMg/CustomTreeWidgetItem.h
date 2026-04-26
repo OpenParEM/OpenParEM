@@ -350,10 +350,7 @@ public:
 
     void undo ()
     {
-        if (current) {
-            std::cout << "      current->getPrior=" << current->getPrior() << std::endl; std::cout.flush();
-            current=current->getPrior();
-        }
+        if (current) current=current->getPrior();
     }
 
     void redo ()
