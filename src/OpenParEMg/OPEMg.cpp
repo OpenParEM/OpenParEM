@@ -3458,18 +3458,14 @@ void OpenParEMg::finishEditObject (bool cancel)
             if (item && item->is_drawing()) {
 
                 // remove the old version from display and tracking
-                // ui->drawingWindow->hideItem(item);
-                // ui->drawingWindow->removeItemFromMap(item);
-                // ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+                ui->drawingWindow->hideItem(item);
+                ui->drawingWindow->removeItemFromMap(item);
+                ui->drawingWindow->deleteShape(item->getShape());  // lose selection
 
                 // clone the item onto itself for undo/redo
                 ShapeData *newShapeData=item->getShapeData()->copyCreate();
                 newShapeData->setEdit();
                 item->addShapeData(newShapeData);
-
-                // add the new item back to the display and tracking
-                // ui->drawingWindow->insertItemToMap(item->getShape(),item);
-                // ui->drawingWindow->showItem(item);
 
                 // modify the clone
 
@@ -3489,18 +3485,24 @@ void OpenParEMg::finishEditObject (bool cancel)
                 if (process) {
                     Extrude *extrude=dynamic_cast<Extrude *>(process);
                     if (extrude) {
+
+                        // clone the child so that undo/redo works properly
+                        int i=0;
+                        while (i < item->childCount()) {
+                            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+                            Polywire *polywire=static_cast<Polywire *>(child->getPolywire());
+                            if (polywire) {
+                                ShapeData *newShapeData=child->getShapeData()->copyCreate();
+                                newShapeData->setEdit();
+                                child->addShapeData(newShapeData);
+                            }
+                            i++;
+                        }
+
                         extrude->set_length(length);
                         reprocess(item);
                     }
                 }
-
-                // find and show the top-level item
-                // CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-                // while (!parentItem->is_rootDrawing()) {
-                //     item=parentItem;
-                //     parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-                // }
-                //ui->drawingWindow->showItem(item);
 
                 activeAction=false;
 

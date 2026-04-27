@@ -735,7 +735,14 @@ public:
         OPEMobject=nullptr;
         material.clear();
         linkedItems.clear();
-        std::cout << "exit CustomTreeWidgetItem::reset" << std::endl; std::cout.flush();
+
+        int i=0;
+        while (i < childCount()) {
+            CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+            childItem->reset();
+            removeChild(childItem);
+            i++;
+        }
     }
 
     bool hasUndo () {return dataStack.hasUndo();}
