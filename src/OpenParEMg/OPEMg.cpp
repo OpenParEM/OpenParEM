@@ -3020,11 +3020,11 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 
     Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
     if (polywire) {
-        if (!item->getShape().IsNull()) {
-            ui->drawingWindow->hideItem(item);
-            ui->drawingWindow->removeItemFromMap(item);
-            ui->drawingWindow->deleteShape(item->getShape());
-        }
+        // if (!item->getShape().IsNull()) {
+        //     ui->drawingWindow->hideItem(item);
+        //     ui->drawingWindow->removeItemFromMap(item);
+        //     ui->drawingWindow->deleteShape(item->getShape());
+        // }
 
         ShapeData *shapeData=item->getShapeData();
         shapeData->setShape(polywire->get_AIS_Shape());
@@ -3090,8 +3090,6 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
                                 //ui->drawingWindow->showItem(item);
 
                                 drawingChanged=true;
-
-                                //reextrudePolywire(item,child);
                             } else {
                                 stop=true;
                             }
@@ -4004,7 +4002,6 @@ void OpenParEMg::copyDrawingItems ()
         CustomTreeWidgetItem *item=copyList[i];
         if (item && item->is_drawing()) {
 
-            //xxx
             CustomTreeWidgetItem *newItem=copyItem(item,&drawing);
 
             int i=0;
@@ -7686,7 +7683,6 @@ void OpenParEMg::finishDraw ()
         newItem->setText(0,activePolywire->getName(&objectCounts));
         drawing.addChild(newItem);
         ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
-        //ui->drawingWindow->displayShape(newItem->getShape());
         ui->drawingWindow->activateItem(newItem);
         ui->drawingWindow->selectItem(newItem);
         ui->drawingWindow->showItem(newItem);
@@ -7696,8 +7692,6 @@ void OpenParEMg::finishDraw ()
         // put it on the Z-layer to get it higher selection priority
         newItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
 
-        ui->drawingWindow->showItem(newItem);
-        ui->drawingWindow->activateSelectItem(newItem);
         previousClickedItem=clickedItem;
         clickedItem=newItem;
     }
@@ -7805,7 +7799,6 @@ bool OpenParEMg::insertActionValid ()
     if (VIcount != 1) return false;
     if (pathCount == 0) return false;
 
-    //xxx
     // check that the paths are within the port
 
     CustomTreeWidgetItem *modeParentItem=(CustomTreeWidgetItem *)VIitem->QTreeWidgetItem::parent();
@@ -8244,6 +8237,7 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
         }
     }
     ui->drawingWindow->showItem(item);
+    ui->drawingWindow->activateItem(item);
 }
 
 void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
@@ -8360,6 +8354,7 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
         }
     }
     ui->drawingWindow->showItem(item);
+    ui->drawingWindow->activateItem(item);
 }
 
 void OpenParEMg::on_actionUndo_triggered ()
