@@ -214,6 +214,7 @@ public:
     Rectangle ()
     {
         closed=true;
+        isSquare=false;
     }
 
     Rectangle (Rectangle *);
@@ -243,6 +244,8 @@ public:
     void setWidth (double width_) {width=width_;}
     void setHeight (double height_) {height=height_;}
 
+    void setIsSquare (bool isSquare_) {isSquare=isSquare_;}
+
     void recalculate ();
     void recalculate (gp_Pnt);
     void recalculate (gp_Pnt, gp_Pnt);
@@ -264,6 +267,8 @@ public:
 private:
     gp_Vec u,v;
     double width,height;
+    bool isSquare;
+    double tempWidth,tempHeight;  // for stretching squares
 };
 
 class Polycircle : public Polywire

@@ -2194,6 +2194,7 @@ void OpenParEMg::deleteDrawingItems ()
             ShapeData *newShapeData=item->getShapeData()->copyCreate();
             newShapeData->setDelete();
             item->addShapeData(newShapeData);
+            ui->drawingWindow->unselectItem(item);
 
             // reset the top-level compound
             reprocess(&drawing);
@@ -2206,12 +2207,14 @@ void OpenParEMg::deleteDrawingItems ()
     // see if everything has been deleted
     //if (drawing.childCount() == 0) resetDrawing();
 
-    restoreSelection();
-    clickedItem=nullptr;
-    previousClickedItem=nullptr;
+    // restoreSelection();
+    // clickedItem=nullptr;
+    // previousClickedItem=nullptr;
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(21);
+    // ui->drawingWindow->updateViewer();
+    // setMenusI(21);
+
+    finishOperation(false,100);
 }
 
 void OpenParEMg::insertModeItems ()
@@ -2795,7 +2798,7 @@ bool OpenParEMg::isValidExtrudePolywire ()
         if (item && item->is_drawing()) {
             CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
             if (parent && parent->is_rootDrawing()) {
-                Polywire *polywire=item->getPolywire();
+                Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
                 if (polywire && polywire->isClosed()) polywireCount++;
             }
         }
@@ -2868,7 +2871,6 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
                 if (polywire) {
 
                     // set direction
-                    polywire=item->getPolywire();
                     polywire->setReverseExtrusionDirection(false);
                     if (extrusionDirection.Magnitude() > 1e-12) {
                         if (polywire->getNormal().IsOpposite(extrusionDirection,1.5)) {
@@ -3321,10 +3323,10 @@ bool OpenParEMg::isValidObjectEdit ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire && polywire->canEdit()) count++;
 
-            Process *process=item->getProcess();
+            Process *process=static_cast<Process *>(item->getProcess());
             if (process && process->canEdit()) count++;
         }
         i++;
@@ -3399,7 +3401,7 @@ void OpenParEMg::editObject ()
                     int i=0;
                     while (i < item->childCount()) {
                         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-                        polywire=child->getPolywire();
+                        polywire=static_cast<Polywire *>(child->getPolywire());
                         if (polywire) break;
                         i++;
                     }
@@ -3959,7 +3961,7 @@ CustomTreeWidgetItem* OpenParEMg::copyItem (CustomTreeWidgetItem *item, CustomTr
     newItemParent->addChild(newItem);
 
     // children for processes
-    Process *process=newItem->getProcess();
+    Process *process=static_cast<Process *>(newItem->getProcess());
     if (process) {
         int i=0;
         while (i < item->childCount()) {
@@ -4047,7 +4049,7 @@ bool OpenParEMg::isValidObjectStretch ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire) count++;
         }
         i++;
@@ -4076,7 +4078,7 @@ void OpenParEMg::stretchObject ()
                 currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
                 //restrictToDrawingPlane=true;
 
-                Polywire *polywire=item->getPolywire();
+                Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
                 if (polywire) {
                     item->setEnableStretch(true);
                     item->resetP0P1();
@@ -4096,7 +4098,7 @@ void OpenParEMg::finishStretchObject (CustomTreeWidgetItem *item)
 
     if (!item) return;
 
-    Polywire *polywire=item->getPolywire();
+    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
     if (!polywire) return;
     polywire->deleteRubberband();
 
@@ -4107,8 +4109,17 @@ void OpenParEMg::finishStretchObject (CustomTreeWidgetItem *item)
 
     // modify the clone
 
-    polywire=item->getPolywire();
+    polywire=static_cast<Polywire *>(item->getPolywire());
     if (!polywire) return;
+
+    Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+    if (rectangle) {
+        if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
+            rectangle->setIsSquare(true);
+        } else {
+            rectangle->setIsSquare(false);
+        }
+    }
 
     item->setEnableStretch(false);
     gp_Pnt pnt=item->getP1();
@@ -4142,7 +4153,7 @@ bool OpenParEMg::isValidDeletePoint ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire && polywire->canDeletePoint()) count++;
         }
         i++;
@@ -4172,7 +4183,7 @@ void OpenParEMg::deletePoint ()
                 currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
                 //restrictToDrawingPlane=true;
 
-                Polywire *polywire=item->getPolywire();
+                Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
                 if (polywire) {
                     item->setEnableDeletePoint(true);
                     item->resetP0P1();
@@ -4204,7 +4215,7 @@ void OpenParEMg::finishDeletePoint (CustomTreeWidgetItem *item)
     // ui->drawingWindow->insertItemToMap(item->getShape(),item);
     // ui->drawingWindow->showItem(item);
 
-    Polywire *polywire=item->getPolywire();
+    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
     if (!polywire) return;
 
     gp_Pnt p0=item->getP0();
@@ -4239,7 +4250,7 @@ bool OpenParEMg::isValidInsertPoint ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire && polywire->canInsertPoint()) count++;
         }
         i++;
@@ -4269,7 +4280,7 @@ void OpenParEMg::insertPoint ()
                 currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
                 //restrictToDrawingPlane=true;
 
-                Polywire *polywire=item->getPolywire();
+                Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
                 if (polywire) {
 
                     // remove the old version from display and tracking
@@ -4288,7 +4299,7 @@ void OpenParEMg::insertPoint ()
 
                     // modify the clone
 
-                    polywire=item->getPolywire();
+                    polywire=static_cast<Polywire *>(item->getPolywire());
                     item->setEnableInsertPoint(true);
                     item->resetP0P1();
                     gp_Pln plane=polywire->getPlane();
@@ -4305,7 +4316,7 @@ void OpenParEMg::finishInsertPoint (CustomTreeWidgetItem *item)
 {
     if (!item) return;
 
-    Polywire *polywire=item->getPolywire();
+    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
     if (polywire) {
         gp_Pnt p0=item->getP0();
         polywire->insertPoint(p0);
@@ -4346,8 +4357,8 @@ bool OpenParEMg::isValidCloseExistingPolyline ()
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
             CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-            if (parentItem->is_rootDrawing()) {
-                Polywire *polywire=item->getPolywire();
+            if (parentItem && parentItem->is_rootDrawing()) {
+                Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
                 if (polywire && polywire->canClose()) count++;
             }
         }
@@ -4363,7 +4374,7 @@ void OpenParEMg::closeExistingPolyline ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire) {
 
                 // for undo/redo
@@ -4388,7 +4399,7 @@ void OpenParEMg::closeExistingPolyline ()
 
                 // modify the clone
 
-                polywire=item->getPolywire();
+                polywire=static_cast<Polywire *>(item->getPolywire());
                 polywire->close();
                 reprocess(item);
                 //item->setText(0,"FACE");
@@ -4414,8 +4425,8 @@ bool OpenParEMg::isValidOpenExistingPolyline ()
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
             CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-            if (parentItem->is_rootDrawing()) {
-                Polywire *polywire=item->getPolywire();
+            if (parentItem && parentItem->is_rootDrawing()) {
+                Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
                 if (polywire && polywire->canOpen()) count++;
             }
         }
@@ -4431,7 +4442,7 @@ void OpenParEMg::openExistingPolyline ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire) {
                 // for undo/redo
 
@@ -4455,7 +4466,7 @@ void OpenParEMg::openExistingPolyline ()
 
                 // modify the clone
 
-                polywire=item->getPolywire();
+                polywire=static_cast<Polywire *>(item->getPolywire());
                 polywire->open();
                 reprocess(item);
                 //item->setText(0,"WIRE");
@@ -4480,7 +4491,7 @@ bool OpenParEMg::isValidConvertToPolyline ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire && polywire->canConvert()) count++;
         }
         i++;
@@ -4495,7 +4506,7 @@ void OpenParEMg::convertToPolyline ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire) {
                 Polyline *newPolyline=polywire->convert();
                 delete polywire; polywire=nullptr;
@@ -4526,10 +4537,10 @@ bool OpenParEMg::isValidConvertToPath ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire) {
                 CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-                if (parentItem->is_rootDrawing()) count++;
+                if (parentItem && parentItem->is_rootDrawing()) count++;
             }
         }
         i++;
@@ -4544,7 +4555,7 @@ void OpenParEMg::convertToPath ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire) {
 
                 // default path name
@@ -4666,14 +4677,14 @@ void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item)
 
     // modify the clone
 
-    Polywire *polywire=item->getPolywire();
+    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
     if (polywire) {
         polywire->rotate(angle,startPoint,endPoint);
         reprocess(item);
         drawingChanged=true;
     }
 
-    Process *process=item->getProcess();
+    Process *process=static_cast<Process *>(item->getProcess());
     if (process) {
 
         // ui->drawingWindow->hideItem(item);
@@ -5896,12 +5907,12 @@ void OpenParEMg::saveItem (std::ofstream *out, CustomTreeWidgetItem *item)
         }
     } else if (item->is_drawing()) {
 
-        Polywire *polywire=item->getPolywire();
+        Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
         if (polywire) {
             polywire->save(out,item->get_name(),item->get_depth());
         }
 
-        Process *process=item->getProcess();
+        Process *process=static_cast<Process *>(item->getProcess());
         if (process) {
             process->startSave(out,item->get_name(),item->get_material(),item->get_depth());
 
@@ -6626,6 +6637,11 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
         CTRLpressed=true;
     } else if (event->key() == Qt::Key_Shift) {
         SHIFTpressed=true;
+
+        if (activePolywire) {
+            Rectangle *rectangle=dynamic_cast<Rectangle *>(activePolywire);
+            if (rectangle) rectangle->setIsSquare(true);
+        }
     } else if (event->key() == Qt::Key_Escape) {
         //std::cout << "OpenParEMg::keyPressEvent   Qt::Key_Escape" << std::endl; std::cout.flush();
 
@@ -6682,6 +6698,11 @@ void OpenParEMg::keyReleaseEvent (QKeyEvent *event)
         CTRLpressed=false;
     } else if (event->key() == Qt::Key_Shift) {
         SHIFTpressed=false;
+
+        if (activePolywire) {
+            Rectangle *rectangle=dynamic_cast<Rectangle *>(activePolywire);
+            if (rectangle) rectangle->setIsSquare(false);
+        }
     }
     QWidget::keyReleaseEvent(event);
 }
@@ -7699,6 +7720,10 @@ void OpenParEMg::finishDraw ()
     restrictToDrawingPlane=false;
 
     activePolywire->deleteRubberband();
+
+    Rectangle *rectangle=dynamic_cast<Rectangle *>(activePolywire);
+    if (rectangle) rectangle->setIsSquare(false);
+
     activePolywire=nullptr;
 
     drawingChanged=true;
@@ -7894,10 +7919,18 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
                 item->moveAnimateShape(lastMousePosition,pnt,ui->drawingWindow->get_viewerContext());
             }
 
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
 
             // stretch
             if (polywire && item->getEnableStretch() && item->hasP0()) {
+                Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+                if (rectangle) {
+                    if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
+                        rectangle->setIsSquare(true);
+                    } else {
+                        rectangle->setIsSquare(false);
+                    }
+                }
                 polywire->setCurrentMousePosition(pnt);
                 polywire->drawStretchRubberband();
             }
@@ -7967,11 +8000,21 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                 }
             }
 
-            Polywire *polywire=item->getPolywire();
+            Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire) {
 
                 // stretch
                 if (item->getEnableStretch()) {
+
+                    Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+                    if (rectangle) {
+                        if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
+                            rectangle->setIsSquare(true);
+                        } else {
+                            rectangle->setIsSquare(false);
+                        }
+                    }
+
                     if (!item->hasP0()) {
                         item->setP0(pnt);
                         polywire->setEditIndex(pnt);
@@ -8034,6 +8077,8 @@ void OpenParEMg::finishOperation (bool cancel, int source)
         if (activePolywire && activePolywire->getDrawEnable()) {
             activePolywire->setDrawEnable(false);
             activePolywire->deleteRubberband();
+            // xxx
+            ui->drawingWindow->finishPickVertex(true);
             ui->drawingWindow->updateViewer();
             delete activePolywire;
             activePolywire=nullptr;
@@ -8051,11 +8096,21 @@ void OpenParEMg::finishOperation (bool cancel, int source)
                     ui->drawingWindow->showItem(item);
                 }
 
-                Polywire *polywire=item->getPolywire();
+                Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
                 if (polywire) {
 
                     // stretch
                     if (item->getEnableStretch()) {
+
+                        Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+                        if (rectangle) {
+                            if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
+                                rectangle->setIsSquare(true);
+                            } else {
+                                rectangle->setIsSquare(false);
+                            }
+                        }
+
                         item->setEnableStretch(false);
                         polywire->deleteRubberband();
                         ui->drawingWindow->showItem(item);
@@ -8289,7 +8344,7 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
 
         ShapeData *shapeData=item->getShapeData();
         if (shapeData) {
-            Process *process=shapeData->getProcess();
+            Process *process=static_cast<Process *>(shapeData->getProcess());
             if (process) {
                 int i=0;
                 while (i < item->childCount()) {

@@ -61,13 +61,21 @@ void LengthInputForm::set_length (double *length_)
     transferLength=length_;
     localLength=*transferLength;
     ui->lineEdit->setText(QString::number(localLength));
+
+    if (abs(localLength) > 1e-14) {
+        activateWindow();
+        raise();
+        ui->lineEdit->clearFocus();
+        ui->OkButton->setEnabled(true);
+        ui->OkButton->setFocus();
+    }
 }
 
 void LengthInputForm::on_lineEdit_returnPressed ()
 {
     localLength=ui->lineEdit->text().toDouble();
     ui->OkButton->setEnabled(true);
-    if (abs(localLength) < 1e-12) {
+    if (abs(localLength) > 1e-14) {
         activateWindow();
         raise();
         ui->lineEdit->clearFocus();
@@ -102,12 +110,9 @@ void LengthInputForm::on_pickEnd_clicked ()
 
 void LengthInputForm::on_OkButton_clicked ()
 {
-    std::cout << "LengthInputForm::on_OkButton_clicked" << std::endl; std::cout.flush();
     ui->OkButton->setChecked(true);
     *transferLength=localLength;
-    std::cout << "place 1" << std::endl; std::cout.flush();
     emit relay->finishOperation(false,71);
-    std::cout << "place 2" << std::endl; std::cout.flush();
     QDialog::close();
 }
 
@@ -163,7 +168,6 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
 
 void LengthInputForm::reject ()
 {
-    //std::cout << "LengthInputForm::reject" << std::endl; std::cout.flush();
     ui->CancelButton->setChecked(true);
     emit relay->finishOperation(true,73);
 

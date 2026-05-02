@@ -207,26 +207,26 @@ void CustomOpenGLWidget::clearDrawing ()
     viewerContext->UpdateCurrentViewer();
 }
 
-void CustomOpenGLWidget::cancelDraw ()
-{
-    //std::cout << "CustomOpenGLWidget::cancelDraw" << std::endl; std::cout.flush();
+// void CustomOpenGLWidget::cancelDraw ()
+// {
+//     //std::cout << "CustomOpenGLWidget::cancelDraw" << std::endl; std::cout.flush();
 
-    // invalidate flags
-    pickFirstVertex=false;
-    pickSecondVertex=false;
+//     // invalidate flags
+//     pickFirstVertex=false;
+//     pickSecondVertex=false;
 
-    // remove temporaryVertex, if needed
-    if (!temporaryVertex.IsNull()) {
-        viewerContext->Remove(temporaryVertex,Standard_True);
-        temporaryVertex.Nullify();
-    }
+//     // remove temporaryVertex, if needed
+//     if (!temporaryVertex.IsNull()) {
+//         viewerContext->Remove(temporaryVertex,Standard_True);
+//         temporaryVertex.Nullify();
+//     }
 
-    // reset point selection symbol
-    //viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
+//     // reset point selection symbol
+//     //viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
 
-    // clear detection
-    viewerContext->ClearDetected(Standard_True);
-}
+//     // clear detection
+//     viewerContext->ClearDetected(Standard_True);
+// }
 
 void CustomOpenGLWidget::wheelEvent (QWheelEvent* event)
 {
@@ -297,7 +297,7 @@ void CustomOpenGLWidget::finishPickVertex (bool cancel)
 
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
-    std::cout << "CustomOpenGLWidget::mousePressEvent   pickFirstVertex=" << pickFirstVertex << std::endl; std::cout.flush();
+    std::cout << "CustomOpenGLWidget::mousePressEvent   pickFirstVertex=" << pickFirstVertex << "  pickSecondVertex=" << pickSecondVertex << std::endl; std::cout.flush();
 
     QOpenGLWidget::mousePressEvent(event);
     if (view.IsNull()) return;
@@ -306,7 +306,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     // pass the mouse press from Qt to OCCT
     bool passClick=true;
     if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
-    if (event->button() == Qt::RightButton && pickFirstVertex) passClick=false;   // prevent right-click from zooming
+    if (event->button() == Qt::RightButton && (pickFirstVertex || pickSecondVertex)) passClick=false;   // prevent right-click from zooming
     if (passClick) {
         const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());

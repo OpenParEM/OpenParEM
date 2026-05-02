@@ -1091,6 +1091,9 @@ Rectangle::Rectangle (Rectangle *rectangle)
     width=rectangle->width;
     height=rectangle->height;
     normal=rectangle->normal;
+    isSquare=rectangle->isSquare;
+    tempWidth=rectangle->tempWidth;
+    tempHeight=rectangle->tempHeight;
 
     long unsigned int i=0;
     while (i < rectangle->shapePoints.size()) {
@@ -1153,6 +1156,18 @@ void Rectangle::drawRubberband ()
     width=d.Dot(u);
     height=d.Dot(v);
 
+    if (isSquare) {
+        if (abs(width) > abs(height)) {
+            height=abs(width);
+            if (tempHeight < 0) height=-height;
+        } else {
+            width=abs(height);
+            if (tempWidth < 0) width=-width;
+        }
+
+        shapePoints[2]=shapePoints[0].Translated(u*width).Translated(v*height);
+    }
+
     shapePoints[1]=shapePoints[0].Translated(u*width);
     shapePoints[3]=shapePoints[0].Translated(v*height);
 
@@ -1171,6 +1186,9 @@ void Rectangle::drawRubberband ()
     if (!rubberband.IsNull()) {
         viewerContext->Display(rubberband,0,-1,Standard_True);
     }
+
+    tempWidth=width;
+    tempHeight=height;
 }
 
 void Rectangle::drawStretchRubberband ()
@@ -1188,47 +1206,98 @@ void Rectangle::drawStretchRubberband ()
         i++;
     }
 
+    double tw;
+    double th;
+
     if (editIndex == 0 || editIndex == 4) {
         gp_Vec d(currentMousePosition,tempShapePoints[2]);
-        double tempWidth=d.Dot(u);
-        double tempHeight=d.Dot(v);
+        tw=d.Dot(u);
+        th=d.Dot(v);
 
-        if (abs(tempWidth) > Precision::Confusion() && abs(tempHeight) > Precision::Confusion()) {
+        if (isSquare) {
+            if (abs(tw) > abs(th)) {
+                th=abs(tw);
+                if (tempHeight < 0) th=-th;
+            } else {
+                tw=abs(th);
+                if (tempWidth < 0) tw=-tw;
+            }
+
+            currentMousePosition=tempShapePoints[2].Translated(-u*tw).Translated(-v*th);
+        }
+
+        if (abs(tw) > Precision::Confusion() && abs(th) > Precision::Confusion()) {
             tempShapePoints[0]=currentMousePosition;
-            tempShapePoints[1]=tempShapePoints[2].Translated(-v*tempHeight);
-            tempShapePoints[3]=tempShapePoints[2].Translated(-u*tempWidth);
+            tempShapePoints[1]=tempShapePoints[2].Translated(-v*th);
+            tempShapePoints[3]=tempShapePoints[2].Translated(-u*tw);
             tempShapePoints[4]=tempShapePoints[0];
         }
     } else if (editIndex == 1) {
         gp_Vec d(tempShapePoints[3],currentMousePosition);
-        double tempWidth=d.Dot(u);
-        double tempHeight=-d.Dot(v);
+        tw=d.Dot(u);
+        th=d.Dot(v);
 
-        if (abs(tempWidth) > Precision::Confusion() && abs(tempHeight) > Precision::Confusion()) {
-            tempShapePoints[0]=tempShapePoints[3].Translated(-v*tempHeight);
+        if (isSquare) {
+            if (abs(tw) > abs(th)) {
+                th=abs(tw);
+                if (tempHeight < 0) th=-th;
+            } else {
+                tw=abs(th);
+                if (tempWidth < 0) tw=-tw;
+            }
+
+            currentMousePosition=tempShapePoints[3].Translated(u*tw).Translated(v*th);
+        }
+
+        if (abs(tw) > Precision::Confusion() && abs(th) > Precision::Confusion()) {
+            tempShapePoints[0]=tempShapePoints[3].Translated(v*th);
             tempShapePoints[1]=currentMousePosition;
-            tempShapePoints[2]=tempShapePoints[3].Translated(u*tempWidth);
+            tempShapePoints[2]=tempShapePoints[3].Translated(u*tw);
             tempShapePoints[4]=tempShapePoints[0];
         }
     } else if (editIndex == 2) {
         gp_Vec d(tempShapePoints[0],currentMousePosition);
-        double tempWidth=d.Dot(u);
-        double tempHeight=d.Dot(v);
+        tw=d.Dot(u);
+        th=d.Dot(v);
 
-        if (abs(tempWidth) > Precision::Confusion() && abs(tempHeight) > Precision::Confusion()) {
-            tempShapePoints[1]=tempShapePoints[0].Translated(u*tempWidth);
+        if (isSquare) {
+            if (abs(tw) > abs(th)) {
+                th=abs(tw);
+                if (tempHeight < 0) th=-th;
+            } else {
+                tw=abs(th);
+                if (tempWidth < 0) tw=-tw;
+            }
+
+            currentMousePosition=tempShapePoints[0].Translated(u*tw).Translated(v*th);
+        }
+
+        if (abs(tw) > Precision::Confusion() && abs(th) > Precision::Confusion()) {
+            tempShapePoints[1]=tempShapePoints[0].Translated(u*tw);
             tempShapePoints[2]=currentMousePosition;
-            tempShapePoints[3]=tempShapePoints[0].Translated(v*tempHeight);
+            tempShapePoints[3]=tempShapePoints[0].Translated(v*th);
             tempShapePoints[4]=tempShapePoints[0];
         }
     } else if (editIndex == 3) {
         gp_Vec d(currentMousePosition,tempShapePoints[1]);
-        double tempWidth=d.Dot(u);
-        double tempHeight=-d.Dot(v);
+        tw=d.Dot(u);
+        th=d.Dot(v);
 
-        if (abs(tempWidth) > Precision::Confusion() && abs(tempHeight) > Precision::Confusion()) {
-            tempShapePoints[0]=tempShapePoints[1].Translated(-u*tempWidth);
-            tempShapePoints[2]=tempShapePoints[1].Translated(v*tempHeight);
+        if (isSquare) {
+            if (abs(tw) > abs(th)) {
+                th=abs(tw);
+                if (tempHeight < 0) th=-th;
+            } else {
+                tw=abs(th);
+                if (tempWidth < 0) tw=-tw;
+            }
+
+            currentMousePosition=tempShapePoints[1].Translated(-u*tw).Translated(-v*th);
+        }
+
+        if (abs(tw) > Precision::Confusion() && abs(th) > Precision::Confusion()) {
+            tempShapePoints[0]=tempShapePoints[1].Translated(-u*tw);
+            tempShapePoints[2]=tempShapePoints[1].Translated(-v*th);
             tempShapePoints[3]=currentMousePosition;
             tempShapePoints[4]=tempShapePoints[0];
         }
@@ -1249,10 +1318,15 @@ void Rectangle::drawStretchRubberband ()
     if (!rubberband.IsNull()) {
         viewerContext->Display(rubberband,0,-1,Standard_True);
     }
+
+    tempWidth=tw;
+    tempHeight=th;
 }
 
 TopoDS_Face Rectangle::buildFace (TopoDS_Wire &wire)
 {
+    //std::cout << "Rectangle::buildFace" << std::endl; std::cout.flush();
+
     TopoDS_Face face;
     if (wire.IsNull()) return face;
 
@@ -1267,10 +1341,25 @@ TopoDS_Face Rectangle::buildFace (TopoDS_Wire &wire)
 
 void Rectangle::setEditPoint (gp_Pnt &pnt)
 {
+    //std::cout << "Rectangle::setEditPoint  tempWidth=" << tempWidth << "  tempHeight=" << tempHeight << std::endl; std::cout.flush();
+
     if (editIndex == 0 || editIndex == 4) {
         gp_Vec d(pnt,shapePoints[2]);
         width=d.Dot(u);
         height=d.Dot(v);
+
+        if (isSquare) {
+            std::cout << "   width=" << width << "  height=" << height << std::endl; std::cout.flush();
+            if (abs(width) > abs(height)) {
+                height=abs(width);
+                if (tempHeight < 0) height=-height;
+            } else {
+                width=abs(height);
+                if (tempWidth < 0) width=-width;
+            }
+
+            pnt=shapePoints[2].Translated(-u*width).Translated(-v*height);
+        }
 
         shapePoints[0]=pnt;
         shapePoints[1]=shapePoints[2].Translated(-v*height);
@@ -1281,6 +1370,18 @@ void Rectangle::setEditPoint (gp_Pnt &pnt)
         width=d.Dot(u);
         height=-d.Dot(v);
 
+        if (isSquare) {
+            if (abs(width) > abs(height)) {
+                height=abs(width);
+                if (tempHeight < 0) height=-height;
+            } else {
+                width=abs(height);
+                if (tempWidth < 0) width=-width;
+            }
+
+            pnt=shapePoints[3].Translated(u*width).Translated(-v*height);
+        }
+
         shapePoints[0]=shapePoints[3].Translated(-v*height);
         shapePoints[1]=pnt;
         shapePoints[2]=shapePoints[3].Translated(u*width);
@@ -1290,6 +1391,18 @@ void Rectangle::setEditPoint (gp_Pnt &pnt)
         width=d.Dot(u);
         height=d.Dot(v);
 
+        if (isSquare) {
+            if (abs(width) > abs(height)) {
+                height=abs(width);
+                if (tempHeight < 0) height=-height;
+            } else {
+                width=abs(height);
+                if (tempWidth < 0) width=-width;
+            }
+
+            pnt=shapePoints[0].Translated(u*width).Translated(v*height);
+        }
+
         shapePoints[1]=shapePoints[0].Translated(u*width);
         shapePoints[2]=pnt;
         shapePoints[3]=shapePoints[0].Translated(v*height);
@@ -1298,6 +1411,18 @@ void Rectangle::setEditPoint (gp_Pnt &pnt)
         gp_Vec d(pnt,shapePoints[1]);
         width=d.Dot(u);
         height=-d.Dot(v);
+
+        if (isSquare) {
+            if (abs(width) > abs(height)) {
+                height=abs(width);
+                if (tempHeight < 0) height=-height;
+            } else {
+                width=abs(height);
+                if (tempWidth < 0) width=-width;
+            }
+
+            pnt=shapePoints[1].Translated(-u*width).Translated(v*height);
+        }
 
         shapePoints[0]=shapePoints[1].Translated(-u*width);
         shapePoints[2]=shapePoints[1].Translated(v*height);
@@ -1402,6 +1527,9 @@ Rectangle* Rectangle::copyCreate ()
     newRectangle->v=v;
     newRectangle->width=width;
     newRectangle->height=height;
+    newRectangle->isSquare=isSquare;
+    newRectangle->tempWidth=tempWidth;
+    newRectangle->tempHeight=tempHeight;
     newRectangle->reverseExtrusionDirection=reverseExtrusionDirection;
     return newRectangle;
 
@@ -1465,6 +1593,9 @@ void Rectangle::save (std::ofstream *out, QString name, int level)
 
     *out << space << "   width=" << width << std::endl;
     *out << space << "   height=" << height << std::endl;
+    *out << space << "   isSquare=" << isSquare << std::endl;
+    *out << space << "   tempWidth=" << tempWidth << std::endl;
+    *out << space << "   tempHeight=" << tempHeight << std::endl;
 
     *out << space << "   u=("
          << u.X() << ","
@@ -1604,6 +1735,9 @@ bool Rectangle::load (std::vector<std::string> &inputData, long unsigned int sta
         i++;
     }
 
+    isSquare=false;
+    tempWidth=0;
+    tempHeight=0;
     recalculate();
 
     objectCounts->rectangle++;

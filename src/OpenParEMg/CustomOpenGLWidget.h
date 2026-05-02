@@ -72,7 +72,7 @@ public:
     void fitAll () {view->FitAll(); view->Redraw();}
     void fitSelected () {viewerContext->FitSelected(view); view->Redraw();}
 
-    void cancelDraw ();
+    // void cancelDraw ();
     //void drawRubberBand (gp_Pnt);
 
     void wheelEvent (QWheelEvent*) override;
