@@ -118,16 +118,8 @@ public:
 
     bool hasUndo ()
     {
-        std::cout << "hasUndo: current=" << current << std::endl; std::cout.flush();
-        std::cout << "         itemChangesList.size()=" << itemChangesList.size() << std::endl; std::cout.flush();
-        bool retVal=false;
-        if (current) {
-            //std::cout << "         current->getPrior()=" << current->getPrior() << std::endl; std::cout.flush();
-            //if (current->getPrior()) retVal=true;
-            retVal=true;
-        }
-        std::cout << "         retVal=" << retVal << std::endl; std::cout.flush();
-        return retVal;
+        if (current) return true;
+        return false;
     }
 
     bool hasRedo ()
@@ -548,6 +540,8 @@ private slots:
 
     //void set_displayMode (CustomTreeWidgetItem *, int);
     //void set_selectionMode (CustomTreeWidgetItem *, int);
+
+    void findShowTopLevelItem (CustomTreeWidgetItem *, bool);
 
     void editObject ();
     void moveObject ();
