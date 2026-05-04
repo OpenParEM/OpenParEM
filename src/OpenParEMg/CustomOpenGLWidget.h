@@ -227,7 +227,6 @@ public:
         viewerContext->Display(item->getShape(),Standard_False);
         viewerContext->Load(item->getShape());
         viewerContext->Activate(item->getShape(),0,Standard_False);
-        std::cout << "activateItem: item=" << item << std::endl; std::cout.flush();
     }
 
     bool isSelectedItem (CustomTreeWidgetItem *item)

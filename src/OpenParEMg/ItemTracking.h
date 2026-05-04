@@ -1030,7 +1030,6 @@ public:
 
         if (shape.IsNull()) {std::cout << "ItemTracker::insertItemToMap  ERROR inserting null shape" << std::endl; std::cout.flush();}
 
-        std::cout << "insertItemToMap: item=" << item << "   shape=" << &shape << std::endl; std::cout.flush();
         shapeToItemMap.insert({shape,item});
     }
 
@@ -1040,7 +1039,6 @@ public:
         Handle(AIS_Shape) shape=item->getShape();
         if (shape.IsNull()) return;
         if (viewerContext->IsDisplayed(shape)) viewerContext->Erase(shape,Standard_False);
-        std::cout << "removeItemFromMap: item=" << item << std::endl; std::cout.flush();
         shapeToItemMap.erase(shape);
     }
 
