@@ -346,6 +346,7 @@ public:
 
     bool isValidDeletePoint ();
     void finishDeletePoint (CustomTreeWidgetItem *);
+    void cancelDeletePoint ();
 
     bool isValidInsertPoint ();
     void finishInsertPoint (CustomTreeWidgetItem *);

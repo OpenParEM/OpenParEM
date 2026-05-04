@@ -1217,7 +1217,13 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
             if (item) {
                 if (item->is_drawing()) {
-                    buildDrawingMenu(menu);
+                    if (item->getEnableDeletePoint()) {
+                        cancelAction=new QAction("Cancel");
+                        connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDeletePoint);
+                        menu.addAction(cancelAction);
+                    } else {
+                        buildDrawingMenu(menu);
+                    }
                     break;
                 }
                 if (item->is_path() || item->is_port() || item->is_integrationPathSegment()) {
@@ -4253,6 +4259,19 @@ void OpenParEMg::finishDeletePoint (CustomTreeWidgetItem *item)
     ui->drawingWindow->showItem(item);
 
     finishOperation(false,8);
+}
+
+void OpenParEMg::cancelDeletePoint ()
+{
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) {
+            item->setEnableDeletePoint(false);
+        }
+        i++;
+    }
+    finishOperation(true,4005);
 }
 
 bool OpenParEMg::isValidInsertPoint ()
@@ -8137,6 +8156,14 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
                         item->setEnableStretch(false);
                         polywire->deleteRubberband();
+                        ui->drawingWindow->showItem(item);
+                        ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+                    }
+
+                    // delete point
+                    if (item->getEnableDeletePoint()) {
+                        item->setEnableDeletePoint(false);
+                        //polywire->deleteRubberband();
                         ui->drawingWindow->showItem(item);
                         ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
                     }
