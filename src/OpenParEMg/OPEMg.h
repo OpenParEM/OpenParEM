@@ -350,6 +350,7 @@ public:
 
     bool isValidInsertPoint ();
     void finishInsertPoint (CustomTreeWidgetItem *);
+    void finishStretchPoint (CustomTreeWidgetItem *);
     void cancelInsertPoint ();
 
     bool isValidCloseExistingPolyline ();

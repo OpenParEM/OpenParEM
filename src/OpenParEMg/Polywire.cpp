@@ -825,11 +825,14 @@ void Polyline::drawStretchRubberband ()
         }
     }
 
-    TopoDS_Wire wire=polyMaker.Wire();
-    rubberband=new AIS_Shape(wire);
-
-    if (!rubberband.IsNull()) {
-        viewerContext->Display(rubberband,0,-1,Standard_True);
+    if (polyMaker.IsDone()) {
+        TopoDS_Wire wire=polyMaker.Wire();
+        if (!wire.IsNull()) {
+            rubberband=new AIS_Shape(wire);
+            if (!rubberband.IsNull()) {
+                viewerContext->Display(rubberband,0,-1,Standard_True);
+            }
+        }
     }
 }
 

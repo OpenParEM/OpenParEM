@@ -4130,42 +4130,43 @@ void OpenParEMg::finishStretchObject (CustomTreeWidgetItem *item)
     item->addShapeData(newShapeData);
 
     // modify the clone
+    finishStretchPoint(item);
 
-    polywire=static_cast<Polywire *>(item->getPolywire());
-    if (!polywire) return;
+    // polywire=static_cast<Polywire *>(item->getPolywire());
+    // if (!polywire) return;
 
-    Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
-    if (rectangle) {
-        if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
-            rectangle->setIsSquare(true);
-        } else {
-            rectangle->setIsSquare(false);
-        }
-    }
+    // Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+    // if (rectangle) {
+    //     if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
+    //         rectangle->setIsSquare(true);
+    //     } else {
+    //         rectangle->setIsSquare(false);
+    //     }
+    // }
 
-    item->setEnableStretch(false);
-    gp_Pnt pnt=item->getP1();
-    polywire->setEditPoint(pnt);
-    reprocess(item);
-    activeAction=false;
+    // item->setEnableStretch(false);
+    // gp_Pnt pnt=item->getP1();
+    // polywire->setEditPoint(pnt);
+    // reprocess(item);
+    // activeAction=false;
 
-    ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
-    item->resetOperation();
-    drawingChanged=true;
+    // ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+    // item->resetOperation();
+    // drawingChanged=true;
 
-    // find and show the top-level item
-    ui->drawingWindow->hideItem(item);
-    CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-    if (parentItem) {
-        while (!parentItem->is_rootDrawing()) {
-            item=parentItem;
-            parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-            if (!parentItem) break;
-        }
-    }
-    ui->drawingWindow->showItem(item);
+    // // find and show the top-level item
+    // // ui->drawingWindow->hideItem(item);
+    // // CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    // // if (parentItem) {
+    // //     while (!parentItem->is_rootDrawing()) {
+    // //         item=parentItem;
+    // //         parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    // //         if (!parentItem) break;
+    // //     }
+    // // }
+    // // ui->drawingWindow->showItem(item);
 
-    finishOperation(false,7);
+    // finishOperation(false,7);
 }
 
 bool OpenParEMg::isValidDeletePoint ()
@@ -4299,7 +4300,8 @@ void OpenParEMg::insertPoint ()
     startOperation(false);
     activeAction=true;
     itemChangesStack.startNew();
-    ui->drawingWindow->set_pickFirstVertex(true);
+    //ui->drawingWindow->set_pickFirstVertex(true);
+    ui->drawingWindow->set_pickSecondVertex(true);
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -4317,23 +4319,6 @@ void OpenParEMg::insertPoint ()
 
                 Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
                 if (polywire) {
-
-                    // remove the old version from display and tracking
-                    ui->drawingWindow->hideItem(item);
-                    ui->drawingWindow->removeItemFromMap(item);
-                    ui->drawingWindow->deleteShape(item->getShape());  // lose selection
-
-                    // clone the item onto itself for undo/redo
-                    ShapeData *newShapeData=item->getShapeData()->copyCreate();
-                    newShapeData->setEdit();
-                    item->addShapeData(newShapeData);
-
-                    // add the new item back to the display and tracking
-                    ui->drawingWindow->insertItemToMap(item->getShape(),item);
-                    ui->drawingWindow->showItem(item);
-
-                    // modify the clone
-
                     polywire=static_cast<Polywire *>(item->getPolywire());
                     item->setEnableInsertPoint(true);
                     item->resetP0P1();
@@ -4351,37 +4336,82 @@ void OpenParEMg::finishInsertPoint (CustomTreeWidgetItem *item)
 {
     if (!item) return;
 
+    // remove the old version from display and tracking
+    ui->drawingWindow->hideItem(item);
+    ui->drawingWindow->removeItemFromMap(item);
+    ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+
+    // clone the item onto itself for undo/redo
+    ShapeData *newShapeData=item->getShapeData()->copyCreate();
+    newShapeData->setEdit();
+    item->addShapeData(newShapeData);
+
+    // add the new item back to the display and tracking
+    ui->drawingWindow->insertItemToMap(item->getShape(),item);
+    //ui->drawingWindow->showItem(item);
+
+    // modify the clone
+
     Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
     if (polywire) {
+
+        // insert
         gp_Pnt p0=item->getP0();
         polywire->insertPoint(p0);
-        //reprocess(item);
-        item->resetOperation();
 
-        ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
-
-        drawingChanged=true;
-
-        // switch over to stretch behavior
-        // set up the first point pick, then let the stretchObject code do the rest for the second pick
-        startOperation(false);
-
-        item->setEnableStretch(true);
-        ui->drawingWindow->set_pickSecondVertex(true);
-
-        clearTreeSelection();
-        ui->drawingWindow->showItem(item);
-        ui->drawingWindow->selectItem(item);
-        item->setP0(p0);
+        // stretch
+        startOperation(true);  // re-run with mid-point selection
         polywire->setEditIndex(p0);
         polywire->setCurrentMousePosition(p0);
-        polywire->drawStretchRubberband();
+        ui->drawingWindow->set_pickSecondVertex(true);
 
-        ui->drawingWindow->hideItem(item);
-        ui->drawingWindow->updateViewer();
-
-        activeAction=false;
+        // finishStretchPoint completes the operation
     }
+}
+
+void OpenParEMg::finishStretchPoint (CustomTreeWidgetItem *item)
+{
+    //std::cout << "OpenParEMg::finishStretchPoint" << std::endl; std::cout.flush();
+
+    if (!item) return;
+
+    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
+    if (!polywire) return;
+    polywire->deleteRubberband();
+
+    Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+    if (rectangle) {
+        if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
+            rectangle->setIsSquare(true);
+        } else {
+            rectangle->setIsSquare(false);
+        }
+    }
+
+    item->setEnableStretch(false);
+    item->setEnableInsertPoint(false);
+    gp_Pnt pnt=item->getP1();
+    polywire->setEditPoint(pnt);
+    reprocess(item);
+    activeAction=false;
+
+    ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+    item->resetOperation();
+    drawingChanged=true;
+
+    // find and show the top-level item
+    // ui->drawingWindow->hideItem(item);
+    // CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    // if (parentItem) {
+    //     while (!parentItem->is_rootDrawing()) {
+    //         item=parentItem;
+    //         parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    //         if (!parentItem) break;
+    //     }
+    // }
+    // ui->drawingWindow->showItem(item);
+
+    finishOperation(false,7);
 }
 
 void OpenParEMg::cancelInsertPoint ()
@@ -7994,6 +8024,12 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
                 polywire->setCurrentMousePosition(pnt);
                 polywire->drawStretchRubberband();
             }
+
+            // insert point
+            if (polywire && item->getEnableInsertPoint() && item->hasP0()) {
+                polywire->setCurrentMousePosition(pnt);
+                polywire->drawStretchRubberband();
+            }
         }
         i++;
     }
@@ -8107,8 +8143,15 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                 // insert point
                 if (item->getEnableInsertPoint()) {
                     if (polywire->isPointOnPlane(pnt)) {
-                        item->setP0(pnt);
-                        finishInsertPoint(item);
+                        if (!item->hasP0()) {
+                            item->setP0(pnt);
+                            finishInsertPoint(item);
+                        } else {
+                            item->setP1(pnt);
+                            polywire->setCurrentMousePosition(pnt);
+                            polywire->drawStretchRubberband();
+                            finishStretchPoint(item);
+                        }
                     }
                 }
             }
