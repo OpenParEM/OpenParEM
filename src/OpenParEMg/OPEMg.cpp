@@ -1221,6 +1221,10 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
                         cancelAction=new QAction("Cancel");
                         connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelDeletePoint);
                         menu.addAction(cancelAction);
+                    } else if (item->getEnableInsertPoint()) {
+                        cancelAction=new QAction("Cancel");
+                        connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelInsertPoint);
+                        menu.addAction(cancelAction);
                     } else {
                         buildDrawingMenu(menu);
                     }
@@ -4378,6 +4382,19 @@ void OpenParEMg::finishInsertPoint (CustomTreeWidgetItem *item)
 
         activeAction=false;
     }
+}
+
+void OpenParEMg::cancelInsertPoint ()
+{
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_drawing()) {
+            item->setEnableInsertPoint(false);
+        }
+        i++;
+    }
+    finishOperation(true,4005);
 }
 
 bool OpenParEMg::isValidCloseExistingPolyline ()
@@ -8163,6 +8180,14 @@ void OpenParEMg::finishOperation (bool cancel, int source)
                     // delete point
                     if (item->getEnableDeletePoint()) {
                         item->setEnableDeletePoint(false);
+                        //polywire->deleteRubberband();
+                        ui->drawingWindow->showItem(item);
+                        ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+                    }
+
+                    // insert point
+                    if (item->getEnableInsertPoint()) {
+                        item->setEnableInsertPoint(false);
                         //polywire->deleteRubberband();
                         ui->drawingWindow->showItem(item);
                         ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
