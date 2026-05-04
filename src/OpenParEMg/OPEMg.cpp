@@ -4473,7 +4473,7 @@ void OpenParEMg::closeExistingPolyline ()
 
                 // add the new item back to the display and tracking
                 ui->drawingWindow->insertItemToMap(item->getShape(),item);
-                ui->drawingWindow->showItem(item);
+                //ui->drawingWindow->showItem(item);
 
                 // modify the clone
 
@@ -4540,7 +4540,7 @@ void OpenParEMg::openExistingPolyline ()
 
                 // add the new item back to the display and tracking
                 ui->drawingWindow->insertItemToMap(item->getShape(),item);
-                ui->drawingWindow->showItem(item);
+                //ui->drawingWindow->showItem(item);
 
                 // modify the clone
 
