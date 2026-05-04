@@ -4214,9 +4214,9 @@ void OpenParEMg::finishDeletePoint (CustomTreeWidgetItem *item)
     if (!item) return;
 
     // remove the old version from display and tracking
-    // ui->drawingWindow->hideItem(item);
-    // ui->drawingWindow->removeItemFromMap(item);
-    // ui->drawingWindow->deleteShape(item->getShape());  // lose selection
+    ui->drawingWindow->hideItem(item);
+    ui->drawingWindow->removeItemFromMap(item);
+    ui->drawingWindow->deleteShape(item->getShape());  // lose selection
 
     // clone the item onto itself for undo/redo
     ShapeData *newShapeData=item->getShapeData()->copyCreate();
@@ -4224,7 +4224,7 @@ void OpenParEMg::finishDeletePoint (CustomTreeWidgetItem *item)
     item->addShapeData(newShapeData);
 
     // add the new item back to the display and tracking
-    // ui->drawingWindow->insertItemToMap(item->getShape(),item);
+    ui->drawingWindow->insertItemToMap(item->getShape(),item);
     // ui->drawingWindow->showItem(item);
 
     Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
