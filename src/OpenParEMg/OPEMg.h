@@ -125,8 +125,6 @@ public:
             //std::cout << "         current->getPrior()=" << current->getPrior() << std::endl; std::cout.flush();
             //if (current->getPrior()) retVal=true;
             retVal=true;
-        } else {
-            if (itemChangesList.size() > 0) retVal=true;
         }
         std::cout << "         retVal=" << retVal << std::endl; std::cout.flush();
         return retVal;
