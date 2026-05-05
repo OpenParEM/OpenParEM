@@ -3481,9 +3481,7 @@ void OpenParEMg::findShowTopLevelItem (CustomTreeWidgetItem *item, bool hideItem
         }
     }
     ui->drawingWindow->showItem(item);
-    ui->drawingWindow->activateItem(item);
     if (hideItem) ui->drawingWindow->hideItem(item);
-    //ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::finishEditObject (bool cancel)
@@ -3664,10 +3662,8 @@ void OpenParEMg::finishMergeSolids ()
     drawing.addChild(newItem);
     newItem->setParent(&drawing);
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
-    //ui->drawingWindow->displayShape(newItem->getShape());
-    ui->drawingWindow->activateItem(newItem);
-    ui->drawingWindow->selectItem(newItem);
     ui->drawingWindow->showItem(newItem);
+    ui->drawingWindow->selectItem(newItem);
     itemChangesStack.add(newItem);
 
     // ToDo: put back?
@@ -3792,10 +3788,8 @@ void OpenParEMg::finishSubtractSolids ()
     drawing.addChild(newItem);
     newItem->setParent(&drawing);
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
-    //ui->drawingWindow->displayShape(newItem->getShape());
-    ui->drawingWindow->activateItem(newItem);
-    ui->drawingWindow->selectItem(newItem);
     ui->drawingWindow->showItem(newItem);
+    ui->drawingWindow->selectItem(newItem);
     itemChangesStack.add(newItem);
 
     subtract=nullptr;
@@ -3944,7 +3938,6 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
 
         // add the new item back to the display and tracking
         ui->drawingWindow->insertItemToMap(item->getShape(),item);
-        //ui->drawingWindow->showItem(item);
 
         reprocess(item);
         drawingChanged=true;
@@ -4025,6 +4018,8 @@ void OpenParEMg::copyDrawingItems ()
         if (item && item->is_drawing()) {
             CustomTreeWidgetItem *newItem=copyItem(item,&drawing);
             newItem->setParent(&drawing);
+            ui->drawingWindow->hideItem(newItem);
+            ui->drawingWindow->showItem(newItem);
         }
         i++;
     }
@@ -4184,7 +4179,6 @@ void OpenParEMg::finishDeletePoint (CustomTreeWidgetItem *item)
 
     // add the new item back to the display and tracking
     ui->drawingWindow->insertItemToMap(item->getShape(),item);
-    // ui->drawingWindow->showItem(item);
 
     Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
     if (!polywire) return;
@@ -4286,7 +4280,6 @@ void OpenParEMg::finishInsertPoint (CustomTreeWidgetItem *item)
 
     // add the new item back to the display and tracking
     ui->drawingWindow->insertItemToMap(item->getShape(),item);
-    //ui->drawingWindow->showItem(item);
 
     // modify the clone
 
@@ -4401,7 +4394,6 @@ void OpenParEMg::closeExistingPolyline ()
 
                 // add the new item back to the display and tracking
                 ui->drawingWindow->insertItemToMap(item->getShape(),item);
-                //ui->drawingWindow->showItem(item);
 
                 // modify the clone
 
@@ -4412,7 +4404,7 @@ void OpenParEMg::closeExistingPolyline ()
                 item->setText(0,polywire->getName(&objectCounts));
                 item->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
                 ui->drawingWindow->showItem(item);
-                ui->drawingWindow->activateSelectItem(item);
+                ui->drawingWindow->selectItem(item);
                 ui->drawingWindow->updateViewer();
                 drawingChanged=true;
 
@@ -4468,7 +4460,6 @@ void OpenParEMg::openExistingPolyline ()
 
                 // add the new item back to the display and tracking
                 ui->drawingWindow->insertItemToMap(item->getShape(),item);
-                //ui->drawingWindow->showItem(item);
 
                 // modify the clone
 
@@ -4479,7 +4470,7 @@ void OpenParEMg::openExistingPolyline ()
                 item->setText(0,polywire->getName(&objectCounts));
                 item->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
                 ui->drawingWindow->showItem(item);
-                ui->drawingWindow->activateSelectItem(item);
+                ui->drawingWindow->selectItem(item);
                 ui->drawingWindow->updateViewer();
                 drawingChanged=true;
 
@@ -4672,7 +4663,6 @@ void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item)
 
     // add the new item back to the display and tracking
     // ui->drawingWindow->insertItemToMap(item->getShape(),item);
-    // ui->drawingWindow->showItem(item);
 
     // modify the clone
 
@@ -5723,7 +5713,7 @@ void OpenParEMg::insertToMapActivateItem (CustomTreeWidgetItem *item)
 
     item->setForeground(0,Qt::gray);
     ui->drawingWindow->showItem(item);
-    ui->drawingWindow->activateSelectItem(item);
+    ui->drawingWindow->selectItem(item);
 }
 
 TopoDS_Shape NormalizeCompound (const TopoDS_Shape& shape, BRep_Builder& builder)
@@ -7708,9 +7698,8 @@ void OpenParEMg::finishDraw ()
         drawing.addChild(newItem);
         newItem->setParent(&drawing);
         ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
-        ui->drawingWindow->activateItem(newItem);
-        ui->drawingWindow->selectItem(newItem);
         ui->drawingWindow->showItem(newItem);
+        ui->drawingWindow->selectItem(newItem);
         itemChangesStack.add(newItem);
         activeAction=false;
 
@@ -8235,7 +8224,6 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
                 child->decrease_depth();
 
                 ui->drawingWindow->showItem(child);
-                ui->drawingWindow->activateItem(child);
             }
             i++;
         }
@@ -8387,6 +8375,7 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
                 item->getParent()->addChild(child);
                 child->setParent(item->getParent());
                 child->decrease_depth();
+                ui->drawingWindow->showItem(child);
             }
             i++;
         }

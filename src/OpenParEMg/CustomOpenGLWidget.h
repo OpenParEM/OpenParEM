@@ -133,6 +133,7 @@ public:
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::showItem" << std::endl; std::cout.flush();
         drawingTracker->showItem(item);
+        activateItem(item);
     }
 
     bool isValidShow ()
