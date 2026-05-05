@@ -402,6 +402,7 @@ public:
         enableDeletePoint=false;
         enableInsertPoint=false;
         depth=0;
+        parent=nullptr;
     }
 
     QString get_name () {return text(0);}
@@ -528,13 +529,13 @@ public:
         }
     }
 
-    bool hasParent ()
-    {
-        CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)this->QTreeWidgetItem::parent();
-        if (!parentItem) return false;
-        if (parentItem->is_rootDrawing()) return false;
-        return true;
-    }
+    // bool hasParent ()
+    // {
+    //     CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)this->QTreeWidgetItem::parent();
+    //     if (!parentItem) return false;
+    //     if (parentItem->is_rootDrawing()) return false;
+    //     return true;
+    // }
 
     gp_Trsf getTrsf () {return aTrsf;}
     void setTrsf (gp_Trsf aTrsf_) {aTrsf=aTrsf_;}
@@ -728,6 +729,7 @@ public:
     {
         std::cout << "CustomTreeWidgetItem::reset" << std::endl; std::cout.flush();
         dataStack.reset();
+        parent=nullptr;
         children.clear();
         setForeground(0,Qt::black);
         setExpanded(Standard_False);
@@ -748,6 +750,9 @@ public:
     bool hasUndo () {return dataStack.hasUndo();}
     bool hasRedo () {return dataStack.hasRedo();}
 
+    void setParent (CustomTreeWidgetItem *parent_) {parent=parent_;}
+    CustomTreeWidgetItem* getParent () {return parent;}
+
     void clearChildren () {children.clear();}
     void push_child (CustomTreeWidgetItem *child) {children.push_back(child);}
     long unsigned int getChildrenSize () {return children.size();}
@@ -758,7 +763,8 @@ private slots:
 private:
     bool activeAction;                                 // for undo/redo, an active operation such as move, edit, stretch, etc. is in progress
     ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
-    std::vector<CustomTreeWidgetItem *> children;      // temporary storage for children at undo for redo
+    CustomTreeWidgetItem *parent;                      // parent for undo/redo
+    std::vector<CustomTreeWidgetItem *> children;      // children for undo/redo
     Handle(AIS_Shape) animateShape;                    // temporary shape for animation during moving
     gp_Trsf aTrsf;
     std::vector<Handle(AIS_Shape)> meshEntities;       // for mesh
