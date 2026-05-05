@@ -76,7 +76,7 @@ QString Extrude::getName (ObjectCounts *objectCounts) {
 void Extrude::startSave (std::ofstream *out, QString name, QString material, int level)
 {
     std::string space;
-    long unsigned int i=0;
+    int i=0;
     while (i < level) {
         space.append("   ");
         i++;
@@ -95,7 +95,7 @@ void Extrude::startSave (std::ofstream *out, QString name, QString material, int
 void Extrude::endSave (std::ofstream *out, int level)
 {
     std::string space;
-    long unsigned int i=0;
+    int i=0;
     while (i < level) {
         space.append("   ");
         i++;
@@ -108,12 +108,6 @@ Merge* Merge::copyCreate ()
 {
     Merge* newMerge=new Merge();
     newMerge->modified=modified;
-
-    // long unsigned int i=0;
-    // while (i < childList.size()) {
-    //     newMerge->addChild(childList[i]);
-    //     i++;
-    // }
 
     return newMerge;
 }
@@ -128,7 +122,7 @@ QString Merge::getName (ObjectCounts *objectCounts) {
 void Merge::startSave (std::ofstream *out, QString name, QString material, int level)
 {
     std::string space;
-    long unsigned int i=0;
+    int i=0;
     while (i < level) {
         space.append("   ");
         i++;
@@ -146,7 +140,7 @@ void Merge::startSave (std::ofstream *out, QString name, QString material, int l
 void Merge::endSave (std::ofstream *out, int level)
 {
     std::string space;
-    long unsigned int i=0;
+    int i=0;
     while (i < level) {
         space.append("   ");
         i++;
@@ -179,7 +173,7 @@ QString Subtract::getName (ObjectCounts *objectCounts) {
 void Subtract::startSave (std::ofstream *out, QString name, QString material, int level)
 {
     std::string space;
-    long unsigned int i=0;
+    int i=0;
     while (i < level) {
         space.append("   ");
         i++;
@@ -197,7 +191,7 @@ void Subtract::startSave (std::ofstream *out, QString name, QString material, in
 void Subtract::endSave (std::ofstream *out, int level)
 {
     std::string space;
-    long unsigned int i=0;
+    int i=0;
     while (i < level) {
         space.append("   ");
         i++;

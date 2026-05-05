@@ -5953,8 +5953,6 @@ void OpenParEMg::saveItem (std::ofstream *out, CustomTreeWidgetItem *item)
         }
 
         // Brep
-        std::cout << "  polywire=" << polywire << std::endl; std::cout.flush();
-        std::cout << "  process=" << process << std::endl; std::cout.flush();
         if (!polywire && !process) {
             std::string space;
             long unsigned int i=0;
@@ -6250,6 +6248,7 @@ bool OpenParEMg::saveDrawingFile (QString filename)
         saveItem(&outputFile,&drawing);
         outputFile.close();
         drawingChanged=false;
+        itemChangesStack.clear();
         return false;
     }
     return true;
