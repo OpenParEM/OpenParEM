@@ -727,7 +727,7 @@ public:
 
     void reset ()
     {
-        std::cout << "CustomTreeWidgetItem::reset" << std::endl; std::cout.flush();
+        //std::cout << "CustomTreeWidgetItem::reset  item=" << this << std::endl; std::cout.flush();
         dataStack.reset();
         parent=nullptr;
         children.clear();
@@ -738,12 +738,13 @@ public:
         material.clear();
         linkedItems.clear();
 
-        int i=0;
-        while (i < childCount()) {
-            CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
-            childItem->reset();
-            removeChild(childItem);
-            i++;
+        while (childCount() > 0) {
+            CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(0);
+            if (childItem) {
+                childItem->reset();
+                removeChild(childItem);
+                delete childItem;
+            }
         }
     }
 

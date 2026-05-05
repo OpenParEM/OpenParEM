@@ -5298,7 +5298,7 @@ void OpenParEMg::printLockouts ()
 
 void OpenParEMg::resetDrawing ()
 {
-    std::cout << "OpenParEMg::resetDrawing" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::resetDrawing  drawing=" << &drawing << std::endl; std::cout.flush();
 
     // mesh
     deleteMesh(false);
@@ -5335,12 +5335,11 @@ void OpenParEMg::resetDrawing ()
     drawingChanged=true;
 
     on_actionShape_triggered();
-    std::cout << "exit OpenParEMg::resetDrawing" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::resetProject ()
 {
-    std::cout << "OpenParEMg::resetProject" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::resetProject" << std::endl; std::cout.flush();
 
     if (!projectFileLoaded) return;
 
@@ -5373,7 +5372,6 @@ void OpenParEMg::resetProject ()
     resetLockouts();
 
     setMenusI(41);
-    std::cout << "exit OpenParEMg::resetProject" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::on_actionNew_triggered ()
