@@ -4012,15 +4012,27 @@ void OpenParEMg::copyDrawingItems ()
     //activeAction=true;  // no need since there is not a cancel option
     itemChangesStack.startNew();
 
+    std::vector<CustomTreeWidgetItem *> newItemsList;
+
+    // copy the selected items
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
             CustomTreeWidgetItem *newItem=copyItem(item,&drawing);
             newItem->setParent(&drawing);
-            ui->drawingWindow->hideItem(newItem);
-            ui->drawingWindow->showItem(newItem);
+            newItemsList.push_back(newItem);
         }
+        i++;
+    }
+
+    // show and select the new items
+    ui->drawingWindow->unselectAllItems();
+    i=0;
+    while (i < newItemsList.size()) {
+        ui->drawingWindow->hideItem(newItemsList[i]);
+        ui->drawingWindow->showItem(newItemsList[i]);
+        ui->drawingWindow->selectItem(newItemsList[i]);
         i++;
     }
 
@@ -4098,6 +4110,11 @@ void OpenParEMg::finishStretchObject (CustomTreeWidgetItem *item)
     //std::cout << "OpenParEMg::finishStretchObject" << std::endl; std::cout.flush();
 
     if (!item) return;
+
+    // remove the old version from display and tracking
+    // ui->drawingWindow->hideItem(item);
+    // ui->drawingWindow->removeItemFromMap(item);
+    // ui->drawingWindow->deleteShape(item->getShape());
 
     Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
     if (!polywire) return;
@@ -4435,7 +4452,7 @@ bool OpenParEMg::isValidOpenExistingPolyline ()
 }
 
 void OpenParEMg::openExistingPolyline ()
-{
+{   
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
@@ -4499,18 +4516,37 @@ bool OpenParEMg::isValidConvertToPolyline ()
 
 void OpenParEMg::convertToPolyline ()
 {
+    startOperation(true);
+    // activeAction=true;  // not needed since the action cannot be canceled
+    itemChangesStack.startNew();
+
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_drawing()) {
             Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
             if (polywire) {
+
+                // remove the old version from display and tracking
+                ui->drawingWindow->hideItem(item);
+                ui->drawingWindow->removeItemFromMap(item);
+                ui->drawingWindow->deleteShape(item->getShape());
+
+                // clone the item onto itself for undo/redo
+                ShapeData *newShapeData=item->getShapeData()->copyCreate();
+                newShapeData->setEdit();
+                item->addShapeData(newShapeData);
+
+                // add the new item back to the display and tracking
+                ui->drawingWindow->insertItemToMap(item->getShape(),item);
+
+                // convert
                 Polyline *newPolyline=polywire->convert();
-                delete polywire; polywire=nullptr;
                 item->setPolywire(newPolyline);
                 reprocess(item);
                 item->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
                 ui->drawingWindow->activateSelectItem(item);
+                itemChangesStack.add(item);
                 drawingChanged=true;
 
                 findShowTopLevelItem(item,false);
@@ -4518,6 +4554,8 @@ void OpenParEMg::convertToPolyline ()
         }
         i++;
     }
+
+    finishOperation(false,6000);
 }
 
 bool OpenParEMg::isValidConvertToPath ()
