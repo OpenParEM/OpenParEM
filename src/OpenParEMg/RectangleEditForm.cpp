@@ -52,6 +52,8 @@ RectangleEditForm::RectangleEditForm (QWidget *parent)
     ui->CancelButton->setCheckable(true);
 
     ui->OkButton->setEnabled(false);
+
+    conversionFactor=1;
 }
 
 RectangleEditForm::~RectangleEditForm ()
@@ -79,16 +81,16 @@ void RectangleEditForm::populate (Rectangle *polywire_)
     width=polywire_->getWidth();
     height=polywire_->getHeight();
 
-    ui->positionX->setText(QString::number(p0.X()));
-    ui->positionY->setText(QString::number(p0.Y()));
-    ui->positionZ->setText(QString::number(p0.Z()));
+    ui->positionX->setText(QString::number(p0.X()*conversionFactor));
+    ui->positionY->setText(QString::number(p0.Y()*conversionFactor));
+    ui->positionZ->setText(QString::number(p0.Z()*conversionFactor));
 
-    ui->position2X->setText(QString::number(p1.X()));
-    ui->position2Y->setText(QString::number(p1.Y()));
-    ui->position2Z->setText(QString::number(p1.Z()));
+    ui->position2X->setText(QString::number(p1.X()*conversionFactor));
+    ui->position2Y->setText(QString::number(p1.Y()*conversionFactor));
+    ui->position2Z->setText(QString::number(p1.Z()*conversionFactor));
 
-    ui->width->setText(QString::number(width));
-    ui->height->setText(QString::number(height));
+    ui->width->setText(QString::number(width*conversionFactor));
+    ui->height->setText(QString::number(height*conversionFactor));
 }
 
 void RectangleEditForm::repopulateOffOrigin ()
@@ -116,21 +118,21 @@ void RectangleEditForm::repopulateOffSize ()
 
 void RectangleEditForm::on_positionX_returnPressed ()
 {
-    p0.SetX(ui->positionX->text().toDouble());
+    p0.SetX(ui->positionX->text().toDouble()/conversionFactor);
     repopulateOffOrigin();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_positionY_returnPressed ()
 {
-    p0.SetY(ui->positionY->text().toDouble());
+    p0.SetY(ui->positionY->text().toDouble()/conversionFactor);
     repopulateOffOrigin();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_positionZ_returnPressed ()
 {
-    p0.SetZ(ui->positionZ->text().toDouble());
+    p0.SetZ(ui->positionZ->text().toDouble()/conversionFactor);
     repopulateOffOrigin();
     ui->OkButton->setEnabled(isValid());
 }
@@ -148,21 +150,21 @@ void RectangleEditForm::on_pick_clicked ()
 
 void RectangleEditForm::on_position2X_returnPressed ()
 {
-    p1.SetX(ui->position2X->text().toDouble());
+    p1.SetX(ui->position2X->text().toDouble()/conversionFactor);
     repopulateOffPositions();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_position2Y_returnPressed ()
 {
-    p1.SetY(ui->position2Y->text().toDouble());
+    p1.SetY(ui->position2Y->text().toDouble()/conversionFactor);
     repopulateOffPositions();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_position2Z_returnPressed ()
 {
-    p1.SetZ(ui->position2Z->text().toDouble());
+    p1.SetZ(ui->position2Z->text().toDouble()/conversionFactor);
     repopulateOffPositions();
     ui->OkButton->setEnabled(isValid());
 }
@@ -180,14 +182,14 @@ void RectangleEditForm::on_pick2_clicked ()
 
 void RectangleEditForm::on_width_returnPressed ()
 {
-    width=ui->width->text().toDouble();
+    width=ui->width->text().toDouble()/conversionFactor;
     repopulateOffSize();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_height_returnPressed ()
 {
-    height=ui->height->text().toDouble();
+    height=ui->height->text().toDouble()/conversionFactor;
     repopulateOffSize();
     ui->OkButton->setEnabled(isValid());
 }
@@ -217,18 +219,18 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
     if (pickPoint) {
         pickPoint=false;
         p0=point;
-        ui->positionX->setText(QString::number(p0.X()));
-        ui->positionY->setText(QString::number(p0.Y()));
-        ui->positionZ->setText(QString::number(p0.Z()));
+        ui->positionX->setText(QString::number(p0.X()*conversionFactor));
+        ui->positionY->setText(QString::number(p0.Y()*conversionFactor));
+        ui->positionZ->setText(QString::number(p0.Z()*conversionFactor));
         repopulateOffOrigin();
     }
 
     if (pickPoint2) {
         pickPoint2=false;
         p1=point;
-        ui->position2X->setText(QString::number(p1.X()));
-        ui->position2Y->setText(QString::number(p1.Y()));
-        ui->position2Z->setText(QString::number(p1.Z()));
+        ui->position2X->setText(QString::number(p1.X()*conversionFactor));
+        ui->position2Y->setText(QString::number(p1.Y()*conversionFactor));
+        ui->position2Z->setText(QString::number(p1.Z()*conversionFactor));
         repopulateOffPositions();
     }
 

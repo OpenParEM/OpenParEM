@@ -30,6 +30,8 @@ public:
     void repopulateOffFirstPoint ();
     void reject () override;
 
+    void set_conversionFactor (double conversionFactor_) {conversionFactor=conversionFactor_;}
+
 public slots:
     void on_CancelButton_clicked ();
 
@@ -59,6 +61,7 @@ private:
     QIntValidator intValidator;
     CustomOpenGLWidget *drawingWindow;
     Relay *relay;
+    double conversionFactor;   // converts from m to some other unit coming in, then back to m going out
 };
 
 #endif // POLYCIRCLEEDITFORM_H

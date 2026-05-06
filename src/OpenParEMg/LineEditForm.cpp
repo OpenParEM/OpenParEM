@@ -52,6 +52,8 @@ LineEditForm::LineEditForm (QWidget *parent)
     ui->CancelButton->setCheckable(true);
 
     ui->OkButton->setEnabled(false);
+
+    conversionFactor=1;
 }
 
 LineEditForm::~LineEditForm ()
@@ -77,15 +79,15 @@ void LineEditForm::populate (Line *polywire_)
         p0=polywire_->getP0();
         p1=polywire_->getP1();
 
-        ui->positionX->setText(QString::number(p0.X()));
-        ui->positionY->setText(QString::number(p0.Y()));
-        ui->positionZ->setText(QString::number(p0.Z()));
+        ui->positionX->setText(QString::number(p0.X()*conversionFactor));
+        ui->positionY->setText(QString::number(p0.Y()*conversionFactor));
+        ui->positionZ->setText(QString::number(p0.Z()*conversionFactor));
 
-        ui->position2X->setText(QString::number(p1.X()));
-        ui->position2Y->setText(QString::number(p1.Y()));
-        ui->position2Z->setText(QString::number(p1.Z()));
+        ui->position2X->setText(QString::number(p1.X()*conversionFactor));
+        ui->position2Y->setText(QString::number(p1.Y()*conversionFactor));
+        ui->position2Z->setText(QString::number(p1.Z()*conversionFactor));
 
-        ui->length->setText(QString::number(p0.Distance(p1)));
+        ui->length->setText(QString::number(p0.Distance(p1)*conversionFactor));
     }
 }
 
@@ -101,12 +103,12 @@ void LineEditForm::on_length_returnPressed ()
 
     gp_Vec dir(p0,p1);
     dir.Normalize();
-    dir*=ui->length->text().toDouble();
+    dir*=ui->length->text().toDouble()/conversionFactor;
     p1=p0.Translated(dir);
 
-    ui->position2X->setText(QString::number(p1.X()));
-    ui->position2Y->setText(QString::number(p1.Y()));
-    ui->position2Z->setText(QString::number(p1.Z()));
+    ui->position2X->setText(QString::number(p1.X()*conversionFactor));
+    ui->position2Y->setText(QString::number(p1.Y()*conversionFactor));
+    ui->position2Z->setText(QString::number(p1.Z()*conversionFactor));
 
     ui->OkButton->setEnabled(isValid());
 }
@@ -184,20 +186,20 @@ void LineEditForm::pickVertexFinished (gp_Pnt point)
     if (pickPoint) {
         pickPoint=false;
         p0=point;
-        ui->positionX->setText(QString::number(p0.X()));
-        ui->positionY->setText(QString::number(p0.Y()));
-        ui->positionZ->setText(QString::number(p0.Z()));
+        ui->positionX->setText(QString::number(p0.X()*conversionFactor));
+        ui->positionY->setText(QString::number(p0.Y()*conversionFactor));
+        ui->positionZ->setText(QString::number(p0.Z()*conversionFactor));
     }
 
     if (pickPoint2) {
         pickPoint2=false;
         p1=point;
-        ui->position2X->setText(QString::number(p1.X()));
-        ui->position2Y->setText(QString::number(p1.Y()));
-        ui->position2Z->setText(QString::number(p1.Z()));
+        ui->position2X->setText(QString::number(p1.X()*conversionFactor));
+        ui->position2Y->setText(QString::number(p1.Y()*conversionFactor));
+        ui->position2Z->setText(QString::number(p1.Z()*conversionFactor));
     }
 
-    ui->length->setText(QString::number(p0.Distance(p1)));
+    ui->length->setText(QString::number(p0.Distance(p1)*conversionFactor));
 
     ui->pick->setChecked(false);
 

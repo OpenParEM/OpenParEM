@@ -49,6 +49,8 @@ RotateInputForm::RotateInputForm(QWidget *parent)
     ui->CustomAxis->setChecked(true);
 
     on_Zaxis_clicked();
+
+    conversionFactor=1;
 }
 
 RotateInputForm::~RotateInputForm ()
@@ -68,9 +70,9 @@ void RotateInputForm::set_startPoint (gp_Pnt *startPoint)
     transferStartPoint=startPoint;
     localStartPoint=*transferStartPoint;
 
-    ui->startX->setText(QString::number(localStartPoint.X()));
-    ui->startY->setText(QString::number(localStartPoint.Y()));
-    ui->startZ->setText(QString::number(localStartPoint.Z()));
+    ui->startX->setText(QString::number(localStartPoint.X()*conversionFactor));
+    ui->startY->setText(QString::number(localStartPoint.Y()*conversionFactor));
+    ui->startZ->setText(QString::number(localStartPoint.Z()*conversionFactor));
 }
 
 void RotateInputForm::set_endPoint (gp_Pnt *endPoint)
@@ -78,9 +80,9 @@ void RotateInputForm::set_endPoint (gp_Pnt *endPoint)
     transferEndPoint=endPoint;
     localEndPoint=*transferEndPoint;
 
-    ui->endX->setText(QString::number(localEndPoint.X()));
-    ui->endY->setText(QString::number(localEndPoint.Y()));
-    ui->endZ->setText(QString::number(localEndPoint.Z()));
+    ui->endX->setText(QString::number(localEndPoint.X()*conversionFactor));
+    ui->endY->setText(QString::number(localEndPoint.Y()*conversionFactor));
+    ui->endZ->setText(QString::number(localEndPoint.Z()*conversionFactor));
 }
 
 void RotateInputForm::on_Xaxis_clicked ()
@@ -226,9 +228,9 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
     if (pickStartPoint) {
         hasStartPoint=true;
         localStartPoint=point;
-        ui->startX->setText(QString::number(localStartPoint.X()));
-        ui->startY->setText(QString::number(localStartPoint.Y()));
-        ui->startZ->setText(QString::number(localStartPoint.Z()));
+        ui->startX->setText(QString::number(localStartPoint.X()*conversionFactor));
+        ui->startY->setText(QString::number(localStartPoint.Y()*conversionFactor));
+        ui->startZ->setText(QString::number(localStartPoint.Z()*conversionFactor));
         activateWindow();
         raise();
         ui->pickStart->setChecked(false);
@@ -238,9 +240,9 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
     if (pickEndPoint) {
         hasEndPoint=true;
         localEndPoint=point;
-        ui->endX->setText(QString::number(localEndPoint.X()));
-        ui->endY->setText(QString::number(localEndPoint.Y()));
-        ui->endZ->setText(QString::number(localEndPoint.Z()));
+        ui->endX->setText(QString::number(localEndPoint.X()*conversionFactor));
+        ui->endY->setText(QString::number(localEndPoint.Y()*conversionFactor));
+        ui->endZ->setText(QString::number(localEndPoint.Z()*conversionFactor));
         activateWindow();
         raise();
         ui->pickEnd->setChecked(false);

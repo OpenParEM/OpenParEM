@@ -2848,6 +2848,7 @@ bool OpenParEMg::isValidExtrudePolywire ()
 // from m to the given unit
 double OpenParEMg::getConversionFactor ()
 {
+    std::cout << "OpenParEMg::getConversionFactor  gui_units=" << projData.gui_units << std::endl; std::cout.flush();
     if (strcmp(projData.gui_units,"m") == 0) return 1;
     if (strcmp(projData.gui_units,"cm") == 0) return 100;
     if (strcmp(projData.gui_units,"mm") == 0) return 1000;
@@ -2878,12 +2879,12 @@ void OpenParEMg::extrudePolywire ()
     // user input form
     if (lengthInputForm) delete lengthInputForm;
     lengthInputForm=new LengthInputForm();
+    lengthInputForm->set_conversionFactor(getConversionFactor());
     lengthInputForm->set_drawingWindow(ui->drawingWindow);
     extrusionDirection.SetCoord(0,0,0);
     lengthInputForm->set_extrusionDirection(&extrusionDirection);
     lengthInputForm->set_length(&length);
     lengthInputForm->set_relay(relay);
-    lengthInputForm->set_conversionFactor(getConversionFactor());
     lengthInputForm->setModal(false);
     connect(this,&OpenParEMg::sendPnt,lengthInputForm,&LengthInputForm::pickVertexFinished);
     lengthInputForm->show();
@@ -3413,6 +3414,7 @@ void OpenParEMg::editObject ()
                 lineEdit=line->copyCreate();
                 if (lineEditForm) delete lineEditForm;
                 lineEditForm=new LineEditForm();
+                lineEditForm->set_conversionFactor(getConversionFactor());
                 lineEditForm->set_polywire(lineEdit);
                 lineEditForm->set_drawingWindow(ui->drawingWindow);
                 lineEditForm->set_relay(relay);
@@ -3426,6 +3428,7 @@ void OpenParEMg::editObject ()
                 rectangleEdit=rectangle->copyCreate();
                 if (rectangleEditForm) delete rectangleEditForm;
                 rectangleEditForm=new RectangleEditForm();
+                rectangleEditForm->set_conversionFactor(getConversionFactor());
                 rectangleEditForm->set_polywire(rectangleEdit);
                 rectangleEditForm->set_drawingWindow(ui->drawingWindow);
                 rectangleEditForm->set_relay(relay);
@@ -3439,6 +3442,7 @@ void OpenParEMg::editObject ()
                 polycircleEdit=polycircle->copyCreate();
                 if (polycircleEditForm) delete polycircleEditForm;
                 polycircleEditForm=new PolycircleEditForm();
+                polycircleEditForm->set_conversionFactor(getConversionFactor());
                 polycircleEditForm->set_Polycircle(polycircleEdit);
                 polycircleEditForm->set_drawingWindow(ui->drawingWindow);
                 polycircleEditForm->set_relay(relay);
@@ -4708,6 +4712,7 @@ void OpenParEMg::rotateObject ()
 
     if (rotateInputForm) delete rotateInputForm;
     rotateInputForm=new RotateInputForm();
+    rotateInputForm->set_conversionFactor(getConversionFactor());
     rotateInputForm->set_drawingWindow(ui->drawingWindow);
     rotateInputForm->set_angle(&angle);
     rotateInputForm->set_startPoint(&startPoint);
@@ -7533,6 +7538,7 @@ void OpenParEMg::startPlaneSetToFace ()
     // use a form to get the local x-direction
     if (vectorInputForm) delete vectorInputForm;
     vectorInputForm=new VectorInputForm();
+    vectorInputForm->set_conversionFactor(getConversionFactor());
     vectorInputForm->set_startPoint(&startPoint);
     vectorInputForm->set_endPoint(&endPoint);
     vectorInputForm->set_drawingWindow(ui->drawingWindow);

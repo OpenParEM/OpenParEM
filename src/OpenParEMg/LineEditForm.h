@@ -46,6 +46,8 @@ public:
     void set_relay (Relay *relay_) {relay=relay_;}
     void pickVertexFinished (gp_Pnt);
 
+    void set_conversionFactor (double conversionFactor_) {conversionFactor=conversionFactor_;}
+
     void reject () override;
 
 private slots:
@@ -74,6 +76,8 @@ private:
 
     CustomOpenGLWidget *drawingWindow;
     Relay *relay;
+
+    double conversionFactor;   // converts from m to some other unit coming in, then back to m going out
 };
 
 #endif // LINEEDITFORM_H

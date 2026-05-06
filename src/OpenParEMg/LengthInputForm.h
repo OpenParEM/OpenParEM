@@ -78,7 +78,7 @@ private:
     CustomOpenGLWidget *drawingWindow;
     Relay *relay;
 
-    double conversionFactor;
+    double conversionFactor;   // converts from m to some other unit coming in, then back to m going out
 };
 
 #endif // LENGTHINPUTFORM_H
