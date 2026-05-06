@@ -3984,6 +3984,8 @@ CustomTreeWidgetItem* OpenParEMg::copyItem (CustomTreeWidgetItem *item, CustomTr
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
     newItemParent->addChild(newItem);
     newItem->setParent(newItemParent);
+    newItem->copy_depth(newItemParent);
+    if (newItemParent != &drawing) newItem->increase_depth();
     itemChangesStack.add(newItem);
 
     // children for processes
@@ -8295,6 +8297,8 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
 
         // recreate
 
+        item->copy_depth(item->getParent());
+        item->increase_depth();
         item->getParent()->addChild(item);
 
         long unsigned int i=0;
@@ -8305,6 +8309,7 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
                  item->getParent()->takeChild(index);
                 item->addChild(child);
                 child->setParent(item);
+                child->copy_depth(item);
                 child->increase_depth();
             }
             i++;
@@ -8339,6 +8344,8 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
 
         // create
 
+        item->copy_depth(item->getParent());
+        item->increase_depth();
         item->getParent()->addChild(item);
 
         long unsigned int i=0;
@@ -8350,6 +8357,7 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
                     item->getParent()->takeChild(index);
                     item->addChild(child);
                     child->setParent(item);
+                    child->copy_depth(item);
                     child->increase_depth();
                 } else {
                     ui->drawingWindow->insertItemToMap(child->getShape(),child);
@@ -8357,6 +8365,8 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
                     ui->drawingWindow->activateItem(child);
                     item->addChild(child);
                     child->setParent(item);
+                    child->copy_depth(item);
+                    child->increase_depth();
                     reprocess(child);
                 }
             }
