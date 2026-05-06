@@ -418,6 +418,9 @@ private slots:
     void on_actionDrawingSetPlaneToXZ_triggered ();
     void on_actionDrawingSetPlaneToYZ_triggered ();
 
+    // Drawing preferences
+    void on_actionPreferences_triggered ();
+
     // Materials
     void on_actionSelectMaterialsDatabase_triggered ();
 
@@ -553,6 +556,7 @@ private slots:
     void createPath ();
     //void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape, int);
     //void replaceItemShape (CustomTreeWidgetItem *, Polywire *, int);
+    double getConversionFactor ();
     void extrudePolywire ();
     void mergeSolids ();
     void subtractSolids ();

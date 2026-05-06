@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "OPEMg.h"
+#include "DrawingPreferences.h"
 #include "Process.h"
 #include "ui_OPEMg.h"
 
@@ -528,11 +529,12 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionSelectEdge->setEnabled(false);
         ui->actionSelectWire->setEnabled(false);
         ui->actionSelectFace->setEnabled(false);
-        ui->actionSelectWithBox->setEnabled(false);
+        ui->actionSelectWithBox2->setEnabled(false);
         ui->actionDrawLine->setEnabled(true);
         ui->actionDrawPolyline->setEnabled(true);
         ui->actionDrawPolycircle->setEnabled(true);
         ui->actionDrawRectangle->setEnabled(true);
+        ui->actionPreferences->setEnabled(true);
         ui->actionMeshOptions->setEnabled(true);
         ui->actionMeshLoad->setEnabled(true);
         ui->actionMeshSave->setEnabled(false);
@@ -563,7 +565,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         //     ui->actionSelectEdge->setEnabled(true);
         //     ui->actionSelectWire->setEnabled(true);
         //     ui->actionSelectFace->setEnabled(true);
-        //     ui->actionSelectWithBox->setEnabled(true);
+        //     ui->actionSelectWithBox2->setEnabled(true);
         //     ui->actionWireframe->setEnabled(true);
 
         //     ui->actionMeshGenerate->setEnabled(true);
@@ -578,7 +580,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         //     ui->actionSelectEdge->setEnabled(false);
         //     ui->actionSelectWire->setEnabled(false);
         //     ui->actionSelectFace->setEnabled(false);
-        //     ui->actionSelectWithBox->setEnabled(false);
+        //     ui->actionSelectWithBox2->setEnabled(false);
         //     ui->actionUnselectAll->setEnabled(false);
         //     ui->actionHideAll->setEnabled(false);
         //     ui->actionWireframe->setEnabled(false);
@@ -596,11 +598,15 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionSelectEdge->setEnabled(false);
         ui->actionSelectWire->setEnabled(false);
         ui->actionSelectFace->setEnabled(false);
-        ui->actionSelectWithBox->setEnabled(false);
+        ui->actionSelectWithBox2->setEnabled(false);
         ui->actionUnselectAll->setEnabled(false);
         ui->actionHideAll->setEnabled(false);
         ui->actionWireframe->setEnabled(false);
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
+        ui->actionDrawingPlaneSetToFaceAxis->setEnabled(false);
+        ui->actionDrawingSetPlaneToXY->setEnabled(false);
+        ui->actionDrawingSetPlaneToXZ->setEnabled(false);
+        ui->actionDrawingSetPlaneToYZ->setEnabled(false);
         ui->actionMeshGenerate->setEnabled(false);
         if (drawing.childCount() > 0) {
             ui->actionExportStep->setEnabled(true);
@@ -611,11 +617,15 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionSelectEdge->setEnabled(true);
             ui->actionSelectWire->setEnabled(true);
             ui->actionSelectFace->setEnabled(true);
-            ui->actionSelectWithBox->setEnabled(true);
+            ui->actionSelectWithBox2->setEnabled(true);
             ui->actionUnselectAll->setEnabled(true);
             ui->actionHideAll->setEnabled(true);
             ui->actionWireframe->setEnabled(true);
             ui->actionDrawingPlaneSetToFace->setEnabled(true);
+            ui->actionDrawingPlaneSetToFaceAxis->setEnabled(true);
+            ui->actionDrawingSetPlaneToXY->setEnabled(true);
+            ui->actionDrawingSetPlaneToXZ->setEnabled(true);
+            ui->actionDrawingSetPlaneToYZ->setEnabled(true);
             ui->actionMeshGenerate->setEnabled(true);
         }
 
@@ -699,7 +709,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionSelectEdge->setEnabled(false);
         ui->actionSelectWire->setEnabled(false);
         ui->actionSelectFace->setEnabled(false);
-        ui->actionSelectWithBox->setEnabled(false);
+        ui->actionSelectWithBox2->setEnabled(false);
         ui->actionUnselectAll->setEnabled(false);
         ui->actionShowAll->setEnabled(false);
         ui->actionHideAll->setEnabled(false);
@@ -709,10 +719,15 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionDrawingPlaneHide->setEnabled(false);
         ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
+        ui->actionDrawingPlaneSetToFaceAxis->setEnabled(false);
+        ui->actionDrawingSetPlaneToXY->setEnabled(false);
+        ui->actionDrawingSetPlaneToXZ->setEnabled(false);
+        ui->actionDrawingSetPlaneToYZ->setEnabled(false);
         ui->actionDrawLine->setEnabled(false);
         ui->actionDrawPolyline->setEnabled(false);
         ui->actionDrawPolycircle->setEnabled(false);
         ui->actionDrawRectangle->setEnabled(false);
+        ui->actionPreferences->setEnabled(false);
 
         ui->actionSelectMaterialsDatabase->setEnabled(false);
         ui->actionMaterialsOptions->setEnabled(false);
@@ -753,8 +768,13 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionDrawPolyline->setEnabled(false);
         ui->actionDrawPolycircle->setEnabled(false);
         ui->actionDrawRectangle->setEnabled(false);
+        ui->actionPreferences->setEnabled(false);
         ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
+        ui->actionDrawingPlaneSetToFaceAxis->setEnabled(false);
+        ui->actionDrawingSetPlaneToXY->setEnabled(false);
+        ui->actionDrawingSetPlaneToXZ->setEnabled(false);
+        ui->actionDrawingSetPlaneToYZ->setEnabled(false);
         ui->actionSelectMaterialsDatabase->setEnabled(true);
         ui->actionMaterialsOptions->setEnabled(true);
         ui->actionMeshOptions->setEnabled(true);
@@ -2825,6 +2845,19 @@ bool OpenParEMg::isValidExtrudePolywire ()
     return false;
 }
 
+// from m to the given unit
+double OpenParEMg::getConversionFactor ()
+{
+    if (strcmp(projData.gui_units,"m") == 0) return 1;
+    if (strcmp(projData.gui_units,"cm") == 0) return 100;
+    if (strcmp(projData.gui_units,"mm") == 0) return 1000;
+    if (strcmp(projData.gui_units,"um") == 0) return 1e6;
+    if (strcmp(projData.gui_units,"ft") == 0) return 100/2.54/12;
+    if (strcmp(projData.gui_units,"in") == 0) return 100/2.54;
+    if (strcmp(projData.gui_units,"mil") == 0) return 100/2.54*1000;
+    return 1;
+}
+
 void OpenParEMg::extrudePolywire ()
 {
     //std::cout << "OpenParEMg::extrudePolywire" << std::endl; std::cout.flush();
@@ -2850,6 +2883,7 @@ void OpenParEMg::extrudePolywire ()
     lengthInputForm->set_extrusionDirection(&extrusionDirection);
     lengthInputForm->set_length(&length);
     lengthInputForm->set_relay(relay);
+    lengthInputForm->set_conversionFactor(getConversionFactor());
     lengthInputForm->setModal(false);
     connect(this,&OpenParEMg::sendPnt,lengthInputForm,&LengthInputForm::pickVertexFinished);
     lengthInputForm->show();
@@ -5795,7 +5829,7 @@ bool OpenParEMg::loadBrepFile (QString filePath, bool createName)
             BRep_Builder builder;
             TopoDS_Shape normalized=NormalizeCompound(s,builder);
             addRootDisplayShapeCreate(normalized);
-            drawingChanged=false;
+            drawingChanged=true;
 
             showRootDrawingItems();
 
@@ -5821,13 +5855,6 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
             TopoDS_Shape normalized=NormalizeCompound(s,builder);
             addRootDisplayShapeCreate(normalized);
             drawingChanged=true;
-
-            if (createName) {
-                QFileInfo fileInfo(filePath);
-                QString brepName=fileInfo.fileName();
-                cstrFromQString (&(projData.gui_brep_file),brepName);
-                projectChanged=true;
-            }
 
             //drawing.setForeground(0,Qt::gray);
             //ui->drawingWindow->showItem(&drawing);
@@ -7576,6 +7603,21 @@ void OpenParEMg::on_actionDrawingSetPlaneToYZ_triggered ()
     setMenusI(78);
 }
 
+//xxx
+void OpenParEMg::on_actionPreferences_triggered ()
+{
+    DrawingPreferences *drawingPreferences=new DrawingPreferences();
+    drawingPreferences->set_simulationRunning(simulationRunning);
+    drawingPreferences->set_projData(&projData);
+    drawingPreferences->exec();
+    delete drawingPreferences;
+
+    if (projData.modified) {
+        projectChanged=true;
+    }
+    setMenusI(56);
+}
+
 void OpenParEMg::cancelDraw ()
 {
     std::cout << "OpenParEMg::cancelDraw" << std::endl; std::cout.flush();
@@ -8120,7 +8162,6 @@ void OpenParEMg::finishOperation (bool cancel, int source)
         if (activePolywire && activePolywire->getDrawEnable()) {
             activePolywire->setDrawEnable(false);
             activePolywire->deleteRubberband();
-            // xxx
             ui->drawingWindow->finishPickVertex(true);
             ui->drawingWindow->updateViewer();
             delete activePolywire;
@@ -8462,4 +8503,7 @@ void OpenParEMg::on_actionRedo_triggered ()
     ui->drawingWindow->updateViewer();
     setMenusI(3000);
 }
+
+
+
 

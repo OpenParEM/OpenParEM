@@ -26,7 +26,7 @@ MeshDialog::MeshDialog (QWidget *parent)
     , ui(new Ui::MeshDialog)
 {
     ui->setupUi(this);
-    setFixedSize(608,234);
+    setFixedSize(width(),height());
     ui->meshFileLineEdit->setReadOnly(true);
 }
 
@@ -72,29 +72,37 @@ void MeshDialog::on_meshSaveRefined_checkStateChanged (const Qt::CheckState &arg
 {
     if (arg1 == 0) meshSaveRefined=0;
     else meshSaveRefined=1;
-    projData->modified=1;
     ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshRefinementFraction_textChanged (const QString &arg1)
 {
     meshRefinementFraction=arg1.toDouble();
-    projData->modified=1;
     ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshQualityLimit_textChanged (const QString &arg1)
 {
     meshQualityLimit=arg1.toDouble();
-    projData->modified=1;
     ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshOptionOk_clicked ()
 {
-    projData->mesh_save_refined=meshSaveRefined;
-    projData->mesh_3D_refinement_fraction=meshRefinementFraction;
-    projData->mesh_quality_limit=meshQualityLimit;
+    if (projData->mesh_save_refined != meshSaveRefined) {
+        projData->mesh_save_refined=meshSaveRefined;
+        projData->modified=1;
+    }
+
+    if (projData->mesh_3D_refinement_fraction != meshRefinementFraction) {
+        projData->mesh_3D_refinement_fraction=meshRefinementFraction;
+        projData->modified=1;
+    }
+
+    if (projData->mesh_quality_limit != meshQualityLimit) {
+        projData->mesh_quality_limit=meshQualityLimit;
+        projData->modified=1;
+    }
 
     close();
 }

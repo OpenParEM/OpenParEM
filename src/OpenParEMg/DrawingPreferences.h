@@ -18,67 +18,41 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LENGTHINPUTFORM_H
-#define LENGTHINPUTFORM_H
 
-#include "CustomOpenGLWidget.h"
-#include "Process.h"
-#include "Relay.h"
+#ifndef DRAWINGPREFERENCES_H
+#define DRAWINGPREFERENCES_H
+
 #include <QDialog>
-#include <TopoDS_Vertex.hxx>
-#include <qvalidator.h>
+#include "project.h"
 
 namespace Ui {
-class LengthInputForm;
+class DrawingPreferences;
 }
 
-class LengthInputForm : public QDialog
+class DrawingPreferences : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit LengthInputForm(QWidget *parent = nullptr);
-    ~LengthInputForm();
+    explicit DrawingPreferences(QWidget *parent = nullptr);
+    ~DrawingPreferences();
 
-    void set_length (double *);
-    void set_extrusionDirection (gp_Vec *extrusionDirection_) {extrusionDirection=extrusionDirection_;}
-    void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
-    void set_relay (Relay *relay_) {relay=relay_;}
-    //void set_Extrude (Extrude *extrude_) {extrude=extrude_;}
-
-    void set_conversionFactor (double conversionFactor_) {conversionFactor=conversionFactor_;}
-
-    void reject () override;
-
-    void print_point (gp_Pnt);
+    void set_projData (struct projectData *);
+    void set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
 
 private slots:
-    void on_lineEdit_returnPressed ();
-    void on_pickStart_clicked ();
-    void on_pickEnd_clicked ();
+    void on_units_currentTextChanged(const QString &arg1);
+    void on_gridSize_valueChanged(double arg1);
     void on_OkButton_clicked ();
-
-public slots:
-    void pickVertexFinished (gp_Pnt);
     void on_CancelButton_clicked ();
 
 private:
-    Ui::LengthInputForm *ui;
+    Ui::DrawingPreferences *ui;
 
-    gp_Vec *extrusionDirection;
-    double *transferLength, localLength;
-    bool pickStartPoint;
-    bool pickEndPoint;
-    bool hasStartPoint;
-    bool hasEndPoint;
-    gp_Pnt startPoint, endPoint;
-    QDoubleValidator validator;
-    //Extrude *extrude;
-
-    CustomOpenGLWidget *drawingWindow;
-    Relay *relay;
-
-    double conversionFactor;
+    struct projectData *projData;
+    QString units;
+    double gridSize;
+    bool simulationRunning;
 };
 
-#endif // LENGTHINPUTFORM_H
+#endif // DRAWINGPREFERENCES_H

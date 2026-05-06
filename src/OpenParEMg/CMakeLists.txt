@@ -87,6 +87,7 @@ qt_add_executable(OpenParEMg
     VectorInputForm.h VectorInputForm.cpp VectorInputForm.ui
     LineEditForm.h LineEditForm.cpp LineEditForm.ui
     ObjectCounts.h
+    DrawingPreferences.h DrawingPreferences.cpp DrawingPreferences.ui
 
 )
 

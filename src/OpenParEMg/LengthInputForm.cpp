@@ -48,7 +48,7 @@ LengthInputForm::LengthInputForm (QWidget *parent)
     hasStartPoint=false;
     hasEndPoint=false;
 
-    //extrude=nullptr;
+    conversionFactor=1;
 }
 
 LengthInputForm::~LengthInputForm ()
@@ -60,6 +60,7 @@ void LengthInputForm::set_length (double *length_)
 {
     transferLength=length_;
     localLength=*transferLength;
+    localLength*=conversionFactor;
     ui->lineEdit->setText(QString::number(localLength));
 
     if (abs(localLength) > 1e-14) {
@@ -111,7 +112,7 @@ void LengthInputForm::on_pickEnd_clicked ()
 void LengthInputForm::on_OkButton_clicked ()
 {
     ui->OkButton->setChecked(true);
-    *transferLength=localLength;
+    *transferLength=localLength/conversionFactor;
     emit relay->finishOperation(false,71);
     QDialog::close();
 }
@@ -130,9 +131,9 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
     if (pickStartPoint) {
         hasStartPoint=true;
         startPoint=point;
-        ui->startX->setText(QString::number(startPoint.X()));
-        ui->startY->setText(QString::number(startPoint.Y()));
-        ui->startZ->setText(QString::number(startPoint.Z()));
+        ui->startX->setText(QString::number(startPoint.X()*conversionFactor));
+        ui->startY->setText(QString::number(startPoint.Y()*conversionFactor));
+        ui->startZ->setText(QString::number(startPoint.Z()*conversionFactor));
         activateWindow();
         raise();
         ui->pickStart->setChecked(false);
@@ -142,9 +143,9 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
     if (pickEndPoint) {
         hasEndPoint=true;
         endPoint=point;
-        ui->endX->setText(QString::number(endPoint.X()));
-        ui->endY->setText(QString::number(endPoint.Y()));
-        ui->endZ->setText(QString::number(endPoint.Z()));
+        ui->endX->setText(QString::number(endPoint.X()*conversionFactor));
+        ui->endY->setText(QString::number(endPoint.Y()*conversionFactor));
+        ui->endZ->setText(QString::number(endPoint.Z()*conversionFactor));
         activateWindow();
         raise();
         ui->pickEnd->setChecked(false);
@@ -153,7 +154,7 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
 
     if (hasStartPoint && hasEndPoint) {
         Standard_Real distance=startPoint.Distance(endPoint);
-        localLength=distance;
+        localLength=distance*conversionFactor;
         if (localLength > 1e-13) {
             extrusionDirection->SetCoord(endPoint.X()-startPoint.X(),endPoint.Y()-startPoint.Y(),endPoint.Z()-startPoint.Z());
             ui->OkButton->setEnabled(true);

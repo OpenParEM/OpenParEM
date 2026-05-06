@@ -26,7 +26,7 @@ OPEMg_Refinement::OPEMg_Refinement(QWidget *parent)
     , ui(new Ui::OPEMg_Refinement)
 {
     ui->setupUi(this);
-    this->setFixedSize(450,317);
+    this->setFixedSize(width(),height());
 
     toleranceValidator.setBottom(0);
 

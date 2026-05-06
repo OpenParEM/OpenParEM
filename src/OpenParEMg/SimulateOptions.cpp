@@ -29,7 +29,7 @@ SimOptions::SimOptions (QWidget *parent)
     , ui(new Ui::SimOptions)
 {
     ui->setupUi(this);
-    this->setFixedSize(518,503);
+    this->setFixedSize(width(),height());
 }
 
 SimOptions::~SimOptions ()

@@ -735,7 +735,8 @@ void init_project (struct projectData *data) {
    data->debug_tempfiles_keep=0;
    data->debug_refine_preconditioner=1;
 
-   data->gui_brep_file=allocCopyString("");
+   data->gui_units=allocCopyString("mm");
+   data->gui_grid_size=10;
    data->gui_slot_count=5;
 
    data->physicalGroupMaterialAllocated=5;
@@ -792,7 +793,7 @@ void free_project (struct projectData *data) {
    data->inputAntennaPatternsCount=0;
    data->inputAntennaPatternsAllocated=0;
 
-   if (data->gui_brep_file) {free (data->gui_brep_file); data->gui_brep_file=NULL;}
+   if (data->gui_units) {free (data->gui_units); data->gui_units=NULL;}
 
    if (data->physicalGroupMaterials) {
        long unsigned int i=0;
@@ -1077,8 +1078,11 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0; if (defaultData && double_compare(data->debug_refine_preconditioner,defaultData->debug_refine_preconditioner,1e-14)) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.refine.preconditioner %d\n",indent,comment[matched],data->debug_refine_preconditioner);
 
-   matched=0; if (defaultData && strcmp(data->gui_brep_file,defaultData->gui_brep_file) == 0) matched=1;
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.brep.file %s\n",indent,comment[matched],data->gui_brep_file);
+   matched=0; if (defaultData && strcmp(data->gui_units,defaultData->gui_units) == 0) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.units %s\n",indent,comment[matched],data->gui_units);
+
+   matched=0; if (defaultData && double_compare(data->gui_grid_size,defaultData->gui_grid_size,1e-14)) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.grid.size %.15g\n",indent,comment[matched],data->gui_grid_size);
 
    matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
@@ -1383,8 +1387,11 @@ int save_project (const char *filename, struct projectData *data, struct project
     matched=0; if (defaultData && double_compare(data->debug_refine_preconditioner,defaultData->debug_refine_preconditioner,1e-14)) matched=1;
     fprintf(fptr,"%s%sdebug.refine.preconditioner %d\n",indent,comment[matched],data->debug_refine_preconditioner);
 
-    matched=0; if (defaultData && strcmp(data->gui_brep_file,defaultData->gui_brep_file) == 0) matched=1;
-    fprintf(fptr,"%s%sgui.brep.file %s\n",indent,comment[matched],data->gui_brep_file);
+    matched=0; if (defaultData && strcmp(data->gui_units,defaultData->gui_units) == 0) matched=1;
+    fprintf(fptr,"%s%sgui.units %s\n",indent,comment[matched],data->gui_units);
+
+    matched=0; if (defaultData && double_compare(data->gui_grid_size,defaultData->gui_grid_size,1e-14)) matched=1;
+    fprintf(fptr,"%s%sgui.grid.size %.15g\n",indent,comment[matched],data->gui_grid_size);
 
     matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
     fprintf(fptr,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
@@ -2853,13 +2860,40 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
-               else if (strcmp(keyword,"gui.brep.file") == 0) {
+               else if (strcmp(keyword,"gui.units") == 0) {
                    value=strtok(NULL," ");
                    if (is_text(value)) {
-                       free(data->gui_brep_file);
-                       data->gui_brep_file=allocCopyString(value);
+                       free(data->gui_units);
+                       data->gui_units=allocCopyString(value);
                        value=strtok(NULL," ");
                        if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                       if (!(strcmp(data->gui_units,"m") == 0) &&
+                           !(strcmp(data->gui_units,"mm") == 0) &&
+                           !(strcmp(data->gui_units,"cm") == 0) &&
+                           !(strcmp(data->gui_units,"um") == 0) &&
+                           !(strcmp(data->gui_units,"ft") == 0) &&
+                           !(strcmp(data->gui_units,"in") == 0) &&
+                           !(strcmp(data->gui_units,"mil") == 0)) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3155: Value must be \"m\", \"mm\", \"cm\", \"um\", \"ft\", \"in\", or \"mil\" at line %d.\n",indent,indent,lineCount);
+                       }
+                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"gui.grid.size") == 0) {
+                   value=strtok(NULL," ");
+                   if (is_double(value)) {
+                       data->gui_grid_size=atof(value);
+                       value=strtok(NULL," ");
+                       if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                       if (data->gui_grid_size < 0.001) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3157: Value must be >= 0.001 at line %d.\n",indent,indent,lineCount);
+                       }
+                       if (data->gui_grid_size > 1000) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3158: Value must be < 1000 at line %d.\n",indent,indent,lineCount);
+                       }
                    } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
@@ -3180,9 +3214,11 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send(&(data->debug_tempfiles_keep),1,MPI_INT,i,1000076,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->debug_refine_preconditioner),1,MPI_INT,i,1000110,PETSC_COMM_WORLD);
 
-         length=strlen(data->gui_brep_file);
+         length=strlen(data->gui_units);
          ierr=MPI_Send (&length,1,MPI_INT,i,1000089,PETSC_COMM_WORLD);
-         ierr=MPI_Send(data->gui_brep_file,length,MPI_CHAR,i,1000090,PETSC_COMM_WORLD);
+         ierr=MPI_Send(data->gui_units,length,MPI_CHAR,i,1000090,PETSC_COMM_WORLD);
+
+         ierr=MPI_Send(&(data->gui_grid_size),1,MPI_DOUBLE,i,1000122,PETSC_COMM_WORLD);
 
          ierr=MPI_Send(&(data->gui_slot_count),1,MPI_INT,i,1000121,PETSC_COMM_WORLD);
 
@@ -3420,10 +3456,12 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(&(data->debug_refine_preconditioner),1,MPI_INT,0,1000110,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
       ierr=MPI_Recv(&length,1,MPI_INT,0,1000089,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-      if (data->gui_brep_file) free(data->gui_brep_file);
-      data->gui_brep_file=(char *) malloc((length+1)*sizeof(char));
-      ierr=MPI_Recv(data->gui_brep_file,length,MPI_CHAR,0,1000090,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-      data->gui_brep_file[length]='\0';
+      if (data->gui_units) free(data->gui_units);
+      data->gui_units=(char *) malloc((length+1)*sizeof(char));
+      ierr=MPI_Recv(data->gui_units,length,MPI_CHAR,0,1000090,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      data->gui_units[length]='\0';
+
+      ierr=MPI_Recv(&(data->gui_grid_size),1,MPI_DOUBLE,0,1000122,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
       ierr=MPI_Recv(&(data->gui_slot_count),1,MPI_INT,0,1000121,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 

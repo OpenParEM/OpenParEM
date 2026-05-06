@@ -179,11 +179,14 @@
     </widget>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
-    <addaction name="menuDrawing_Plane"/>
+    <addaction name="separator"/>
     <addaction name="actionDrawLine"/>
     <addaction name="actionDrawPolyline"/>
     <addaction name="actionDrawPolycircle"/>
     <addaction name="actionDrawRectangle"/>
+    <addaction name="separator"/>
+    <addaction name="menuDrawing_Plane"/>
+    <addaction name="actionPreferences"/>
    </widget>
    <widget class="QMenu" name="menuSelect">
     <property name="title">
@@ -601,6 +604,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Y</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string>Preferences ...</string>
    </property>
   </action>
  </widget>

@@ -155,8 +155,9 @@ struct projectData {
 
    // GUI keywords - not required for standalone operation
 
-   char *gui_brep_file;
+   char *gui_units;
    int gui_slot_count;
+   double gui_grid_size;
 
    // keyword and format:
    // gui_physical_group dim,tag,material
