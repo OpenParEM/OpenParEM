@@ -3467,6 +3467,7 @@ void OpenParEMg::editObject ()
                     if (polywire) {
                         if (lengthEditForm) delete lengthEditForm;
                         lengthEditForm=new LengthInputForm();
+                        lengthEditForm->set_conversionFactor(getConversionFactor());
                         length=extrude->get_length();
                         lengthEditForm->set_length(&length);
                         lengthEditForm->set_drawingWindow(ui->drawingWindow);
