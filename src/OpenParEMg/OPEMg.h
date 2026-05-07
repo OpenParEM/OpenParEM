@@ -380,6 +380,8 @@ public:
     void undoItem (CustomTreeWidgetItem *);
     void redoItem (CustomTreeWidgetItem *);
 
+    void setScale ();
+
 private slots:
     // File
     void on_actionNew_triggered ();

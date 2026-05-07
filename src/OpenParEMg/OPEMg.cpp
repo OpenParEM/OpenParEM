@@ -23,7 +23,9 @@
 #include "Process.h"
 #include "ui_OPEMg.h"
 
+#include <GC_MakeSegment.hxx>
 #include <Geom_Plane.hxx>
+#include <Geom_TrimmedCurve.hxx>
 #include <csignal>
 #include <quadmath.h>
 #include <iostream>
@@ -5424,13 +5426,36 @@ void OpenParEMg::resetProject ()
     setMenusI(41);
 }
 
+// set the scale in the drawing window to the size of the drawing plane
+void OpenParEMg::setScale ()
+{
+    // Note that using setScale method of QOpenGLWidget causes jitter until a fitAll command is issued,
+    // so don't do it this way.
+    //ui->drawingWindow->setScale(getConversionFactor()*100);  // <<-- jittery
+
+    // draw a line, call fitAll, then delete the line
+
+    double size=1/getConversionFactor()*projData.gui_grid_size/3;
+
+    gp_Pnt p1(-size,-size,0);
+    gp_Pnt p2(size,size,0);
+    Handle(Geom_TrimmedCurve) lineGeom=GC_MakeSegment(p1,p2);
+    TopoDS_Edge lineEdge=BRepBuilderAPI_MakeEdge(lineGeom);
+    Handle(AIS_Shape) line=new AIS_Shape(lineEdge);
+    ui->drawingWindow->displayShape(line);
+    ui->drawingWindow->fitAll();
+    ui->drawingWindow->removeShape(line);
+    line.Nullify();
+    ui->drawingWindow->updateViewer();
+}
+
 void OpenParEMg::on_actionNew_triggered ()
 {
     resetProject();
     init_project (&defaultData);
     init_project (&projData);
 
-    ui->drawingWindow->setScale(getConversionFactor()*100);
+    setScale();
 
     projData.modified=0;
     projectFileLoaded=true;
@@ -7456,7 +7481,6 @@ void OpenParEMg::on_actionSelectWithBox2_triggered ()
 void OpenParEMg::on_actionDrawingPlaneShow_triggered ()
 {
     drawingPlaneShown=true;
-    //ui->drawingWindow->setScale(getConversionFactor()/100);
 
     Standard_Real xOrigin=0;
     Standard_Real yOrigin=0;
@@ -7468,8 +7492,7 @@ void OpenParEMg::on_actionDrawingPlaneShow_triggered ()
     Standard_Real offset=0;
 
     ui->drawingWindow->showGrid(xOrigin,yOrigin,xStep,yStep,rotationAngle,xSize,ySize,offset);
-    ui->drawingWindow->setScale(getConversionFactor()*100);
-    ui->drawingWindow->updateViewer();
+    setScale();
     setMenusI(73);
 }
 
