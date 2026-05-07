@@ -71,6 +71,7 @@ public:
 
     void fitAll () {view->FitAll(); view->Redraw();}
     void fitSelected () {viewerContext->FitSelected(view); view->Redraw();}
+    void setScale (double scale) {view->SetScale(scale); view->Redraw();}
 
     // void cancelDraw ();
     //void drawRubberBand (gp_Pnt);
@@ -81,7 +82,8 @@ public:
     void mouseReleaseEvent (QMouseEvent*) override;
     void mouseMoveEvent (QMouseEvent*) override;
 
-    void showGrid ();
+    void showGrid (Standard_Real, Standard_Real, Standard_Real, Standard_Real,
+                  Standard_Real, Standard_Real, Standard_Real, Standard_Real);
     void hideGrid ();
     bool PixelToPointOnPlane (const Standard_Integer, const Standard_Integer, gp_Pnt& thePoint3D);
     void set_snapToGrid (bool state) {

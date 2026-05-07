@@ -616,21 +616,19 @@ void CustomOpenGLWidget::set_gridPlane (gp_Pln &plane)
     viewer->SetPrivilegedPlane(drawingPlane.Position());
 }
 
-void CustomOpenGLWidget::showGrid ()
+void CustomOpenGLWidget::showGrid (Standard_Real xOrigin, Standard_Real yOrigin,
+                                  Standard_Real xStep, Standard_Real yStep, Standard_Real rotationAngle,
+                                  Standard_Real xSize, Standard_Real ySize, Standard_Real offset)
 {
+    //std::cout << "CustomOpenGLWidget::showGrid  origin: (" << xOrigin << "," << yOrigin << "), step: (" << xStep << "," << yStep << ")" << ", size: (" << xSize << "," << ySize << "), offset=" << offset << std::endl; std::cout.flush();
+
     //Handle(V3d_RectangularGrid) grid=new V3d_RectangularGrid(&(*viewer),Quantity_NOC_GRAY80,Quantity_NOC_GRAY50);
-    viewer->ActivateGrid(Aspect_GT_Rectangular,Aspect_GDM_Lines);
+    //viewer->SetGridEcho(Standard_False);
+    //Handle(Aspect_Grid) grid = viewer->Grid();
 
-    Standard_Real xOrigin,yOrigin,xStep,yStep,rotationAngle,xSize,ySize,offset;
-    viewer->RectangularGridValues(xOrigin,yOrigin,xStep,yStep,rotationAngle);
-    viewer->RectangularGridGraphicValues(xSize,ySize,offset);
-    std::cout << "Origin: (" << xOrigin << "," << yOrigin << "), step: (" << xStep << "," << yStep << ")" << ", size: (" << xSize << "," << ySize << "), offset=" << offset << std::endl; std::cout.flush();
-
-    xStep=0.01; yStep=0.01;
     viewer->SetRectangularGridValues(xOrigin,yOrigin,xStep,yStep,rotationAngle);
-
-    xSize=10*xStep; ySize=10*yStep; offset=0;
     viewer->SetRectangularGridGraphicValues(xSize,ySize,offset);
+    viewer->ActivateGrid(Aspect_GT_Rectangular,Aspect_GDM_Lines);
 }
 
 void CustomOpenGLWidget::hideGrid ()

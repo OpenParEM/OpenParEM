@@ -604,9 +604,6 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionWireframe->setEnabled(false);
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
         ui->actionDrawingPlaneSetToFaceAxis->setEnabled(false);
-        ui->actionDrawingSetPlaneToXY->setEnabled(false);
-        ui->actionDrawingSetPlaneToXZ->setEnabled(false);
-        ui->actionDrawingSetPlaneToYZ->setEnabled(false);
         ui->actionMeshGenerate->setEnabled(false);
         if (drawing.childCount() > 0) {
             ui->actionExportStep->setEnabled(true);
@@ -623,9 +620,6 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionWireframe->setEnabled(true);
             ui->actionDrawingPlaneSetToFace->setEnabled(true);
             ui->actionDrawingPlaneSetToFaceAxis->setEnabled(true);
-            ui->actionDrawingSetPlaneToXY->setEnabled(true);
-            ui->actionDrawingSetPlaneToXZ->setEnabled(true);
-            ui->actionDrawingSetPlaneToYZ->setEnabled(true);
             ui->actionMeshGenerate->setEnabled(true);
         }
 
@@ -686,10 +680,16 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionDrawingPlaneShow->setEnabled(false);
             ui->actionDrawingPlaneHide->setEnabled(true);
             ui->actionDrawingPlaneSnapToGrid->setEnabled(true);
+            ui->actionDrawingSetPlaneToXY->setEnabled(true);
+            ui->actionDrawingSetPlaneToXZ->setEnabled(true);
+            ui->actionDrawingSetPlaneToYZ->setEnabled(true);
         } else {
             ui->actionDrawingPlaneShow->setEnabled(true);
             ui->actionDrawingPlaneHide->setEnabled(false);
             ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
+            ui->actionDrawingSetPlaneToXY->setEnabled(false);
+            ui->actionDrawingSetPlaneToXZ->setEnabled(false);
+            ui->actionDrawingSetPlaneToYZ->setEnabled(false);
         }
 
     } else {
@@ -716,13 +716,13 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionWireframe->setEnabled(false);
 
         ui->actionDrawingPlaneShow->setEnabled(false);
+        ui->actionDrawingSetPlaneToXY->setEnabled(false);
+        ui->actionDrawingSetPlaneToXZ->setEnabled(false);
+        ui->actionDrawingSetPlaneToYZ->setEnabled(false);
         ui->actionDrawingPlaneHide->setEnabled(false);
         ui->actionDrawingPlaneSnapToGrid->setEnabled(false);
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
         ui->actionDrawingPlaneSetToFaceAxis->setEnabled(false);
-        ui->actionDrawingSetPlaneToXY->setEnabled(false);
-        ui->actionDrawingSetPlaneToXZ->setEnabled(false);
-        ui->actionDrawingSetPlaneToYZ->setEnabled(false);
         ui->actionDrawLine->setEnabled(false);
         ui->actionDrawPolyline->setEnabled(false);
         ui->actionDrawPolycircle->setEnabled(false);
@@ -7445,7 +7445,19 @@ void OpenParEMg::on_actionSelectWithBox2_triggered ()
 void OpenParEMg::on_actionDrawingPlaneShow_triggered ()
 {
     drawingPlaneShown=true;
-    ui->drawingWindow->showGrid();
+    //ui->drawingWindow->setScale(getConversionFactor()/100);
+
+    Standard_Real xOrigin=0;
+    Standard_Real yOrigin=0;
+    Standard_Real xStep=1/getConversionFactor()/10;
+    Standard_Real yStep=1/getConversionFactor()/10;
+    Standard_Real rotationAngle=0;
+    Standard_Real xSize=1/getConversionFactor()*projData.gui_grid_size/2;
+    Standard_Real ySize=1/getConversionFactor()*projData.gui_grid_size/2;
+    Standard_Real offset=0;
+
+    ui->drawingWindow->showGrid(xOrigin,yOrigin,xStep,yStep,rotationAngle,xSize,ySize,offset);
+    ui->drawingWindow->setScale(getConversionFactor()*100);
     ui->drawingWindow->updateViewer();
     setMenusI(73);
 }
@@ -7621,6 +7633,10 @@ void OpenParEMg::on_actionPreferences_triggered ()
 
     if (projData.modified) {
         projectChanged=true;
+    }
+
+    if (drawingPlaneShown) {
+        on_actionDrawingPlaneShow_triggered();
     }
     setMenusI(56);
 }
