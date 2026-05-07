@@ -722,9 +722,9 @@ private:
     ObjectCounts objectCounts;    // for uniquely numbering objects in their item names
 
     // for edit forms
-    Line *lineEdit;               // polywires
-    Rectangle *rectangleEdit;
-    Polycircle *polycircleEdit;
+    Line *lineEdit;               // for undo/redo
+    Rectangle *rectangleEdit;     // for undo/redo
+    Polycircle *polycircleEdit;   // for undo/redo
     double length;                // extrusion
     double angle;                 // rotation
     gp_Pnt startPoint, endPoint;  // rotation and vector input

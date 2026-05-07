@@ -72,6 +72,17 @@ bool PolycircleEditForm::isValid ()
 
 void PolycircleEditForm::populate (Polycircle *polycircle_)
 {
+    // temporarily draw the shape
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
+    }
+    tempShape=polycircle_->get_AIS_Shape();
+    if (!tempShape.IsNull()) {
+        drawingWindow->displayShape(tempShape);
+        drawingWindow->updateViewer();
+    }
+
     centerPoint=polycircle_->getCenterPoint();
     firstPoint=polycircle_->getFirstPoint();
     vertexCount=polycircle_->getVertexCount();
@@ -84,7 +95,7 @@ void PolycircleEditForm::populate (Polycircle *polycircle_)
     ui->firstPositionY->setText(QString::number(firstPoint.Y()*conversionFactor));
     ui->firstPositionZ->setText(QString::number(firstPoint.Z()*conversionFactor));
 
-    double radius=centerPoint.Distance(firstPoint);
+    radius=centerPoint.Distance(firstPoint);
     ui->radius->setText(QString::number(radius*conversionFactor));
 
     ui->vertexCount->setText(QString::number(vertexCount));
@@ -96,24 +107,34 @@ void PolycircleEditForm::set_Polycircle (Polycircle *polycircle_)
     populate(polycircle);
 }
 
+void PolycircleEditForm::repopulate ()
+{
+    Polycircle temp(polycircle);
+    temp.setCenterPoint(centerPoint);
+    temp.setFirstPoint(firstPoint);
+    temp.setVertexCount(vertexCount);
+    temp.recalculate();
+    populate(&temp);
+}
+
 void PolycircleEditForm::on_centerPositionX_returnPressed ()
 {
     centerPoint.SetX(ui->centerPositionX->text().toDouble()/conversionFactor);
-    repopulateOffCenter();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_centerPositionY_returnPressed ()
 {
     centerPoint.SetY(ui->centerPositionY->text().toDouble()/conversionFactor);
-    repopulateOffCenter();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_centerPositionZ_returnPressed ()
 {
     centerPoint.SetZ(ui->centerPositionZ->text().toDouble()/conversionFactor);
-    repopulateOffCenter();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
@@ -128,34 +149,25 @@ void PolycircleEditForm::on_pickCenter_clicked ()
     drawingWindow->updateViewer();
 }
 
-void PolycircleEditForm::repopulateOffCenter ()
-{
-    Polycircle temp(polycircle);
-    gp_Pnt oldCenter=temp.getCenterPoint();
-    temp.shift(centerPoint,oldCenter);
-    populate(&temp);
-}
-
-void PolycircleEditForm::repopulateOffFirstPoint ()
-{
-    Polycircle temp(polycircle);
-    temp.setFirstPoint(firstPoint);
-    temp.recalculate();
-    populate(&temp);
-}
+// void PolycircleEditForm::repopulateOffFirstPoint ()
+// {
+//     Polycircle temp(polycircle);
+//     temp.setFirstPoint(firstPoint);
+//     temp.recalculate();
+//     populate(&temp);
+// }
 
 void PolycircleEditForm::on_radius_returnPressed ()
 {
     if (ui->radius->text().toDouble() < Precision::Confusion()) return;
-
-    Polycircle temp(polycircle);
-
-    if (centerPoint.Distance(firstPoint) < Precision::Confusion()) return;
+    radius=ui->radius->text().toDouble()/conversionFactor;
 
     gp_Vec dir(centerPoint,firstPoint);
     dir.Normalize();
+    gp_Pnt newFirstPoint=centerPoint.Translated(dir*radius);
 
-    gp_Pnt newFirstPoint=centerPoint.Translated(dir*ui->radius->text().toDouble()/conversionFactor);
+    Polycircle temp(polycircle);
+    temp.setCenterPoint(centerPoint);
     temp.setFirstPoint(newFirstPoint);
     temp.recalculate();
     populate(&temp);
@@ -166,21 +178,21 @@ void PolycircleEditForm::on_radius_returnPressed ()
 void PolycircleEditForm::on_firstPositionX_returnPressed ()
 {
     firstPoint.SetX(ui->firstPositionX->text().toDouble()/conversionFactor);
-    repopulateOffFirstPoint();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_firstPositionY_returnPressed ()
 {
     firstPoint.SetY(ui->firstPositionY->text().toDouble()/conversionFactor);
-    repopulateOffFirstPoint();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void PolycircleEditForm::on_firstPositionZ_returnPressed ()
 {
     firstPoint.SetZ(ui->firstPositionZ->text().toDouble()/conversionFactor);
-    repopulateOffFirstPoint();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
@@ -198,6 +210,7 @@ void PolycircleEditForm::on_pickFirst_clicked ()
 void PolycircleEditForm::on_vertexCount_returnPressed ()
 {
     vertexCount=ui->vertexCount->text().toInt();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
@@ -208,6 +221,11 @@ void PolycircleEditForm::on_OkButton_clicked ()
     polycircle->setVertexCount(vertexCount);
 
     polycircle->recalculate();
+
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
+    }
 
     emit relay->finishOperation(false,51);
 
@@ -221,22 +239,16 @@ void PolycircleEditForm::pickVertexFinished (gp_Pnt point)
     if (pickCenterPoint) {
         pickCenterPoint=false;
         centerPoint=point;
-        ui->centerPositionX->setText(QString::number(centerPoint.X()*conversionFactor));
-        ui->centerPositionY->setText(QString::number(centerPoint.Y()*conversionFactor));
-        ui->centerPositionZ->setText(QString::number(centerPoint.Z()*conversionFactor));
         ui->pickCenter->setChecked(false);
-        repopulateOffCenter();
     }
 
     if (pickFirstPoint) {
         pickFirstPoint=false;
         firstPoint=point;
-        ui->firstPositionX->setText(QString::number(firstPoint.X()*conversionFactor));
-        ui->firstPositionY->setText(QString::number(firstPoint.Y()*conversionFactor));
-        ui->firstPositionZ->setText(QString::number(firstPoint.Z()*conversionFactor));
         ui->pickFirst->setChecked(false);
-        repopulateOffFirstPoint();
     }
+
+    repopulate();
 
     ui->OkButton->setEnabled(isValid());
 }
@@ -244,6 +256,12 @@ void PolycircleEditForm::pickVertexFinished (gp_Pnt point)
 void PolycircleEditForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
+
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
+    }
+
     emit relay->finishOperation(true,52);
     QDialog::close();
 }

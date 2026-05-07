@@ -373,6 +373,12 @@ public:
         viewerContext->Display(shape,Standard_False);
     }
 
+    void removeShape (Handle(AIS_Shape) shape)
+    {
+        if (showTracking) std::cout << "CustomOpenGLWidget::removeShape   type" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
+        viewerContext->Remove(shape,Standard_False);
+    }
+
     void hideShape (Handle(AIS_Shape) shape)
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::hideShape" << std::endl; std::cout.flush();

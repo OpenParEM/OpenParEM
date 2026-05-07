@@ -42,8 +42,7 @@ public:
     bool isValid ();
     void set_polywire (Rectangle *);
     void populate (Rectangle *);
-    void repopulateOffOrigin ();
-    void repopulateOffPositions ();
+    void repopulate ();
     void repopulateOffSize ();
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
     void set_relay (Relay *relay_) {relay=relay_;}
@@ -83,6 +82,7 @@ private:
 
     CustomOpenGLWidget *drawingWindow;
     Relay *relay;
+    Handle(AIS_Shape) tempShape;
     double conversionFactor;  // converts from m to some other unit coming in, then back to m going out
 };
 

@@ -381,6 +381,24 @@ void Polywire::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
 // Line
 ////////////////////////////////////////////////////////////////////////////////
 
+Line::Line (Line *line)
+{
+    normal=line->normal;
+    modified=line->modified;
+    drawEnable=line->drawEnable;
+    editIndex=line->editIndex;
+    closed=line->closed;
+    reverseExtrusionDirection=line->reverseExtrusionDirection;
+
+    long unsigned int i=0;
+    while (i < line->shapePoints.size()) {
+        shapePoints.push_back(line->shapePoints[i]);
+        i++;
+    }
+
+    viewerContext=line->viewerContext;
+}
+
 gp_Pnt Line::getP0 ()
 {
     gp_Pnt P0;
@@ -462,7 +480,6 @@ Line* Line::copyCreate ()
 
 Handle(AIS_Shape) Line::get_AIS_Shape ()
 {
-    //xxx
     print();
     Handle(AIS_Shape) shape;
     TopoDS_Wire wire=buildWire();
@@ -1476,8 +1493,10 @@ void Rectangle::recalculate (gp_Pnt p0, gp_Pnt p1)
 }
 
 // for change in width and/or height
-void Rectangle::recalculate (double width_, double height_)
+void Rectangle::recalculate (gp_Pnt p0, double width_, double height_)
 {
+    shapePoints[0]=p0;
+
     width=width_;
     height=height_;
 

@@ -3394,7 +3394,7 @@ void OpenParEMg::editObject ()
 {
     //std::cout << "OpenParEMg::editObject" << std::endl; std::cout.flush();
 
-    startOperation(false);
+    startOperation(true);
     activeAction=true;
     itemChangesStack.startNew();
 
@@ -3405,6 +3405,7 @@ void OpenParEMg::editObject ()
 
             Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
 
+            // supporting undo/redo
             lineEdit=nullptr;
             rectangleEdit=nullptr;
             polycircleEdit=nullptr;
@@ -3415,10 +3416,11 @@ void OpenParEMg::editObject ()
                 if (lineEditForm) delete lineEditForm;
                 lineEditForm=new LineEditForm();
                 lineEditForm->set_conversionFactor(getConversionFactor());
-                lineEditForm->set_polywire(lineEdit);
                 lineEditForm->set_drawingWindow(ui->drawingWindow);
+                lineEditForm->set_polywire(lineEdit);
                 lineEditForm->set_relay(relay);
                 lineEditForm->setModal(false);
+                ui->drawingWindow->hideItem(item);
                 connect(this,&OpenParEMg::sendPnt,lineEditForm,&LineEditForm::pickVertexFinished);
                 lineEditForm->show();
             }
@@ -3429,10 +3431,11 @@ void OpenParEMg::editObject ()
                 if (rectangleEditForm) delete rectangleEditForm;
                 rectangleEditForm=new RectangleEditForm();
                 rectangleEditForm->set_conversionFactor(getConversionFactor());
-                rectangleEditForm->set_polywire(rectangleEdit);
                 rectangleEditForm->set_drawingWindow(ui->drawingWindow);
+                rectangleEditForm->set_polywire(rectangleEdit);
                 rectangleEditForm->set_relay(relay);
                 rectangleEditForm->setModal(false);
+                ui->drawingWindow->hideItem(item);
                 connect(this,&OpenParEMg::sendPnt,rectangleEditForm,&RectangleEditForm::pickVertexFinished);
                 rectangleEditForm->show();
             }
@@ -3443,10 +3446,11 @@ void OpenParEMg::editObject ()
                 if (polycircleEditForm) delete polycircleEditForm;
                 polycircleEditForm=new PolycircleEditForm();
                 polycircleEditForm->set_conversionFactor(getConversionFactor());
-                polycircleEditForm->set_Polycircle(polycircleEdit);
                 polycircleEditForm->set_drawingWindow(ui->drawingWindow);
+                polycircleEditForm->set_Polycircle(polycircleEdit);
                 polycircleEditForm->set_relay(relay);
                 polycircleEditForm->setModal(false);
+                ui->drawingWindow->hideItem(item);
                 connect(this,&OpenParEMg::sendPnt,polycircleEditForm,&PolycircleEditForm::pickVertexFinished);
                 polycircleEditForm->show();
             }
@@ -3527,7 +3531,11 @@ void OpenParEMg::finishEditObject (bool cancel)
 {
     //std::cout << "OpenParEMg::finishEditObject  length=" << length << "  cancel=" << cancel << std::endl; std::cout.flush();
 
-    if (!cancel) {
+    if (cancel) {
+        if (lineEdit) {delete lineEdit; lineEdit=nullptr;}
+        if (rectangleEdit) {delete rectangleEdit; rectangleEdit=nullptr;}
+        if (polycircleEdit) {delete polycircleEdit; polycircleEdit=nullptr;}
+    } else {
         long unsigned int i=0;
         while (i < ui->drawingWindow->get_selectedItems_size()) {
             CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);

@@ -75,56 +75,71 @@ void LineEditForm::set_polywire (Line *polywire_)
 
 void LineEditForm::populate (Line *polywire_)
 {
-    if (polywire_) {
-        p0=polywire_->getP0();
-        p1=polywire_->getP1();
-
-        ui->positionX->setText(QString::number(p0.X()*conversionFactor));
-        ui->positionY->setText(QString::number(p0.Y()*conversionFactor));
-        ui->positionZ->setText(QString::number(p0.Z()*conversionFactor));
-
-        ui->position2X->setText(QString::number(p1.X()*conversionFactor));
-        ui->position2Y->setText(QString::number(p1.Y()*conversionFactor));
-        ui->position2Z->setText(QString::number(p1.Z()*conversionFactor));
-
-        ui->length->setText(QString::number(p0.Distance(p1)*conversionFactor));
+    // temporarily draw the shape
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
     }
-}
+    tempShape=polywire_->get_AIS_Shape();
+    if (!tempShape.IsNull()) {
+        drawingWindow->displayShape(tempShape);
+        drawingWindow->updateViewer();
+    }
 
-void LineEditForm::repopulate ()
-{
-    polywire->setP0(p0);
-    polywire->setP1(p1);
-}
+    p0=polywire_->getP0();
+    p1=polywire_->getP1();
+    length=p0.Distance(p1);
 
-void LineEditForm::on_length_returnPressed ()
-{
-    if (ui->length->text().toDouble() == 0) return;
-
-    gp_Vec dir(p0,p1);
-    dir.Normalize();
-    dir*=ui->length->text().toDouble()/conversionFactor;
-    p1=p0.Translated(dir);
+    ui->positionX->setText(QString::number(p0.X()*conversionFactor));
+    ui->positionY->setText(QString::number(p0.Y()*conversionFactor));
+    ui->positionZ->setText(QString::number(p0.Z()*conversionFactor));
 
     ui->position2X->setText(QString::number(p1.X()*conversionFactor));
     ui->position2Y->setText(QString::number(p1.Y()*conversionFactor));
     ui->position2Z->setText(QString::number(p1.Z()*conversionFactor));
 
+    ui->length->setText(QString::number(length*conversionFactor));
+}
+
+void LineEditForm::repopulate ()
+{
+    Line temp=Line(polywire);
+    temp.setP0(p0);
+    temp.setP1(p1);
+    populate(&temp);
+}
+
+void LineEditForm::on_length_returnPressed ()
+{
+    if (ui->length->text().toDouble() == 0) return;
+    length=ui->length->text().toDouble();
+
+    gp_Vec dir(p0,p1);
+    dir.Normalize();
+    dir*=length/conversionFactor;
+    p1=p0.Translated(dir); 
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void LineEditForm::on_positionX_returnPressed ()
 {
+    p0.SetX(ui->positionX->text().toDouble()/conversionFactor);
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void LineEditForm::on_positionY_returnPressed ()
 {
+    p0.SetY(ui->positionY->text().toDouble()/conversionFactor);
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void LineEditForm::on_positionZ_returnPressed ()
 {
+    p0.SetZ(ui->positionZ->text().toDouble()/conversionFactor);
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
@@ -141,16 +156,22 @@ void LineEditForm::on_pick_clicked ()
 
 void LineEditForm::on_position2X_returnPressed ()
 {
+    p1.SetX(ui->position2X->text().toDouble()/conversionFactor);
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void LineEditForm::on_position2Y_returnPressed ()
 {
+    p1.SetY(ui->position2Y->text().toDouble()/conversionFactor);
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void LineEditForm::on_position2Z_returnPressed ()
 {
+    p1.SetZ(ui->position2Z->text().toDouble()/conversionFactor);
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
@@ -167,7 +188,14 @@ void LineEditForm::on_pick2_clicked ()
 
 void LineEditForm::on_OkButton_clicked ()
 {
-    repopulate();
+    polywire->setP0(p0);
+    polywire->setP1(p1);
+
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
+    }
+
     emit relay->finishOperation(false,61);
     QDialog::close();
 }
@@ -175,6 +203,12 @@ void LineEditForm::on_OkButton_clicked ()
 void LineEditForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
+
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
+    }
+
     emit relay->finishOperation(true,62);
     QDialog::close();
 }
@@ -186,23 +220,15 @@ void LineEditForm::pickVertexFinished (gp_Pnt point)
     if (pickPoint) {
         pickPoint=false;
         p0=point;
-        ui->positionX->setText(QString::number(p0.X()*conversionFactor));
-        ui->positionY->setText(QString::number(p0.Y()*conversionFactor));
-        ui->positionZ->setText(QString::number(p0.Z()*conversionFactor));
     }
 
     if (pickPoint2) {
         pickPoint2=false;
         p1=point;
-        ui->position2X->setText(QString::number(p1.X()*conversionFactor));
-        ui->position2Y->setText(QString::number(p1.Y()*conversionFactor));
-        ui->position2Z->setText(QString::number(p1.Z()*conversionFactor));
     }
 
-    ui->length->setText(QString::number(p0.Distance(p1)*conversionFactor));
-
+    repopulate();
     ui->pick->setChecked(false);
-
     ui->OkButton->setEnabled(isValid());
 }
 

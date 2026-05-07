@@ -26,8 +26,8 @@ public:
     bool isValid ();
 
     void populate (Polycircle *);
-    void repopulateOffCenter ();
-    void repopulateOffFirstPoint ();
+    void repopulate ();
+    // void repopulateOffFirstPoint ();
     void reject () override;
 
     void set_conversionFactor (double conversionFactor_) {conversionFactor=conversionFactor_;}
@@ -54,6 +54,7 @@ private:
     Polycircle *polycircle;
 
     gp_Pnt centerPoint, firstPoint;  // store in variables to avoid precision loss in the form
+    double radius;                   // store in variables to avoid precision loss in the form
     int vertexCount;
     bool pickCenterPoint;
     bool pickFirstPoint;
@@ -61,6 +62,7 @@ private:
     QIntValidator intValidator;
     CustomOpenGLWidget *drawingWindow;
     Relay *relay;
+    Handle(AIS_Shape) tempShape;
     double conversionFactor;   // converts from m to some other unit coming in, then back to m going out
 };
 

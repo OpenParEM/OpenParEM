@@ -79,6 +79,7 @@ public:
     virtual gp_Pln getPlane ();
 
     void set_viewerContext (Handle(AIS_InteractiveContext) viewerContext_) {viewerContext=viewerContext_;}
+    Handle(AIS_InteractiveContext) get_viewerContext () {return viewerContext;}
 
     void setEditIndex (gp_Pnt &pnt);
     virtual void setEditPoint (gp_Pnt &pnt);
@@ -129,6 +130,7 @@ class Line : public Polywire
 {
 public:
     Line () {}
+    Line (Line *);
     void drawRubberband () override;
     void drawStretchRubberband () override;
     bool canDeleteLastPoint () override {return false;}
@@ -249,7 +251,7 @@ public:
     void recalculate ();
     void recalculate (gp_Pnt);
     void recalculate (gp_Pnt, gp_Pnt);
-    void recalculate (double, double);
+    void recalculate (gp_Pnt, double, double);
 
     gp_Pnt getOppositeCorner ();
 

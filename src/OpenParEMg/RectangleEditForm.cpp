@@ -76,10 +76,26 @@ void RectangleEditForm::set_polywire (Rectangle *polywire_)
 
 void RectangleEditForm::populate (Rectangle *polywire_)
 {
+    //std::cout << "RectangleEditForm::populate" << std::endl; std::cout.flush();
+
+    // temporarily draw the shape
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
+    }
+    tempShape=polywire_->get_AIS_Shape();
+    if (!tempShape.IsNull()) {
+        drawingWindow->displayShape(tempShape);
+        drawingWindow->updateViewer();
+    }
+
+    // local variables
     p0=polywire_->getPosition();
     p1=polywire_->getOppositeCorner();
     width=polywire_->getWidth();
     height=polywire_->getHeight();
+
+    // fill form
 
     ui->positionX->setText(QString::number(p0.X()*conversionFactor));
     ui->positionY->setText(QString::number(p0.Y()*conversionFactor));
@@ -93,14 +109,7 @@ void RectangleEditForm::populate (Rectangle *polywire_)
     ui->height->setText(QString::number(height*conversionFactor));
 }
 
-void RectangleEditForm::repopulateOffOrigin ()
-{
-    Rectangle temp(polywire);
-    temp.recalculate(p0);
-    populate(&temp);
-}
-
-void RectangleEditForm::repopulateOffPositions ()
+void RectangleEditForm::repopulate ()
 {
     Rectangle temp(polywire);
     temp.recalculate(p0,p1);
@@ -110,28 +119,28 @@ void RectangleEditForm::repopulateOffPositions ()
 void RectangleEditForm::repopulateOffSize ()
 {
     Rectangle temp(polywire);
-    temp.recalculate(width,height);
+    temp.recalculate(p0,width,height);
     populate(&temp);
 }
 
 void RectangleEditForm::on_positionX_returnPressed ()
 {
     p0.SetX(ui->positionX->text().toDouble()/conversionFactor);
-    repopulateOffOrigin();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_positionY_returnPressed ()
 {
     p0.SetY(ui->positionY->text().toDouble()/conversionFactor);
-    repopulateOffOrigin();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_positionZ_returnPressed ()
 {
     p0.SetZ(ui->positionZ->text().toDouble()/conversionFactor);
-    repopulateOffOrigin();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
@@ -149,21 +158,21 @@ void RectangleEditForm::on_pick_clicked ()
 void RectangleEditForm::on_position2X_returnPressed ()
 {
     p1.SetX(ui->position2X->text().toDouble()/conversionFactor);
-    repopulateOffPositions();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_position2Y_returnPressed ()
 {
     p1.SetY(ui->position2Y->text().toDouble()/conversionFactor);
-    repopulateOffPositions();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_position2Z_returnPressed ()
 {
     p1.SetZ(ui->position2Z->text().toDouble()/conversionFactor);
-    repopulateOffPositions();
+    repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
@@ -198,6 +207,11 @@ void RectangleEditForm::on_OkButton_clicked ()
 
     polywire->recalculate(p0,p1);
 
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
+    }
+
     emit relay->finishOperation(false,41);
 
     QDialog::close();
@@ -206,6 +220,12 @@ void RectangleEditForm::on_OkButton_clicked ()
 void RectangleEditForm::on_CancelButton_clicked()
 {
     ui->CancelButton->setChecked(true);
+
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
+    }
+
     emit relay->finishOperation(true,42);
     QDialog::close();
 }
@@ -217,22 +237,16 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
     if (pickPoint) {
         pickPoint=false;
         p0=point;
-        ui->positionX->setText(QString::number(p0.X()*conversionFactor));
-        ui->positionY->setText(QString::number(p0.Y()*conversionFactor));
-        ui->positionZ->setText(QString::number(p0.Z()*conversionFactor));
-        repopulateOffOrigin();
+        ui->pick->setChecked(false);
     }
 
     if (pickPoint2) {
         pickPoint2=false;
         p1=point;
-        ui->position2X->setText(QString::number(p1.X()*conversionFactor));
-        ui->position2Y->setText(QString::number(p1.Y()*conversionFactor));
-        ui->position2Z->setText(QString::number(p1.Z()*conversionFactor));
-        repopulateOffPositions();
+        ui->pick2->setChecked(false);
     }
 
-    ui->pick->setChecked(false);
+    repopulate();
 
     ui->OkButton->setEnabled(isValid());
 }

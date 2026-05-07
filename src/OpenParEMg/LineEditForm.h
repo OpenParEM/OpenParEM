@@ -69,6 +69,7 @@ private:
     Ui::LineEditForm *ui;
 
     gp_Pnt p0,p1;   // store in variable to avoid losing precision in the form
+    double length;  // store in variable to avoid losing precision in the form
     bool pickPoint;
     bool pickPoint2;
     Line *polywire;
@@ -76,7 +77,7 @@ private:
 
     CustomOpenGLWidget *drawingWindow;
     Relay *relay;
-
+    Handle(AIS_Shape) tempShape;
     double conversionFactor;   // converts from m to some other unit coming in, then back to m going out
 };
 
