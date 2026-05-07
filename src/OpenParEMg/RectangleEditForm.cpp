@@ -110,9 +110,7 @@ void RectangleEditForm::repopulateOffPositions ()
 void RectangleEditForm::repopulateOffSize ()
 {
     Rectangle temp(polywire);
-    temp.setWidth(width);
-    temp.setHeight(height);
-    temp.recalculate();
+    temp.recalculate(width,height);
     populate(&temp);
 }
 

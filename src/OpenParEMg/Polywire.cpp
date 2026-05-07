@@ -1093,10 +1093,16 @@ Rectangle::Rectangle (Rectangle *rectangle)
     v=rectangle->v;
     width=rectangle->width;
     height=rectangle->height;
-    normal=rectangle->normal;
     isSquare=rectangle->isSquare;
     tempWidth=rectangle->tempWidth;
     tempHeight=rectangle->tempHeight;
+
+    normal=rectangle->normal;
+    modified=rectangle->modified;
+    drawEnable=rectangle->drawEnable;
+    editIndex=rectangle->editIndex;
+    closed=rectangle->closed;
+    reverseExtrusionDirection=rectangle->reverseExtrusionDirection;
 
     long unsigned int i=0;
     while (i < rectangle->shapePoints.size()) {
@@ -1105,7 +1111,6 @@ Rectangle::Rectangle (Rectangle *rectangle)
     }
 
     viewerContext=rectangle->viewerContext;
-    modified=rectangle->modified;
 }
 
 bool Rectangle::isValidPoint (gp_Pnt &pnt, bool zeroPntLogic)
@@ -1463,6 +1468,18 @@ void Rectangle::recalculate (gp_Pnt p0, gp_Pnt p1)
 
     width=d.Dot(u);
     height=d.Dot(v);
+
+    shapePoints[1]=shapePoints[0].Translated(u*width);
+    shapePoints[2]=shapePoints[0].Translated(u*width).Translated(v*height);
+    shapePoints[3]=shapePoints[0].Translated(v*height);
+    shapePoints[4]=shapePoints[0];
+}
+
+// for change in width and/or height
+void Rectangle::recalculate (double width_, double height_)
+{
+    width=width_;
+    height=height_;
 
     shapePoints[1]=shapePoints[0].Translated(u*width);
     shapePoints[2]=shapePoints[0].Translated(u*width).Translated(v*height);

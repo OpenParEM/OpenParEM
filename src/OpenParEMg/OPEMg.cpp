@@ -5421,6 +5421,9 @@ void OpenParEMg::on_actionNew_triggered ()
     resetProject();
     init_project (&defaultData);
     init_project (&projData);
+
+    ui->drawingWindow->setScale(getConversionFactor()*100);
+
     projData.modified=0;
     projectFileLoaded=true;
     projectChanged=true;
@@ -7622,7 +7625,6 @@ void OpenParEMg::on_actionDrawingSetPlaneToYZ_triggered ()
     setMenusI(78);
 }
 
-//xxx
 void OpenParEMg::on_actionPreferences_triggered ()
 {
     DrawingPreferences *drawingPreferences=new DrawingPreferences();

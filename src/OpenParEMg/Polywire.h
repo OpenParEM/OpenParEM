@@ -249,6 +249,7 @@ public:
     void recalculate ();
     void recalculate (gp_Pnt);
     void recalculate (gp_Pnt, gp_Pnt);
+    void recalculate (double, double);
 
     gp_Pnt getOppositeCorner ();
 
