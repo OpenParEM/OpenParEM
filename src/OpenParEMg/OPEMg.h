@@ -257,6 +257,28 @@ public:
     OpenParEMg (QWidget *parent = nullptr);
     ~OpenParEMg ();
 
+    void closeEvent (QCloseEvent *event) override {
+
+        // if (lengthInputForm) {delete lengthInputForm; lengthInputForm=nullptr;}
+        // if (vectorInputForm) {delete vectorInputForm; vectorInputForm=nullptr;}
+        // if (lengthEditForm) {delete lengthEditForm; lengthEditForm=nullptr;}
+        // if (lineEditForm) {delete lineEditForm; lineEditForm=nullptr;}
+        // if (rectangleEditForm) {delete rectangleEditForm; rectangleEditForm=nullptr;}
+        // if (polycircleEditForm) {delete polycircleEditForm; polycircleEditForm=nullptr;}
+        // if (rotateInputForm) {delete rotateInputForm; rotateInputForm=nullptr;}
+
+        // on_actionExit_triggered();
+        // finishOperation(true,6000);
+        // event->ignore();
+
+        close_event=event;
+        closeWindow_triggered();
+    }
+
+
+    int check_changed ();
+    void closeWindow_triggered ();
+
     void saveProject ();
     void addRootDisplayShapeCreate (TopoDS_Shape);
     void insertToMapActivateItem (CustomTreeWidgetItem *);
@@ -734,6 +756,9 @@ private:
     // for undo/redo
     bool activeAction;            // shows whether a current action is active, such as move, stretch, edit, etc.
     ItemChangesStack itemChangesStack;
+
+    // for closing
+    QCloseEvent *close_event;
 };
 
 #endif // OPEMG_H

@@ -406,11 +406,15 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->drawingWindow->show();
     setMenus();
 
+    close_event=nullptr;
+
     PetscInitializeNoArguments();
 }
 
 OpenParEMg::~OpenParEMg ()
 {
+    std::cout << "OpenParEMg::~OpenParEMg" << std::endl; std::cout.flush();
+
     freeQActionList();
 
     if (timer) delete timer;
@@ -419,6 +423,45 @@ OpenParEMg::~OpenParEMg ()
     gmsh::finalize();
     PetscFinalize();
     delete ui;
+}
+
+int OpenParEMg::check_changed ()
+{
+    int retVal=0;
+    if (projectChanged || drawingChanged || meshChanged || boundaryDatabase->is_modified()) {
+        QMessageBox msgBox(this);
+        msgBox.setText("The project has been modified.");
+        msgBox.setInformativeText("Do you want to save your changes?");
+        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Save);
+        retVal = msgBox.exec();
+    }
+    return retVal;
+}
+
+void OpenParEMg::closeWindow_triggered()
+{
+    if (lengthInputForm) {delete lengthInputForm; lengthInputForm=nullptr;}
+    if (vectorInputForm) {delete vectorInputForm; vectorInputForm=nullptr;}
+    if (lengthEditForm) {delete lengthEditForm; lengthEditForm=nullptr;}
+    if (lineEditForm) {delete lineEditForm; lineEditForm=nullptr;}
+    if (rectangleEditForm) {delete rectangleEditForm; rectangleEditForm=nullptr;}
+    if (polycircleEditForm) {delete polycircleEditForm; polycircleEditForm=nullptr;}
+    if (rotateInputForm) {delete rotateInputForm; rotateInputForm=nullptr;}
+    finishOperation(true,6000);
+
+    int retVal=check_changed();
+    if (retVal) {
+        if (retVal == QMessageBox::Save) {
+            on_actionSave_triggered();
+        } else if (retVal == QMessageBox::Discard) {
+            // do nothing
+        } else if (retVal == QMessageBox::Cancel) {
+            if (close_event) close_event->ignore();
+            return;
+        }
+    }
+    if (close_event) close_event->accept();
 }
 
 void OpenParEMg::initQActionList ()
@@ -6435,11 +6478,6 @@ void OpenParEMg::on_actionExportStep_triggered()
 
 void OpenParEMg::on_actionExit_triggered ()
 {
-    if (projectChanged || drawingChanged || meshChanged || boundaryDatabase->is_modified()) {
-        QMessageBox::StandardButton reply;
-        reply = QMessageBox::question(this,"OpenParEMg","There are unsaved changes.  Do you want to exit anyway?",QMessageBox::Yes|QMessageBox::No);
-        if (reply == QMessageBox::No) return;
-    }
     QApplication::quit();
 }
 
