@@ -5004,18 +5004,16 @@ void OpenParEMg::createPort ()
 
 void OpenParEMg::renumberDimTag ()
 {
-    std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
 
     int count=1;
     int i=0;
     while (i < drawing.childCount()) {
-        std::cout << "   i=" << i << std::endl; std::cout.flush();
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
 
         // SOLID
         if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
             child->set_dimTag(3,count);
-            std::cout << "   SOLID: count=" << count << std::endl; std::cout.flush();
             count++;
         }
 
@@ -5024,7 +5022,6 @@ void OpenParEMg::renumberDimTag ()
             // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
             if (!child->getPolywire()) {
                 child->set_dimTag(3,count);
-                std::cout << "   COMPOUND: count=" << count << std::endl; std::cout.flush();
                 count++;
             }
         }
@@ -8030,6 +8027,8 @@ void OpenParEMg::startOperation (bool withMidPoints)
     ui->drawingWindow->Deactivate();
     ui->drawingWindow->Activate(1,Standard_False);                     // vertices
     if (withMidPoints) ui->drawingWindow->Activate(2,Standard_False);  // edges, to get midpoints
+
+    setMenusI(100);
 }
 
 void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
@@ -8238,7 +8237,6 @@ void OpenParEMg::finishOperation (bool cancel, int source)
                 if (item->getEnableMove()) {
                     item->unsetAnimate(ui->drawingWindow->get_viewerContext());
                     item->setEnableMove(false);
-                    ui->drawingWindow->showItem(item);
                 }
 
                 Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
@@ -8258,7 +8256,6 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
                         item->setEnableStretch(false);
                         polywire->deleteRubberband();
-                        ui->drawingWindow->showItem(item);
                         ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
                     }
 
@@ -8266,7 +8263,6 @@ void OpenParEMg::finishOperation (bool cancel, int source)
                     if (item->getEnableDeletePoint()) {
                         item->setEnableDeletePoint(false);
                         //polywire->deleteRubberband();
-                        ui->drawingWindow->showItem(item);
                         ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
                     }
 
@@ -8274,10 +8270,11 @@ void OpenParEMg::finishOperation (bool cancel, int source)
                     if (item->getEnableInsertPoint()) {
                         item->setEnableInsertPoint(false);
                         //polywire->deleteRubberband();
-                        ui->drawingWindow->showItem(item);
                         ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
                     }
                 }
+
+                ui->drawingWindow->showItem(item);
             }
             i++;
         }
