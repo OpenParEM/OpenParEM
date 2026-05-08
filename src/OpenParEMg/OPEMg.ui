@@ -76,6 +76,7 @@
      <property name="title">
       <string>Export</string>
      </property>
+     <addaction name="actionExportBrep"/>
      <addaction name="actionExportStep"/>
     </widget>
     <addaction name="actionNew"/>
@@ -609,6 +610,11 @@
   <action name="actionPreferences">
    <property name="text">
     <string>Preferences ...</string>
+   </property>
+  </action>
+  <action name="actionExportBrep">
+   <property name="text">
+    <string>BRep ...</string>
    </property>
   </action>
  </widget>

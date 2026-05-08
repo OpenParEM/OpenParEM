@@ -280,11 +280,13 @@ public:
     void closeWindow_triggered ();
 
     void saveProject ();
-    void addRootDisplayShapeCreate (TopoDS_Shape);
     void insertToMapActivateItem (CustomTreeWidgetItem *);
+    QString getAISshapeName (Handle(AIS_Shape));
     bool loadBrepFile (QString, bool);
     bool loadStepFile (QString, bool);
-    bool saveBrepFile (char *);
+    bool isValidSaveBrepFile ();
+    bool saveBrepFile (QString);
+    bool isValidSaveStepFile ();
     bool saveStepFile (QString);
     bool saveBoundaryDatabase ();
     void increase_depth (CustomTreeWidgetItem *);
@@ -413,6 +415,7 @@ private slots:
     void on_actionClose_triggered();
     void on_actionImportBrep_triggered ();
     void on_actionImportStep_triggered();
+    void on_actionExportBrep_triggered ();
     void on_actionExportStep_triggered();
     void on_actionExit_triggered ();
 

@@ -36,9 +36,15 @@ public:
         extrude=0;
         merge=0;
         subtract=0;
+        vertex=0;
+        edge=0;
+        wire=0;
+        face=0;
         solid=0;
         compsolid=0;
         compound=0;
+        shell=0;
+        unknown=0;
     }
 
     void reset ()
@@ -50,13 +56,19 @@ public:
         extrude=0;
         merge=0;
         subtract=0;
+        vertex=0;
+        edge=0;
+        wire=0;
+        face=0;
         solid=0;
         compsolid=0;
         compound=0;
+        shell=0;
+        unknown=0;
     }
 
-    long unsigned int line,polyline,rectangle,polycircle;  // polywire objects
-    long unsigned int extrude,merge,subtract;              // operation objects
-    long unsigned int solid,compsolid,compound;            // general AIS shapes
+    long unsigned int line,polyline,rectangle,polycircle;                           // polywire objects
+    long unsigned int extrude,merge,subtract;                                       // operation objects
+    long unsigned int vertex,edge,wire,face,solid,compsolid,compound,shell,unknown; // general AIS shapes
 };
 #endif // OBJECTCOUNTS_H

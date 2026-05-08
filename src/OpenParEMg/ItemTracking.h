@@ -738,6 +738,7 @@ public:
 
         if (item->is_rootDrawing()) {
             item->setSelected(Standard_True);
+            selectedItems.push_back(item);  // xxx
         } else {
             if (!item->getShape().IsNull()) {
                 SelectShape(item->getShape());
@@ -885,6 +886,9 @@ public:
 
         if (item->is_rootDrawing()) {
             item->setSelected(Standard_False);
+
+            // remove from the list of selected items
+            selectedItems.nullify(index);
         } else {
             UnselectShape(item->getShape());
             item->setSelected(Standard_False);
@@ -909,6 +913,9 @@ public:
 
         if (item->is_rootDrawing()) {
             item->setSelected(Standard_False);
+
+            // remove from the list of selected items
+            selectedItems.nullify(index);
         } else {
             UnselectShape(item->getShape());
             item->setSelected(Standard_False);

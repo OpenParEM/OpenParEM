@@ -634,9 +634,9 @@ void OpenParEMg::setMenusI (int placeIndex)
         // }
 
         ui->actionImportBrep->setEnabled(true);
-        ui->actionImportBrep->setEnabled(true);
-        ui->actionExportStep->setEnabled(false);
-        ui->actionExportStep->setEnabled(false);
+        ui->actionImportStep->setEnabled(true);
+        ui->actionExportBrep->setEnabled(isValidSaveBrepFile());
+        ui->actionExportStep->setEnabled(isValidSaveStepFile());
         ui->actionFitSelected->setEnabled(false);
         ui->actionFitAll->setEnabled(false);
         ui->actionMenuSelection->setEnabled(false);
@@ -651,8 +651,8 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionDrawingPlaneSetToFaceAxis->setEnabled(false);
         ui->actionMeshGenerate->setEnabled(false);
         if (drawing.childCount() > 0) {
-            ui->actionExportStep->setEnabled(true);
-            ui->actionExportStep->setEnabled(true);
+            ui->actionExportBrep->setEnabled(isValidSaveBrepFile());
+            ui->actionExportStep->setEnabled(isValidSaveStepFile());
             ui->actionFitSelected->setEnabled(true);
             ui->actionFitAll->setEnabled(true);
             ui->actionMenuSelection->setEnabled(true);
@@ -746,6 +746,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionExit->setEnabled(true);
         ui->actionImportBrep->setEnabled(false);
         ui->actionImportStep->setEnabled(false);
+        ui->actionExportBrep->setEnabled(false);
         ui->actionExportStep->setEnabled(false);
 
         ui->actionFitSelected->setEnabled(false);
@@ -808,6 +809,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionExit->setEnabled(false);
         ui->actionImportBrep->setEnabled(false);
         ui->actionImportStep->setEnabled(false);
+        ui->actionExportBrep->setEnabled(false);
         ui->actionExportStep->setEnabled(false);
         ui->actionDrawLine->setEnabled(false);
         ui->actionDrawPolyline->setEnabled(false);
@@ -3088,12 +3090,6 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 
     if (item == &drawing) {
 
-        // if (!item->getShape().IsNull()) {
-        //     ui->drawingWindow->hideItem(item);
-        //     ui->drawingWindow->removeItemFromMap(item);
-        //     ui->drawingWindow->deleteShape(item->getShape());
-        // }
-
         TopoDS_Compound compound;
         BRep_Builder builder;
         builder.MakeCompound(compound);
@@ -3113,32 +3109,17 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
         ShapeData *shapeData=item->getShapeData();
         shapeData->setShape(newAISshape);
 
-        // ui->drawingWindow->insertItemToMap(item->getShape(),item);
-        // ui->drawingWindow->displayShape(item->getShape());
-        // ui->drawingWindow->selectItem(item);
-        // ui->drawingWindow->showItem(item);
-
         return;
     }
 
     Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
     if (polywire) {
-        // if (!item->getShape().IsNull()) {
-        //     ui->drawingWindow->hideItem(item);
-        //     ui->drawingWindow->removeItemFromMap(item);
-        //     ui->drawingWindow->deleteShape(item->getShape());
-        // }
 
         ShapeData *shapeData=item->getShapeData();
         shapeData->setShape(polywire->get_AIS_Shape());
 
         ui->drawingWindow->insertItemToMap(item->getShape(),item);
-        //ui->drawingWindow->displayShape(item->getShape());
         ui->drawingWindow->activateItem(item);
-        //ui->drawingWindow->selectItem(item);
-        //ui->drawingWindow->showItem(item);
-
-        //replaceItemShape(item,polywire,2);
     }
 
     Process *process=static_cast<Process *>(item->getProcess());
@@ -3187,10 +3168,7 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
                                 shapeData->setShape(newAISshape);
 
                                 ui->drawingWindow->insertItemToMap(item->getShape(),item);
-                                //ui->drawingWindow->displayShape(item->getShape());
                                 ui->drawingWindow->activateItem(item);
-                                //ui->drawingWindow->selectItem(item);
-                                //ui->drawingWindow->showItem(item);
 
                                 drawingChanged=true;
                             } else {
@@ -3250,12 +3228,8 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
                         shapeData->setShape(newAISshape);
 
                         ui->drawingWindow->insertItemToMap(item->getShape(),item);
-                        //ui->drawingWindow->displayShape(item->getShape());
                         ui->drawingWindow->activateItem(item);
-                        //ui->drawingWindow->selectItem(item);
-                        //ui->drawingWindow->showItem(item);
 
-                        //replaceItemShape(item,mergedShape,4);  // inserts to item map
                         drawingChanged=true;
                     } else {
                         stop=true;
@@ -3311,12 +3285,8 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
                         shapeData->setShape(newAISshape);
 
                         ui->drawingWindow->insertItemToMap(item->getShape(),item);
-                        //ui->drawingWindow->displayShape(item->getShape());
                         ui->drawingWindow->activateItem(item);
-                        //ui->drawingWindow->selectItem(item);
-                        //ui->drawingWindow->showItem(item);
 
-                        //replaceItemShape(item,subtractedShape,5);  // inserts to item map
                         drawingChanged=true;
                     } else {
                         stop=true;
@@ -3328,6 +3298,10 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
                 stop=true;
             }
         }
+    }
+
+    if (!polywire && !process) {
+        ui->drawingWindow->activateItem(item);
     }
 
     // necessary?
@@ -3417,7 +3391,6 @@ bool OpenParEMg::isValidObjectDelete ()
 bool OpenParEMg::isValidObjectEdit ()
 {
     //std::cout << "OpenParEMg::isValidObjectEdit" << std::endl; std::cout.flush();
-
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -4021,12 +3994,12 @@ void OpenParEMg::finishMoveObject (CustomTreeWidgetItem *item, gp_Pnt p0, gp_Pnt
     }
 
     if (!polywire && !process) {
-        TopoDS_Shape newShape=item->moveShape(p0,p1,ui->drawingWindow->get_viewerContext());
-        Handle(AIS_Shape) newAISshape=new AIS_Shape(newShape);
+        item->reset_transformation();
+        TopoDS_Shape shape=item->moveShape(p0,p1,ui->drawingWindow->get_viewerContext());
+        Handle(AIS_Shape) newAISshape=new AIS_Shape(shape);
 
-        ShapeData *newShapeData=item->getShapeData()->copyCreate();
-        newShapeData->setShape(newAISshape);
-        item->addShapeData(newShapeData);
+        ShapeData *shapeData=item->getShapeData();
+        shapeData->setShape(newAISshape);
 
         // add the new item back to the display and tracking
         ui->drawingWindow->insertItemToMap(item->getShape(),item);
@@ -4809,10 +4782,6 @@ void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item)
     Process *process=static_cast<Process *>(item->getProcess());
     if (process) {
 
-        // ui->drawingWindow->hideItem(item);
-        // ui->drawingWindow->removeItemFromMap(item);
-        // ui->drawingWindow->deleteShape(item->getShape());
-
         int i=0;
         while (i < item->childCount()) {
             CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
@@ -4822,16 +4791,12 @@ void OpenParEMg::finishRotateObject (CustomTreeWidgetItem *item)
     }
 
     if (!polywire && !process) {
-        TopoDS_Shape newShape=item->rotateShape(angle,startPoint,endPoint,ui->drawingWindow->get_viewerContext());
-        Handle(AIS_Shape) newAISshape=new AIS_Shape(newShape);
+        item->reset_transformation();
+        TopoDS_Shape shape=item->rotateShape(angle,startPoint,endPoint,ui->drawingWindow->get_viewerContext());
+        Handle(AIS_Shape) newAISshape=new AIS_Shape(shape);
 
-        // ui->drawingWindow->hideItem(item);
-        // ui->drawingWindow->removeItemFromMap(item);
-        // ui->drawingWindow->deleteShape(item->getShape());
-
-        ShapeData *newShapeData=item->getShapeData()->copyCreate();
-        newShapeData->setShape(newAISshape);
-        item->addShapeData(newShapeData);
+        ShapeData *shapeData=item->getShapeData();
+        shapeData->setShape(newAISshape);
 
         // add the new item back to the display and tracking
         ui->drawingWindow->insertItemToMap(item->getShape(),item);
@@ -5276,22 +5241,6 @@ void OpenParEMg::on_actionOpen_triggered ()
             } else materialsLoaded=true;
         }
 
-        // // load brep file, if defined
-        // bool brepLoaded=false;
-        // if (strcmp(projData.gui_brep_file,"") != 0) {
-
-        //     QString filePath=projData.gui_brep_file;
-
-        //     if (loadBrepFile(filePath,false)) {
-        //         QString message="Unable to load Brep file \"";
-        //         message.append(filePath);
-        //         message.append("\".");
-        //         QMessageBox mb;
-        //         mb.critical(nullptr, "Error",message);
-        //         mb.setFixedSize(500, 200);
-        //     } else brepLoaded=true;
-        // }
-
         // load boundaries, if any, and draw
         if (strcmp(projData.port_definition_file,"") != 0) {
             if (boundaryDatabase->load(projData.port_definition_file,projData.solution_check_closed_loop)) {
@@ -5342,6 +5291,7 @@ void OpenParEMg::on_actionOpen_triggered ()
 
         projData.modified=0;
         projectFileLoaded=true;
+        drawingChanged=false;
         projectChanged=false;
     } else {
         // should not occur
@@ -5508,14 +5458,20 @@ void OpenParEMg::on_actionNew_triggered ()
     setMenusI(42);
 }
 
+//xxx
 void OpenParEMg::on_actionClose_triggered()
 {
     //std::cout << "OpenParEMg::on_actionClose_triggered" << std::endl; std::cout.flush();
 
-    if (projectChanged || meshChanged || boundaryDatabase->is_modified()) {
-        QMessageBox::StandardButton reply;
-        reply = QMessageBox::question(this,"OpenParEMg","There are unsaved changes.  Do you want to close anyway?",QMessageBox::Yes|QMessageBox::No);
-        if (reply == QMessageBox::No) return;
+    int retVal=check_changed();
+    if (retVal) {
+        if (retVal == QMessageBox::Save) {
+            on_actionSave_triggered();
+        } else if (retVal == QMessageBox::Discard) {
+            // do nothing
+        } else if (retVal == QMessageBox::Cancel) {
+            return;
+        }
     }
 
     resetProject();
@@ -5799,62 +5755,6 @@ void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
     }
 }
 
-void OpenParEMg::addRootDisplayShapeCreate (TopoDS_Shape shape)
-{
-    if (shape.IsNull()) return;
-
-    // ToDo: delete this?
-    // ensure the root item is a compound
-    if (shape.ShapeType() != TopAbs_COMPOUND) {
-        BRep_Builder builder;
-        TopoDS_Compound compound;
-        builder.MakeCompound(compound);
-        builder.Add(compound,shape);
-        shape=compound;
-    }
-
-    // drawing item
-    Handle(AIS_Shape) drawingShape=new AIS_Shape(shape);
-    ui->drawingWindow->insertItemToMap(drawingShape,&drawing);
-    drawing.setShape(drawingShape);
-
-    // pick off solids that are included in the compound and add below drawing
-    TopoDS_Iterator topoIterator(shape);
-    while (topoIterator.More()) {
-        const TopoDS_Shape& child=topoIterator.Value();
-        TopAbs_ShapeEnum shapeType=child.ShapeType();
-        // TopAbs_COMPSOLID may not be needed
-        if (shapeType == TopAbs_COMPSOLID || shapeType == TopAbs_SOLID) {
-            CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
-            Handle(AIS_Shape) drawingShape=new AIS_Shape(child);
-            ui->drawingWindow->insertItemToMap(drawingShape,newItem);
-            newItem->setShape(drawingShape);
-            if (shapeType == TopAbs_COMPSOLID) {
-                objectCounts.compsolid++;
-                QString name="COMPSOLID";
-                name.append(QString::number(objectCounts.compsolid));
-                newItem->setText(0,name);
-            } else if (shapeType == TopAbs_SOLID) {
-                objectCounts.solid++;
-                QString name="SOLID";
-                name.append(QString::number(objectCounts.solid));
-                newItem->setText(0,name);
-            }
-            newItem->set_itemType(0);  // a drawing item
-            newItem->setForeground(0,Qt::gray);
-            newItem->setPolywire(nullptr);
-            //newItem->set_dimTag(dimTag);
-            drawing.addChild(newItem);
-            newItem->setParent(&drawing);
-        }
-        topoIterator.Next();
-    }
-
-    drawing.setForeground(0,Qt::gray);
-    ui->drawingWindow->showItem(&drawing);
-    ui->drawingWindow->unselectItem(&drawing);
-}
-
 void OpenParEMg::insertToMapActivateItem (CustomTreeWidgetItem *item)
 {
     //std::cout << "OpenParEMg::addItemWithShape" << std::endl; std::cout.flush();
@@ -5903,6 +5803,26 @@ TopoDS_Shape NormalizeCompound (const TopoDS_Shape& shape, BRep_Builder& builder
     return result;
 }
 
+QString OpenParEMg::getAISshapeName (Handle(AIS_Shape) shape)
+{
+    QString name;
+    int count=0;
+    if (shape.IsNull()) return name;
+
+    if (shape->Shape().ShapeType() == TopAbs_COMPOUND) {name="COMPOUND"; objectCounts.compound++; count=objectCounts.compound;}
+    else if (shape->Shape().ShapeType() == TopAbs_COMPSOLID) {name="COMPSOLID"; objectCounts.compsolid++; count=objectCounts.compsolid;}
+    else if (shape->Shape().ShapeType() == TopAbs_SHELL) {name="SHELL"; objectCounts.shell++; count=objectCounts.shell;}
+    else if (shape->Shape().ShapeType() == TopAbs_SOLID) {name="SOLID"; objectCounts.solid++; count=objectCounts.solid;}
+    else if (shape->Shape().ShapeType() == TopAbs_FACE) {name="FACE"; objectCounts.face++; count=objectCounts.face;}
+    else if (shape->Shape().ShapeType() == TopAbs_WIRE) {name="WIRE"; objectCounts.wire++; count=objectCounts.wire;}
+    else if (shape->Shape().ShapeType() == TopAbs_EDGE) {name="EDGE"; objectCounts.edge++; count=objectCounts.edge;}
+    else if (shape->Shape().ShapeType() == TopAbs_VERTEX) {name="VERTEX"; objectCounts.vertex++; count=objectCounts.vertex;}
+    else {name="UNKNOWN"; objectCounts.unknown++; count=objectCounts.unknown;}
+
+    name.append(QString::number(count));
+    return name;
+}
+
 bool OpenParEMg::loadBrepFile (QString filePath, bool createName)
 {
     bool retval=false;
@@ -5915,10 +5835,30 @@ bool OpenParEMg::loadBrepFile (QString filePath, bool createName)
 
             BRep_Builder builder;
             TopoDS_Shape normalized=NormalizeCompound(s,builder);
-            addRootDisplayShapeCreate(normalized);
-            drawingChanged=true;
+            if (!normalized.IsNull()) {
+                Handle(AIS_Shape) shape=new AIS_Shape(normalized);
+                if (!shape.IsNull()) {
+                    CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
+                    ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,shape);
+                    newItem->addShapeData(newShapeData);
+                    newItem->setText(0,getAISshapeName(shape));
+                    drawing.addChild(newItem);
+                    newItem->setParent(&drawing);
+                    ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
+                    ui->drawingWindow->showItem(newItem);
+                    ui->drawingWindow->selectItem(newItem);
+                    itemChangesStack.startNew();
+                    itemChangesStack.add(newItem);
 
-            showRootDrawingItems();
+                    // put it on the Z-layer to get it higher selection priority
+                    newItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
+
+                    drawingChanged=true;
+                }
+            }
+
+            //  ??? needed
+            //showRootDrawingItems();
 
         } else retval=true;
     }
@@ -5940,12 +5880,30 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
 
             BRep_Builder builder;
             TopoDS_Shape normalized=NormalizeCompound(s,builder);
-            addRootDisplayShapeCreate(normalized);
-            drawingChanged=true;
+            if (!normalized.IsNull()) {
+                Handle(AIS_Shape) shape=new AIS_Shape(normalized);
+                if (!shape.IsNull()) {
+                    CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
+                    ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,shape);
+                    newItem->addShapeData(newShapeData);
+                    newItem->setText(0,getAISshapeName(shape));
+                    drawing.addChild(newItem);
+                    newItem->setParent(&drawing);
+                    ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
+                    ui->drawingWindow->showItem(newItem);
+                    ui->drawingWindow->selectItem(newItem);
+                    itemChangesStack.startNew();
+                    itemChangesStack.add(newItem);
 
-            //drawing.setForeground(0,Qt::gray);
-            //ui->drawingWindow->showItem(&drawing);
-            showRootDrawingItems();
+                    // put it on the Z-layer to get it higher selection priority
+                    newItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
+
+                    drawingChanged=true;
+                }
+            }
+
+            // ??? needed
+            //showRootDrawingItems();
 
         } else retval=true;
     }
@@ -5971,26 +5929,81 @@ CustomTreeWidgetItem* get_vertexItem (CustomTreeWidgetItem *item)
     return nullptr;
 }
 
-bool OpenParEMg::saveBrepFile (char *filePath)
+bool OpenParEMg::isValidSaveBrepFile ()
 {
-    std::cout << "OpenParEMg::saveBrepFile" << std::endl; std::cout.flush();
-
-    if (drawing.getShape()->Shape().IsNull()) return true;
-    if (!BRepTools::Write(drawing.getShape()->Shape(),filePath)) return true;
+    int count=0;
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item) {
+            if (item->is_rootDrawing() || item->is_drawing()) {
+                Handle(AIS_Shape) shape=item->getShape();
+                if (!shape.IsNull()) {
+                    count++;
+                }
+            }
+        }
+        i++;
+    }
+    if (count == 1 && ui->drawingWindow->get_selectedItems_count() == count) return true;
     return false;
+}
+
+// return true on error
+bool OpenParEMg::saveBrepFile (QString filePath)
+{
+    //std::cout << "OpenParEMg::saveBrepFile" << std::endl; std::cout.flush();
+
+    if (filePath.isEmpty()) return true;
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item) {
+            if (item->is_rootDrawing() || item->is_drawing()) {
+                Handle(AIS_Shape) shape=item->getShape();
+                if (!shape.IsNull()) {
+                    if (BRepTools::Write(shape->Shape(),filePath.toStdString().c_str())) return false;
+                }
+            }
+        }
+        i++;
+    }
+
+    return true;
+}
+
+bool OpenParEMg::isValidSaveStepFile ()
+{
+    return isValidSaveBrepFile();
 }
 
 bool OpenParEMg::saveStepFile (QString filePath)
 {
-    if (!filePath.isEmpty()) {
-        STEPControl_Writer writer;
-        writer.Transfer(drawing.getShape()->Shape(),STEPControl_ManifoldSolidBrep,Standard_True);
+    //std::cout << "OpenParEMg::saveStepFile" << std::endl; std::cout.flush();
 
-        IFSelect_ReturnStatus status=writer.Write(filePath.toStdString().c_str());
-        if (status == IFSelect_RetDone) {
-            return false;
+    if (filePath.isEmpty()) return true;
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item) {
+            if (item->is_rootDrawing() || item->is_drawing()) {
+                Handle(AIS_Shape) shape=item->getShape();
+                if (!shape.IsNull()) {
+                    STEPControl_Writer writer;
+                    writer.Transfer(shape->Shape(),STEPControl_ManifoldSolidBrep,Standard_True);
+
+                    IFSelect_ReturnStatus status=writer.Write(filePath.toStdString().c_str());
+                    if (status == IFSelect_RetDone) {
+                        return false;
+                    }
+                }
+            }
         }
+        i++;
     }
+
     return true;
 }
 
@@ -6312,7 +6325,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     if (loadBrep) {
         std::stringstream ss;
 
-        long unsigned int i=startBlockIndex+1;
+        long unsigned int i=startBlockIndex+2;
         while (i < endBlockIndex) {
             ss << inputData[i] << std::endl;
             i++;
@@ -6323,10 +6336,9 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
         BRepTools::Read(shape,ss,builder);
 
         if (!shape.IsNull()) {
-            //CustomTreeWidgetItem *newItem=addItemShapeCreate(shape,parent);
             CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
-            Handle(AIS_Shape) dummy;
-            ShapeData *newShapeData=new ShapeData(1,polywire,nullptr,dummy);
+            Handle(AIS_Shape) aisShape=new AIS_Shape(shape);
+            ShapeData *newShapeData=new ShapeData(1,polywire,nullptr,aisShape);
             newItem->addShapeData(newShapeData);
 
             // name
@@ -6449,22 +6461,29 @@ void OpenParEMg::on_actionImportStep_triggered()
     setMenusI(53);
 }
 
+void OpenParEMg::on_actionExportBrep_triggered ()
+{
+    QString filePath=QFileDialog::getSaveFileName(this,tr("Save BRep File"), absolutePath, tr("BRep Files (*.brep)"),
+                                                  nullptr,QFileDialog::DontUseNativeDialog);
+    if (filePath.isNull()) return;
+
+    if (saveBrepFile(filePath)) {
+        QString message="Unable to save BRep file \"";
+        message.append(filePath);
+        message.append("\".");
+        QMessageBox mb;
+        mb.critical(nullptr, "Error",message);
+        mb.setFixedSize(500, 200);
+    }
+    setMenusI(54);
+}
+
 void OpenParEMg::on_actionExportStep_triggered()
 {
-    // std::vector<Handle(AIS_InteractiveObject)> selectedList;
-    // ui->drawingWindow->getSelected (&selectedList);
-    // if (selectedList.size() == 0) {
-    //     QMessageBox mb;
-    //     mb.critical(nullptr,"Error","Select solid shapes to export.");
-    //     mb.setFixedSize(500, 200);
-    //     return;
-    // }
-
     QString filePath=QFileDialog::getSaveFileName(this,tr("Save STEP File"), absolutePath, tr("STEP Files (*.step *.stp)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isNull()) return;
 
-    //if (saveStepFile(filePath,&selectedList)) {
     if (saveStepFile(filePath)) {
         QString message="Unable to save STEP file \"";
         message.append(filePath);
@@ -8599,7 +8618,5 @@ void OpenParEMg::on_actionRedo_triggered ()
     ui->drawingWindow->updateViewer();
     setMenusI(3000);
 }
-
-
 
 

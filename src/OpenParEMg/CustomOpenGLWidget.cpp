@@ -500,6 +500,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
             }
         }
         updateViewer();
+        emit relay->setMenus();
 
     } //else if (event->button() == Qt::RightButton) {
     //}
