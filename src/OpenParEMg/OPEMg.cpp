@@ -4990,28 +4990,32 @@ void OpenParEMg::createPort ()
 //     }
 // }
 
-void OpenParEMg::resetDimTag (CustomTreeWidgetItem *item)
-{
-    item->set_dimTag(-1,-1);
+// void OpenParEMg::resetDimTag (CustomTreeWidgetItem *item)
+// {
+//     item->set_dimTag(-1,-1);
 
-    int i=0;
-    while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-        resetDimTag(child);
-        i++;
-    }
-}
+//     int i=0;
+//     while (i < item->childCount()) {
+//         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+//         resetDimTag(child);
+//         i++;
+//     }
+// }
 
 void OpenParEMg::renumberDimTag ()
 {
-    double count=1;
+    std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
+
+    int count=1;
     int i=0;
     while (i < drawing.childCount()) {
+        std::cout << "   i=" << i << std::endl; std::cout.flush();
         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
 
         // SOLID
         if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
             child->set_dimTag(3,count);
+            std::cout << "   SOLID: count=" << count << std::endl; std::cout.flush();
             count++;
         }
 
@@ -5020,6 +5024,7 @@ void OpenParEMg::renumberDimTag ()
             // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
             if (!child->getPolywire()) {
                 child->set_dimTag(3,count);
+                std::cout << "   COMPOUND: count=" << count << std::endl; std::cout.flush();
                 count++;
             }
         }
@@ -7065,8 +7070,8 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     }
 
     // reset dimTags
-    //resetDimTag(&drawing);
     renumberDimTag();
+    reprocess(&drawing);
 
     // generate mesh
     TopoDS_Shape shape=drawing.getShape()->Shape();

@@ -298,7 +298,7 @@ public:
 
     void dumpDrawingEntities ();
     void shapeCount (TopoDS_Shape, int *);
-    void resetDimTag (CustomTreeWidgetItem *);
+    // void resetDimTag (CustomTreeWidgetItem *);
     void renumberDimTag ();
     void setPhysicalGroups ();
     void setMaterials ();
