@@ -1543,7 +1543,7 @@ void Boundary::recalculatePathIndexList (std::vector<Path *> *pathList)
 #ifdef HAS_GUI
 
 void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                     CustomTreeWidgetItem *boundaryWidgetItem, MaterialDatabase *materialDatabase)
+                     CustomTreeWidgetItem *pathWidgetItem, CustomTreeWidgetItem *boundaryWidgetItem, MaterialDatabase *materialDatabase)
 {
     // name
 
@@ -1561,8 +1561,8 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
 
     // attach item
     int j=0;
-    while (j < boundaryWidgetItem->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) boundaryWidgetItem->child(j);
+    while (j < pathWidgetItem->childCount()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) pathWidgetItem->child(j);
         if (child->get_OPEMobject() == path) {
             itemName->push_linkedItem(child);
             child->push_linkedItem(itemName);
@@ -2700,14 +2700,14 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, Cu
     QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,relay,&Relay::setMenus);
 }
 
-void IntegrationPath::crossLink (std::vector<Path *> *pathList, CustomTreeWidgetItem *portItem)
-{
-    long unsigned int i=0;
-    while (i < pathIndexList.size()) {
-        (*pathList)[pathIndexList[i]]->set_portItem(portItem);
-        i++;
-    }
-}
+// void IntegrationPath::crossLink (std::vector<Path *> *pathList, CustomTreeWidgetItem *portItem)
+// {
+//     long unsigned int i=0;
+//     while (i < pathIndexList.size()) {
+//         (*pathList)[pathIndexList[i]]->set_portItem(portItem);
+//         i++;
+//     }
+// }
 
 #endif
 
@@ -4418,14 +4418,14 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     }
 }
 
-void Mode::crossLink (std::vector<Path *> *pathList, CustomTreeWidgetItem *portItem)
-{
-    long unsigned int i=0;
-    while (i < integrationPathList.size()) {
-        integrationPathList[i]->crossLink(pathList,portItem);
-        i++;
-    }
-}
+// void Mode::crossLink (std::vector<Path *> *pathList, CustomTreeWidgetItem *portItem)
+// {
+//     long unsigned int i=0;
+//     while (i < integrationPathList.size()) {
+//         integrationPathList[i]->crossLink(pathList,portItem);
+//         i++;
+//     }
+// }
 
 #endif
 
@@ -7370,16 +7370,16 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     }
 }
 
-void Port::crossLink (std::vector<Path *> *pathList)
-{
-    if (outline) outline->set_portItem(item);
+// void Port::crossLink (std::vector<Path *> *pathList)
+// {
+//     if (outline) outline->set_portItem(item);
 
-    long unsigned int i=0;
-    while (i < modeList.size()) {
-        modeList[i]->crossLink(pathList,item);
-        i++;
-    }
-}
+//     long unsigned int i=0;
+//     while (i < modeList.size()) {
+//         modeList[i]->crossLink(pathList,item);
+//         i++;
+//     }
+// }
 
 void Port::set_comboZdef ()
 {
@@ -8110,6 +8110,16 @@ bool BoundaryDatabase::pathNameExists (string name)
     long unsigned int i=0;
     while (i < pathList.size()) {
         if (pathList[i]->get_name().compare(name) == 0) return true;
+        i++;
+    }
+    return false;
+}
+
+bool BoundaryDatabase::boundaryNameExists (string name)
+{
+    long unsigned int i=0;
+    while (i < boundaryList.size()) {
+        if (boundaryList[i]->get_name().compare(name) == 0) return true;
         i++;
     }
     return false;
@@ -9677,6 +9687,20 @@ void BoundaryDatabase::deletePort (string name)
     }
 }
 
+void BoundaryDatabase::deleteBoundary (string name)
+{
+    long unsigned int i=0;
+    while (i < boundaryList.size()) {
+        if (boundaryList[i]->get_name().compare(name) == 0) {
+            delete boundaryList[i];
+            boundaryList.erase(boundaryList.begin()+i);
+            modified=true;
+            break;
+        }
+        i++;
+    }
+}
+
 // Straight lines do no have normals, but a normal is needed to orient arrow heads for display in OpenParEMg.
 // Look for paths without normals and assign the normal from the associated port to the path.
 void BoundaryDatabase::assignPathNormals ()
@@ -9793,7 +9817,7 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData, CustomO
     // boundaries
     i=0;
     while (i < boundaryList.size()) {
-        boundaryList[i]->draw(relay,projData,this,drawingWindow,drawingItemTree,boundaryTreeItem,materialDatabase);
+        boundaryList[i]->draw(relay,projData,this,drawingWindow,drawingItemTree,pathTreeItem,boundaryTreeItem,materialDatabase);
         i++;
     }
 }
@@ -9803,6 +9827,12 @@ void BoundaryDatabase::draw_port (Relay *relay, Port *port, struct projectData *
                                   CustomTreeWidgetItem *pathTreeItem, CustomTreeWidgetItem *portTreeItem, CustomTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
 {
     port->draw(relay,projData,this,drawingWindow,drawingItemTree,pathTreeItem,portTreeItem);
+}
+
+void BoundaryDatabase::draw_boundary (Relay *relay, Boundary *boundary, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+                                      CustomTreeWidgetItem *pathTreeItem, CustomTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
+{
+    boundary->draw(relay,projData,this,drawingWindow,drawingItemTree,pathTreeItem,boundaryTreeItem,materialDatabase);
 }
 
 // void BoundaryDatabase::set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap)
@@ -9822,14 +9852,14 @@ void BoundaryDatabase::draw_port (Relay *relay, Port *port, struct projectData *
 //     }
 //}
 
-void BoundaryDatabase::crossLink ()
-{
-    long unsigned int i=0;
-    while (i < portList.size()) {
-        portList[i]->crossLink(&pathList);
-        i++;
-    }
-}
+// void BoundaryDatabase::crossLink ()
+// {
+//     long unsigned int i=0;
+//     while (i < portList.size()) {
+//         portList[i]->crossLink(&pathList);
+//         i++;
+//     }
+// }
 
 void BoundaryDatabase::set_comboZdef ()
 {

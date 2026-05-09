@@ -240,7 +240,31 @@ public:
                 showItem(child);
                 i++;
             }
-        // ToDo: boundary
+        } else if (item->is_rootBoundary()) {
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                showItem(child);
+                i++;
+            }
+        } else if (item->is_boundary()) {
+            if (item->foreground(0) == Qt::black) return;
+
+            item->setForeground(0,Qt::black);
+
+            int i=0;
+            while (i < item->linkedItems_size()) {
+                CustomTreeWidgetItem *linkedItem=item->get_linkedItem(i);
+                showItem(linkedItem);
+                i++;
+            }
+
+            i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                showItem(child);
+                i++;
+            }
         } else if (item->is_rootMesh()) {
             int i=0;
             while (i < item->childCount()) {
@@ -476,7 +500,34 @@ public:
                 hideItem(child);
                 i++;
             }
-        // ToDo: boundary
+        } else if (item->is_rootBoundary()) {
+            int i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                hideItem(child);
+                i++;
+            }
+        } else if (item->is_boundary()) {
+            if (item->foreground(0) == Qt::gray) return;  // avoid infinite loop due to crosslinking of paths
+
+            item->setForeground(0,Qt::gray);
+            nullifyVisibleItem(item);
+
+            int i=0;
+            while (i < item->linkedItems_size()) {
+                CustomTreeWidgetItem *linkedItem=item->get_linkedItem(i);
+                if (item->is_boundary()) {
+                    hideItem(linkedItem);
+                }
+                i++;
+            }
+
+            i=0;
+            while (i < item->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+                hideItem(child);
+                i++;
+            }
         } else if (item->is_rootMesh()) {
             int i=0;
             while (i < item->childCount()) {
@@ -724,12 +775,6 @@ public:
                     SelectShape(item->getArrowHead(j));
                     j++;
                 }
-
-                // j=0;
-                // while (j < item->linkedItems_size()) {
-                //     selectItem(item->get_linkedItem(j));
-                //     j++;
-                // }
 
                 return;
             }

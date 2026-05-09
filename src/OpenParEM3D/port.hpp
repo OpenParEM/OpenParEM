@@ -160,6 +160,14 @@ class Boundary
       bool checkBoundingBox (mfem::Vector *, mfem::Vector *, std::string *, double, std::vector<Path *> *);
       int get_startLine () {return startLine;}
       int get_endLine () {return endLine;}
+      Path* get_outline () {return outline;}
+      void set_outline (Path *outline_) {outline=outline_; modified=true;}
+      void push_path (keywordPair *name, long unsigned int index, bool reverse) {
+          pathNameList.push_back(name);
+          pathIndexList.push_back(index);
+          reverseList.push_back(reverse);
+          modified=true;
+      }
       bool is_default_boundary () {return is_default;}
       void set_default_boundary () {is_default=true;}
       bool is_modified () {return modified;}
@@ -181,6 +189,7 @@ class Boundary
       std::string get_type () {return type.get_value();}
       std::string get_material () {return material.get_value();}
       double get_wave_impedance () {return wave_impedance.get_dbl_value();}
+      void set_wave_impedance (double value) {wave_impedance.set_dbl_value(value);}
       std::string get_pathName (long unsigned int i) {return pathNameList[i]->get_value();}
       int get_pathName_lineNumber (long unsigned int i) {return pathNameList[i]->get_lineNumber();}
       bool get_reverse (long unsigned int i) {return reverseList[i];}
@@ -214,8 +223,8 @@ class Boundary
 #ifdef HAS_GUI
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
-      void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, MaterialDatabase *);
-      void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
+      void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
+      //void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
 #endif
 };
 
@@ -326,7 +335,7 @@ class IntegrationPath
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
       void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
-      void crossLink (std::vector<Path *> *, CustomTreeWidgetItem *);
+      //void crossLink (std::vector<Path *> *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -535,7 +544,7 @@ class Mode
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
       void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
-      void crossLink (std::vector<Path *> *, CustomTreeWidgetItem *);
+      //void crossLink (std::vector<Path *> *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -778,7 +787,7 @@ class Port
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
       void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
-      void crossLink (std::vector<Path *> *);
+      //void crossLink (std::vector<Path *> *);
       void set_comboZdef ();
 #endif
 };
@@ -814,6 +823,7 @@ class BoundaryDatabase
       Boundary* get_defaultBoundary ();
       long unsigned int get_boundaryListSize() {return boundaryList.size();}
       Boundary* get_boundary (long unsigned int i) {return boundaryList[i];}
+      void push_boundary (Boundary *boundary) {boundaryList.push_back(boundary);}
       bool markMeshBoundaries (mfem::Mesh *mesh);
       bool createDefaultBoundary (struct projectData *, mfem::Mesh *, MaterialDatabase *, BoundaryDatabase *);
       bool inBlocks (int);
@@ -830,6 +840,7 @@ class BoundaryDatabase
       bool portNameExists (std::string);
       bool netNameExists (std::string);
       bool pathNameExists (std::string);
+      bool boundaryNameExists (std::string);
       bool alignRadiationNormals ();
       void subdivide_paths ();
       void print ();
@@ -909,6 +920,7 @@ class BoundaryDatabase
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *, long unsigned int, long unsigned int);
       void calculateFarField (double, mfem::Vector, double, double, std::vector<OPEMpoint *> *);
       void deletePort (std::string);
+      void deleteBoundary (std::string);
       void assignPathNormals ();
       Port* get_matchingPort (Path *);
       void renamePath (std::string, std::string);
@@ -916,7 +928,8 @@ class BoundaryDatabase
 #ifdef HAS_GUI
       void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
       void draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
-      void crossLink ();
+      void draw_boundary (Relay *, Boundary *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
+      //void crossLink ();
       void set_comboZdef ();
 #endif
 };

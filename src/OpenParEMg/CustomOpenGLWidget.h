@@ -312,6 +312,12 @@ public:
         return drawingTracker->get_portSelectedCount();
     }
 
+    int get_boundarySelectedCount ()
+    {
+        if (showTracking) std::cout << "CustomOpenGLWidget::get_portSelectedCount" << std::endl; std::cout.flush();
+        return drawingTracker->get_boundarySelectedCount();
+    }
+
     void unselectItem (CustomTreeWidgetItem *item)
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::unselectItem" << std::endl; std::cout.flush();

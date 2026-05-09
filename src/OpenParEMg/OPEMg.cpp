@@ -264,8 +264,9 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(collapseAllAction);
     QActionList.push_back(setPlaneAction);
     QActionList.push_back(setPlaneAxisAction);
-    QActionList.push_back(createPortAction);
     QActionList.push_back(createPathAction);
+    QActionList.push_back(createPortAction);
+    QActionList.push_back(createBoundaryAction);
     QActionList.push_back(drawPathAction);
     QActionList.push_back(drawPolylineAction);
     QActionList.push_back(editAction);
@@ -904,10 +905,12 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     deleteAction=new QAction("Delete");
     setPlaneAction=new QAction("Set Drawing Plane");
     setPlaneAxisAction=new QAction("Set Drawing Plane with Axis");
-    createPortAction=new QAction("Create Port");
-    createPortAction->setToolTip("Copy the selected face and create a port.");
     createPathAction=new QAction("Create Path");
     createPathAction->setToolTip("Copy the selected face and create a path.");
+    createPortAction=new QAction("Create Port");
+    createPortAction->setToolTip("Copy the selected face and create a port.");
+    createBoundaryAction=new QAction("Create Boundary");
+    createBoundaryAction->setToolTip("Copy the selected face and create a boundary.");
     extrudeAction=new QAction("Extrude");
     extrudeAction->setToolTip("Extrude the selected polywires along each normal.");
     mergeAction=new QAction("Merge");
@@ -935,8 +938,9 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     connect(copyAction, &QAction::triggered, this, &OpenParEMg::copyDrawingItems);
     connect(setPlaneAction, &QAction::triggered, this, &OpenParEMg::setPlaneToFace);
     connect(setPlaneAxisAction, &QAction::triggered, this, &OpenParEMg::setPlaneToFaceAxis);
-    connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
     connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPath);
+    connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPort);
+    connect(createBoundaryAction, &QAction::triggered, this, &OpenParEMg::createBoundary);
     connect(extrudeAction, &QAction::triggered, this, &OpenParEMg::extrudePolywire);
     connect(mergeAction, &QAction::triggered, this, &OpenParEMg::mergeSolids);
     connect(subtractAction, &QAction::triggered, this, &OpenParEMg::subtractSolids);
@@ -953,7 +957,7 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     if (isValidSetPlane()) menu.addAction(setPlaneAxisAction);
     if (isValidCreatePath()) menu.addAction(createPathAction);
     if (isValidCreatePort()) menu.addAction(createPortAction);
-    //if (isValidCreateBoundary()) menu.addAction(createBoundaryAction);
+    if (isValidCreateBoundary()) menu.addAction(createBoundaryAction);
     if (isValidObjectEdit()) menu.addAction(editAction);
     if (isValidObjectMove()) menu.addAction(moveAction);
     if (isValidObjectStretch()) menu.addAction(stretchAction);
@@ -1103,7 +1107,50 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
         if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
-    // ToDo: boundary
+    if (clickedItem->is_rootBoundary()) {
+
+        showAction=new QAction("Show",this);
+        hideAction=new QAction("Hide",this);
+        expandAllAction=new QAction("Expand All",this);
+        collapseAllAction=new QAction("Collapse All",this);
+
+        connect(showAction, &QAction::triggered, this, &OpenParEMg::showRootBoundaryItems);
+        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideRootBoundaryItems);
+        connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
+        connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
+
+        if (isValidObjectShow()) menu.addAction(showAction);
+        if (isValidObjectHide()) menu.addAction(hideAction);
+        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
+    }
+
+    if (clickedItem->is_boundary()) {
+
+        showAction=new QAction("Show",this);
+        hideAction=new QAction("Hide",this);
+        unselectAction=new QAction("Unselect",this);
+        renameAction=new QAction("Rename",this);
+        deleteAction=new QAction("Delete",this);
+        expandAllAction=new QAction("Expand All",this);
+        collapseAllAction=new QAction("Collapse All",this);
+
+        connect(showAction, &QAction::triggered, this, &OpenParEMg::showBoundaryItems);
+        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideBoundaryItems);
+        connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectBoundaryItems);
+        connect(renameAction, &QAction::triggered, this, &OpenParEMg::renameBoundaryItems);
+        connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteBoundaryItems);
+        connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
+        connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
+
+        if (isValidShowPath()) menu.addAction(showAction);
+        if (isValidHidePath()) menu.addAction(hideAction);
+        if (ui->drawingWindow->hasBoundarySelectedItems()) menu.addAction(unselectAction);
+        if (ui->drawingWindow->get_boundarySelectedCount() == 1) menu.addAction(renameAction);
+        menu.addAction(deleteAction);
+        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
+    }
 
     if (clickedItem->is_rootMesh()) {
 
@@ -1298,7 +1345,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
                     }
                     break;
                 }
-                if (item->is_path() || item->is_port() || item->is_integrationPathSegment()) {
+                if (item->is_path() || item->is_port() || item->is_boundary() || item->is_integrationPathSegment()) {
                     buildPathMenu(menu);
                     break;
                 }
@@ -1362,22 +1409,6 @@ void OpenParEMg::selectAllRootDrawingItems ()
 // all must be the same type
 bool OpenParEMg::isDrawingValidShow ()
 {
-    //std::cout << "OpenParEMg::isDrawingValidShow" << std::endl; std::cout.flush();
-
-    // bool foundType=false;
-    // TopAbs_ShapeEnum type;
-    // QList<QTreeWidgetItem*> selectedItems=ui->drawingItemTree->selectedItems();
-    // int i=0;
-    // while (i < selectedItems.count()) {
-    //     CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)selectedItems[i];
-    //     if (foundType) {
-    //         if (item->get_AIS_Shape()->Shape().ShapeType() != type) return false;
-    //     } else {
-    //         foundType=true;
-    //         type=item->get_AIS_Shape()->Shape().ShapeType();
-    //     }
-    //     i++;
-    // }
     return true;
 }
 
@@ -1419,7 +1450,7 @@ void OpenParEMg::showDrawingItems ()
 
 void OpenParEMg::hideRootDrawingItems ()
 {
-    std::cout << "OpenParEMg::hideRootDrawingItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::hideRootDrawingItems" << std::endl; std::cout.flush();
 
     ui->drawingWindow->hideItem(&drawing);
     drawing.setForeground(0,Qt::black);
@@ -1430,7 +1461,7 @@ void OpenParEMg::hideRootDrawingItems ()
 
 void OpenParEMg::hideDrawingItems ()
 {
-    std::cout << "OpenParEMg::hideDrawingItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::hideDrawingItems" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1449,7 +1480,7 @@ void OpenParEMg::hideDrawingItems ()
 
 void OpenParEMg::renamePathItems ()
 {
-    std::cout << "OpenParEMg::renamePathItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::renamePathItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1471,7 +1502,7 @@ void OpenParEMg::renamePathItems ()
 
 void OpenParEMg::deletePathItems ()
 {
-    std::cout << "OpenParEMg::deletePathItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::deletePathItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1489,22 +1520,11 @@ void OpenParEMg::deletePathItems ()
 
 void OpenParEMg::showRootPathItems ()
 {
-    std::cout << "OpenParEMg::showRootPathItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::showRootPathItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-        // if (item->is_rootPath()) {
-        //     int j=0;
-        //     while (j < item->childCount()) {
-        //         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
-        //         ui->drawingWindow->showItem(child);
-        //         child->setForeground(0,Qt::black);
-        //         j++;
-        //     }
-        // } else {
-        //     ui->drawingWindow->showItem(item);
-        // }
         if (item && item->is_rootPath()) {
             ui->drawingWindow->showItem(item);
         }
@@ -1529,7 +1549,7 @@ bool OpenParEMg::rootPathValidShow ()
 
 void OpenParEMg::hideRootPathItems ()
 {
-    std::cout << "OpenParEMg::hideRootPathItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::hideRootPathItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1557,14 +1577,14 @@ void OpenParEMg::hideRootPathItems ()
 
 bool OpenParEMg::isPathValidDelete ()
 {
-    std::cout << "OpenParEMg::isPathValidDelete" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::isPathValidDelete" << std::endl; std::cout.flush();
 
     // see if any have linked items
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
-            if (item->is_path() || item->is_port() || item->is_integrationPathSegment()) {
+            if (item->is_path() || item->is_port() || item->is_boundary() || item->is_integrationPathSegment()) {
                 if (item->linkedItems_size() > 0) return false;
             }
         }
@@ -1579,7 +1599,7 @@ bool OpenParEMg::isValidShowPath ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->isValidShow()) {
-            if (item->is_path() || item->is_port() || item->is_integrationPathSegment()) return true;
+            if (item->is_path() || item->is_port() || item->is_boundary() || item->is_integrationPathSegment()) return true;
         }
         i++;
     }
@@ -1588,7 +1608,7 @@ bool OpenParEMg::isValidShowPath ()
 
 void OpenParEMg::showPathItems ()
 {
-    std::cout << "OpenParEMg::showPathItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::showPathItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1620,7 +1640,7 @@ bool OpenParEMg::isValidHidePath ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->isValidHide()) {
-            if (item->is_path() || item->is_port() || item->is_integrationPathSegment()) return true;
+            if (item->is_path() || item->is_port() || item->is_boundary() || item->is_integrationPathSegment()) return true;
         }
         i++;
     }
@@ -1629,7 +1649,7 @@ bool OpenParEMg::isValidHidePath ()
 
 void OpenParEMg::hidePathItems ()
 {
-    std::cout << "OpenParEMg::hidePathItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::hidePathItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1646,20 +1666,12 @@ void OpenParEMg::hidePathItems ()
 
 void OpenParEMg::showRootPortItems ()
 {
-    std::cout << "OpenParEMg::showRootPortItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::showRootPortItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_rootPort()) {
-        //     int j=0;
-        //     while (j < item->childCount()) {
-        //         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
-        //         ui->drawingWindow->showItem(child);
-        //         child->setForeground(0,Qt::black);
-        //         j++;
-        //     }
-        // } else {
             ui->drawingWindow->showItem(item);
         }
         i++;
@@ -1671,7 +1683,7 @@ void OpenParEMg::showRootPortItems ()
 
 void OpenParEMg::showPortItems ()
 {
-    std::cout << "OpenParEMg::showPortItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::showPortItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1688,19 +1700,12 @@ void OpenParEMg::showPortItems ()
 
 void OpenParEMg::hideRootPortItems ()
 {
-    std::cout << "OpenParEMg::hideRootPortItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::hideRootPortItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_rootPort()) {
-        //     int j=0;
-        //     while (j < item->childCount()) {
-        //         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
-        //         ui->drawingWindow->hideItem(child);
-        //         j++;
-        //     }
-        // } else {
             ui->drawingWindow->hideItem(item);
         }
         i++;
@@ -1712,7 +1717,7 @@ void OpenParEMg::hideRootPortItems ()
 
 void OpenParEMg::hidePortItems ()
 {
-    std::cout << "OpenParEMg::hidePortItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::hidePortItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1727,9 +1732,164 @@ void OpenParEMg::hidePortItems ()
     setMenusI(12);
 }
 
+//xxx
+void OpenParEMg::showRootBoundaryItems ()
+{
+    //std::cout << "OpenParEMg::showRootBoundaryItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_rootBoundary()) {
+            ui->drawingWindow->showItem(item);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(9);
+}
+
+void OpenParEMg::hideRootBoundaryItems ()
+{
+    //std::cout << "OpenParEMg::hideRootBoundaryItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_rootBoundary()) {
+            ui->drawingWindow->hideItem(item);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(11);
+}
+
+void OpenParEMg::showBoundaryItems ()
+{
+    //std::cout << "OpenParEMg::showBoundaryItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_boundary()) {
+            ui->drawingWindow->showItem(item);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(10);
+}
+
+void OpenParEMg::hideBoundaryItems ()
+{
+    //std::cout << "OpenParEMg::hideBoundaryItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_boundary()) {
+            ui->drawingWindow->hideItem(item);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(12);
+}
+
+void OpenParEMg::unselectBoundaryItems()
+{
+    //std::cout << "OpenParEMg::unselectBoundaryItems" << std::endl; std::cout.flush();
+
+    int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_boundary()) {
+            ui->drawingWindow->unselectItem(item,i);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(23);
+}
+
+void OpenParEMg::renameBoundaryItems ()
+{
+    //std::cout << "OpenParEMg::renameBoundaryItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_boundary()) {
+            CustomLineEdit *name=new CustomLineEdit();
+            name->setText(item->text(0));
+            originalText=item->text(0);
+            name->set_rxValidator();
+            ui->drawingItemTree->setItemWidget(item,0,name);
+
+            renameItem=item;
+            renameEdit=name;
+            connect(name,&CustomLineEdit::returnPressed,this,&OpenParEMg::rename_returnPressed);
+        }
+        i++;
+    }
+}
+
+void OpenParEMg::deleteBoundaryItems ()
+{
+    //std::cout << "OpenParEMg::deleteBoundaryItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_boundary()) {
+            deleteBoundaryItem(item);
+        }
+        i++;
+    }
+
+    clickedItem=nullptr;
+    previousClickedItem=nullptr;
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(26);
+}
+
+void OpenParEMg::deleteBoundaryItem (CustomTreeWidgetItem * item)
+{
+    //std::cout << "OpenParEMg::deleteBoundaryItem" << std::endl; std::cout.flush();
+
+    // unlink the outline
+    Boundary *boundary=(Boundary *)item->get_OPEMobject();
+    Path *outline=boundary->get_outline();
+    CustomTreeWidgetItem *outlineItem=outline->get_item();
+    outlineItem->removeLinkedItem(item);
+
+    // remove from the boundary database
+    boundaryDatabase->deleteBoundary(item->text(0).toStdString());
+
+    ui->drawingWindow->deleteItem(item);
+    ui->drawingWindow->updateViewer();
+    setMenusI(24);
+}
+
+
+
+
+
+
+
+
+
+
 void OpenParEMg::showRootMeshItems ()
 {
-    std::cout << "OpenParEMg::showRootMeshItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::showRootMeshItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1766,7 +1926,7 @@ bool OpenParEMg::rootMeshValidShow ()
 
 void OpenParEMg::hideRootMeshItems ()
 {
-    std::cout << "OpenParEMg::hideRootMeshItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::hideRootMeshItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1792,7 +1952,7 @@ void OpenParEMg::hideRootMeshItems ()
 
 void OpenParEMg::showMeshItems ()
 {
-    std::cout << "OpenParEMg::showMeshItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::showMeshItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1820,7 +1980,7 @@ bool OpenParEMg::rootMeshValidHide ()
 
 void OpenParEMg::hideMeshItems ()
 {
-    std::cout << "OpenParEMg::hideMeshItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::hideMeshItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1837,7 +1997,7 @@ void OpenParEMg::hideMeshItems ()
 
 void OpenParEMg::renameSportNet ()
 {
-    std::cout << "OpenParEMg::renameSportNet" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::renameSportNet" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -1956,7 +2116,7 @@ bool OpenParEMg::hasCurrent ()
 
 void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
 {
-    std::cout << "OpenParEMg::insertPath" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::insertPath" << std::endl; std::cout.flush();
 
     QDoubleValidator doubleValidator;
     doubleValidator.setBottom(0);
@@ -2099,7 +2259,7 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
 
 void OpenParEMg::rename_returnPressed ()
 {
-    std::cout << "OpenParEMg::rename_returnPressed" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::rename_returnPressed" << std::endl; std::cout.flush();
 
     // new text
     QString newText=renameEdit->text();
@@ -2129,6 +2289,11 @@ void OpenParEMg::rename_returnPressed ()
             if (port) port->set_name(newText.toStdString());
         }
 
+        if (renameItem->is_boundary()) {
+            Boundary *boundary=(Boundary *)renameItem->get_OPEMobject();
+            if (boundary) boundary->set_name(newText.toStdString());
+        }
+
         if (renameItem->is_sport()) {
             Mode *mode=(Mode *)renameItem->get_OPEMobject();
             if (mode) mode->set_net(newText.toStdString());
@@ -2152,7 +2317,7 @@ void OpenParEMg::rename_returnPressed ()
 
 void OpenParEMg::unselectRootDrawingItems()
 {
-    std::cout << "OpenParEMg::unselectRootDrawingItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::unselectRootDrawingItems" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2175,7 +2340,7 @@ void OpenParEMg::unselectRootDrawingItems()
 
 void OpenParEMg::unselectDrawingItems()
 {
-    std::cout << "OpenParEMg::unselectDrawingItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::unselectDrawingItems" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2228,7 +2393,7 @@ void OpenParEMg::renameDrawingItems ()
 
 void OpenParEMg::deleteDrawingItems ()
 {
-    std::cout << "OpenParEMg::deleteDrawingItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::deleteDrawingItems" << std::endl; std::cout.flush();
 
     //activeAction=true;  // no need since there is not a cancel option
     itemChangesStack.startNew();
@@ -2289,22 +2454,12 @@ void OpenParEMg::deleteDrawingItems ()
         i++;
     }
 
-    // see if everything has been deleted
-    //if (drawing.childCount() == 0) resetDrawing();
-
-    // restoreSelection();
-    // clickedItem=nullptr;
-    // previousClickedItem=nullptr;
-
-    // ui->drawingWindow->updateViewer();
-    // setMenusI(21);
-
     finishOperation(false,100);
 }
 
 void OpenParEMg::insertModeItems ()
 {
-    std::cout << "OpenParEMg::insertModeItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::insertModeItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2329,7 +2484,7 @@ void OpenParEMg::insertModeItems ()
 
 void OpenParEMg::unselectPortItems()
 {
-    std::cout << "OpenParEMg::unselectPortItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::unselectPortItems" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2346,7 +2501,7 @@ void OpenParEMg::unselectPortItems()
 
 void OpenParEMg::renamePortItems ()
 {
-    std::cout << "OpenParEMg::renamePortItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::renamePortItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2368,7 +2523,7 @@ void OpenParEMg::renamePortItems ()
 
 void OpenParEMg::deletePortItem (CustomTreeWidgetItem * item)
 {
-    std::cout << "OpenParEMg::deletePortItem" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::deletePortItem" << std::endl; std::cout.flush();
 
     // unlink the outline
     Port *port=(Port *)item->get_OPEMobject();
@@ -2417,7 +2572,7 @@ void OpenParEMg::deletePortItem (CustomTreeWidgetItem * item)
 
 void OpenParEMg::deleteRootPortItems ()
 {
-    std::cout << "OpenParEMg::deleteRootPortItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::deleteRootPortItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2441,7 +2596,7 @@ void OpenParEMg::deleteRootPortItems ()
 
 void OpenParEMg::deletePortItems ()
 {
-    std::cout << "OpenParEMg::deletePortItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::deletePortItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2461,7 +2616,7 @@ void OpenParEMg::deletePortItems ()
 
 void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *item)
 {
-    std::cout << "OpenParEMg::deleteSportItem" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::deleteSportItem" << std::endl; std::cout.flush();
 
     if (!item) return;
 
@@ -2501,7 +2656,7 @@ void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *item)
 
 void OpenParEMg::deleteSportItems ()
 {
-    std::cout << "OpenParEMg::deleteSportItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::deleteSportItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2521,7 +2676,7 @@ void OpenParEMg::deleteSportItems ()
 
 void OpenParEMg::showNetItems ()
 {
-    std::cout << "OpenParEMg::showNetItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::showNetItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2556,7 +2711,7 @@ void OpenParEMg::showNetItems ()
 
 void OpenParEMg::showVIItems ()
 {
-    std::cout << "OpenParEMg::showVIItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::showVIItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2575,7 +2730,7 @@ void OpenParEMg::showVIItems ()
 
 void OpenParEMg::removeIntegrationPathItems ()
 {
-    std::cout << "OpenParEMg::removeIntegrationPathItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::removeIntegrationPathItems" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2722,6 +2877,13 @@ void OpenParEMg::hideIntegrationPathItems ()
     setMenusI(35);
 }
 
+bool OpenParEMg::isValidCreatePath ()
+{
+    if (ui->drawingWindow->get_selectedItems_size() > 0) return false;
+    if (ui->drawingWindow->numberDrawingFaceSelected() > 0) return true;
+    return false;
+}
+
 void OpenParEMg::createPath ()
 {
     std::cout << "OpenParEMg::createPath  NbSelected=" << ui->drawingWindow->NbSelected() << std::endl; std::cout.flush();
@@ -2777,101 +2939,6 @@ void OpenParEMg::createPath ()
     ui->drawingWindow->updateViewer();
     setMenusI(36);
 }
-
-// void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, TopoDS_Shape &shape, int i)
-// {
-//     //std:: cout << "OpenParEMg::replaceItemShape  item=" << item << "  place=" << i << std::endl; std::cout.flush();
-
-//     if (!item) return;
-
-//     // save for later restoration since the operations will modify the visible item list
-//     std::vector<CustomTreeWidgetItem *> displayedItems=ui->drawingWindow->getVisibleDrawingItems();
-
-//     // remove old shape
-//     if (!item->getShape().IsNull()) {
-//         ui->drawingWindow->hideItem(item);
-//         ui->drawingWindow->removeItemFromMap(item);
-//         ui->drawingWindow->deleteShape(item->getShape());  // lose selection
-//     }
-
-//     // refresh selection: Processing on rootDrawing deselects all but 1 item, so reselect here.
-//     if (item->is_rootDrawing()) {
-//         long unsigned int i=0;
-//         while (i < ui->drawingWindow->get_selectedItems_size()) {
-//             CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-//             if (item) ui->drawingWindow->refreshSelectedItem(item);
-//             i++;
-//         }
-//     }
-
-//     // install new shape
-//     Handle(AIS_Shape) AISshape=new AIS_Shape(shape);
-//     // must activate for selection since SetAutoActivateSelection is set to false in CustomOpenGLWidget.cpp
-//     if (!item->is_rootDrawing()) ui->drawingWindow->activateSelectShape(AISshape);
-//     item->setShape(AISshape);
-//     ui->drawingWindow->insertItemToMap(AISshape,item);
-
-//     // redisplay
-//     if (item->is_rootDrawing()) {
-//         long unsigned int i=0;
-//         while (i < displayedItems.size()) {
-//             ui->drawingWindow->showItem(displayedItems[i]);
-//             i++;
-//         }
-//     }
-// }
-
-// void OpenParEMg::replaceItemShape (CustomTreeWidgetItem *item, Polywire *polywire, int i)
-// {
-//     //std:: cout << "OpenParEMg::replaceItemShape  item=" << item << "  polywire=" << polywire << "  place=" << i << std::endl; std::cout.flush();
-
-//     if (!item) return;
-//     if (!polywire) return;
-
-//     // save for later restoration since the operations will modify the visible item list
-//     std::vector<CustomTreeWidgetItem *> displayedItems=ui->drawingWindow->getVisibleDrawingItems();
-
-//     // remove old shape
-//     if (!item->getShape().IsNull()) {
-//         ui->drawingWindow->hideItem(item);
-//         ui->drawingWindow->removeItemFromMap(item);
-//         ui->drawingWindow->deleteShape(item->getShape());  // lose selection
-//     }
-
-//     // refresh selection: Processing on rootDrawing deselects all but 1 item, so reselect here.
-//     if (item->is_rootDrawing()) {
-//         long unsigned int i=0;
-//         while (i < ui->drawingWindow->get_selectedItems_size()) {
-//             CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-//             if (item) ui->drawingWindow->refreshSelectedItem(item);
-//             i++;
-//         }
-//     }
-
-//     // get a new shape
-//     Handle(AIS_Shape) AISshape=polywire->get_AIS_Shape();
-//     if (AISshape.IsNull()) return;
-
-//     // install new shape
-//     // must activate for selection since SetAutoActivateSelection is set to false in CustomOpenGLWidget.cpp
-//     if (!item->is_rootDrawing()) ui->drawingWindow->activateSelectShape(AISshape);
-//     if (item->getShapeData()) {
-//         item->getShapeData()->setShape(AISshape);
-//     } else {
-//         ShapeData *newShapeData=new ShapeData (0,nullptr,nullptr,AISshape);
-//         item->addShapeData(newShapeData);
-//     }
-//     ui->drawingWindow->insertItemToMap(AISshape,item);
-
-//     // redisplay
-//     if (item->is_rootDrawing()) {
-//         long unsigned int i=0;
-//         while (i < displayedItems.size()) {
-//             ui->drawingWindow->showItem(displayedItems[i]);
-//             i++;
-//         }
-//     }
-// }
 
 bool OpenParEMg::isValidExtrudePolywire ()
 {
@@ -3318,20 +3385,6 @@ bool OpenParEMg::isValidSetPlane ()
 {
     if (ui->drawingWindow->get_selectedItems_size() > 0) return false;
     if (ui->drawingWindow->numberDrawingFaceSelected() == 1) return true;
-    return false;
-}
-
-bool OpenParEMg::isValidCreatePort ()
-{
-    if (ui->drawingWindow->get_selectedItems_size() > 0) return false;
-    if (ui->drawingWindow->numberDrawingFaceSelected() > 0) return true;
-    return false;
-}
-
-bool OpenParEMg::isValidCreatePath ()
-{
-    if (ui->drawingWindow->get_selectedItems_size() > 0) return false;
-    if (ui->drawingWindow->numberDrawingFaceSelected() > 0) return true;
     return false;
 }
 
@@ -4824,6 +4877,13 @@ void OpenParEMg::finishRotateObject ()
     finishOperation(false,9);
 }
 
+bool OpenParEMg::isValidCreatePort ()
+{
+    if (ui->drawingWindow->get_selectedItems_size() > 0) return false;
+    if (ui->drawingWindow->numberDrawingFaceSelected() > 0) return true;
+    return false;
+}
+
 void OpenParEMg::createPort ()
 {
     //std::cout << "OpenParEMg::createPort" << std::endl; std::cout.flush();
@@ -4895,7 +4955,10 @@ void OpenParEMg::createPort ()
 
                 // add new path to the drawing
                 CustomTreeWidgetItem *item=newPath->get_item();
-                if (item) insertToMapActivateItem(item);
+                if (item) {
+                    insertToMapActivateItem(item);
+                    ui->drawingWindow->activateItem(item);
+                }
 
                 // port
 
@@ -4937,79 +5000,99 @@ void OpenParEMg::createPort ()
     ui->drawingWindow->updateViewer();
 }
 
-// void OpenParEMg::showDisplayShape (CustomTreeWidgetItem *item)
-// {
-//     std::cout << "OpenParEMg::showDisplayShape" << std::endl; std::cout.flush();
-//     ui->drawingWindow->showItem(item);
-// }
+bool OpenParEMg::isValidCreateBoundary ()
+{
+    return isValidCreatePort();
+}
 
-// void OpenParEMg::hideDisplayShape (CustomTreeWidgetItem *item)
-// {
-//     std::cout << "OpenParEMg::hideDisplayShape" << std::endl; std::cout.flush();
-//     ui->drawingWindow->hideItem(item);
-// }
+void OpenParEMg::createBoundary ()
+{
+    //std::cout << "OpenParEMg::createBoundary" << std::endl; std::cout.flush();
 
-// void OpenParEMg::selectDisplayShape (CustomTreeWidgetItem *item)
-// {
-//     std::cout << "OpenParEMg::selectDisplayShape" << std::endl; std::cout.flush();
-//     ui->drawingWindow->hideItem(item);
-// }
+    int count=0;
+    while (count < ui->drawingWindow->NbSelected()) {
+        TopoDS_Shape selectedShape=ui->drawingWindow->get_selectedSubshape(count);
+        if (!selectedShape.IsNull()) {
+            if (selectedShape.ShapeType() == TopAbs_FACE) {
 
-// void OpenParEMg::unselectDisplayShape (CustomTreeWidgetItem *item)
-// {
-//     std::cout << "OpenParEMg::unselectDisplayShape" << std::endl; std::cout.flush();
-//     ui->drawingWindow->unselectItem(item);
-// }
+                // default boundary name
 
-// void OpenParEMg::showPortShape (CustomTreeWidgetItem *item)
-// {
-//     std::cout << "OpenParEMg::showPortShape" << std::endl; std::cout.flush();
-//     ui->drawingWindow->showItem(item);
-// }
+                std::string boundaryName="boundary";
+                boundaryName.append(std::to_string(boundary.childCount()+1));
 
-// void OpenParEMg::hidePortShape (CustomTreeWidgetItem *item)
-// {
-//     std::cout << "OpenParEMg::hidePortShape" << std::endl; std::cout.flush();
-//     ui->drawingWindow->hideItem(item);
-// }
+                int i=1;
+                while (boundaryDatabase->boundaryNameExists(boundaryName)) {
+                    std::string testName=boundaryName;
+                    testName.append("_").append(std::to_string(i));
+                    if (boundaryDatabase->boundaryNameExists(testName)) {i++;}
+                    else {boundaryName=testName; break;}
+                }
 
-// recursive
-// void OpenParEMg::set_selectionMode (CustomTreeWidgetItem *item, int selectionMode)
-// {
-//     //item->set_selectionMode(selectionMode);
+                // default path name
 
-//     int i=0;
-//     while (i < item->childCount()) {
-//         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-//         set_selectionMode(child,selectionMode);
-//         i++;
-//     }
-// }
+                std::string pathName="boundary";
+                pathName.append(std::to_string(boundary.childCount()+1));
 
-// recursive
-// void OpenParEMg::set_displayMode (CustomTreeWidgetItem *item, int displayMode)
-// {
-//     //item->set_displayMode(displayMode);
+                i=1;
+                while (boundaryDatabase->pathNameExists(pathName)) {
+                    std::string testName=pathName;
+                    testName.append("_").append(std::to_string(i));
+                    if (boundaryDatabase->pathNameExists(testName)) {i++;}
+                    else {pathName=testName; break;}
+                }
 
-//     int i=0;
-//     while (i < item->childCount()) {
-//         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-//         set_displayMode(child,displayMode);
-//         i++;
-//     }
-// }
+                // path name placed in a keywordPair
+                keywordPair *kwPathName=new keywordPair();
+                kwPathName->set_keyword("path");
+                kwPathName->set_value(pathName);
+                kwPathName->set_lineNumber(0);
+                kwPathName->set_loaded(true);
 
-// void OpenParEMg::resetDimTag (CustomTreeWidgetItem *item)
-// {
-//     item->set_dimTag(-1,-1);
+                // path
 
-//     int i=0;
-//     while (i < item->childCount()) {
-//         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-//         resetDimTag(child);
-//         i++;
-//     }
-// }
+                Path *newPath=new Path(0,0);
+                newPath->set_name(pathName);
+                newPath->is_modified();
+                newPath->addFacePoints(TopoDS::Face(selectedShape));
+                newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
+
+                boundaryDatabase->push_path(newPath);
+
+                // add new path to the drawing
+                CustomTreeWidgetItem *item=newPath->get_item();
+                if (item) {
+                    insertToMapActivateItem(item);
+                    ui->drawingWindow->activateItem(item);
+                }
+
+                // boundary
+
+                Boundary *newBoundary=new Boundary(0,0);
+                newBoundary->set_name(boundaryName);
+                newBoundary->set_outline(newPath);
+
+                // default to radiation in free space
+                newBoundary->set_type("radiation");
+                newBoundary->set_wave_impedance(sqrt(4.0e-7*M_PI/8.8541878176e-12));  // free-space value
+
+                // path info
+                newBoundary->push_path(kwPathName,boundaryDatabase->get_pathList_size()-1,false);
+
+                // add to boundary database
+                boundaryDatabase->push_boundary(newBoundary);
+
+                // draw it
+                boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
+            }
+        }
+        count++;
+    }
+
+    ui->drawingWindow->setSubshapeSelection(false);
+    on_actionShape_triggered();
+    setMenusI(37);
+    ui->drawingWindow->updateViewer();
+}
 
 void OpenParEMg::renumberDimTag ()
 {
@@ -5459,7 +5542,6 @@ void OpenParEMg::on_actionNew_triggered ()
     setMenusI(42);
 }
 
-//xxx
 void OpenParEMg::on_actionClose_triggered()
 {
     //std::cout << "OpenParEMg::on_actionClose_triggered" << std::endl; std::cout.flush();
@@ -7923,7 +8005,7 @@ void OpenParEMg::finishDraw ()
 
 void OpenParEMg::drawPath ()
 {
-    std::cout << "OpenParEMg::drawPath" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::drawPath" << std::endl; std::cout.flush();
 
     // to avoid stray clicks in the selection tree
     workingItem=clickedItem;
@@ -7973,7 +8055,7 @@ void OpenParEMg::drawPath ()
 
 void OpenParEMg::drawLinePath ()
 {
-    std::cout << "OpenParEMg::drawLinePath" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::drawLinePath" << std::endl; std::cout.flush();
 
     activePolywire=new Line();
     activePolywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
@@ -7983,7 +8065,7 @@ void OpenParEMg::drawLinePath ()
 
 void OpenParEMg::drawPolylinePath ()
 {
-    std::cout << "OpenParEMg::drawPolylinePath" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::drawPolylinePath" << std::endl; std::cout.flush();
 
     activePolywire=new Polyline();
     activePolywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
@@ -7993,7 +8075,7 @@ void OpenParEMg::drawPolylinePath ()
 
 bool OpenParEMg::insertActionValid ()
 {
-    std::cout << "OpenParEMg::insertActionValid" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::insertActionValid" << std::endl; std::cout.flush();
 
     int VIcount=0;
     CustomTreeWidgetItem *VIitem;
@@ -8042,7 +8124,7 @@ bool OpenParEMg::insertActionValid ()
 
 void OpenParEMg::insertSelectedPath ()
 {
-    std::cout << "OpenParEMg::insertSelectedPath" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::insertSelectedPath" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {

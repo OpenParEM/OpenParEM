@@ -322,7 +322,6 @@ public:
 
     void dumpDrawingEntities ();
     void shapeCount (TopoDS_Shape, int *);
-    // void resetDimTag (CustomTreeWidgetItem *);
     void renumberDimTag ();
     void setPhysicalGroups ();
     void setMaterials ();
@@ -344,8 +343,9 @@ public:
     void setPlaneToFace ();
     void setPlaneToFaceAxis ();
 
-    bool isValidCreatePort ();
     bool isValidCreatePath ();
+    bool isValidCreatePort ();
+    bool isValidCreateBoundary ();
 
     bool isValidObjectMove ();
     bool isValidRotateObject ();
@@ -505,6 +505,20 @@ private slots:
     void showPortItems ();
     void hideRootPortItems ();
     void hidePortItems ();
+
+    //xxx
+    void showRootBoundaryItems ();
+    void hideRootBoundaryItems ();
+    void showBoundaryItems ();
+    void hideBoundaryItems ();
+    void unselectBoundaryItems ();
+    void renameBoundaryItems ();
+    void deleteBoundaryItems ();
+    void deleteBoundaryItem (CustomTreeWidgetItem *);
+
+
+
+
     void showRootMeshItems ();
     void showMeshItems ();
     bool rootMeshValidShow ();
@@ -540,12 +554,6 @@ private slots:
     void removeIntegrationPathItems ();
     void showIntegrationPathItems ();
     void hideIntegrationPathItems ();
-    //void showDisplayShape (CustomTreeWidgetItem *);
-    //void showPortShape (CustomTreeWidgetItem *);
-    //void hideDisplayShape (CustomTreeWidgetItem *);
-    //void hidePortShape (CustomTreeWidgetItem *);
-    //void selectDisplayShape (CustomTreeWidgetItem *);
-    //void unselectDisplayShape (CustomTreeWidgetItem *);
 
     void assignMaterial ();
 
@@ -568,9 +576,6 @@ private slots:
     void keyPressEvent (QKeyEvent *) override;
     void keyReleaseEvent (QKeyEvent *) override;
 
-    //void set_displayMode (CustomTreeWidgetItem *, int);
-    //void set_selectionMode (CustomTreeWidgetItem *, int);
-
     void findShowTopLevelItem (CustomTreeWidgetItem *, bool);
 
     void editObject ();
@@ -579,10 +584,9 @@ private slots:
     void deletePoint ();
     void insertPoint ();
     void rotateObject ();
-    void createPort ();
     void createPath ();
-    //void replaceItemShape (CustomTreeWidgetItem *, TopoDS_Shape &shape, int);
-    //void replaceItemShape (CustomTreeWidgetItem *, Polywire *, int);
+    void createPort ();
+    void createBoundary ();
     double getConversionFactor ();
     void extrudePolywire ();
     void mergeSolids ();
@@ -680,8 +684,9 @@ private:
     QAction *renameAction;
     QAction *expandAllAction;
     QAction *collapseAllAction;
-    QAction *createPortAction;
     QAction *createPathAction;
+    QAction *createPortAction;
+    QAction *createBoundaryAction;
     QAction *drawPathAction;
     QAction *drawPolylineAction;
     QAction *drawPolycircleAction;

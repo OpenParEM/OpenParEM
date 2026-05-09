@@ -520,7 +520,7 @@ public:
 
     void removeLinkedItem (CustomTreeWidgetItem *item)
     {
-        std::cout << "CustomTreeWidgetItem::removeLinkedItem" << std::endl; std::cout.flush();
+        //std::cout << "CustomTreeWidgetItem::removeLinkedItem" << std::endl; std::cout.flush();
 
         long unsigned int i=0;
         while (i < linkedItems.size()) {
@@ -529,17 +529,8 @@ public:
         }
     }
 
-    // bool hasParent ()
-    // {
-    //     CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)this->QTreeWidgetItem::parent();
-    //     if (!parentItem) return false;
-    //     if (parentItem->is_rootDrawing()) return false;
-    //     return true;
-    // }
-
     gp_Trsf getTrsf () {return aTrsf;}
     void setTrsf (gp_Trsf aTrsf_) {aTrsf=aTrsf_;}
-
 
     TopoDS_Shape moveShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_InteractiveContext) viewerContext)
     {
