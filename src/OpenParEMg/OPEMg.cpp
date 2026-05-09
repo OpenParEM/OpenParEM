@@ -951,8 +951,9 @@ void OpenParEMg::buildDrawingMenu (QMenu &menu)
     if (isValidObjectDelete()) menu.addAction(deleteAction);
     if (isValidSetPlane()) menu.addAction(setPlaneAction);
     if (isValidSetPlane()) menu.addAction(setPlaneAxisAction);
-    if (isValidCreatePort()) menu.addAction(createPortAction);
     if (isValidCreatePath()) menu.addAction(createPathAction);
+    if (isValidCreatePort()) menu.addAction(createPortAction);
+    //if (isValidCreateBoundary()) menu.addAction(createBoundaryAction);
     if (isValidObjectEdit()) menu.addAction(editAction);
     if (isValidObjectMove()) menu.addAction(moveAction);
     if (isValidObjectStretch()) menu.addAction(stretchAction);
@@ -3919,7 +3920,7 @@ bool OpenParEMg::isValidObjectMove ()
         if (item && item->is_drawing()) count++;
         i++;
     }
-    if (count == ui->drawingWindow->get_selectedItems_count()) return true;
+    if (count > 0 && count == ui->drawingWindow->get_selectedItems_count()) return true;
     return false;
 }
 
@@ -4031,7 +4032,7 @@ bool OpenParEMg::isValidCopy ()
         if (item && item->is_drawing()) count++;
         i++;
     }
-    if (count == ui->drawingWindow->get_selectedItems_count()) return true;
+    if (count > 0 && count == ui->drawingWindow->get_selectedItems_count()) return true;
     return false;
 }
 
@@ -4577,7 +4578,7 @@ bool OpenParEMg::isValidConvertToPolyline ()
         }
         i++;
     }
-    if (count == ui->drawingWindow->get_selectedItems_count()) return true;
+    if (count > 0 && count == ui->drawingWindow->get_selectedItems_count()) return true;
     return false;
 }
 
@@ -4640,7 +4641,7 @@ bool OpenParEMg::isValidConvertToPath ()
         }
         i++;
     }
-    if (count == ui->drawingWindow->get_selectedItems_count()) return true;
+    if (count > 0 && count == ui->drawingWindow->get_selectedItems_count()) return true;
     return false;
 }
 
@@ -4715,7 +4716,7 @@ bool OpenParEMg::isValidRotateObject ()
         if (item && item->is_drawing()) count++;
         i++;
     }
-    if (count == ui->drawingWindow->get_selectedItems_count()) return true;
+    if (count > 0 && count == ui->drawingWindow->get_selectedItems_count()) return true;
     return false;
 }
 
