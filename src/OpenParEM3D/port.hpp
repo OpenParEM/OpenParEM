@@ -854,6 +854,7 @@ class BoundaryDatabase
       Path* get_path (long unsigned int i) {return pathList[i];}
       void push_path (Path *path) {pathList.push_back(path);}
       long unsigned int get_pathList_size () {return pathList.size();}
+      long unsigned int get_path_index (Path *);
       int getLastAttribute ();
       void savePortMeshes (MeshMaterialList *, std::vector<mfem::ParSubMesh> *);
       void save2Dsetups (struct projectData *, double, GammaDatabase *);

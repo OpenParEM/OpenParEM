@@ -8414,6 +8414,16 @@ int BoundaryDatabase::getLastAttribute ()
    return attribute;
 }
 
+long unsigned int BoundaryDatabase::get_path_index (Path *path)
+{
+    long unsigned int i=0;
+    while (i < pathList.size()) {
+        if (pathList[i] == path) return i;
+        i++;
+    }
+    return -1;
+}
+
 bool BoundaryDatabase::createDefaultBoundary (struct projectData *projData, Mesh *mesh,
                                                MaterialDatabase *materialDatabase, BoundaryDatabase *boundaryDatabase)
 {

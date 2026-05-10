@@ -344,8 +344,14 @@ public:
     void setPlaneToFaceAxis ();
 
     bool isValidCreatePath ();
-    bool isValidCreatePort ();
-    bool isValidCreateBoundary ();
+    bool isValidCreatePortFromFace ();
+    bool isValidCreatePortFromPath ();
+
+    bool isValidCreateBoundaryFromFace ();
+    bool isValidCreateBoundaryFromPath ();
+
+    bool isValidConvertToPort ();
+    bool isValidConvertToBoundary ();
 
     bool isValidObjectMove ();
     bool isValidRotateObject ();
@@ -585,8 +591,12 @@ private slots:
     void insertPoint ();
     void rotateObject ();
     void createPath ();
-    void createPort ();
-    void createBoundary ();
+    void createPortFromFace ();
+    void createPortFromPath ();
+    void createBoundaryFromFace ();
+    void createBoundaryFromPath ();
+    void convertToPort ();
+    void convertToBoundary ();
     double getConversionFactor ();
     void extrudePolywire ();
     void mergeSolids ();
@@ -703,6 +713,8 @@ private:
     QAction *subtractAction;
     QAction *convertToPolylineAction;
     QAction *convertToPathAction;
+    QAction *convertToPortAction;
+    QAction *convertToBoundaryAction;
     QAction *setPlaneAction;
     QAction *setPlaneAxisAction;
     QAction *assignMaterialAction;
