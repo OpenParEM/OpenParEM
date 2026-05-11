@@ -9833,16 +9833,18 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData, CustomO
 }
 
 // assumes that the port is in the boundary database
-void BoundaryDatabase::draw_port (Relay *relay, Port *port, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+CustomTreeWidgetItem* BoundaryDatabase::draw_port (Relay *relay, Port *port, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
                                   CustomTreeWidgetItem *pathTreeItem, CustomTreeWidgetItem *portTreeItem, CustomTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
 {
     port->draw(relay,projData,this,drawingWindow,drawingItemTree,pathTreeItem,portTreeItem);
+    return port->get_item();
 }
 
-void BoundaryDatabase::draw_boundary (Relay *relay, Boundary *boundary, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+CustomTreeWidgetItem* BoundaryDatabase::draw_boundary (Relay *relay, Boundary *boundary, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
                                       CustomTreeWidgetItem *pathTreeItem, CustomTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
 {
     boundary->draw(relay,projData,this,drawingWindow,drawingItemTree,pathTreeItem,boundaryTreeItem,materialDatabase);
+    return boundary->get_item();
 }
 
 // void BoundaryDatabase::set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap)

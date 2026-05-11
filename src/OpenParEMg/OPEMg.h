@@ -127,7 +127,13 @@ public:
         if (current) {
             if (current->getNext()) return true;
         } else {
-            if (itemChangesList.size() > 0) return true;
+            int count=0;
+            long unsigned int i=0;
+            while (i < itemChangesList.size()) {
+                if (itemChangesList[i]) count++;
+                i++;
+            }
+            if (count > 0) return true;
         }
 
         return false;
@@ -180,6 +186,17 @@ public:
         readIndex=0;
     }
 
+    ItemChanges* getCurrentNext ()
+    {
+        if (current) return current->getNext();
+        return nullptr;
+    }
+
+    void setCurrentNext (ItemChanges *next)
+    {
+        if (current) current->setNext(next);
+    }
+
     void pop_back ()
     {
         if (itemChangesList.size() == 0) return;
@@ -208,8 +225,10 @@ public:
         std::cout << "ItemChangesStack:" << std::endl;
         long unsigned int i=0;
         while (i < itemChangesList.size()) {
-            std::cout << "   ItemChanges: " << itemChangesList[i] << std::endl;
-            itemChangesList[i]->print();
+            if (itemChangesList[i]) {
+                std::cout << "   ItemChanges: " << itemChangesList[i] << std::endl;
+                itemChangesList[i]->print();
+            }
             i++;
         }
         std::cout << "   current=" << current << std::endl;
@@ -258,23 +277,9 @@ public:
     ~OpenParEMg ();
 
     void closeEvent (QCloseEvent *event) override {
-
-        // if (lengthInputForm) {delete lengthInputForm; lengthInputForm=nullptr;}
-        // if (vectorInputForm) {delete vectorInputForm; vectorInputForm=nullptr;}
-        // if (lengthEditForm) {delete lengthEditForm; lengthEditForm=nullptr;}
-        // if (lineEditForm) {delete lineEditForm; lineEditForm=nullptr;}
-        // if (rectangleEditForm) {delete rectangleEditForm; rectangleEditForm=nullptr;}
-        // if (polycircleEditForm) {delete polycircleEditForm; polycircleEditForm=nullptr;}
-        // if (rotateInputForm) {delete rotateInputForm; rotateInputForm=nullptr;}
-
-        // on_actionExit_triggered();
-        // finishOperation(true,6000);
-        // event->ignore();
-
         close_event=event;
         closeWindow_triggered();
     }
-
 
     int check_changed ();
     void closeWindow_triggered ();
@@ -304,10 +309,6 @@ public:
                   long unsigned int &endBlockIndex, CustomTreeWidgetItem *, bool);
     bool saveDrawingFile (QString);
     bool loadDrawingFile ();
-    //bool menuAllHidden (CustomTreeWidgetItem *);
-    //bool menuAllShown (CustomTreeWidgetItem *);
-    //void meshShowEntities ();
-    //void meshHideEntities ();
     void drawMesh ();
     void deleteMesh (bool);
 
@@ -383,10 +384,10 @@ public:
     void convertToPolyline ();
 
     bool isValidConvertToPath ();
+    void convertItemToPath (CustomTreeWidgetItem *, bool);
     void convertToPath ();
 
     bool isValidExtrudePolywire ();
-    // void reextrudePolywire (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void finishExtrudePolywire (bool);
 
     void finishMoveObject (CustomTreeWidgetItem *, gp_Pnt p0, gp_Pnt p1, bool);
@@ -499,7 +500,7 @@ private slots:
     void renamePathItems ();
     void deletePathItems ();
     void showRootPathItems ();
-    bool isPathValidDelete ();
+    bool isValidDeletePath ();
     bool isValidShowPath ();
     void showPathItems ();
     bool rootPathValidShow ();

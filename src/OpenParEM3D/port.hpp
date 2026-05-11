@@ -928,8 +928,8 @@ class BoundaryDatabase
       void deletePath (Path *);
 #ifdef HAS_GUI
       void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
-      void draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
-      void draw_boundary (Relay *, Boundary *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
+      CustomTreeWidgetItem* draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
+      CustomTreeWidgetItem* draw_boundary (Relay *, Boundary *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
       //void crossLink ();
       void set_comboZdef ();
 #endif

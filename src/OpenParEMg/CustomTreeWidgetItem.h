@@ -43,6 +43,11 @@ public:
         process=nullptr;
         prior=nullptr;
         next=nullptr;
+
+        // for conversions
+        path=nullptr;
+        port=nullptr;
+        boundary=nullptr;
     }
 
     ShapeData (int type_,Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
@@ -55,6 +60,10 @@ public:
         setPolywire(polywire_);
         setProcess(process_);
         setShape(shape_);
+
+        path=nullptr;
+        port=nullptr;
+        boundary=nullptr;
     }
 
     ShapeData (ShapeData *shapeData)
@@ -67,6 +76,10 @@ public:
         setPolywire(shapeData->getPolywire());
         setProcess(shapeData->getProcess());
         setShape(shapeData->getShape());
+
+        path=nullptr;
+        port=nullptr;
+        boundary=nullptr;
     }
 
     ~ShapeData ()
@@ -103,6 +116,9 @@ public:
                 }
                 i++;
             }
+            newShapeData->path=path;
+            newShapeData->port=port;
+            newShapeData->boundary=boundary;
         }
         return newShapeData;
     }
@@ -139,6 +155,12 @@ public:
         setShape(shape_);
     }
 
+    void set (CustomTreeWidgetItem *path_, CustomTreeWidgetItem *port_, CustomTreeWidgetItem *boundary_) {
+        path=path_;
+        port=port_;
+        boundary=boundary_;
+    }
+
     void set (ShapeData *shapeData)
     {
         if (!shapeData) return;
@@ -148,6 +170,9 @@ public:
         setPolywire(shapeData->getPolywire());
         setProcess(shapeData->getProcess());
         setShape(shapeData->getShape());
+        path=shapeData->path;
+        port=shapeData->port;
+        boundary=shapeData->boundary;
     }
 
     void set (Handle(AIS_Shape) shape_)
@@ -160,6 +185,9 @@ public:
 
     Polywire* getPolywire () {return polywire;}
     Process* getProcess () {return process;}
+    CustomTreeWidgetItem* getPath () {return path;}
+    CustomTreeWidgetItem* getPort () {return port;}
+    CustomTreeWidgetItem* getBoundary () {return boundary;}
     Handle(AIS_Shape) getShape () {return shape;}
     long unsigned int getArrowHeadsSize () {return arrowHeads.size();}
     Handle(AIS_Shape) getArrowHead (long unsigned int i) {return arrowHeads[i];}
@@ -168,11 +196,17 @@ public:
     bool isCreate () {if (type == 1) return true; return false;}
     bool isEdit () {if (type == 2) return true; return false;}
     bool isDelete () {if (type == 3) return true; return false;}
+    bool isConvertToPath () {if (type == 4) return true; return false;}
+    bool isConvertToPort () {if (type == 5) return true; return false;}
+    bool isConvertToBoundary () {if (type == 6) return true; return false;}
 
     void setNoop () {type=0;}
     void setCreate () {type=1;}
     void setEdit () {type=2;}
     void setDelete () {type=3;}
+    void setConvertToPath () {type=4;}
+    void setConvertToPort () {type=5;}
+    void setConvertToBoundary () {type=6;}
 
     void setPrior (ShapeData *prior_) {prior=prior_;}
     void setNext (ShapeData *next_) {next=next_;}
@@ -187,6 +221,9 @@ public:
         if (isCreate()) std:: cout << "                  type=create" << std::endl;
         if (isEdit()) std:: cout << "                  type=edit" << std::endl;
         if (isDelete()) std::cout << "                  type=delete" << std::endl;
+        if (isConvertToPath()) std::cout << "                  type=convertToPath" << std::endl;
+        if (isConvertToPort()) std::cout << "                  type=convertToPort" << std::endl;
+        if (isConvertToBoundary()) std::cout << "                  type=convertToBoundary" << std::endl;
         if (shape.IsNull()) std::cout << "                  shape=null" << std::endl;
         else std::cout << "                  shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
         std::cout << "                  arrowHeadCount=" << arrowHeads.size() << std::endl;
@@ -194,16 +231,24 @@ public:
         std::cout << "                  process=" << process << std::endl;
         std::cout << "                  prior=" << prior << std::endl;
         std::cout << "                  next=" << next << std::endl;
+        std::cout << "                  path=" << path << std::endl;
+        std::cout << "                  port=" << port << std::endl;
+        std::cout << "                  boundary=" << boundary << std::endl;
     }
 
 private:
-    int type;                                          // 0 - noop; 1 - create; 2 - edit; 3 - delete
+    int type;                                          // 0 - noop; 1 - create; 2 - edit; 3 - delete;
+                                                       // 4 - convert to path; 5 - convert to port; 6 - convert to boundary
     Handle(AIS_Shape) shape;                           // for drawing
     std::vector<Handle(AIS_Shape)> arrowHeads;         // for integration lines to show direction
     Polywire *polywire;                                // Polywire object for this item
     Process *process;                                  // for drawing processing of children
     ShapeData *prior;                                  // prior ShapeData in ShapeDataStack
     ShapeData *next;                                   // next ShapeData in ShapeDataStack
+
+    CustomTreeWidgetItem *path;                        // for conversions from drawing to path, port, or boundary items
+    CustomTreeWidgetItem *port;
+    CustomTreeWidgetItem *boundary;
 };
 
 class ShapeDataStack
@@ -261,6 +306,11 @@ public:
         current->set(shapeData_);
     }
 
+    void set (CustomTreeWidgetItem *path, CustomTreeWidgetItem *port, CustomTreeWidgetItem *boundary)
+    {
+        current->set(path,port,boundary);
+    }
+
     void setType (int type_)
     {
         current->setType(type_);
@@ -307,6 +357,24 @@ public:
     Process* getProcess ()
     {
         if (current) return current->getProcess();
+        return nullptr;
+    }
+
+    CustomTreeWidgetItem* getPath ()
+    {
+        if (current) return current->getPath();
+        return nullptr;
+    }
+
+    CustomTreeWidgetItem* getPort ()
+    {
+        if (current) return current->getPort();
+        return nullptr;
+    }
+
+    CustomTreeWidgetItem* getBoundary ()
+    {
+        if (current) return current->getBoundary();
         return nullptr;
     }
 
@@ -369,6 +437,29 @@ public:
         current=nullptr;
     }
 
+    void pop ()
+    {
+        if (current == shapeDataList[shapeDataList.size()-1]) {
+            long unsigned int i=0;
+            while (i < shapeDataList.size()) {
+                if (shapeDataList[i]->getNext() == current) {
+                    shapeDataList[i]->setNext(nullptr);
+                }
+                if (shapeDataList[i]->getPrior() == current) {
+                    shapeDataList[i]->setPrior(nullptr);
+                }
+                i++;
+            }
+
+            if (shapeDataList[shapeDataList.size()-1]) {
+                delete shapeDataList[shapeDataList.size()-1];
+                shapeDataList[shapeDataList.size()-1]=nullptr;
+            }
+            shapeDataList.pop_back();
+            current=shapeDataList[shapeDataList.size()-1];
+        }
+    }
+
     void print ()
     {
         std::cout << "            ShapeDataStack: " << this << std::endl;
@@ -427,6 +518,7 @@ public:
 
     void undo () {dataStack.undo();}
     void redo () {dataStack.redo();}
+    void pop () {dataStack.pop();}
 
     void set_Material (QString material_) {material=material_;}
     QString get_Material () {return material;}
