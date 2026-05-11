@@ -9753,7 +9753,7 @@ void BoundaryDatabase::renamePath (std::string from, std::string to)
 
 void BoundaryDatabase::deletePath (Path *path)
 {
-    std::cout << "BoundaryDatabase::deletePath" << std::endl; std::cout.flush();
+    //std::cout << "BoundaryDatabase::deletePath" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < pathList.size()) {

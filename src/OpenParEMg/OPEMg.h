@@ -127,13 +127,7 @@ public:
         if (current) {
             if (current->getNext()) return true;
         } else {
-            int count=0;
-            long unsigned int i=0;
-            while (i < itemChangesList.size()) {
-                if (itemChangesList[i]) count++;
-                i++;
-            }
-            if (count > 0) return true;
+            if (itemChangesList.size() > 0) return true;
         }
 
         return false;

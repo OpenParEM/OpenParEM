@@ -4712,7 +4712,7 @@ void OpenParEMg::convertItemToPath (CustomTreeWidgetItem *item, bool saveForUndo
     //xxx
     // remove existing item from the drawing
 
-    if (saveForUndoRedo) itemChangesStack.startNew();
+    //if (saveForUndoRedo) itemChangesStack.startNew();
 
     // remove the old version from display and tracking
     ui->drawingWindow->hideItem(item);
@@ -4744,6 +4744,8 @@ void OpenParEMg::convertItemToPath (CustomTreeWidgetItem *item, bool saveForUndo
 
 void OpenParEMg::convertToPath ()
 {
+    itemChangesStack.startNew();
+
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
