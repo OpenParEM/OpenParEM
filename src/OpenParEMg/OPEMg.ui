@@ -193,8 +193,6 @@
     <property name="title">
      <string>Select</string>
     </property>
-    <addaction name="actionSelectEdge"/>
-    <addaction name="actionSelectWire"/>
     <addaction name="actionSelectFace"/>
     <addaction name="actionSelectWithBox2"/>
    </widget>
@@ -565,11 +563,6 @@
     <string>Set to Face with Axis</string>
    </property>
   </action>
-  <action name="actionSelectEdge">
-   <property name="text">
-    <string>Edge</string>
-   </property>
-  </action>
   <action name="actionSelectFace">
    <property name="text">
     <string>Face</string>
@@ -578,11 +571,6 @@
   <action name="actionSelectWithBox2">
    <property name="text">
     <string>Select with Box</string>
-   </property>
-  </action>
-  <action name="actionSelectWire">
-   <property name="text">
-    <string>Wire</string>
    </property>
   </action>
   <action name="actionUndo">

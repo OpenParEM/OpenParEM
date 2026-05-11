@@ -574,8 +574,6 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionUnselectAll->setEnabled(true);
         ui->actionShowAll->setEnabled(true);
         ui->actionHideAll->setEnabled(true);
-        ui->actionSelectEdge->setEnabled(false);
-        ui->actionSelectWire->setEnabled(false);
         ui->actionSelectFace->setEnabled(false);
         ui->actionSelectWithBox2->setEnabled(false);
         ui->actionDrawLine->setEnabled(true);
@@ -643,8 +641,6 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionFitSelected->setEnabled(false);
         ui->actionFitAll->setEnabled(false);
         ui->actionMenuSelection->setEnabled(false);
-        ui->actionSelectEdge->setEnabled(false);
-        ui->actionSelectWire->setEnabled(false);
         ui->actionSelectFace->setEnabled(false);
         ui->actionSelectWithBox2->setEnabled(false);
         ui->actionUnselectAll->setEnabled(false);
@@ -659,8 +655,6 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionFitSelected->setEnabled(true);
             ui->actionFitAll->setEnabled(true);
             ui->actionMenuSelection->setEnabled(true);
-            ui->actionSelectEdge->setEnabled(true);
-            ui->actionSelectWire->setEnabled(true);
             ui->actionSelectFace->setEnabled(true);
             ui->actionSelectWithBox2->setEnabled(true);
             ui->actionUnselectAll->setEnabled(true);
@@ -755,8 +749,6 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionFitSelected->setEnabled(false);
         ui->actionFitAll->setEnabled(false);
         ui->actionMenuSelection->setEnabled(false);
-        ui->actionSelectEdge->setEnabled(false);
-        ui->actionSelectWire->setEnabled(false);
         ui->actionSelectFace->setEnabled(false);
         ui->actionSelectWithBox2->setEnabled(false);
         ui->actionUnselectAll->setEnabled(false);
@@ -2890,56 +2882,59 @@ bool OpenParEMg::isValidCreatePath ()
 
 void OpenParEMg::createPath ()
 {
-    std::cout << "OpenParEMg::createPath  NbSelected=" << ui->drawingWindow->NbSelected() << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::createPath  NbSelected=" << ui->drawingWindow->NbSelected() << std::endl; std::cout.flush();
 
-    int count=0;
-    while (count < ui->drawingWindow->NbSelected()) {
+    int i=0;
+    while (i < ui->drawingWindow->NbSelected()) {
+        TopoDS_Shape selectedShape=ui->drawingWindow->get_selectedSubshape(i);
+        if (selectedShape.ShapeType() == TopAbs_FACE) {
 
-        // default path name
+            // default path name
 
-        std::string pathName="p";
+            std::string pathName="path";
+            pathName.append(std::to_string(path.childCount()+1));
 
-        int i=1;
-        while (boundaryDatabase->pathNameExists(pathName)) {
-            std::string testName=pathName;
-            testName.append("_").append(std::to_string(i));
-            if (boundaryDatabase->pathNameExists(testName)) {i++;}
-            else {pathName=testName; break;}
+            int i=1;
+            while (boundaryDatabase->pathNameExists(pathName)) {
+                std::string testName=pathName;
+                testName.append("_").append(std::to_string(i));
+                if (boundaryDatabase->pathNameExists(testName)) {i++;}
+                else {pathName=testName; break;}
+            }
+
+            // path name placed in a keywordPair
+            keywordPair *kwPathName=new keywordPair();
+            kwPathName->set_keyword("path");
+            kwPathName->set_value(pathName);
+            kwPathName->set_lineNumber(0);
+            kwPathName->set_loaded(true);
+
+            // path
+
+            Path *newPath=new Path(0,0);
+            newPath->set_name(pathName);
+            newPath->is_modified();
+            if (selectedShape.ShapeType() == TopAbs_FACE) newPath->addFacePoints(TopoDS::Face(selectedShape));
+            else if (selectedShape.ShapeType() == TopAbs_WIRE) newPath->addWirePoints(TopoDS::Wire(selectedShape));
+            else if (selectedShape.ShapeType () == TopAbs_EDGE) newPath->addEdgePoints(TopoDS::Edge(selectedShape));
+            newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
+
+            boundaryDatabase->push_path(newPath);
+
+            // save the items for later
+            CustomTreeWidgetItem *item=newPath->get_item();
+            if (item) insertToMapActivateItem(item);
+
+            // see if the path is within an existing port
+            Port *port=boundaryDatabase->get_matchingPort(newPath);
+            if (port) newPath->set_portItem(port->get_item());
         }
-
-        // path name placed in a keywordPair
-        keywordPair *kwPathName=new keywordPair();
-        kwPathName->set_keyword("path");
-        kwPathName->set_value(pathName);
-        kwPathName->set_lineNumber(0);
-        kwPathName->set_loaded(true);
-
-        // path
-
-        Path *newPath=new Path(0,0);
-        newPath->set_name(pathName);
-        newPath->is_modified();
-        TopoDS_Shape subshape=ui->drawingWindow->get_selectedSubshape(count);
-        if (subshape.ShapeType() == TopAbs_FACE) newPath->addFacePoints(TopoDS::Face(subshape));
-        else if (subshape.ShapeType() == TopAbs_WIRE) newPath->addWirePoints(TopoDS::Wire(subshape));
-        else if (subshape.ShapeType () == TopAbs_EDGE) newPath->addEdgePoints(TopoDS::Edge(subshape));
-        newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
-
-        boundaryDatabase->push_path(newPath);
-
-        // add new path to the drawing
-        CustomTreeWidgetItem *item=newPath->get_item();
-        if (item) insertToMapActivateItem(item);
-
-        // see if the path is within an existing port
-        Port *port=boundaryDatabase->get_matchingPort(newPath);
-        if (port) newPath->set_portItem(port->get_item());
-
-        count++;
+        i++;
     }
 
     ui->drawingWindow->setSubshapeSelection(false);
     on_actionShape_triggered();
+
     ui->drawingWindow->updateViewer();
     setMenusI(36);
 }
@@ -8070,18 +8065,6 @@ void OpenParEMg::on_actionAbortAndExit_triggered ()
     }
 
     QApplication::quit();
-}
-
-void OpenParEMg::on_actionSelectEdge_triggered ()
-{
-    on_actionEdge_triggered();
-    ui->drawingWindow->setSubshapeSelection(true);
-}
-
-void OpenParEMg::on_actionSelectWire_triggered()
-{
-    on_actionWire_triggered();
-    ui->drawingWindow->setSubshapeSelection(true);
 }
 
 void OpenParEMg::on_actionSelectFace_triggered ()

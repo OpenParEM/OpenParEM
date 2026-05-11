@@ -429,8 +429,6 @@ private slots:
     void on_actionWireframe_triggered();
 
     // Select
-    //void finishSelect ();
-    void on_actionSelectEdge_triggered ();
     void on_actionSelectFace_triggered ();
     void on_actionSelectWithBox2_triggered ();
 
@@ -626,7 +624,6 @@ private slots:
     void finishOperation (bool, int);
     void getPickedVertex (gp_Pnt, bool);
 
-    void on_actionSelectWire_triggered ();
     void on_actionUndo_triggered ();
     void on_actionRedo_triggered ();
 
