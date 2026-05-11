@@ -590,7 +590,9 @@ private slots:
     void createPortFromPath ();
     void createBoundaryFromFace ();
     void createBoundaryFromPath ();
+    void convertItemToPort (CustomTreeWidgetItem *, bool);
     void convertToPort ();
+    void convertItemToBoundary (CustomTreeWidgetItem *, bool);
     void convertToBoundary ();
     double getConversionFactor ();
     void extrudePolywire ();

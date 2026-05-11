@@ -546,7 +546,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    // itemChangesStack.print();
+    //itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
@@ -1892,15 +1892,6 @@ void OpenParEMg::deleteBoundaryItem (CustomTreeWidgetItem * item)
     ui->drawingWindow->updateViewer();
     setMenusI(24);
 }
-
-
-
-
-
-
-
-
-
 
 void OpenParEMg::showRootMeshItems ()
 {
@@ -4678,68 +4669,68 @@ void OpenParEMg::convertItemToPath (CustomTreeWidgetItem *item, bool saveForUndo
 {
     Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
 
-    // default path name
+        // default path name
 
-    std::string pathName="p";
+        std::string pathName=item->get_name().toStdString();
 
-    int i=1;
-    while (boundaryDatabase->pathNameExists(pathName)) {
-        std::string testName=pathName;
-        testName.append("_").append(std::to_string(i));
-        if (boundaryDatabase->pathNameExists(testName)) {i++;}
-        else {pathName=testName; break;}
-    }
+        int i=1;
+        while (boundaryDatabase->pathNameExists(pathName)) {
+            std::string testName=pathName;
+            testName.append("_").append(std::to_string(i));
+            if (boundaryDatabase->pathNameExists(testName)) {i++;}
+            else {pathName=testName; break;}
+        }
 
-    // path name placed in a keywordPair
-    keywordPair *kwPathName=new keywordPair();
-    kwPathName->set_keyword("path");
-    kwPathName->set_value(pathName);
-    kwPathName->set_lineNumber(0);
-    kwPathName->set_loaded(true);
+        // path name placed in a keywordPair
+        keywordPair *kwPathName=new keywordPair();
+        kwPathName->set_keyword("path");
+        kwPathName->set_value(pathName);
+        kwPathName->set_lineNumber(0);
+        kwPathName->set_loaded(true);
 
-    // path
+        // path
 
-    Path *newPath=new Path(0,0);
-    newPath->set_name(pathName);
-    newPath->is_modified();
-    newPath->set_normal(polywire->getNormal());
-    newPath->addWirePoints(polywire->buildWire());
-    newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
+        Path *newPath=new Path(0,0);
+        newPath->set_name(pathName);
+        newPath->is_modified();
+        newPath->set_normal(polywire->getNormal());
+        newPath->addWirePoints(polywire->buildWire());
+        newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
 
-    boundaryDatabase->push_path(newPath);
+        boundaryDatabase->push_path(newPath);
 
 
-    //xxx
-    // remove existing item from the drawing
+        //xxx
+        // remove existing item from the drawing
 
-    //if (saveForUndoRedo) itemChangesStack.startNew();
+        //if (saveForUndoRedo) itemChangesStack.startNew();
 
-    // remove the old version from display and tracking
-    ui->drawingWindow->hideItem(item);
-    ui->drawingWindow->removeItemFromMap(item);
-    ui->drawingWindow->deleteShape(item->getShape());
-    drawing.removeChild(item);
+        // remove the old version from display and tracking
+        ui->drawingWindow->hideItem(item);
+        ui->drawingWindow->removeItemFromMap(item);
+        ui->drawingWindow->deleteShape(item->getShape());
+        drawing.removeChild(item);
 
-    // clone the item onto itself for undo/redo
-    ShapeData *newShapeData=item->getShapeData()->copyCreate();
-    newShapeData->setConvertToPath();
-    item->addShapeData(newShapeData);
-    ui->drawingWindow->unselectItem(item);
-    if (saveForUndoRedo) itemChangesStack.add(item);
+        // clone the item onto itself for undo/redo
+        ShapeData *newShapeData=item->getShapeData()->copyCreate();
+        newShapeData->setConvertToPath();
+        item->addShapeData(newShapeData);
+        ui->drawingWindow->unselectItem(item);
+        if (saveForUndoRedo) itemChangesStack.add(item);
 
-    // add new path to the drawing
-    CustomTreeWidgetItem *pathItem=newPath->get_item();
-    if (pathItem) {
-        insertToMapActivateItem(pathItem);
-        pathItem->set_itemType(4);
-        newShapeData->set(pathItem,nullptr,nullptr);
-    }
+        // add new path to the drawing
+        CustomTreeWidgetItem *pathItem=newPath->get_item();
+        if (pathItem) {
+            insertToMapActivateItem(pathItem);
+            pathItem->set_itemType(4);
+            newShapeData->set(pathItem,nullptr,nullptr);
+        }
 
-    // see if the path is within an existing port
-    Port *port=boundaryDatabase->get_matchingPort(newPath);
-    if (port) newPath->set_portItem(port->get_item());
+        // see if the path is within an existing port
+        Port *port=boundaryDatabase->get_matchingPort(newPath);
+        if (port) newPath->set_portItem(port->get_item());
 
-    drawing.removeChild(item);
+        drawing.removeChild(item);
 }
 
 void OpenParEMg::convertToPath ()
@@ -5294,9 +5285,138 @@ bool OpenParEMg::isValidConvertToPort ()
     return false;
 }
 
+void OpenParEMg::convertItemToPort (CustomTreeWidgetItem *item, bool saveForUndoRedo)
+{
+    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
+
+    // path name
+
+    std::string pathName=item->get_name().toStdString();
+
+    int i=1;
+    while (boundaryDatabase->pathNameExists(pathName)) {
+        std::string testName=pathName;
+        testName.append("_").append(std::to_string(i));
+        if (boundaryDatabase->pathNameExists(testName)) {i++;}
+        else {pathName=testName; break;}
+    }
+
+    // path name placed in a keywordPair
+    keywordPair *kwPathName=new keywordPair();
+    kwPathName->set_keyword("path");
+    kwPathName->set_value(pathName);
+    kwPathName->set_lineNumber(0);
+    kwPathName->set_loaded(true);
+
+    // path
+
+    Path *newPath=new Path(0,0);
+    newPath->set_name(pathName);
+    newPath->is_modified();
+    newPath->set_normal(polywire->getNormal());
+    newPath->addWirePoints(polywire->buildWire());
+    newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
+
+    boundaryDatabase->push_path(newPath);
+
+
+    // remove existing item from the drawing
+
+    //if (saveForUndoRedo) itemChangesStack.startNew();
+
+    // remove the old version from display and tracking
+    ui->drawingWindow->hideItem(item);
+    ui->drawingWindow->removeItemFromMap(item);
+    ui->drawingWindow->deleteShape(item->getShape());
+    drawing.removeChild(item);
+
+    // clone the item onto itself for undo/redo
+    ShapeData *newShapeData=item->getShapeData()->copyCreate();
+    newShapeData->setConvertToPort();
+    item->addShapeData(newShapeData);
+    ui->drawingWindow->unselectItem(item);
+    if (saveForUndoRedo) itemChangesStack.add(item);
+
+    // add new path to the drawing
+    CustomTreeWidgetItem *pathItem=newPath->get_item();
+    std::cout << "1 pathItem=" << pathItem << std::endl; std::cout.flush();
+    if (pathItem) {
+        insertToMapActivateItem(pathItem);
+        pathItem->set_itemType(4);
+        newShapeData->set(pathItem,nullptr,nullptr);
+    }
+
+    // reset the top-level compound
+    //reprocess(&drawing);
+
+    // create new port
+
+    // next available s-port number
+    int sport=boundaryDatabase->get_SportCount()+1;
+
+    // default port name
+
+    std::string portName="port";
+    portName.append(std::to_string(sport));
+
+    i=1;
+    while (boundaryDatabase->portNameExists(portName)) {
+        std::string testName=portName;
+        testName.append("_").append(std::to_string(i));
+        if (boundaryDatabase->portNameExists(testName)) {i++;}
+        else {portName=testName; break;}
+    }
+
+    // default net name
+
+    std::string netName="net";
+    netName.append(std::to_string(sport));
+
+    i=1;
+    while (boundaryDatabase->netNameExists(netName)) {
+        std::string testName=netName;
+        testName.append("_").append(std::to_string(i));
+        if (boundaryDatabase->netNameExists(testName)) {i++;}
+        else {netName=testName; break;}
+    }
+
+    // port
+
+    Port *newPort=new Port(0,0);
+    newPort->set_name(portName);
+    newPort->set_outline(newPath);
+
+    // path info
+    newPort->push_path(kwPathName,boundaryDatabase->get_path_index(newPath),false);
+
+    // impedance
+    if (boundaryDatabase->get_portList_size() == 0) {
+        newPort->set_impedance_definition("PV");
+        newPort->set_impedance_calculation("line");
+    } else {
+        newPort->set_impedance_definition(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_definition());
+        newPort->set_impedance_calculation(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_calculation());
+    }
+
+    // must have at least one mode per port - default to sensible assumptions
+    Mode *newMode=new Mode(0,0,newPort->get_impedance_calculation());
+    newMode->set_net(netName);
+    newMode->set_Sport(sport);
+    newPort->push_mode(newMode);
+
+    // add to boundary database
+    boundaryDatabase->push_port(newPort);
+
+    // draw it
+    CustomTreeWidgetItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+    newShapeData->set(nullptr,newPortItem,nullptr);
+}
+
 void OpenParEMg::convertToPort ()
 {
     //std::cout << "OpenParEMg::convertToPort" << std::endl; std::cout.flush();
+
+    itemChangesStack.startNew();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -5306,135 +5426,17 @@ void OpenParEMg::convertToPort ()
             if (polywire) {
                 CustomTreeWidgetItem *parentItem=item->getParent();
                 if (parentItem && parentItem->is_rootDrawing()) {
-                    if (polywire->isClosed()) {
-
-                        // path name
-
-                        std::string pathName=item->get_name().toStdString();
-
-                        int i=1;
-                        while (boundaryDatabase->pathNameExists(pathName)) {
-                            std::string testName=pathName;
-                            testName.append("_").append(std::to_string(i));
-                            if (boundaryDatabase->pathNameExists(testName)) {i++;}
-                            else {pathName=testName; break;}
-                        }
-
-                        // path name placed in a keywordPair
-                        keywordPair *kwPathName=new keywordPair();
-                        kwPathName->set_keyword("path");
-                        kwPathName->set_value(pathName);
-                        kwPathName->set_lineNumber(0);
-                        kwPathName->set_loaded(true);
-
-                        // path
-
-                        Path *newPath=new Path(0,0);
-                        newPath->set_name(pathName);
-                        newPath->is_modified();
-                        newPath->set_normal(polywire->getNormal());
-                        newPath->addWirePoints(polywire->buildWire());
-                        newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
-
-                        boundaryDatabase->push_path(newPath);
-
-                        // add new path to the drawing
-                        CustomTreeWidgetItem *pathItem=newPath->get_item();
-                        if (pathItem) {
-                            insertToMapActivateItem(pathItem);
-                            pathItem->set_itemType(4);
-                        }
-
-                        // remove existing item from the drawing
-
-                        itemChangesStack.startNew();
-
-                        // remove the old version from display and tracking
-                        ui->drawingWindow->hideItem(item);
-                        ui->drawingWindow->removeItemFromMap(item);
-                        ui->drawingWindow->deleteShape(item->getShape());
-                        drawing.removeChild(item);
-
-                        // clone the item onto itself for undo/redo
-                        ShapeData *newShapeData=item->getShapeData()->copyCreate();
-                        newShapeData->setConvertToPort();
-                        item->addShapeData(newShapeData);
-                        ui->drawingWindow->unselectItem(item);
-                        itemChangesStack.add(item);
-
-                        // reset the top-level compound
-                        reprocess(&drawing);
-
-                        // create new port
-
-                        // next available s-port number
-                        int sport=boundaryDatabase->get_SportCount()+1;
-
-                        // default port name
-
-                        std::string portName="port";
-                        portName.append(std::to_string(sport));
-
-                        i=1;
-                        while (boundaryDatabase->portNameExists(portName)) {
-                            std::string testName=portName;
-                            testName.append("_").append(std::to_string(i));
-                            if (boundaryDatabase->portNameExists(testName)) {i++;}
-                            else {portName=testName; break;}
-                        }
-
-                        // default net name
-
-                        std::string netName="net";
-                        netName.append(std::to_string(sport));
-
-                        i=1;
-                        while (boundaryDatabase->netNameExists(netName)) {
-                            std::string testName=netName;
-                            testName.append("_").append(std::to_string(i));
-                            if (boundaryDatabase->netNameExists(testName)) {i++;}
-                            else {netName=testName; break;}
-                        }
-
-                        // port
-
-                        Port *newPort=new Port(0,0);
-                        newPort->set_name(portName);
-                        newPort->set_outline(newPath);
-
-                        // path info
-                        newPort->push_path(kwPathName,boundaryDatabase->get_path_index(newPath),false);
-
-                        // impedance
-                        if (boundaryDatabase->get_portList_size() == 0) {
-                            newPort->set_impedance_definition("PV");
-                            newPort->set_impedance_calculation("line");
-                        } else {
-                            newPort->set_impedance_definition(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_definition());
-                            newPort->set_impedance_calculation(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_calculation());
-                        }
-
-                        // must have at least one mode per port - default to sensible assumptions
-                        Mode *newMode=new Mode(0,0,newPort->get_impedance_calculation());
-                        newMode->set_net(netName);
-                        newMode->set_Sport(sport);
-                        newPort->push_mode(newMode);
-
-                        // add to boundary database
-                        boundaryDatabase->push_port(newPort);
-
-                        // draw it
-                        CustomTreeWidgetItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
-                        newShapeData->set(nullptr,newPortItem,nullptr);
-                    }
+                    if (polywire->isClosed()) convertItemToPort(item,true);
                 }
             }
         }
         i++;
     }
 
+    // for face selection
     ui->drawingWindow->setSubshapeSelection(false);
     on_actionShape_triggered();
+
     setMenusI(37);
     ui->drawingWindow->updateViewer();
 }
@@ -5444,9 +5446,107 @@ bool OpenParEMg::isValidConvertToBoundary ()
     return isValidConvertToPort();
 }
 
+void OpenParEMg::convertItemToBoundary (CustomTreeWidgetItem *item, bool saveForUndoRedo)
+{
+    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
+
+    // path name
+
+    std::string pathName=item->get_name().toStdString();
+
+    int i=1;
+    while (boundaryDatabase->pathNameExists(pathName)) {
+        std::string testName=pathName;
+        testName.append("_").append(std::to_string(i));
+        if (boundaryDatabase->pathNameExists(testName)) {i++;}
+        else {pathName=testName; break;}
+    }
+
+    // path name placed in a keywordPair
+    keywordPair *kwPathName=new keywordPair();
+    kwPathName->set_keyword("path");
+    kwPathName->set_value(pathName);
+    kwPathName->set_lineNumber(0);
+    kwPathName->set_loaded(true);
+
+    // path
+
+    Path *newPath=new Path(0,0);
+    newPath->set_name(pathName);
+    newPath->is_modified();
+    newPath->set_normal(polywire->getNormal());
+    newPath->addWirePoints(polywire->buildWire());
+    newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
+
+    boundaryDatabase->push_path(newPath);
+
+    // remove existing item from the drawing
+
+    //itemChangesStack.startNew();
+
+    // remove the old version from display and tracking
+    ui->drawingWindow->hideItem(item);
+    ui->drawingWindow->removeItemFromMap(item);
+    ui->drawingWindow->deleteShape(item->getShape());
+    drawing.removeChild(item);
+
+    // clone the item onto itself for undo/redo
+    ShapeData *newShapeData=item->getShapeData()->copyCreate();
+    newShapeData->setConvertToBoundary();
+    item->addShapeData(newShapeData);
+    ui->drawingWindow->unselectItem(item);
+    if (saveForUndoRedo) itemChangesStack.add(item);
+
+    // add new path to the drawing
+    CustomTreeWidgetItem *pathItem=newPath->get_item();
+    if (pathItem) {
+        insertToMapActivateItem(pathItem);
+        pathItem->set_itemType(4);
+        newShapeData->set(pathItem,nullptr,nullptr);
+    }
+
+    // reset the top-level compound
+    //reprocess(&drawing);
+
+    // default boundary name
+
+    std::string boundaryName="boundary";
+    boundaryName.append(std::to_string(boundary.childCount()+1));
+
+    i=1;
+    while (boundaryDatabase->boundaryNameExists(boundaryName)) {
+        std::string testName=boundaryName;
+        testName.append("_").append(std::to_string(i));
+        if (boundaryDatabase->boundaryNameExists(testName)) {i++;}
+        else {boundaryName=testName; break;}
+    }
+
+    // boundary
+
+    Boundary *newBoundary=new Boundary(0,0);
+    newBoundary->set_name(boundaryName);
+    newBoundary->set_outline(newPath);
+
+    // default to radiation in free space
+    newBoundary->set_type("radiation");
+    newBoundary->set_wave_impedance(sqrt(4.0e-7*M_PI/8.8541878176e-12));  // free-space value
+
+    // path info
+    newBoundary->push_path(kwPathName,boundaryDatabase->get_path_index(newPath),false);
+
+    // add to boundary database
+    boundaryDatabase->push_boundary(newBoundary);
+
+    // draw it
+    CustomTreeWidgetItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
+    newShapeData->set(nullptr,nullptr,newBoundaryItem);
+}
+
 void OpenParEMg::convertToBoundary ()
 {
     //std::cout << "OpenParEMg::convertToBoundary" << std::endl; std::cout.flush();
+
+    itemChangesStack.startNew();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -5456,91 +5556,17 @@ void OpenParEMg::convertToBoundary ()
             if (polywire) {
                 CustomTreeWidgetItem *parentItem=item->getParent();
                 if (parentItem && parentItem->is_rootDrawing()) {
-                    if (polywire->isClosed()) {
-
-                        // path name
-
-                        std::string pathName=item->get_name().toStdString();
-
-                        int i=1;
-                        while (boundaryDatabase->pathNameExists(pathName)) {
-                            std::string testName=pathName;
-                            testName.append("_").append(std::to_string(i));
-                            if (boundaryDatabase->pathNameExists(testName)) {i++;}
-                            else {pathName=testName; break;}
-                        }
-
-                        // path name placed in a keywordPair
-                        keywordPair *kwPathName=new keywordPair();
-                        kwPathName->set_keyword("path");
-                        kwPathName->set_value(pathName);
-                        kwPathName->set_lineNumber(0);
-                        kwPathName->set_loaded(true);
-
-                        // path
-
-                        Path *newPath=new Path(0,0);
-                        newPath->set_name(pathName);
-                        newPath->is_modified();
-                        newPath->set_normal(polywire->getNormal());
-                        newPath->addWirePoints(polywire->buildWire());
-                        newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
-
-                        boundaryDatabase->push_path(newPath);
-
-                        // add new path to the drawing
-                        CustomTreeWidgetItem *pathItem=newPath->get_item();
-                        if (pathItem) {
-                            insertToMapActivateItem(pathItem);
-                            pathItem->set_itemType(4);
-                        }
-
-                        // remove existing item from the drawing
-                        ui->drawingWindow->hideItem(item);
-                        ui->drawingWindow->removeItemFromMap(item);
-                        ui->drawingWindow->deleteShape(item->getShape());
-                        drawing.removeChild(item);
-
-                        // default boundary name
-
-                        std::string boundaryName="boundary";
-                        boundaryName.append(std::to_string(boundary.childCount()+1));
-
-                        i=1;
-                        while (boundaryDatabase->boundaryNameExists(boundaryName)) {
-                            std::string testName=boundaryName;
-                            testName.append("_").append(std::to_string(i));
-                            if (boundaryDatabase->boundaryNameExists(testName)) {i++;}
-                            else {boundaryName=testName; break;}
-                        }
-
-                        // boundary
-
-                        Boundary *newBoundary=new Boundary(0,0);
-                        newBoundary->set_name(boundaryName);
-                        newBoundary->set_outline(newPath);
-
-                        // default to radiation in free space
-                        newBoundary->set_type("radiation");
-                        newBoundary->set_wave_impedance(sqrt(4.0e-7*M_PI/8.8541878176e-12));  // free-space value
-
-                        // path info
-                        newBoundary->push_path(kwPathName,boundaryDatabase->get_path_index(newPath),false);
-
-                        // add to boundary database
-                        boundaryDatabase->push_boundary(newBoundary);
-
-                        // draw it
-                        boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
-                    }
+                    if (polywire->isClosed()) convertItemToBoundary(item,true);
                 }
             }
         }
         i++;
     }
 
+    // for face selection
     ui->drawingWindow->setSubshapeSelection(false);
     on_actionShape_triggered();
+
     setMenusI(37);
     ui->drawingWindow->updateViewer();
 }
@@ -9038,11 +9064,87 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
             }
         }
     } else if (shapeData->isConvertToPort()) {
+        CustomTreeWidgetItem *portItem=item->getShapeData()->getPort();
+        if (portItem) {
 
+            if (portItem->linkedItems_size() > 0) {
+                CustomTreeWidgetItem *pathItem=portItem->get_linkedItem(0);
 
+                // remove the port
+                deletePortItem(portItem);
+
+                if (pathItem) {
+                    if (pathItem->linkedItems_size() == 0) {
+
+                        // remove the path
+                        boundaryDatabase->deletePath((Path *)pathItem->get_OPEMobject());
+                        ui->drawingWindow->deleteItem(pathItem);
+
+                        // put the converted shape back
+
+                        drawing.addChild(item);
+
+                        //reprocess(item);
+                        ui->drawingWindow->unselectItem(item);
+                        ShapeData *shapeData=item->getShapeData();
+                        if (shapeData) shapeData->set(nullptr,nullptr,nullptr);
+
+                        item->undo();
+                        findShowTopLevelItem(item,false);
+                    } else {
+                        QMessageBox mb;
+                        QString text="Path \"";
+                        text.append(pathItem->get_name());
+                        text.append("\" cannot be removed because it is in use.");
+                        mb.setText(text);
+                        mb.setStandardButtons(QMessageBox::Ok);
+                        mb.setDefaultButton(QMessageBox::Ok);
+                        mb.exec();
+                    }
+                }
+            }
+        }
     } else if (shapeData->isConvertToBoundary()) {
+        CustomTreeWidgetItem *boundaryItem=item->getShapeData()->getBoundary();
+        if (boundaryItem) {
 
+            if (boundaryItem->linkedItems_size() > 0) {
+                CustomTreeWidgetItem *pathItem=boundaryItem->get_linkedItem(0);
 
+                // remove the port
+                deleteBoundaryItem(boundaryItem);
+
+                if (pathItem) {
+                    if (pathItem->linkedItems_size() == 0) {
+
+                        // remove the path
+                        boundaryDatabase->deletePath((Path *)pathItem->get_OPEMobject());
+                        ui->drawingWindow->deleteItem(pathItem);
+
+                        // put the converted shape back
+
+                        drawing.addChild(item);
+
+                        //reprocess(item);
+                        ui->drawingWindow->unselectItem(item);
+                        ShapeData *shapeData=item->getShapeData();
+                        if (shapeData) shapeData->set(nullptr,nullptr,nullptr);
+
+                        item->undo();
+                        findShowTopLevelItem(item,false);
+                    } else {
+                        QMessageBox mb;
+                        QString text="Path \"";
+                        text.append(pathItem->get_name());
+                        text.append("\" cannot be removed because it is in use.");
+                        mb.setText(text);
+                        mb.setStandardButtons(QMessageBox::Ok);
+                        mb.setDefaultButton(QMessageBox::Ok);
+                        mb.exec();
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -9151,7 +9253,11 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
         item->getParent()->removeChild(item);
 
         findShowTopLevelItem(item,true);
-    } else if (next->isConvertToPath()) {
+    } else if (next->isConvertToPath() || next->isConvertToPort() || next->isConvertToBoundary()) {
+        bool isConvertToPath=next->isConvertToPath();
+        bool isConvertToPort=next->isConvertToPort();
+        bool isConvertToBoundary=next->isConvertToBoundary();
+
         ui->drawingWindow->hideItem(item);
         ui->drawingWindow->removeItemFromMap(item);
         //ui->drawingWindow->deleteShape(item->getShape());
@@ -9159,16 +9265,15 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
 
         item->redo();
 
+        // remove the shape data since it will get regenerated on conversion
         item->pop();
-        ItemChanges *next=itemChangesStack.getCurrentNext();
-        convertItemToPath(item,false);
-        itemChangesStack.setCurrentNext(next);
-    } else if (next->isConvertToPort()) {
 
-
-    } else if (next->isConvertToBoundary()) {
-
-
+        // convert
+        ItemChanges *currentNext=itemChangesStack.getCurrentNext();
+        if (isConvertToPath) {convertItemToPath(item,false);}
+        else if (isConvertToPort) {convertItemToPort(item,false);}
+        else if (isConvertToBoundary) {convertItemToBoundary(item,false);}
+        itemChangesStack.setCurrentNext(currentNext);
     }
 }
 

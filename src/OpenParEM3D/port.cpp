@@ -1555,6 +1555,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     boundaryWidgetItem->addChild(itemName);
     itemName->set_OPEMobject(this);
+    set_item(itemName);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
     Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
