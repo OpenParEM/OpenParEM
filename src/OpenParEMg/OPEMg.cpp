@@ -2914,9 +2914,7 @@ void OpenParEMg::createPath ()
             Path *newPath=new Path(0,0);
             newPath->set_name(pathName);
             newPath->is_modified();
-            if (selectedShape.ShapeType() == TopAbs_FACE) newPath->addFacePoints(TopoDS::Face(selectedShape));
-            else if (selectedShape.ShapeType() == TopAbs_WIRE) newPath->addWirePoints(TopoDS::Wire(selectedShape));
-            else if (selectedShape.ShapeType () == TopAbs_EDGE) newPath->addEdgePoints(TopoDS::Edge(selectedShape));
+            newPath->addFacePoints(TopoDS::Face(selectedShape));
             newPath->create_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
 
             boundaryDatabase->push_path(newPath);
@@ -4974,7 +4972,9 @@ void OpenParEMg::createPortFromFace ()
                 boundaryDatabase->push_port(newPort);
 
                 // draw it
-                boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+                CustomTreeWidgetItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+                port.setExpanded(true);
+                newPortItem->setExpanded(true);
             }
         }
         i++;
@@ -5083,7 +5083,9 @@ void OpenParEMg::createPortFromPath ()
                     boundaryDatabase->push_port(newPort);
 
                     // draw it
-                    boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+                    CustomTreeWidgetItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+                    port.setExpanded(true);
+                    newPortItem->setExpanded(true);
                 }
             }
         }
@@ -5178,7 +5180,9 @@ void OpenParEMg::createBoundaryFromFace ()
                 boundaryDatabase->push_boundary(newBoundary);
 
                 // draw it
-                boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
+                CustomTreeWidgetItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
+                boundary.setExpanded(true);
+                newBoundaryItem->setExpanded(true);
             }
         }
         i++;
@@ -5244,7 +5248,9 @@ void OpenParEMg::createBoundaryFromPath ()
                     boundaryDatabase->push_boundary(newBoundary);
 
                     // draw it
-                    boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
+                    CustomTreeWidgetItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
+                    boundary.setExpanded(true);
+                    newBoundaryItem->setExpanded(true);
                 }
             }
         }
@@ -5405,6 +5411,8 @@ void OpenParEMg::convertItemToPort (CustomTreeWidgetItem *item, bool saveForUndo
     // draw it
     CustomTreeWidgetItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
     newShapeData->set(nullptr,newPortItem,nullptr);
+    port.setExpanded(true);
+    newPortItem->setExpanded(true);
 }
 
 void OpenParEMg::convertToPort ()
@@ -5535,6 +5543,8 @@ void OpenParEMg::convertItemToBoundary (CustomTreeWidgetItem *item, bool saveFor
     // draw it
     CustomTreeWidgetItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
     newShapeData->set(nullptr,nullptr,newBoundaryItem);
+    boundary.setExpanded(true);
+    newBoundaryItem->setExpanded(true);
 }
 
 void OpenParEMg::convertToBoundary ()
@@ -8380,11 +8390,10 @@ void OpenParEMg::finishDraw ()
     activePolywire->setDrawEnable(false);
 
     if (isIntegrationPath) {
-        std::cout << "   isIntegrationPath" << std::endl; std::cout.flush();
 
         // default path name
 
-        std::string pathName="p";
+        std::string pathName=integrationPathName.toStdString();
 
         int i=1;
         while (boundaryDatabase->pathNameExists(pathName)) {
@@ -8483,6 +8492,12 @@ void OpenParEMg::drawPath ()
                 // port parent
                 CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)modeParentItem->QTreeWidgetItem::parent();
 
+                // name for the integration path
+                if (item->is_voltage()) integrationPathName="v";
+                if (item->is_current()) integrationPathName="i";
+                integrationPathName.append(QString::number(port.childCount()));
+                integrationPathName.append(QString::number(portParentItem->childCount()-2));
+
                 // port shape
                 if (portParentItem->linkedItems_size() > 0) {
 
@@ -8494,7 +8509,6 @@ void OpenParEMg::drawPath ()
                     Path *portPath=(Path *)portItem->get_OPEMobject();
 
                     // select on vertices within the port path
-                    std::cout << "selectOnVertex  portPath=" << portPath << std::endl; std::cout.flush();
                     ui->drawingWindow->selectOnVertex(portPath);
 
                     // get the normal to apply to the drawn Path

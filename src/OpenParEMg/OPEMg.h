@@ -750,6 +750,7 @@ private:
     // drawing
     bool disableMenus;
     bool isIntegrationPath;
+    QString integrationPathName;
     bool restrictToDrawingPlane;
     bool skipDrawingPlaneAxisForm;
     gp_Pnt lastMousePosition;
