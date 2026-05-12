@@ -520,8 +520,14 @@ public:
     void setSingleSelection () {isSingleSelection=true;}
     void setSetToPlane (bool isSetToPlane_) {isSetToPlane=isSetToPlane_;}
 
-    std::vector<CustomTreeWidgetItem *> getVisibleDrawingItems (){
+    std::vector<CustomTreeWidgetItem *> getVisibleDrawingItems ()
+    {
         return drawingTracker->getVisibleDrawingItems();
+    }
+
+    void setShaded (Handle(AIS_Shape) shape)
+    {
+        viewerContext->SetDisplayMode(shape, AIS_Shaded, Standard_True);
     }
 
     void PrintAllActiveModes () {

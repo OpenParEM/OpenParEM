@@ -19,6 +19,7 @@ signals:
     void getCurrentMousePosition (gp_Pnt);
     void getPickedVertex (gp_Pnt, bool);
     void startPlaneSetToFace ();
+    void updateViewer ();
 };
 
 #endif // RELAY_H

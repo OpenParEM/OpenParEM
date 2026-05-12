@@ -1593,8 +1593,9 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     if (is_radiation()) comboType->setCurrentIndex(3);
     drawingItemTree->setItemWidget(itemType,0,comboType);
 
-    QObject::connect(comboType, &CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
+    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::setMenus);
+    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::updateViewer);
 
     // boundary type dependent data
 
@@ -7243,25 +7244,38 @@ void comboIndexChanged (int index, Port *port, Boundary *boundary, int type,
 
     // Boundary: type
     if (boundary && type == 2) {
+
+        // for setting fill color and transparency
+        Handle(AIS_Shape) shape;
+        CustomTreeWidgetItem *item=boundary->get_item();
+        if (item && item->linkedItems_size() > 0) {
+            CustomTreeWidgetItem *pathItem=item->get_linkedItem(0);
+            if (pathItem) shape=pathItem->getShape();
+        }
+
         if (index == 0) {
             boundary->set_type("perfect_electric_conductor");
             if (itemMaterial) itemMaterial->setHidden(true);
             if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
+            if (!shape.IsNull()) shape->SetColor(Quantity_NOC_GREENYELLOW);  // X11 color wheel
         }
         if (index == 1) {
             boundary->set_type("perfect_magnetic_conductor");
             if (itemMaterial) itemMaterial->setHidden(true);
             if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
+            if (!shape.IsNull()) if (!shape.IsNull()) shape->SetColor(Quantity_NOC_CYAN);  // X11 color wheel
         }
         if (index == 2) {
             boundary->set_type("surface_impedance");
             if (itemMaterial) itemMaterial->setHidden(false);
             if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
+            if (!shape.IsNull()) if (!shape.IsNull()) shape->SetColor(Quantity_NOC_GOLDENROD);  // X11 color wheel
         }
         if (index == 3) {
             boundary->set_type("radiation");
             if (itemMaterial) itemMaterial->setHidden(true);
             if (itemWaveImpedance) itemWaveImpedance->setHidden(false);
+            if (!shape.IsNull()) if (!shape.IsNull()) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);  // X11 color wheel
         }
     }
 
@@ -9813,7 +9827,7 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData, CustomO
     // paths
     long unsigned int i=0;
     while (i < pathList.size()) {
-        pathList[i]->create_item(drawingWindow,pathTreeItem);
+        pathList[i]->create_wire_item(drawingWindow,pathTreeItem);
         i++;
     }
 

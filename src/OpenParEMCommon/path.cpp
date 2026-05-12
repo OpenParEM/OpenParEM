@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "path.hpp"
+#include <BRepBuilderAPI_MakeFace.hxx>
 
 #ifdef HAS_GUI
 #include <AIS_Shape.hxx>
@@ -2170,7 +2171,7 @@ void Path::addEdgePoints (TopoDS_Edge edge)
     points.push_back(point);
 }
 
-void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
+void Path::create_wire_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
 {
     item=new CustomTreeWidgetItem(0);
     item->set_itemType(4);
@@ -2245,6 +2246,27 @@ void Path::create_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem 
     }
 
     parentItem->addChild(item);
+}
+
+void Path::create_face_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
+{
+    item=new CustomTreeWidgetItem(0);
+    item->set_itemType(4);
+    item->set_OPEMobject(this);
+    item->setText(0,QString::fromStdString(get_name()));
+    item->setForeground(0,Qt::black);
+
+    TopoDS_Wire wire=create_TopoDS_Wire();
+    if (!wire.IsNull()) {
+        BRepBuilderAPI_MakeFace faceMaker(wire);
+        if (faceMaker.IsDone()) {
+            TopoDS_Face face=faceMaker.Face();
+            Handle(AIS_Shape) shape=new AIS_Shape(face);
+            ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,shape);
+            item->addShapeData(newShapeData);
+            parentItem->addChild(item);
+        }
+    }
 }
 
 #endif

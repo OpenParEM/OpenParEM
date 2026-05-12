@@ -306,11 +306,11 @@ public:
     void drawMesh ();
     void deleteMesh (bool);
 
-    bool isRootDrawingValidShow ();
-    bool isRootDrawingValidHide ();
+    bool isValidRootDrawingShow ();
+    bool isValidRootDrawingHide ();
 
 
-    bool isRootDrawingValidSelectAll ();
+    bool isValidRootDrawingSelectAll ();
 
     bool hasSelectedPaths ();
     void clearTreeSelection ();
@@ -478,16 +478,16 @@ private slots:
 
     // Functionality
 
-    void selectAllRootDrawingItems ();
+    void rootDrawingSelectAll ();
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
     void expand (CustomTreeWidgetItem *);
     void collapse (CustomTreeWidgetItem *);
     void expandAllItems ();
     void collapseAllItems ();
-    bool isDrawingValidShow ();
-    void showRootDrawingItems ();
+    bool isValidDrawingShow ();
+    void rootDrawingShow ();
     void showDrawingItems ();
-    void hideRootDrawingItems ();
+    void rootDrawingHide ();
     void hideDrawingItems ();
     void renamePathItems ();
     void deletePathItems ();
@@ -495,19 +495,23 @@ private slots:
     bool isValidDeletePath ();
     bool isValidShowPath ();
     void showPathItems ();
-    bool rootPathValidShow ();
+    bool isValidRootPathShow ();
     void hideRootPathItems ();
     bool isValidHidePath ();
     void hidePathItems ();
-    bool rootPathValidHide ();
-    void showRootPortItems ();
+    bool isValidRootPathHide ();
+    void rootPortHide ();
+    bool isValidRootPortShow ();
+    void rootPortShow ();
     void showPortItems ();
-    void hideRootPortItems ();
+    bool isValidRootPortHide ();
     void hidePortItems ();
 
     //xxx
-    void showRootBoundaryItems ();
-    void hideRootBoundaryItems ();
+    bool isValidRootBoundaryShow ();
+    void rootBoundaryShow ();
+    bool isValidRootBoundaryHide ();
+    void rootBoundaryHide ();
     void showBoundaryItems ();
     void hideBoundaryItems ();
     void unselectBoundaryItems ();
@@ -520,13 +524,13 @@ private slots:
 
     void showRootMeshItems ();
     void showMeshItems ();
-    bool rootMeshValidShow ();
+    bool isValidRootMeshShow ();
     void hideRootMeshItems ();
     void hideMeshItems ();
-    bool rootMeshValidHide ();
+    bool isValidRootMeshHide ();
     //void addSportNet ();
     void renameSportNet ();
-    bool deleteSportValid ();
+    bool isValidDeleteValid ();
     void deleteSportItem (CustomTreeWidgetItem *);
     void deleteSportItems ();
     void rename_returnPressed ();
@@ -609,7 +613,7 @@ private slots:
     void drawPath ();
     void drawLinePath ();
     void drawPolylinePath ();
-    bool insertActionValid ();
+    bool isValidInsertAction ();
     void insertSelectedPath ();
     void finishPolyline ();
     void deleteLastPoint ();
@@ -632,6 +636,7 @@ public slots:
     void setMenusI (int);
     void finishEditObject (bool);
     void startPlaneSetToFace ();
+    void updateViewer ();
 
 signals:
     void sendPnt (gp_Pnt);
