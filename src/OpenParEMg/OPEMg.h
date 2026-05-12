@@ -637,6 +637,8 @@ public slots:
     void finishEditObject (bool);
     void startPlaneSetToFace ();
     void updateViewer ();
+    void setShaded (Handle(AIS_Shape));
+    void convertPathToFace (CustomTreeWidgetItem *);
 
 signals:
     void sendPnt (gp_Pnt);

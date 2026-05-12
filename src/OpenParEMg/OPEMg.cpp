@@ -231,6 +231,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     connect(relay,&Relay::getPickedVertex,this,&OpenParEMg::getPickedVertex);
     connect(relay,&Relay::setMenus,this,&OpenParEMg::setMenus);
     connect(relay,&Relay::updateViewer,this,&OpenParEMg::updateViewer);
+    connect(relay,&Relay::convertPathToFace,this,&OpenParEMg::convertPathToFace);
+    connect(relay,&Relay::setShaded,this,&OpenParEMg::setShaded);
     connect(relay,&Relay::clearTreeSelection,this,&OpenParEMg::clearTreeSelection);
     connect(relay,&Relay::startPlaneSetToFace,this,&OpenParEMg::startPlaneSetToFace);
 
@@ -432,6 +434,43 @@ OpenParEMg::~OpenParEMg ()
 void OpenParEMg::updateViewer ()
 {
     ui->drawingWindow->updateViewer();
+}
+
+void OpenParEMg::setShaded (Handle(AIS_Shape) shape)
+{
+    if (shape.IsNull()) return;
+    ui->drawingWindow->setShaded(shape);
+}
+
+void OpenParEMg::convertPathToFace (CustomTreeWidgetItem *item)
+{
+    if (!item) return;
+    Handle(AIS_Shape) shape=item->getShape();
+    if (shape.IsNull()) return;
+
+    ui->drawingWindow->hideItem(item);
+    ui->drawingWindow->removeItemFromMap(item);
+    ui->drawingWindow->deleteShape(shape);
+
+    Path *path=static_cast<Path *>(item->get_OPEMobject());
+    if (path) {
+        TopoDS_Wire wire=path->create_TopoDS_Wire();
+        if (!wire.IsNull()) {
+            BRepBuilderAPI_MakeFace faceMaker(wire);
+            if (faceMaker.IsDone()) {
+                TopoDS_Face face=faceMaker.Face();
+                Handle(AIS_Shape) newShape=new AIS_Shape(face);
+                ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,newShape);
+                item->addShapeData(newShapeData);
+
+                ui->drawingWindow->showItem(item);
+                ui->drawingWindow->insertItemToMap(newShape,item);
+                ui->drawingWindow->displayShape(newShape);
+                ui->drawingWindow->activateItem(item);
+                //ui->drawingWindow->updateViewer();
+            }
+        }
+    }
 }
 
 int OpenParEMg::check_changed ()

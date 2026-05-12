@@ -527,7 +527,7 @@ public:
 
     void setShaded (Handle(AIS_Shape) shape)
     {
-        viewerContext->SetDisplayMode(shape, AIS_Shaded, Standard_True);
+        viewerContext->SetDisplayMode(shape,AIS_Shaded,Standard_True);
     }
 
     void PrintAllActiveModes () {

@@ -842,6 +842,13 @@ public:
     long unsigned int getChildrenSize () {return children.size();}
     CustomTreeWidgetItem* getChild (long unsigned int i) {return children[i];}
 
+    void convertPathToFace ()
+    {
+        Handle(AIS_Shape) shape=getShape();
+        if (shape.IsNull()) return;
+
+    }
+
 private slots:
 
 private:

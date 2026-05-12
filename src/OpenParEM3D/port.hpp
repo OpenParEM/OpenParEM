@@ -335,7 +335,6 @@ class IntegrationPath
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
       void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
-      //void crossLink (std::vector<Path *> *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -544,7 +543,6 @@ class Mode
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
       void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
-      //void crossLink (std::vector<Path *> *, CustomTreeWidgetItem *);
 #endif
 };
 
@@ -787,7 +785,6 @@ class Port
       void set_item (CustomTreeWidgetItem *item_) {item=item_;}
       CustomTreeWidgetItem* get_item () {return item;}
       void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
-      //void crossLink (std::vector<Path *> *);
       void set_comboZdef ();
 #endif
 };
@@ -930,7 +927,6 @@ class BoundaryDatabase
       void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
       CustomTreeWidgetItem* draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
       CustomTreeWidgetItem* draw_boundary (Relay *, Boundary *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
-      //void crossLink ();
       void set_comboZdef ();
 #endif
 };

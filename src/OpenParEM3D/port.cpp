@@ -1567,6 +1567,20 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
         if (child->get_OPEMobject() == path) {
             itemName->push_linkedItem(child);
             child->push_linkedItem(itemName);
+
+            emit relay->convertPathToFace(child);
+
+            //xxx
+            Handle(AIS_Shape) shape=child->getShape();
+            if (!shape.IsNull()) {
+                shape->SetTransparency(0);
+                shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+                if (is_perfect_electric_conductor()) shape->SetColor(Quantity_NOC_GREENYELLOW);
+                if (is_perfect_magnetic_conductor()) shape->SetColor(Quantity_NOC_CYAN);
+                if (is_surface_impedance()) shape->SetColor(Quantity_NOC_GOLDENROD);
+                if (is_radiation()) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
+                emit relay->setShaded(shape);
+            }
         }
         j++;
     }
@@ -2701,15 +2715,6 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, Cu
     QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,&textValueChanged);
     QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,relay,&Relay::setMenus);
 }
-
-// void IntegrationPath::crossLink (std::vector<Path *> *pathList, CustomTreeWidgetItem *portItem)
-// {
-//     long unsigned int i=0;
-//     while (i < pathIndexList.size()) {
-//         (*pathList)[pathIndexList[i]]->set_portItem(portItem);
-//         i++;
-//     }
-// }
 
 #endif
 
@@ -4419,15 +4424,6 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
         i++;
     }
 }
-
-// void Mode::crossLink (std::vector<Path *> *pathList, CustomTreeWidgetItem *portItem)
-// {
-//     long unsigned int i=0;
-//     while (i < integrationPathList.size()) {
-//         integrationPathList[i]->crossLink(pathList,portItem);
-//         i++;
-//     }
-// }
 
 #endif
 
@@ -7322,6 +7318,17 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
         if (child->get_OPEMobject() == path) {
             itemName->push_linkedItem(child);
             child->push_linkedItem(itemName);
+
+            emit relay->convertPathToFace(child);
+
+            //xxx
+            Handle(AIS_Shape) shape=child->getShape();
+            if (!shape.IsNull()) {
+                shape->SetColor(Quantity_NOC_MINTCREAM);
+                shape->SetTransparency(0.25);
+                shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+                emit relay->setShaded(shape);
+            }
         }
         j++;
     }
@@ -7384,17 +7391,6 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
         i++;
     }
 }
-
-// void Port::crossLink (std::vector<Path *> *pathList)
-// {
-//     if (outline) outline->set_portItem(item);
-
-//     long unsigned int i=0;
-//     while (i < modeList.size()) {
-//         modeList[i]->crossLink(pathList,item);
-//         i++;
-//     }
-// }
 
 void Port::set_comboZdef ()
 {
@@ -9878,15 +9874,6 @@ CustomTreeWidgetItem* BoundaryDatabase::draw_boundary (Relay *relay, Boundary *b
 //         i++;
 //     }
 //}
-
-// void BoundaryDatabase::crossLink ()
-// {
-//     long unsigned int i=0;
-//     while (i < portList.size()) {
-//         portList[i]->crossLink(&pathList);
-//         i++;
-//     }
-// }
 
 void BoundaryDatabase::set_comboZdef ()
 {
