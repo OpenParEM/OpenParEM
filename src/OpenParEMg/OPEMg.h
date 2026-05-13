@@ -602,6 +602,7 @@ private slots:
     void subtractSolids ();
 
     void loadMeshFile (QString);
+    void updateLogs ();
     void checkFinish ();
 
     void cancelDraw ();
@@ -630,6 +631,8 @@ private slots:
 
     void on_actionUndo_triggered ();
     void on_actionRedo_triggered ();
+
+    void handleLogUserScroll (int);
 
 public slots:
     void setMenus ();
@@ -778,6 +781,12 @@ private:
     // for undo/redo
     bool activeAction;            // shows whether a current action is active, such as move, stretch, edit, etc.
     ItemChangesStack itemChangesStack;
+
+    // for the logging tabs
+    bool logAutoScrollEnabled;
+    bool iterationAutoScrollEnabled;
+    bool dataAutoScrollEnabled;
+    qint64 logLastPos;
 
     // for closing
     QCloseEvent *close_event;

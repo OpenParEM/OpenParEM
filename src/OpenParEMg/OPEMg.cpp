@@ -65,7 +65,9 @@
 #include <QSlider>
 #include <QList>
 #include <QTreeWidgetItem>
+#include <QScrollArea>
 //#include <thread>
+#include <QTextBlock>
 
 #include "MeshOptions.h"
 #include "SimulateOptions.h"
@@ -189,11 +191,47 @@ std::vector<std::string> splitWhitespace(const std::string& input) {
     return result;
 }
 
+// top of file
+
 OpenParEMg::OpenParEMg (QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::OpenParEMg)
 {
     ui->setupUi(this);
+
+
+    // QScrollArea *scrollArea = new QScrollArea(this);
+
+    // // Take your existing central content widget and put it inside the scroll area
+    // scrollArea->setWidget(ui->centralwidget);
+
+    // // Ensure the scroll area content scales or retains its size
+    // scrollArea->setWidgetResizable(true);
+
+    // // Set the scroll area as the main window's view
+    // this->setCentralWidget(scrollArea);
+
+    // scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    // scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+    // // Now resizing safely shows scrollbars if the screen is too small
+    // //this->resize(800, 600);
+
+    // set the starting window size
+
+    int windowWidth=1550;
+    int windowHeight=900;
+
+    QScreen *screen=QGuiApplication::primaryScreen();
+    QSize maxAvailableSize=screen->availableSize();
+    int maxWidth=maxAvailableSize.width();
+    int maxHeight=maxAvailableSize.height();
+
+    if (windowWidth > maxWidth) windowWidth=maxWidth;
+    if (windowHeight > maxHeight) windowHeight=maxHeight;
+
+    //this->resize(windowWidth,windowHeight);
+
 
     MPI_PORT_COMM=nullptr;
     request=nullptr;
@@ -356,6 +394,19 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     drawing.addShapeData(newShapeData);
 
     /////////////////////////////////////////////////////////////////////////////
+    // logging tabs
+    /////////////////////////////////////////////////////////////////////////////
+
+    QFont monoFont=QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    monoFont.setPointSize(10);
+    ui->logText->setFont(monoFont);
+
+    logAutoScrollEnabled=true;
+    iterationAutoScrollEnabled=true;
+    dataAutoScrollEnabled=true;
+    connect(ui->logText->verticalScrollBar(),&QScrollBar::actionTriggered,this,&OpenParEMg::handleLogUserScroll);
+
+    /////////////////////////////////////////////////////////////////////////////
     // context menu for drawingWindow
     /////////////////////////////////////////////////////////////////////////////
 
@@ -370,11 +421,12 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
 
     /////////////////////////////////////////////////////////////////////////////
-    // timer or checking when OpenParEM3D finishes
+    // timer or checking when OpenParEM3D finishes and updating tabs with run data
     /////////////////////////////////////////////////////////////////////////////
 
     timer=new QTimer(this);
     connect(timer,&QTimer::timeout,this,&OpenParEMg::checkFinish);
+    connect(timer,&QTimer::timeout,this,&OpenParEMg::updateLogs);
 
     /////////////////////////////////////////////////////////////////////////////
     // misc
@@ -8031,6 +8083,10 @@ void OpenParEMg::on_actionRun_triggered ()
 
     // run OpenParEM3D
 
+    // clear the results in the tabs
+    ui->logText->clear();
+    logLastPos=0;
+
     char *project=nullptr;
     cstrFromQString (&project,projectFile);
 
@@ -9437,4 +9493,112 @@ void OpenParEMg::on_actionRedo_triggered ()
     setMenusI(3000);
 }
 
+void OpenParEMg::handleLogUserScroll (int action)
+{
+    Q_UNUSED(action);
+    QScrollBar *scrollBar=ui->logText->verticalScrollBar();
 
+    bool isAtBottom=false;
+    if (scrollBar->value() == scrollBar->maximum()) isAtBottom=true;
+
+    if (isAtBottom) {
+        logAutoScrollEnabled=true;
+    } else {
+        logAutoScrollEnabled=false;
+    }
+}
+
+//xxx
+void OpenParEMg::updateLogs ()
+{
+    // default log file name used throughout
+    QString logFile=projData.project_name;
+    logFile.append(".log");
+
+    // open thefile
+    QFile file(logFile);
+    if (file.exists()) {
+        if (QFileInfo(logFile).isFile()) {
+            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+        }
+    }
+
+    QScrollBar *sb =
+        ui->logText->verticalScrollBar();
+
+    bool atBottom =
+        (sb->value() >= sb->maximum() - 2);
+
+    file.seek(logLastPos);
+
+    QByteArray newData = file.readAll();
+
+    logLastPos = file.pos();
+
+    if (!newData.isEmpty())
+    {
+        QTextCursor cursor =
+            ui->logText->textCursor();
+
+        if (atBottom)
+            cursor.movePosition(QTextCursor::End);
+
+        cursor.insertText(QString::fromUtf8(newData));
+
+        if (atBottom)
+        {
+            ui->logText->setTextCursor(cursor);
+            ui->logText->ensureCursorVisible();
+        }
+    }
+
+
+
+
+   //  QScrollBar *scrollBar=ui->logText->verticalScrollBar();
+   //  //int oldValue=scrollBar->value();
+   // // bool atBottom=(oldValue >= scrollBar->maximum()-2);
+
+   //  bool atBottom=(scrollBar->value() >= scrollBar->maximum() - 2);
+
+   //  // Save current top visible block
+   //  QTextCursor cursor = ui->logText->cursorForPosition(QPoint(0,0));
+   //  int topBlock = cursor.blockNumber();
+
+
+   //  // block signals during file loading
+   //  {
+   //      QSignalBlocker blocker(scrollBar);
+   //      ui->logText->setPlainText(QString::fromUtf8(file.readAll()));
+   //      file.close();
+   //  }
+
+   //  if (atBottom)
+   //  {
+   //      scrollBar->setValue(scrollBar->maximum());
+   //  }
+   //  else
+   //  {
+   //      QTextBlock block =
+   //          ui->logText->document()->findBlockByNumber(topBlock);
+
+   //      QTextCursor c(block);
+   //      ui->logText->setTextCursor(c);
+   //      ui->logText->centerCursor();
+   //  }
+
+
+    // if (atBottom) {
+    //     scrollBar->setValue(scrollBar->maximum());
+    // } else {
+    //     scrollBar->setValue(oldValue);
+    // }
+
+    // if (logAutoScrollEnabled) {
+    //     scrollBar->setValue(scrollBar->maximum());
+    // } else {
+    //     scrollBar->setValue(logScrollValue);
+    // }
+}
+
+// end of file
