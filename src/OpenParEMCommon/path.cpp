@@ -19,7 +19,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "path.hpp"
-#include <BRepBuilderAPI_MakeFace.hxx>
 
 #ifdef HAS_GUI
 #include <AIS_Shape.hxx>
@@ -33,6 +32,7 @@
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include "CustomOpenGLWidget.h"
+#include <BRepBuilderAPI_MakeFace.hxx>
 #endif
 
 // angle between lines ptc,pt1 and ptc,pt2 (always positive)

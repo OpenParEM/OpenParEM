@@ -467,7 +467,6 @@ void OpenParEMg::convertPathToFace (CustomTreeWidgetItem *item)
                 ui->drawingWindow->insertItemToMap(newShape,item);
                 ui->drawingWindow->displayShape(newShape);
                 ui->drawingWindow->activateItem(item);
-                //ui->drawingWindow->updateViewer();
             }
         }
     }
@@ -8035,9 +8034,14 @@ void OpenParEMg::on_actionRun_triggered ()
     char *project=nullptr;
     cstrFromQString (&project,projectFile);
 
-    char** argv=(char **)malloc(2*sizeof(char *));
+    char *logfile=(char *)malloc((strlen(projData.project_name)+5)*sizeof(char));
+    sprintf(logfile,"%s.log",projData.project_name);
+
+    //char** argv=(char **)malloc(2*sizeof(char *));
+    char *argv[3];
     argv[0]=project;
-    argv[1]=nullptr;
+    argv[1]=logfile;
+    argv[2]=nullptr;
 
     int *error_codes=(int *)malloc(projData.gui_slot_count*sizeof(int));
 
@@ -8073,7 +8077,6 @@ void OpenParEMg::on_actionRun_triggered ()
         // send current path
         std::filesystem::path currentPath=std::filesystem::current_path();
         std::string projectPath=currentPath.string();
-        std::cout << "sending projectPath=" << projectPath << std::endl; std::cout.flush();
         int length=projectPath.length();
         int i=0;
         while (i < projData.gui_slot_count) {
@@ -8094,7 +8097,8 @@ void OpenParEMg::on_actionRun_triggered ()
     MPI_Errhandler_free(&errorHandler);
 
     if (project) free(project);
-    if (argv) free(argv);
+    if (logfile) free(logfile);
+    //if (argv) free(argv);
     if (error_codes) free(error_codes);
 }
 

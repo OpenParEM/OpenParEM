@@ -121,6 +121,12 @@ void help () {
    PetscPrintf(PETSC_COMM_WORLD,"       filename    : Filename of an OpenParEM setup file.\n");
    PetscPrintf(PETSC_COMM_WORLD,"\nOpenParEM3D is a full-wave 3D electromagnetic solver.\n");
    PetscPrintf(PETSC_COMM_WORLD,"Version %d.%d.%d\n",version_major,version_minor,version_patch);
+
+   // get the MPI version
+   char version_string[MPI_MAX_LIBRARY_VERSION_STRING];
+   int resultlen;
+   MPI_Get_library_version(version_string, &resultlen);
+   PetscPrintf(PETSC_COMM_WORLD,"%s\n",version_string);
 }
 
 bool print_mesh_quality_message (ParMesh *pmesh, struct projectData *projData)

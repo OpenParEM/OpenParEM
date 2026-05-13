@@ -255,10 +255,18 @@ wrap_executable() {
 
    echo "wrapping $1"
 
+   # executable to wrap
    PROG=$1
    BINPROG=$PROG.bin
 
+   # flag for processing for OPENMPI
    HAS_COMPILED_OPENMPI=$2
+
+   # delete the log file
+   REMOVE_LOGFILE=$3
+
+   # redirect stdout/stderr to a log file
+   TEST_REDIRECT=$4
 
    cd "$install_path/bin"
 
@@ -280,12 +288,36 @@ wrap_executable() {
       fi
 
       echo '' >> $PROG
+      if [ "$TEST_REDIRECT" = "1" ]; then
+         echo "# usage: $PROG [-h|--help] project_name log_file_name" >> $PROG
+         echo '#        project_name is required and requires an extension' >> $PROG
+         echo '#        log_file_name is optional' >> $PROG
+         echo '# ' >> $PROG
+         echo '# Output to the terminal is redirected to a log file, where' >> $PROG
+         echo "# the file name is either log_file_name or $PROG.log if log_file_name is not provided." >> $PROG
+         echo '# ' >> $PROG
+         echo '# If -h or --help are given, then a short help message is printed to the terminal' >> $PROG
+         echo '# followed by immediate exit.' >> $PROG
+      else
+         echo "# usage: $PROG file_name" >> $PROG
+         echo '#        file_name is required' >> $PROG
+      fi
+
+      echo '' >> $PROG
       echo "BINPROG=$BINPROG" >> $PROG
       echo 'BINPATH=$(which $BINPROG)' >> $PROG
       echo 'if [ "$BINPATH" = "" ]; then' >> $PROG
       echo '   echo "ERROR: Failed to locate $BINPROG."' >> $PROG
       echo '   exit 1' >> $PROG
       echo 'fi' >> $PROG
+
+      if [ "$TEST_REDIRECT" = "1" ]; then
+         echo '' >> $PROG
+         echo 'if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then' >> $PROG
+         echo '   $BINPROG "$1"' >> $PROG
+         echo '   exit 0' >> $PROG
+         echo 'fi' >> $PROG
+      fi
 
       echo 'OPEM=${BINPATH%/bin/$BINPROG}' >> $PROG
 
@@ -297,8 +329,44 @@ wrap_executable() {
       fi
       echo 'export OMP_NUM_THREADS=1' >> $PROG
 
+      # create a default log file name if one is not provided
+      # default is to remove any exension and add .log (aligned with OpenParEM3D)
       echo '' >> $PROG
-      echo '$BINPROG "$@"' >> $PROG
+      echo 'if [ "$2" = "" ]; then' >> $PROG
+      echo "   LOGFILE=\`expr \"\$1\" : '\\(.*\\)\\.[^.]*\$'\`.log" >> $PROG
+      echo 'else' >> $PROG
+      echo '   LOGFILE="$2"' >> $PROG
+      echo 'fi' >> $PROG
+      echo '' >> $PROG
+
+      if [ "$REMOVE_LOGFILE" = "1" ]; then
+         echo 'if [ -n "$OMPI_COMM_WORLD_RANK" ]; then' >> $PROG
+         echo '     # Open MPI' >> $PROG
+         echo '    RANK=$OMPI_COMM_WORLD_RANK' >> $PROG
+         echo 'elif [ -n "$PMI_RANK" ]; then' >> $PROG
+         echo '    # MPICH, Intel MPI, many PMI-based launchers' >> $PROG
+         echo '    RANK=$PMI_RANK' >> $PROG
+         echo 'elif [ -n "$MPI_RANKID" ]; then' >> $PROG
+         echo '    # Some older MPICH / platform MPI variants' >> $PROG
+         echo '    RANK=$MPI_RANKID' >> $PROG
+         echo 'elif [ -n "$SLURM_PROCID" ]; then' >> $PROG
+         echo '    # Slurm srun' >> $PROG
+         echo '    RANK=$SLURM_PROCID' >> $PROG
+         echo 'else' >> $PROG
+         echo '    RANK=0' >> $PROG
+         echo 'fi' >> $PROG
+         echo '' >> $PROG
+         echo 'if [ "$RANK" = "0" ]; then' >> $PROG
+         echo '   rm -f "$LOGFILE"' >> $PROG
+         echo 'fi' >> $PROG
+         echo '' >> $PROG
+      fi
+
+      if [ "$TEST_REDIRECT" = "1" ]; then
+         echo '$BINPROG "$1" >> "$LOGFILE" 2>&1' >> $PROG
+      else
+         echo '$BINPROG "$1"' >> $PROG
+      fi
 
       chmod u+x $PROG
       if [ $? -ne 0 ]; then
@@ -1992,13 +2060,13 @@ cd "$install_path/bin"
 cd "$scripts_dir"
 
 if [ "$with_OpenParEM" = "1" ]; then
-   wrap_executable builder $HAS_ORTERUN
-   wrap_executable OpenParEM2D $HAS_ORTERUN
-   wrap_executable process2D $HAS_ORTERUN
-   wrap_executable simplify2D $HAS_ORTERUN
-   wrap_executable OpenParEM3D $HAS_ORTERUN
-   wrap_executable process3D $HAS_ORTERUN
-   wrap_executable simplify3D $HAS_ORTERUN
+   wrap_executable builder $HAS_ORTERUN 0 0
+   wrap_executable OpenParEM2D $HAS_ORTERUN 0 1
+   wrap_executable process2D $HAS_ORTERUN 0 0
+   wrap_executable simplify2D $HAS_ORTERUN 0 0
+   wrap_executable OpenParEM3D $HAS_ORTERUN 1 1
+   wrap_executable process3D $HAS_ORTERUN 0 0
+   wrap_executable simplify3D $HAS_ORTERUN 0 0
 fi
 
 
@@ -2024,7 +2092,7 @@ fi
 if [ "$HAS_OPENMPI" = "1" ]; then 
    if [ "$HAS_ORTERUN" = "1" ]; then
       if [ "$HAS_ORTERUNBIN" = "0" ]; then
-         wrap_executable orterun $HAS_ORTERUN
+         wrap_executable orterun $HAS_ORTERUN 0 0
       fi
    else
       cd "$install_path/bin"
@@ -2054,7 +2122,7 @@ fi
 # wrapping for MPICH
 if [ "$HAS_MPICH" = "1" ]; then
    if [ "$HAS_MPIRUNBIN" = "0" ]; then
-      wrap_executable mpirun 0
+      wrap_executable mpirun 0 0 0
    fi
 fi
 

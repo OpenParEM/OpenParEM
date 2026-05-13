@@ -63,6 +63,5 @@ solution.iteration.limit 10000
 //debug.skip.forced.reciprocity false
 //debug.tempfiles.keep false
 //debug.refine.preconditioner 1
-gui.brep.file straight.brep
 //gui.slot.count 5
 gui.physical.group 3,1,air
