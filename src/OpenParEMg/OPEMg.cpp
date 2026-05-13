@@ -400,11 +400,10 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QFont monoFont=QFontDatabase::systemFont(QFontDatabase::FixedFont);
     monoFont.setPointSize(10);
     ui->logText->setFont(monoFont);
+    ui->iterationsText->setFont(monoFont);
+    ui->dataText->setFont(monoFont);
 
-    logAutoScrollEnabled=true;
-    iterationAutoScrollEnabled=true;
-    dataAutoScrollEnabled=true;
-    connect(ui->logText->verticalScrollBar(),&QScrollBar::actionTriggered,this,&OpenParEMg::handleLogUserScroll);
+    //connect(ui->logText->verticalScrollBar(),&QScrollBar::actionTriggered,this,&OpenParEMg::handleLogUserScroll);
 
     /////////////////////////////////////////////////////////////////////////////
     // context menu for drawingWindow
@@ -426,7 +425,9 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     timer=new QTimer(this);
     connect(timer,&QTimer::timeout,this,&OpenParEMg::checkFinish);
-    connect(timer,&QTimer::timeout,this,&OpenParEMg::updateLogs);
+    connect(timer,&QTimer::timeout,this,&OpenParEMg::updateLogTab);
+    connect(timer,&QTimer::timeout,this,&OpenParEMg::updateIterationsTab);
+    connect(timer,&QTimer::timeout,this,&OpenParEMg::updateDataTab);
 
     /////////////////////////////////////////////////////////////////////////////
     // misc
@@ -8086,6 +8087,8 @@ void OpenParEMg::on_actionRun_triggered ()
     // clear the results in the tabs
     ui->logText->clear();
     logLastPos=0;
+    iterationLastPos=0;
+    dataLastPos=0;
 
     char *project=nullptr;
     cstrFromQString (&project,projectFile);
@@ -9493,23 +9496,23 @@ void OpenParEMg::on_actionRedo_triggered ()
     setMenusI(3000);
 }
 
-void OpenParEMg::handleLogUserScroll (int action)
-{
-    Q_UNUSED(action);
-    QScrollBar *scrollBar=ui->logText->verticalScrollBar();
+// void OpenParEMg::handleLogUserScroll (int action)
+// {
+//     Q_UNUSED(action);
+//     QScrollBar *scrollBar=ui->logText->verticalScrollBar();
 
-    bool isAtBottom=false;
-    if (scrollBar->value() == scrollBar->maximum()) isAtBottom=true;
+//     bool isAtBottom=false;
+//     if (scrollBar->value() == scrollBar->maximum()) isAtBottom=true;
 
-    if (isAtBottom) {
-        logAutoScrollEnabled=true;
-    } else {
-        logAutoScrollEnabled=false;
-    }
-}
+//     if (isAtBottom) {
+//         logAutoScrollEnabled=true;
+//     } else {
+//         logAutoScrollEnabled=false;
+//     }
+// }
 
 //xxx
-void OpenParEMg::updateLogs ()
+void OpenParEMg::updateLogTab ()
 {
     // default log file name used throughout
     QString logFile=projData.project_name;
@@ -9523,82 +9526,110 @@ void OpenParEMg::updateLogs ()
         }
     }
 
-    QScrollBar *sb =
-        ui->logText->verticalScrollBar();
+    // get the current scroll bar location
+    QScrollBar *scrollBar=ui->logText->verticalScrollBar();
+    bool atBottom=(scrollBar->value() >= scrollBar->maximum() - 2);
 
-    bool atBottom =
-        (sb->value() >= sb->maximum() - 2);
-
+    // get new data that has been added to the file
     file.seek(logLastPos);
+    QByteArray newData=file.readAll();
+    logLastPos=file.pos();
 
-    QByteArray newData = file.readAll();
-
-    logLastPos = file.pos();
-
+    // load the new data
+    // set the cursor so the user can scroll up to view prior data
     if (!newData.isEmpty())
     {
-        QTextCursor cursor =
-            ui->logText->textCursor();
+        QTextCursor cursor=ui->logText->textCursor();
 
-        if (atBottom)
-            cursor.movePosition(QTextCursor::End);
+        if (atBottom) cursor.movePosition(QTextCursor::End);
 
         cursor.insertText(QString::fromUtf8(newData));
 
-        if (atBottom)
-        {
+        if (atBottom) {
             ui->logText->setTextCursor(cursor);
             ui->logText->ensureCursorVisible();
         }
     }
+}
 
+void OpenParEMg::updateIterationsTab ()
+{
+    // default iterations file name used throughout
+    QString iterationFile=projData.project_name;
+    iterationFile.append("_iterations.txt");
 
+    // open thefile
+    QFile file(iterationFile);
+    if (file.exists()) {
+        if (QFileInfo(iterationFile).isFile()) {
+            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+        }
+    }
 
+    // get the current scroll bar location
+    QScrollBar *scrollBar=ui->iterationsText->verticalScrollBar();
+    bool atBottom=(scrollBar->value() >= scrollBar->maximum() - 2);
 
-   //  QScrollBar *scrollBar=ui->logText->verticalScrollBar();
-   //  //int oldValue=scrollBar->value();
-   // // bool atBottom=(oldValue >= scrollBar->maximum()-2);
+    // get new data that has been added to the file
+    file.seek(iterationLastPos);
+    QByteArray newData=file.readAll();
+    iterationLastPos=file.pos();
 
-   //  bool atBottom=(scrollBar->value() >= scrollBar->maximum() - 2);
+    // load the new data
+    // set the cursor so the user can scroll up to view prior data
+    if (!newData.isEmpty())
+    {
+        QTextCursor cursor=ui->iterationsText->textCursor();
 
-   //  // Save current top visible block
-   //  QTextCursor cursor = ui->logText->cursorForPosition(QPoint(0,0));
-   //  int topBlock = cursor.blockNumber();
+        if (atBottom) cursor.movePosition(QTextCursor::End);
 
+        cursor.insertText(QString::fromUtf8(newData));
 
-   //  // block signals during file loading
-   //  {
-   //      QSignalBlocker blocker(scrollBar);
-   //      ui->logText->setPlainText(QString::fromUtf8(file.readAll()));
-   //      file.close();
-   //  }
+        if (atBottom) {
+            ui->iterationsText->setTextCursor(cursor);
+            ui->iterationsText->ensureCursorVisible();
+        }
+    }
+}
 
-   //  if (atBottom)
-   //  {
-   //      scrollBar->setValue(scrollBar->maximum());
-   //  }
-   //  else
-   //  {
-   //      QTextBlock block =
-   //          ui->logText->document()->findBlockByNumber(topBlock);
+void OpenParEMg::updateDataTab ()
+{
+    // default data csv file name used throughout
+    QString dataFile=projData.project_name;
+    dataFile.append("_results.csv");
 
-   //      QTextCursor c(block);
-   //      ui->logText->setTextCursor(c);
-   //      ui->logText->centerCursor();
-   //  }
+    // open thefile
+    QFile file(dataFile);
+    if (file.exists()) {
+        if (QFileInfo(dataFile).isFile()) {
+            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+        }
+    }
 
+    // get the current scroll bar location
+    QScrollBar *scrollBar=ui->dataText->verticalScrollBar();
+    bool atBottom=(scrollBar->value() >= scrollBar->maximum() - 2);
 
-    // if (atBottom) {
-    //     scrollBar->setValue(scrollBar->maximum());
-    // } else {
-    //     scrollBar->setValue(oldValue);
-    // }
+    // get new data that has been added to the file
+    file.seek(dataLastPos);
+    QByteArray newData=file.readAll();
+    dataLastPos=file.pos();
 
-    // if (logAutoScrollEnabled) {
-    //     scrollBar->setValue(scrollBar->maximum());
-    // } else {
-    //     scrollBar->setValue(logScrollValue);
-    // }
+    // load the new data
+    // set the cursor so the user can scroll up to view prior data
+    if (!newData.isEmpty())
+    {
+        QTextCursor cursor=ui->dataText->textCursor();
+
+        if (atBottom) cursor.movePosition(QTextCursor::End);
+
+        cursor.insertText(QString::fromUtf8(newData));
+
+        if (atBottom) {
+            ui->dataText->setTextCursor(cursor);
+            ui->dataText->ensureCursorVisible();
+        }
+    }
 }
 
 // end of file

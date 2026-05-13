@@ -602,7 +602,9 @@ private slots:
     void subtractSolids ();
 
     void loadMeshFile (QString);
-    void updateLogs ();
+    void updateLogTab ();
+    void updateIterationsTab ();
+    void updateDataTab ();
     void checkFinish ();
 
     void cancelDraw ();
@@ -632,7 +634,7 @@ private slots:
     void on_actionUndo_triggered ();
     void on_actionRedo_triggered ();
 
-    void handleLogUserScroll (int);
+    //void handleLogUserScroll (int);
 
 public slots:
     void setMenus ();
@@ -783,10 +785,9 @@ private:
     ItemChangesStack itemChangesStack;
 
     // for the logging tabs
-    bool logAutoScrollEnabled;
-    bool iterationAutoScrollEnabled;
-    bool dataAutoScrollEnabled;
     qint64 logLastPos;
+    qint64 iterationLastPos;
+    qint64 dataLastPos;
 
     // for closing
     QCloseEvent *close_event;
