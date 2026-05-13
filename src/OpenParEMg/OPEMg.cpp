@@ -393,6 +393,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,newShape);
     drawing.addShapeData(newShapeData);
 
+    ui->drawingItemTree->setCurrentItem(nullptr);
+
     /////////////////////////////////////////////////////////////////////////////
     // logging tabs
     /////////////////////////////////////////////////////////////////////////////
@@ -9520,11 +9522,9 @@ void OpenParEMg::updateLogTab ()
 
     // open thefile
     QFile file(logFile);
-    if (file.exists()) {
-        if (QFileInfo(logFile).isFile()) {
-            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
-        }
-    }
+    if (!file.exists()) return;
+    if (!QFileInfo(logFile).isFile()) return;
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
 
     // get the current scroll bar location
     QScrollBar *scrollBar=ui->logText->verticalScrollBar();
@@ -9555,16 +9555,14 @@ void OpenParEMg::updateLogTab ()
 void OpenParEMg::updateIterationsTab ()
 {
     // default iterations file name used throughout
-    QString iterationFile=projData.project_name;
-    iterationFile.append("_iterations.txt");
+    QString iterationsFile=projData.project_name;
+    iterationsFile.append("_iterations.txt");
 
     // open thefile
-    QFile file(iterationFile);
-    if (file.exists()) {
-        if (QFileInfo(iterationFile).isFile()) {
-            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
-        }
-    }
+    QFile file(iterationsFile);
+    if (!file.exists()) return;
+    if (!QFileInfo(iterationsFile).isFile()) return;
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
 
     // get the current scroll bar location
     QScrollBar *scrollBar=ui->iterationsText->verticalScrollBar();
@@ -9600,11 +9598,9 @@ void OpenParEMg::updateDataTab ()
 
     // open thefile
     QFile file(dataFile);
-    if (file.exists()) {
-        if (QFileInfo(dataFile).isFile()) {
-            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
-        }
-    }
+    if (!file.exists()) return;
+    if (!QFileInfo(dataFile).isFile()) return;
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
 
     // get the current scroll bar location
     QScrollBar *scrollBar=ui->dataText->verticalScrollBar();
