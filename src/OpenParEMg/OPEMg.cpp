@@ -199,40 +199,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 {
     ui->setupUi(this);
 
-
-    // QScrollArea *scrollArea = new QScrollArea(this);
-
-    // // Take your existing central content widget and put it inside the scroll area
-    // scrollArea->setWidget(ui->centralwidget);
-
-    // // Ensure the scroll area content scales or retains its size
-    // scrollArea->setWidgetResizable(true);
-
-    // // Set the scroll area as the main window's view
-    // this->setCentralWidget(scrollArea);
-
-    // scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    // scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-
-    // // Now resizing safely shows scrollbars if the screen is too small
-    // //this->resize(800, 600);
-
-    // set the starting window size
-
-    int windowWidth=1550;
-    int windowHeight=900;
-
-    QScreen *screen=QGuiApplication::primaryScreen();
-    QSize maxAvailableSize=screen->availableSize();
-    int maxWidth=maxAvailableSize.width();
-    int maxHeight=maxAvailableSize.height();
-
-    if (windowWidth > maxWidth) windowWidth=maxWidth;
-    if (windowHeight > maxHeight) windowHeight=maxHeight;
-
-    //this->resize(windowWidth,windowHeight);
-
-
     MPI_PORT_COMM=nullptr;
     request=nullptr;
 
@@ -487,6 +453,27 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     ui->drawingItemTree->show();
     ui->drawingWindow->show();
+
+    // set the starting window size
+
+    int windowWidth=1510;
+    int windowHeight=900;
+
+    QScreen *screen=QGuiApplication::primaryScreen();
+    QSize maxAvailableSize=screen->availableSize();
+    int maxWidth=maxAvailableSize.width();
+    int maxHeight=maxAvailableSize.height();
+
+    if (windowWidth > maxWidth) windowWidth=maxWidth;
+    if (windowHeight > maxHeight) windowHeight=maxHeight;
+
+    //this->resize(windowWidth,windowHeight);
+
+    int locationX=(maxWidth-windowWidth)/2;
+    int locationY=(maxHeight-windowHeight)/2;
+
+    this->setGeometry(locationX,locationY,windowWidth,windowHeight);
+
     setMenus();
 
     close_event=nullptr;
