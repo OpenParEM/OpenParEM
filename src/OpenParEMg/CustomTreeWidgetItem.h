@@ -199,6 +199,7 @@ public:
     bool isConvertToPath () {if (type == 4) return true; return false;}
     bool isConvertToPort () {if (type == 5) return true; return false;}
     bool isConvertToBoundary () {if (type == 6) return true; return false;}
+    bool isReversePath () {if (type == 7) return true; return false;}
 
     void setNoop () {type=0;}
     void setCreate () {type=1;}
@@ -207,6 +208,7 @@ public:
     void setConvertToPath () {type=4;}
     void setConvertToPort () {type=5;}
     void setConvertToBoundary () {type=6;}
+    void setReversePath () {type=7;}
 
     void setPrior (ShapeData *prior_) {prior=prior_;}
     void setNext (ShapeData *next_) {next=next_;}
@@ -224,6 +226,8 @@ public:
         if (isConvertToPath()) std::cout << "                  type=convertToPath" << std::endl;
         if (isConvertToPort()) std::cout << "                  type=convertToPort" << std::endl;
         if (isConvertToBoundary()) std::cout << "                  type=convertToBoundary" << std::endl;
+        if (isReversePath()) std::cout << "                  type=reversePath" << std::endl;
+
         if (shape.IsNull()) std::cout << "                  shape=null" << std::endl;
         else std::cout << "                  shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
         std::cout << "                  arrowHeadCount=" << arrowHeads.size() << std::endl;
@@ -239,6 +243,7 @@ public:
 private:
     int type;                                          // 0 - noop; 1 - create; 2 - edit; 3 - delete;
                                                        // 4 - convert to path; 5 - convert to port; 6 - convert to boundary
+                                                       // 7 - reverse path direction
     Handle(AIS_Shape) shape;                           // for drawing
     std::vector<Handle(AIS_Shape)> arrowHeads;         // for integration lines to show direction
     Polywire *polywire;                                // Polywire object for this item

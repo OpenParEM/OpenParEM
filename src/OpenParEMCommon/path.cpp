@@ -2171,9 +2171,10 @@ void Path::addEdgePoints (TopoDS_Edge edge)
     points.push_back(point);
 }
 
-void Path::create_wire_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
+void Path::fill_wire_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *item)
 {
-    item=new CustomTreeWidgetItem(0);
+    if (!item) return;
+
     item->set_itemType(4);
     item->set_OPEMobject(this);
     item->setText(0,QString::fromStdString(get_name()));
@@ -2244,7 +2245,12 @@ void Path::create_wire_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidget
         }
         i++;
     }
+}
 
+void Path::create_wire_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
+{
+    item=new CustomTreeWidgetItem(0);
+    fill_wire_item(drawingWindow,item);
     parentItem->addChild(item);
 }
 

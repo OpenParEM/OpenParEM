@@ -467,8 +467,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     if (windowWidth > maxWidth) windowWidth=maxWidth;
     if (windowHeight > maxHeight) windowHeight=maxHeight;
 
-    //this->resize(windowWidth,windowHeight);
-
     int locationX=(maxWidth-windowWidth)/2;
     int locationY=(maxHeight-windowHeight)/2;
 
@@ -1090,6 +1088,8 @@ void OpenParEMg::buildPathMenu (QMenu &menu)
     createPortAction->setToolTip("Create a port from the path.");
     createBoundaryAction=new QAction("Create Boundary");
     createBoundaryAction->setToolTip("Create a bounary from the path.");
+    reversePathAction=new QAction("Reverse Direction");
+    reversePathAction->setToolTip("Reverse the direction of the path.");
     renameAction=new QAction("Rename",this);
     deleteAction=new QAction("Delete",this);
     showAction=new QAction("Show",this);
@@ -1098,6 +1098,7 @@ void OpenParEMg::buildPathMenu (QMenu &menu)
 
     connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPortFromPath);
     connect(createBoundaryAction, &QAction::triggered, this, &OpenParEMg::createBoundaryFromPath);
+    connect(reversePathAction, &QAction::triggered, this, &OpenParEMg::reversePathItems);
     connect(renameAction, &QAction::triggered, this, &OpenParEMg::renamePathItems);
     connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deletePathItems);
     connect(showAction, &QAction::triggered, this, &OpenParEMg::showPathItems);
@@ -1109,6 +1110,7 @@ void OpenParEMg::buildPathMenu (QMenu &menu)
     if (ui->drawingWindow->get_pathSelectedCount() == 1) menu.addAction(renameAction);
     if (isValidCreatePortFromPath()) menu.addAction(createPortAction);
     if (isValidCreateBoundaryFromPath()) menu.addAction(createBoundaryAction);
+    if (isValidReversePath()) menu.addAction(reversePathAction);
     if (isValidDeletePath()) menu.addAction(deleteAction);
     menu.addAction(cancelAction);
 }
@@ -4827,8 +4829,6 @@ void OpenParEMg::convertItemToPath (CustomTreeWidgetItem *item, bool saveForUndo
 
         boundaryDatabase->push_path(newPath);
 
-
-        //xxx
         // remove existing item from the drawing
 
         //if (saveForUndoRedo) itemChangesStack.startNew();
@@ -5764,6 +5764,89 @@ void OpenParEMg::convertToBoundary ()
 
     setMenusI(37);
     ui->drawingWindow->updateViewer();
+}
+
+bool OpenParEMg::isValidReversePath ()
+{
+    //std::cout << "OpenParEMg::isValidReversePath" << std::endl; std::cout.flush();
+
+    int count=0;
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_path()) {
+            count++;
+            count+=item->linkedItems_size();
+
+            if (item->linkedItems_size() > 0) {
+                bool found=false;
+                long unsigned int j=0;
+                while (j < item->linkedItems_size()) {
+                    CustomTreeWidgetItem *linkedItem=item->get_linkedItem(j);
+                    if (linkedItem && linkedItem->is_integrationPathSegment()) {found=true; break;}
+                    j++;
+                }
+                if (!found) return false;
+            }
+        }
+        i++;
+    }
+
+    if (count > 0 && ui->drawingWindow->get_selectedItems_count() == count) return true;
+    return false;
+}
+
+void OpenParEMg::reversePathItem (CustomTreeWidgetItem *item, bool saveForUndoRedo)
+{
+    // remove the old version from display and tracking
+    ui->drawingWindow->hideItem(item);
+    ui->drawingWindow->removeItemFromMap(item);
+    ui->drawingWindow->deleteShape(item->getShape());
+    drawing.removeChild(item);
+
+    // clone the item onto itself for undo/redo
+    ShapeData *newShapeData=item->getShapeData()->copyCreate();
+    newShapeData->setReversePath();
+    item->addShapeData(newShapeData);
+    ui->drawingWindow->unselectItem(item);
+    if (saveForUndoRedo) itemChangesStack.add(item);
+
+    // reverse the path
+    Path *path=static_cast<Path *>(item->get_OPEMobject());
+    if (path) {
+        path->reverseOrder();
+        path->fill_wire_item(ui->drawingWindow,item);
+
+        //ui->drawingWindow->activateItem(item);  // redundant since showItem activates now  ToDo::update elsewhere
+        ui->drawingWindow->insertItemToMap(item->getShape(),item);
+        ui->drawingWindow->showItem(item);
+        ui->drawingWindow->selectItem(item);
+    }
+
+    setMenusI(37);
+    ui->drawingWindow->updateViewer();
+}
+
+//xxx
+void OpenParEMg::reversePathItems ()
+{
+    itemChangesStack.startNew();
+
+    // make a list of items to reverse
+    std::vector<CustomTreeWidgetItem *> changeList;
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_path()) changeList.push_back(item);
+        i++;
+    }
+
+    // make the changes
+    i=0;
+    while (i < changeList.size()) {
+        reversePathItem(changeList[i],true);
+        i++;
+    }
 }
 
 void OpenParEMg::renumberDimTag ()

@@ -392,6 +392,7 @@ public:
     bool isValidCreatePath ();
     bool isValidCreatePortFromFace ();
     bool isValidCreatePortFromPath ();
+    bool isValidReversePath ();
 
     bool isValidCreateBoundaryFromFace ();
     bool isValidCreateBoundaryFromPath ();
@@ -647,6 +648,8 @@ private slots:
     void convertToPort ();
     void convertItemToBoundary (CustomTreeWidgetItem *, bool);
     void convertToBoundary ();
+    void reversePathItem (CustomTreeWidgetItem *, bool);
+    void reversePathItems ();
     double getConversionFactor ();
     void extrudePolywire ();
     void mergeSolids ();
@@ -751,6 +754,7 @@ private:
     QAction *collapseAllAction;
     QAction *createPathAction;
     QAction *createPortAction;
+    QAction *reversePathAction;
     QAction *createBoundaryAction;
     QAction *drawPathAction;
     QAction *drawPolylineAction;
