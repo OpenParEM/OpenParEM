@@ -26,6 +26,9 @@
 #include <QMainWindow>
 #include <QStyledItemDelegate>
 #include <QTimer>
+#include <qplaintextedit.h>
+#include <qscrollbar.h>
+#include <qtextobject.h>
 
 #include "LengthInputForm.h"
 #include "LineEditForm.h"
@@ -50,6 +53,54 @@ extern "C" void set_project_name (struct projectData *, const char *);
 extern "C" int save_project (const char *, struct projectData *, struct projectData *, const char *);
 extern "C" void clear_physicalGroupMaterials (struct projectData *);
 extern "C" void add_physicalGroupMaterial (struct projectData *, int, int, int, char *);
+
+class LogViewerFilter : public QObject
+{
+    Q_OBJECT
+
+public:
+    bool followTail=true;
+    bool skipLoad=false;
+
+    LogViewerFilter(QObject *parent = nullptr)
+        : QObject(parent) {}
+
+    void setTextEdit (QPlainTextEdit *textEdit_) {textEdit=textEdit_;}
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() == QEvent::KeyPress ||
+            event->type() == QEvent::MouseButtonPress)
+        {
+            skipLoad=true;
+        }
+
+        if (event->type() == QEvent::Wheel ||
+            event->type() == QEvent::KeyRelease ||
+            event->type() == QEvent::MouseButtonRelease)
+        {
+            skipLoad=false;
+
+            QScrollBar *scrollBar=textEdit->verticalScrollBar();
+            bool atBottom=(scrollBar->value() >= scrollBar->maximum() - 2);
+
+            int topBlock = scrollBar->value();
+            QTextBlock block = textEdit->document()->findBlockByLineNumber(topBlock);
+
+            QTextCursor cursor(block);
+            textEdit->setTextCursor(cursor);
+
+            followTail=false;
+            if (atBottom) followTail=true;
+        }
+
+        return QObject::eventFilter(obj, event);
+    }
+
+private:
+    QPlainTextEdit *textEdit;
+};
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -602,9 +653,9 @@ private slots:
     void subtractSolids ();
 
     void loadMeshFile (QString);
-    void updateLogTab ();
-    void updateIterationsTab ();
-    void updateDataTab ();
+    void updateLogTab (bool);
+    void updateIterationsTab (bool);
+    void updateDataTab (bool);
     void checkFinish ();
 
     void cancelDraw ();
@@ -633,8 +684,6 @@ private slots:
 
     void on_actionUndo_triggered ();
     void on_actionRedo_triggered ();
-
-    //void handleLogUserScroll (int);
 
 public slots:
     void setMenus ();
@@ -788,6 +837,13 @@ private:
     qint64 logLastPos;
     qint64 iterationLastPos;
     qint64 dataLastPos;
+    LogViewerFilter *logFilter;
+    LogViewerFilter *iterationsFilter;
+    LogViewerFilter *dataFilter;
+    QString partialLogLine;
+    char logLastChar;
+    char iterationsLastChar;
+    char dataLastChar;
 
     // for closing
     QCloseEvent *close_event;

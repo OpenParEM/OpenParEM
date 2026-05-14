@@ -399,13 +399,34 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     // logging tabs
     /////////////////////////////////////////////////////////////////////////////
 
+    ui->logText->setReadOnly(true);
+    ui->iterationsText->setReadOnly(true);
+    ui->dataText->setReadOnly(true);
+
+    // ui->logText->setCursor(Qt::BlankCursor);
+    // ui->iterationsText->setCursor(Qt::BlankCursor);
+    // ui->dataText->setCursor(Qt::BlankCursor);
+
     QFont monoFont=QFontDatabase::systemFont(QFontDatabase::FixedFont);
     monoFont.setPointSize(10);
     ui->logText->setFont(monoFont);
     ui->iterationsText->setFont(monoFont);
     ui->dataText->setFont(monoFont);
 
-    //connect(ui->logText->verticalScrollBar(),&QScrollBar::actionTriggered,this,&OpenParEMg::handleLogUserScroll);
+    logFilter=new LogViewerFilter(this);
+    logFilter->setTextEdit(ui->logText);
+    ui->logText->viewport()->installEventFilter(logFilter);
+    ui->logText->verticalScrollBar()->installEventFilter(logFilter);
+
+    iterationsFilter=new LogViewerFilter(this);
+    iterationsFilter->setTextEdit(ui->iterationsText);
+    ui->iterationsText->viewport()->installEventFilter(iterationsFilter);
+    ui->iterationsText->verticalScrollBar()->installEventFilter(iterationsFilter);
+
+    dataFilter=new LogViewerFilter(this);
+    dataFilter->setTextEdit(ui->dataText);
+    ui->dataText->viewport()->installEventFilter(dataFilter);
+    ui->dataText->verticalScrollBar()->installEventFilter(dataFilter);
 
     /////////////////////////////////////////////////////////////////////////////
     // context menu for drawingWindow
@@ -425,11 +446,12 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     // timer or checking when OpenParEM3D finishes and updating tabs with run data
     /////////////////////////////////////////////////////////////////////////////
 
+    bool defaultForce=false;
     timer=new QTimer(this);
     connect(timer,&QTimer::timeout,this,&OpenParEMg::checkFinish);
-    connect(timer,&QTimer::timeout,this,&OpenParEMg::updateLogTab);
-    connect(timer,&QTimer::timeout,this,&OpenParEMg::updateIterationsTab);
-    connect(timer,&QTimer::timeout,this,&OpenParEMg::updateDataTab);
+    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateLogTab(defaultForce);});
+    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateIterationsTab(defaultForce);});
+    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateDataTab(defaultForce);});
 
     /////////////////////////////////////////////////////////////////////////////
     // misc
@@ -8032,10 +8054,8 @@ void OpenParEMg::on_actionRun_triggered ()
 {
     // check for an existing lock file
 
-    std::cout << "absolutePath=" << absolutePath.toStdString() << std::endl; std::cout.flush();
     QString currentPath;
     currentPath=QDir::currentPath();
-    std::cout << "currentPath=" << currentPath.toStdString() << std::endl; std::cout.flush();
 
     std::string lockfile=".";
     lockfile.append(projData.project_name);
@@ -8087,10 +8107,31 @@ void OpenParEMg::on_actionRun_triggered ()
     // run OpenParEM3D
 
     // clear the results in the tabs
+
     ui->logText->clear();
+    ui->iterationsText->clear();
+    ui->dataText->clear();
+
     logLastPos=0;
     iterationLastPos=0;
     dataLastPos=0;
+
+    logLastChar='\0';
+    iterationsLastChar='\0';
+    dataLastChar='\0';
+
+    // install event filters in the tabs
+
+    ui->logText->viewport()->installEventFilter(logFilter);
+    ui->logText->verticalScrollBar()->installEventFilter(logFilter);
+
+    ui->iterationsText->viewport()->installEventFilter(iterationsFilter);
+    ui->iterationsText->verticalScrollBar()->installEventFilter(iterationsFilter);
+
+    ui->dataText->viewport()->installEventFilter(dataFilter);
+    ui->dataText->verticalScrollBar()->installEventFilter(dataFilter);
+
+    // assemble the command line argument
 
     char *project=nullptr;
     cstrFromQString (&project,projectFile);
@@ -8098,13 +8139,14 @@ void OpenParEMg::on_actionRun_triggered ()
     char *logfile=(char *)malloc((strlen(projData.project_name)+5)*sizeof(char));
     sprintf(logfile,"%s.log",projData.project_name);
 
-    //char** argv=(char **)malloc(2*sizeof(char *));
     char *argv[3];
     argv[0]=project;
     argv[1]=logfile;
     argv[2]=nullptr;
 
     int *error_codes=(int *)malloc(projData.gui_slot_count*sizeof(int));
+
+    // run the job
 
     MPI_Errhandler errorHandler;
     MPI_Comm_create_errhandler(eh3D,&errorHandler);
@@ -8187,6 +8229,22 @@ void OpenParEMg::checkFinish ()
 
         timer->stop();
 
+        // finish results loading, if they are not done already
+        updateLogTab(true);
+        updateIterationsTab(true);
+        updateDataTab(true);
+
+        // uninstall event filters on the tabs
+
+        ui->logText->verticalScrollBar()->removeEventFilter(logFilter);
+        ui->logText->viewport()->removeEventFilter(logFilter);
+
+        ui->iterationsText->verticalScrollBar()->removeEventFilter(iterationsFilter);
+        ui->iterationsText->viewport()->removeEventFilter(iterationsFilter);
+
+        ui->dataText->verticalScrollBar()->removeEventFilter(dataFilter);
+        ui->dataText->viewport()->removeEventFilter(dataFilter);
+
         // get the status of the 3D simulations
         int fail3D=0;
         MPI_Recv(&fail3D,1,MPI_INT,0,320000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
@@ -8223,30 +8281,8 @@ void OpenParEMg::on_actionAbort_triggered ()
     simulationAborting=true;
     setMenusI(72);
 
-    //timer->stop();
-
     int signal=1;
     MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);
-
-    /*
-    // get the status of the 3D simulations
-    int fail3D=0;
-    MPI_Recv(&fail3D,1,MPI_INT,0,320000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
-
-    // unblock OpenParEM3D
-    signal;
-    MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);
-
-    //MPI_Comm_disconnect(MPI_PORT_COMM);
-
-    MPI_Comm_free(MPI_PORT_COMM);
-    MPI_PORT_COMM=nullptr;
-
-    MPI_Request_free(request);
-    request=nullptr;
-
-    prefix(); PetscPrintf(PETSC_COMM_WORLD,"OpenParEM3D Job Aborted.\n");
-*/
 }
 
 void OpenParEMg::on_actionAbortAndExit_triggered ()
@@ -9498,133 +9534,126 @@ void OpenParEMg::on_actionRedo_triggered ()
     setMenusI(3000);
 }
 
-// void OpenParEMg::handleLogUserScroll (int action)
-// {
-//     Q_UNUSED(action);
-//     QScrollBar *scrollBar=ui->logText->verticalScrollBar();
-
-//     bool isAtBottom=false;
-//     if (scrollBar->value() == scrollBar->maximum()) isAtBottom=true;
-
-//     if (isAtBottom) {
-//         logAutoScrollEnabled=true;
-//     } else {
-//         logAutoScrollEnabled=false;
-//     }
-// }
-
-//xxx
-void OpenParEMg::updateLogTab ()
+void OpenParEMg::updateLogTab (bool force)
 {
     // default log file name used throughout
     QString logFile=projData.project_name;
     logFile.append(".log");
 
-    // open thefile
+    // open the file
     QFile file(logFile);
     if (!file.exists()) return;
     if (!QFileInfo(logFile).isFile()) return;
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
 
-    // get the current scroll bar location
-    QScrollBar *scrollBar=ui->logText->verticalScrollBar();
-    bool atBottom=(scrollBar->value() >= scrollBar->maximum() - 2);
-
     // get new data that has been added to the file
     file.seek(logLastPos);
     QByteArray newData=file.readAll();
     logLastPos=file.pos();
+    if (newData.isEmpty()) return;
+
+    // test for a quirk of back-to-back line returns due to block boundaries when loading
+    if (logLastChar == '\n' && newData[0] == '\n') newData.removeFirst();
+    logLastChar=newData[newData.size()-1];
+
+    // check for skip or force
+    if (!force && logFilter->skipLoad) return;
 
     // load the new data
     // set the cursor so the user can scroll up to view prior data
-    if (!newData.isEmpty())
-    {
-        QTextCursor cursor=ui->logText->textCursor();
 
-        if (atBottom) cursor.movePosition(QTextCursor::End);
+    QTextCursor cursor=ui->logText->textCursor();
+    QTextCursor oldCursor=cursor;
 
-        cursor.insertText(QString::fromUtf8(newData));
+    cursor.movePosition(QTextCursor::End);
+    cursor.insertText(QString::fromUtf8(newData));
 
-        if (atBottom) {
-            ui->logText->setTextCursor(cursor);
-            ui->logText->ensureCursorVisible();
-        }
+    if (logFilter->followTail) {
+        ui->logText->setTextCursor(cursor);
+    } else {
+        ui->logText->setTextCursor(oldCursor);
     }
 }
 
-void OpenParEMg::updateIterationsTab ()
+void OpenParEMg::updateIterationsTab (bool force)
 {
     // default iterations file name used throughout
     QString iterationsFile=projData.project_name;
     iterationsFile.append("_iterations.txt");
 
-    // open thefile
+    // open the file
     QFile file(iterationsFile);
     if (!file.exists()) return;
     if (!QFileInfo(iterationsFile).isFile()) return;
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
 
-    // get the current scroll bar location
-    QScrollBar *scrollBar=ui->iterationsText->verticalScrollBar();
-    bool atBottom=(scrollBar->value() >= scrollBar->maximum() - 2);
-
     // get new data that has been added to the file
     file.seek(iterationLastPos);
     QByteArray newData=file.readAll();
     iterationLastPos=file.pos();
+    if (newData.isEmpty()) return;
+
+    // test for a quirk of back-to-back line returns due to block boundaries when loading
+    if (iterationsLastChar == '\n' && newData[0] == '\n') newData.removeFirst();
+    iterationsLastChar=newData[newData.size()-1];
+
+    // check for skip or force
+    if (!force && iterationsFilter->skipLoad) return;
 
     // load the new data
     // set the cursor so the user can scroll up to view prior data
-    if (!newData.isEmpty())
-    {
-        QTextCursor cursor=ui->iterationsText->textCursor();
 
-        if (atBottom) cursor.movePosition(QTextCursor::End);
+    QTextCursor cursor=ui->iterationsText->textCursor();
+    QTextCursor oldCursor=cursor;
 
-        cursor.insertText(QString::fromUtf8(newData));
+    cursor.movePosition(QTextCursor::End);
+    cursor.insertText(QString::fromUtf8(newData));
 
-        if (atBottom) {
-            ui->iterationsText->setTextCursor(cursor);
-            ui->iterationsText->ensureCursorVisible();
-        }
+    if (iterationsFilter->followTail) {
+        ui->iterationsText->setTextCursor(cursor);
+    } else {
+        ui->iterationsText->setTextCursor(oldCursor);
     }
 }
 
-void OpenParEMg::updateDataTab ()
+void OpenParEMg::updateDataTab (bool force)
 {
     // default data csv file name used throughout
     QString dataFile=projData.project_name;
     dataFile.append("_results.csv");
 
-    // open thefile
+    // open the file
     QFile file(dataFile);
     if (!file.exists()) return;
     if (!QFileInfo(dataFile).isFile()) return;
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
 
-    // get the current scroll bar location
-    QScrollBar *scrollBar=ui->dataText->verticalScrollBar();
-    bool atBottom=(scrollBar->value() >= scrollBar->maximum() - 2);
-
     // get new data that has been added to the file
     file.seek(dataLastPos);
     QByteArray newData=file.readAll();
     dataLastPos=file.pos();
+    if (newData.isEmpty()) return;
+
+    // test for a quirk of back-to-back line returns due to block boundaries when loading
+    if (dataLastChar == '\n' && newData[0] == '\n') newData.removeFirst();
+    dataLastChar=newData[newData.size()-1];
+
+    // check for skip or force
+    if (!force && dataFilter->skipLoad) return;
 
     // load the new data
     // set the cursor so the user can scroll up to view prior data
-    if (!newData.isEmpty())
-    {
-        QTextCursor cursor=ui->dataText->textCursor();
 
-        if (atBottom) cursor.movePosition(QTextCursor::End);
+    QTextCursor cursor=ui->dataText->textCursor();
+    QTextCursor oldCursor=cursor;
 
-        cursor.insertText(QString::fromUtf8(newData));
+    cursor.movePosition(QTextCursor::End);
+    cursor.insertText(QString::fromUtf8(newData));
 
-        if (atBottom) {
-            ui->dataText->setTextCursor(cursor);
-            ui->dataText->ensureCursorVisible();
-        }
+    if (dataFilter->followTail) {
+        ui->dataText->setTextCursor(cursor);
+    } else {
+        ui->dataText->setTextCursor(oldCursor);
     }
 }
 

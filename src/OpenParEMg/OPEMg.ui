@@ -86,11 +86,17 @@
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
           <widget class="QPlainTextEdit" name="logText">
+           <property name="acceptDrops">
+            <bool>false</bool>
+           </property>
            <property name="undoRedoEnabled">
             <bool>false</bool>
            </property>
            <property name="lineWrapMode">
             <enum>QPlainTextEdit::LineWrapMode::NoWrap</enum>
+           </property>
+           <property name="textInteractionFlags">
+            <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
            </property>
           </widget>
          </item>
@@ -103,11 +109,17 @@
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
           <widget class="QPlainTextEdit" name="iterationsText">
+           <property name="acceptDrops">
+            <bool>false</bool>
+           </property>
            <property name="undoRedoEnabled">
             <bool>false</bool>
            </property>
            <property name="lineWrapMode">
             <enum>QPlainTextEdit::LineWrapMode::NoWrap</enum>
+           </property>
+           <property name="textInteractionFlags">
+            <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
            </property>
           </widget>
          </item>
@@ -120,11 +132,17 @@
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
           <widget class="QPlainTextEdit" name="dataText">
+           <property name="acceptDrops">
+            <bool>false</bool>
+           </property>
            <property name="undoRedoEnabled">
             <bool>false</bool>
            </property>
            <property name="lineWrapMode">
             <enum>QPlainTextEdit::LineWrapMode::NoWrap</enum>
+           </property>
+           <property name="textInteractionFlags">
+            <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
            </property>
           </widget>
          </item>
