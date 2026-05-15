@@ -5818,9 +5818,11 @@ void OpenParEMg::reversePathItem (CustomTreeWidgetItem *item, bool saveForUndoRe
         path->fill_wire_item(ui->drawingWindow,item);
 
         //ui->drawingWindow->activateItem(item);  // redundant since showItem activates now  ToDo::update elsewhere
-        ui->drawingWindow->insertItemToMap(item->getShape(),item);
-        ui->drawingWindow->showItem(item);
-        ui->drawingWindow->selectItem(item);
+        // ui->drawingWindow->insertItemToMap(item->getShape(),item);
+        // ui->drawingWindow->showItem(item);
+        // ui->drawingWindow->selectItem(item);
+        insertToMapActivateItem(item);
+        projectChanged=true;
     }
 
     setMenusI(37);
