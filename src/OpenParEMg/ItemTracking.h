@@ -163,8 +163,6 @@ public:
 
         if (!item) return;
 
-        //unselectItem(item);
-
         // show item
         if (item->is_rootDrawing()) {
             int i=0;
@@ -174,21 +172,11 @@ public:
                 i++;
             }
         } else if (item->is_drawing()) {
-
             if (item->foreground(0) == Qt::gray) {
                 DisplayShape(item->getShape());
                 item->setForeground(0,Qt::black);
                 visibleItems.push_back(item);
-                //selectItem(item);
             }
-
-            // // hide children
-            // int i=0;
-            // while (i < item->childCount()) {
-            //     CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
-            //     hideItem(child);
-            //     i++;
-            // }
         } else if (item->is_rootPath()) {
             int i=0;
             while (i < item->childCount()) {

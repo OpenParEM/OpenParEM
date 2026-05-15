@@ -23,6 +23,7 @@ VectorInputForm::VectorInputForm (QWidget *parent)
     hasEndPoint=false;
 
     conversionFactor=1;
+    isXclose=true;
 }
 
 VectorInputForm::~VectorInputForm ()
@@ -80,6 +81,7 @@ void VectorInputForm::on_OkButton_clicked ()
     *transferStartPoint=localStartPoint;
     *transferEndPoint=localEndPoint;
     emit relay->finishOperation(false,31);
+    isXclose=false;
     QDialog::close();
 }
 
@@ -87,6 +89,7 @@ void VectorInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
     emit relay->finishOperation(true,32);
+    isXclose=false;
     QDialog::close();
 }
 
@@ -127,8 +130,7 @@ void VectorInputForm::pickVertexFinished (gp_Pnt point)
 void VectorInputForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(true,33);
-
+    if (isXclose) emit relay->finishOperation(true,33);
     QDialog::reject();
 }
 

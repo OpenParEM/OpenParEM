@@ -54,6 +54,9 @@ RectangleEditForm::RectangleEditForm (QWidget *parent)
     ui->OkButton->setEnabled(false);
 
     conversionFactor=1;
+    isXclose=true;
+
+    std::cout << "RectangleEditForm::RectangleEditForm" << std::endl; std::cout.flush();
 }
 
 RectangleEditForm::~RectangleEditForm ()
@@ -214,6 +217,7 @@ void RectangleEditForm::on_OkButton_clicked ()
 
     emit relay->finishOperation(false,41);
 
+    isXclose=false;
     QDialog::close();
 }
 
@@ -227,6 +231,8 @@ void RectangleEditForm::on_CancelButton_clicked()
     }
 
     emit relay->finishOperation(true,42);
+
+    isXclose=false;
     QDialog::close();
 }
 
@@ -254,7 +260,7 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
 void RectangleEditForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(true,43);
+    if(isXclose) emit relay->finishOperation(true,43);
     QDialog::reject();
 }
 

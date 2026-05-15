@@ -3240,7 +3240,9 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
     }
 
     if (lengthInputForm) {lengthInputForm=nullptr;}
-    finishOperation(false,1);
+
+    // Do not call finishOperation: lengthInputForm calls finishOperation
+    //finishOperation(false,1);
 }
 
 // stop on incomplete structures - happens while loading a drawing
@@ -3476,6 +3478,7 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
     if (!stop) {
         reprocess(item->getParent());
     }
+    //std::cout << "exit OpenParEMg::reprocess  item=" << item << std::endl; std::cout.flush();
 }
 
 bool OpenParEMg::isValidSetPlane ()
@@ -3681,9 +3684,10 @@ void OpenParEMg::editObject ()
 
 void OpenParEMg::findShowTopLevelItem (CustomTreeWidgetItem *item, bool hideItem)
 {
+    std::cout << "OpenParEMg::findShowTopLevelItem   item=" << item << std::endl; std::cout.flush();
     if (!item) return;
 
-    ui->drawingWindow->hideItem(item);
+    //ui->drawingWindow->hideItem(item);
     CustomTreeWidgetItem *parentItem=item->getParent();
     if (parentItem) {
         while (!parentItem->is_rootDrawing()) {
@@ -3692,6 +3696,8 @@ void OpenParEMg::findShowTopLevelItem (CustomTreeWidgetItem *item, bool hideItem
             if (!parentItem) break;
         }
     }
+    std::cout << "  hide item=" << item << std::endl; std::cout.flush();
+    ui->drawingWindow->hideItem(item);
     ui->drawingWindow->showItem(item);
     if (hideItem) ui->drawingWindow->hideItem(item);
 }
@@ -3721,7 +3727,6 @@ void OpenParEMg::finishEditObject (bool cancel)
                 item->addShapeData(newShapeData);
 
                 // modify the clone
-
                 Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
                 if (polywire) {
                     Line *line=dynamic_cast<Line *>(polywire);
@@ -3771,7 +3776,8 @@ void OpenParEMg::finishEditObject (bool cancel)
     if (rectangleEditForm) {rectangleEditForm=nullptr;}
     if (polycircleEditForm) {polycircleEditForm=nullptr;}
 
-    finishOperation(false,2);
+    // Do not call finishOperation: the edit forms call finishOperation
+    //finishOperation(false,2);
 }
 
 bool OpenParEMg::isValidMergeSolids ()
@@ -4993,7 +4999,9 @@ void OpenParEMg::finishRotateObject ()
         i++;
     }
     if (rotateInputForm) {rotateInputForm=nullptr;}
-    finishOperation(false,9);
+
+    // Do not call finishOperation: rotationEditForm calls finishOperation
+    //finishOperation(false,9);
 }
 
 bool OpenParEMg::isValidCreatePortFromFace ()
@@ -8535,7 +8543,9 @@ void OpenParEMg::finishPlaneSetToFace ()
     restrictToDrawingPlane=false;
 
     if (vectorInputForm) {vectorInputForm=nullptr;}
-    finishOperation(false,11);
+
+    // Do not call finishOperation: vectorInputForm calls finishOperation
+    //finishOperation(false,11);
 }
 
 void OpenParEMg::on_actionDrawingSetPlaneToXY_triggered ()
@@ -9124,7 +9134,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 
 void OpenParEMg::finishOperation (bool cancel, int source)
 {
-    //std::cout << "OpenParEMg::finishOperation  cancel=" << cancel << "  source=" << source << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::finishOperation  cancel=" << cancel << "  source=" << source << std::endl; std::cout.flush();
 
     if (cancel) {
 
@@ -9188,7 +9198,8 @@ void OpenParEMg::finishOperation (bool cancel, int source)
                     }
                 }
 
-                ui->drawingWindow->showItem(item);
+                CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                if (parent->is_rootDrawing()) ui->drawingWindow->showItem(item);
             }
             i++;
         }

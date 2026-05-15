@@ -51,6 +51,7 @@ RotateInputForm::RotateInputForm(QWidget *parent)
     on_Zaxis_clicked();
 
     conversionFactor=1;
+    isXclose=true;
 }
 
 RotateInputForm::~RotateInputForm ()
@@ -209,6 +210,7 @@ void RotateInputForm::on_OkButton_clicked ()
     *transferStartPoint=localStartPoint;
     *transferEndPoint=localEndPoint;
     emit relay->finishOperation(false,20);
+    isXclose=false;
     QDialog::close();
 }
 
@@ -216,6 +218,7 @@ void RotateInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
     emit relay->finishOperation(true,21);
+    isXclose=false;
     QDialog::close();
 }
 
@@ -263,7 +266,7 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
 void RotateInputForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(true,22);
+    if (isXclose) emit relay->finishOperation(true,22);
     QDialog::reject();
 }
 

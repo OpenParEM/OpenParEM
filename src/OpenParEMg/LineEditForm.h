@@ -79,6 +79,7 @@ private:
     Relay *relay;
     Handle(AIS_Shape) tempShape;
     double conversionFactor;   // converts from m to some other unit coming in, then back to m going out
+    bool isXclose;             // user clicked the "X" to close
 };
 
 #endif // LINEEDITFORM_H

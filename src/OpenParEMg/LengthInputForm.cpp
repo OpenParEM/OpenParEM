@@ -49,6 +49,7 @@ LengthInputForm::LengthInputForm (QWidget *parent)
     hasEndPoint=false;
 
     conversionFactor=1;
+    isXclose=true;
 }
 
 LengthInputForm::~LengthInputForm ()
@@ -114,6 +115,7 @@ void LengthInputForm::on_OkButton_clicked ()
     ui->OkButton->setChecked(true);
     *transferLength=localLength/conversionFactor;
     emit relay->finishOperation(false,71);
+    isXclose=false;
     QDialog::close();
 }
 
@@ -121,6 +123,7 @@ void LengthInputForm::on_CancelButton_clicked ()
 {
     ui->CancelButton->setChecked(true);
     emit relay->finishOperation(true,72);
+    isXclose=false;
     QDialog::close();
 }
 
@@ -170,8 +173,7 @@ void LengthInputForm::pickVertexFinished (gp_Pnt point)
 void LengthInputForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(true,73);
-
+    if (isXclose) emit relay->finishOperation(true,73);
     QDialog::reject();
 }
 

@@ -54,6 +54,7 @@ LineEditForm::LineEditForm (QWidget *parent)
     ui->OkButton->setEnabled(false);
 
     conversionFactor=1;
+    isXclose=true;
 }
 
 LineEditForm::~LineEditForm ()
@@ -197,6 +198,8 @@ void LineEditForm::on_OkButton_clicked ()
     }
 
     emit relay->finishOperation(false,61);
+
+    isXclose=false;
     QDialog::close();
 }
 
@@ -210,6 +213,8 @@ void LineEditForm::on_CancelButton_clicked ()
     }
 
     emit relay->finishOperation(true,62);
+
+    isXclose=false;
     QDialog::close();
 }
 
@@ -235,7 +240,7 @@ void LineEditForm::pickVertexFinished (gp_Pnt point)
 void LineEditForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(true,63);
+    if (isXclose) emit relay->finishOperation(true,63);
     QDialog::reject();
 }
 

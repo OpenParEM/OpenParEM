@@ -56,6 +56,7 @@ PolycircleEditForm::PolycircleEditForm (QWidget *parent)
     ui->OkButton->setEnabled(false);
 
     conversionFactor=1;
+    isXclose=true;
 }
 
 PolycircleEditForm::~PolycircleEditForm ()
@@ -229,6 +230,7 @@ void PolycircleEditForm::on_OkButton_clicked ()
 
     emit relay->finishOperation(false,51);
 
+    isXclose=false;
     QDialog::close();
 }
 
@@ -263,12 +265,14 @@ void PolycircleEditForm::on_CancelButton_clicked ()
     }
 
     emit relay->finishOperation(true,52);
+
+    isXclose=false;
     QDialog::close();
 }
 
 void PolycircleEditForm::reject ()
 {
     ui->CancelButton->setChecked(true);
-    emit relay->finishOperation(true,53);
+    if (isXclose) emit relay->finishOperation(true,53);
     QDialog::reject();
 }
