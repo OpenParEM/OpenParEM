@@ -3882,9 +3882,6 @@ void OpenParEMg::finishMergeSolids ()
     ui->drawingWindow->selectItem(newItem);
     itemChangesStack.add(newItem);
 
-    // ToDo: put back?
-    //merge=nullptr;
-
     // save the objects for undo/redo
     newItem->push_child(item0);
     newItem->push_child(item1);
@@ -4007,8 +4004,6 @@ void OpenParEMg::finishSubtractSolids ()
     ui->drawingWindow->showItem(newItem);
     ui->drawingWindow->selectItem(newItem);
     itemChangesStack.add(newItem);
-
-    subtract=nullptr;
 
     // save the objects for undo/redo
     newItem->push_child(item0);
@@ -4203,6 +4198,11 @@ CustomTreeWidgetItem* OpenParEMg::copyItem (CustomTreeWidgetItem *item, CustomTr
     newItem->copy_depth(newItemParent);
     if (newItemParent != &drawing) newItem->increase_depth();
     itemChangesStack.add(newItem);
+
+    Polywire *polywire=static_cast<Polywire *>(newItem->getPolywire());
+    if (polywire) {
+        newItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
+    }
 
     // children for processes
     Process *process=static_cast<Process *>(newItem->getProcess());
