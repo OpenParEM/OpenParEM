@@ -2,6 +2,7 @@
 
 #include "CustomTreeWidgetItem.h"
 #include "OPEMg.h"
+#include "ui_OPEMg.h"
 
 
 void RootDrawingItem::showMenu (QMenu *menu)
@@ -19,6 +20,121 @@ void RootDrawingItem::showMenu (QMenu *menu)
     if (mw->isValidRootDrawingSelectAll()) menu->addAction(mw->selectAllAction);
 }
 
+void DrawingItem::startDraw ()
+{
+    gp_Dir normal=mw->ui->drawingWindow->get_normal();
+    mw->activePolywire->setNormal(normal.X(),normal.Y(),normal.Z());
+    mw->activePolywire->set_viewerContext(mw->ui->drawingWindow->get_viewerContext());
+    mw->activePolywire->setDrawEnable(true);
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    newShapeData->setPolywire(mw->activePolywire);
+    addShapeData(newShapeData);
+
+    mw->restrictToDrawingPlane=true;
+    mw->startOperation(true);
+    mw->activeAction=true;
+    mw->itemChangesStack.startNew();
+    mw->ui->drawingWindow->set_pickFirstVertex(true);
+    mw->clearTreeSelection();
+}
+
+void DrawingItem::startLine ()
+{
+    mw->activePolywire=new Line();
+    if (!mw->activePolywire) return;
+    startDraw();
+}
+
+void DrawingItem::startPolyline ()
+{
+    mw->activePolywire=new Polyline();
+    if (!mw->activePolywire) return;
+    startDraw();
+}
+
+void DrawingItem::startRectangle ()
+{
+    mw->activePolywire=new Rectangle();
+    if (!mw->activePolywire) return;
+    mw->activePolywire->setU(mw->uLocalAxis);
+    startDraw();
+}
+
+void DrawingItem::startPolycircle ()
+{
+    mw->activePolywire=new Polycircle();
+    if (!mw->activePolywire) return;
+    startDraw();
+}
+
+void DrawingItem::finishDraw ()
+{
+    // add teh final shape to the shape data
+    ShapeData *shapeData=getShapeData();
+    shapeData->setShape(shapeData->getPolywire()->get_AIS_Shape());
+
+    // add to the selection tree
+    setText(0,mw->activePolywire->getName(&(mw->objectCounts)));
+    mw->drawing.addChild(this);
+    setParent(&(mw->drawing));
+
+    // put into tracking, display, and select
+    mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+    mw->ui->drawingWindow->showItem(this);
+    mw->ui->drawingWindow->selectItem(this);
+
+    // add to the stack for undo/redo
+    mw->itemChangesStack.add(this);
+
+    // put it on the Z-layer to get it higher selection priority
+    getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
+
+    // remove rectangle constraint, if present
+    Rectangle *rectangle=dynamic_cast<Rectangle *>(shapeData->getPolywire());
+    if (rectangle) rectangle->setIsSquare(false);
+
+    // clicked item tracking
+    mw->previousClickedItem=mw->clickedItem;
+    mw->clickedItem=this;
+
+    // make sure everything is off
+    mw->activePolywire->deleteRubberband();
+    mw->ui->drawingWindow->removeSelectOnVertex();
+
+    // reset flags
+    activeAction=false;
+    mw->restrictToDrawingPlane=false;
+    mw->activePolywire=nullptr;
+    mw->workingItem=nullptr;
+
+    // mark as changed
+    mw->drawingChanged=true;
+
+    // final universal cleanup
+    mw->finishOperation(false,13);
+}
+
+void DrawingItem::cancelDraw ()
+{
+    // take care of shapes
+    if (!animateShape.IsNull()) animateShape.Nullify();
+    if ( mw->activePolywire) {
+        mw->activePolywire->deleteRubberband();
+        mw->activePolywire=nullptr;
+    }
+
+    // remove the in-process ShapeData
+    pop();
+
+    // remove the current undo/redo item
+    mw->itemChangesStack.pop_back();
+
+    mw->activeAction=false;
+
+    mw->ui->drawingWindow->updateViewer();
+}
 
 
 DrawingItem* DrawingItem::copyCreate ()

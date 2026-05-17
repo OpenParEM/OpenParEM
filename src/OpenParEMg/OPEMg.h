@@ -814,6 +814,7 @@ private:
     RotateInputForm *rotateInputForm;
 
     // drawing
+    DrawingItem *currentDrawingItem;
     bool disableMenus;
     bool isIntegrationPath;
     QString integrationPathName;

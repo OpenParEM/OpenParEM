@@ -847,6 +847,14 @@ public:
 
     DrawingItem* copyCreate ();
 
+    void startDraw ();
+    void startLine ();
+    void startPolyline ();
+    void startRectangle ();
+    void startPolycircle ();
+    void finishDraw ();
+    void cancelDraw ();
+
 
     void showMenu (QMenu *);
 

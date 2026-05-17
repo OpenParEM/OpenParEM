@@ -7746,6 +7746,11 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
         on_actionShape_triggered();
         ui->drawingWindow->setSubshapeSelection(false);
         ui->drawingWindow->setSetToPlane(false);
+        if (currentDrawingItem) {
+            currentDrawingItem->cancelDraw();
+            delete currentDrawingItem;
+            currentDrawingItem=nullptr;
+        }
 
         if (renameItem) {
             ui->drawingItemTree->removeItemWidget(renameItem,0);
@@ -8657,102 +8662,45 @@ void OpenParEMg::cancelDraw ()
 {
     std::cout << "OpenParEMg::cancelDraw" << std::endl; std::cout.flush();
 
+    if (currentDrawingItem) {
+        currentDrawingItem->cancelDraw();
+        delete currentDrawingItem;
+        currentDrawingItem=nullptr;
+    }
+
     finishOperation(true,12);
 }
 
 void OpenParEMg::on_actionDrawLine_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionDrawLine_triggered" << std::endl; std::cout.flush();
-
-    restrictToDrawingPlane=true;
-    startOperation(true);
-    activeAction=true;
-    itemChangesStack.startNew();
-    ui->drawingWindow->set_pickFirstVertex(true);
-    clearTreeSelection();
-
-    if (activePolywire) {
-        std::cout << "ASSERT: OpenParEMg::on_actionDrawLine_triggered found activePolywire" << std::endl; std::cout.flush();
-    } else {
-        activePolywire=new Line();
-        gp_Dir normal=ui->drawingWindow->get_normal();
-        activePolywire->setNormal(normal.X(),normal.Y(),normal.Z());
-        activePolywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
-        activePolywire->setDrawEnable(true);
-    }
+    currentDrawingItem=new DrawingItem();
+    currentDrawingItem->setMW(this);
+    currentDrawingItem->startLine();
 }
 
 void OpenParEMg::on_actionDrawPolyline_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionDrawPolyline_triggered" << std::endl; std::cout.flush();
-
-    restrictToDrawingPlane=true;
-    startOperation(true);
-    activeAction=true;
-    itemChangesStack.startNew();
-    ui->drawingWindow->set_pickFirstVertex(true);
-    clearTreeSelection();
-
-    if (activePolywire) {
-        std::cout << "ASSERT: OpenParEMg::on_actionDrawPolyline_triggered found activePolywire" << std::endl; std::cout.flush();
-    } else {
-        activePolywire=new Polyline();
-        gp_Dir normal=ui->drawingWindow->get_normal();
-        activePolywire->setNormal(normal.X(),normal.Y(),normal.Z());
-        activePolywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
-        activePolywire->setDrawEnable(true);
-    }
+    currentDrawingItem=new DrawingItem();
+    currentDrawingItem->setMW(this);
+    currentDrawingItem->startPolyline();
 }
 
 void OpenParEMg::on_actionDrawPolycircle_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionDrawPolycircle_triggered" << std::endl; std::cout.flush();
-
-    restrictToDrawingPlane=true;
-    startOperation(true);
-    activeAction=true;
-    itemChangesStack.startNew();
-    ui->drawingWindow->set_pickFirstVertex(true);
-    clearTreeSelection();
-
-    if (activePolywire) {
-        std::cout << "ASSERT: OpenParEMg::on_actionDrawPolycircle_triggered found activePolywire" << std::endl; std::cout.flush();
-    } else {
-        activePolywire=new Polycircle();
-        gp_Dir normal=ui->drawingWindow->get_normal();
-        activePolywire->setNormal(normal.X(),normal.Y(),normal.Z());
-        activePolywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
-        activePolywire->setDrawEnable(true);
-    }
+    currentDrawingItem=new DrawingItem();
+    currentDrawingItem->setMW(this);
+    currentDrawingItem->startPolycircle();
 }
 
 void OpenParEMg::on_actionDrawRectangle_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionDrawRectangle_triggered" << std::endl; std::cout.flush();
-
-    restrictToDrawingPlane=true;
-    startOperation(true);
-    activeAction=true;
-    itemChangesStack.startNew();
-    ui->drawingWindow->set_pickFirstVertex(true);
-    clearTreeSelection();
-
-    if (activePolywire) {
-        std::cout << "ASSERT: OpenParEMg::on_actionDrawRectangle_triggered found activePolywire" << std::endl; std::cout.flush();
-    } else {
-        activePolywire=new Rectangle();
-        gp_Dir normal=ui->drawingWindow->get_normal();
-        activePolywire->setNormal(normal.X(),normal.Y(),normal.Z());
-        activePolywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
-        activePolywire->setDrawEnable(true);
-        activePolywire->setU(uLocalAxis);
-    }
+    currentDrawingItem=new DrawingItem();
+    currentDrawingItem->setMW(this);
+    currentDrawingItem->startRectangle();
 }
 
 void OpenParEMg::finishDraw ()
 {
-    //std::cout << "OpenParEMg::finishDraw" << std::endl; std::cout.flush();
-
     if (!activePolywire) return;
     activePolywire->setDrawEnable(false);
 
@@ -8804,40 +8752,21 @@ void OpenParEMg::finishDraw ()
 
         isIntegrationPath=false;
     } else {
-        DrawingItem *newItem=new DrawingItem(0);
-        newItem->setMW(this);
-        ShapeData *newShapeData=new ShapeData(1,activePolywire,nullptr,activePolywire->get_AIS_Shape());
-        newItem->addShapeData(newShapeData);
-        newItem->setText(0,activePolywire->getName(&objectCounts));
-        drawing.addChild(newItem);
-        newItem->setParent(&drawing);
-        ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
-        ui->drawingWindow->showItem(newItem);
-        ui->drawingWindow->selectItem(newItem);
-        itemChangesStack.add(newItem);
-        activeAction=false;
-
-        // put it on the Z-layer to get it higher selection priority
-        newItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
-
-        previousClickedItem=clickedItem;
-        clickedItem=newItem;
+        currentDrawingItem->finishDraw();
+        currentDrawingItem=nullptr;
     }
 
-    restrictToDrawingPlane=false;
+    // restrictToDrawingPlane=false;
 
-    activePolywire->deleteRubberband();
+    // activePolywire->deleteRubberband();
 
-    Rectangle *rectangle=dynamic_cast<Rectangle *>(activePolywire);
-    if (rectangle) rectangle->setIsSquare(false);
+    // activePolywire=nullptr;
 
-    activePolywire=nullptr;
+    // drawingChanged=true;
+    // workingItem=nullptr;
+    // ui->drawingWindow->removeSelectOnVertex();
 
-    drawingChanged=true;
-    workingItem=nullptr;
-    ui->drawingWindow->removeSelectOnVertex();
-
-    finishOperation(false,13);
+    // finishOperation(false,13);
 }
 
 void OpenParEMg::drawPath ()
@@ -9204,19 +9133,19 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
     if (cancel) {
 
-        if (activeAction) {
-            itemChangesStack.pop_back();
-            activeAction=false;
-        }
+        // if (activeAction) {
+        //     itemChangesStack.pop_back();
+        //     activeAction=false;
+        // }
 
-        if (activePolywire && activePolywire->getDrawEnable()) {
-            activePolywire->setDrawEnable(false);
-            activePolywire->deleteRubberband();
-            ui->drawingWindow->finishPickVertex(true);
-            ui->drawingWindow->updateViewer();
-            delete activePolywire;
-            activePolywire=nullptr;
-        }
+        // if (activePolywire && activePolywire->getDrawEnable()) {
+        //     activePolywire->setDrawEnable(false);
+        //     activePolywire->deleteRubberband();
+        //     ui->drawingWindow->finishPickVertex(true);
+        //     ui->drawingWindow->updateViewer();
+        //     delete activePolywire;
+        //     activePolywire=nullptr;
+        // }
 
         long unsigned int i=0;
         while (i < ui->drawingWindow->get_selectedItems_size()) {
