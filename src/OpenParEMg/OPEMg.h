@@ -317,6 +317,9 @@ class OpenParEMg : public QMainWindow
 {
     Q_OBJECT
 
+    friend class RootDrawingItem;
+    friend class DrawingItem;
+
 public:
     OpenParEMg (QWidget *parent = nullptr);
     ~OpenParEMg ();
@@ -375,7 +378,6 @@ public:
     void clearSelection ();
     void restoreSelection ();
 
-    //void rebuildTopLevelShape ();
     void reprocess (CustomTreeWidgetItem *);
 
     void startOperation (bool);
@@ -412,12 +414,12 @@ public:
     void copyDrawingItems ();
 
     bool isValidDeletePoint ();
-    void finishDeletePoint (CustomTreeWidgetItem *);
+    void finishDeletePoint (DrawingItem *);
     void cancelDeletePoint ();
 
     bool isValidInsertPoint ();
-    void finishInsertPoint (CustomTreeWidgetItem *);
-    void finishStretchPoint (CustomTreeWidgetItem *);
+    void finishInsertPoint (DrawingItem *);
+    void finishStretchPoint (DrawingItem *);
     void cancelInsertPoint ();
 
     bool isValidCloseExistingPolyline ();
@@ -436,12 +438,12 @@ public:
     bool isValidExtrudePolywire ();
     void finishExtrudePolywire (bool);
 
-    void finishMoveObject (CustomTreeWidgetItem *, gp_Pnt p0, gp_Pnt p1, bool);
-    void finishMoveObject (CustomTreeWidgetItem *, gp_Pnt p0, gp_Pnt p1);
+    void finishMoveObject (DrawingItem *, gp_Pnt p0, gp_Pnt p1, bool);
+    void finishMoveObject (DrawingItem *, gp_Pnt p0, gp_Pnt p1);
 
-    void finishStretchObject (CustomTreeWidgetItem *);
+    void finishStretchObject (DrawingItem *);
 
-    void finishRotateObject (CustomTreeWidgetItem *);
+    void finishRotateObject (DrawingItem *);
     void finishRotateObject ();
 
     bool isValidMergeSolids ();
@@ -613,7 +615,6 @@ private slots:
     void assignMaterial ();
 
     void cancelDrawingMenu ();
-    void buildDrawingMenu (QMenu &menu);
     void cancelPathMenu ();
     void buildPathMenu (QMenu &menu);
     void itemTreeContextMenu_triggered (const QPoint& pnt);
@@ -718,7 +719,7 @@ private:
     QString selectedMaterial;
     BoundaryDatabase *boundaryDatabase;
 
-    CustomTreeWidgetItem drawing;
+    RootDrawingItem drawing;
     CustomTreeWidgetItem path;
     CustomTreeWidgetItem port;
     CustomTreeWidgetItem boundary;

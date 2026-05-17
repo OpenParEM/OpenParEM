@@ -23,6 +23,7 @@
 
 #include <QTreeWidgetItem>
 #include <QMenu>
+#include <QObject>
 #include "AIS_Shape.hxx"
 #include <AIS_InteractiveContext.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
@@ -491,12 +492,6 @@ public:
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
         OPEMobject=nullptr;
-        p0set=false;
-        p1set=false;
-        enableMove=false;
-        enableStretch=false;
-        enableDeletePoint=false;
-        enableInsertPoint=false;
         depth=0;
         parent=nullptr;
     }
@@ -626,36 +621,6 @@ public:
         }
     }
 
-    gp_Trsf getTrsf () {return aTrsf;}
-    void setTrsf (gp_Trsf aTrsf_) {aTrsf=aTrsf_;}
-
-    TopoDS_Shape moveShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_InteractiveContext) viewerContext)
-    {
-        Handle(AIS_Shape) shape=getShape();
-
-        gp_Trsf step;
-        step.SetTranslation(p1,p2);
-        aTrsf=step*aTrsf;
-        shape->SetLocalTransformation(aTrsf);
-
-        viewerContext->Redisplay(shape,Standard_True);
-
-        BRepBuilderAPI_Transform transformer(shape->Shape(),aTrsf,Standard_True);
-        return transformer.Shape();
-    }
-
-    void moveAnimateShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_InteractiveContext) viewerContext)
-    {
-        if (animateShape.IsNull()) return;
-
-        gp_Trsf step;
-        step.SetTranslation(p1,p2);
-        aTrsf=step*aTrsf;
-        animateShape->SetLocalTransformation(aTrsf);
-
-        viewerContext->Redisplay(animateShape,Standard_True);
-    }
-
 
     TopoDS_Shape rotateShape (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2, Handle(AIS_InteractiveContext) viewerContext)
     {
@@ -670,52 +635,13 @@ public:
         return transformer.Shape();
     }
 
-    void reset_transformation ()
-    {
-        aTrsf=gp_Trsf();
-    }
 
-    void setAnimate (Handle(AIS_InteractiveContext) viewerContext)
-    {
-        Handle(AIS_Shape) shape=dataStack.getShapeData()->getShape();
-        if (shape.IsNull()) return;
 
-        if (!animateShape.IsNull()) {
-            viewerContext->Remove(animateShape,Standard_True);
-            animateShape.Nullify();
-        }
 
-        animateShape=new AIS_Shape(shape->Shape());
-        viewerContext->Display(animateShape,AIS_WireFrame,-1,Standard_True);  // non-selectable
-    }
 
-    void unsetAnimate (Handle(AIS_InteractiveContext) viewerContext)
-    {
-        //std::cout << "unsetAnimate" << std::endl; std::cout.flush();
-        if (animateShape.IsNull()) return;
-        viewerContext->Remove(animateShape,Standard_True);
-        animateShape.Nullify();
-    }
 
-    void setP0 (gp_Pnt p0_) {p0=p0_; p0set=true;}
-    void setP1 (gp_Pnt p1_) {p1=p1_; p1set=true;}
-    bool hasP0 () {return p0set;}
-    bool hasP1 () {return p1set;}
-    gp_Pnt getP0 () {return p0;}
-    gp_Pnt getP1 () {return p1;}
-    void resetP0P1 () {p0set=false; p1set=false;}
 
-    void setEnableMove (bool enableMove_) {enableMove=enableMove_;}
-    bool getEnableMove () {return enableMove;}
 
-    void setEnableStretch (bool enableStretch_) {enableStretch=enableStretch_;}
-    bool getEnableStretch () {return enableStretch;}
-
-    void setEnableDeletePoint (bool enableDeletePoint_) {enableDeletePoint=enableDeletePoint_;}
-    bool getEnableDeletePoint () {return enableDeletePoint;}
-
-    void setEnableInsertPoint (bool enableInsertPoint_) {enableInsertPoint=enableInsertPoint_;}
-    bool getEnableInsertPoint () {return enableInsertPoint;}
 
     CustomTreeWidgetItem* copyCreate ()
     {
@@ -727,7 +653,6 @@ public:
         ShapeData *copyShapeData=dataStack.getShapeData()->copyCreate();
         newItem->dataStack.add(copyShapeData);
         newItem->setText(0,this->text(0).append("_copy"));
-        newItem->aTrsf=aTrsf;
         newItem->dimTag=dimTag;
         newItem->forShowHide=forShowHide;
         newItem->itemType=itemType;
@@ -802,16 +727,7 @@ public:
                   << "   dimTag.second=" << dimTag.second << std::endl;
     }
 
-    void resetOperation ()
-    {
-        aTrsf=gp_Trsf();
-        p0set=false;
-        p1set=false;
-        enableMove=false;
-        enableStretch=false;
-        enableDeletePoint=false;
-        enableInsertPoint=false;
-    }
+
 
     void reset ()
     {
@@ -856,13 +772,13 @@ public:
 
 private slots:
 
-private:
+public:
     bool activeAction;                                 // for undo/redo, an active operation such as move, edit, stretch, etc. is in progress
     ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
     CustomTreeWidgetItem *parent;                      // parent for undo/redo
     std::vector<CustomTreeWidgetItem *> children;      // children for undo/redo
-    Handle(AIS_Shape) animateShape;                    // temporary shape for animation during moving
-    gp_Trsf aTrsf;
+
+
     std::vector<Handle(AIS_Shape)> meshEntities;       // for mesh
     std::pair<int,int> dimTag;                         //
     bool forShowHide;                                  // false - does not participate in item tree show/hide operations; true - does participate
@@ -883,6 +799,100 @@ private:
     QString material;                                  // material for this item - only valid for top-level SOLID and COMPOUND
     std::vector<CustomTreeWidgetItem *> linkedItems;   // link to path items, if any
 
+
+
+    int depth;                                         // item depth in the tree for saving formatted drawing files
+};
+
+class BaseItem : public CustomTreeWidgetItem
+{
+    Q_OBJECT
+
+public:
+    explicit BaseItem (QObject *parent = nullptr) {}
+
+    void setMW (OpenParEMg *mw_) {mw=mw_;}
+
+protected:
+    OpenParEMg *mw;
+
+};
+
+class RootDrawingItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    explicit RootDrawingItem (QObject *parent = nullptr) {}
+    void showMenu (QMenu *);
+
+private:
+
+};
+
+class DrawingItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    explicit DrawingItem (QObject *parent = nullptr)
+    {
+        p0set=false;
+        p1set=false;
+        enableMove=false;
+        enableStretch=false;
+        enableDeletePoint=false;
+        enableInsertPoint=false;
+    }
+
+    DrawingItem* copyCreate ();
+
+
+    void showMenu (QMenu *);
+
+    void setEnableMove (bool enableMove_) {enableMove=enableMove_;}
+    bool getEnableMove () {return enableMove;}
+
+    void setEnableStretch (bool enableStretch_) {enableStretch=enableStretch_;}
+    bool getEnableStretch () {return enableStretch;}
+
+    void setEnableDeletePoint (bool enableDeletePoint_) {enableDeletePoint=enableDeletePoint_;}
+    bool getEnableDeletePoint () {return enableDeletePoint;}
+
+    void setEnableInsertPoint (bool enableInsertPoint_) {enableInsertPoint=enableInsertPoint_;}
+    bool getEnableInsertPoint () {return enableInsertPoint;}
+
+    void setP0 (gp_Pnt p0_) {p0=p0_; p0set=true;}
+    void setP1 (gp_Pnt p1_) {p1=p1_; p1set=true;}
+    bool hasP0 () {return p0set;}
+    bool hasP1 () {return p1set;}
+    gp_Pnt getP0 () {return p0;}
+    gp_Pnt getP1 () {return p1;}
+    void resetP0P1 () {p0set=false; p1set=false;}
+
+    gp_Trsf getTrsf () {return aTrsf;}
+    void setTrsf (gp_Trsf aTrsf_) {aTrsf=aTrsf_;}
+    void reset_transformation () {aTrsf=gp_Trsf();}
+
+    TopoDS_Shape moveShape (gp_Pnt, gp_Pnt, Handle(AIS_InteractiveContext));
+    void setAnimate (Handle(AIS_InteractiveContext));
+    void unsetAnimate (Handle(AIS_InteractiveContext));
+    void moveAnimateShape (gp_Pnt, gp_Pnt, Handle(AIS_InteractiveContext));
+
+    void resetOperation ()
+    {
+        aTrsf=gp_Trsf();
+        p0set=false;
+        p1set=false;
+        enableMove=false;
+        enableStretch=false;
+        enableDeletePoint=false;
+        enableInsertPoint=false;
+    }
+
+private:
+    Handle(AIS_Shape) animateShape;                    // temporary shape for animation during moving
+    gp_Trsf aTrsf;
     gp_Pnt p0,p1;                                      // for move operations
     bool p0set,p1set;
     bool enableMove;
@@ -890,7 +900,6 @@ private:
     bool enableDeletePoint;
     bool enableInsertPoint;
 
-    int depth;                                         // item depth in the tree for saving formatted drawing files
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H
