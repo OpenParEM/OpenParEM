@@ -22,6 +22,30 @@ void RootDrawingItem::showMenu (QMenu *menu)
     if (mw->isValidRootDrawingSelectAll()) menu->addAction(mw->selectAllAction);
 }
 
+void DrawingItem::setForUndoRedo ()
+{
+    // clone the item onto itself for undo/redo
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+
+    // remove the old version from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    // save the new version for current usage
+    newShapeData->setEdit();
+    addShapeData(newShapeData);
+
+    // put the new version into display and tracking
+    mw->ui->drawingWindow->displayShape(getShape());
+    mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+    setForeground(0,Qt::gray);
+    mw->ui->drawingWindow->showItem(this);
+
+    // reset the selection filters
+    mw->startOperation(true);
+}
+
 void DrawingItem::startDraw ()
 {
     gp_Dir normal=mw->ui->drawingWindow->get_normal();
@@ -140,15 +164,7 @@ void DrawingItem::cancelDraw ()
 
 void DrawingItem::startMove ()
 {
-    // remove
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
-
-    // copy the data for undo/redo
-    ShapeData *newShapeData=getShapeData()->copyCreate();
-    newShapeData->setEdit();
-    addShapeData(newShapeData);
+    setForUndoRedo();
 
     // enable move
     resetOperation();
@@ -206,20 +222,7 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 
 void DrawingItem::startRotate ()
 {
-    // remove the old version from display and tracking
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
-
-    // clone the item onto itself for undo/redo
-    ShapeData *newShapeData=getShapeData()->copyCreate();
-    newShapeData->setEdit();
-    addShapeData(newShapeData);
-
-    // put the new version into display and tracking
-    mw->ui->drawingWindow->displayShape(getShape());
-    mw->insertToMapActivateItem(this);
-
+    setForUndoRedo();
     resetOperation();
     mw->itemChangesStack.add(this);
 }
@@ -262,6 +265,43 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
     resetOperation();
     activeAction=false;
     mw->findShowTopLevelItem(this,false);
+}
+
+void DrawingItem::startStretch ()
+{
+    setForUndoRedo();
+
+    Handle(AIS_Shape) shape=getShape();
+    if (!shape.IsNull()) {
+
+        // set the drawing plane
+        mw->currentPrivilegedPlane=mw->ui->drawingWindow->get_gridPlane();
+
+        // set the polywire for stretch
+        Polywire *polywire=static_cast<Polywire *>(getPolywire());
+        if (polywire) {
+            resetOperation();
+            setEnableStretch(true);
+            gp_Pln plane=polywire->getPlane();
+            mw->ui->drawingWindow->set_gridPlane(plane);
+            mw->itemChangesStack.add(this);
+        }
+    }
+}
+
+void DrawingItem::finishStretch ()
+{
+    // remove the old version from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (!polywire) return;
+    polywire->deleteRubberband();
+
+    // modify the clone
+    mw->finishStretchPoint(this);
 }
 
 void DrawingItem::extrude ()
@@ -352,19 +392,7 @@ void DrawingItem::extrude ()
 
 void DrawingItem::startEdit ()
 {
-    // remove the old version from display and tracking
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
-
-    // clone the item onto itself for undo/redo
-    ShapeData *newShapeData=getShapeData()->copyCreate();
-    newShapeData->setEdit();
-    addShapeData(newShapeData);
-
-    // put the new version into display and tracking
-    mw->ui->drawingWindow->displayShape(getShape());
-    mw->insertToMapActivateItem(this);
+    setForUndoRedo();
 
     // polywire to edit
     Polywire *polywire=static_cast<Polywire *>(getPolywire());

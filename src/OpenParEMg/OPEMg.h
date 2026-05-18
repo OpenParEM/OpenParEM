@@ -440,7 +440,7 @@ public:
 
     void finishMoveObject (gp_Pnt, gp_Pnt);
 
-    void finishStretchObject (DrawingItem *);
+    void finishStretchObject ();
 
     void finishRotateObject (double, gp_Pnt, gp_Pnt);
 

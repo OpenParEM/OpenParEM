@@ -847,6 +847,8 @@ public:
 
     DrawingItem* copyCreate ();
 
+    void setForUndoRedo ();
+
     void startDraw ();
     void startLine ();
     void startPolyline ();
@@ -860,6 +862,9 @@ public:
 
     void startRotate ();
     void finishRotate (double, gp_Pnt, gp_Pnt);
+
+    void startStretch ();
+    void finishStretch ();
 
     void extrude ();
 

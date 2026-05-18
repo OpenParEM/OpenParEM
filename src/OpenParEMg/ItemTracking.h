@@ -1063,13 +1063,17 @@ public:
     {
         //std::cout << "ItemTracker::insertItemToMap" << std::endl; std::cout.flush();
 
+        std::cout << "insertItemToMap:" << std::endl; std::cout.flush();
         if (!item) return;
+        std::cout << "   has item" << std::endl; std::cout.flush();
         if (shape.IsNull()) return;
+        std::cout << "   has shape" << std::endl; std::cout.flush();
         if (item->is_mesh()) return;
         if (item->is_sportLabel()) return;
 
         if (shape.IsNull()) {std::cout << "ItemTracker::insertItemToMap  ERROR inserting null shape" << std::endl; std::cout.flush();}
 
+        std::cout << "   insert" << std::endl; std::cout.flush();
         shapeToItemMap.insert({shape,item});
     }
 
@@ -1078,7 +1082,11 @@ public:
         if (!item) return;
         Handle(AIS_Shape) shape=item->getShape();
         if (shape.IsNull()) return;
+
+        // hide the object
         if (viewerContext->IsDisplayed(shape)) viewerContext->Erase(shape,Standard_False);
+
+        // remove it from the hash
         shapeToItemMap.erase(shape);
     }
 
@@ -1184,12 +1192,12 @@ private:
         unselectItem(item);
         hideItem(item);
 
-        // remove the AIS_Shape
+        // remove the AIS_Shape from the viewer
         viewerContext->Remove(item->getShape(),Standard_False);
         shapeToItemMap.erase(item->getShape());
         item->getShape().Nullify();
 
-        // remove arrow heads
+        // remove arrow heads from the viewer
         long unsigned int j=0;
         while (j < item->getArrowHeadsSize()) {
             viewerContext->Remove(item->getArrowHead(j),Standard_False);

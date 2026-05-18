@@ -3972,51 +3972,26 @@ void OpenParEMg::stretchObject ()
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem) {
-                Handle(AIS_Shape) shape=drawingItem->getShape();
-                if (!shape.IsNull()) {
-
-                    // set the drawing plane
-                    currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
-                    //restrictToDrawingPlane=true;
-
-                    Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
-                    if (polywire) {
-                        drawingItem->setEnableStretch(true);
-                        drawingItem->resetP0P1();
-                        gp_Pln plane=polywire->getPlane();
-                        ui->drawingWindow->set_gridPlane(plane);
-                        itemChangesStack.add(drawingItem);
-                    }
-                }
-            }
+            if (drawingItem) drawingItem->startStretch();
         }
         i++;
     }
+    ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::finishStretchObject (DrawingItem *item)
+void OpenParEMg::finishStretchObject ()
 {
     //std::cout << "OpenParEMg::finishStretchObject" << std::endl; std::cout.flush();
 
-    if (!item) return;
-
-    // remove the old version from display and tracking
-    // ui->drawingWindow->hideItem(item);
-    // ui->drawingWindow->removeItemFromMap(item);
-    // ui->drawingWindow->deleteShape(item->getShape());
-
-    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
-    if (!polywire) return;
-    polywire->deleteRubberband();
-
-    // clone the item onto itself for undo/redo
-    ShapeData *newShapeData=item->getShapeData()->copyCreate();
-    newShapeData->setEdit();
-    item->addShapeData(newShapeData);
-
-    // modify the clone
-    finishStretchPoint(item);
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+            if (drawingItem) drawingItem->finishStretch();
+        }
+        i++;
+    }
 }
 
 bool OpenParEMg::isValidDeletePoint ()
@@ -4633,6 +4608,8 @@ void OpenParEMg::rotateObject ()
         }
         i++;
     }
+
+    ui->drawingWindow->updateViewer();
 
     if (rotateInputForm) delete rotateInputForm;
     rotateInputForm=new RotateInputForm();
@@ -8770,7 +8747,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                             drawingItem->setP1(pnt);
                             polywire->setCurrentMousePosition(pnt);
                             polywire->drawStretchRubberband();
-                            finishStretchObject(drawingItem);
+                            finishStretchObject();
                         }
                     }
                 }
