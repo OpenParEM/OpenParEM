@@ -858,6 +858,9 @@ public:
     void startMove ();
     void finishMove (gp_Pnt, gp_Pnt);
 
+    void startRotate ();
+    void finishRotate (double, gp_Pnt, gp_Pnt);
+
     void extrude ();
 
     void startEdit ();

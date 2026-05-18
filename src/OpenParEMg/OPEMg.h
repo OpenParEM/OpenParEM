@@ -436,14 +436,13 @@ public:
     void convertToPath ();
 
     bool isValidExtrudePolywire ();
-    void finishExtrudePolywire (bool);
+    void finishExtrudePolywire ();
 
     void finishMoveObject (gp_Pnt, gp_Pnt);
 
     void finishStretchObject (DrawingItem *);
 
-    void finishRotateObject (DrawingItem *);
-    void finishRotateObject ();
+    void finishRotateObject (double, gp_Pnt, gp_Pnt);
 
     bool isValidMergeSolids ();
     void finishMergeSolids ();

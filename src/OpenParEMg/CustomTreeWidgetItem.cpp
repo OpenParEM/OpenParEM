@@ -204,6 +204,66 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
     mw->findShowTopLevelItem(this,false);
 }
 
+void DrawingItem::startRotate ()
+{
+    // remove the old version from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    // clone the item onto itself for undo/redo
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setEdit();
+    addShapeData(newShapeData);
+
+    // put the new version into display and tracking
+    mw->ui->drawingWindow->displayShape(getShape());
+    mw->insertToMapActivateItem(this);
+
+    resetOperation();
+    mw->itemChangesStack.add(this);
+}
+
+void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint)
+{
+    // remove the old version from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+        polywire->rotate(angle,startPoint,endPoint);
+        mw->reprocess(this);
+        mw->drawingChanged=true;
+    }
+
+    Process *process=static_cast<Process *>(getProcess());
+    if (process) {
+        int i=0;
+        while (i < childCount()) {
+            DrawingItem *processChild=(DrawingItem *)child(i);
+            processChild->finishRotate(angle,startPoint,endPoint);
+            i++;
+        }
+    }
+
+    if (!polywire && !process) {
+        TopoDS_Shape shape=rotateShape(angle,startPoint,endPoint,mw->ui->drawingWindow->get_viewerContext());
+        Handle(AIS_Shape) newAISshape=new AIS_Shape(shape);
+
+        ShapeData *shapeData=getShapeData();
+        shapeData->setShape(newAISshape);
+
+        mw->reprocess(this);
+        mw->drawingChanged=true;
+    }
+
+    resetOperation();
+    activeAction=false;
+    mw->findShowTopLevelItem(this,false);
+}
+
 void DrawingItem::extrude ()
 {
     TopoDS_Shape extrudeShape=getShape()->Shape();

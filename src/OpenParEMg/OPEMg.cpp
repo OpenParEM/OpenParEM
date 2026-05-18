@@ -3047,11 +3047,11 @@ void OpenParEMg::extrudePolywire ()
     lengthInputForm->show();
 }
 
-void OpenParEMg::finishExtrudePolywire (bool cancel)
+void OpenParEMg::finishExtrudePolywire ()
 {
     //std::cout << "OpenParEMg::finishExtrudePolywire" << std::endl; std::cout.flush();
 
-    if (!cancel && abs(length) > 1e-12) {
+    if (abs(length) > 1e-12) {
 
         std::vector<DrawingItem *> selectedItems;
         int i=0;
@@ -3813,9 +3813,8 @@ void OpenParEMg::moveObject ()
 
 void OpenParEMg::finishMoveObject (gp_Pnt p0, gp_Pnt p1)
 {
-    std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
+    // std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
 
-    std::vector<DrawingItem *> selectedItems;
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
@@ -4630,7 +4629,7 @@ void OpenParEMg::rotateObject ()
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem) itemChangesStack.add(drawingItem);
+            if (drawingItem) drawingItem->startRotate();
         }
         i++;
     }
@@ -4648,82 +4647,29 @@ void OpenParEMg::rotateObject ()
     rotateInputForm->show();
 }
 
-void OpenParEMg::finishRotateObject (DrawingItem *item)
+void OpenParEMg::finishRotateObject (double angle_, gp_Pnt startPoint_, gp_Pnt endPoint_)
 {
-    //std::cout << "OpenParEMg::finishRotateObject" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::finishRotateObject" << std::endl; std::cout.flush();
 
-    if (!item) return;
-
-    // remove the old version from display and tracking
-    ui->drawingWindow->hideItem(item);
-    ui->drawingWindow->removeItemFromMap(item);
-    ui->drawingWindow->deleteShape(item->getShape());  // lose selection
-
-    // clone the item onto itself for undo/redo
-    ShapeData *newShapeData=item->getShapeData()->copyCreate();
-    newShapeData->setEdit();
-    item->addShapeData(newShapeData);
-    activeAction=false;
-
-    // add the new item back to the display and tracking
-    // ui->drawingWindow->insertItemToMap(item->getShape(),item);
-
-    // modify the clone
-
-    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
-    if (polywire) {
-        polywire->rotate(angle,startPoint,endPoint);
-        reprocess(item);
-        drawingChanged=true;
-    }
-
-    Process *process=static_cast<Process *>(item->getProcess());
-    if (process) {
-
-        int i=0;
-        while (i < item->childCount()) {
-            DrawingItem *child=(DrawingItem *)item->child(i);
-            finishRotateObject(child);
-            i++;
-        }
-    }
-
-    if (!polywire && !process) {
-        item->reset_transformation();
-        TopoDS_Shape shape=item->rotateShape(angle,startPoint,endPoint,ui->drawingWindow->get_viewerContext());
-        Handle(AIS_Shape) newAISshape=new AIS_Shape(shape);
-
-        ShapeData *shapeData=item->getShapeData();
-        shapeData->setShape(newAISshape);
-
-        // add the new item back to the display and tracking
-        ui->drawingWindow->insertItemToMap(item->getShape(),item);
-        ui->drawingWindow->showItem(item);
-
-        reprocess(item);
-        drawingChanged=true;
-    }
-}
-
-void OpenParEMg::finishRotateObject ()
-{
-    long unsigned int i=0;
+    std::vector<DrawingItem *> selectedList;
+    int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (item) {
-                finishRotateObject(drawingItem);
-                drawingItem->resetOperation();
-                findShowTopLevelItem(drawingItem,false);
-            }
+            if (drawingItem) selectedList.push_back(drawingItem);
         }
         i++;
     }
-    if (rotateInputForm) {rotateInputForm=nullptr;}
 
-    // Do not call finishOperation: rotationEditForm calls finishOperation
-    //finishOperation(false,9);
+    i=0;
+    while (i < selectedList.size()) {
+        selectedList[i]->finishRotate(angle_,startPoint_,endPoint_);
+        i++;
+    }
+
+    // Do not call finishOperation: rotateInputForm calls finishOperation
+    //finishOperation(false,1);
 }
 
 bool OpenParEMg::isValidCreatePortFromFace ()
@@ -8942,9 +8888,9 @@ void OpenParEMg::finishOperation (bool cancel, int source)
         restrictToDrawingPlane=false;
 
     } else {
-        if (lengthInputForm) finishExtrudePolywire(false);
+        if (lengthInputForm) finishExtrudePolywire();
         if (vectorInputForm) finishPlaneSetToFace();
-        if (rotateInputForm) finishRotateObject();
+        if (rotateInputForm) finishRotateObject(angle,startPoint,endPoint);
         if (lineEditForm || rectangleEditForm || polycircleEditForm || lengthEditForm) finishEditObject(false);
     }
 
