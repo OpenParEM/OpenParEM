@@ -3053,99 +3053,20 @@ void OpenParEMg::finishExtrudePolywire (bool cancel)
 
     if (!cancel && abs(length) > 1e-12) {
 
+        std::vector<DrawingItem *> selectedItems;
         int i=0;
         while (i < ui->drawingWindow->get_selectedItems_size()) {
             CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
             if (item) {
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-                if (drawingItem) {
-
-                    // don't clone; a new item will be created
-
-                    TopoDS_Shape extrudeShape=drawingItem->getShape()->Shape();
-
-                    // pick off the face to exclude any extra vertices added for selection convenience
-                    if (extrudeShape.ShapeType() == TopAbs_COMPOUND) {
-                        TopoDS_Iterator it(extrudeShape);
-                        for (; it.More(); it.Next()) {
-                            TopoDS_Shape subShape=it.Value();
-                            if (subShape.ShapeType() == TopAbs_FACE) {
-                                extrudeShape=subShape;
-                                break;
-                            }
-                        }
-                    }
-
-                    // extrude
-                    Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
-                    if (polywire) {
-
-                        // set direction
-                        polywire->setReverseExtrusionDirection(false);
-                        if (extrusionDirection.Magnitude() > 1e-12) {
-                            if (polywire->getNormal().IsOpposite(extrusionDirection,1.5)) {
-                                polywire->setReverseExtrusionDirection(true);
-                            }
-                        }
-
-                        // scale it
-                        gp_Vec scaledVec=gp_Vec(polywire->getNormal())*length;
-                        if (polywire->getReverseExtrusionDirection()) scaledVec=-scaledVec;
-
-                        // extrude it
-                        BRepPrimAPI_MakePrism aPrism(extrudeShape,scaledVec);
-                        if (aPrism.IsDone()) {
-
-                            Handle(AIS_Shape) newShape=new AIS_Shape(aPrism);
-
-                            // define the process
-                            Extrude *extrude=new Extrude();
-                            extrude->set_length(length);
-
-                            // add it
-                            DrawingItem *newItem=new DrawingItem(0);
-                            newItem->setText(0,extrude->getName(&objectCounts));
-                            ShapeData *newShapeData=new ShapeData(1,nullptr,extrude,newShape);
-                            newItem->addShapeData(newShapeData);
-                            itemChangesStack.add(newItem);
-
-                            drawing.addChild(newItem);
-                            newItem->setParent(&drawing);
-                            extrude=nullptr;
-
-                            //ui->drawingWindow->displayShape(newItem->getShape());
-                            ui->drawingWindow->activateItem(newItem);
-                            ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
-                            ui->drawingWindow->showItem(newItem);
-                            ui->drawingWindow->selectItem(newItem);
-
-                            // move the object in the selection tree
-                            int index=drawing.indexOfChild(drawingItem);
-                            drawing.takeChild(index);
-                            newItem->addChild(drawingItem);
-                            drawingItem->setParent(newItem);
-
-                            // add the object to the child list for undo/redo
-                            newItem->push_child(drawingItem);
-
-                            // hide/show
-                            ui->drawingWindow->hideItem(drawingItem);
-                            ui->drawingWindow->unselectItem(drawingItem,i);  // changes list
-
-                            ui->drawingWindow->showItem(newItem);
-                            ui->drawingWindow->selectItem(newItem);
-
-                            increase_depth(drawingItem);
-                            previousClickedItem=clickedItem;
-                            clickedItem=newItem;
-
-                            drawingChanged=true;
-                        }
-                    }
-                    drawingItem->resetOperation();
-                    activeAction=false;
-                }
+                if (drawingItem) selectedItems.push_back(drawingItem);
             }
+            i++;
+        }
+
+        i=0;
+        while (i < selectedItems.size()) {
+            selectedItems[i]->extrude();
             i++;
         }
     }
@@ -3596,17 +3517,14 @@ void OpenParEMg::editObject ()
 
 void OpenParEMg::findShowTopLevelItem (CustomTreeWidgetItem *item, bool hideItem)
 {
-    std::cout << "OpenParEMg::findShowTopLevelItem   item=" << item << std::endl; std::cout.flush();
     if (!item) return;
 
     CustomTreeWidgetItem *parentItem=item->getParent();
-    if (parentItem) {
-        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
-        while (!rootDrawingItem) {
-            item=parentItem;
-            parentItem=item->getParent();
-            if (!parentItem) break;
-        }
+    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
+    while (!rootDrawingItem) {
+        item=parentItem;
+        parentItem=item->getParent();
+        rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
     }
     ui->drawingWindow->hideItem(item);
     ui->drawingWindow->showItem(item);
@@ -4002,26 +3920,17 @@ bool OpenParEMg::isValidObjectMove ()
 
 void OpenParEMg::moveObject ()
 {
-    //std::cout << "OpenParEMg::moveObject" << std::endl; std::cout.flush();
-
     startOperation(true);
     activeAction=true;
     itemChangesStack.startNew();
     ui->drawingWindow->set_pickSecondVertex(true);
 
-    // set up for animation and undo/redo
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem) {
-                drawingItem->setAnimate(ui->drawingWindow->get_viewerContext());
-                drawingItem->resetP0P1();
-                drawingItem->reset_transformation();
-                drawingItem->setEnableMove(true);
-                itemChangesStack.add(item);
-            }
+            if (drawingItem) drawingItem->startMove();
         }
         i++;
     }
@@ -4032,74 +3941,22 @@ void OpenParEMg::moveObject ()
 //     std::cout << name << "=(" << p.X() << "," << p.Y() << "," << p.Z() << ")" << std::endl; std::cout.flush();
 // }
 
-void OpenParEMg::finishMoveObject (DrawingItem *item, gp_Pnt p0, gp_Pnt p1, bool isChild)
+void OpenParEMg::finishMoveObject (gp_Pnt p0, gp_Pnt p1)
 {
-    //std::cout << "OpenParEMg::finishMoveObject  isChild=" << isChild << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
 
-    if (!item) return;
-
-    item->unsetAnimate(ui->drawingWindow->get_viewerContext());
-
-    // remove the old version from display and tracking
-    ui->drawingWindow->hideItem(item);
-    ui->drawingWindow->removeItemFromMap(item);
-    ui->drawingWindow->deleteShape(item->getShape());
-
-    // clone the item onto itself for undo/redo
-    ShapeData *newShapeData=item->getShapeData()->copyCreate();
-    newShapeData->setEdit();
-    item->addShapeData(newShapeData);
-
-    // modify the clone
-
-    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
-    if (polywire) {
-        polywire->shift(p1,p0);
-        reprocess(item);
-        drawingChanged=true;
-    }
-
-    Process *process=static_cast<Process *>(item->getProcess());
-    if (process) {
-        int i=0;
-        while (i < item->childCount()) {
-            DrawingItem *child=(DrawingItem *)item->child(i);
-            finishMoveObject(child,p0,p1,false);
-            drawingChanged=true;
-            i++;
+    std::vector<DrawingItem *> selectedItems;
+    int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+            if (drawingItem) drawingItem->finishMove(p0,p1);
         }
-
-        reprocess(item);
-        ui->drawingWindow->activateItem(item);
+        i++;
     }
 
-    if (!polywire && !process) {
-        item->reset_transformation();
-        TopoDS_Shape shape=item->moveShape(p0,p1,ui->drawingWindow->get_viewerContext());
-        Handle(AIS_Shape) newAISshape=new AIS_Shape(shape);
-
-        ShapeData *shapeData=item->getShapeData();
-        shapeData->setShape(newAISshape);
-
-        // add the new item back to the display and tracking
-        ui->drawingWindow->insertItemToMap(item->getShape(),item);
-
-        reprocess(item);
-        drawingChanged=true;
-    }
-
-    activeAction=false;
-}
-
-void OpenParEMg::finishMoveObject (DrawingItem *item, gp_Pnt p0, gp_Pnt p1)
-{
-    //std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
-
-    if (!item) return;
-
-    finishMoveObject(item,p0,p1,false);
-    item->resetOperation();
-    findShowTopLevelItem(item,false);
+    finishOperation(false,250);
 }
 
 bool OpenParEMg::isValidCopy ()
@@ -9034,94 +8891,99 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     if (rectangleEditForm) rectangleEditForm->pickVertexFinished(pnt);
     if (polycircleEditForm) polycircleEditForm->pickVertexFinished(pnt);
 
-    bool finishedMove=false;
-    long unsigned int i=0;
+    // actions for which several selected items are allowed
+    bool finishMove=false;
+    int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
-
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem) {
 
                 // move
                 if (drawingItem->getEnableMove()) {
                     if (!drawingItem->hasP0()) {
-                        drawingItem->setP0(pnt);
+                        drawingItem->setP0(pnt);  // just to use the set flag
+                        startPoint=pnt;
                         ui->drawingWindow->hideItem(drawingItem);
                     } else {
-                        gp_Pnt p0=drawingItem->getP0();
-                        finishMoveObject(drawingItem,p0,pnt);
-                        finishedMove=true;
-                    }
-                }
-
-                Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
-                if (polywire) {
-
-                    // stretch
-                    if (drawingItem->getEnableStretch()) {
-
-                        Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
-                        if (rectangle) {
-                            if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
-                                rectangle->setIsSquare(true);
-                            } else {
-                                rectangle->setIsSquare(false);
-                            }
-                        }
-
-                        if (!drawingItem->hasP0()) {
-                            drawingItem->setP0(pnt);
-                            polywire->setEditIndex(pnt);
-                            polywire->setCurrentMousePosition(pnt);
-                            polywire->drawStretchRubberband();
-
-                            // switch to allowing selection on midpoints
-                            startOperation(true);
-
-                            ui->drawingWindow->hideItem(drawingItem);
-                            ui->drawingWindow->updateViewer();
-                        } else {
-                            if (polywire->isPointOnPlane(pnt) && polywire->isValidInsertPoint(pnt)) {
-                                drawingItem->setP1(pnt);
-                                polywire->setCurrentMousePosition(pnt);
-                                polywire->drawStretchRubberband();
-                                finishStretchObject(drawingItem);
-                            }
-                        }
-                    }
-
-                    // delete point
-                    if (drawingItem->getEnableDeletePoint()) {
-                        if (polywire->isPointOnPlane(pnt)) {
-                            drawingItem->setP0(pnt);
-                            finishDeletePoint(drawingItem);
-                        }
-                    }
-
-                    // insert point
-                    if (drawingItem->getEnableInsertPoint()) {
-                        if (polywire->isPointOnPlane(pnt)) {
-                            if (!drawingItem->hasP0()) {
-                                drawingItem->setP0(pnt);
-                                finishInsertPoint(drawingItem);
-                            } else {
-                                drawingItem->setP1(pnt);
-                                polywire->setCurrentMousePosition(pnt);
-                                polywire->drawStretchRubberband();
-                                finishStretchPoint(drawingItem);
-                            }
-                        }
+                        //drawingItem->setP1(pnt);
+                        endPoint=pnt;
+                        finishMove=true;
                     }
                 }
             }
         }
         i++;
     }
+    if (finishMove) finishMoveObject(startPoint,endPoint);
 
-    if (finishedMove) {
-        finishOperation(false,15);
+    // actions for which only one selected item is allowed or needed
+    if (ui->drawingWindow->get_selectedItems_size() > 0) {
+        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(0);
+        if (item) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+
+            Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
+            if (polywire) {
+
+                // stretch
+                if (drawingItem->getEnableStretch()) {
+
+                    Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+                    if (rectangle) {
+                        if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
+                            rectangle->setIsSquare(true);
+                        } else {
+                            rectangle->setIsSquare(false);
+                        }
+                    }
+
+                    if (!drawingItem->hasP0()) {
+                        drawingItem->setP0(pnt);
+                        polywire->setEditIndex(pnt);
+                        polywire->setCurrentMousePosition(pnt);
+                        polywire->drawStretchRubberband();
+
+                        // switch to allowing selection on midpoints
+                        startOperation(true);
+
+                        ui->drawingWindow->hideItem(drawingItem);
+                        ui->drawingWindow->updateViewer();
+                    } else {
+                        if (polywire->isPointOnPlane(pnt) && polywire->isValidInsertPoint(pnt)) {
+                            drawingItem->setP1(pnt);
+                            polywire->setCurrentMousePosition(pnt);
+                            polywire->drawStretchRubberband();
+                            finishStretchObject(drawingItem);
+                        }
+                    }
+                }
+
+                // delete point
+                if (drawingItem->getEnableDeletePoint()) {
+                    if (polywire->isPointOnPlane(pnt)) {
+                        drawingItem->setP0(pnt);
+                        finishDeletePoint(drawingItem);
+                    }
+                }
+
+                // insert point
+                if (drawingItem->getEnableInsertPoint()) {
+                    if (polywire->isPointOnPlane(pnt)) {
+                        if (!drawingItem->hasP0()) {
+                            drawingItem->setP0(pnt);
+                            finishInsertPoint(drawingItem);
+                        } else {
+                            drawingItem->setP1(pnt);
+                            polywire->setCurrentMousePosition(pnt);
+                            polywire->drawStretchRubberband();
+                            finishStretchPoint(drawingItem);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     lastMousePosition=pnt;

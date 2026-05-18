@@ -3,6 +3,8 @@
 #include "CustomTreeWidgetItem.h"
 #include "OPEMg.h"
 #include "ui_OPEMg.h"
+#include <BRepPrimAPI_MakePrism.hxx>
+#include <TopoDS_Iterator.hxx>
 
 
 void RootDrawingItem::showMenu (QMenu *menu)
@@ -71,7 +73,7 @@ void DrawingItem::startPolycircle ()
 
 void DrawingItem::finishDraw ()
 {
-    // add teh final shape to the shape data
+    // add the final shape to the shape data
     ShapeData *shapeData=getShapeData();
     shapeData->setShape(shapeData->getPolywire()->get_AIS_Shape());
 
@@ -134,6 +136,158 @@ void DrawingItem::cancelDraw ()
     mw->activeAction=false;
 
     mw->ui->drawingWindow->updateViewer();
+}
+
+void DrawingItem::startMove ()
+{
+    // remove
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    // copy the data for undo/redo
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setEdit();
+    addShapeData(newShapeData);
+
+    // enable move
+    resetOperation();
+    setAnimate(mw->ui->drawingWindow->get_viewerContext());
+    setEnableMove(true);
+
+    // add to the stack for undo/redo
+    mw->itemChangesStack.add(this);
+}
+
+void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
+{
+    unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
+
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+        polywire->shift(p1_,p0_);
+        mw->reprocess(this);
+        mw->drawingChanged=true;
+    }
+
+    Process *process=static_cast<Process *>(getProcess());
+    if (process) {
+        int i=0;
+        while (i < childCount()) {
+            DrawingItem *processChild=(DrawingItem *)child(i);
+            processChild->finishMove(p0_,p1_);
+            mw->drawingChanged=true;
+            i++;
+        }
+
+        mw->ui->drawingWindow->activateItem(this);
+    }
+
+    if (!polywire && !process) {
+        reset_transformation();
+        TopoDS_Shape shape=moveShape(p0_,p1_,mw->ui->drawingWindow->get_viewerContext());
+        Handle(AIS_Shape) newAISshape=new AIS_Shape(shape);
+
+        ShapeData *shapeData=getShapeData();
+        shapeData->setShape(newAISshape);
+
+        // add the new item back to the display and tracking
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+
+        mw->reprocess(this);
+        mw->drawingChanged=true;
+    }
+
+    activeAction=false;
+
+    resetOperation();
+    mw->findShowTopLevelItem(this,false);
+}
+
+void DrawingItem::extrude ()
+{
+    TopoDS_Shape extrudeShape=getShape()->Shape();
+    if (extrudeShape.IsNull()) return;
+
+    // pick off the face to exclude any extra vertices added for selection convenience
+    if (extrudeShape.ShapeType() == TopAbs_COMPOUND) {
+        TopoDS_Iterator it(extrudeShape);
+        for (; it.More(); it.Next()) {
+            TopoDS_Shape subShape=it.Value();
+            if (subShape.ShapeType() == TopAbs_FACE) {
+                extrudeShape=subShape;
+                break;
+            }
+        }
+    }
+
+    // extrude
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+
+        // set direction
+        polywire->setReverseExtrusionDirection(false);
+        if (mw->extrusionDirection.Magnitude() > 1e-12) {
+            if (polywire->getNormal().IsOpposite(mw->extrusionDirection,1.5)) {
+                polywire->setReverseExtrusionDirection(true);
+            }
+        }
+
+        // scale it
+        gp_Vec scaledVec=gp_Vec(polywire->getNormal())*mw->length;
+        if (polywire->getReverseExtrusionDirection()) scaledVec=-scaledVec;
+
+        // extrude it
+        BRepPrimAPI_MakePrism aPrism(extrudeShape,scaledVec);
+        if (aPrism.IsDone()) {
+
+            Handle(AIS_Shape) newShape=new AIS_Shape(aPrism);
+
+            // define the process
+            Extrude *newExtrude=new Extrude();
+            newExtrude->set_length(mw->length);
+
+            // add it
+            DrawingItem *newItem=new DrawingItem(0);
+            newItem->setMW(mw);
+            newItem->setText(0,newExtrude->getName(&(mw->objectCounts)));
+            ShapeData *newShapeData=new ShapeData(1,nullptr,newExtrude,newShape);
+            newItem->addShapeData(newShapeData);
+            mw->itemChangesStack.add(newItem);
+
+            mw->drawing.addChild(newItem);
+            newItem->setParent(&(mw->drawing));
+            newExtrude=nullptr;
+
+            // move the object in the selection tree
+            int index=mw->drawing.indexOfChild(this);
+            mw->drawing.takeChild(index);
+            newItem->addChild(this);
+            this->setParent(newItem);
+            depth++;
+
+            mw->ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
+
+            // add the object to the child list for undo/redo
+            newItem->push_child(this);
+
+            // hide/show
+
+            mw->ui->drawingWindow->hideItem(this);
+            mw->ui->drawingWindow->unselectItem(this);
+
+            mw->ui->drawingWindow->showItem(newItem);
+            mw->ui->drawingWindow->activateItem(newItem);
+            mw->ui->drawingWindow->selectItem(newItem);
+
+            mw->previousClickedItem=mw->clickedItem;
+            mw->clickedItem=newItem;
+
+            mw->drawingChanged=true;
+        }
+    }
+    resetOperation();
+    activeAction=false;
 }
 
 

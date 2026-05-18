@@ -438,8 +438,7 @@ public:
     bool isValidExtrudePolywire ();
     void finishExtrudePolywire (bool);
 
-    void finishMoveObject (DrawingItem *, gp_Pnt p0, gp_Pnt p1, bool);
-    void finishMoveObject (DrawingItem *, gp_Pnt p0, gp_Pnt p1);
+    void finishMoveObject (gp_Pnt, gp_Pnt);
 
     void finishStretchObject (DrawingItem *);
 

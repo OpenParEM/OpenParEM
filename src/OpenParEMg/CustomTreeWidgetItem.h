@@ -855,6 +855,11 @@ public:
     void finishDraw ();
     void cancelDraw ();
 
+    void startMove ();
+    void finishMove (gp_Pnt, gp_Pnt);
+
+    void extrude ();
+
 
     void showMenu (QMenu *);
 
