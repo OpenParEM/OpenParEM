@@ -130,7 +130,7 @@ void DrawingItem::finishDraw ()
     mw->ui->drawingWindow->removeSelectOnVertex();
 
     // reset flags
-    activeAction=false;
+    mw->activeAction=false;
     mw->restrictToDrawingPlane=false;
     mw->activePolywire=nullptr;
     mw->workingItem=nullptr;
@@ -214,7 +214,7 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
         mw->drawingChanged=true;
     }
 
-    activeAction=false;
+    mw->activeAction=false;
 
     resetOperation();
     mw->findShowTopLevelItem(this,false);
@@ -263,7 +263,7 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
     }
 
     resetOperation();
-    activeAction=false;
+    mw->activeAction=false;
     mw->findShowTopLevelItem(this,false);
 }
 
@@ -300,7 +300,6 @@ void DrawingItem::finishStretch ()
     if (!polywire) return;
     polywire->deleteRubberband();
 
-    // modify the clone
     mw->finishStretchPoint(this);
 }
 
@@ -387,7 +386,7 @@ void DrawingItem::extrude ()
         }
     }
     resetOperation();
-    activeAction=false;
+    mw->activeAction=false;
 }
 
 DrawingItem* DrawingItem::copy (CustomTreeWidgetItem *parent)
@@ -568,7 +567,7 @@ void DrawingItem::finishEdit ()
         }
     }
 
-    activeAction=false;
+    mw->activeAction=false;
     mw->findShowTopLevelItem(this,false);
 }
 
@@ -610,12 +609,99 @@ void DrawingItem::finishDeletePoint ()
     gp_Pnt p0=getP0();
     polywire->deletePoint(p0);
     mw->reprocess(this);
-    activeAction=false;
+    mw->activeAction=false;
     resetOperation();
 
     mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
     mw->drawingChanged=true;
     mw->findShowTopLevelItem(this,false);
+}
+
+void DrawingItem::cancelDeletePoint ()
+{
+    setEnableDeletePoint(false);
+}
+
+void DrawingItem::startInsertPoint ()
+{
+    setForUndoRedo();
+
+    Handle(AIS_Shape) shape=getShape();
+    if (!shape.IsNull()) {
+        // set the selected shape to be the only selectable shape
+        // includes selecting just on vertices of the shape and not midpoints
+        //ui->drawingWindow->set_activeShape(shape);
+
+        // set the drawing plane
+        mw->currentPrivilegedPlane=mw->ui->drawingWindow->get_gridPlane();
+        //restrictToDrawingPlane=true;
+
+        Polywire *polywire=static_cast<Polywire *>(getPolywire());
+        if (polywire) {
+            polywire=static_cast<Polywire *>(getPolywire());
+            setEnableInsertPoint(true);
+            resetP0P1();
+            gp_Pln plane=polywire->getPlane();
+            mw->ui->drawingWindow->set_gridPlane(plane);
+            mw->itemChangesStack.add(this);
+        }
+    }
+}
+
+void DrawingItem::finishInsertPoint ()
+{
+    // remove the old version from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+
+        // insert
+        gp_Pnt p0=getP0();
+        polywire->insertPoint(p0);
+
+        // stretch
+        mw->startOperation(true);  // re-run with mid-point selection
+        polywire->setEditIndex(p0);
+        polywire->setCurrentMousePosition(p0);
+        mw->ui->drawingWindow->set_pickSecondVertex(true);
+
+        // finishStretchPoint completes the operation
+    }
+}
+
+void DrawingItem::finishStretchPoint ()
+{
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (!polywire) return;
+    polywire->deleteRubberband();
+
+    Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+    if (rectangle) {
+        if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
+            rectangle->setIsSquare(true);
+        } else {
+            rectangle->setIsSquare(false);
+        }
+    }
+
+    setEnableStretch(false);
+    setEnableInsertPoint(false);
+    gp_Pnt pnt=getP1();
+    polywire->setEditPoint(pnt);
+    mw->reprocess(this);
+    mw->activeAction=false;
+
+    mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
+    resetOperation();
+    mw->drawingChanged=true;
+}
+
+void DrawingItem::cancelInsertPoint ()
+{
+    setEnableInsertPoint(false);
 }
 
 DrawingItem* DrawingItem::copyCreate ()

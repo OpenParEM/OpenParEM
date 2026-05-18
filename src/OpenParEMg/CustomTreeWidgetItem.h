@@ -773,7 +773,7 @@ public:
 private slots:
 
 public:
-    bool activeAction;                                 // for undo/redo, an active operation such as move, edit, stretch, etc. is in progress
+    //bool activeAction;                                 // for undo/redo, an active operation such as move, edit, stretch, etc. is in progress
     ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
     CustomTreeWidgetItem *parent;                      // parent for undo/redo
     std::vector<CustomTreeWidgetItem *> children;      // children for undo/redo
@@ -874,6 +874,12 @@ public:
 
     void startDeletePoint ();
     void finishDeletePoint ();
+    void cancelDeletePoint ();
+
+    void startInsertPoint ();
+    void finishInsertPoint ();
+    void finishStretchPoint ();
+    void cancelInsertPoint ();
 
     void showMenu (QMenu *);
 
