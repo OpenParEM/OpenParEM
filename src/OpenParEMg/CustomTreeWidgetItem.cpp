@@ -572,6 +572,52 @@ void DrawingItem::finishEdit ()
     mw->findShowTopLevelItem(this,false);
 }
 
+void DrawingItem::startDeletePoint ()
+{
+    setForUndoRedo();
+
+    Handle(AIS_Shape) shape=getShape();
+    if (!shape.IsNull()) {
+        // set the selected shape to be the only selectable shape
+        // includes selecting just on vertices of the shape and not midpoints
+        //ui->drawingWindow->set_activeShape(shape);
+
+        // set the drawing plane
+        mw->currentPrivilegedPlane=mw->ui->drawingWindow->get_gridPlane();
+        //restrictToDrawingPlane=true;
+
+        Polywire *polywire=static_cast<Polywire *>(getPolywire());
+        if (polywire) {
+            resetOperation();
+            setEnableDeletePoint(true);
+            gp_Pln plane=polywire->getPlane();
+            mw->ui->drawingWindow->set_gridPlane(plane);
+            mw->itemChangesStack.add(this);
+        }
+    }
+}
+
+void DrawingItem::finishDeletePoint ()
+{
+    // remove the old version from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (!polywire) return;
+
+    gp_Pnt p0=getP0();
+    polywire->deletePoint(p0);
+    mw->reprocess(this);
+    activeAction=false;
+    resetOperation();
+
+    mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
+    mw->drawingChanged=true;
+    mw->findShowTopLevelItem(this,false);
+}
+
 DrawingItem* DrawingItem::copyCreate ()
 {
     std::cout << "DrawingItem::copyCreate" << std::endl; std::cout.flush();

@@ -1063,17 +1063,13 @@ public:
     {
         //std::cout << "ItemTracker::insertItemToMap" << std::endl; std::cout.flush();
 
-        std::cout << "insertItemToMap:" << std::endl; std::cout.flush();
         if (!item) return;
-        std::cout << "   has item" << std::endl; std::cout.flush();
         if (shape.IsNull()) return;
-        std::cout << "   has shape" << std::endl; std::cout.flush();
         if (item->is_mesh()) return;
         if (item->is_sportLabel()) return;
 
         if (shape.IsNull()) {std::cout << "ItemTracker::insertItemToMap  ERROR inserting null shape" << std::endl; std::cout.flush();}
 
-        std::cout << "   insert" << std::endl; std::cout.flush();
         shapeToItemMap.insert({shape,item});
     }
 

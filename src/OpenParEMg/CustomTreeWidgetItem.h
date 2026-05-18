@@ -872,6 +872,9 @@ public:
     void startEdit ();
     void finishEdit ();
 
+    void startDeletePoint ();
+    void finishDeletePoint ();
+
     void showMenu (QMenu *);
 
     void setEnableMove (bool enableMove_) {enableMove=enableMove_;}

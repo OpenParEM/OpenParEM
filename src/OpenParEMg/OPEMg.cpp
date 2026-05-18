@@ -3983,27 +3983,7 @@ void OpenParEMg::deletePoint ()
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem) {
-                Handle(AIS_Shape) shape=drawingItem->getShape();
-                if (!shape.IsNull()) {
-                    // set the selected shape to be the only selectable shape
-                    // includes selecting just on vertices of the shape and not midpoints
-                    //ui->drawingWindow->set_activeShape(shape);
-
-                    // set the drawing plane
-                    currentPrivilegedPlane=ui->drawingWindow->get_gridPlane();
-                    //restrictToDrawingPlane=true;
-
-                    Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
-                    if (polywire) {
-                        drawingItem->setEnableDeletePoint(true);
-                        drawingItem->resetP0P1();
-                        gp_Pln plane=polywire->getPlane();
-                        ui->drawingWindow->set_gridPlane(plane);
-                        itemChangesStack.add(drawingItem);
-                    }
-                }
-            }
+            if (drawingItem) drawingItem->startDeletePoint();
         }
         i++;
     }
@@ -4012,35 +3992,7 @@ void OpenParEMg::deletePoint ()
 void OpenParEMg::finishDeletePoint (DrawingItem *item)
 {
     if (!item) return;
-
-    // remove the old version from display and tracking
-    ui->drawingWindow->hideItem(item);
-    ui->drawingWindow->removeItemFromMap(item);
-    ui->drawingWindow->deleteShape(item->getShape());  // lose selection
-
-    // clone the item onto itself for undo/redo
-    ShapeData *newShapeData=item->getShapeData()->copyCreate();
-    newShapeData->setEdit();
-    item->addShapeData(newShapeData);
-
-    // add the new item back to the display and tracking
-    ui->drawingWindow->insertItemToMap(item->getShape(),item);
-
-    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
-    if (!polywire) return;
-
-    gp_Pnt p0=item->getP0();
-    polywire->deletePoint(p0);
-    reprocess(item);
-    activeAction=false;
-    item->resetOperation();
-
-    ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
-
-    drawingChanged=true;
-
-    findShowTopLevelItem(item,false);
-
+    item->finishDeletePoint();
     finishOperation(false,8);
 }
 
