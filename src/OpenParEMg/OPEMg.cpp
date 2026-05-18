@@ -3717,6 +3717,7 @@ void OpenParEMg::finishMergeSolids ()
 
     // add it
     DrawingItem *newItem=new DrawingItem(0);
+    newItem->setMW(this);
     ShapeData *newShapeData=new ShapeData(1,nullptr,merge,newAISshape);
     newItem->addShapeData(newShapeData);
     newItem->setText(0,merge->getName(&objectCounts));
@@ -3841,6 +3842,7 @@ void OpenParEMg::finishSubtractSolids ()
 
     // add it
     DrawingItem *newItem=new DrawingItem(0);
+    newItem->setMW(this);
     ShapeData *newShapeData=new ShapeData(1,nullptr,subtract,newAISshape);
     newItem->addShapeData(newShapeData);
     newItem->setText(0,subtract->getName(&objectCounts));
