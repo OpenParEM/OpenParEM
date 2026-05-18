@@ -410,7 +410,6 @@ public:
     bool isValidObjectStretch ();
 
     bool isValidCopy ();
-    CustomTreeWidgetItem * copyItem (CustomTreeWidgetItem *, CustomTreeWidgetItem *);
     void copyDrawingItems ();
 
     bool isValidDeletePoint ();

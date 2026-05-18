@@ -390,6 +390,60 @@ void DrawingItem::extrude ()
     activeAction=false;
 }
 
+DrawingItem* DrawingItem::copy (CustomTreeWidgetItem *parent)
+{
+    DrawingItem *newItem=copyCreate();
+    newItem->setMW(mw);
+    mw->itemChangesStack.add(newItem);
+
+    ShapeData *shapeData=newItem->getShapeData();
+    shapeData->setCreate();
+
+    Polywire *polywire=static_cast<Polywire *>(newItem->getPolywire());
+    if (polywire) {
+        newItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
+    }
+
+    // set for display
+    newItem->setForeground(0,Qt::black);
+    mw->ui->drawingWindow->activateItem(newItem);
+    mw->ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
+
+    // set parent
+
+    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
+    if (rootDrawingItem) {
+        rootDrawingItem->addChild(newItem);
+        newItem->setParent(rootDrawingItem);
+        newItem->copy_depth(rootDrawingItem);
+    }
+
+    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(parent);
+    if (drawingItem) {
+        drawingItem->addChild(newItem);
+        newItem->setParent(drawingItem);
+        newItem->copy_depth(drawingItem);
+        newItem->increase_depth();
+    }
+
+    // children for processes
+    Process *process=static_cast<Process *>(newItem->getProcess());
+    if (process) {
+        int i=0;
+        while (i < childCount()) {
+            DrawingItem *processChild=(DrawingItem *)child(i);
+            if (processChild) {
+                DrawingItem *newChild=processChild->copy(newItem);
+                newChild->setParent(newItem);
+                newItem->push_child(newChild);
+            }
+            i++;
+        }
+    }
+
+    return newItem;
+}
+
 void DrawingItem::startEdit ()
 {
     setForUndoRedo();

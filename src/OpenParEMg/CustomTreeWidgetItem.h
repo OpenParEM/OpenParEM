@@ -867,6 +867,7 @@ public:
     void finishStretch ();
 
     void extrude ();
+    DrawingItem* copy (CustomTreeWidgetItem *);
 
     void startEdit ();
     void finishEdit ();

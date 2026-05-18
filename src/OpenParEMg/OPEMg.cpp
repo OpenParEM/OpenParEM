@@ -3844,47 +3844,6 @@ bool OpenParEMg::isValidCopy ()
     return false;
 }
 
-CustomTreeWidgetItem* OpenParEMg::copyItem (CustomTreeWidgetItem *item, CustomTreeWidgetItem *newItemParent)
-{
-    //std::cout << "OpenParEMg::copyItem" << std::endl; std::cout.flush();
-
-    if (!item) return nullptr;
-
-    CustomTreeWidgetItem *newItem=item->copyCreate();
-    ShapeData *shapeData=newItem->getShapeData();
-    shapeData->setCreate();
-    newItem->setForeground(0,Qt::black);
-    ui->drawingWindow->activateItem(newItem);
-    ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
-    newItemParent->addChild(newItem);
-    newItem->setParent(newItemParent);
-    newItem->copy_depth(newItemParent);
-    if (newItemParent != &drawing) newItem->increase_depth();
-    itemChangesStack.add(newItem);
-
-    Polywire *polywire=static_cast<Polywire *>(newItem->getPolywire());
-    if (polywire) {
-        newItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
-    }
-
-    // children for processes
-    Process *process=static_cast<Process *>(newItem->getProcess());
-    if (process) {
-        int i=0;
-        while (i < item->childCount()) {
-            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
-            if (child) {
-                CustomTreeWidgetItem *newChild=copyItem(child,newItem);
-                newChild->setParent(newItem);
-                newItem->push_child(newChild);
-            }
-            i++;
-        }
-    }
-
-    return newItem;
-}
-
 void OpenParEMg::copyDrawingItems ()
 {
     //std::cout << "OpenParEMg::copyDrawingItems" << std::endl; std::cout.flush();
@@ -3893,7 +3852,7 @@ void OpenParEMg::copyDrawingItems ()
     //activeAction=true;  // no need since there is not a cancel option
     itemChangesStack.startNew();
 
-    std::vector<CustomTreeWidgetItem *> newItemsList;
+    std::vector<CustomTreeWidgetItem *> selectedList;
 
     // copy the selected items
     long unsigned int i=0;
@@ -3902,9 +3861,8 @@ void OpenParEMg::copyDrawingItems ()
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem) {
-                CustomTreeWidgetItem *newItem=copyItem(drawingItem,&drawing);
-                newItem->setParent(&drawing);
-                newItemsList.push_back(newItem);
+                CustomTreeWidgetItem *newItem=drawingItem->copy(&drawing);
+                selectedList.push_back(newItem);
             }
         }
         i++;
@@ -3913,10 +3871,10 @@ void OpenParEMg::copyDrawingItems ()
     // show and select the new items
     ui->drawingWindow->unselectAllItems();
     i=0;
-    while (i < newItemsList.size()) {
-        ui->drawingWindow->hideItem(newItemsList[i]);
-        ui->drawingWindow->showItem(newItemsList[i]);
-        ui->drawingWindow->selectItem(newItemsList[i]);
+    while (i < selectedList.size()) {
+        ui->drawingWindow->hideItem(selectedList[i]);
+        ui->drawingWindow->showItem(selectedList[i]);
+        ui->drawingWindow->selectItem(selectedList[i]);
         i++;
     }
 
