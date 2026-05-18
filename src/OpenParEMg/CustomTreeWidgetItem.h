@@ -860,6 +860,8 @@ public:
 
     void extrude ();
 
+    void startEdit ();
+    void finishEdit ();
 
     void showMenu (QMenu *);
 

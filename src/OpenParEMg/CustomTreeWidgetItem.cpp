@@ -290,6 +290,145 @@ void DrawingItem::extrude ()
     activeAction=false;
 }
 
+void DrawingItem::startEdit ()
+{
+    // remove the old version from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    // clone the item onto itself for undo/redo
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setEdit();
+    addShapeData(newShapeData);
+
+    // put the new version into display and tracking
+    mw->ui->drawingWindow->displayShape(getShape());
+    mw->insertToMapActivateItem(this);
+
+    // polywire to edit
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+
+    // supporting undo/redo
+    mw->lineEdit=nullptr;
+    mw->rectangleEdit=nullptr;
+    mw->polycircleEdit=nullptr;
+
+    Line *line=dynamic_cast<Line *>(polywire);
+    if (line) {
+        mw->lineEdit=line->copyCreate();
+        if (mw->lineEditForm) delete mw->lineEditForm;
+        mw->lineEditForm=new LineEditForm();
+        mw->lineEditForm->set_conversionFactor(mw->getConversionFactor());
+        mw->lineEditForm->set_drawingWindow(mw->ui->drawingWindow);
+        mw->lineEditForm->set_polywire(mw->lineEdit);
+        mw->lineEditForm->set_relay(mw->relay);
+        mw->lineEditForm->setModal(false);
+        mw->ui->drawingWindow->hideItem(this);
+        connect(mw,&OpenParEMg::sendPnt,mw->lineEditForm,&LineEditForm::pickVertexFinished);
+        mw->lineEditForm->show();
+    }
+
+    Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+    if (rectangle) {
+        mw->rectangleEdit=rectangle->copyCreate();
+        if (mw->rectangleEditForm) delete mw->rectangleEditForm;
+        mw->rectangleEditForm=new RectangleEditForm();
+        mw->rectangleEditForm->set_conversionFactor(mw->getConversionFactor());
+        mw->rectangleEditForm->set_drawingWindow(mw->ui->drawingWindow);
+        mw->rectangleEditForm->set_polywire(mw->rectangleEdit);
+        mw->rectangleEditForm->set_relay(mw->relay);
+        mw->rectangleEditForm->setModal(false);
+        mw->ui->drawingWindow->hideItem(this);
+        connect(mw,&OpenParEMg::sendPnt,mw->rectangleEditForm,&RectangleEditForm::pickVertexFinished);
+        mw->rectangleEditForm->show();
+    }
+
+    Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+    if (polycircle) {
+        mw->polycircleEdit=polycircle->copyCreate();
+        if (mw->polycircleEditForm) delete mw->polycircleEditForm;
+        mw->polycircleEditForm=new PolycircleEditForm();
+        mw->polycircleEditForm->set_conversionFactor(mw->getConversionFactor());
+        mw->polycircleEditForm->set_drawingWindow(mw->ui->drawingWindow);
+        mw->polycircleEditForm->set_Polycircle(mw->polycircleEdit);
+        mw->polycircleEditForm->set_relay(mw->relay);
+        mw->polycircleEditForm->setModal(false);
+        mw->ui->drawingWindow->hideItem(this);
+        connect(mw,&OpenParEMg::sendPnt,mw->polycircleEditForm,&PolycircleEditForm::pickVertexFinished);
+        mw->polycircleEditForm->show();
+    }
+
+    Process *process=static_cast<Process *>(getProcess());
+    if (process) {
+        Extrude *extrude=dynamic_cast<Extrude *>(process);
+        if (extrude) {
+            Polywire *polywire=nullptr;
+            int i=0;
+            while (i < childCount()) {
+                DrawingItem *processChild=(DrawingItem *)child(i);
+                polywire=static_cast<Polywire *>(processChild->getPolywire());
+                if (polywire) break;
+                i++;
+            }
+
+            if (polywire) {
+                if (mw->lengthEditForm) delete mw->lengthEditForm;
+                mw->lengthEditForm=new LengthInputForm();
+                mw->lengthEditForm->set_conversionFactor(mw->getConversionFactor());
+                mw->length=extrude->get_length();
+                mw->lengthEditForm->set_length(&(mw->length));
+                mw->lengthEditForm->set_drawingWindow(mw->ui->drawingWindow);
+                mw->lengthEditForm->set_relay(mw->relay);
+                mw->lengthEditForm->setModal(false);
+                mw->lengthEditForm->show();
+            }
+        }
+    }
+
+    mw->itemChangesStack.add(this);
+}
+
+void DrawingItem::finishEdit ()
+{
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+        Line *line=dynamic_cast<Line *>(polywire);
+        Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+        Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
+        if (line) setPolywire(mw->lineEdit);
+        else if (rectangle) setPolywire(mw->rectangleEdit);
+        else if (polycircle) setPolywire(mw->polycircleEdit);
+
+        mw->reprocess(this);
+    }
+
+    Process *process=static_cast<Process *>(getProcess());
+    if (process) {
+        Extrude *extrude=dynamic_cast<Extrude *>(process);
+        if (extrude) {
+
+            // clone the child so that undo/redo works properly
+            int i=0;
+            while (i < childCount()) {
+                DrawingItem *processChild=(DrawingItem *)child(i);
+                Polywire *polywire=static_cast<Polywire *>(processChild->getPolywire());
+                if (polywire) {
+                    ShapeData *newShapeData=processChild->getShapeData()->copyCreate();
+                    newShapeData->setEdit();
+                    processChild->addShapeData(newShapeData);
+                }
+                i++;
+            }
+
+            extrude->set_length(mw->length);
+            mw->reprocess(this);
+        }
+    }
+
+    activeAction=false;
+    mw->findShowTopLevelItem(this,false);
+}
 
 DrawingItem* DrawingItem::copyCreate ()
 {

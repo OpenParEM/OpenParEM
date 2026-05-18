@@ -3427,89 +3427,7 @@ void OpenParEMg::editObject ()
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem) {
-
-                Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
-
-                // supporting undo/redo
-                lineEdit=nullptr;
-                rectangleEdit=nullptr;
-                polycircleEdit=nullptr;
-
-                Line *line=dynamic_cast<Line *>(polywire);
-                if (line) {
-                    lineEdit=line->copyCreate();
-                    if (lineEditForm) delete lineEditForm;
-                    lineEditForm=new LineEditForm();
-                    lineEditForm->set_conversionFactor(getConversionFactor());
-                    lineEditForm->set_drawingWindow(ui->drawingWindow);
-                    lineEditForm->set_polywire(lineEdit);
-                    lineEditForm->set_relay(relay);
-                    lineEditForm->setModal(false);
-                    ui->drawingWindow->hideItem(drawingItem);
-                    connect(this,&OpenParEMg::sendPnt,lineEditForm,&LineEditForm::pickVertexFinished);
-                    lineEditForm->show();
-                }
-
-                Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
-                if (rectangle) {
-                    rectangleEdit=rectangle->copyCreate();
-                    if (rectangleEditForm) delete rectangleEditForm;
-                    rectangleEditForm=new RectangleEditForm();
-                    rectangleEditForm->set_conversionFactor(getConversionFactor());
-                    rectangleEditForm->set_drawingWindow(ui->drawingWindow);
-                    rectangleEditForm->set_polywire(rectangleEdit);
-                    rectangleEditForm->set_relay(relay);
-                    rectangleEditForm->setModal(false);
-                    ui->drawingWindow->hideItem(drawingItem);
-                    connect(this,&OpenParEMg::sendPnt,rectangleEditForm,&RectangleEditForm::pickVertexFinished);
-                    rectangleEditForm->show();
-                }
-
-                Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
-                if (polycircle) {
-                    polycircleEdit=polycircle->copyCreate();
-                    if (polycircleEditForm) delete polycircleEditForm;
-                    polycircleEditForm=new PolycircleEditForm();
-                    polycircleEditForm->set_conversionFactor(getConversionFactor());
-                    polycircleEditForm->set_drawingWindow(ui->drawingWindow);
-                    polycircleEditForm->set_Polycircle(polycircleEdit);
-                    polycircleEditForm->set_relay(relay);
-                    polycircleEditForm->setModal(false);
-                    ui->drawingWindow->hideItem(drawingItem);
-                    connect(this,&OpenParEMg::sendPnt,polycircleEditForm,&PolycircleEditForm::pickVertexFinished);
-                    polycircleEditForm->show();
-                }
-
-                Process *process=static_cast<Process *>(drawingItem->getProcess());
-                if (process) {
-                    Extrude *extrude=dynamic_cast<Extrude *>(process);
-                    if (extrude) {
-                        Polywire *polywire=nullptr;
-                        int i=0;
-                        while (i < drawingItem->childCount()) {
-                            DrawingItem *child=(DrawingItem *)drawingItem->child(i);
-                            polywire=static_cast<Polywire *>(child->getPolywire());
-                            if (polywire) break;
-                            i++;
-                        }
-
-                        if (polywire) {
-                            if (lengthEditForm) delete lengthEditForm;
-                            lengthEditForm=new LengthInputForm();
-                            lengthEditForm->set_conversionFactor(getConversionFactor());
-                            length=extrude->get_length();
-                            lengthEditForm->set_length(&length);
-                            lengthEditForm->set_drawingWindow(ui->drawingWindow);
-                            lengthEditForm->set_relay(relay);
-                            lengthEditForm->setModal(false);
-                            lengthEditForm->show();
-                        }
-                    }
-                }
-
-                itemChangesStack.add(drawingItem);
-            }
+            if (drawingItem) drawingItem->startEdit();
         }
         i++;
     }
@@ -3545,57 +3463,7 @@ void OpenParEMg::finishEditObject (bool cancel)
             CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
             if (item) {
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-                if (drawingItem) {
-
-                    // remove the old version from display and tracking
-                    ui->drawingWindow->hideItem(drawingItem);
-                    ui->drawingWindow->removeItemFromMap(drawingItem);
-                    ui->drawingWindow->deleteShape(drawingItem->getShape());  // lose selection
-
-                    // clone the item onto itself for undo/redo
-                    ShapeData *newShapeData=drawingItem->getShapeData()->copyCreate();
-                    newShapeData->setEdit();
-                    drawingItem->addShapeData(newShapeData);
-
-                    // modify the clone
-                    Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
-                    if (polywire) {
-                        Line *line=dynamic_cast<Line *>(polywire);
-                        Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
-                        Polycircle *polycircle=dynamic_cast<Polycircle *>(polywire);
-                        if (line) drawingItem->setPolywire(lineEdit);
-                        else if (rectangle) drawingItem->setPolywire(rectangleEdit);
-                        else if (polycircle) drawingItem->setPolywire(polycircleEdit);
-
-                        reprocess(drawingItem);
-                    }
-
-                    Process *process=static_cast<Process *>(drawingItem->getProcess());
-                    if (process) {
-                        Extrude *extrude=dynamic_cast<Extrude *>(process);
-                        if (extrude) {
-
-                            // clone the child so that undo/redo works properly
-                            int i=0;
-                            while (i < drawingItem->childCount()) {
-                                DrawingItem *child=(DrawingItem *)drawingItem->child(i);
-                                Polywire *polywire=static_cast<Polywire *>(child->getPolywire());
-                                if (polywire) {
-                                    ShapeData *newShapeData=child->getShapeData()->copyCreate();
-                                    newShapeData->setEdit();
-                                    child->addShapeData(newShapeData);
-                                }
-                                i++;
-                            }
-
-                            extrude->set_length(length);
-                            reprocess(drawingItem);
-                        }
-                    }
-
-                    activeAction=false;
-                    findShowTopLevelItem(drawingItem,false);
-                }
+                if (drawingItem) drawingItem->finishEdit();
             }
             i++;
         }
@@ -4284,7 +4152,6 @@ void OpenParEMg::insertPoint ()
     startOperation(false);
     activeAction=true;
     itemChangesStack.startNew();
-    //ui->drawingWindow->set_pickFirstVertex(true);
     ui->drawingWindow->set_pickSecondVertex(true);
 
     long unsigned int i=0;
@@ -9103,9 +8970,6 @@ void OpenParEMg::finishOperation (bool cancel, int source)
     ui->drawingWindow->setSubshapeSelection(false);
     ui->drawingWindow->setSetToPlane(false);
     isIntegrationPath=false;
-
-    // reset the vertex symbol
-    //ui->drawingWindow->set_pickFirstVertex(false);  // also sets the second vertex
 
     // refresh the selection to enable further operations on the selected items
     ui->drawingWindow->refreshSelectedItems();
