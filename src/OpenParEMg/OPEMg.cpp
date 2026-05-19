@@ -2447,54 +2447,7 @@ void OpenParEMg::deleteDrawingItems ()
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem) {
-
-                // parentItem
-                CustomTreeWidgetItem *parentItem=drawingItem->getParent();
-                if (parentItem) {
-                    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
-                    if (rootDrawingItem) {
-                        int insertIndex=rootDrawingItem->indexOfChild(item);
-
-                        // move children to parent
-                        while (drawingItem->childCount() > 0) {
-                            CustomTreeWidgetItem* child=(CustomTreeWidgetItem *)drawingItem->takeChild(0);
-                            rootDrawingItem->insertChild(insertIndex++,child);
-                            child->setParent(rootDrawingItem);
-                            child->decrease_depth();
-                            ui->drawingWindow->showItem(child);
-
-                            // set the materials
-                            if (!drawingItem->text(1).isNull()) {
-                                if (!child->getPolywire()) child->setText(1,drawingItem->text(1));
-                            }
-
-                            // adjust the depth
-                            decrease_depth(child);
-                        }
-
-                        rootDrawingItem->removeChild(drawingItem);
-                    }
-
-                    itemChangesStack.add(drawingItem);
-
-                    // remove the old version from display and tracking
-                    ui->drawingWindow->hideItem(drawingItem);
-                    ui->drawingWindow->removeItemFromMap(drawingItem);
-                    ui->drawingWindow->deleteShape(drawingItem->getShape());  // lose selection
-
-                    // clone the item onto itself for undo/redo
-                    ShapeData *newShapeData=drawingItem->getShapeData()->copyCreate();
-                    newShapeData->setDelete();
-                    drawingItem->addShapeData(newShapeData);
-                    ui->drawingWindow->unselectItem(drawingItem);
-
-                    // reset the top-level compound
-                    reprocess(&drawing);
-
-                    drawingChanged=true;
-                }
-            }
+            if (drawingItem) drawingItem->del();
         }
         i++;
     }

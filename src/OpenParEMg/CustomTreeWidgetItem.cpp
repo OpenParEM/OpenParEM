@@ -704,6 +704,52 @@ void DrawingItem::cancelInsertPoint ()
     setEnableInsertPoint(false);
 }
 
+void DrawingItem::del ()
+{
+    setForUndoRedo();
+
+    // mark as delete
+    ShapeData *shapeData=getShapeData();
+    shapeData->setDelete();
+
+    // parentItem
+    CustomTreeWidgetItem *parentItem=getParent();
+    if (parentItem) {
+        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
+        if (rootDrawingItem) {
+            int insertIndex=rootDrawingItem->indexOfChild(this);
+
+            // move children to parent
+            while (childCount() > 0) {
+                CustomTreeWidgetItem* drawingChild=(CustomTreeWidgetItem *)takeChild(0);
+                rootDrawingItem->insertChild(insertIndex++,drawingChild);
+                drawingChild->setParent(rootDrawingItem);
+                drawingChild->decrease_depth();
+                mw->ui->drawingWindow->showItem(drawingChild);
+
+                // set the materials
+                if (!text(1).isNull()) {
+                    if (!drawingChild->getPolywire()) drawingChild->setText(1,text(1));
+                }
+            }
+
+            rootDrawingItem->removeChild(this);
+        }
+
+        mw->itemChangesStack.add(this);
+
+        // remove from display and tracking
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(this->getShape());
+
+        // reset the top-level compound
+        mw->reprocess(&(mw->drawing));
+
+        mw->drawingChanged=true;
+    }
+}
+
 DrawingItem* DrawingItem::copyCreate ()
 {
     std::cout << "DrawingItem::copyCreate" << std::endl; std::cout.flush();

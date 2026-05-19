@@ -881,6 +881,8 @@ public:
     void finishStretchPoint ();
     void cancelInsertPoint ();
 
+    void del ();
+
     void showMenu (QMenu *);
 
     void setEnableMove (bool enableMove_) {enableMove=enableMove_;}
