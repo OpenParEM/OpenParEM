@@ -2171,7 +2171,7 @@ void Path::addEdgePoints (TopoDS_Edge edge)
     points.push_back(point);
 }
 
-void Path::fill_wire_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *item)
+void Path::fill_wire_item (CustomOpenGLWidget *drawingWindow, PathItem *item)
 {
     if (!item) return;
 
@@ -2247,16 +2247,16 @@ void Path::fill_wire_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetIt
     }
 }
 
-void Path::create_wire_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
+void Path::create_wire_item (CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
 {
-    item=new CustomTreeWidgetItem(0);
+    item=new PathItem(0);
     fill_wire_item(drawingWindow,item);
     parentItem->addChild(item);
 }
 
-void Path::create_face_item (CustomOpenGLWidget *drawingWindow, CustomTreeWidgetItem *parentItem)
+void Path::create_face_item (CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
 {
-    item=new CustomTreeWidgetItem(0);
+    item=new PathItem(0);
     item->set_itemType(4);
     item->set_OPEMobject(this);
     item->setText(0,QString::fromStdString(get_name()));

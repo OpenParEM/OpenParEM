@@ -436,7 +436,7 @@ public:
     void convertToPolyline ();
 
     bool isValidConvertToPath ();
-    void convertItemToPath (CustomTreeWidgetItem *, bool);
+    void convertItemToPath (DrawingItem *, bool);
     void convertToPath ();
 
     bool isValidExtrudePolywire ();
@@ -651,7 +651,7 @@ private slots:
     void convertToPort ();
     void convertItemToBoundary (CustomTreeWidgetItem *, bool);
     void convertToBoundary ();
-    void reversePathItem (CustomTreeWidgetItem *, bool);
+    void reversePathItem (PathItem *, bool);
     void reversePathItems ();
     double getConversionFactor ();
     void extrudePolywire ();

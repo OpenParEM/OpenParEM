@@ -42,6 +42,7 @@
 #include <GeomAPI_ExtremaCurveCurve.hxx>
 #include <Precision.hxx>
 #include <algorithm>
+#include "path.hpp"
 
 
 Handle(AIS_Shape) CreateAISLineFromVertices (const gp_Pnt& p1, const gp_Pnt& p2)
@@ -377,6 +378,64 @@ void Polywire::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
     normal=normal.Rotated(axis,angleRadians);
 }
 
+// re-use the basic code from Path::fill_wire_item
+void Polywire::addArrows (BRep_Builder& builder, TopoDS_Compound& compound)
+{
+    if (!hasArrows) return;
+
+    // variable for use in the existing code
+
+    keywordPair p1;
+    keywordPair p2;
+
+    struct point normal_sp;
+    normal_sp.x=normal.X(); normal_sp.y=normal.Y(); normal_sp.z=normal.Z(); normal_sp.dim=3;
+
+    // shortest segment
+    double shortestLength=DBL_MAX;
+    long unsigned int i=0;
+    while (i < shapePoints.size()-1) {
+        gp_Pnt from=shapePoints[i];
+        gp_Pnt to=shapePoints[i+1];
+        double length=from.Distance(to);
+        if (length > 0 && length < shortestLength) shortestLength=length;
+        i++;
+    }
+
+    // make arrows
+    i=0;
+    while (i < shapePoints.size()-1) {
+        p1.set_point_value(shapePoints[i].X(),shapePoints[i].Y(),shapePoints[i].Z());
+        p2.set_point_value(shapePoints[i+1].X(),shapePoints[i+1].Y(),shapePoints[i+1].Z());
+
+        keywordPair *from=&p1;
+        keywordPair *to=&p2;
+
+        struct point center=point_midpoint(from->get_point_value(),to->get_point_value());
+        struct point centerOffset=point_scale(shortestLength/20,point_normalize(point_subtraction(center,from->get_point_value())));
+        struct point arrowOffset=point_scale(2,point_cross_product(normal_sp,centerOffset));
+
+        keywordPair *tip=new keywordPair();
+        tip->set_point_value(point_addition(center,centerOffset));
+
+        keywordPair *p1=new keywordPair ();
+        p1->set_point_value(point_subtraction(point_subtraction(center,centerOffset),arrowOffset));
+
+        keywordPair *p2=new keywordPair ();
+        p2->set_point_value(point_addition(point_subtraction(center,centerOffset),arrowOffset));
+
+        Path arrowHead(0,0);
+        arrowHead.set_closed(false);
+        arrowHead.push_point(p1);
+        arrowHead.push_point(tip);
+        arrowHead.push_point(p2);
+
+        builder.Add(compound,arrowHead.create_TopoDS_Wire());
+
+        i++;
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Line
 ////////////////////////////////////////////////////////////////////////////////
@@ -480,11 +539,19 @@ Line* Line::copyCreate ()
 
 Handle(AIS_Shape) Line::get_AIS_Shape ()
 {
-    print();
     Handle(AIS_Shape) shape;
     TopoDS_Wire wire=buildWire();
     if (!wire.IsNull()) {
-        shape=new AIS_Shape(wire);
+        if (hasArrows) {
+            TopoDS_Compound compound;
+            BRep_Builder builder;
+            builder.MakeCompound(compound);
+            builder.Add(compound,wire);
+            addArrows(builder,compound);
+            shape=new AIS_Shape(compound);
+        } else {
+            shape=new AIS_Shape(wire);
+        }
     }
     return shape;
 }
@@ -765,13 +832,29 @@ Handle(AIS_Shape) Polyline::get_AIS_Shape ()
     Handle(AIS_Shape) shape;
     TopoDS_Wire wire=buildWire();
     if (!wire.IsNull()) {
-        if (closed) {
-            TopoDS_Face face=buildFace(wire);
-            if (!face.IsNull()) {
-                shape=new AIS_Shape(face);
+        if (hasArrows) {
+            TopoDS_Compound compound;
+            BRep_Builder builder;
+            builder.MakeCompound(compound);
+            if (closed) {
+                TopoDS_Face face=buildFace(wire);
+                if (!face.IsNull()) {
+                    builder.Add(compound,face);
+                }
+            } else {
+                builder.Add(compound,wire);
             }
+            addArrows(builder,compound);
+            shape=new AIS_Shape(compound);
         } else {
-            shape=new AIS_Shape(wire);
+            if (closed) {
+                TopoDS_Face face=buildFace(wire);
+                if (!face.IsNull()) {
+                    shape=new AIS_Shape(face);
+                }
+            } else {
+                shape=new AIS_Shape(wire);
+            }
         }
     }
     return shape;
@@ -1576,12 +1659,33 @@ Rectangle* Rectangle::copyCreate ()
 
 Handle(AIS_Shape) Rectangle::get_AIS_Shape ()
 {
+    std::cout << "Rectangle::get_AIS_Shape  hasArrows=" << hasArrows << std::endl; std::cout.flush();
     Handle(AIS_Shape) shape;
     TopoDS_Wire wire=buildWire();
     if (!wire.IsNull()) {
-        TopoDS_Face face=buildFace(wire);
-        if (!face.IsNull()) {
-            shape=new AIS_Shape(face);
+        if (hasArrows) {
+            TopoDS_Compound compound;
+            BRep_Builder builder;
+            builder.MakeCompound(compound);
+            if (closed) {
+                TopoDS_Face face=buildFace(wire);
+                if (!face.IsNull()) {
+                    builder.Add(compound,face);
+                }
+            } else {
+                builder.Add(compound,wire);
+            }
+            addArrows(builder,compound);
+            shape=new AIS_Shape(compound);
+        } else {
+            if (closed) {
+                TopoDS_Face face=buildFace(wire);
+                if (!face.IsNull()) {
+                    shape=new AIS_Shape(face);
+                }
+            } else {
+                shape=new AIS_Shape(wire);
+            }
         }
     }
     return shape;
@@ -2088,21 +2192,28 @@ Handle(AIS_Shape) Polycircle::get_AIS_Shape ()
     Handle(AIS_Shape) shape;
     TopoDS_Wire wire=buildWire();
     if (!wire.IsNull()) {
-        TopoDS_Face face=buildFace(wire);
-        if (!face.IsNull()) {
+        TopoDS_Compound compound;
+        BRep_Builder builder;
+        builder.MakeCompound(compound);
 
-            // for center selection
-            TopoDS_Vertex vertex=BRepBuilderAPI_MakeVertex(centerPoint);
-
-            // combined shape
-            TopoDS_Compound compound;
-            BRep_Builder builder;
-            builder.MakeCompound(compound);
-            builder.Add(compound,face);
-            builder.Add(compound,vertex);
-
-            shape=new AIS_Shape(compound);
+        if (closed) {
+            TopoDS_Face face=buildFace(wire);
+            if (!face.IsNull()) {
+                builder.Add(compound,face);
+            }
+        } else {
+            builder.Add(compound,wire);
         }
+
+        if (hasArrows) {
+            addArrows(builder,compound);
+        }
+
+        // center point for selection
+        TopoDS_Vertex vertex=BRepBuilderAPI_MakeVertex(centerPoint);
+        builder.Add(compound,vertex);
+
+        shape=new AIS_Shape(compound);
     }
     return shape;
 }

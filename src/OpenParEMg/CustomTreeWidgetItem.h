@@ -669,10 +669,6 @@ public:
         return newItem;
     }
 
-    long unsigned int getArrowHeadsSize () {return dataStack.getArrowHeadsSize();}
-    Handle(AIS_Shape) getArrowHead (long unsigned int i) {return dataStack.getArrowHead(i);}
-    void pushArrowHead (Handle(AIS_Shape) arrowHead) {dataStack.pushArrowHead(arrowHead);}
-
     void print_itemType ()
     {
         if (is_rootDrawing()) std::cout << "root drawing" << std::endl;
@@ -822,6 +818,11 @@ public:
         parentItem=nullptr;
     }
 
+    bool isDrawingItem () {return false;}
+    bool isRootDrawingItem () {return false;}
+    bool isRootPathItem () {return false;}
+    bool isPathItem () {return false;}
+
     void setMW (OpenParEMg *mw_) {mw=mw_;}
     virtual void showMenu (QMenu *) = 0;
     virtual void del () = 0;
@@ -849,6 +850,7 @@ public:
         depth=0;
         parentItem=nullptr;
     }
+    bool isRootDrawingItem () {return true;}
     void showMenu (QMenu *) override;
     void del () override {}
     void undo () override {};
@@ -879,6 +881,7 @@ public:
         enableDeletePoint=false;
         enableInsertPoint=false;
     }
+    bool isDrawingItem () {return true;}
 
     DrawingItem* copyCreate ();
 
@@ -992,6 +995,7 @@ public:
         depth=0;
         parentItem=nullptr;
     }
+    bool isRootPathItem () {return true;}
     void showMenu (QMenu *) override;
     void del () override {}
     void undo () override {}
@@ -1017,12 +1021,17 @@ public:
 
         path=nullptr;
     }
+    bool isPathItem () {return true;}
     void showMenu (QMenu *) override;
     void del () override;
     void setPath (Path *path_) {path=path_;}
     Path* getPath () {return path;}
     void undo () override;
     void redo () override;
+
+    long unsigned int getArrowHeadsSize () {return dataStack.getArrowHeadsSize();}
+    Handle(AIS_Shape) getArrowHead (long unsigned int i) {return dataStack.getArrowHead(i);}
+    void pushArrowHead (Handle(AIS_Shape) arrowHead) {dataStack.pushArrowHead(arrowHead);}
 
 private:
     Path *path;

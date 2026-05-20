@@ -22,6 +22,7 @@
 #define POLYWIRE_H
 
 #include <AIS_Shape.hxx>
+#include <BRep_Builder.hxx>
 #include <QObject>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
@@ -101,6 +102,10 @@ public:
     virtual Handle(AIS_Shape) get_AIS_Shape () = 0;
     virtual QString getName (ObjectCounts *objectCounts) = 0;
 
+    void setHasArrows (bool hasArrows_) {hasArrows=hasArrows_;}
+    bool getHasArrows () {return hasArrows;}
+    void addArrows (BRep_Builder &builder, TopoDS_Compound &compound);
+
     void setReverseExtrusionDirection (bool reverseExtrusionDirection_) {reverseExtrusionDirection=reverseExtrusionDirection_;}
     bool getReverseExtrusionDirection () {return reverseExtrusionDirection;}
 
@@ -120,6 +125,7 @@ protected:
     gp_Pnt currentMousePosition;                    // current mouse position while drawing
     Handle(AIS_Shape) rubberband;                   // rubberband for drawing - currentMousePosition is the next point
     Handle(AIS_InteractiveContext) viewerContext;   // drawing context
+    bool hasArrows;                                 // draw arrows for paths
 
     bool drawEnable;                                // flag for enabling drawing objects
     long unsigned int editIndex;                    // index into a completed shape outline for stretching

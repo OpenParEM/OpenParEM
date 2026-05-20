@@ -230,14 +230,6 @@ public:
         viewerContext->Display(item->getShape(),Standard_False);
         viewerContext->Load(item->getShape());
         viewerContext->Activate(item->getShape(),0,Standard_False);
-
-        long unsigned int i=0;
-        while (i < item->getArrowHeadsSize()) {
-            viewerContext->Display(item->getArrowHead(i),Standard_False);
-            viewerContext->Load(item->getArrowHead(i));
-            viewerContext->Activate(item->getArrowHead(i),0,Standard_False);
-            i++;
-        }
     }
 
     bool isSelectedItem (CustomTreeWidgetItem *item)

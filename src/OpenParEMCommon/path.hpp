@@ -39,6 +39,9 @@
 
 class CustomOpenGLWidget;
 class CustomTreeWidgetItem;
+class RootPathItem;
+class PathItem;
+
 #endif
 
 struct point point_copy (struct point);
@@ -76,7 +79,7 @@ class Path {
       bool hasOutput;
       bool modified;
       #ifdef HAS_GUI
-      CustomTreeWidgetItem *item;      // tree item for this path
+      PathItem *item;      // tree item for this path
       CustomTreeWidgetItem *portItem;  // valid port for this path
       #endif
    public:
@@ -149,10 +152,10 @@ class Path {
       void assignPathNormal (struct point);
 #ifdef HAS_GUI
       void set_normal (gp_Vec);
-      void fill_wire_item (CustomOpenGLWidget *, CustomTreeWidgetItem *);
-      void create_wire_item (CustomOpenGLWidget *, CustomTreeWidgetItem *);
-      void create_face_item (CustomOpenGLWidget *, CustomTreeWidgetItem *);
-      CustomTreeWidgetItem* get_item () {return item;}
+      void fill_wire_item (CustomOpenGLWidget *, PathItem *);
+      void create_wire_item (CustomOpenGLWidget *, RootPathItem *);
+      void create_face_item (CustomOpenGLWidget *, RootPathItem *);
+      PathItem* get_item () {return item;}
       void set_portItem (CustomTreeWidgetItem *portItem_) {portItem=portItem_;}
       CustomTreeWidgetItem* get_portItem () {return portItem;}
       TopoDS_Wire create_TopoDS_Wire ();

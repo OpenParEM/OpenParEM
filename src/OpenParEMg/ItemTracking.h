@@ -22,7 +22,7 @@ public:
             currentCount++;
 
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
-            if (pathItem) currentPathCount++;
+            if (pathItem && pathItem->isPathItem()) currentPathCount++;
 
             if (item->is_port()) currentPortCount++;
             if (item->is_boundary()) currentBoundaryCount++;
@@ -35,7 +35,7 @@ public:
 
         if (data[index]) {
             PathItem *pathItem=dynamic_cast<PathItem *>(data[index]);
-            if (pathItem) currentPathCount--;
+            if (pathItem && pathItem->isPathItem()) currentPathCount--;
 
             if (data[index]->is_port()) currentPortCount--;
             if (data[index]->is_boundary()) currentBoundaryCount--;
@@ -170,7 +170,7 @@ public:
 
         // show item
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
-        if (rootDrawingItem) {
+        if (rootDrawingItem && rootDrawingItem->isRootDrawingItem()) {
             int i=0;
             while (i < rootDrawingItem->childCount()) {
                 DrawingItem *child=dynamic_cast<DrawingItem *>(rootDrawingItem->child(i));
@@ -180,7 +180,7 @@ public:
         }
 
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-        if (drawingItem) {
+        if (drawingItem && drawingItem->isDrawingItem()) {
             if (drawingItem->foreground(0) == Qt::gray) {
                 DisplayShape(drawingItem->getShape());
                 drawingItem->setForeground(0,Qt::black);
@@ -189,7 +189,7 @@ public:
         }
 
         RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(item);
-        if (rootPathItem) {
+        if (rootPathItem && rootPathItem->isRootPathItem()) {
             int i=0;
             while (i < rootPathItem->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) rootPathItem->child(i);
@@ -199,7 +199,7 @@ public:
         }
 
         PathItem *pathItem=dynamic_cast<PathItem *>(item);
-        if (pathItem) {
+        if (pathItem && pathItem->isPathItem()) {
             if (pathItem->foreground(0) == Qt::black) return;
 
             DisplayShape(pathItem->getShape());
@@ -207,12 +207,6 @@ public:
             visibleItems.push_back(item);
 
             long unsigned int i=0;
-            while (i < pathItem->getArrowHeadsSize()) {
-                DisplayShape(pathItem->getArrowHead(i));
-                i++;
-            }
-
-            i=0;
             while (i < pathItem->linkedItems_size()) {
                 CustomTreeWidgetItem *linkedItem=pathItem->get_linkedItem(i);
                 showItem(linkedItem);
@@ -337,7 +331,7 @@ public:
 
                 // children
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-                if (!drawingItem) {
+                if (!(drawingItem && drawingItem->isDrawingItem())) {
                     int j=0;
                     while (j < item->childCount()) {
                         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
@@ -428,7 +422,7 @@ public:
 
         // custom hide
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
-        if (rootDrawingItem) {
+        if (rootDrawingItem && rootDrawingItem->isRootDrawingItem()) {
             EraseShape(rootDrawingItem->getShape());
             nullifyVisibleItem(rootDrawingItem);
 
@@ -441,7 +435,7 @@ public:
         }
 
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-        if (drawingItem) {
+        if (drawingItem && drawingItem->isDrawingItem()) {
 
             // hide item
             EraseShape(drawingItem->getShape());
@@ -458,7 +452,7 @@ public:
         }
 
         RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(item);
-        if (rootPathItem) {
+        if (rootPathItem && rootPathItem->isRootPathItem()) {
             int i=0;
             while (i < rootPathItem->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) rootPathItem->child(i);
@@ -468,7 +462,7 @@ public:
         }
 
         PathItem *pathItem=dynamic_cast<PathItem *>(item);
-        if (pathItem) {
+        if (pathItem && pathItem->isPathItem()) {
             if (pathItem->foreground(0) == Qt::gray) return;  // avoid infinite loop due to crosslinking of paths
 
             EraseShape(pathItem->getShape());
@@ -476,13 +470,6 @@ public:
             nullifyVisibleItem(pathItem);
 
             long unsigned int i=0;
-            while (i < pathItem->getArrowHeadsSize()) {
-                EraseShape(pathItem->getArrowHead(i));
-                nullifyVisibleItem(pathItem);
-                i++;
-            }
-
-            i=0;
             while (i < pathItem->linkedItems_size()) {
                 hideItem(pathItem->get_linkedItem(i));
                 i++;
@@ -656,7 +643,7 @@ public:
 
                 // children
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-                if (!drawingItem) {   // skip drawing for speed
+                if (!(drawingItem && drawingItem->isDrawingItem())) {   // skip drawing for speed
                     int j=0;
                     while (j < item->childCount()) {
                         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
@@ -748,14 +735,6 @@ public:
             viewerContext->Activate(item->getShape());
         }
 
-        long unsigned int i=0;
-        while (i < item->getArrowHeadsSize()) {
-            if (!item->getArrowHead(i).IsNull()) {
-                viewerContext->Activate(item->getArrowHead(i));
-            }
-            i++;
-        }
-
         selectItem(item);
     }
 
@@ -787,20 +766,13 @@ public:
         while (i < selectedItems.size()) {
             if (item == selectedItems[i]) {
                 SelectShape(item->getShape());
-
-                long unsigned int j=0;
-                while (j < item->getArrowHeadsSize()) {
-                    SelectShape(item->getArrowHead(j));
-                    j++;
-                }
-
                 return;
             }
             i++;
         }
 
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
-        if (rootDrawingItem) {
+        if (rootDrawingItem && rootDrawingItem->isRootDrawingItem()) {
             rootDrawingItem->setSelected(Standard_True);
             selectedItems.push_back(rootDrawingItem);
         } else {
@@ -809,12 +781,6 @@ public:
             }
             item->setSelected(Standard_True);
             selectedItems.push_back(item);
-
-            long unsigned int i=0;
-            while (i < item->getArrowHeadsSize()) {
-                SelectShape(item->getArrowHead(i));
-                i++;
-            }
 
             i=0;
             while (i < item->linkedItems_size()) {
@@ -926,17 +892,11 @@ public:
         if (!item) return;
 
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
-        if (rootDrawingItem) {
+        if (rootDrawingItem && rootDrawingItem->isRootDrawingItem()) {
             rootDrawingItem->setSelected(Standard_False);
         } else {
             UnselectShape(item->getShape());
             item->setSelected(Standard_False);
-
-            long unsigned int i=0;
-            while (i <  item->getArrowHeadsSize()) {
-                UnselectShape(item->getArrowHead(i));
-                i++;
-            }
 
             // remove from the list of selected items
             selectedItems.nullify(item);
@@ -951,7 +911,7 @@ public:
 
 
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
-        if (rootDrawingItem) {
+        if (rootDrawingItem && rootDrawingItem->isRootDrawingItem()) {
             rootDrawingItem->setSelected(Standard_False);
 
             // remove from the list of selected items
@@ -959,12 +919,6 @@ public:
         } else {
             UnselectShape(item->getShape());
             item->setSelected(Standard_False);
-
-            long unsigned int i=0;
-            while (i <  item->getArrowHeadsSize()) {
-                UnselectShape(item->getArrowHead(i));
-                i++;
-            }
 
             // remove from the list of selected items
             selectedItems.nullify(index);
@@ -979,7 +933,7 @@ public:
         if (!item) return;
 
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
-        if (rootDrawingItem) {
+        if (rootDrawingItem && rootDrawingItem->isRootDrawingItem()) {
             rootDrawingItem->setSelected(Standard_False);
 
             // remove from the list of selected items
@@ -987,12 +941,6 @@ public:
         } else {
             UnselectShape(item->getShape());
             item->setSelected(Standard_False);
-
-            long unsigned int i=0;
-            while (i <  item->getArrowHeadsSize()) {
-                UnselectShape(item->getArrowHead(i));
-                i++;
-            }
 
             // remove from the list of selected items
             selectedItems.nullify(index);
@@ -1015,7 +963,7 @@ public:
         DeleteItem(item);
 
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
-        if (!rootDrawingItem) {
+        if (!(rootDrawingItem && rootDrawingItem->isRootDrawingItem())) {
             delete item;
             item=nullptr;
         }
@@ -1143,7 +1091,7 @@ public:
         while (i < visibleItems.size()) {
             if (visibleItems[i]) {
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(visibleItems[i]);
-                if (drawingItem) {
+                if (drawingItem && drawingItem->isDrawingItem()) {
                     copyVisibleItems.push_back(drawingItem);
                 }
             }
@@ -1232,15 +1180,6 @@ private:
         viewerContext->Remove(item->getShape(),Standard_False);
         shapeToItemMap.erase(item->getShape());
         item->getShape().Nullify();
-
-        // remove arrow heads from the viewer
-        long unsigned int j=0;
-        while (j < item->getArrowHeadsSize()) {
-            viewerContext->Remove(item->getArrowHead(j),Standard_False);
-            shapeToItemMap.erase(item->getArrowHead(j));
-            item->getArrowHead(j).Nullify();
-            j++;
-        }
 
         // process children
         int i=0;

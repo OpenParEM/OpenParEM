@@ -9825,7 +9825,7 @@ void BoundaryDatabase::set_unmodified ()
 
 #ifdef HAS_GUI
 void BoundaryDatabase::draw (Relay *relay, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                             CustomTreeWidgetItem *pathTreeItem, CustomTreeWidgetItem *portTreeItem, CustomTreeWidgetItem *boundaryTreeItem,
+                             RootPathItem *pathTreeItem, CustomTreeWidgetItem *portTreeItem, CustomTreeWidgetItem *boundaryTreeItem,
                              MaterialDatabase *materialDatabase)
 {
     //emit relay->triggered();

@@ -145,6 +145,7 @@ void DrawingItem::startDraw ()
     mw->activePolywire->setNormal(normal.X(),normal.Y(),normal.Z());
     mw->activePolywire->set_viewerContext(mw->ui->drawingWindow->get_viewerContext());
     mw->activePolywire->setDrawEnable(true);
+    mw->activePolywire->setHasArrows(false);
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
@@ -558,14 +559,14 @@ DrawingItem* DrawingItem::copy (CustomTreeWidgetItem *parent)
     // set parent
 
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
-    if (rootDrawingItem) {
+    if (rootDrawingItem && rootDrawingItem->isRootDrawingItem()) {
         rootDrawingItem->addChild(newItem);
         newItem->setParentItem(rootDrawingItem);
         newItem->copy_depth(rootDrawingItem);
     }
 
     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(parent);
-    if (drawingItem) {
+    if (drawingItem && drawingItem->isDrawingItem()) {
         drawingItem->addChild(newItem);
         newItem->setParentItem(drawingItem);
         newItem->copy_depth(drawingItem);
@@ -910,7 +911,7 @@ void DrawingItem::del ()
     CustomTreeWidgetItem *parentItem=getParentItem();
     if (parentItem) {
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
-        if (rootDrawingItem) {
+        if (rootDrawingItem && rootDrawingItem->isRootDrawingItem()) {
             int insertIndex=rootDrawingItem->indexOfChild(this);
 
             // move children to parent
@@ -1333,7 +1334,7 @@ void PathItem::del ()
     CustomTreeWidgetItem *parentItem=getParentItem();
     if (parentItem) {
         RootDrawingItem *rootPathItem=dynamic_cast<RootDrawingItem *>(parentItem);
-        if (rootPathItem) {
+        if (rootPathItem && rootPathItem->isRootPathItem()) {
             rootPathItem->removeChild(this);
         }
 
