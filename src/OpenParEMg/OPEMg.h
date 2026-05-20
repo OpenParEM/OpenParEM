@@ -317,8 +317,13 @@ class OpenParEMg : public QMainWindow
 {
     Q_OBJECT
 
+    friend class BaseItem;
+
     friend class RootDrawingItem;
     friend class DrawingItem;
+
+    friend class RootPathItem;
+    friend class PathItem;
 
 public:
     OpenParEMg (QWidget *parent = nullptr);
@@ -717,7 +722,7 @@ private:
     BoundaryDatabase *boundaryDatabase;
 
     RootDrawingItem drawing;
-    CustomTreeWidgetItem path;
+    RootPathItem path;
     CustomTreeWidgetItem port;
     CustomTreeWidgetItem boundary;
     CustomTreeWidgetItem mesh;

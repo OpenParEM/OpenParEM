@@ -20,7 +20,10 @@ public:
         if (item) {
             data.push_back(item);
             currentCount++;
-            if (item->is_path()) currentPathCount++;
+
+            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+            if (pathItem) currentPathCount++;
+
             if (item->is_port()) currentPortCount++;
             if (item->is_boundary()) currentBoundaryCount++;
         }
@@ -31,7 +34,9 @@ public:
         //std::cout << "ItemTracking::nullify  index=" << index << std::endl; std::cout.flush();
 
         if (data[index]) {
-            if (data[index]->is_path()) currentPathCount--;
+            PathItem *pathItem=dynamic_cast<PathItem *>(data[index]);
+            if (pathItem) currentPathCount--;
+
             if (data[index]->is_port()) currentPortCount--;
             if (data[index]->is_boundary()) currentBoundaryCount--;
 
@@ -164,42 +169,52 @@ public:
         if (!item) return;
 
         // show item
-        if (item->is_rootDrawing()) {
+        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+        if (rootDrawingItem) {
             int i=0;
-            while (i < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+            while (i < rootDrawingItem->childCount()) {
+                DrawingItem *child=dynamic_cast<DrawingItem *>(rootDrawingItem->child(i));
                 showItem(child);
                 i++;
             }
-        } else if (item->is_drawing()) {
-            if (item->foreground(0) == Qt::gray) {
-                DisplayShape(item->getShape());
-                item->setForeground(0,Qt::black);
-                visibleItems.push_back(item);
-            }
-        } else if (item->is_rootPath()) {
-            int i=0;
-            while (i < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
-                showItem(child);
-                i++;
-            }
-        } else if (item->is_path()) {
-            if (item->foreground(0) == Qt::black) return;
+        }
 
-            DisplayShape(item->getShape());
-            item->setForeground(0,Qt::black);
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        if (drawingItem) {
+            if (drawingItem->foreground(0) == Qt::gray) {
+                DisplayShape(drawingItem->getShape());
+                drawingItem->setForeground(0,Qt::black);
+                visibleItems.push_back(drawingItem);
+            }
+        }
+
+        RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(item);
+        if (rootPathItem) {
+            int i=0;
+            while (i < rootPathItem->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) rootPathItem->child(i);
+                showItem(child);
+                i++;
+            }
+        }
+
+        PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        if (pathItem) {
+            if (pathItem->foreground(0) == Qt::black) return;
+
+            DisplayShape(pathItem->getShape());
+            pathItem->setForeground(0,Qt::black);
             visibleItems.push_back(item);
 
             long unsigned int i=0;
-            while (i < item->getArrowHeadsSize()) {
-                DisplayShape(item->getArrowHead(i));
+            while (i < pathItem->getArrowHeadsSize()) {
+                DisplayShape(pathItem->getArrowHead(i));
                 i++;
             }
 
             i=0;
-            while (i < item->linkedItems_size()) {
-                CustomTreeWidgetItem *linkedItem=item->get_linkedItem(i);
+            while (i < pathItem->linkedItems_size()) {
+                CustomTreeWidgetItem *linkedItem=pathItem->get_linkedItem(i);
                 showItem(linkedItem);
                 i++;
             }
@@ -320,7 +335,8 @@ public:
                 if (item->isValidShow()) return true;
 
                 // children
-                if (!item->is_drawing()) {
+                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+                if (!drawingItem) {
                     int j=0;
                     while (j < item->childCount()) {
                         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
@@ -410,57 +426,69 @@ public:
         if (!item) return;
 
         // custom hide
-        if (item->is_rootDrawing()) {
-            EraseShape(item->getShape());
-            nullifyVisibleItem(item);
+        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+        if (rootDrawingItem) {
+            EraseShape(rootDrawingItem->getShape());
+            nullifyVisibleItem(rootDrawingItem);
 
             int i=0;
-            while (i < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+            while (i < rootDrawingItem->childCount()) {
+                DrawingItem *child=dynamic_cast<DrawingItem *>(rootDrawingItem->child(i));
                 hideItem(child);
                 i++;
             }
-        } else if (item->is_drawing()) {
+        }
+
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        if (drawingItem) {
 
             // hide item
-            EraseShape(item->getShape());
-            item->setForeground(0,Qt::gray);
-            nullifyVisibleItem(item);
+            EraseShape(drawingItem->getShape());
+            drawingItem->setForeground(0,Qt::gray);
+            nullifyVisibleItem(drawingItem);
 
             // hide children
             int i=0;
-            while (i < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+            while (i < drawingItem->childCount()) {
+                DrawingItem *child=dynamic_cast<DrawingItem *>(drawingItem->child(i));
                 hideItem(child);
                 i++;
             }
-        } else if (item->is_rootPath()) {
-            int i=0;
-            while (i < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
-                hideItem(child);
-                i++;
-            }
-        } else if (item->is_path()) {
-            if (item->foreground(0) == Qt::gray) return;  // avoid infinite loop due to crosslinking of paths
+        }
 
-            EraseShape(item->getShape());
-            item->setForeground(0,Qt::gray);
-            nullifyVisibleItem(item);
+        RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(item);
+        if (rootPathItem) {
+            int i=0;
+            while (i < rootPathItem->childCount()) {
+                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) rootPathItem->child(i);
+                hideItem(child);
+                i++;
+            }
+        }
+
+        PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        if (pathItem) {
+            if (pathItem->foreground(0) == Qt::gray) return;  // avoid infinite loop due to crosslinking of paths
+
+            EraseShape(pathItem->getShape());
+            pathItem->setForeground(0,Qt::gray);
+            nullifyVisibleItem(pathItem);
 
             long unsigned int i=0;
-            while (i < item->getArrowHeadsSize()) {
-                EraseShape(item->getArrowHead(i));
-                nullifyVisibleItem(item);
+            while (i < pathItem->getArrowHeadsSize()) {
+                EraseShape(pathItem->getArrowHead(i));
+                nullifyVisibleItem(pathItem);
                 i++;
             }
 
             i=0;
-            while (i < item->linkedItems_size()) {
-                hideItem(item->get_linkedItem(i));
+            while (i < pathItem->linkedItems_size()) {
+                hideItem(pathItem->get_linkedItem(i));
                 i++;
             }
-        } else if (item->is_rootPort()) {
+        }
+
+        if (item->is_rootPort()) {
             int i=0;
             while (i < item->childCount()) {
                 CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
@@ -626,7 +654,8 @@ public:
                 if (item->isValidHide()) return true;
 
                 // children
-                if (!item->is_drawing()) {   // skip drawing for speed
+                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+                if (!drawingItem) {   // skip drawing for speed
                     int j=0;
                     while (j < item->childCount()) {
                         CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
@@ -769,9 +798,10 @@ public:
             i++;
         }
 
-        if (item->is_rootDrawing()) {
-            item->setSelected(Standard_True);
-            selectedItems.push_back(item);  // xxx
+        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+        if (rootDrawingItem) {
+            rootDrawingItem->setSelected(Standard_True);
+            selectedItems.push_back(rootDrawingItem);
         } else {
             if (!item->getShape().IsNull()) {
                 SelectShape(item->getShape());
@@ -894,8 +924,9 @@ public:
 
         if (!item) return;
 
-        if (item->is_rootDrawing()) {
-            item->setSelected(Standard_False);
+        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+        if (rootDrawingItem) {
+            rootDrawingItem->setSelected(Standard_False);
         } else {
             UnselectShape(item->getShape());
             item->setSelected(Standard_False);
@@ -917,8 +948,10 @@ public:
 
         if (!item) return;
 
-        if (item->is_rootDrawing()) {
-            item->setSelected(Standard_False);
+
+        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+        if (rootDrawingItem) {
+            rootDrawingItem->setSelected(Standard_False);
 
             // remove from the list of selected items
             selectedItems.nullify(index);
@@ -944,8 +977,9 @@ public:
         CustomTreeWidgetItem *item=selectedItems[index];
         if (!item) return;
 
-        if (item->is_rootDrawing()) {
-            item->setSelected(Standard_False);
+        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+        if (rootDrawingItem) {
+            rootDrawingItem->setSelected(Standard_False);
 
             // remove from the list of selected items
             selectedItems.nullify(index);
@@ -978,7 +1012,9 @@ public:
         // if (item->is_root()) return;
 
         DeleteItem(item);
-        if (!item->is_rootDrawing()) {
+
+        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+        if (!rootDrawingItem) {
             delete item;
             item=nullptr;
         }
@@ -1104,8 +1140,11 @@ public:
         std::vector<CustomTreeWidgetItem *> copyVisibleItems;
         long unsigned int i=0;
         while (i < visibleItems.size()) {
-            if (visibleItems[i] && visibleItems[i]->is_drawing()) {
-                copyVisibleItems.push_back(visibleItems[i]);
+            if (visibleItems[i]) {
+                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(visibleItems[i]);
+                if (drawingItem) {
+                    copyVisibleItems.push_back(drawingItem);
+                }
             }
             i++;
         }

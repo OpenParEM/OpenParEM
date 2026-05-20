@@ -29,6 +29,9 @@
 #include <BRepBuilderAPI_Transform.hxx>
 #include "Polywire.h"
 #include "Process.h"
+#include "path.hpp"
+
+class DrawingItem;
 
 // shape data with history for undo/redo
 
@@ -759,9 +762,9 @@ public:
     CustomTreeWidgetItem* getParent () {return parent;}
 
     void clearChildren () {children.clear();}
-    void push_child (CustomTreeWidgetItem *child) {children.push_back(child);}
+    void push_child (DrawingItem *child) {children.push_back(child);}
     long unsigned int getChildrenSize () {return children.size();}
-    CustomTreeWidgetItem* getChild (long unsigned int i) {return children[i];}
+    DrawingItem* getChild (long unsigned int i) {return children[i];}
 
     void convertPathToFace ()
     {
@@ -776,7 +779,7 @@ public:
     //bool activeAction;                                 // for undo/redo, an active operation such as move, edit, stretch, etc. is in progress
     ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
     CustomTreeWidgetItem *parent;                      // parent for undo/redo
-    std::vector<CustomTreeWidgetItem *> children;      // children for undo/redo
+    std::vector<DrawingItem *> children;               // children for undo/redo
 
 
     std::vector<Handle(AIS_Shape)> meshEntities;       // for mesh
@@ -812,6 +815,12 @@ public:
     explicit BaseItem (QObject *parent = nullptr) {}
 
     void setMW (OpenParEMg *mw_) {mw=mw_;}
+    virtual void showMenu (QMenu *) = 0;
+    virtual void del () = 0;
+    virtual void undo () = 0;
+    virtual void redo () = 0;
+    void promoteChildren ();
+    void demoteChildren ();
 
 protected:
     OpenParEMg *mw;
@@ -824,7 +833,10 @@ class RootDrawingItem : public BaseItem
 
 public:
     explicit RootDrawingItem (QObject *parent = nullptr) {}
-    void showMenu (QMenu *);
+    void showMenu (QMenu *) override;
+    void del () override {}
+    void undo () override {};
+    void redo () override {};
 
 private:
 
@@ -881,9 +893,9 @@ public:
     void finishStretchPoint ();
     void cancelInsertPoint ();
 
-    void del ();
+    void del () override;
 
-    void showMenu (QMenu *);
+    void showMenu (QMenu *) override;
 
     void setEnableMove (bool enableMove_) {enableMove=enableMove_;}
     bool getEnableMove () {return enableMove;}
@@ -925,6 +937,9 @@ public:
         enableInsertPoint=false;
     }
 
+    void undo () override;
+    void redo () override;
+
 private:
     Handle(AIS_Shape) animateShape;                    // temporary shape for animation during moving
     gp_Trsf aTrsf;
@@ -935,6 +950,41 @@ private:
     bool enableDeletePoint;
     bool enableInsertPoint;
 
+};
+
+class RootPathItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    explicit RootPathItem (QObject *parent = nullptr) {}
+    void showMenu (QMenu *) override;
+    void del () override {}
+    void undo () override {}
+    void redo () override {}
+
+private:
+
+};
+
+class PathItem : public DrawingItem
+{
+    Q_OBJECT
+
+public:
+    explicit PathItem (QObject *parent = nullptr)
+    {
+        path=nullptr;
+    }
+    void showMenu (QMenu *) override;
+    void del () override;
+    void setPath (Path *path_) {path=path_;}
+    Path* getPath () {return path;}
+    void undo () override;
+    void redo () override;
+
+private:
+    Path *path;
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

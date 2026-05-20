@@ -6,6 +6,47 @@
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <TopoDS_Iterator.hxx>
 
+////////////////////////////////////////////////////////////////////////////////
+// RootDrawingItem
+////////////////////////////////////////////////////////////////////////////////
+
+void BaseItem::promoteChildren ()
+{
+    long unsigned int i=0;
+    while (i < getChildrenSize()) {
+        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) getChild(i);
+        if (child) {
+            int index=indexOfChild(child);
+            takeChild(index);
+            getParent()->addChild(child);
+            child->setParent(getParent());
+            child->decrease_depth();
+            mw->ui->drawingWindow->showItem(child);
+        }
+        i++;
+    }
+}
+
+void BaseItem::demoteChildren ()
+{
+    long unsigned int i=0;
+    while (i < getChildrenSize()) {
+        CustomTreeWidgetItem *child=getChild(i);
+        if (child) {
+            int index=getParent()->indexOfChild(child);
+            getParent()->takeChild(index);
+            addChild(child);
+            child->setParent(this);
+            child->copy_depth(this);
+            child->increase_depth();
+        }
+        i++;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// RootDrawingItem
+////////////////////////////////////////////////////////////////////////////////
 
 void RootDrawingItem::showMenu (QMenu *menu)
 {
@@ -22,9 +63,14 @@ void RootDrawingItem::showMenu (QMenu *menu)
     if (mw->isValidRootDrawingSelectAll()) menu->addAction(mw->selectAllAction);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// DrawingItem
+////////////////////////////////////////////////////////////////////////////////
+
 void DrawingItem::setForUndoRedo ()
-{
+{   
     // clone the item onto itself for undo/redo
+    // Do this before deleting the shape below
     ShapeData *newShapeData=getShapeData()->copyCreate();
 
     // remove the old version from display and tracking
@@ -32,7 +78,7 @@ void DrawingItem::setForUndoRedo ()
     mw->ui->drawingWindow->removeItemFromMap(this);
     mw->ui->drawingWindow->deleteShape(getShape());
 
-    // save the new version for current usage
+    // save the new data
     newShapeData->setEdit();
     addShapeData(newShapeData);
 
@@ -59,11 +105,13 @@ void DrawingItem::startDraw ()
     addShapeData(newShapeData);
 
     mw->restrictToDrawingPlane=true;
-    mw->startOperation(true);
     mw->activeAction=true;
-    mw->itemChangesStack.startNew();
-    mw->ui->drawingWindow->set_pickFirstVertex(true);
     mw->clearTreeSelection();
+    mw->ui->drawingWindow->set_pickFirstVertex(true);
+
+    mw->startOperation(true);
+    mw->itemChangesStack.startNew();
+
 }
 
 void DrawingItem::startLine ()
@@ -163,16 +211,37 @@ void DrawingItem::cancelDraw ()
 }
 
 void DrawingItem::startMove ()
-{
-    setForUndoRedo();
+{ 
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+        setForUndoRedo();
+        resetOperation();
+        setAnimate(mw->ui->drawingWindow->get_viewerContext());
+        setEnableMove(true);
+        mw->itemChangesStack.add(this);
+    }
 
-    // enable move
-    resetOperation();
-    setAnimate(mw->ui->drawingWindow->get_viewerContext());
-    setEnableMove(true);
+    Process *process=static_cast<Process *>(getProcess());
+    if (process) {
+        int i=0;
+        while (i < childCount()) {
+            DrawingItem *processChild=(DrawingItem *)child(i);
+            resetOperation();
+            setAnimate(mw->ui->drawingWindow->get_viewerContext());
+            setEnableMove(true);
+            processChild->startMove();
+            //mw->ui->drawingWindow->hideItem(processChild);
+            i++;
+        }
+    }
 
-    // add to the stack for undo/redo
-    mw->itemChangesStack.add(this);
+    if (!polywire && !process) {
+        setForUndoRedo();
+        resetOperation();
+        setAnimate(mw->ui->drawingWindow->get_viewerContext());
+        setEnableMove(true);
+        mw->itemChangesStack.add(this);
+    }
 }
 
 void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
@@ -270,23 +339,20 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
 void DrawingItem::startStretch ()
 {
     setForUndoRedo();
+    resetOperation();
+    setEnableStretch(true);
 
-    Handle(AIS_Shape) shape=getShape();
-    if (!shape.IsNull()) {
+    // set the drawing plane
+    mw->currentPrivilegedPlane=mw->ui->drawingWindow->get_gridPlane();
 
-        // set the drawing plane
-        mw->currentPrivilegedPlane=mw->ui->drawingWindow->get_gridPlane();
-
-        // set the polywire for stretch
-        Polywire *polywire=static_cast<Polywire *>(getPolywire());
-        if (polywire) {
-            resetOperation();
-            setEnableStretch(true);
-            gp_Pln plane=polywire->getPlane();
-            mw->ui->drawingWindow->set_gridPlane(plane);
-            mw->itemChangesStack.add(this);
-        }
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+        polywire->drawStretchRubberband();
+        gp_Pln plane=polywire->getPlane();
+        mw->ui->drawingWindow->set_gridPlane(plane);
     }
+
+    mw->itemChangesStack.add(this);
 }
 
 void DrawingItem::finishStretch ()
@@ -298,13 +364,17 @@ void DrawingItem::finishStretch ()
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (!polywire) return;
-    polywire->deleteRubberband();
+    //polywire->deleteRubberband();
 
-    mw->finishStretchPoint(this);
+    //mw->finishStretchPoint(this);
+    finishStretchPoint();
 }
 
 void DrawingItem::extrude ()
 {
+    // Do not set because the DrawingItem itself is not modified
+    // setForUndoRedo();
+
     TopoDS_Shape extrudeShape=getShape()->Shape();
     if (extrudeShape.IsNull()) return;
 
@@ -358,17 +428,11 @@ void DrawingItem::extrude ()
             newItem->setParent(&(mw->drawing));
             newExtrude=nullptr;
 
-            // move the object in the selection tree
-            int index=mw->drawing.indexOfChild(this);
-            mw->drawing.takeChild(index);
-            newItem->addChild(this);
-            this->setParent(newItem);
-            depth++;
-
             mw->ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
 
             // add the object to the child list for undo/redo
             newItem->push_child(this);
+            newItem->demoteChildren();
 
             // hide/show
 
@@ -387,6 +451,7 @@ void DrawingItem::extrude ()
     }
     resetOperation();
     mw->activeAction=false;
+    //mw->finishOperation(false,1);
 }
 
 DrawingItem* DrawingItem::copy (CustomTreeWidgetItem *parent)
@@ -697,6 +762,7 @@ void DrawingItem::finishStretchPoint ()
     mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
     resetOperation();
     mw->drawingChanged=true;
+    mw->finishOperation(false,1);
 }
 
 void DrawingItem::cancelInsertPoint ()
@@ -777,6 +843,7 @@ DrawingItem* DrawingItem::copyCreate ()
 
 void DrawingItem::showMenu (QMenu *menu)
 {
+    std::cout << "place 3  menu=" << menu << std::endl; std::cout.flush();
     mw->assignMaterialAction=new QAction("Assign Material");
     mw->showAction=new QAction("Show");
     mw->hideAction=new QAction("Hide");
@@ -921,4 +988,247 @@ void DrawingItem::moveAnimateShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_Interactive
     viewerContext->Redisplay(animateShape,Standard_True);
 }
 
+void DrawingItem::undo ()
+{
+    std::cout << "DrawingItem::undo" << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    if (shapeData->isNoop()) {
+        // nothing to do
+    } else if (shapeData->isCreate()) {
+        // remove the item
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+        getParent()->removeChild(this);
+
+        promoteChildren();
+
+        dataStack.undo();
+        mw->findShowTopLevelItem(this,false);
+    } else if (shapeData->isEdit()) {
+
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+
+        dataStack.undo();
+
+        ShapeData *shapeData=getShapeData();
+        if (shapeData) {
+            Process *process=static_cast<Process *>(shapeData->getProcess());
+            if (process) {
+                int i=0;
+                while (i < childCount()) {
+                    CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+                    childItem->undo();
+                    mw->ui->drawingWindow->hideItem(childItem);
+                    i++;
+                }
+            } else {
+                mw->reprocess(this);
+                mw->ui->drawingWindow->unselectItem(this);
+            }
+        }
+
+        mw->findShowTopLevelItem(this,false);
+    } else if (shapeData->isDelete()) {
+        copy_depth(getParent());
+        increase_depth();
+        getParent()->addChild(this);
+
+        demoteChildren();
+
+        dataStack.undo();
+
+        mw->reprocess(this);
+        mw->ui->drawingWindow->unselectItem(this);
+        mw->findShowTopLevelItem(this,false);
+    }
+}
+
+void DrawingItem::redo ()
+{
+    std::cout << "DrawingItem::redo" << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    ShapeData *next=shapeData->getNext();
+    if (!next) return;
+
+    if (next->isNoop()) {
+        // should not occur
+    } else if (next->isCreate()) {
+        dataStack.redo();
+
+        copy_depth(getParent());
+        increase_depth();
+        getParent()->addChild(this);
+
+        long unsigned int i=0;
+        while (i < getChildrenSize()) {
+            CustomTreeWidgetItem *childItem=getChild(i);
+            if (childItem) {
+                int index=getParent()->indexOfChild(childItem);
+                if (index >= 0) {
+                    getParent()->takeChild(index);
+                    addChild(childItem);
+                    childItem->setParent(this);
+                    childItem->copy_depth(this);
+                    childItem->increase_depth();
+                } else {
+                    mw->ui->drawingWindow->insertItemToMap(childItem->getShape(),childItem);
+                    mw->ui->drawingWindow->displayShape(childItem->getShape());
+                    mw->ui->drawingWindow->activateItem(childItem);
+                    addChild(childItem);
+                    childItem->setParent(this);
+                    childItem->copy_depth(this);
+                    childItem->increase_depth();
+                    mw->reprocess(childItem);
+                }
+            }
+            i++;
+        }
+
+        mw->reprocess(this);
+        mw->ui->drawingWindow->unselectItem(this);
+        mw->findShowTopLevelItem(this,false);
+    } else if (next->isEdit()) {
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+
+        dataStack.redo();
+
+        ShapeData *shapeData=getShapeData();
+        if (shapeData) {
+            Process *process=static_cast<Process *>(shapeData->getProcess());
+            if (process) {
+                int i=0;
+                while (i < childCount()) {
+                    CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+                    childItem->redo();
+                    i++;
+                }
+            }
+        }
+
+        mw->reprocess(this);
+        mw->insertToMapActivateItem(this);
+        mw->ui->drawingWindow->unselectItem(this);
+        mw->findShowTopLevelItem(this,false);
+    } else if (next->isDelete()) {
+        // remove this version from display and tracking
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+
+        dataStack.redo();
+
+        promoteChildren();
+        getParent()->removeChild(this);
+        mw->findShowTopLevelItem(this,true);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// RootPathItem
+////////////////////////////////////////////////////////////////////////////////
+
+void RootPathItem::showMenu (QMenu *menu)
+{
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
+
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showRootPathItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideRootPathItems);
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+
+    if (mw->isValidRootPathShow()) menu->addAction(mw->showAction);
+    if (mw->isValidRootPathHide()) menu->addAction(mw->hideAction);
+    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// PathItem
+////////////////////////////////////////////////////////////////////////////////
+
+void PathItem::showMenu (QMenu *menu)
+{
+    mw->createPortAction=new QAction("Create Port");
+    mw->createPortAction->setToolTip("Create a port from the path.");
+    mw->createBoundaryAction=new QAction("Create Boundary");
+    mw->createBoundaryAction->setToolTip("Create a bounary from the path.");
+    mw->reversePathAction=new QAction("Reverse Direction");
+    mw->reversePathAction->setToolTip("Reverse the direction of the path.");
+    mw->renameAction=new QAction("Rename",this);
+    mw->deleteAction=new QAction("Delete",this);
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+    mw->cancelAction=new QAction("Cancel");
+
+    connect(mw->createPortAction, &QAction::triggered, mw, &OpenParEMg::createPortFromPath);
+    connect(mw->createBoundaryAction, &QAction::triggered, mw, &OpenParEMg::createBoundaryFromPath);
+    connect(mw->reversePathAction, &QAction::triggered, mw, &OpenParEMg::reversePathItems);
+    connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renamePathItems);
+    connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deletePathItems);
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showPathItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hidePathItems);
+    connect(mw->cancelAction, &QAction::triggered, mw, &OpenParEMg::cancelPathMenu);
+
+    if (mw->isValidShowPath()) menu->addAction(mw->showAction);
+    if (mw->isValidHidePath()) menu->addAction(mw->hideAction);
+    if (mw->ui->drawingWindow->get_pathSelectedCount() == 1) menu->addAction(mw->renameAction);
+    if (mw->isValidCreatePortFromPath()) menu->addAction(mw->createPortAction);
+    if (mw->isValidCreateBoundaryFromPath()) menu->addAction(mw->createBoundaryAction);
+    if (mw->isValidReversePath()) menu->addAction(mw->reversePathAction);
+    if (mw->isValidDeletePath()) menu->addAction(mw->deleteAction);
+    menu->addAction(mw->cancelAction);
+}
+
+void PathItem::del ()
+{
+    setForUndoRedo();
+
+    // mark as delete
+    ShapeData *shapeData=getShapeData();
+    shapeData->setDelete();
+
+    // parentItem
+    CustomTreeWidgetItem *parentItem=getParent();
+    if (parentItem) {
+        RootDrawingItem *rootPathItem=dynamic_cast<RootDrawingItem *>(parentItem);
+        if (rootPathItem) {
+            rootPathItem->removeChild(this);
+        }
+
+        mw->itemChangesStack.add(this);
+
+        // remove from display and tracking
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(this->getShape());
+
+        mw->drawingChanged=true;
+    }
+}
+
+void PathItem::undo ()
+{
+    std::cout << "PathItem::undo" << std::endl; std::cout.flush();
+
+}
+
+void PathItem::redo ()
+{
+    std::cout << "PathItem::redo" << std::endl; std::cout.flush();
+
+}
 
