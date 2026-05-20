@@ -739,27 +739,10 @@ void DrawingItem::startDeletePoint ()
 
 void DrawingItem::finishDeletePoint ()
 {
-    // // remove the old version from display and tracking
-    // mw->ui->drawingWindow->hideItem(this);
-    // mw->ui->drawingWindow->removeItemFromMap(this);
-    // mw->ui->drawingWindow->deleteShape(getShape());
-
-    // Polywire *polywire=static_cast<Polywire *>(getPolywire());
-    // if (!polywire) return;
-
-    // gp_Pnt p0=getP0();
-    // polywire->deletePoint(p0);
-    // mw->reprocess(this);
-    // mw->activeAction=false;
-    // resetOperation();
-
-    // mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
-    // mw->drawingChanged=true;
-    // mw->findShowTopLevelItem(this,false);
-
-
-
-
+    // remove the old version from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -809,9 +792,8 @@ void DrawingItem::startInsertPoint ()
 
         Polywire *polywire=static_cast<Polywire *>(getPolywire());
         if (polywire) {
-            polywire=static_cast<Polywire *>(getPolywire());
+            resetOperation();
             setEnableInsertPoint(true);
-            resetP0P1();
             gp_Pln plane=polywire->getPlane();
             mw->ui->drawingWindow->set_gridPlane(plane);
             mw->itemChangesStack.add(this);
@@ -845,35 +827,11 @@ void DrawingItem::finishInsertPoint ()
 
 void DrawingItem::finishStretchPoint ()
 {
-    // Polywire *polywire=static_cast<Polywire *>(getPolywire());
-    // if (!polywire) return;
-    // polywire->deleteRubberband();
-
-    // Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
-    // if (rectangle) {
-    //     if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
-    //         rectangle->setIsSquare(true);
-    //     } else {
-    //         rectangle->setIsSquare(false);
-    //     }
-    // }
-
-    // setEnableStretch(false);
-    // setEnableInsertPoint(false);
-    // gp_Pnt pnt=getP1();
-    // polywire->setEditPoint(pnt);
-    // mw->reprocess(this);
-    // mw->activeAction=false;
-
-    // mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
-    // resetOperation();
-    // mw->drawingChanged=true;
-    // mw->finishOperation(false,1);
-
-
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
         polywire->deleteRubberband();
+        gp_Pnt pnt=getP1();
+        polywire->setEditPoint(pnt);
 
         Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
         if (rectangle) {
@@ -906,6 +864,7 @@ void DrawingItem::finishStretchPoint ()
     resetOperation();
     mw->activeAction=false;
     mw->findShowTopLevelItem(this,false);
+    mw->finishOperation(false,1);
 }
 
 void DrawingItem::cancelInsertPoint ()
