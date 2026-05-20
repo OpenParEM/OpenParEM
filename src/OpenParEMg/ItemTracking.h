@@ -319,8 +319,9 @@ public:
         } else if (item->is_sportNumber()) {
             // nothing to do
         } else {
-            std::cout << "ASSERT: Invalid option in ItemTracking::showItem" << std::endl; std::cout.flush();
-            item->print();
+            //xxx
+            //std::cout << "ASSERT: Invalid option in ItemTracking::showItem" << std::endl; std::cout.flush();
+            //item->print();
         }
     }
 

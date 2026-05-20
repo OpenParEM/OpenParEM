@@ -860,6 +860,7 @@ public:
     DrawingItem* copyCreate ();
 
     void setForUndoRedo ();
+    void cancelOperation ();
 
     void startDraw ();
     void startLine ();

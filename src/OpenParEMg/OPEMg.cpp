@@ -656,7 +656,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    itemChangesStack.print();
+    //itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
@@ -7237,19 +7237,21 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
             rotateInputForm=nullptr;
         }
 
-        on_actionShape_triggered();
-        ui->drawingWindow->setSubshapeSelection(false);
-        ui->drawingWindow->setSetToPlane(false);
-        if (currentDrawingItem) {
-            currentDrawingItem->cancelDraw();
-            delete currentDrawingItem;
-            currentDrawingItem=nullptr;
-        }
+        //on_actionShape_triggered();
+        //ui->drawingWindow->setSubshapeSelection(false);
+        //ui->drawingWindow->setSetToPlane(false);
+        // if (currentDrawingItem) {
+        //     currentDrawingItem->cancelDraw();
+        //     delete currentDrawingItem;
+        //     currentDrawingItem=nullptr;
+        // }
 
-        if (renameItem) {
-            ui->drawingItemTree->removeItemWidget(renameItem,0);
-            renameItem=nullptr;
-        }
+        // if (renameItem) {
+        //     ui->drawingItemTree->removeItemWidget(renameItem,0);
+        //     renameItem=nullptr;
+        // }
+
+        finishOperation(true,30);
     }
     QWidget::keyPressEvent(event);
 }
@@ -8634,10 +8636,34 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
     if (cancel) {
 
-        // if (activeAction) {
-        //     itemChangesStack.pop_back();
-        //     activeAction=false;
-        // }
+        on_actionShape_triggered();
+        if (currentDrawingItem) {
+            currentDrawingItem->cancelDraw();
+            delete currentDrawingItem;
+            currentDrawingItem=nullptr;
+        }
+
+        if (renameItem) {
+            ui->drawingItemTree->removeItemWidget(renameItem,0);
+            renameItem=nullptr;
+        }
+
+        if (activeAction) {
+            long unsigned int i=0;
+            while (i < ui->drawingWindow->get_selectedItems_size()) {
+                CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+                if (item) {
+                    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+                    if (drawingItem) drawingItem->cancelOperation();
+                }
+                i++;
+            }
+
+            itemChangesStack.pop_back();
+            activeAction=false;
+
+            ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+        }
 
         // if (activePolywire && activePolywire->getDrawEnable()) {
         //     activePolywire->setDrawEnable(false);
@@ -8648,62 +8674,62 @@ void OpenParEMg::finishOperation (bool cancel, int source)
         //     activePolywire=nullptr;
         // }
 
-        long unsigned int i=0;
-        while (i < ui->drawingWindow->get_selectedItems_size()) {
-            CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-            if (item) {
+        // long unsigned int i=0;
+        // while (i < ui->drawingWindow->get_selectedItems_size()) {
+        //     CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        //     if (item) {
 
-                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-                if (drawingItem) {
+        //         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        //         if (drawingItem) {
 
-                    // move
-                    if (drawingItem->getEnableMove()) {
-                        drawingItem->unsetAnimate(ui->drawingWindow->get_viewerContext());
-                        drawingItem->setEnableMove(false);
-                    }
+        //             // move
+        //             if (drawingItem->getEnableMove()) {
+        //                 drawingItem->unsetAnimate(ui->drawingWindow->get_viewerContext());
+        //                 drawingItem->setEnableMove(false);
+        //             }
 
-                    Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
-                    if (polywire) {
+        //             Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
+        //             if (polywire) {
 
-                        // stretch
-                        if (drawingItem->getEnableStretch()) {
+        //                 // stretch
+        //                 if (drawingItem->getEnableStretch()) {
 
-                            Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
-                            if (rectangle) {
-                                if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
-                                    rectangle->setIsSquare(true);
-                                } else {
-                                    rectangle->setIsSquare(false);
-                                }
-                            }
+        //                     Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+        //                     if (rectangle) {
+        //                         if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
+        //                             rectangle->setIsSquare(true);
+        //                         } else {
+        //                             rectangle->setIsSquare(false);
+        //                         }
+        //                     }
 
-                            drawingItem->setEnableStretch(false);
-                            polywire->deleteRubberband();
-                            ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
-                        }
+        //                     drawingItem->setEnableStretch(false);
+        //                     polywire->deleteRubberband();
+        //                     ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+        //                 }
 
-                        // delete point
-                        if (drawingItem->getEnableDeletePoint()) {
-                            drawingItem->setEnableDeletePoint(false);
-                            //polywire->deleteRubberband();
-                            ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
-                        }
+        //                 // delete point
+        //                 if (drawingItem->getEnableDeletePoint()) {
+        //                     drawingItem->setEnableDeletePoint(false);
+        //                     //polywire->deleteRubberband();
+        //                     ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+        //                 }
 
-                        // insert point
-                        if (drawingItem->getEnableInsertPoint()) {
-                            drawingItem->setEnableInsertPoint(false);
-                            //polywire->deleteRubberband();
-                            ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
-                        }
-                    }
+        //                 // insert point
+        //                 if (drawingItem->getEnableInsertPoint()) {
+        //                     drawingItem->setEnableInsertPoint(false);
+        //                     //polywire->deleteRubberband();
+        //                     ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+        //                 }
+        //             }
 
-                    CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-                    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
-                    if (rootDrawingItem) ui->drawingWindow->showItem(rootDrawingItem);
-                }
-            }
-            i++;
-        }
+        //             CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+        //             RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
+        //             if (rootDrawingItem) ui->drawingWindow->showItem(rootDrawingItem);
+        //         }
+        //     }
+        //     i++;
+        // }
 
         if (vectorInputForm) {
             ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);

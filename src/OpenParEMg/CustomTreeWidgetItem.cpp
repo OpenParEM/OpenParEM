@@ -92,6 +92,53 @@ void DrawingItem::setForUndoRedo ()
     mw->startOperation(true);
 }
 
+void DrawingItem::cancelOperation ()
+{
+    //std::cout << "DrawingItem::cancelOperation" << std::endl; std::cout.flush();
+
+    resetOperation();
+
+    // remove animate shape
+    unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
+
+    // remove rubberband
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+        polywire->deleteRubberband();
+    }
+    //{QMessageBox mb; mb.critical(nullptr, "Debug", "place 1"); mw->ui->drawingWindow->updateViewer();}
+
+    // remove the old version from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+        dataStack.undo(); // go back to the prior shape data
+        mw->reprocess(this);
+    }
+
+    Process *process=static_cast<Process *>(getProcess());
+    if (process) {
+        long unsigned int i=0;
+        while (i < getChildrenSize()) {
+            // dataStack.undo(); // Do not go back to the prior shape data - operations work on the children
+            getChild(i)->cancelOperation();
+            i++;
+        }
+    }
+
+    if (!polywire && !process) {
+        dataStack.undo();  // go back to the prior shape data
+        mw->reprocess(this);
+    }
+
+    setForeground(0,Qt::gray);
+    mw->ui->drawingWindow->showItem(this);
+    mw->ui->drawingWindow->activateItem(this);
+}
+
 void DrawingItem::startDraw ()
 {
     gp_Dir normal=mw->ui->drawingWindow->get_normal();
@@ -199,8 +246,8 @@ void DrawingItem::cancelDraw ()
         mw->activePolywire=nullptr;
     }
 
-    // remove the in-process ShapeData
-    pop();
+    cancelOperation();
+    mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
 
     // remove the current undo/redo item
     mw->itemChangesStack.pop_back();
@@ -211,7 +258,9 @@ void DrawingItem::cancelDraw ()
 }
 
 void DrawingItem::startMove ()
-{ 
+{
+    //std::cout << "DrawingItem::startMove" << std::endl; std::cout.flush();
+
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
         setForUndoRedo();
@@ -246,6 +295,8 @@ void DrawingItem::startMove ()
 
 void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 {
+    std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>> DrawingItem::finishMove" << std::endl; std::cout.flush();
+
     unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
