@@ -4235,35 +4235,7 @@ void OpenParEMg::convertToPolyline ()
         CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem) {
-                Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
-                if (polywire) {
-
-                    // remove the old version from display and tracking
-                    ui->drawingWindow->hideItem(drawingItem);
-                    ui->drawingWindow->removeItemFromMap(drawingItem);
-                    ui->drawingWindow->deleteShape(drawingItem->getShape());
-
-                    // clone the item onto itself for undo/redo
-                    ShapeData *newShapeData=drawingItem->getShapeData()->copyCreate();
-                    newShapeData->setEdit();
-                    drawingItem->addShapeData(newShapeData);
-
-                    // add the new item back to the display and tracking
-                    ui->drawingWindow->insertItemToMap(drawingItem->getShape(),drawingItem);
-
-                    // convert
-                    Polyline *newPolyline=polywire->convert();
-                    drawingItem->setPolywire(newPolyline);
-                    reprocess(drawingItem);
-                    drawingItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
-                    ui->drawingWindow->activateSelectItem(drawingItem);
-                    itemChangesStack.add(drawingItem);
-                    drawingChanged=true;
-
-                    findShowTopLevelItem(drawingItem,false);
-                }
-            }
+            if (drawingItem) drawingItem->convertToPolyline();
         }
         i++;
     }

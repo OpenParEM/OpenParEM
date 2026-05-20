@@ -767,6 +767,7 @@ void DrawingItem::finishDeletePoint ()
         mw->drawingChanged=true;
     }
 
+    resetOperation();
     mw->activeAction=false;
     mw->findShowTopLevelItem(this,false);
 }
@@ -870,6 +871,31 @@ void DrawingItem::finishStretchPoint ()
 void DrawingItem::cancelInsertPoint ()
 {
     setEnableInsertPoint(false);
+}
+
+void DrawingItem::convertToPolyline ()
+{
+    setForUndoRedo();
+
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+
+        // remove the old version from display and tracking
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+
+        // convert
+        Polyline *newPolyline=polywire->convert();
+        setPolywire(newPolyline);
+        mw->reprocess(this);
+        getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
+        mw->ui->drawingWindow->activateSelectItem(this);
+        mw->itemChangesStack.add(this);
+        mw->drawingChanged=true;
+
+        mw->findShowTopLevelItem(this,false);
+    }
 }
 
 void DrawingItem::del ()

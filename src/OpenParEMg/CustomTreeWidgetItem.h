@@ -917,6 +917,8 @@ public:
     void finishStretchPoint ();
     void cancelInsertPoint ();
 
+    void convertToPolyline ();
+
     void del () override;
 
     void showMenu (QMenu *) override;
