@@ -18,8 +18,8 @@ void BaseItem::promoteChildren ()
         if (child) {
             int index=indexOfChild(child);
             takeChild(index);
-            getParent()->addChild(child);
-            child->setParent(getParent());
+            getParentItem()->addChild(child);
+            child->setParentItem(getParentItem());
             child->decrease_depth();
             mw->ui->drawingWindow->showItem(child);
         }
@@ -33,10 +33,10 @@ void BaseItem::demoteChildren ()
     while (i < getChildrenSize()) {
         CustomTreeWidgetItem *child=getChild(i);
         if (child) {
-            int index=getParent()->indexOfChild(child);
-            getParent()->takeChild(index);
+            int index=getParentItem()->indexOfChild(child);
+            getParentItem()->takeChild(index);
             addChild(child);
-            child->setParent(this);
+            child->setParentItem(this);
             child->copy_depth(this);
             child->increase_depth();
         }
@@ -199,7 +199,7 @@ void DrawingItem::finishDraw ()
     // add to the selection tree
     setText(0,mw->activePolywire->getName(&(mw->objectCounts)));
     mw->drawing.addChild(this);
-    setParent(&(mw->drawing));
+    setParentItem(&(mw->drawing));
 
     // put into tracking, display, and select
     mw->ui->drawingWindow->insertItemToMap(getShape(),this);
@@ -507,7 +507,7 @@ void DrawingItem::extrude ()
             mw->itemChangesStack.add(newItem);
 
             mw->drawing.addChild(newItem);
-            newItem->setParent(&(mw->drawing));
+            newItem->setParentItem(&(mw->drawing));
             newExtrude=nullptr;
 
             mw->ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
@@ -560,14 +560,14 @@ DrawingItem* DrawingItem::copy (CustomTreeWidgetItem *parent)
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
     if (rootDrawingItem) {
         rootDrawingItem->addChild(newItem);
-        newItem->setParent(rootDrawingItem);
+        newItem->setParentItem(rootDrawingItem);
         newItem->copy_depth(rootDrawingItem);
     }
 
     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(parent);
     if (drawingItem) {
         drawingItem->addChild(newItem);
-        newItem->setParent(drawingItem);
+        newItem->setParentItem(drawingItem);
         newItem->copy_depth(drawingItem);
         newItem->increase_depth();
     }
@@ -580,7 +580,7 @@ DrawingItem* DrawingItem::copy (CustomTreeWidgetItem *parent)
             DrawingItem *processChild=(DrawingItem *)child(i);
             if (processChild) {
                 DrawingItem *newChild=processChild->copy(newItem);
-                newChild->setParent(newItem);
+                newChild->setParentItem(newItem);
                 newItem->push_child(newChild);
             }
             i++;
@@ -694,15 +694,13 @@ void DrawingItem::finishEdit ()
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
         Extrude *extrude=dynamic_cast<Extrude *>(process);
-        if (extrude) {
-            extrude->set_length(mw->length);
+        if (extrude) extrude->set_length(mw->length);
 
-            int i=0;
-            while (i < getChildrenSize()) {
-                DrawingItem *processChild=(DrawingItem *)getChild(i);
-                processChild->finishEdit();
-                i++;
-            }
+        int i=0;
+        while (i < getChildrenSize()) {
+            DrawingItem *processChild=(DrawingItem *)getChild(i);
+            processChild->finishEdit();
+            i++;
         }
     }
 
@@ -741,22 +739,52 @@ void DrawingItem::startDeletePoint ()
 
 void DrawingItem::finishDeletePoint ()
 {
-    // remove the old version from display and tracking
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
+    // // remove the old version from display and tracking
+    // mw->ui->drawingWindow->hideItem(this);
+    // mw->ui->drawingWindow->removeItemFromMap(this);
+    // mw->ui->drawingWindow->deleteShape(getShape());
+
+    // Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    // if (!polywire) return;
+
+    // gp_Pnt p0=getP0();
+    // polywire->deletePoint(p0);
+    // mw->reprocess(this);
+    // mw->activeAction=false;
+    // resetOperation();
+
+    // mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
+    // mw->drawingChanged=true;
+    // mw->findShowTopLevelItem(this,false);
+
+
+
+
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
-    if (!polywire) return;
+    if (polywire) {
+        gp_Pnt p0=getP0();
+        polywire->deletePoint(p0);
+        mw->reprocess(this);
+        mw->drawingChanged=true;
+    }
 
-    gp_Pnt p0=getP0();
-    polywire->deletePoint(p0);
-    mw->reprocess(this);
+    Process *process=static_cast<Process *>(getProcess());
+    if (process) {
+        int i=0;
+        while (i < getChildrenSize()) {
+            DrawingItem *processChild=(DrawingItem *)getChild(i);
+            processChild->finishDeletePoint();
+            i++;
+        }
+    }
+
+    if (!polywire && !process) {
+        mw->reprocess(this);
+        mw->drawingChanged=true;
+    }
+
     mw->activeAction=false;
-    resetOperation();
-
-    mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
-    mw->drawingChanged=true;
     mw->findShowTopLevelItem(this,false);
 }
 
@@ -817,30 +845,67 @@ void DrawingItem::finishInsertPoint ()
 
 void DrawingItem::finishStretchPoint ()
 {
-    Polywire *polywire=static_cast<Polywire *>(getPolywire());
-    if (!polywire) return;
-    polywire->deleteRubberband();
+    // Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    // if (!polywire) return;
+    // polywire->deleteRubberband();
 
-    Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
-    if (rectangle) {
-        if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
-            rectangle->setIsSquare(true);
-        } else {
-            rectangle->setIsSquare(false);
+    // Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+    // if (rectangle) {
+    //     if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
+    //         rectangle->setIsSquare(true);
+    //     } else {
+    //         rectangle->setIsSquare(false);
+    //     }
+    // }
+
+    // setEnableStretch(false);
+    // setEnableInsertPoint(false);
+    // gp_Pnt pnt=getP1();
+    // polywire->setEditPoint(pnt);
+    // mw->reprocess(this);
+    // mw->activeAction=false;
+
+    // mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
+    // resetOperation();
+    // mw->drawingChanged=true;
+    // mw->finishOperation(false,1);
+
+
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+        polywire->deleteRubberband();
+
+        Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
+        if (rectangle) {
+            if (QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier)) {
+                rectangle->setIsSquare(true);
+            } else {
+                rectangle->setIsSquare(false);
+            }
+        }
+
+        mw->reprocess(this);
+        mw->drawingChanged=true;
+    }
+
+    Process *process=static_cast<Process *>(getProcess());
+    if (process) {
+        int i=0;
+        while (i < getChildrenSize()) {
+            DrawingItem *processChild=(DrawingItem *)getChild(i);
+            processChild->finishStretchPoint();
+            i++;
         }
     }
 
-    setEnableStretch(false);
-    setEnableInsertPoint(false);
-    gp_Pnt pnt=getP1();
-    polywire->setEditPoint(pnt);
-    mw->reprocess(this);
-    mw->activeAction=false;
+    if (!polywire && !process) {
+        mw->reprocess(this);
+        mw->drawingChanged=true;
+    }
 
-    mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
     resetOperation();
-    mw->drawingChanged=true;
-    mw->finishOperation(false,1);
+    mw->activeAction=false;
+    mw->findShowTopLevelItem(this,false);
 }
 
 void DrawingItem::cancelInsertPoint ()
@@ -857,7 +922,7 @@ void DrawingItem::del ()
     shapeData->setDelete();
 
     // parentItem
-    CustomTreeWidgetItem *parentItem=getParent();
+    CustomTreeWidgetItem *parentItem=getParentItem();
     if (parentItem) {
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
         if (rootDrawingItem) {
@@ -867,7 +932,7 @@ void DrawingItem::del ()
             while (childCount() > 0) {
                 CustomTreeWidgetItem* drawingChild=(CustomTreeWidgetItem *)takeChild(0);
                 rootDrawingItem->insertChild(insertIndex++,drawingChild);
-                drawingChild->setParent(rootDrawingItem);
+                drawingChild->setParentItem(rootDrawingItem);
                 drawingChild->decrease_depth();
                 mw->ui->drawingWindow->showItem(drawingChild);
 
@@ -1080,7 +1145,7 @@ void DrawingItem::undo ()
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
-        getParent()->removeChild(this);
+        getParentItem()->removeChild(this);
 
         promoteChildren();
 
@@ -1113,9 +1178,9 @@ void DrawingItem::undo ()
 
         mw->findShowTopLevelItem(this,false);
     } else if (shapeData->isDelete()) {
-        copy_depth(getParent());
+        copy_depth(getParentItem());
         increase_depth();
-        getParent()->addChild(this);
+        getParentItem()->addChild(this);
 
         demoteChildren();
 
@@ -1142,19 +1207,19 @@ void DrawingItem::redo ()
     } else if (next->isCreate()) {
         dataStack.redo();
 
-        copy_depth(getParent());
+        copy_depth(getParentItem());
         increase_depth();
-        getParent()->addChild(this);
+        getParentItem()->addChild(this);
 
         long unsigned int i=0;
         while (i < getChildrenSize()) {
             CustomTreeWidgetItem *childItem=getChild(i);
             if (childItem) {
-                int index=getParent()->indexOfChild(childItem);
+                int index=getParentItem()->indexOfChild(childItem);
                 if (index >= 0) {
-                    getParent()->takeChild(index);
+                    getParentItem()->takeChild(index);
                     addChild(childItem);
-                    childItem->setParent(this);
+                    childItem->setParentItem(this);
                     childItem->copy_depth(this);
                     childItem->increase_depth();
                 } else {
@@ -1162,7 +1227,7 @@ void DrawingItem::redo ()
                     mw->ui->drawingWindow->displayShape(childItem->getShape());
                     mw->ui->drawingWindow->activateItem(childItem);
                     addChild(childItem);
-                    childItem->setParent(this);
+                    childItem->setParentItem(this);
                     childItem->copy_depth(this);
                     childItem->increase_depth();
                     mw->reprocess(childItem);
@@ -1207,7 +1272,7 @@ void DrawingItem::redo ()
         dataStack.redo();
 
         promoteChildren();
-        getParent()->removeChild(this);
+        getParentItem()->removeChild(this);
         mw->findShowTopLevelItem(this,true);
     }
 }
@@ -1280,7 +1345,7 @@ void PathItem::del ()
     shapeData->setDelete();
 
     // parentItem
-    CustomTreeWidgetItem *parentItem=getParent();
+    CustomTreeWidgetItem *parentItem=getParentItem();
     if (parentItem) {
         RootDrawingItem *rootPathItem=dynamic_cast<RootDrawingItem *>(parentItem);
         if (rootPathItem) {

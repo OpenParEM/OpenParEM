@@ -496,7 +496,7 @@ public:
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
         OPEMobject=nullptr;
         depth=0;
-        parent=nullptr;
+        parentItem=nullptr;
     }
 
     QString get_name () {return text(0);}
@@ -736,7 +736,7 @@ public:
     {
         //std::cout << "CustomTreeWidgetItem::reset  item=" << this << std::endl; std::cout.flush();
         dataStack.reset();
-        parent=nullptr;
+        parentItem=nullptr;
         children.clear();
         setForeground(0,Qt::black);
         setExpanded(Standard_False);
@@ -758,8 +758,8 @@ public:
     bool hasUndo () {return dataStack.hasUndo();}
     bool hasRedo () {return dataStack.hasRedo();}
 
-    void setParent (CustomTreeWidgetItem *parent_) {parent=parent_;}
-    CustomTreeWidgetItem* getParent () {return parent;}
+    void setParentItem (CustomTreeWidgetItem *parentItem_) {parentItem=parentItem_;}
+    CustomTreeWidgetItem* getParentItem () {return parentItem;}
 
     void clearChildren () {children.clear();}
     void push_child (DrawingItem *child) {children.push_back(child);}
@@ -778,7 +778,7 @@ private slots:
 public:
     //bool activeAction;                                 // for undo/redo, an active operation such as move, edit, stretch, etc. is in progress
     ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
-    CustomTreeWidgetItem *parent;                      // parent for undo/redo
+    CustomTreeWidgetItem *parentItem;                  // parent for undo/redo
     std::vector<DrawingItem *> children;               // children for undo/redo
 
 
@@ -812,7 +812,15 @@ class BaseItem : public CustomTreeWidgetItem
     Q_OBJECT
 
 public:
-    explicit BaseItem (QObject *parent = nullptr) {}
+    explicit BaseItem (QObject *parent = nullptr)
+    {
+        itemType=0;                 // default to drawing
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        OPEMobject=nullptr;
+        depth=0;
+        parentItem=nullptr;
+    }
 
     void setMW (OpenParEMg *mw_) {mw=mw_;}
     virtual void showMenu (QMenu *) = 0;
@@ -832,7 +840,15 @@ class RootDrawingItem : public BaseItem
     Q_OBJECT
 
 public:
-    explicit RootDrawingItem (QObject *parent = nullptr) {}
+    explicit RootDrawingItem (QObject *parent = nullptr)
+    {
+        itemType=0;                 // default to drawing
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        OPEMobject=nullptr;
+        depth=0;
+        parentItem=nullptr;
+    }
     void showMenu (QMenu *) override;
     void del () override {}
     void undo () override {};
@@ -849,6 +865,13 @@ class DrawingItem : public BaseItem
 public:
     explicit DrawingItem (QObject *parent = nullptr)
     {
+        itemType=0;                 // default to drawing
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        OPEMobject=nullptr;
+        depth=0;
+        parentItem=nullptr;
+
         p0set=false;
         p1set=false;
         enableMove=false;
@@ -958,7 +981,15 @@ class RootPathItem : public BaseItem
     Q_OBJECT
 
 public:
-    explicit RootPathItem (QObject *parent = nullptr) {}
+    explicit RootPathItem (QObject *parent = nullptr)
+    {
+        itemType=0;                 // default to drawing
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        OPEMobject=nullptr;
+        depth=0;
+        parentItem=nullptr;
+    }
     void showMenu (QMenu *) override;
     void del () override {}
     void undo () override {}
@@ -975,6 +1006,13 @@ class PathItem : public DrawingItem
 public:
     explicit PathItem (QObject *parent = nullptr)
     {
+        itemType=0;                 // default to drawing
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        OPEMobject=nullptr;
+        depth=0;
+        parentItem=nullptr;
+
         path=nullptr;
     }
     void showMenu (QMenu *) override;

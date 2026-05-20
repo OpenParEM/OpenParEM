@@ -2264,13 +2264,13 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
         itemScale->setFlags(item->flags() & ~Qt::ItemIsEditable);
         itemScale->setToolTip(0,"Scale factor for the integration path.");
         item->addChild(itemScale);
-        itemScale->setParent(item);
+        itemScale->setParentItem(item);
 
         CustomTreeWidgetItem *itemScaleValue=new CustomTreeWidgetItem(0);
         itemScaleValue->set_itemType(13);
         itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
         itemScale->addChild(itemScaleValue);
-        itemScaleValue->setParent(itemScale);
+        itemScaleValue->setParentItem(itemScale);
 
         CustomLineEdit *scaleEdit=new CustomLineEdit();
         scaleEdit->setText(QString::number(1));   // default value
@@ -2299,7 +2299,7 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
         pathItem->setForeground(0,Qt::gray);
         pathItem->set_OPEMobject(pathsToAdd[i]);
         item->addChild(pathItem);
-        pathItem->setParent(item);
+        pathItem->setParentItem(item);
         pathItemList[i]->push_linkedItem(pathItem);
         pathItem->push_linkedItem(pathItemList[i]);
         ui->drawingWindow->showItem(pathItem);
@@ -3288,7 +3288,7 @@ void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
 
     // recursively work to the top of the tree
     if (!stop) {
-        reprocess(item->getParent());
+        reprocess(item->getParentItem());
     }
     //std::cout << "exit OpenParEMg::reprocess  item=" << item << std::endl; std::cout.flush();
 }
@@ -3412,11 +3412,11 @@ void OpenParEMg::findShowTopLevelItem (CustomTreeWidgetItem *item, bool hideItem
 {
     if (!item) return;
 
-    CustomTreeWidgetItem *parentItem=item->getParent();
+    CustomTreeWidgetItem *parentItem=item->getParentItem();
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
     while (!rootDrawingItem) {
         item=parentItem;
-        parentItem=item->getParent();
+        parentItem=item->getParentItem();
         rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
     }
     ui->drawingWindow->hideItem(item);
@@ -3565,7 +3565,7 @@ void OpenParEMg::finishMergeSolids ()
     newItem->addShapeData(newShapeData);
     newItem->setText(0,merge->getName(&objectCounts));
     drawing.addChild(newItem);
-    newItem->setParent(&drawing);
+    newItem->setParentItem(&drawing);
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
     ui->drawingWindow->showItem(newItem);
     ui->drawingWindow->selectItem(newItem);
@@ -3580,12 +3580,12 @@ void OpenParEMg::finishMergeSolids ()
     int index=drawing.indexOfChild(item0);
     drawing.takeChild(index);
     newItem->addChild(item0);
-    item0->setParent(newItem);
+    item0->setParentItem(newItem);
 
     index=drawing.indexOfChild(item1);
     drawing.takeChild(index);
     newItem->addChild(item1);
-    item1->setParent(newItem);
+    item1->setParentItem(newItem);
 
     // reset materials
     QString nullMaterial;
@@ -3690,7 +3690,7 @@ void OpenParEMg::finishSubtractSolids ()
     newItem->addShapeData(newShapeData);
     newItem->setText(0,subtract->getName(&objectCounts));
     drawing.addChild(newItem);
-    newItem->setParent(&drawing);
+    newItem->setParentItem(&drawing);
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
     ui->drawingWindow->showItem(newItem);
     ui->drawingWindow->selectItem(newItem);
@@ -3705,12 +3705,12 @@ void OpenParEMg::finishSubtractSolids ()
     int index=drawing.indexOfChild(item0);
     drawing.takeChild(index);
     newItem->addChild(item0);
-    item0->setParent(newItem);
+    item0->setParentItem(newItem);
 
     index=drawing.indexOfChild(item1);
     drawing.takeChild(index);
     newItem->addChild(item1);
-    item1->setParent(newItem);
+    item1->setParentItem(newItem);
 
     // reset materials
     QString nullMaterial;
@@ -4065,7 +4065,7 @@ bool OpenParEMg::isValidCloseExistingPolyline ()
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem) {
-                CustomTreeWidgetItem *parentItem=drawingItem->getParent();
+                CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
                 if (parentItem) {
                     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                     if (rootDrawingItem) {
@@ -4140,7 +4140,7 @@ bool OpenParEMg::isValidOpenExistingPolyline ()
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem) {
-                CustomTreeWidgetItem *parentItem=drawingItem->getParent();
+                CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
                 if (parentItem) {
                     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                     if (parentItem) {
@@ -4282,7 +4282,7 @@ bool OpenParEMg::isValidConvertToPath ()
             if (drawingItem) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) {
-                    CustomTreeWidgetItem *parentItem=drawingItem->getParent();
+                    CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
                     if (parentItem) {
                         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                         if (rootDrawingItem) count++;
@@ -4931,7 +4931,7 @@ bool OpenParEMg::isValidConvertToPort ()
                 // must be a polywire at the top level
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) {
-                    CustomTreeWidgetItem *parentItem=drawingItem->getParent();
+                    CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
                     if (parentItem) {
                         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                         if (rootDrawingItem) {
@@ -5099,7 +5099,7 @@ void OpenParEMg::convertToPort ()
             if (drawingItem) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) {
-                    CustomTreeWidgetItem *parentItem=drawingItem->getParent();
+                    CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
                     if (parentItem) {
                         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                         if (rootDrawingItem) {
@@ -5248,7 +5248,7 @@ void OpenParEMg::convertToBoundary ()
             if (drawingItem) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) {
-                    CustomTreeWidgetItem *parentItem=drawingItem->getParent();
+                    CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
                     if (parentItem) {
                         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                         if (rootDrawingItem) {
@@ -6191,7 +6191,7 @@ bool OpenParEMg::loadBrepFile (QString filePath, bool createName)
                     newItem->addShapeData(newShapeData);
                     newItem->setText(0,getAISshapeName(shape));
                     drawing.addChild(newItem);
-                    newItem->setParent(&drawing);
+                    newItem->setParentItem(&drawing);
                     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
                     ui->drawingWindow->showItem(newItem);
                     ui->drawingWindow->selectItem(newItem);
@@ -6236,7 +6236,7 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
                     newItem->addShapeData(newShapeData);
                     newItem->setText(0,getAISshapeName(shape));
                     drawing.addChild(newItem);
-                    newItem->setParent(&drawing);
+                    newItem->setParentItem(&drawing);
                     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
                     ui->drawingWindow->showItem(newItem);
                     ui->drawingWindow->selectItem(newItem);
@@ -6618,7 +6618,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
 
         if (increaseDepth) newItem->increase_depth();
         parent->addChild(newItem);
-        newItem->setParent(parent);
+        newItem->setParentItem(parent);
         reprocess(newItem);
         drawingChanged=true;
         ui->drawingWindow->showItem(newItem);
@@ -6638,7 +6638,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
         ShapeData *newShapeData=new ShapeData(1,nullptr,process,dummy);
         newItem->addShapeData(newShapeData);
         parent->addChild(newItem);
-        newItem->setParent(parent);
+        newItem->setParentItem(parent);
 
         // extrude
         if (typeStart == 5) {
@@ -6745,7 +6745,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             }
 
             parent->addChild(newItem);
-            newItem->setParent(parent);
+            newItem->setParentItem(parent);
             reprocess(newItem);
             drawingChanged=true;
             ui->drawingWindow->showItem(newItem);
