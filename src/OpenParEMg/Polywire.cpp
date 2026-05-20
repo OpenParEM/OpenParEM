@@ -378,7 +378,7 @@ void Polywire::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
     normal=normal.Rotated(axis,angleRadians);
 }
 
-// re-use the basic code from Path::fill_wire_item
+// re-use the basic code from Path::fill_wire_item [now removed]
 void Polywire::addArrows (BRep_Builder& builder, TopoDS_Compound& compound)
 {
     if (!hasArrows) return;

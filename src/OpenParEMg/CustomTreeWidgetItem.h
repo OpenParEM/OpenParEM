@@ -91,13 +91,6 @@ public:
         if (polywire) {delete polywire; polywire=nullptr;}
         if (process) {delete process; process=nullptr;}
         if (!shape.IsNull()) {shape.Nullify();}
-
-        long unsigned int i=0;
-        while (i < arrowHeads.size()) {
-            if (!arrowHeads[i].IsNull()) arrowHeads[i].Nullify();
-            i++;
-        }
-        arrowHeads.clear();
     }
 
     ShapeData* copyCreate ()
@@ -112,14 +105,6 @@ public:
             if (polywire) newShapeData->polywire=polywire->copyCreate();
             if (process) newShapeData->process=process->copyCreate();
             if (!shape.IsNull()) newShapeData->shape=new AIS_Shape(shape->Shape());
-            long unsigned int i=0;
-            while (i < arrowHeads.size()) {
-                if (!arrowHeads[i].IsNull()) {
-                    Handle(AIS_Shape) arrowHead=new AIS_Shape(arrowHeads[i]->Shape());
-                    newShapeData->arrowHeads.push_back(arrowHead);
-                }
-                i++;
-            }
             newShapeData->path=path;
             newShapeData->port=port;
             newShapeData->boundary=boundary;
@@ -185,16 +170,12 @@ public:
         setShape(shape_);
     }
 
-    void pushArrowHead (Handle(AIS_Shape) arrowHead) {arrowHeads.push_back(arrowHead);}
-
     Polywire* getPolywire () {return polywire;}
     Process* getProcess () {return process;}
     CustomTreeWidgetItem* getPath () {return path;}
     CustomTreeWidgetItem* getPort () {return port;}
     CustomTreeWidgetItem* getBoundary () {return boundary;}
     Handle(AIS_Shape) getShape () {return shape;}
-    long unsigned int getArrowHeadsSize () {return arrowHeads.size();}
-    Handle(AIS_Shape) getArrowHead (long unsigned int i) {return arrowHeads[i];}
 
     bool isNoop () {if (type == 0) return true; return false;}
     bool isCreate () {if (type == 1) return true; return false;}
@@ -234,7 +215,6 @@ public:
 
         if (shape.IsNull()) std::cout << "                  shape=null" << std::endl;
         else std::cout << "                  shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
-        std::cout << "                  arrowHeadCount=" << arrowHeads.size() << std::endl;
         std::cout << "                  polywire=" << polywire << std::endl;
         std::cout << "                  process=" << process << std::endl;
         std::cout << "                  prior=" << prior << std::endl;
@@ -249,7 +229,6 @@ private:
                                                        // 4 - convert to path; 5 - convert to port; 6 - convert to boundary
                                                        // 7 - reverse path direction
     Handle(AIS_Shape) shape;                           // for drawing
-    std::vector<Handle(AIS_Shape)> arrowHeads;         // for integration lines to show direction
     Polywire *polywire;                                // Polywire object for this item
     Process *process;                                  // for drawing processing of children
     ShapeData *prior;                                  // prior ShapeData in ShapeDataStack
@@ -343,14 +322,7 @@ public:
         current->setProcess(process_);
     }
 
-    void pushArrowHead (Handle(AIS_Shape) arrowHead)
-    {
-        if (arrowHead.IsNull()) return;
-        current->pushArrowHead(arrowHead);
-    }
-
     // from current location
-
 
     ShapeData* getShapeData ()
     {
@@ -392,19 +364,6 @@ public:
         Handle(AIS_Shape) shape;
         if (current) shape=current->getShape();
         return shape;
-    }
-
-    long unsigned int getArrowHeadsSize ()
-    {
-        if (current) return current->getArrowHeadsSize();
-        return 0;
-    }
-
-    Handle(AIS_Shape) getArrowHead (long unsigned int i)
-    {
-        Handle(AIS_Shape) arrowHead;
-        if (current) arrowHead=current->getArrowHead(i);
-        return arrowHead;
     }
 
     bool hasUndo ()
@@ -1028,10 +987,6 @@ public:
     Path* getPath () {return path;}
     void undo () override;
     void redo () override;
-
-    long unsigned int getArrowHeadsSize () {return dataStack.getArrowHeadsSize();}
-    Handle(AIS_Shape) getArrowHead (long unsigned int i) {return dataStack.getArrowHead(i);}
-    void pushArrowHead (Handle(AIS_Shape) arrowHead) {dataStack.pushArrowHead(arrowHead);}
 
 private:
     Path *path;

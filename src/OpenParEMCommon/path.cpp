@@ -2180,71 +2180,10 @@ void Path::fill_wire_item (CustomOpenGLWidget *drawingWindow, PathItem *item)
     item->setText(0,QString::fromStdString(get_name()));
     item->setForeground(0,Qt::black);
 
-    // shape
     TopoDS_Wire wire=create_TopoDS_Wire();
     Handle(AIS_Shape) shape=new AIS_Shape(wire);
     ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,shape);
     item->addShapeData(newShapeData);
-
-    // arrow heads
-
-    // shortest segment
-    double shortestLength=DBL_MAX;
-    long unsigned int i=0;
-    while (i < points.size()) {
-        keywordPair *from=points[i];
-        keywordPair *to=nullptr;
-
-        if (i < points.size()-1) {
-            to=points[i+1];
-        } else {
-            if (is_closed()) to=points[0];
-        }
-
-        if (to) {
-            double length=point_magnitude(point_subtraction(from->get_point_value(),to->get_point_value()));
-            if (length > 0 && length < shortestLength) shortestLength=length;
-        }
-        i++;
-    }
-
-    // make arrows
-    i=0;
-    while (i < points.size()) {
-        keywordPair *from=points[i];
-        keywordPair *to=nullptr;
-
-        if (i < points.size()-1) {
-            to=points[i+1];
-        } else {
-            if (is_closed()) to=points[0];
-        }
-
-        if (to) {
-            struct point center=point_midpoint(from->get_point_value(),to->get_point_value());
-            struct point centerOffset=point_scale(shortestLength/20,point_normalize(point_subtraction(center,from->get_point_value())));
-            struct point arrowOffset=point_scale(2,point_cross_product(normal,centerOffset));
-
-            keywordPair *tip=new keywordPair();
-            tip->set_point_value(point_addition(center,centerOffset));
-
-            keywordPair *p1=new keywordPair ();
-            p1->set_point_value(point_subtraction(point_subtraction(center,centerOffset),arrowOffset));
-
-            keywordPair *p2=new keywordPair ();
-            p2->set_point_value(point_addition(point_subtraction(center,centerOffset),arrowOffset));
-
-            Path arrowHead(0,0);
-            arrowHead.set_closed(false);
-            arrowHead.push_point(p1);
-            arrowHead.push_point(tip);
-            arrowHead.push_point(p2);
-
-            Handle(AIS_Shape) arrowDrawingShape=new AIS_Shape (arrowHead.create_TopoDS_Wire());
-            item->pushArrowHead(arrowDrawingShape);
-        }
-        i++;
-    }
 }
 
 void Path::create_wire_item (CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
