@@ -291,17 +291,40 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 
 void DrawingItem::startRotate ()
 {
-    setForUndoRedo();
-    resetOperation();
-    mw->itemChangesStack.add(this);
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (polywire) {
+        setForUndoRedo();
+        resetOperation();
+        mw->itemChangesStack.add(this);
+    }
+
+    Process *process=static_cast<Process *>(getProcess());
+    if (process) {
+        int i=0;
+        while (i < childCount()) {
+            DrawingItem *processChild=(DrawingItem *)child(i);
+            resetOperation();
+            processChild->startRotate();
+            //mw->ui->drawingWindow->hideItem(processChild);
+            i++;
+        }
+    }
+
+    if (!polywire && !process) {
+        setForUndoRedo();
+        resetOperation();
+        mw->itemChangesStack.add(this);
+    }
 }
 
 void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint)
 {
-    // remove the old version from display and tracking
+    // // remove the old version from display and tracking
     mw->ui->drawingWindow->hideItem(this);
     mw->ui->drawingWindow->removeItemFromMap(this);
     mw->ui->drawingWindow->deleteShape(getShape());
+
+    unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -316,23 +339,31 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
         while (i < childCount()) {
             DrawingItem *processChild=(DrawingItem *)child(i);
             processChild->finishRotate(angle,startPoint,endPoint);
+            mw->drawingChanged=true;
             i++;
         }
+
+        mw->ui->drawingWindow->activateItem(this);
     }
 
     if (!polywire && !process) {
+        reset_transformation();
         TopoDS_Shape shape=rotateShape(angle,startPoint,endPoint,mw->ui->drawingWindow->get_viewerContext());
         Handle(AIS_Shape) newAISshape=new AIS_Shape(shape);
 
         ShapeData *shapeData=getShapeData();
         shapeData->setShape(newAISshape);
 
+        // add the new item back to the display and tracking
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+
         mw->reprocess(this);
         mw->drawingChanged=true;
     }
 
-    resetOperation();
     mw->activeAction=false;
+
+    resetOperation();
     mw->findShowTopLevelItem(this,false);
 }
 
