@@ -295,7 +295,7 @@ void DrawingItem::startMove ()
 
 void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 {
-    std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>> DrawingItem::finishMove" << std::endl; std::cout.flush();
+    //std::cout << "DrawingItem::finishMove" << std::endl; std::cout.flush();
 
     unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
 
@@ -695,23 +695,19 @@ void DrawingItem::finishEdit ()
     if (process) {
         Extrude *extrude=dynamic_cast<Extrude *>(process);
         if (extrude) {
+            extrude->set_length(mw->length);
 
-            // clone the child so that undo/redo works properly
             int i=0;
-            while (i < childCount()) {
-                DrawingItem *processChild=(DrawingItem *)child(i);
-                Polywire *polywire=static_cast<Polywire *>(processChild->getPolywire());
-                if (polywire) {
-                    ShapeData *newShapeData=processChild->getShapeData()->copyCreate();
-                    newShapeData->setEdit();
-                    processChild->addShapeData(newShapeData);
-                }
+            while (i < getChildrenSize()) {
+                DrawingItem *processChild=(DrawingItem *)getChild(i);
+                processChild->finishEdit();
                 i++;
             }
-
-            extrude->set_length(mw->length);
-            mw->reprocess(this);
         }
+    }
+
+    if (!polywire && !process) {
+        mw->reprocess(this);
     }
 
     mw->activeAction=false;
