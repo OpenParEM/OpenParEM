@@ -75,6 +75,7 @@ public:
     gp_Vec getNormal () {return normal;}
 
     virtual void setU (gp_Vec u_) {return;}
+    virtual void reverseOrder () = 0;
 
     gp_Pnt getPosition ();
     virtual gp_Pln getPlane ();
@@ -153,6 +154,7 @@ public:
     void deletePoint (gp_Pnt &gp_Pnt) override {return;}
     bool canInsertPoint () override {return false;}
     void insertPoint (gp_Pnt &pnt) override {return;}
+    void reverseOrder () override;
     gp_Pnt getP0 ();
     gp_Pnt getP1 ();
     void setP0 (gp_Pnt &P0);
@@ -204,6 +206,7 @@ public:
     Polyline* copyCreate () override;
     Handle(AIS_Shape) get_AIS_Shape () override;
     void shift (gp_Pnt &pnt1, gp_Pnt &pnt2) override;
+    void reverseOrder () override;
     QString getName (ObjectCounts *objectCounts) override;
     void save (std::ofstream *, QString, int) override;
     bool load (std::vector<std::string> &inputData, long unsigned int,
@@ -251,6 +254,7 @@ public:
     void setU (gp_Vec u_) override {u=u_;}
     void setWidth (double width_) {width=width_;}
     void setHeight (double height_) {height=height_;}
+    void reverseOrder () override;
 
     void setIsSquare (bool isSquare_) {isSquare=isSquare_;}
 
@@ -310,6 +314,7 @@ public:
     void deletePoint (gp_Pnt &gp_Pnt) override {return;}
     bool canInsertPoint () override {return false;}
     void insertPoint (gp_Pnt &pnt) override {return;}
+    void reverseOrder () override;
 
     bool isPointOnPlane (gp_Pnt &pnt) override;
 

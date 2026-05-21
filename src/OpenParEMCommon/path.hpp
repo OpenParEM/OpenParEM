@@ -78,6 +78,7 @@ class Path {
       double zmax,zmin;
       bool hasOutput;
       bool modified;
+      bool isUsed;         // allows the GUI to mark a path as no longer used so that it does not get written to the path file
       #ifdef HAS_GUI
       PathItem *item;      // tree item for this path
       CustomTreeWidgetItem *portItem;  // valid port for this path
@@ -150,6 +151,8 @@ class Path {
       bool lineIntersects (struct point, struct point);
       struct point getInsidePoint ();
       void assignPathNormal (struct point);
+      void setIsUsed (bool isUsed_) {isUsed=isUsed_;}
+      bool getIsUsed () {return isUsed;}
 #ifdef HAS_GUI
       void set_normal (gp_Vec);
       void fill_wire_item (CustomOpenGLWidget *, PathItem *);

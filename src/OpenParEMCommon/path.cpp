@@ -593,6 +593,7 @@ Path::Path(int startLine_, int endLine_)
 
    hasOutput=false;
    modified=true;
+   isUsed=true;
 
 #if HAS_GUI
    item=nullptr;
@@ -671,6 +672,8 @@ void Path::print (std::string indent)
 
 void Path::save (std::ofstream *out)
 {
+    if (!isUsed) return;
+
     PetscMPIInt rank;
     MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
@@ -698,6 +701,7 @@ void Path::save (std::ofstream *out)
 bool Path::output (std::ofstream *out, int force_dim)
 {
    if (hasOutput) return false;
+   if (!isUsed) return true;
 
    *out << "Path" << std::endl;
    *out << "   name=" << get_name() << std::endl;

@@ -901,6 +901,7 @@ void DrawingItem::convertToPolyline ()
 
 void DrawingItem::del ()
 {
+    std::cout << "place 1" << std::endl; std::cout.flush();
     setForUndoRedo();
 
     // mark as delete
@@ -1119,14 +1120,16 @@ void DrawingItem::moveAnimateShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_Interactive
 
 void DrawingItem::undo ()
 {
-    std::cout << "DrawingItem::undo" << std::endl; std::cout.flush();
+    std::cout << "DrawingItem::undo  this=" << this << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
     if (shapeData->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
         // nothing to do
     } else if (shapeData->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
         // remove the item
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
@@ -1138,6 +1141,7 @@ void DrawingItem::undo ()
         dataStack.undo();
         mw->findShowTopLevelItem(this,false);
     } else if (shapeData->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
 
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
@@ -1164,6 +1168,7 @@ void DrawingItem::undo ()
 
         mw->findShowTopLevelItem(this,false);
     } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
         copy_depth(getParentItem());
         increase_depth();
         getParentItem()->addChild(this);
@@ -1180,7 +1185,7 @@ void DrawingItem::undo ()
 
 void DrawingItem::redo ()
 {
-    std::cout << "DrawingItem::redo" << std::endl; std::cout.flush();
+    std::cout << "DrawingItem::redo  this=" << this << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -1189,8 +1194,10 @@ void DrawingItem::redo ()
     if (!next) return;
 
     if (next->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
         // should not occur
     } else if (next->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
         dataStack.redo();
 
         copy_depth(getParentItem());
@@ -1226,6 +1233,7 @@ void DrawingItem::redo ()
         mw->ui->drawingWindow->unselectItem(this);
         mw->findShowTopLevelItem(this,false);
     } else if (next->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
@@ -1250,6 +1258,7 @@ void DrawingItem::redo ()
         mw->ui->drawingWindow->unselectItem(this);
         mw->findShowTopLevelItem(this,false);
     } else if (next->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
         // remove this version from display and tracking
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
@@ -1351,13 +1360,215 @@ void PathItem::del ()
 
 void PathItem::undo ()
 {
-    std::cout << "PathItem::undo" << std::endl; std::cout.flush();
+    std::cout << "PathItem::undo  this=" << this << std::endl; std::cout.flush();
 
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    if (shapeData->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // nothing to do
+    } else if (shapeData->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        // remove the item
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+        getParentItem()->removeChild(this);
+
+        Path *path=static_cast<Path *>(getPath());
+        if (path) path->setIsUsed(false);
+
+        dataStack.undo();
+    } else if (shapeData->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
+
+        // dataStack.undo();
+
+        // ShapeData *shapeData=getShapeData();
+        // if (shapeData) {
+        //     Process *process=static_cast<Process *>(shapeData->getProcess());
+        //     if (process) {
+        //         int i=0;
+        //         while (i < childCount()) {
+        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             childItem->undo();
+        //             mw->ui->drawingWindow->hideItem(childItem);
+        //             i++;
+        //         }
+        //     } else {
+        //         mw->reprocess(this);
+        //         mw->ui->drawingWindow->unselectItem(this);
+        //     }
+        // }
+
+        // mw->findShowTopLevelItem(this,false);
+    } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+
+        dataStack.undo();
+
+        Path *path=static_cast<Path *>(getPath());
+        if (path) path->setIsUsed(true);
+
+        mw->path.addChild(this);
+
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+        mw->ui->drawingWindow->displayShape(getShape());
+        mw->ui->drawingWindow->activateItem(this);
+    } else if (shapeData->isReversePath()) {
+        std::cout << "   isReversePath" << std::endl; std::cout.flush();
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+
+        dataStack.undo();
+
+        // reverse the path
+        Path *path=static_cast<Path *>(getPath());
+        if (path) {
+            // reverse the path in the path database
+            path->reverseOrder();
+
+            // do not reverse the direction of the shape: already in expected order
+            //getShapeData()->getPolywire()->reverseOrder();
+
+            // update the shape
+            setShape(getShapeData()->getPolywire()->get_AIS_Shape());
+        }
+
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+        mw->ui->drawingWindow->displayShape(getShape());
+        mw->ui->drawingWindow->activateItem(this);
+    }
 }
 
 void PathItem::redo ()
 {
-    std::cout << "PathItem::redo" << std::endl; std::cout.flush();
+    std::cout << "PathItem::redo  this=" << this << std::endl; std::cout.flush();
 
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    ShapeData *next=shapeData->getNext();
+    if (!next) return;
+
+    if (next->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // should not occur
+    } else if (next->isCreate()) {
+        dataStack.redo();
+
+        mw->path.addChild(this);
+
+        Path *path=static_cast<Path *>(getPath());
+        if (path) path->setIsUsed(true);
+
+        mw->ui->drawingWindow->displayShape(getShape());
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+        setForeground(0,Qt::gray);
+        mw->ui->drawingWindow->showItem(this);
+    } else if (next->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
+
+        // dataStack.redo();
+
+        // ShapeData *shapeData=getShapeData();
+        // if (shapeData) {
+        //     Process *process=static_cast<Process *>(shapeData->getProcess());
+        //     if (process) {
+        //         int i=0;
+        //         while (i < childCount()) {
+        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             childItem->redo();
+        //             i++;
+        //         }
+        //     }
+        // }
+
+        // mw->reprocess(this);
+        // mw->insertToMapActivateItem(this);
+        // mw->ui->drawingWindow->unselectItem(this);
+        // mw->findShowTopLevelItem(this,false);
+    } else if (next->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        // // remove this version from display and tracking
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
+
+        // dataStack.redo();
+
+        // promoteChildren();
+        // getParentItem()->removeChild(this);
+        // mw->findShowTopLevelItem(this,true);
+    } else if (next->isReversePath()) {
+        std::cout << "   isReversePath" << std::endl; std::cout.flush();
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+
+        dataStack.redo();
+
+        // reverse the path
+        Path *path=static_cast<Path *>(getPath());
+        if (path) {
+            // reverse the path in the path database
+            path->reverseOrder();
+
+            // do not reverse the direction of the shape: already in expected order
+            //getShapeData()->getPolywire()->reverseOrder();
+
+            // update the shape
+            setShape(getShapeData()->getPolywire()->get_AIS_Shape());
+        }
+
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+        mw->ui->drawingWindow->displayShape(getShape());
+        mw->ui->drawingWindow->activateItem(this);
+    }
+}
+
+void PathItem::reverse ()
+{
+    setForUndoRedo();
+
+    ShapeData *shapeData=getShapeData();
+    shapeData->setReversePath();
+
+    // remove the old version from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    // reverse the path
+    Path *path=static_cast<Path *>(getPath());
+    if (path) {
+
+        // reverse the path in the path database
+        path->reverseOrder();
+
+        // reverse the direction of the shape
+        getShapeData()->getPolywire()->reverseOrder();
+
+        // update the shape
+        setShape(getShapeData()->getPolywire()->get_AIS_Shape());
+
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+        mw->ui->drawingWindow->displayShape(getShape());
+        mw->ui->drawingWindow->activateItem(this);
+
+        mw->projectChanged=true;
+
+        // add to the stack for undo/redo
+        mw->itemChangesStack.add(this);
+    }
 }
 

@@ -523,6 +523,7 @@ Line* Line::copyCreate ()
     Line *newLine=new Line();
     newLine->modified=modified;
     newLine->closed=closed;
+    newLine->hasArrows=hasArrows;
     long unsigned int i=0;
     while (i < shapePoints.size()) {
         newLine->shapePoints.push_back(shapePoints[i]);
@@ -575,6 +576,15 @@ void Line::shift (gp_Pnt &pnt1, gp_Pnt &pnt2)
     while (i < shapePoints.size()) {
         shapePoints[i]=shapePoints[i].XYZ()-offset.XYZ();
         i++;
+    }
+}
+
+void Line::reverseOrder ()
+{
+    if (shapePoints.size() > 1) {
+        gp_Pnt temp=shapePoints[0];
+        shapePoints[0]=shapePoints[1];
+        shapePoints[1]=temp;
     }
 }
 
@@ -807,11 +817,31 @@ bool Polyline::isValidInsertPoint (gp_Pnt &pnt)
     return true;
 }
 
+// same simple algorithm as Path::reverseOrder
+// An in-place reverse could be nice to have at some point.
+void Polyline::reverseOrder ()
+{
+    std::vector<gp_Pnt> reversed_points;
+
+    long unsigned int i=0;
+    while (i < shapePoints.size()) {
+        reversed_points.push_back(shapePoints[shapePoints.size()-1-i]);
+        i++;
+    }
+
+    i=0;
+    while (i < shapePoints.size()) {
+        shapePoints[i]=reversed_points[i];
+        i++;
+    }
+}
+
 Polyline* Polyline::copyCreate ()
 {
     Polyline *newPolyline=new Polyline();
     newPolyline->modified=modified;
     newPolyline->closed=closed;
+    newPolyline->hasArrows=hasArrows;
     long unsigned int i=0;
     while (i < shapePoints.size()) {
         newPolyline->shapePoints.push_back(shapePoints[i]);
@@ -1635,6 +1665,7 @@ Rectangle* Rectangle::copyCreate ()
     Rectangle *newRectangle=new Rectangle();
     newRectangle->modified=modified;
     newRectangle->closed=closed;
+    newRectangle->hasArrows=hasArrows;
     long unsigned int i=0;
     while (i < shapePoints.size()) {
         newRectangle->shapePoints.push_back(shapePoints[i]);
@@ -1704,6 +1735,16 @@ Polyline* Rectangle::convert ()
     polyline->normal=normal;
     polyline->viewerContext=viewerContext;
     return polyline;
+}
+
+void Rectangle::reverseOrder ()
+{
+    if (shapePoints.size() > 3) {
+        shapePoints[0]=shapePoints[1];
+    }
+    u=-u;
+    //v=-v;
+    recalculate();
 }
 
 QString Rectangle::getName (ObjectCounts *objectCounts) {
@@ -2163,11 +2204,18 @@ void Polycircle::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
     recalculate();
 }
 
+void Polycircle::reverseOrder ()
+{
+    normal=-normal;
+    recalculate();
+}
+
 Polycircle* Polycircle::copyCreate ()
 {
     Polycircle *newPolycircle=new Polycircle();
     newPolycircle->modified=modified;
     newPolycircle->closed=closed;
+    newPolycircle->hasArrows=hasArrows;
     long unsigned int i=0;
     while (i < shapePoints.size()) {
         newPolycircle->shapePoints.push_back(shapePoints[i]);

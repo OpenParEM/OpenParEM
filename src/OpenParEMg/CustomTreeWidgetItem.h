@@ -458,6 +458,11 @@ public:
         parentItem=nullptr;
     }
 
+    virtual bool isDrawingItem () {return false;}
+    virtual bool isRootDrawingItem () {return false;}
+    virtual bool isRootPathItem () {return false;}
+    virtual bool isPathItem () {return false;}
+
     QString get_name () {return text(0);}
     QString get_material () {return text(1);}
     void copy_depth (CustomTreeWidgetItem *item) {depth=item->depth;}
@@ -777,10 +782,10 @@ public:
         parentItem=nullptr;
     }
 
-    bool isDrawingItem () {return false;}
-    bool isRootDrawingItem () {return false;}
-    bool isRootPathItem () {return false;}
-    bool isPathItem () {return false;}
+    bool isDrawingItem () override {return false;}
+    bool isRootDrawingItem () override {return false;}
+    bool isRootPathItem () override {return false;}
+    bool isPathItem () override {return false;}
 
     void setMW (OpenParEMg *mw_) {mw=mw_;}
     virtual void showMenu (QMenu *) = 0;
@@ -809,7 +814,12 @@ public:
         depth=0;
         parentItem=nullptr;
     }
-    bool isRootDrawingItem () {return true;}
+
+    bool isDrawingItem () override {return false;}
+    bool isRootDrawingItem () override {return true;}
+    bool isRootPathItem () override {return false;}
+    bool isPathItem () override {return false;}
+
     void showMenu (QMenu *) override;
     void del () override {}
     void undo () override {};
@@ -840,7 +850,11 @@ public:
         enableDeletePoint=false;
         enableInsertPoint=false;
     }
-    bool isDrawingItem () {return true;}
+
+    bool isDrawingItem () override {return true;}
+    bool isRootDrawingItem () override {return false;}
+    bool isRootPathItem () override {return false;}
+    bool isPathItem () override {return false;}
 
     DrawingItem* copyCreate ();
 
@@ -954,7 +968,12 @@ public:
         depth=0;
         parentItem=nullptr;
     }
-    bool isRootPathItem () {return true;}
+
+    bool isDrawingItem () override {return false;}
+    bool isRootDrawingItem () override {return false;}
+    bool isRootPathItem () override {return true;}
+    bool isPathItem () override {return false;}
+
     void showMenu (QMenu *) override;
     void del () override {}
     void undo () override {}
@@ -980,13 +999,19 @@ public:
 
         path=nullptr;
     }
-    bool isPathItem () {return true;}
+
+    bool isDrawingItem () override {return false;}
+    bool isRootDrawingItem () override {return false;}
+    bool isRootPathItem () override {return false;}
+    bool isPathItem () override {return true;}
+
     void showMenu (QMenu *) override;
     void del () override;
     void setPath (Path *path_) {path=path_;}
     Path* getPath () {return path;}
     void undo () override;
     void redo () override;
+    void reverse ();
 
 private:
     Path *path;

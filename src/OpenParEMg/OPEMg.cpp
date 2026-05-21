@@ -656,7 +656,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    //itemChangesStack.print();
+    itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
@@ -4309,12 +4309,12 @@ void OpenParEMg::convertItemToPath (DrawingItem *item, bool saveForUndoRedo)
         newShapeData->setCreate();
         newShapeData->setPolywire(polywire->copyCreate());
         newShapeData->getPolywire()->setHasArrows(true);
-        std::cout << "place 2   polywire->hasArrows=" << newShapeData->getPolywire()->getHasArrows() << std::endl; std::cout.flush();
         newShapeData->setShape(newShapeData->getPolywire()->get_AIS_Shape());
         newPathItem->addShapeData(newShapeData);
         newPathItem->setText(0,QString::fromStdString(pathName));
         newPathItem->setPath(newPath);
 
+        newPathItem->setParentItem(&path);
         path.addChild(newPathItem);
         itemChangesStack.add(newPathItem);
 
@@ -4333,9 +4333,7 @@ void OpenParEMg::convertItemToPath (DrawingItem *item, bool saveForUndoRedo)
     }
 
     // delete the drawing item
-    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-    drawingItem->del();
-    itemChangesStack.add(drawingItem);
+    item->del();
 }
 
 void OpenParEMg::convertToPath ()
@@ -5275,35 +5273,35 @@ bool OpenParEMg::isValidReversePath ()
 
 void OpenParEMg::reversePathItem (PathItem *item, bool saveForUndoRedo)
 {
-    // remove the old version from display and tracking
-    ui->drawingWindow->hideItem(item);
-    ui->drawingWindow->removeItemFromMap(item);
-    ui->drawingWindow->deleteShape(item->getShape());
-    drawing.removeChild(item);
+    // // remove the old version from display and tracking
+    // ui->drawingWindow->hideItem(item);
+    // ui->drawingWindow->removeItemFromMap(item);
+    // ui->drawingWindow->deleteShape(item->getShape());
+    // drawing.removeChild(item);
 
-    // clone the item onto itself for undo/redo
-    ShapeData *newShapeData=item->getShapeData()->copyCreate();
-    newShapeData->setReversePath();
-    item->addShapeData(newShapeData);
-    ui->drawingWindow->unselectItem(item);
-    if (saveForUndoRedo) itemChangesStack.add(item);
+    // // clone the item onto itself for undo/redo
+    // ShapeData *newShapeData=item->getShapeData()->copyCreate();
+    // newShapeData->setReversePath();
+    // item->addShapeData(newShapeData);
+    // ui->drawingWindow->unselectItem(item);
+    // if (saveForUndoRedo) itemChangesStack.add(item);
 
-    // reverse the path
-    Path *path=static_cast<Path *>(item->get_OPEMobject());
-    if (path) {
-        path->reverseOrder();
-        path->fill_wire_item(ui->drawingWindow,item);
+    // // reverse the path
+    // Path *path=static_cast<Path *>(item->get_OPEMobject());
+    // if (path) {
+    //     path->reverseOrder();
+    //     path->fill_wire_item(ui->drawingWindow,item);
 
-        //ui->drawingWindow->activateItem(item);  // redundant since showItem activates now  ToDo::update elsewhere
-        // ui->drawingWindow->insertItemToMap(item->getShape(),item);
-        // ui->drawingWindow->showItem(item);
-        // ui->drawingWindow->selectItem(item);
-        insertToMapActivateItem(item);
-        projectChanged=true;
-    }
+    //     //ui->drawingWindow->activateItem(item);  // redundant since showItem activates now  ToDo::update elsewhere
+    //     // ui->drawingWindow->insertItemToMap(item->getShape(),item);
+    //     // ui->drawingWindow->showItem(item);
+    //     // ui->drawingWindow->selectItem(item);
+    //     insertToMapActivateItem(item);
+    //     projectChanged=true;
+    // }
 
-    setMenusI(37);
-    ui->drawingWindow->updateViewer();
+    // setMenusI(37);
+    // ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::reversePathItems ()
@@ -5325,9 +5323,11 @@ void OpenParEMg::reversePathItems ()
     // make the changes
     i=0;
     while (i < changeList.size()) {
-        reversePathItem(changeList[i],true);
+        changeList[i]->reverse();
         i++;
     }
+
+    finishOperation(false,1);
 }
 
 void OpenParEMg::renumberDimTag ()
@@ -8753,6 +8753,9 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
 
     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
     if (drawingItem && drawingItem->isDrawingItem()) drawingItem->undo();
+
+    PathItem *pathItem=dynamic_cast<PathItem *>(item);
+    if (pathItem && pathItem->isPathItem()) pathItem->undo();
 }
 
 void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
@@ -8772,16 +8775,30 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
 
     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
     if (drawingItem && drawingItem->isDrawingItem()) drawingItem->redo();
+
+    PathItem *pathItem=dynamic_cast<PathItem *>(item);
+    if (pathItem && pathItem->isPathItem()) pathItem->redo();
 }
 
 void OpenParEMg::on_actionUndo_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionUndo_triggered" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::on_actionUndo_triggered" << std::endl; std::cout.flush();
 
     itemChangesStack.readNew();
     CustomTreeWidgetItem *item=itemChangesStack.getItem();
     while (item) {
-        undoItem(item);
+        //undoItem(item);
+        std::cout << "   undo item" << std::endl; std::cout.flush();
+
+        std::cout << "      check DrawingItem" << std::endl; std::cout.flush();
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        if (drawingItem && drawingItem->isDrawingItem()) drawingItem->undo();
+
+        std::cout << "      check PathItem" << std::endl; std::cout.flush();
+        PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        if (pathItem && pathItem->isPathItem()) pathItem->undo();
+
+        std::cout << "      get next item" << std::endl; std::cout.flush();
         item=itemChangesStack.getItem();
     }
 
@@ -8798,7 +8815,14 @@ void OpenParEMg::on_actionRedo_triggered ()
     itemChangesStack.readNew();
     CustomTreeWidgetItem *item=itemChangesStack.getItem();
     while (item) {
-        redoItem(item);
+        //redoItem(item);
+
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        if (drawingItem && drawingItem->isDrawingItem()) drawingItem->redo();
+
+        PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        if (pathItem && pathItem->isPathItem()) pathItem->redo();
+
         item=itemChangesStack.getItem();
     }
 
