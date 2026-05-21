@@ -559,14 +559,14 @@ DrawingItem* DrawingItem::copy (CustomTreeWidgetItem *parent)
     // set parent
 
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
-    if (rootDrawingItem && rootDrawingItem->isRootDrawingItem()) {
+    if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
         rootDrawingItem->addChild(newItem);
         newItem->setParentItem(rootDrawingItem);
         newItem->copy_depth(rootDrawingItem);
     }
 
     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(parent);
-    if (drawingItem && drawingItem->isDrawingItem()) {
+    if (drawingItem && drawingItem->is_drawing()) {
         drawingItem->addChild(newItem);
         newItem->setParentItem(drawingItem);
         newItem->copy_depth(drawingItem);
@@ -912,7 +912,7 @@ void DrawingItem::del ()
     CustomTreeWidgetItem *parentItem=getParentItem();
     if (parentItem) {
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
-        if (rootDrawingItem && rootDrawingItem->isRootDrawingItem()) {
+        if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
             int insertIndex=rootDrawingItem->indexOfChild(this);
 
             // move children to parent
@@ -1343,7 +1343,7 @@ void PathItem::del ()
     CustomTreeWidgetItem *parentItem=getParentItem();
     if (parentItem) {
         RootDrawingItem *rootPathItem=dynamic_cast<RootDrawingItem *>(parentItem);
-        if (rootPathItem && rootPathItem->isRootPathItem()) {
+        if (rootPathItem && rootPathItem->is_rootPath()) {
             rootPathItem->removeChild(this);
         }
 
@@ -1572,3 +1572,200 @@ void PathItem::reverse ()
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// RootBoundaryItem
+////////////////////////////////////////////////////////////////////////////////
+
+void RootBoundaryItem::showMenu (QMenu *menu)
+{
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
+
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::rootBoundaryShow);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::rootBoundaryHide);
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+
+    if (mw->isValidRootBoundaryShow()) menu->addAction(mw->showAction);
+    if (mw->isValidRootBoundaryHide()) menu->addAction(mw->hideAction);
+    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// BoundaryItem
+////////////////////////////////////////////////////////////////////////////////
+
+void BoundaryItem::showMenu (QMenu *menu)
+{
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+    mw->unselectAction=new QAction("Unselect",this);
+    mw->renameAction=new QAction("Rename",this);
+    mw->deleteAction=new QAction("Delete",this);
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
+
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showBoundaryItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideBoundaryItems);
+    connect(mw->unselectAction, &QAction::triggered, mw, &OpenParEMg::unselectBoundaryItems);
+    connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renameBoundaryItems);
+    connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deleteBoundaryItems);
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+
+    if (mw->isValidShowPath()) menu->addAction(mw->showAction);
+    if (mw->isValidHidePath()) menu->addAction(mw->hideAction);
+    if (mw->ui->drawingWindow->hasBoundarySelectedItems()) menu->addAction(mw->unselectAction);
+    if (mw->ui->drawingWindow->get_boundarySelectedCount() == 1) menu->addAction(mw->renameAction);
+    menu->addAction(mw->deleteAction);
+    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+}
+
+void BoundaryItem::del ()
+{
+    setForUndoRedo();
+
+    // mark as delete
+    ShapeData *shapeData=getShapeData();
+    shapeData->setDelete();
+
+    // parentItem
+    CustomTreeWidgetItem *parentItem=getParentItem();
+    if (parentItem) {
+        RootDrawingItem *rootPathItem=dynamic_cast<RootDrawingItem *>(parentItem);
+        if (rootPathItem && rootPathItem->is_rootPath()) {
+            rootPathItem->removeChild(this);
+        }
+
+        mw->itemChangesStack.add(this);
+
+        // remove from display and tracking
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(this->getShape());
+
+        mw->drawingChanged=true;
+    }
+}
+
+void BoundaryItem::undo ()
+{
+    std::cout << "BoundaryItem::undo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    if (shapeData->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // nothing to do
+    } else if (shapeData->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        // remove the item
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+        getParentItem()->removeChild(this);
+
+        dataStack.undo();
+    } else if (shapeData->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
+
+        // dataStack.undo();
+
+        // ShapeData *shapeData=getShapeData();
+        // if (shapeData) {
+        //     Process *process=static_cast<Process *>(shapeData->getProcess());
+        //     if (process) {
+        //         int i=0;
+        //         while (i < childCount()) {
+        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             childItem->undo();
+        //             mw->ui->drawingWindow->hideItem(childItem);
+        //             i++;
+        //         }
+        //     } else {
+        //         mw->reprocess(this);
+        //         mw->ui->drawingWindow->unselectItem(this);
+        //     }
+        // }
+
+        // mw->findShowTopLevelItem(this,false);
+    } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+
+        dataStack.undo();
+
+
+        mw->path.addChild(this);
+
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+        mw->ui->drawingWindow->displayShape(getShape());
+        mw->ui->drawingWindow->activateItem(this);
+    }
+}
+
+void BoundaryItem::redo ()
+{
+    std::cout << "BoundaryItem::redo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    ShapeData *next=shapeData->getNext();
+    if (!next) return;
+
+    if (next->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // should not occur
+    } else if (next->isCreate()) {
+        dataStack.redo();
+        mw->boundary.addChild(this);
+        setForeground(0,Qt::gray);
+        mw->ui->drawingWindow->showItem(this);
+    } else if (next->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
+
+        // dataStack.redo();
+
+        // ShapeData *shapeData=getShapeData();
+        // if (shapeData) {
+        //     Process *process=static_cast<Process *>(shapeData->getProcess());
+        //     if (process) {
+        //         int i=0;
+        //         while (i < childCount()) {
+        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             childItem->redo();
+        //             i++;
+        //         }
+        //     }
+        // }
+
+        // mw->reprocess(this);
+        // mw->insertToMapActivateItem(this);
+        // mw->ui->drawingWindow->unselectItem(this);
+        // mw->findShowTopLevelItem(this,false);
+    } else if (next->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        // // remove this version from display and tracking
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
+
+        // dataStack.redo();
+
+        // promoteChildren();
+        // getParentItem()->removeChild(this);
+        // mw->findShowTopLevelItem(this,true);
+    }
+}

@@ -1690,7 +1690,6 @@ Rectangle* Rectangle::copyCreate ()
 
 Handle(AIS_Shape) Rectangle::get_AIS_Shape ()
 {
-    std::cout << "Rectangle::get_AIS_Shape  hasArrows=" << hasArrows << std::endl; std::cout.flush();
     Handle(AIS_Shape) shape;
     TopoDS_Wire wire=buildWire();
     if (!wire.IsNull()) {

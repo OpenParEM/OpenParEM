@@ -458,11 +458,6 @@ public:
         parentItem=nullptr;
     }
 
-    virtual bool isDrawingItem () {return false;}
-    virtual bool isRootDrawingItem () {return false;}
-    virtual bool isRootPathItem () {return false;}
-    virtual bool isPathItem () {return false;}
-
     QString get_name () {return text(0);}
     QString get_material () {return text(1);}
     void copy_depth (CustomTreeWidgetItem *item) {depth=item->depth;}
@@ -774,18 +769,13 @@ class BaseItem : public CustomTreeWidgetItem
 public:
     explicit BaseItem (QObject *parent = nullptr)
     {
-        itemType=0;                 // default to drawing
+        itemType=-1;                 // undefined
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        set_dimTag(-1,-1);           // for mesh items; invalid initialization
         OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
     }
-
-    bool isDrawingItem () override {return false;}
-    bool isRootDrawingItem () override {return false;}
-    bool isRootPathItem () override {return false;}
-    bool isPathItem () override {return false;}
 
     void setMW (OpenParEMg *mw_) {mw=mw_;}
     virtual void showMenu (QMenu *) = 0;
@@ -807,18 +797,13 @@ class RootDrawingItem : public BaseItem
 public:
     explicit RootDrawingItem (QObject *parent = nullptr)
     {
-        itemType=0;                 // default to drawing
+        itemType=100;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
         OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
     }
-
-    bool isDrawingItem () override {return false;}
-    bool isRootDrawingItem () override {return true;}
-    bool isRootPathItem () override {return false;}
-    bool isPathItem () override {return false;}
 
     void showMenu (QMenu *) override;
     void del () override {}
@@ -836,7 +821,7 @@ class DrawingItem : public BaseItem
 public:
     explicit DrawingItem (QObject *parent = nullptr)
     {
-        itemType=0;                 // default to drawing
+        itemType=0;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
         OPEMobject=nullptr;
@@ -850,11 +835,6 @@ public:
         enableDeletePoint=false;
         enableInsertPoint=false;
     }
-
-    bool isDrawingItem () override {return true;}
-    bool isRootDrawingItem () override {return false;}
-    bool isRootPathItem () override {return false;}
-    bool isPathItem () override {return false;}
 
     DrawingItem* copyCreate ();
 
@@ -961,18 +941,13 @@ class RootPathItem : public BaseItem
 public:
     explicit RootPathItem (QObject *parent = nullptr)
     {
-        itemType=0;                 // default to drawing
+        itemType=104;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
         OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
     }
-
-    bool isDrawingItem () override {return false;}
-    bool isRootDrawingItem () override {return false;}
-    bool isRootPathItem () override {return true;}
-    bool isPathItem () override {return false;}
 
     void showMenu (QMenu *) override;
     void del () override {}
@@ -990,7 +965,7 @@ class PathItem : public DrawingItem
 public:
     explicit PathItem (QObject *parent = nullptr)
     {
-        itemType=0;                 // default to drawing
+        itemType=4;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
         OPEMobject=nullptr;
@@ -999,11 +974,6 @@ public:
 
         path=nullptr;
     }
-
-    bool isDrawingItem () override {return false;}
-    bool isRootDrawingItem () override {return false;}
-    bool isRootPathItem () override {return false;}
-    bool isPathItem () override {return true;}
 
     void showMenu (QMenu *) override;
     void del () override;
@@ -1014,7 +984,59 @@ public:
     void reverse ();
 
 private:
-    Path *path;
+    Path *path;    // related path from the boundary database
+};
+
+class RootBoundaryItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    explicit RootBoundaryItem (QObject *parent = nullptr)
+    {
+        itemType=102;
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        OPEMobject=nullptr;
+        depth=0;
+        parentItem=nullptr;
+    }
+
+    void showMenu (QMenu *) override;
+    void del () override {}
+    void undo () override {}
+    void redo () override {}
+
+private:
+
+};
+
+class BoundaryItem : public DrawingItem
+{
+    Q_OBJECT
+
+public:
+    explicit BoundaryItem (QObject *parent = nullptr)
+    {
+        itemType=2;
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        OPEMobject=nullptr;
+        depth=0;
+        parentItem=nullptr;
+
+        pathItem=nullptr;
+    }
+
+    void showMenu (QMenu *) override;
+    void del () override;
+    void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
+    PathItem* getPathItem () {return pathItem;}
+    void undo () override;
+    void redo () override;
+
+private:
+    PathItem *pathItem;   // PathItem associated with this boundary
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H

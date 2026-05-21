@@ -1543,12 +1543,12 @@ void Boundary::recalculatePathIndexList (std::vector<Path *> *pathList)
 #ifdef HAS_GUI
 
 void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                     CustomTreeWidgetItem *pathWidgetItem, CustomTreeWidgetItem *boundaryWidgetItem, MaterialDatabase *materialDatabase)
+                     RootPathItem *pathWidgetItem, RootBoundaryItem *boundaryWidgetItem, MaterialDatabase *materialDatabase)
 {
     // name
 
     QString textName=QString::fromStdString(get_name());
-    CustomTreeWidgetItem *itemName=new CustomTreeWidgetItem(0);
+    BoundaryItem *itemName=new BoundaryItem(0);
     itemName->setText(0,textName);
     itemName->set_itemType(2);
     itemName->setForeground(0,Qt::gray);
@@ -1563,8 +1563,8 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     // attach item
     int j=0;
     while (j < pathWidgetItem->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) pathWidgetItem->child(j);
-        if (child->get_OPEMobject() == path) {
+        PathItem *child=dynamic_cast<PathItem *>(pathWidgetItem->child(j));
+        if (child->getPath() == path) {
             itemName->push_linkedItem(child);
             child->push_linkedItem(itemName);
 
@@ -9825,7 +9825,7 @@ void BoundaryDatabase::set_unmodified ()
 
 #ifdef HAS_GUI
 void BoundaryDatabase::draw (Relay *relay, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                             RootPathItem *pathTreeItem, CustomTreeWidgetItem *portTreeItem, CustomTreeWidgetItem *boundaryTreeItem,
+                             RootPathItem *pathTreeItem, CustomTreeWidgetItem *portTreeItem, RootBoundaryItem *boundaryTreeItem,
                              MaterialDatabase *materialDatabase)
 {
     //emit relay->triggered();
@@ -9861,8 +9861,8 @@ CustomTreeWidgetItem* BoundaryDatabase::draw_port (Relay *relay, Port *port, str
     return port->get_item();
 }
 
-CustomTreeWidgetItem* BoundaryDatabase::draw_boundary (Relay *relay, Boundary *boundary, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                                      CustomTreeWidgetItem *pathTreeItem, CustomTreeWidgetItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
+BoundaryItem* BoundaryDatabase::draw_boundary (Relay *relay, Boundary *boundary, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+                                      RootPathItem *pathTreeItem, RootBoundaryItem *boundaryTreeItem, MaterialDatabase *materialDatabase)
 {
     boundary->draw(relay,projData,this,drawingWindow,drawingItemTree,pathTreeItem,boundaryTreeItem,materialDatabase);
     return boundary->get_item();

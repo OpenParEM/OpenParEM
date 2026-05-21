@@ -325,6 +325,9 @@ class OpenParEMg : public QMainWindow
     friend class RootPathItem;
     friend class PathItem;
 
+    friend class RootBoundaryItem;
+    friend class BoundaryItem;
+
 public:
     OpenParEMg (QWidget *parent = nullptr);
     ~OpenParEMg ();
@@ -436,7 +439,8 @@ public:
     void convertToPolyline ();
 
     bool isValidConvertToPath ();
-    void convertItemToPath (DrawingItem *, bool);
+    PathItem* createPathFromDrawing (DrawingItem *, bool);
+    void convertItemToPath (DrawingItem *);
     void convertToPath ();
 
     bool isValidExtrudePolywire ();
@@ -649,7 +653,7 @@ private slots:
     void createBoundaryFromPath ();
     void convertItemToPort (CustomTreeWidgetItem *, bool);
     void convertToPort ();
-    void convertItemToBoundary (CustomTreeWidgetItem *, bool);
+    void convertItemToBoundary (DrawingItem *);
     void convertToBoundary ();
     void reversePathItem (PathItem *, bool);
     void reversePathItems ();
@@ -724,7 +728,7 @@ private:
     RootDrawingItem drawing;
     RootPathItem path;
     CustomTreeWidgetItem port;
-    CustomTreeWidgetItem boundary;
+    RootBoundaryItem boundary;
     CustomTreeWidgetItem mesh;
 
     CustomTreeWidgetItem *clickedItem,*previousClickedItem,*workingItem;
