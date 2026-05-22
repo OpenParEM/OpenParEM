@@ -319,11 +319,16 @@ class OpenParEMg : public QMainWindow
 
     friend class BaseItem;
 
+    friend class SelectionItem;
+
     friend class RootDrawingItem;
     friend class DrawingItem;
 
     friend class RootPathItem;
     friend class PathItem;
+
+    friend class RootPortItem;
+    friend class PortItem;
 
     friend class RootBoundaryItem;
     friend class BoundaryItem;
@@ -651,7 +656,7 @@ private slots:
     void createPortFromPath ();
     void createBoundaryFromFace ();
     void createBoundaryFromPath ();
-    void convertItemToPort (CustomTreeWidgetItem *, bool);
+    void convertItemToPort (DrawingItem *);
     void convertToPort ();
     void convertItemToBoundary (DrawingItem *);
     void convertToBoundary ();
@@ -727,7 +732,7 @@ private:
 
     RootDrawingItem drawing;
     RootPathItem path;
-    CustomTreeWidgetItem port;
+    RootPortItem port;
     RootBoundaryItem boundary;
     CustomTreeWidgetItem mesh;
 

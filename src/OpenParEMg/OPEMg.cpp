@@ -298,9 +298,9 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     drawing.setMW(this);
     path.setMW(this);
+    port.setMW(this);
     boundary.setMW(this);
 
-    port.set_itemType(101);
     mesh.set_itemType(103);
 
     ui->drawingItemTree->setHeaderHidden(true);
@@ -511,11 +511,25 @@ void OpenParEMg::convertPathToFace (CustomTreeWidgetItem *item)
     Handle(AIS_Shape) shape=item->getShape();
     if (shape.IsNull()) return;
 
+    std::cout << "a.1 isInMap=" << ui->drawingWindow->isInMap(item->getShape()) << std::endl; std::cout.flush();
+
     ui->drawingWindow->hideItem(item);
     ui->drawingWindow->removeItemFromMap(item);
     ui->drawingWindow->deleteShape(shape);
+    std::cout << "a.2 isInMap=" << ui->drawingWindow->isInMap(item->getShape()) << std::endl; std::cout.flush();
 
-    Path *path=static_cast<Path *>(item->get_OPEMobject());
+    PathItem* pathItem=nullptr;
+
+    BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
+    if (boundaryItem && boundaryItem->is_boundary()) pathItem=boundaryItem->getPathItem();
+
+    PortItem *portItem=dynamic_cast<PortItem *>(item);
+    if (portItem && portItem->is_boundary()) pathItem=portItem->getPathItem();
+
+    if (!pathItem) return;
+
+
+    Path *path=static_cast<Path *>(pathItem->getPath());
     if (path) {
         TopoDS_Wire wire=path->create_TopoDS_Wire();
         if (!wire.IsNull()) {
@@ -526,13 +540,16 @@ void OpenParEMg::convertPathToFace (CustomTreeWidgetItem *item)
                 ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,newShape);
                 item->addShapeData(newShapeData);
 
+                std::cout << "a.3 isInMap=" << ui->drawingWindow->isInMap(item->getShape()) << std::endl; std::cout.flush();
                 ui->drawingWindow->showItem(item);
                 ui->drawingWindow->insertItemToMap(newShape,item);
                 ui->drawingWindow->displayShape(newShape);
                 ui->drawingWindow->activateItem(item);
+                std::cout << "a.4 isInMap=" << ui->drawingWindow->isInMap(item->getShape()) << std::endl; std::cout.flush();
             }
         }
     }
+    std::cout << "a.5 isInMap=" << ui->drawingWindow->isInMap(item->getShape()) << std::endl; std::cout.flush();
 }
 
 int OpenParEMg::check_changed ()
@@ -653,7 +670,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    itemChangesStack.print();
+    //itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
@@ -1061,54 +1078,12 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(clickedItem);
     if (boundaryItem && boundaryItem->is_boundary()) boundaryItem->showMenu(&menu);
 
+    RootPortItem *rootPortItem=dynamic_cast<RootPortItem *>(clickedItem);
+    if (rootPortItem && rootPortItem->is_rootPort()) rootPortItem->showMenu(&menu);
 
-    if (clickedItem->is_rootPort()) {
+    PortItem *portItem=dynamic_cast<PortItem *>(clickedItem);
+    if (portItem && portItem->is_port()) portItem->showMenu(&menu);
 
-        showAction=new QAction("Show",this);
-        hideAction=new QAction("Hide",this);
-        expandAllAction=new QAction("Expand All",this);
-        collapseAllAction=new QAction("Collapse All",this);
-
-        connect(showAction, &QAction::triggered, this, &OpenParEMg::rootPortShow);
-        connect(hideAction, &QAction::triggered, this, &OpenParEMg::rootPortHide);
-        connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
-        connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
-
-        if (isValidRootPortShow()) menu.addAction(showAction);
-        if (isValidRootPortHide()) menu.addAction(hideAction);
-        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
-        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
-    }
-
-    if (clickedItem->is_port()) {
-
-        showAction=new QAction("Show",this);
-        hideAction=new QAction("Hide",this);
-        unselectAction=new QAction("Unselect",this);
-        renameAction=new QAction("Rename",this);
-        insertAction=new QAction("Insert Mode",this);
-        deleteAction=new QAction("Delete",this);
-        expandAllAction=new QAction("Expand All",this);
-        collapseAllAction=new QAction("Collapse All",this);
-
-        connect(showAction, &QAction::triggered, this, &OpenParEMg::showPortItems);
-        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePortItems);
-        connect(unselectAction, &QAction::triggered, this, &OpenParEMg::unselectPortItems);
-        connect(insertAction, &QAction::triggered, this, &OpenParEMg::insertModeItems);
-        connect(renameAction, &QAction::triggered, this, &OpenParEMg::renamePortItems);
-        connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deletePortItems);
-        connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
-        connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
-
-        if (isValidShowPath()) menu.addAction(showAction);
-        if (isValidHidePath()) menu.addAction(hideAction);
-        if (ui->drawingWindow->hasPortSelectedItems()) menu.addAction(unselectAction);
-        if (ui->drawingWindow->get_portSelectedCount() == 1) menu.addAction(renameAction);
-        menu.addAction(insertAction);
-        menu.addAction(deleteAction);
-        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
-        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
-    }
 
     if (clickedItem->is_rootMesh()) {
 
@@ -4519,7 +4494,7 @@ void OpenParEMg::createPortFromFace ()
                 boundaryDatabase->push_port(newPort);
 
                 // draw it
-                CustomTreeWidgetItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+                PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
                 port.setExpanded(true);
                 newPortItem->setExpanded(true);
             }
@@ -4874,79 +4849,10 @@ bool OpenParEMg::isValidConvertToPort ()
     return false;
 }
 
-void OpenParEMg::convertItemToPort (CustomTreeWidgetItem *item, bool saveForUndoRedo)
+void OpenParEMg::convertItemToPort (DrawingItem *item)
 {
-    Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
-
-    // path name
-
-    std::string pathName=item->get_name().toStdString();
-
-    int i=1;
-    while (boundaryDatabase->pathNameExists(pathName)) {
-        std::string testName=pathName;
-        testName.append("_").append(std::to_string(i));
-        if (boundaryDatabase->pathNameExists(testName)) {i++;}
-        else {pathName=testName; break;}
-    }
-
-    // path name placed in a keywordPair
-    keywordPair *kwPathName=new keywordPair();
-    kwPathName->set_keyword("path");
-    kwPathName->set_value(pathName);
-    kwPathName->set_lineNumber(0);
-    kwPathName->set_loaded(true);
-
-    // path
-
-    Path *newPath=new Path(0,0);
-    newPath->set_name(pathName);
-    newPath->is_modified();
-    newPath->set_normal(polywire->getNormal());
-    newPath->addWirePoints(polywire->buildWire());
-    newPath->create_face_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
-
-    boundaryDatabase->push_path(newPath);
-
-
-    // remove existing item from the drawing
-
-    //if (saveForUndoRedo) itemChangesStack.startNew();
-
-    // remove the old version from display and tracking
-    ui->drawingWindow->hideItem(item);
-    ui->drawingWindow->removeItemFromMap(item);
-    ui->drawingWindow->deleteShape(item->getShape());
-    drawing.removeChild(item);
-
-    // clone the item onto itself for undo/redo
-    ShapeData *newShapeData=item->getShapeData()->copyCreate();
-    newShapeData->setConvertToPort();
-    item->addShapeData(newShapeData);
-    ui->drawingWindow->unselectItem(item);
-    if (saveForUndoRedo) itemChangesStack.add(item);
-
-    // add new path to the drawing
-    PathItem *pathItem=newPath->get_item();
-    if (pathItem && pathItem->is_path()) {
-        // set color and transparency
-        Handle(AIS_Shape) shape=pathItem->getShape();
-        if (!shape.IsNull()) {
-            shape->SetColor(Quantity_NOC_MINTCREAM);  // X11 color wheel
-            shape->SetTransparency(0.25);
-            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-            ui->drawingWindow->setShaded(shape);
-        }
-
-        insertToMapActivateItem(pathItem);
-        pathItem->set_itemType(4);
-        newShapeData->set(pathItem,nullptr,nullptr);
-    }
-
-    // reset the top-level compound
-    //reprocess(&drawing);
-
-    // create new port
+    PathItem *pathItem=createPathFromDrawing(item,false);
+    if (!pathItem) return;
 
     // next available s-port number
     int sport=boundaryDatabase->get_SportCount()+1;
@@ -4956,7 +4862,7 @@ void OpenParEMg::convertItemToPort (CustomTreeWidgetItem *item, bool saveForUndo
     std::string portName="port";
     portName.append(std::to_string(sport));
 
-    i=1;
+    long unsigned int i=1;
     while (boundaryDatabase->portNameExists(portName)) {
         std::string testName=portName;
         testName.append("_").append(std::to_string(i));
@@ -4981,10 +4887,15 @@ void OpenParEMg::convertItemToPort (CustomTreeWidgetItem *item, bool saveForUndo
 
     Port *newPort=new Port(0,0);
     newPort->set_name(portName);
-    newPort->set_outline(newPath);
+    newPort->set_outline(pathItem->getPath());
 
     // path info
-    newPort->push_path(kwPathName,boundaryDatabase->get_path_index(newPath),false);
+    keywordPair *kwPathName=new keywordPair();
+    kwPathName->set_keyword("path");
+    kwPathName->set_value(pathItem->text(0).toStdString());
+    kwPathName->set_lineNumber(0);
+    kwPathName->set_loaded(true);
+    newPort->push_path(kwPathName,boundaryDatabase->get_path_index(pathItem->getPath()),false);
 
     // impedance
     if (boundaryDatabase->get_portList_size() == 0) {
@@ -5005,10 +4916,25 @@ void OpenParEMg::convertItemToPort (CustomTreeWidgetItem *item, bool saveForUndo
     boundaryDatabase->push_port(newPort);
 
     // draw it
-    CustomTreeWidgetItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
-    newShapeData->set(nullptr,newPortItem,nullptr);
-    port.setExpanded(true);
-    newPortItem->setExpanded(true);
+    PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+    if (newPortItem) {
+        newPortItem->setMW(this);
+        newPortItem->setParentItem(&boundary);
+        newPortItem->setPathItem(pathItem);
+        newPortItem->setExpanded(true);
+
+        ShapeData *newShapeData=newPortItem->getShapeData()->copyCreate();
+        newShapeData->setCreate();
+        newShapeData->set(nullptr,nullptr,newPortItem);
+        newPortItem->addShapeData(newShapeData);
+
+        port.setExpanded(true);
+
+        itemChangesStack.add(newPortItem);
+    }
+
+    // delete the drawing item
+    item->del();
 }
 
 void OpenParEMg::convertToPort ()
@@ -5029,7 +4955,7 @@ void OpenParEMg::convertToPort ()
                     if (parentItem) {
                         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                         if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
-                            if (polywire->isClosed()) convertItemToPort(drawingItem,true);
+                            if (polywire->isClosed()) convertItemToPort(drawingItem);
                         }
                     }
                 }
@@ -5038,12 +4964,7 @@ void OpenParEMg::convertToPort ()
         i++;
     }
 
-    // for face selection
-    ui->drawingWindow->setSubshapeSelection(false);
-    on_actionShape_triggered();
-
-    setMenusI(37);
-    ui->drawingWindow->updateViewer();
+    finishOperation(false,1);
 }
 
 bool OpenParEMg::isValidConvertToBoundary ()
@@ -5055,6 +4976,8 @@ void OpenParEMg::convertItemToBoundary (DrawingItem *item)
 {
     PathItem *pathItem=createPathFromDrawing(item,false);
     if (!pathItem) return;
+
+    std::cout << "1 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
 
     // default boundary name
 
@@ -5091,25 +5014,33 @@ void OpenParEMg::convertItemToBoundary (DrawingItem *item)
     // add to boundary database
     boundaryDatabase->push_boundary(newBoundary);
 
+    std::cout << "2 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
     // draw it
     BoundaryItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
     if (newBoundaryItem) {
+        std::cout << "2.1 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
         newBoundaryItem->setMW(this);
         newBoundaryItem->setParentItem(&boundary);
         newBoundaryItem->setPathItem(pathItem);
         newBoundaryItem->setExpanded(true);
 
+        std::cout << "2.2 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
         ShapeData *newShapeData=newBoundaryItem->getShapeData()->copyCreate();
         newShapeData->setCreate();
         newShapeData->set(nullptr,nullptr,newBoundaryItem);
         newBoundaryItem->addShapeData(newShapeData);
 
+        std::cout << "2.3 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
         boundary.setExpanded(true);
         itemChangesStack.add(newBoundaryItem);
+        std::cout << "2.4 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
     }
 
+    std::cout << "3 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
     // delete the drawing item
     item->del();
+
+    std::cout << "4 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::convertToBoundary ()
@@ -5138,10 +5069,6 @@ void OpenParEMg::convertToBoundary ()
         }
         i++;
     }
-
-    // for face selection
-    ui->drawingWindow->setSubshapeSelection(false);
-    on_actionShape_triggered();
 
     finishOperation(false,1);
 }
@@ -8509,7 +8436,6 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
     if (cancel) {
 
-        on_actionShape_triggered();
         if (currentDrawingItem) {
             currentDrawingItem->cancelDraw();
             delete currentDrawingItem;
@@ -8635,7 +8561,7 @@ void OpenParEMg::finishOperation (bool cancel, int source)
     disableMenus=false;
 
     // restore selection
-    restoreSelection();
+    on_actionShape_triggered();
     ui->drawingWindow->setSubshapeSelection(false);
     ui->drawingWindow->setSetToPlane(false);
     isIntegrationPath=false;
@@ -8690,6 +8616,9 @@ void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
     PathItem *pathItem=dynamic_cast<PathItem *>(item);
     if (pathItem && pathItem->is_path()) pathItem->redo();
 
+    PortItem *portItem=dynamic_cast<PortItem *>(item);
+    if (portItem && portItem->is_port()) portItem->undo();
+
     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
     if (boundaryItem && boundaryItem->is_boundary()) boundaryItem->redo();
 }
@@ -8711,6 +8640,9 @@ void OpenParEMg::on_actionUndo_triggered ()
         std::cout << "      check PathItem" << std::endl; std::cout.flush();
         PathItem *pathItem=static_cast<PathItem *>(item);
         if (pathItem && pathItem->is_path()) pathItem->undo();
+
+        PortItem *portItem=dynamic_cast<PortItem *>(item);
+        if (portItem && portItem->is_port()) portItem->redo();
 
         std::cout << "      check BoundaryItem" << std::endl; std::cout.flush();
         BoundaryItem *boundaryItem=static_cast<BoundaryItem *>(item);

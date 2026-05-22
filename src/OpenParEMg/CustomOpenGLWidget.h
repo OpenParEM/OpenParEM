@@ -556,6 +556,8 @@ public:
         std::cout << "      drawing selected count = " << viewerContext->NbSelected() << std::endl; std::cout.flush();
     }
 
+    bool isInMap (Handle(AIS_Shape) shape) {return drawingTracker->isInMap(shape);}
+
 protected:
     void initializeGL () override;
     void paintGL () override;

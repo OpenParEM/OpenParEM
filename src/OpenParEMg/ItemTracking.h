@@ -716,11 +716,13 @@ public:
 
     void selectItemShape (Handle(AIS_Shape) shape)
     {
+        std::cout << "place 2 selectItemShape  shape.IsNull()=" << shape.IsNull() << std::endl;
         if (selectTracking) {std::cout << "ItemTracker::selectShape" << std::endl; std::cout.flush();}
 
         CustomTreeWidgetItem *item=shapeToItemMap[shape];
         if (item) {
             //showItem(item);
+            std::cout << "place 3 item found" << std::endl; std::cout.flush();
             selectItem(item);  // mesh shapes are not in the map, so need to check for valid item
         }
     }
@@ -758,6 +760,7 @@ public:
 
     void selectItem (CustomTreeWidgetItem *item)
     {
+        std::cout << "place 4 selectItem item=" << item << std::endl; std::cout.flush();
         if (selectTracking) {std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();}
         if (!item) return;
 
@@ -1117,6 +1120,12 @@ public:
         std::cout << "      selected size = " << selectedItems.size() << std::endl; std::cout.flush();
         std::cout << "      visible count = " << visibleItems.count() << std::endl;
         std::cout << "      selected count = " << selectedItems.count() << std::endl; std::cout.flush();
+    }
+
+    bool isInMap (Handle(AIS_Shape) shape) {
+        CustomTreeWidgetItem *item=shapeToItemMap[shape];
+        if (item) return true;
+        return false;
     }
 
 private:

@@ -901,7 +901,6 @@ void DrawingItem::convertToPolyline ()
 
 void DrawingItem::del ()
 {
-    std::cout << "place 1" << std::endl; std::cout.flush();
     setForUndoRedo();
 
     // mark as delete
@@ -1636,9 +1635,9 @@ void BoundaryItem::del ()
     // parentItem
     CustomTreeWidgetItem *parentItem=getParentItem();
     if (parentItem) {
-        RootDrawingItem *rootPathItem=dynamic_cast<RootDrawingItem *>(parentItem);
-        if (rootPathItem && rootPathItem->is_rootPath()) {
-            rootPathItem->removeChild(this);
+        RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(parentItem);
+        if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) {
+            rootBoundaryItem->removeChild(this);
         }
 
         mw->itemChangesStack.add(this);
@@ -1704,7 +1703,7 @@ void BoundaryItem::undo ()
         dataStack.undo();
 
 
-        mw->path.addChild(this);
+        mw->boundary.addChild(this);
 
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
         mw->ui->drawingWindow->displayShape(getShape());
@@ -1728,6 +1727,207 @@ void BoundaryItem::redo ()
     } else if (next->isCreate()) {
         dataStack.redo();
         mw->boundary.addChild(this);
+        setForeground(0,Qt::gray);
+        mw->ui->drawingWindow->showItem(this);
+    } else if (next->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
+
+        // dataStack.redo();
+
+        // ShapeData *shapeData=getShapeData();
+        // if (shapeData) {
+        //     Process *process=static_cast<Process *>(shapeData->getProcess());
+        //     if (process) {
+        //         int i=0;
+        //         while (i < childCount()) {
+        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             childItem->redo();
+        //             i++;
+        //         }
+        //     }
+        // }
+
+        // mw->reprocess(this);
+        // mw->insertToMapActivateItem(this);
+        // mw->ui->drawingWindow->unselectItem(this);
+        // mw->findShowTopLevelItem(this,false);
+    } else if (next->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        // // remove this version from display and tracking
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
+
+        // dataStack.redo();
+
+        // promoteChildren();
+        // getParentItem()->removeChild(this);
+        // mw->findShowTopLevelItem(this,true);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// RootPortItem
+////////////////////////////////////////////////////////////////////////////////
+
+void RootPortItem::showMenu (QMenu *menu)
+{
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
+
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::rootPortShow);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::rootPortHide);
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+
+    if (mw->isValidRootPortShow()) menu->addAction(mw->showAction);
+    if (mw->isValidRootPortHide()) menu->addAction(mw->hideAction);
+    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// PortItem
+////////////////////////////////////////////////////////////////////////////////
+
+void PortItem::showMenu (QMenu *menu)
+{
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+    mw->unselectAction=new QAction("Unselect",this);
+    mw->renameAction=new QAction("Rename",this);
+    mw->insertAction=new QAction("Insert Mode",this);
+    mw->deleteAction=new QAction("Delete",this);
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
+
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showPortItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hidePortItems);
+    connect(mw->unselectAction, &QAction::triggered, mw, &OpenParEMg::unselectPortItems);
+    connect(mw->insertAction, &QAction::triggered, mw, &OpenParEMg::insertModeItems);
+    connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renamePortItems);
+    connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deletePortItems);
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+
+    if (mw->isValidShowPath()) menu->addAction(mw->showAction);
+    if (mw->isValidHidePath()) menu->addAction(mw->hideAction);
+    if (mw->ui->drawingWindow->hasPortSelectedItems()) menu->addAction(mw->unselectAction);
+    if (mw->ui->drawingWindow->get_portSelectedCount() == 1) menu->addAction(mw->renameAction);
+    menu->addAction(mw->insertAction);
+    menu->addAction(mw->deleteAction);
+    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+}
+
+void PortItem::del ()
+{
+    setForUndoRedo();
+
+    // mark as delete
+    ShapeData *shapeData=getShapeData();
+    shapeData->setDelete();
+
+    // parentItem
+    CustomTreeWidgetItem *parentItem=getParentItem();
+    if (parentItem) {
+        RootPortItem *rootPortItem=dynamic_cast<RootPortItem *>(parentItem);
+        if (rootPortItem && rootPortItem->is_rootPort()) {
+            rootPortItem->removeChild(this);
+        }
+
+        mw->itemChangesStack.add(this);
+
+        // remove from display and tracking
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(this->getShape());
+
+        mw->drawingChanged=true;
+    }
+}
+
+void PortItem::undo ()
+{
+    std::cout << "PortItem::undo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    if (shapeData->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // nothing to do
+    } else if (shapeData->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        // remove the item
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+        getParentItem()->removeChild(this);
+
+        dataStack.undo();
+    } else if (shapeData->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
+
+        // dataStack.undo();
+
+        // ShapeData *shapeData=getShapeData();
+        // if (shapeData) {
+        //     Process *process=static_cast<Process *>(shapeData->getProcess());
+        //     if (process) {
+        //         int i=0;
+        //         while (i < childCount()) {
+        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             childItem->undo();
+        //             mw->ui->drawingWindow->hideItem(childItem);
+        //             i++;
+        //         }
+        //     } else {
+        //         mw->reprocess(this);
+        //         mw->ui->drawingWindow->unselectItem(this);
+        //     }
+        // }
+
+        // mw->findShowTopLevelItem(this,false);
+    } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+
+        dataStack.undo();
+
+
+        mw->port.addChild(this);
+
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+        mw->ui->drawingWindow->displayShape(getShape());
+        mw->ui->drawingWindow->activateItem(this);
+    }
+}
+
+void PortItem::redo ()
+{
+    std::cout << "PortItem::redo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    ShapeData *next=shapeData->getNext();
+    if (!next) return;
+
+    if (next->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // should not occur
+    } else if (next->isCreate()) {
+        dataStack.redo();
+        mw->port.addChild(this);
         setForeground(0,Qt::gray);
         mw->ui->drawingWindow->showItem(this);
     } else if (next->isEdit()) {

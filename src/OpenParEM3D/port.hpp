@@ -223,8 +223,7 @@ class Boundary
 #ifdef HAS_GUI
       void set_item (BoundaryItem *item_) {item=item_;}
       BoundaryItem* get_item () {return item;}
-      void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootBoundaryItem *, MaterialDatabase *);
-      //void set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap_) {drawingToItemMap=drawingToItemMap_;}
+      void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *rootPathItem, RootBoundaryItem *, MaterialDatabase *);
 #endif
 };
 
@@ -651,7 +650,7 @@ class Port
       mfem::ParGridFunction *grid2DsolutionImHz=nullptr;
 
 #ifdef HAS_GUI
-      CustomTreeWidgetItem *item;
+      PortItem *item;
       CustomComboBox *comboZdef;   // comboBox for the impedance definition
 #endif
 
@@ -782,9 +781,9 @@ class Port
       void renamePath (std::string, std::string);
       void recalculatePathIndexList (std::vector<Path *> *);
 #ifdef HAS_GUI
-      void set_item (CustomTreeWidgetItem *item_) {item=item_;}
-      CustomTreeWidgetItem* get_item () {return item;}
-      void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+      void set_item (PortItem *item_) {item=item_;}
+      PortItem* get_item () {return item;}
+      void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *);
       void set_comboZdef ();
 #endif
 };
@@ -924,8 +923,8 @@ class BoundaryDatabase
       void renamePath (std::string, std::string);
       void deletePath (Path *);
 #ifdef HAS_GUI
-      void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, CustomTreeWidgetItem *, RootBoundaryItem *, MaterialDatabase *);
-      CustomTreeWidgetItem* draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, CustomTreeWidgetItem *, MaterialDatabase *);
+      void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *, RootBoundaryItem *, MaterialDatabase *);
+      PortItem* draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *, RootBoundaryItem *, MaterialDatabase *);
       BoundaryItem* draw_boundary (Relay *, Boundary *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootBoundaryItem *, MaterialDatabase *);
       void set_comboZdef ();
 #endif

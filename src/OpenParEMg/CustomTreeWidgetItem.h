@@ -790,6 +790,22 @@ protected:
 
 };
 
+class SelectionItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    explicit SelectionItem (QObject *parent = nullptr) {}
+    void showMenu (QMenu *) override {return;}
+    void del () override {return;}
+    void undo () override {return;}
+    void redo () override {return;}
+
+private:
+
+
+};
+
 class RootDrawingItem : public BaseItem
 {
     Q_OBJECT
@@ -804,7 +820,6 @@ public:
         depth=0;
         parentItem=nullptr;
     }
-
     void showMenu (QMenu *) override;
     void del () override {}
     void undo () override {};
@@ -835,7 +850,6 @@ public:
         enableDeletePoint=false;
         enableInsertPoint=false;
     }
-
     DrawingItem* copyCreate ();
 
     void setForUndoRedo ();
@@ -948,7 +962,6 @@ public:
         depth=0;
         parentItem=nullptr;
     }
-
     void showMenu (QMenu *) override;
     void del () override {}
     void undo () override {}
@@ -974,7 +987,6 @@ public:
 
         path=nullptr;
     }
-
     void showMenu (QMenu *) override;
     void del () override;
     void setPath (Path *path_) {path=path_;}
@@ -1001,7 +1013,6 @@ public:
         depth=0;
         parentItem=nullptr;
     }
-
     void showMenu (QMenu *) override;
     void del () override {}
     void undo () override {}
@@ -1037,6 +1048,56 @@ public:
 
 private:
     PathItem *pathItem;   // PathItem associated with this boundary
+};
+
+class RootPortItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    explicit RootPortItem (QObject *parent = nullptr)
+    {
+        itemType=101;
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        OPEMobject=nullptr;
+        depth=0;
+        parentItem=nullptr;
+    }
+    void showMenu (QMenu *) override;
+    void del () override {}
+    void undo () override {}
+    void redo () override {}
+
+private:
+
+};
+
+class PortItem : public DrawingItem
+{
+    Q_OBJECT
+
+public:
+    explicit PortItem (QObject *parent = nullptr)
+    {
+        itemType=1;
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        OPEMobject=nullptr;
+        depth=0;
+        parentItem=nullptr;
+
+        pathItem=nullptr;
+    }
+    void showMenu (QMenu *) override;
+    void del () override;
+    void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
+    PathItem* getPathItem () {return pathItem;}
+    void undo () override;
+    void redo () override;
+
+private:
+    PathItem *pathItem;   // PathItem associated with this port
 };
 
 #endif // CUSTOMTREEWIDGETITEM_H
