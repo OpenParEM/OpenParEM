@@ -59,11 +59,11 @@ public:
         else viewerContext->SetDisplayMode(AIS_Shaded, Standard_False);
     }
 
-    void set_drawingItemTree (CustomTreeWidgetItem *drawingItemTree_) {drawingItemTree=drawingItemTree_;}
-    void set_portItemTree (CustomTreeWidgetItem *portItemTree_) {portItemTree=portItemTree_;}
-    void set_boundaryItemTree (CustomTreeWidgetItem *boundaryItemTree_) {boundaryItemTree=boundaryItemTree_;}
-    void set_meshItemTree (CustomTreeWidgetItem *meshItemTree_) {meshItemTree=meshItemTree_;}
-    void set_pathItemTree (CustomTreeWidgetItem *pathItemTree_) {pathItemTree=pathItemTree_;}
+    void set_drawingItemTree (RootDrawingItem *rootDrawingItem_) {rootDrawingItem=rootDrawingItem_;}
+        void set_pathItemTree (RootPathItem *rootPathItem_) {rootPathItem=rootPathItem_;}
+    void set_portItemTree (RootPortItem *rootPortItem_) {rootPortItem=rootPortItem_;}
+    void set_boundaryItemTree (RootBoundaryItem *rootBoundaryItem_) {rootBoundaryItem=rootBoundaryItem_;}
+    void set_meshItemTree (RootMeshItem *rootMeshItem_) {rootMeshItem=rootMeshItem_;}
     void set_relay (Relay *relay_) {relay=relay_;}
 
     void updateViewer ();
@@ -131,7 +131,7 @@ public:
         drawingTracker->reshowVisibleItems();
     }
 
-    void showItem (CustomTreeWidgetItem *item)
+    void showItem (BaseItem *item)
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::showItem" << std::endl; std::cout.flush();
         drawingTracker->showItem(item);
@@ -174,7 +174,7 @@ public:
         return drawingTracker->isNetValidHide();
     }
 
-    void hideItem (CustomTreeWidgetItem *item)
+    void hideItem (BaseItem *item)
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::hideItem" << std::endl; std::cout.flush();
         drawingTracker->hideItem(item);
@@ -191,7 +191,7 @@ public:
     //     drawingTracker->hideItems();
     // }
 
-    void refreshSelectedItem (CustomTreeWidgetItem *item)
+    void refreshSelectedItem (BaseItem *item)
     {
         drawingTracker->refreshSelectedItem(item);
     }
@@ -201,13 +201,13 @@ public:
         drawingTracker->refreshSelectedItems();
     }
 
-    void selectItem (CustomTreeWidgetItem *item)
+    void selectItem (BaseItem *item)
     {
         //if (showTracking) std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();
         drawingTracker->selectItem(item);
     }
 
-    void activateSelectItem (CustomTreeWidgetItem *item)
+    void activateSelectItem (BaseItem *item)
     {
         drawingTracker->activateSelectItem(item);
     }
@@ -223,7 +223,7 @@ public:
         }
     }
 
-    void activateItem (CustomTreeWidgetItem *item)
+    void activateItem (BaseItem *item)
     {
         if (!item) return;
         if (item->getShape().IsNull()) return;
@@ -232,7 +232,7 @@ public:
         viewerContext->Activate(item->getShape(),0,Standard_False);
     }
 
-    bool isSelectedItem (CustomTreeWidgetItem *item)
+    bool isSelectedItem (BaseItem *item)
     {
         if (item->getShape().IsNull()) return false;
         if (viewerContext->IsSelected(item->getShape())) {
@@ -318,13 +318,13 @@ public:
         return drawingTracker->get_boundarySelectedCount();
     }
 
-    void unselectItem (CustomTreeWidgetItem *item)
+    void unselectItem (BaseItem *item)
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::unselectItem" << std::endl; std::cout.flush();
         drawingTracker->unselectItem(item);
     }
 
-    void unselectItem (CustomTreeWidgetItem *item, long unsigned int index)
+    void unselectItem (BaseItem *item, long unsigned int index)
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::unselectItem" << std::endl; std::cout.flush();
         drawingTracker->unselectItem(item,index);
@@ -344,24 +344,24 @@ public:
         viewerContext->ClearSelected(Standard_False);
     }
 
-    void deleteItem (CustomTreeWidgetItem *item)
+    void deleteItem (BaseItem *item)
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::deleteItem  item=" << item << std::endl; std::cout.flush();
         drawingTracker->deleteItem(item);
     }
 
-    bool isVisibleItem (CustomTreeWidgetItem *item)
+    bool isVisibleItem (BaseItem *item)
     {
         return drawingTracker->isVisibleItem(item);
     }
 
-    void insertItemToMap (Handle(AIS_Shape) shape, CustomTreeWidgetItem *item)
+    void insertItemToMap (Handle(AIS_Shape) shape, BaseItem *item)
     {
         if (shape.IsNull()) {std::cout << "   CustomOpenGLWidget::insertItemToMap: ASSERT: shape item is null" << std::endl; std::cout.flush(); return;}
         drawingTracker->insertItemToMap(shape,item);
     }
 
-    void removeItemFromMap (CustomTreeWidgetItem *item)
+    void removeItemFromMap (BaseItem *item)
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::removeItemFromMap" << std::endl; std::cout.flush();
         drawingTracker->removeItemFromMap(item);
@@ -506,21 +506,21 @@ public:
 
     gp_Dir get_normal () {return view->Viewer()->PrivilegedPlane().Direction();}
 
-    //void set_selectedItemsList (std::vector<CustomTreeWidgetItem *> *selectedItemsList_) {selectedItemsList=selectedItemsList_;}
+    //void set_selectedItemsList (std::vector<BaseItem *> *selectedItemsList_) {selectedItemsList=selectedItemsList_;}
 
     long unsigned int get_selectedItems_size () {return drawingTracker->getSelectedItemsSize();}
-    CustomTreeWidgetItem* get_selectedItem (long unsigned int i) {return drawingTracker->getSelectedItem(i);}
+    BaseItem* get_selectedItem (long unsigned int i) {return drawingTracker->getSelectedItem(i);}
     long unsigned int get_selectedItems_count () {return drawingTracker->getSelectedItemsCount();}
 
     long unsigned int get_visibleItems_size () {return drawingTracker->getVisibleItemsSize();}
-    CustomTreeWidgetItem* get_visibleItem (long unsigned int i) {return drawingTracker->getVisibleItem(i);}
+    BaseItem* get_visibleItem (long unsigned int i) {return drawingTracker->getVisibleItem(i);}
     long unsigned int get_visibleItems_count () {return drawingTracker->getVisibleItemsCount();}
 
     void setSubshapeSelection (bool isSubshapeSelection_) {isSubshapeSelection=isSubshapeSelection_;}
     void setSingleSelection () {isSingleSelection=true;}
     void setSetToPlane (bool isSetToPlane_) {isSetToPlane=isSetToPlane_;}
 
-    std::vector<CustomTreeWidgetItem *> getVisibleDrawingItems ()
+    std::vector<BaseItem *> getVisibleDrawingItems ()
     {
         return drawingTracker->getVisibleDrawingItems();
     }
@@ -571,11 +571,12 @@ private:
     Handle(V3d_View) focusView;
     Handle(AIS_ViewCube) viewCube;
 
-    CustomTreeWidgetItem *drawingItemTree;
-    CustomTreeWidgetItem *portItemTree;
-    CustomTreeWidgetItem *boundaryItemTree;
-    CustomTreeWidgetItem *meshItemTree;
-    CustomTreeWidgetItem *pathItemTree;
+    RootDrawingItem *rootDrawingItem;
+    RootPathItem *rootPathItem;
+    RootPortItem *rootPortItem;
+    RootBoundaryItem *rootBoundaryItem;
+    RootMeshItem *rootMeshItem;
+
 
     ItemTracker *drawingTracker;
 
@@ -589,7 +590,6 @@ private:
 
     // all drawing
     Relay *relay;
-    //std::vector<CustomTreeWidgetItem *> *selectedItemsList;
     bool ignoreMouseRelease;
     bool isSubshapeSelection;
     bool isSingleSelection;

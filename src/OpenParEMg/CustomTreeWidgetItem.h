@@ -32,6 +32,9 @@
 #include "path.hpp"
 
 class DrawingItem;
+class Port;
+class Mode;
+class Boundary;
 
 // shape data with history for undo/redo
 
@@ -47,11 +50,6 @@ public:
         process=nullptr;
         prior=nullptr;
         next=nullptr;
-
-        // for conversions
-        path=nullptr;
-        port=nullptr;
-        boundary=nullptr;
     }
 
     ShapeData (int type_,Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
@@ -64,10 +62,6 @@ public:
         setPolywire(polywire_);
         setProcess(process_);
         setShape(shape_);
-
-        path=nullptr;
-        port=nullptr;
-        boundary=nullptr;
     }
 
     ShapeData (ShapeData *shapeData)
@@ -80,10 +74,6 @@ public:
         setPolywire(shapeData->getPolywire());
         setProcess(shapeData->getProcess());
         setShape(shapeData->getShape());
-
-        path=nullptr;
-        port=nullptr;
-        boundary=nullptr;
     }
 
     ~ShapeData ()
@@ -105,9 +95,6 @@ public:
             if (polywire) newShapeData->polywire=polywire->copyCreate();
             if (process) newShapeData->process=process->copyCreate();
             if (!shape.IsNull()) newShapeData->shape=new AIS_Shape(shape->Shape());
-            newShapeData->path=path;
-            newShapeData->port=port;
-            newShapeData->boundary=boundary;
         }
         return newShapeData;
     }
@@ -144,12 +131,6 @@ public:
         setShape(shape_);
     }
 
-    void set (CustomTreeWidgetItem *path_, CustomTreeWidgetItem *port_, CustomTreeWidgetItem *boundary_) {
-        path=path_;
-        port=port_;
-        boundary=boundary_;
-    }
-
     void set (ShapeData *shapeData)
     {
         if (!shapeData) return;
@@ -159,9 +140,6 @@ public:
         setPolywire(shapeData->getPolywire());
         setProcess(shapeData->getProcess());
         setShape(shapeData->getShape());
-        path=shapeData->path;
-        port=shapeData->port;
-        boundary=shapeData->boundary;
     }
 
     void set (Handle(AIS_Shape) shape_)
@@ -172,9 +150,6 @@ public:
 
     Polywire* getPolywire () {return polywire;}
     Process* getProcess () {return process;}
-    CustomTreeWidgetItem* getPath () {return path;}
-    CustomTreeWidgetItem* getPort () {return port;}
-    CustomTreeWidgetItem* getBoundary () {return boundary;}
     Handle(AIS_Shape) getShape () {return shape;}
 
     bool isNoop () {if (type == 0) return true; return false;}
@@ -219,9 +194,6 @@ public:
         std::cout << "                  process=" << process << std::endl;
         std::cout << "                  prior=" << prior << std::endl;
         std::cout << "                  next=" << next << std::endl;
-        std::cout << "                  path=" << path << std::endl;
-        std::cout << "                  port=" << port << std::endl;
-        std::cout << "                  boundary=" << boundary << std::endl;
     }
 
 private:
@@ -233,10 +205,6 @@ private:
     Process *process;                                  // for drawing processing of children
     ShapeData *prior;                                  // prior ShapeData in ShapeDataStack
     ShapeData *next;                                   // next ShapeData in ShapeDataStack
-
-    CustomTreeWidgetItem *path;                        // for conversions from drawing to path, port, or boundary items
-    CustomTreeWidgetItem *port;
-    CustomTreeWidgetItem *boundary;
 };
 
 class ShapeDataStack
@@ -270,7 +238,6 @@ public:
 
     void add (ShapeData *shapeData)
     {
-        //std::cout << "CustomTreeWidgetItem::add  shapeData=" << shapeData << std::endl; std::cout.flush();
         if (!shapeData) return;
 
         shapeDataList.push_back(shapeData);
@@ -292,11 +259,6 @@ public:
     {
         if (!shapeData_) return;
         current->set(shapeData_);
-    }
-
-    void set (CustomTreeWidgetItem *path, CustomTreeWidgetItem *port, CustomTreeWidgetItem *boundary)
-    {
-        current->set(path,port,boundary);
     }
 
     void setType (int type_)
@@ -338,24 +300,6 @@ public:
     Process* getProcess ()
     {
         if (current) return current->getProcess();
-        return nullptr;
-    }
-
-    CustomTreeWidgetItem* getPath ()
-    {
-        if (current) return current->getPath();
-        return nullptr;
-    }
-
-    CustomTreeWidgetItem* getPort ()
-    {
-        if (current) return current->getPort();
-        return nullptr;
-    }
-
-    CustomTreeWidgetItem* getBoundary ()
-    {
-        if (current) return current->getBoundary();
         return nullptr;
     }
 
@@ -444,29 +388,28 @@ private:
     ShapeData *current;
 };
 
-class CustomTreeWidgetItem : public QObject, public QTreeWidgetItem {
+class BaseItem : public QObject, public QTreeWidgetItem {
     Q_OBJECT
 
 public:
-    CustomTreeWidgetItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type)
+    BaseItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type)
     {
-        itemType=0;                 // default to drawing
+        itemType=-1;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
-        OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
     }
 
+    void setMW (OpenParEMg *mw_) {mw=mw_;}
+    virtual void showMenu () {return;}
+
     QString get_name () {return text(0);}
-    QString get_material () {return text(1);}
-    void copy_depth (CustomTreeWidgetItem *item) {depth=item->depth;}
+
+    void copy_depth (BaseItem *item) {depth=item->depth;}
     int get_depth () {return depth;}
     void increase_depth () {depth++;}
     void decrease_depth () {depth--;}
-
-    void set_OPEMobject (void *pointer) {OPEMobject=pointer;}
-    void* get_OPEMobject () {return OPEMobject;}
 
     void addShapeData (ShapeData *shapeData_) {dataStack.add(shapeData_);}
     void setShape (Handle(AIS_Shape) shape_) {dataStack.setShape(shape_);}
@@ -481,13 +424,6 @@ public:
     void undo () {dataStack.undo();}
     void redo () {dataStack.redo();}
     void pop () {dataStack.pop();}
-
-    void set_Material (QString material_) {material=material_;}
-    QString get_Material () {return material;}
-
-    long unsigned int linkedItems_size () {return linkedItems.size();}
-    void push_linkedItem (CustomTreeWidgetItem *linkedItem) {linkedItems.push_back(linkedItem);}
-    CustomTreeWidgetItem* get_linkedItem (long unsigned int i) {return linkedItems[i];}
 
     void set_itemType (int itemType_)
     {
@@ -542,10 +478,6 @@ public:
     std::pair<int,int> get_dimTag () {return dimTag;}
     bool is_solid () {if (dimTag.first == 3) return true; return false;}
 
-    std::vector<Handle(AIS_Shape)>* get_meshEntities () {return &meshEntities;}
-    long unsigned int get_meshEntitiesSize () {return meshEntities.size();}
-    Handle(AIS_Shape) get_meshEntity (long unsigned int i) {return meshEntities[i];}
-
     void deleteChildren (QTreeWidgetItem *item)
     {
         if (!item) return;
@@ -572,16 +504,7 @@ public:
         return false;
     }
 
-    void removeLinkedItem (CustomTreeWidgetItem *item)
-    {
-        //std::cout << "CustomTreeWidgetItem::removeLinkedItem" << std::endl; std::cout.flush();
 
-        long unsigned int i=0;
-        while (i < linkedItems.size()) {
-            if (linkedItems[i] == item) linkedItems.erase(linkedItems.begin()+i);
-            i++;
-        }
-    }
 
 
     TopoDS_Shape rotateShape (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2, Handle(AIS_InteractiveContext) viewerContext)
@@ -597,18 +520,9 @@ public:
         return transformer.Shape();
     }
 
-
-
-
-
-
-
-
-
-    CustomTreeWidgetItem* copyCreate ()
+    BaseItem* copyCreate ()
     {
-        std::cout << "CustomTreeWidgetItem::copyCreate()" << std::endl; std::cout.flush();
-        CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem();
+        BaseItem *newItem=new BaseItem();
 
         // copy just the current data
 
@@ -618,13 +532,7 @@ public:
         newItem->dimTag=dimTag;
         newItem->forShowHide=forShowHide;
         newItem->itemType=itemType;
-        newItem->OPEMobject=OPEMobject;
         newItem->depth=depth;
-        long unsigned int i=0;
-        while (i < linkedItems.size()) {
-            newItem->linkedItems.push_back(linkedItems[i]);
-            i++;
-        }
         return newItem;
     }
 
@@ -654,12 +562,9 @@ public:
 
     void print ()
     {
-        std::cout << "CustomTreeWidgetItem:" << std::endl;
+        std::cout << "BaseItem:" << std::endl;
         dataStack.print();
         std::cout << "   forShowHide=" << forShowHide << std::endl;
-        std::cout << "   OPEMobject=" << OPEMobject << std::endl;
-        if (material.isNull()) std::cout << "   material=null" << std::endl;
-        else std::cout << "   material=" << material.toStdString() << std::endl;
         std::cout << "   itemType=" << itemType << std::endl;
         if (is_rootDrawing()) std::cout << "   itemType=rootDrawing" << std::endl;
         if (is_rootPort()) std::cout << "   itemType=rootPort" << std::endl;
@@ -685,23 +590,16 @@ public:
                   << "   dimTag.second=" << dimTag.second << std::endl;
     }
 
-
-
     void reset ()
     {
-        //std::cout << "CustomTreeWidgetItem::reset  item=" << this << std::endl; std::cout.flush();
         dataStack.reset();
         parentItem=nullptr;
         children.clear();
         setForeground(0,Qt::black);
         setExpanded(Standard_False);
-        meshEntities.clear();
-        OPEMobject=nullptr;
-        material.clear();
-        linkedItems.clear();
 
         while (childCount() > 0) {
-            CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(0);
+            BaseItem *childItem=dynamic_cast<BaseItem *>(child(0));
             if (childItem) {
                 childItem->reset();
                 removeChild(childItem);
@@ -713,8 +611,8 @@ public:
     bool hasUndo () {return dataStack.hasUndo();}
     bool hasRedo () {return dataStack.hasRedo();}
 
-    void setParentItem (CustomTreeWidgetItem *parentItem_) {parentItem=parentItem_;}
-    CustomTreeWidgetItem* getParentItem () {return parentItem;}
+    void setParentItem (BaseItem *parentItem_) {parentItem=parentItem_;}
+    BaseItem* getParentItem () {return parentItem;}
 
     void clearChildren () {children.clear();}
     void push_child (DrawingItem *child) {children.push_back(child);}
@@ -730,14 +628,12 @@ public:
 
 private slots:
 
-public:
-    //bool activeAction;                                 // for undo/redo, an active operation such as move, edit, stretch, etc. is in progress
+protected:
+    OpenParEMg *mw;
     ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
-    CustomTreeWidgetItem *parentItem;                  // parent for undo/redo
+    BaseItem *parentItem;                              // parent for undo/redo
     std::vector<DrawingItem *> children;               // children for undo/redo
 
-
-    std::vector<Handle(AIS_Shape)> meshEntities;       // for mesh
     std::pair<int,int> dimTag;                         //
     bool forShowHide;                                  // false - does not participate in item tree show/hide operations; true - does participate
     int itemType;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh, 4 - path
@@ -751,44 +647,14 @@ public:
                                                        // 102 - root boundary item
                                                        // 103 - root mesh item
                                                        // 104 - root path item
-    void *OPEMobject;                                  // a pointer to an item in the boundary database
-                                                       // *path, *mode, *boundary, etc
-                                                       // cast to the correct object type
-    QString material;                                  // material for this item - only valid for top-level SOLID and COMPOUND
-    std::vector<CustomTreeWidgetItem *> linkedItems;   // link to path items, if any
+
+
 
 
 
     int depth;                                         // item depth in the tree for saving formatted drawing files
 };
 
-class BaseItem : public CustomTreeWidgetItem
-{
-    Q_OBJECT
-
-public:
-    explicit BaseItem (QObject *parent = nullptr)
-    {
-        itemType=-1;                 // undefined
-        forShowHide=true;
-        set_dimTag(-1,-1);           // for mesh items; invalid initialization
-        OPEMobject=nullptr;
-        depth=0;
-        parentItem=nullptr;
-    }
-
-    void setMW (OpenParEMg *mw_) {mw=mw_;}
-    virtual void showMenu (QMenu *) = 0;
-    virtual void del () = 0;
-    virtual void undo () = 0;
-    virtual void redo () = 0;
-    void promoteChildren ();
-    void demoteChildren ();
-
-protected:
-    OpenParEMg *mw;
-
-};
 
 class SelectionItem : public BaseItem
 {
@@ -796,10 +662,6 @@ class SelectionItem : public BaseItem
 
 public:
     explicit SelectionItem (QObject *parent = nullptr) {}
-    void showMenu (QMenu *) override {return;}
-    void del () override {return;}
-    void undo () override {return;}
-    void redo () override {return;}
 
 private:
 
@@ -816,14 +678,10 @@ public:
         itemType=100;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
-        OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
     }
-    void showMenu (QMenu *) override;
-    void del () override {}
-    void undo () override {};
-    void redo () override {};
+    void showMenu (QMenu *);
 
 private:
 
@@ -839,7 +697,6 @@ public:
         itemType=0;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
-        OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
 
@@ -850,7 +707,15 @@ public:
         enableDeletePoint=false;
         enableInsertPoint=false;
     }
+
+    QString get_material () {return text(1);}
+    void set_Material (QString material_) {material=material_;}
+    QString get_Material () {return material;}
+
     DrawingItem* copyCreate ();
+
+    void promoteChildren ();
+    void demoteChildren ();
 
     void setForUndoRedo ();
     void cancelOperation ();
@@ -873,7 +738,7 @@ public:
     void finishStretch ();
 
     void extrude ();
-    DrawingItem* copy (CustomTreeWidgetItem *);
+    DrawingItem* copy (BaseItem *);
 
     void startEdit ();
     void finishEdit ();
@@ -889,9 +754,9 @@ public:
 
     void convertToPolyline ();
 
-    void del () override;
+    void del ();
 
-    void showMenu (QMenu *) override;
+    void showMenu (QMenu *);
 
     void setEnableMove (bool enableMove_) {enableMove=enableMove_;}
     bool getEnableMove () {return enableMove;}
@@ -933,10 +798,12 @@ public:
         enableInsertPoint=false;
     }
 
-    void undo () override;
-    void redo () override;
+    void undo ();
+    void redo ();
 
 private:
+    QString material;                                  // material for this item - only valid for top-level SOLID and COMPOUND
+
     Handle(AIS_Shape) animateShape;                    // temporary shape for animation during moving
     gp_Trsf aTrsf;
     gp_Pnt p0,p1;                                      // for move operations
@@ -958,14 +825,10 @@ public:
         itemType=104;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
-        OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
     }
-    void showMenu (QMenu *) override;
-    void del () override {}
-    void undo () override {}
-    void redo () override {}
+    void showMenu (QMenu *);
 
 private:
 
@@ -981,22 +844,37 @@ public:
         itemType=4;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
-        OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
 
         path=nullptr;
     }
-    void showMenu (QMenu *) override;
-    void del () override;
+
+    long unsigned int linkedItems_size () {return linkedItems.size();}
+    void push_linkedItem (BaseItem *linkedItem) {linkedItems.push_back(linkedItem);}
+    BaseItem* get_linkedItem (long unsigned int i) {return linkedItems[i];}
+
+    void removeLinkedItem (BaseItem *item)
+    {
+        long unsigned int i=0;
+        while (i < linkedItems.size()) {
+            if (linkedItems[i] == item) linkedItems.erase(linkedItems.begin()+i);
+            i++;
+        }
+    }
+
+
+    void showMenu (QMenu *);
+    void del ();
     void setPath (Path *path_) {path=path_;}
     Path* getPath () {return path;}
-    void undo () override;
-    void redo () override;
+    void undo ();
+    void redo ();
     void reverse ();
 
 private:
     Path *path;    // related path from the boundary database
+    std::vector<BaseItem *> linkedItems;   // items that use this path item
 };
 
 class RootBoundaryItem : public BaseItem
@@ -1009,14 +887,10 @@ public:
         itemType=102;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
-        OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
     }
-    void showMenu (QMenu *) override;
-    void del () override {}
-    void undo () override {}
-    void redo () override {}
+    void showMenu (QMenu *);
 
 private:
 
@@ -1032,21 +906,24 @@ public:
         itemType=2;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
-        OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
 
+        boundary=nullptr;
         pathItem=nullptr;
     }
 
-    void showMenu (QMenu *) override;
-    void del () override;
+    void showMenu (QMenu *);
+    void del ();
+    void setBoundary (Boundary *boundary_) {boundary=boundary_;}
+    Boundary* getBoundary () {return boundary;}
     void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
     PathItem* getPathItem () {return pathItem;}
-    void undo () override;
-    void redo () override;
+    void undo ();
+    void redo ();
 
 private:
+    Boundary *boundary;
     PathItem *pathItem;   // PathItem associated with this boundary
 };
 
@@ -1060,14 +937,11 @@ public:
         itemType=101;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
-        OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
     }
-    void showMenu (QMenu *) override;
-    void del () override {}
-    void undo () override {}
-    void redo () override {}
+    void showMenu (QMenu *);
+
 
 private:
 
@@ -1083,21 +957,94 @@ public:
         itemType=1;
         forShowHide=true;
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
-        OPEMobject=nullptr;
         depth=0;
         parentItem=nullptr;
 
+        port=nullptr;
         pathItem=nullptr;
     }
-    void showMenu (QMenu *) override;
-    void del () override;
+    void showMenu (QMenu *);
+    void del ();
+    void setPort (Port *port_) {port=port_;}
+    Port* getPort () {return port;}
     void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
     PathItem* getPathItem () {return pathItem;}
-    void undo () override;
-    void redo () override;
+    void undo ();
+    void redo ();
 
 private:
+    Port *port;
     PathItem *pathItem;   // PathItem associated with this port
 };
+
+class ModeItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    explicit ModeItem (QObject *parent = nullptr)
+    {
+        itemType=1;
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        depth=0;
+        parentItem=nullptr;
+
+        mode=nullptr;
+        portItem=nullptr;
+    }
+    void showMenu (QMenu *);
+    void setMode (Mode *mode_) {mode=mode_;}
+    Mode* getMode () {return mode;}
+    void setPortItem (PortItem *portItem_) {portItem=portItem_;}
+    PortItem* getPortItem () {return portItem;}
+
+
+private:
+    Mode *mode;
+    PortItem *portItem;   // PortItem associated with this port
+};
+
+class RootMeshItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    explicit RootMeshItem (QObject *parent = nullptr)
+    {
+        itemType=103;
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        depth=0;
+        parentItem=nullptr;
+    }
+    void showMenu (QMenu *);
+
+private:
+
+};
+
+class MeshItem : public DrawingItem
+{
+    Q_OBJECT
+
+public:
+    explicit MeshItem (QObject *parent = nullptr)
+    {
+        itemType=3;
+        forShowHide=true;
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
+        depth=0;
+        parentItem=nullptr;
+    }
+
+    std::vector<Handle(AIS_Shape)>* get_meshEntities () {return &meshEntities;}
+    long unsigned int get_meshEntitiesSize () {return meshEntities.size();}
+    Handle(AIS_Shape) get_meshEntity (long unsigned int i) {return meshEntities[i];}
+
+private:
+    std::vector<Handle(AIS_Shape)> meshEntities;
+};
+
 
 #endif // CUSTOMTREEWIDGETITEM_H

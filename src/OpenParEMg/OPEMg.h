@@ -113,8 +113,8 @@ class ItemChanges
 {
 public:
     long unsigned int getChangeListSize () {return changeList.size();}
-    CustomTreeWidgetItem* getItem (long unsigned int i) {return changeList[i];}
-    void push_back (CustomTreeWidgetItem *item) {changeList.push_back(item);}
+    BaseItem* getItem (long unsigned int i) {return changeList[i];}
+    void push_back (BaseItem *item) {changeList.push_back(item);}
     void clear () {changeList.clear();}
     void setPrior (ItemChanges *prior_) {prior=prior_;}
     void setNext (ItemChanges *next_) {next=next_;}
@@ -135,7 +135,7 @@ public:
         std::cout.flush();
     }
 private:
-    std::vector<CustomTreeWidgetItem *> changeList;  // change list for a single operation
+    std::vector<BaseItem *> changeList;              // change list for a single operation
     ItemChanges *prior;                              // prior item in ItemChangesStack
     ItemChanges *next;                               // next item in ItemChangesStack
 };
@@ -162,7 +162,7 @@ public:
 
     void readNew () {readIndex=0;}
 
-    void add (CustomTreeWidgetItem *item)
+    void add (BaseItem *item)
     {
         current->push_back(item);
     }
@@ -204,12 +204,12 @@ public:
         readIndex=0;
     }
 
-    CustomTreeWidgetItem* getItem ()
+    BaseItem* getItem ()
     {
         if (!current) return nullptr;
 
         if (readIndex < current->getChangeListSize()) {
-            CustomTreeWidgetItem *item=current->getItem(readIndex);
+            BaseItem *item=current->getItem(readIndex);
             readIndex++;
             return item;
         }
@@ -346,7 +346,7 @@ public:
     void closeWindow_triggered ();
 
     void saveProject ();
-    void insertToMapActivateItem (CustomTreeWidgetItem *);
+    void insertToMapActivateItem (BaseItem *);
     QString getAISshapeName (Handle(AIS_Shape));
     bool loadBrepFile (QString, bool);
     bool loadStepFile (QString, bool);
@@ -355,9 +355,9 @@ public:
     bool isValidSaveStepFile ();
     bool saveStepFile (QString);
     bool saveBoundaryDatabase ();
-    void increase_depth (CustomTreeWidgetItem *);
-    void decrease_depth (CustomTreeWidgetItem *);
-    void saveItem (std::ofstream *, CustomTreeWidgetItem *);
+    void increase_depth (BaseItem *);
+    void decrease_depth (BaseItem *);
+    void saveItem (std::ofstream *, BaseItem *);
 
     int isStartBlock (std::vector<std::string> &inputData, long unsigned int);
     int isEndBlock (std::vector<std::string> &inputData, long unsigned int);
@@ -367,7 +367,7 @@ public:
     int findStartNextBlock (std::vector<std::string> &inputData, long unsigned int &startBlockIndex);
     int findEndNextBlock (std::vector<std::string> &inputData, int, long unsigned int &endBlockIndex);
     bool loadItem (std::vector<std::string> &inputData, long unsigned int &startBlockIndex,
-                  long unsigned int &endBlockIndex, CustomTreeWidgetItem *, bool);
+                  long unsigned int &endBlockIndex, BaseItem *, bool);
     bool saveDrawingFile (QString);
     bool loadDrawingFile ();
     void drawMesh ();
@@ -391,7 +391,7 @@ public:
     void clearSelection ();
     void restoreSelection ();
 
-    void reprocess (CustomTreeWidgetItem *);
+    void reprocess (BaseItem *);
 
     void startOperation (bool);
 
@@ -467,8 +467,8 @@ public:
 
     void debugPrintStats (int);
 
-    void undoItem (CustomTreeWidgetItem *);
-    void redoItem (CustomTreeWidgetItem *);
+    void undoItem (BaseItem *);
+    void redoItem (BaseItem *);
 
     void setScale ();
 
@@ -545,8 +545,8 @@ private slots:
 
     void rootDrawingSelectAll ();
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
-    void expand (CustomTreeWidgetItem *);
-    void collapse (CustomTreeWidgetItem *);
+    void expand (BaseItem *);
+    void collapse (BaseItem *);
     void expandAllItems ();
     void collapseAllItems ();
     bool isValidDrawingShow ();
@@ -582,7 +582,7 @@ private slots:
     void unselectBoundaryItems ();
     void renameBoundaryItems ();
     void deleteBoundaryItems ();
-    void deleteBoundaryItem (CustomTreeWidgetItem *);
+    void deleteBoundaryItem (BoundaryItem *);
 
 
 
@@ -596,13 +596,13 @@ private slots:
     //void addSportNet ();
     void renameSportNet ();
     bool isValidDeleteValid ();
-    void deleteSportItem (CustomTreeWidgetItem *);
+    void deleteSportItem (BaseItem *);
     void deleteSportItems ();
     void rename_returnPressed ();
     bool hasOneSelectedSport ();
     bool hasVoltage ();
     bool hasCurrent ();
-    void insertPath (CustomTreeWidgetItem *);
+    void insertPath (BaseItem *);
     //void selectItems ();
     bool isValidRenameDrawingItems ();
     void renameDrawingItems ();
@@ -612,7 +612,7 @@ private slots:
     void insertModeItems ();
     void unselectPortItems ();
     void renamePortItems ();
-    void deletePortItem (CustomTreeWidgetItem *);
+    void deletePortItem (PortItem *);
     void deleteRootPortItems ();
     void deletePortItems ();
     void showNetItems ();
@@ -643,7 +643,7 @@ private slots:
     void keyPressEvent (QKeyEvent *) override;
     void keyReleaseEvent (QKeyEvent *) override;
 
-    void findShowTopLevelItem (CustomTreeWidgetItem *, bool);
+    void findShowTopLevelItem (BaseItem *, bool);
 
     void editObject ();
     void moveObject ();
@@ -707,7 +707,7 @@ public slots:
     void startPlaneSetToFace ();
     void updateViewer ();
     void setShaded (Handle(AIS_Shape));
-    void convertPathToFace (CustomTreeWidgetItem *);
+    void convertPathToFace (BaseItem *);
 
 signals:
     void sendPnt (gp_Pnt);
@@ -734,9 +734,9 @@ private:
     RootPathItem path;
     RootPortItem port;
     RootBoundaryItem boundary;
-    CustomTreeWidgetItem mesh;
+    RootMeshItem mesh;
 
-    CustomTreeWidgetItem *clickedItem,*previousClickedItem,*workingItem;
+    BaseItem *clickedItem,*previousClickedItem,*workingItem;
     int previousSelectionIndex;
     bool CTRLpressed;
     bool SHIFTpressed;
@@ -810,7 +810,7 @@ private:
     // rename
     QString originalText;
     CustomLineEdit *renameEdit;
-    CustomTreeWidgetItem *renameItem;
+    BaseItem *renameItem;
 
     // relay
     Relay *relay;

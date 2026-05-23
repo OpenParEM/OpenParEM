@@ -2180,7 +2180,7 @@ void Path::fill_wire_item (CustomOpenGLWidget *drawingWindow, PathItem *item)
     if (!item) return;
 
     item->set_itemType(4);
-    item->set_OPEMobject(this);
+    item->setPath(this);
     item->setText(0,QString::fromStdString(get_name()));
     item->setForeground(0,Qt::black);
 
@@ -2200,8 +2200,7 @@ void Path::create_wire_item (CustomOpenGLWidget *drawingWindow, RootPathItem *pa
 void Path::create_face_item (CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
 {
     item=new PathItem(0);
-    item->set_itemType(4);
-    item->set_OPEMobject(this);
+    item->setPath(this);
     item->setText(0,QString::fromStdString(get_name()));
     item->setForeground(0,Qt::black);
 

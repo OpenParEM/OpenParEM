@@ -22,7 +22,7 @@ signals:
     void getPickedVertex (gp_Pnt, bool);
     void startPlaneSetToFace ();
     void updateViewer ();
-    void convertPathToFace (CustomTreeWidgetItem *);
+    void convertPathToFace (PathItem *);
     void setShaded (Handle(AIS_Shape));
 };
 

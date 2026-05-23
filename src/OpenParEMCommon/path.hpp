@@ -38,9 +38,10 @@
 //#include "CustomTreeWidgetItem.h"
 
 class CustomOpenGLWidget;
-class CustomTreeWidgetItem;
+class BaseItem;
 class RootPathItem;
 class PathItem;
+class PortItem;
 
 #endif
 
@@ -81,7 +82,7 @@ class Path {
       bool isUsed;         // allows the GUI to mark a path as no longer used so that it does not get written to the path file
       #ifdef HAS_GUI
       PathItem *item;      // tree item for this path
-      CustomTreeWidgetItem *portItem;  // valid port for this path
+      PortItem *portItem;  // valid port for this path
       #endif
    public:
       Path (int, int);
@@ -159,8 +160,8 @@ class Path {
       void create_wire_item (CustomOpenGLWidget *, RootPathItem *);
       void create_face_item (CustomOpenGLWidget *, RootPathItem *);
       PathItem* get_item () {return item;}
-      void set_portItem (CustomTreeWidgetItem *portItem_) {portItem=portItem_;}
-      CustomTreeWidgetItem* get_portItem () {return portItem;}
+      void set_portItem (PortItem *portItem_) {portItem=portItem_;}
+      PortItem* get_portItem () {return portItem;}
       TopoDS_Wire create_TopoDS_Wire ();
       void addFacePoints (TopoDS_Face);
       void addWirePoints (TopoDS_Wire);

@@ -147,7 +147,7 @@ class Boundary
 #if HAS_GUI
     BoundaryItem *item;
     QDoubleValidator doubleValidator;
-    std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap=nullptr;
+    std::unordered_map<Handle(AIS_Shape), BaseItem*> *drawingToItemMap=nullptr;
 #endif
 
    public:
@@ -290,7 +290,7 @@ class IntegrationPath
       bool modified;
 
 #if HAS_GUI
-      CustomTreeWidgetItem *item;
+      BaseItem *item;
       QDoubleValidator doubleValidator;
 #endif
    public:
@@ -331,9 +331,9 @@ class IntegrationPath
       void recalculatePathIndexList (std::vector<Path *> *);
       void removePath (Path *);
 #ifdef HAS_GUI
-      void set_item (CustomTreeWidgetItem *item_) {item=item_;}
-      CustomTreeWidgetItem* get_item () {return item;}
-      void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+      void set_item (BaseItem *item_) {item=item_;}
+      BaseItem* get_item () {return item;}
+      void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, BaseItem *);
 #endif
 };
 
@@ -451,7 +451,7 @@ class Mode
       bool net_is_updated=false;                           // flag to prevent updating net names more than once
       bool modified;
 #if HAS_GUI
-      CustomTreeWidgetItem *item;
+      ModeItem *item;
 #endif
    public:
       Mode(int,int,std::string);
@@ -539,9 +539,9 @@ class Mode
       void recalculatePathIndexList (std::vector<Path *> *);
       void removeIntegrationPath (std::string, Path *);
 #ifdef HAS_GUI
-      void set_item (CustomTreeWidgetItem *item_) {item=item_;}
-      CustomTreeWidgetItem* get_item () {return item;}
-      void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+      void set_item (ModeItem *item_) {item=item_;}
+      ModeItem* get_item () {return item;}
+      void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, BaseItem *);
 #endif
 };
 
@@ -571,7 +571,7 @@ class DifferentialPair
       keywordPair Sport_N;
       bool modified;
 #if HAS_GUI
-      CustomTreeWidgetItem *item;
+      BaseItem *item;
 #endif
    public:
       DifferentialPair (int, int);
@@ -589,8 +589,8 @@ class DifferentialPair
       void print (std::string);
       void save (std::ofstream *out);
 #if HAS_GUI
-      void set_item (CustomTreeWidgetItem *item_) {item=item_;}
-      CustomTreeWidgetItem* get_item () {return item;}
+      void set_item (BaseItem *item_) {item=item_;}
+      BaseItem* get_item () {return item;}
 #endif
 };
 

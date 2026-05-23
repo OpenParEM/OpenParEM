@@ -25,7 +25,7 @@
 #include "port.hpp"
 #include "CustomTreeWidgetItem.h"
 
-void comboIndexChanged (int, Port *, Boundary *, int, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+void comboIndexChanged (int, Port *, Boundary *, int, BaseItem *, BaseItem *);
 void comboTextChanged (QString value, Boundary *);
 
 class CustomComboBox : public QComboBox {
@@ -46,8 +46,8 @@ public:
     void set_port (Port *port_) {port=port_;}
     void set_boundary (Boundary *boundary_) {boundary=boundary_;}
     void set_type (int type_) {type=type_;}
-    void set_itemMaterial (CustomTreeWidgetItem *itemMaterial_) {itemMaterial=itemMaterial_;}
-    void set_itemWaveImpedance (CustomTreeWidgetItem *itemWaveImpedance_) {itemWaveImpedance=itemWaveImpedance_;}
+    void set_itemMaterial (SelectionItem *itemMaterial_) {itemMaterial=itemMaterial_;}
+    void set_itemWaveImpedance (SelectionItem *itemWaveImpedance_) {itemWaveImpedance=itemWaveImpedance_;}
     void set_itemTracker (ItemTracker *drawingTracker_) {drawingTracker=drawingTracker_;}
 
 protected:
@@ -64,7 +64,7 @@ protected:
     }
 
 signals:
-    void CustomCurrentIndexChanged (int, Port *, Boundary *, int, CustomTreeWidgetItem *, CustomTreeWidgetItem *);
+    void CustomCurrentIndexChanged (int, Port *, Boundary *, int, SelectionItem *, SelectionItem *);
     void CustomCurrentTextChanged (QString, Boundary *);
 
 private slots:
@@ -81,8 +81,8 @@ private:
     int type;  // 0 - Port: impedance definition
                // 1 - Port: impedance calculation
                // 2 - Boundary: boundary type
-    CustomTreeWidgetItem *itemMaterial;
-    CustomTreeWidgetItem *itemWaveImpedance;
+    SelectionItem *itemMaterial;
+    SelectionItem *itemWaveImpedance;
     ItemTracker *drawingTracker;
 };
 

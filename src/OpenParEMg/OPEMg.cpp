@@ -505,7 +505,7 @@ void OpenParEMg::setShaded (Handle(AIS_Shape) shape)
     ui->drawingWindow->setShaded(shape);
 }
 
-void OpenParEMg::convertPathToFace (CustomTreeWidgetItem *item)
+void OpenParEMg::convertPathToFace (BaseItem *item)
 {
     if (!item) return;
     Handle(AIS_Shape) shape=item->getShape();
@@ -958,25 +958,25 @@ void OpenParEMg::setMenusI (int placeIndex)
     boundaryDatabase->set_comboZdef();
 }
 
-void OpenParEMg::expand (CustomTreeWidgetItem *item)
+void OpenParEMg::expand (BaseItem *item)
 {
     if (!item) return;
     item->setExpanded(Standard_True);
     int i=0;
     while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+        BaseItem *child=(BaseItem *) item->child(i);
         expand(child);
         i++;
     }
 }
 
-void OpenParEMg::collapse (CustomTreeWidgetItem *item)
+void OpenParEMg::collapse (BaseItem *item)
 {
     if (!item) return;
     item->setExpanded(Standard_False);
     int i=0;
     while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+        BaseItem *child=(BaseItem *) item->child(i);
         collapse(child);
         i++;
     }
@@ -986,7 +986,7 @@ void OpenParEMg::expandAllItems ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         expand(item);
         i++;
     }
@@ -996,7 +996,7 @@ void OpenParEMg::collapseAllItems ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         collapse(item);
         i++;
     }
@@ -1052,7 +1052,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
 {
     std::cout << "OpenParEMg::itemTreeContextMenu_triggered" << std::endl; std::cout.flush();
 
-    clickedItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemAt(pnt);
+    clickedItem=(BaseItem *)ui->drawingItemTree->itemAt(pnt);
     if (!clickedItem) return;
     if (!clickedItem->isSelected()) return;
 
@@ -1263,7 +1263,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
         // check for selected items
         long unsigned int i=0;
         while (i < ui->drawingWindow->get_selectedItems_size()) {
-            CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+            BaseItem *item=ui->drawingWindow->get_selectedItem(i);
             if (item) {
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
                 if (drawingItem && drawingItem->is_drawing()) {
@@ -1302,7 +1302,7 @@ bool OpenParEMg::isValidRootDrawingShow ()
 {
     int i=0;
     while (i < drawing.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        BaseItem *child=(BaseItem *) drawing.child(i);
         if (child->isValidShow()) return true;
         i++;
     }
@@ -1313,7 +1313,7 @@ bool OpenParEMg::isValidRootDrawingHide ()
 {
     int i=0;
     while (i < drawing.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        BaseItem *child=(BaseItem *) drawing.child(i);
         if (child->isValidHide()) return true;
         i++;
     }
@@ -1324,7 +1324,7 @@ bool OpenParEMg::isValidRootDrawingSelectAll ()
 {
     int i=0;
     while (i < drawing.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        BaseItem *child=(BaseItem *) drawing.child(i);
         if (!child->isSelected()) return true;
         i++;
     }
@@ -1339,7 +1339,7 @@ void OpenParEMg::rootDrawingSelectAll ()
 
     int i=0;
     while (i < drawing.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        BaseItem *child=(BaseItem *) drawing.child(i);
         ui->drawingWindow->showItem(child);
         ui->drawingWindow->selectItem(child);
         i++;
@@ -1361,7 +1361,7 @@ void OpenParEMg::rootDrawingShow ()
 
     int i=0;
     while (i < drawing.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        BaseItem *child=(BaseItem *) drawing.child(i);
         child->setForeground(0,Qt::gray);
         ui->drawingWindow->showItem(child);
         i++;
@@ -1376,7 +1376,7 @@ void OpenParEMg::showDrawingItems ()
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) ui->drawingWindow->showItem(drawingItem);
@@ -1406,7 +1406,7 @@ void OpenParEMg::hideDrawingItems ()
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -1428,7 +1428,7 @@ void OpenParEMg::renamePathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) {
@@ -1453,11 +1453,11 @@ void OpenParEMg::deletePathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) {
-                boundaryDatabase->deletePath((Path *)pathItem->get_OPEMobject());
+                boundaryDatabase->deletePath(pathItem->getPath());
                 ui->drawingWindow->deleteItem(pathItem);
             }
         }
@@ -1474,7 +1474,7 @@ void OpenParEMg::showRootPathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(item);
             if (rootPathItem && rootPathItem->is_rootPath()) ui->drawingWindow->showItem(rootPathItem);
@@ -1490,7 +1490,7 @@ bool OpenParEMg::isValidRootPathShow ()
 {
     int i=0;
     while (i < path.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) path.child(i);
+        BaseItem *child=(BaseItem *) path.child(i);
         if (child && child->foreground(0) == Qt::gray) return true;
         i++;
     }
@@ -1503,7 +1503,7 @@ void OpenParEMg::hideRootPathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(item);
             if (rootPathItem && rootPathItem->is_rootPath()) {
@@ -1522,14 +1522,10 @@ bool OpenParEMg::isValidDeletePath ()
     // see if any have linked items
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->linkedItems_size() > 0) return false;
-
-            if (/*item->is_path() ||*/ item->is_port() || item->is_boundary() || item->is_integrationPathSegment()) {
-                if (item->linkedItems_size() > 0) return false;
-            }
         }
         i++;
     }
@@ -1540,12 +1536,10 @@ bool OpenParEMg::isValidShowPath ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->isValidShow()) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) return false;
-
-            if (/*item->() ||*/ item->is_port() || item->is_boundary() || item->is_integrationPathSegment()) return true;
         }
         i++;
     }
@@ -1558,7 +1552,7 @@ void OpenParEMg::showPathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) ui->drawingWindow->showItem(item);
@@ -1574,7 +1568,7 @@ bool OpenParEMg::isValidRootPathHide ()
 {
     int i=0;
     while (i < path.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) path.child(i);
+        BaseItem *child=(BaseItem *) path.child(i);
         if (child && child->foreground(0) == Qt::black) return true;
         i++;
     }
@@ -1585,7 +1579,7 @@ bool OpenParEMg::isValidHidePath ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->isValidHide()) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) return true;
@@ -1603,7 +1597,7 @@ void OpenParEMg::hidePathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) ui->drawingWindow->hideItem(pathItem);
@@ -1619,7 +1613,7 @@ bool OpenParEMg::isValidRootPortShow ()
 {
     int i=0;
     while (i < port.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) port.child(i);
+        BaseItem *child=(BaseItem *) port.child(i);
         if (child && child->foreground(0) == Qt::gray) return true;
         i++;
     }
@@ -1630,7 +1624,7 @@ void OpenParEMg::rootPortShow ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_rootPort()) {
             ui->drawingWindow->showItem(item);
         }
@@ -1647,7 +1641,7 @@ void OpenParEMg::showPortItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_port()) {
             ui->drawingWindow->showItem(item);
         }
@@ -1662,7 +1656,7 @@ bool OpenParEMg::isValidRootPortHide ()
 {
     int i=0;
     while (i < port.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) port.child(i);
+        BaseItem *child=(BaseItem *) port.child(i);
         if (child && child->foreground(0) == Qt::black) return true;
         i++;
     }
@@ -1673,7 +1667,7 @@ void OpenParEMg::rootPortHide ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_rootPort()) {
             ui->drawingWindow->hideItem(item);
         }
@@ -1690,7 +1684,7 @@ void OpenParEMg::hidePortItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_port()) {
             ui->drawingWindow->hideItem(item);
         }
@@ -1705,7 +1699,7 @@ bool OpenParEMg::isValidRootBoundaryShow ()
 {
     int i=0;
     while (i < boundary.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) boundary.child(i);
+        BaseItem *child=(BaseItem *) boundary.child(i);
         if (child && child->foreground(0) == Qt::gray) return true;
         i++;
     }
@@ -1718,7 +1712,7 @@ void OpenParEMg::rootBoundaryShow ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_rootBoundary()) {
             ui->drawingWindow->showItem(item);
         }
@@ -1733,7 +1727,7 @@ bool OpenParEMg::isValidRootBoundaryHide ()
 {
     int i=0;
     while (i < boundary.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) boundary.child(i);
+        BaseItem *child=(BaseItem *) boundary.child(i);
         if (child && child->foreground(0) == Qt::black) return true;
         i++;
     }
@@ -1746,7 +1740,7 @@ void OpenParEMg::rootBoundaryHide ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_rootBoundary()) {
             ui->drawingWindow->hideItem(item);
         }
@@ -1763,7 +1757,7 @@ void OpenParEMg::showBoundaryItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_boundary()) {
             ui->drawingWindow->showItem(item);
         }
@@ -1780,7 +1774,7 @@ void OpenParEMg::hideBoundaryItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_boundary()) {
             ui->drawingWindow->hideItem(item);
         }
@@ -1797,7 +1791,7 @@ void OpenParEMg::unselectBoundaryItems()
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_boundary()) {
             ui->drawingWindow->unselectItem(item,i);
         }
@@ -1814,7 +1808,7 @@ void OpenParEMg::renameBoundaryItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_boundary()) {
             CustomLineEdit *name=new CustomLineEdit();
             name->setText(item->text(0));
@@ -1836,7 +1830,7 @@ void OpenParEMg::deleteBoundaryItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BoundaryItem *item=dynamic_cast<BoundaryItem *>(ui->drawingWindow->get_selectedItem(i));
         if (item && item->is_boundary()) {
             deleteBoundaryItem(item);
         }
@@ -1850,14 +1844,14 @@ void OpenParEMg::deleteBoundaryItems ()
     setMenusI(26);
 }
 
-void OpenParEMg::deleteBoundaryItem (CustomTreeWidgetItem * item)
+void OpenParEMg::deleteBoundaryItem (BoundaryItem *item)
 {
     //std::cout << "OpenParEMg::deleteBoundaryItem" << std::endl; std::cout.flush();
 
     // unlink the outline
-    Boundary *boundary=(Boundary *)item->get_OPEMobject();
+    Boundary *boundary=item->getBoundary();
     Path *outline=boundary->get_outline();
-    CustomTreeWidgetItem *outlineItem=outline->get_item();
+    PathItem *outlineItem=outline->get_item();
     outlineItem->removeLinkedItem(item);
 
     // remove from the boundary database
@@ -1874,11 +1868,11 @@ void OpenParEMg::showRootMeshItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_rootMesh()) {
             int j=0;
             while (j < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                BaseItem *child=(BaseItem *) item->child(j);
                 ui->drawingWindow->showItem(child);
                 child->setForeground(0,Qt::black);
                 j++;
@@ -1898,7 +1892,7 @@ bool OpenParEMg::isValidRootMeshShow ()
 {
     int i=0;
     while (i < mesh.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) mesh.child(i);
+        BaseItem *child=(BaseItem *) mesh.child(i);
         if (child->foreground(0) == Qt::gray) return true;
         i++;
     }
@@ -1911,11 +1905,11 @@ void OpenParEMg::hideRootMeshItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_rootMesh()) {
             int j=0;
             while (j < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                BaseItem *child=(BaseItem *) item->child(j);
                 ui->drawingWindow->hideItem(child);
                 child->setForeground(0,Qt::gray);
                 j++;
@@ -1937,7 +1931,7 @@ void OpenParEMg::showMeshItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_mesh()) {
             ui->drawingWindow->showItem(item);
         }
@@ -1952,7 +1946,7 @@ bool OpenParEMg::isValidRootMeshHide ()
 {
     int i=0;
     while (i < mesh.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) mesh.child(i);
+        BaseItem *child=(BaseItem *) mesh.child(i);
         if (child->foreground(0) == Qt::black) return true;
         i++;
     }
@@ -1965,7 +1959,7 @@ void OpenParEMg::hideMeshItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_mesh()) {
             ui->drawingWindow->hideItem(item);
         }
@@ -1982,7 +1976,7 @@ void OpenParEMg::renameSportNet ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_sport()) {
             CustomLineEdit *net=new CustomLineEdit();
             net->setText(item->text(0));
@@ -1998,7 +1992,7 @@ void OpenParEMg::renameSportNet ()
     }
 }
 
-bool is_uniqueItem (std::vector<CustomTreeWidgetItem *> *portItemList, QTreeWidgetItem *item)
+bool is_uniqueItem (std::vector<PortItem *> *portItemList, QTreeWidgetItem *item)
 {
     long unsigned int i=0;
     while (i < portItemList->size()) {
@@ -2011,12 +2005,12 @@ bool is_uniqueItem (std::vector<CustomTreeWidgetItem *> *portItemList, QTreeWidg
 bool OpenParEMg::isValidDeleteValid ()
 {
     // get a list of unique port items
-    std::vector<CustomTreeWidgetItem *> portItemList;
+    std::vector<PortItem *> portItemList;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_sport()) {
-            CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+            PortItem *portParentItem=(PortItem *)item->QTreeWidgetItem::parent();
             if (is_uniqueItem(&portItemList,portParentItem)) portItemList.push_back(portParentItem);
         }
         i++;
@@ -2027,16 +2021,16 @@ bool OpenParEMg::isValidDeleteValid ()
     while (j < portItemList.size()) {
 
         // number of modes on this port
-        Port *port=(Port *)portItemList[j]->get_OPEMobject();
+        Port *port=portItemList[j]->getPort();
         int modeCount=port->get_modeCount();
 
         // count the number of selected modes on this port
         int selectedCount=0;
         long unsigned int k=0;
         while (i < ui->drawingWindow->get_selectedItems_size()) {
-            CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(k);
+            BaseItem *item=ui->drawingWindow->get_selectedItem(k);
             if (item && item->is_sport()) {
-                CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                PortItem *portParentItem=(PortItem *)item->QTreeWidgetItem::parent();
                 if (portParentItem == portItemList[j]) selectedCount++;
             }
             k++;
@@ -2055,7 +2049,7 @@ bool OpenParEMg::hasOneSelectedSport ()
     bool found=false;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_sport()) {
             if (found) return false;
             found=true;
@@ -2069,9 +2063,9 @@ bool OpenParEMg::hasVoltage ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_sport()) {
-            Mode *mode=(Mode *)item->get_OPEMobject();
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (modeItem && modeItem->is_sport()) {
+            Mode *mode=modeItem->getMode();
             if (mode && mode->has_voltage()) return true;
         }
         i++;
@@ -2083,9 +2077,9 @@ bool OpenParEMg::hasCurrent ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_sport()) {
-            Mode *mode=(Mode *)item->get_OPEMobject();
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (modeItem && modeItem->is_sport()) {
+            Mode *mode=(Mode *)modeItem->getMode();
             if (mode) {
                 if (mode->has_current()) return true;
             }
@@ -2095,7 +2089,7 @@ bool OpenParEMg::hasCurrent ()
     return false;
 }
 
-void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
+void OpenParEMg::insertPath (BaseItem *item)
 {
     //std::cout << "OpenParEMg::insertPath" << std::endl; std::cout.flush();
 
@@ -2107,11 +2101,11 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
     std::vector<PathItem *> pathItemList;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *selectedItem=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *selectedItem=ui->drawingWindow->get_selectedItem(i);
         if (selectedItem) {
             PathItem *pathItem=dynamic_cast<PathItem *>(selectedItem);
-            if (selectedItem) {
-                Path *aPath=static_cast<Path *>(selectedItem->get_OPEMobject());
+            if (pathItem) {
+                Path *aPath=pathItem->getPath();
                 if (aPath) {
                     pathsToAdd.push_back(aPath);
                     pathItemList.push_back(pathItem);
@@ -2123,13 +2117,13 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
 
     // check that the selected paths can be used on the port
 
-    CustomTreeWidgetItem *modeParentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-    CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)modeParentItem->QTreeWidgetItem::parent();
+    ModeItem *modeParentItem=dynamic_cast<ModeItem *>(item->QTreeWidgetItem::parent());
+    PortItem *portParentItem=dynamic_cast<PortItem *>(modeParentItem->QTreeWidgetItem::parent());
 
     // port outline
-    if (portParentItem->linkedItems_size() != 1) return;
-    CustomTreeWidgetItem *linkedItem=portParentItem->get_linkedItem(0);
-    Path *portPath=static_cast<Path *>(linkedItem->get_OPEMobject());
+    PathItem *linkedItem=portParentItem->getPathItem();
+    if (linkedItem) return;
+    Path *portPath=linkedItem->getPath();
     if (!portPath) return;
 
     long unsigned int j=0;
@@ -2148,7 +2142,7 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
 
     // add an integration path
     std::vector<Path *> *pathList=boundaryDatabase->get_pathList_ptr();
-    Mode *mode=(Mode *)modeParentItem->get_OPEMobject();
+    Mode *mode=modeParentItem->getMode();
     IntegrationPath *integrationPath=nullptr;
 
     // add paths to the mode
@@ -2161,12 +2155,12 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
         // existing integration path
         int i=0;
         while (i < item->childCount()) {
-            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+            BaseItem *child=(BaseItem *)item->child(i);
             std::cout << "child->get_itemType()=" << child->get_itemType() << std::endl; std::cout.flush();
             if (child->is_scale()) {
                 int j=0;
                 while (j < child->childCount()) {
-                    CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *)child->child(j);
+                    BaseItem *grandChild=(BaseItem *)child->child(j);
                     std::cout << "   grandChild->get_itemType()=" << grandChild->get_itemType() << std::endl; std::cout.flush();
                     if (grandChild->is_scaleValue()) {
                         CustomLineEdit *scaleEdit=(CustomLineEdit *)ui->drawingItemTree->itemWidget(grandChild,0);
@@ -2187,7 +2181,7 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
     }
 
     if (addScaleToTree) {
-        CustomTreeWidgetItem *itemScale=new CustomTreeWidgetItem(0);
+        BaseItem *itemScale=new BaseItem(0);
         itemScale->setText(0,"scale");
         itemScale->set_itemType(12);
         itemScale->setFlags(item->flags() & ~Qt::ItemIsEditable);
@@ -2195,7 +2189,7 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
         item->addChild(itemScale);
         itemScale->setParentItem(item);
 
-        CustomTreeWidgetItem *itemScaleValue=new CustomTreeWidgetItem(0);
+        BaseItem *itemScaleValue=new BaseItem(0);
         itemScaleValue->set_itemType(13);
         itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
         itemScale->addChild(itemScaleValue);
@@ -2220,13 +2214,13 @@ void OpenParEMg::insertPath (CustomTreeWidgetItem *item)
         QString pathText="+";
         pathText.append(pathsToAdd[i]->get_name());
 
-        CustomTreeWidgetItem *pathItem=new CustomTreeWidgetItem(0);
+        PathItem *pathItem=new PathItem(0);
         pathItem->setText(0,pathText);
         pathItem->setFlags(item->flags());
         pathItem->setToolTip(0,"Path segment for integration.");
         pathItem->set_itemType(14);
         pathItem->setForeground(0,Qt::gray);
-        pathItem->set_OPEMobject(pathsToAdd[i]);
+        pathItem->setPath(pathsToAdd[i]);
         item->addChild(pathItem);
         pathItem->setParentItem(item);
         pathItemList[i]->push_linkedItem(pathItem);
@@ -2260,7 +2254,7 @@ void OpenParEMg::rename_returnPressed ()
             // change the names of the linked items
             long unsigned int i=0;
             while (i < pathItem->linkedItems_size()) {
-                CustomTreeWidgetItem *item=pathItem->get_linkedItem(i);
+                BaseItem *item=pathItem->get_linkedItem(i);
                 if (item->is_integrationPathSegment()) item->setText(0,newText);
                 i++;
             }
@@ -2270,17 +2264,20 @@ void OpenParEMg::rename_returnPressed ()
         }
 
         if (renameItem->is_port()) {
-            Port *port=(Port *)renameItem->get_OPEMobject();
+            PortItem *portItem=dynamic_cast<PortItem *>(renameItem);
+            Port *port=portItem->getPort();
             if (port) port->set_name(newText.toStdString());
         }
 
         if (renameItem->is_boundary()) {
-            Boundary *boundary=(Boundary *)renameItem->get_OPEMobject();
+            BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(renameItem);
+            Boundary *boundary=boundaryItem->getBoundary();
             if (boundary) boundary->set_name(newText.toStdString());
         }
 
         if (renameItem->is_sport()) {
-            Mode *mode=(Mode *)renameItem->get_OPEMobject();
+            ModeItem *modeItem=dynamic_cast<ModeItem *>(renameItem);
+            Mode *mode=modeItem->getMode();
             if (mode) mode->set_net(newText.toStdString());
         }
     }
@@ -2306,7 +2303,7 @@ void OpenParEMg::unselectRootDrawingItems()
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
             if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) ui->drawingWindow->unselectItem(item,i);
@@ -2330,7 +2327,7 @@ void OpenParEMg::unselectDrawingItems()
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -2351,7 +2348,7 @@ bool OpenParEMg::isValidRenameDrawingItems ()
     QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < items.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        BaseItem *item=(BaseItem *)items[i];
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) count++;
@@ -2367,7 +2364,7 @@ void OpenParEMg::renameDrawingItems ()
     QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < items.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        BaseItem *item=(BaseItem *)items[i];
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -2395,7 +2392,7 @@ void OpenParEMg::deleteDrawingItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->del();
@@ -2412,7 +2409,7 @@ void OpenParEMg::insertModeItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_port()) {
             Port *port=boundaryDatabase->get_port(item->text(0).toStdString());
 
@@ -2437,7 +2434,7 @@ void OpenParEMg::unselectPortItems()
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_port()) {
             ui->drawingWindow->unselectItem(item,i);
         }
@@ -2454,7 +2451,7 @@ void OpenParEMg::renamePortItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_port()) {
             CustomLineEdit *name=new CustomLineEdit();
             name->setText(item->text(0));
@@ -2470,14 +2467,15 @@ void OpenParEMg::renamePortItems ()
     }
 }
 
-void OpenParEMg::deletePortItem (CustomTreeWidgetItem * item)
+void OpenParEMg::deletePortItem (PortItem * item)
 {
     //std::cout << "OpenParEMg::deletePortItem" << std::endl; std::cout.flush();
 
+
     // unlink the outline
-    Port *port=(Port *)item->get_OPEMobject();
+    Port *port=(Port *)item->getPort();
     Path *outline=port->get_outline();
-    CustomTreeWidgetItem *outlineItem=outline->get_item();
+    PathItem *outlineItem=outline->get_item();
     outlineItem->removeLinkedItem(item);
 
     // remove from the boundary database
@@ -2486,20 +2484,21 @@ void OpenParEMg::deletePortItem (CustomTreeWidgetItem * item)
     // remove the integration paths
     int i=0;
     while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+        BaseItem *child=(BaseItem *) item->child(i);
         if (child->is_sport()) {
             int j=0;
             while (j < child->childCount()) {
-                CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *) child->child(j);
+                BaseItem *grandChild=(BaseItem *) child->child(j);
                 if (grandChild->is_voltage() || grandChild->is_current()) {
                     int k=0;
                     while (k < grandChild->childCount()) {
-                        CustomTreeWidgetItem *greatGrandChild=(CustomTreeWidgetItem *) grandChild->child(k);
+                        BaseItem *greatGrandChild=(BaseItem *) grandChild->child(k);
                         if (greatGrandChild->is_integrationPathSegment()) {
+                            PathItem *ggcItem=dynamic_cast<PathItem *>(greatGrandChild);
 
                             // unlink
-                            Path *aPath=static_cast<Path *>(greatGrandChild->get_OPEMobject());
-                            CustomTreeWidgetItem *pathItem=aPath->get_item();
+                            Path *aPath=static_cast<Path *>(ggcItem->getPath());
+                            PathItem *pathItem=aPath->get_item();
                             pathItem->removeLinkedItem(greatGrandChild);
 
                             // delete
@@ -2525,11 +2524,11 @@ void OpenParEMg::deleteRootPortItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_rootPort()) {
             int j=0;
             while (j < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                PortItem *child=dynamic_cast<PortItem *>(item->child(j));
                 deletePortItem(child);
             }
         }
@@ -2549,9 +2548,10 @@ void OpenParEMg::deletePortItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_port()) {
-            deletePortItem(item);
+            PortItem *portItem=dynamic_cast<PortItem *>(item);
+            deletePortItem(portItem);
         }
         i++;
     }
@@ -2563,14 +2563,14 @@ void OpenParEMg::deletePortItems ()
     setMenusI(26);
 }
 
-void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *item)
+void OpenParEMg::deleteSportItem (BaseItem *item)
 {
     //std::cout << "OpenParEMg::deleteSportItem" << std::endl; std::cout.flush();
 
     if (!item) return;
 
     // port
-    CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+    BaseItem *parentItem=(BaseItem *)item->QTreeWidgetItem::parent();
     Port *port=boundaryDatabase->get_port(parentItem->text(0).toStdString());
 
     // remove from the port
@@ -2579,16 +2579,18 @@ void OpenParEMg::deleteSportItem (CustomTreeWidgetItem *item)
     // remove the integration paths
     int i=0;
     while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)item->child(i);
+        BaseItem *child=(BaseItem *)item->child(i);
         if (child->is_voltage() || child->is_current()) {
             int j=0;
             while (j < child->childCount()) {
-                CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *)child->child(j);
+                BaseItem *grandChild=(BaseItem *)child->child(j);
                 if (grandChild->is_integrationPathSegment()) {
 
+                    PathItem *gcItem=dynamic_cast<PathItem *>(grandChild);
+
                     // unlink
-                    Path *aPath=static_cast<Path *>(grandChild->get_OPEMobject());
-                    CustomTreeWidgetItem *pathItem=aPath->get_item();
+                    Path *aPath=static_cast<Path *>(gcItem->getPath());
+                    PathItem *pathItem=aPath->get_item();
                     pathItem->removeLinkedItem(grandChild);
 
                     ui->drawingWindow->deleteItem(grandChild);
@@ -2609,7 +2611,7 @@ void OpenParEMg::deleteSportItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_sport()) {
             deleteSportItem(item);
         }
@@ -2629,18 +2631,18 @@ void OpenParEMg::showNetItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_sport()) {
             ui->drawingWindow->showItem(item);
 
             int j=0;
             while (j < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                BaseItem *child=(BaseItem *) item->child(j);
                 if (child->is_voltage() || child->is_current()) {
                     //child->setForeground(0,Qt::black);
                     int k=0;
                     while (k < child->childCount()) {
-                        CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *) child->child(k);
+                        BaseItem *grandChild=(BaseItem *) child->child(k);
                         if (grandChild->is_integrationPathSegment()) {
                             ui->drawingWindow->showItem(grandChild);
                             grandChild->setForeground(0,Qt::black);
@@ -2664,7 +2666,7 @@ void OpenParEMg::showVIItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             if (item->is_voltage() || item->is_current()) {
                 ui->drawingWindow->showItem(item);
@@ -2683,23 +2685,26 @@ void OpenParEMg::removeIntegrationPathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_integrationPathSegment()) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(item);
 
-            CustomTreeWidgetItem *VIParentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
-            CustomTreeWidgetItem *modeParentItem=(CustomTreeWidgetItem *)VIParentItem->QTreeWidgetItem::parent();
+            BaseItem *VIParentItem=(BaseItem *)item->QTreeWidgetItem::parent();
+            ModeItem *modeParentItem=dynamic_cast<ModeItem *>(VIParentItem->QTreeWidgetItem::parent());
 
-            Mode *mode=(Mode *)modeParentItem->get_OPEMobject();
+            Mode *mode=modeParentItem->getMode();
             if (mode) {
+
+
                 // remove path
                 std::string type=VIParentItem->text(0).toStdString();
-                mode->removeIntegrationPath(VIParentItem->text(0).toStdString(),(Path *)item->get_OPEMobject());
+                mode->removeIntegrationPath(VIParentItem->text(0).toStdString(),pathItem->getPath());
 
                 // remove from linked items
                 int j=0;
                 while (j < path.childCount()) {
-                    CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) path.child(j);
-                    child->removeLinkedItem(item);
+                    PathItem *childItem=dynamic_cast<PathItem *>(path.child(j));
+                    childItem->removeLinkedItem(pathItem);
                     j++;
                 }
 
@@ -2711,14 +2716,14 @@ void OpenParEMg::removeIntegrationPathItems ()
                 bool hasPaths=false;
                 j=0;
                 while (j < VIParentItem->childCount()) {
-                    CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) VIParentItem->child(j);
+                    BaseItem *child=(BaseItem *) VIParentItem->child(j);
                     if (child->is_integrationPathSegment()) {hasPaths=true; break;}
                     j++;
                 }
                 if (!hasPaths) {
                     int j=0;
                     while (j < VIParentItem->childCount()) {
-                        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) VIParentItem->child(j);
+                        BaseItem *child=(BaseItem *) VIParentItem->child(j);
                         if (child->is_scale()) {
                             ui->drawingWindow->deleteItem(child);
                             break;
@@ -2741,7 +2746,7 @@ void OpenParEMg::showIntegrationPathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_integrationPathSegment()) {
             ui->drawingWindow->showItem(item);
             item->setForeground(0,Qt::black);
@@ -2762,16 +2767,16 @@ void OpenParEMg::hideNetItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_sport()) {
             int j=0;
             while (j < item->childCount()) {
-                CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(j);
+                BaseItem *child=(BaseItem *) item->child(j);
                 if (child->is_voltage() || child->is_current()) {
                     //child->setForeground(0,Qt::gray);
                     int k=0;
                     while (k < child->childCount()) {
-                        CustomTreeWidgetItem *grandChild=(CustomTreeWidgetItem *) child->child(k);
+                        BaseItem *grandChild=(BaseItem *) child->child(k);
                         if (grandChild->is_integrationPathSegment()) {
                             ui->drawingWindow->hideItem(grandChild);
                             grandChild->setForeground(0,Qt::gray);
@@ -2795,7 +2800,7 @@ void OpenParEMg::hideVIItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             if (item->is_voltage() || item->is_current()) {
                 ui->drawingWindow->hideItem(item);
@@ -2814,7 +2819,7 @@ void OpenParEMg::hideIntegrationPathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_integrationPathSegment()) {
             ui->drawingWindow->hideItem(item);
             item->setForeground(0,Qt::gray);
@@ -2873,7 +2878,7 @@ void OpenParEMg::createPath ()
             boundaryDatabase->push_path(newPath);
 
             // save the items for later
-            CustomTreeWidgetItem *item=newPath->get_item();
+            BaseItem *item=newPath->get_item();
             if (item) insertToMapActivateItem(item);
 
             // see if the path is within an existing port
@@ -2896,11 +2901,11 @@ bool OpenParEMg::isValidExtrudePolywire ()
     QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < items.count()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *)items[i];
+        BaseItem *item=(BaseItem *)items[i];
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
-                CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)drawingItem->QTreeWidgetItem::parent();
+                BaseItem *parent=(BaseItem *)drawingItem->QTreeWidgetItem::parent();
                 if (parent) {
                     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
                     if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -2960,7 +2965,7 @@ void OpenParEMg::finishExtrudePolywire ()
         std::vector<DrawingItem *> selectedItems;
         int i=0;
         while (i < ui->drawingWindow->get_selectedItems_size()) {
-            CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+            BaseItem *item=ui->drawingWindow->get_selectedItem(i);
             if (item) {
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
                 if (drawingItem && drawingItem->is_drawing()) selectedItems.push_back(drawingItem);
@@ -2983,7 +2988,7 @@ void OpenParEMg::finishExtrudePolywire ()
 
 // stop on incomplete structures - happens while loading a drawing
 // eventually, everything loads and the reprocess completes
-void OpenParEMg::reprocess (CustomTreeWidgetItem *item)
+void OpenParEMg::reprocess (BaseItem *item)
 {
     //std::cout << "OpenParEMg::reprocess  item=" << item << std::endl; std::cout.flush();
 
@@ -3232,11 +3237,11 @@ bool OpenParEMg::isValidSetPlane ()
 bool OpenParEMg::isValidAssignMaterial ()
 {
     if (ui->drawingWindow->get_selectedItems_size() != 1) return false;
-    CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(0);
+    BaseItem *item=ui->drawingWindow->get_selectedItem(0);
     if (item) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
         if (drawingItem && drawingItem->is_drawing()) {
-            CustomTreeWidgetItem *parentItem=(CustomTreeWidgetItem *)drawingItem->QTreeWidgetItem::parent();
+            BaseItem *parentItem=(BaseItem *)drawingItem->QTreeWidgetItem::parent();
             if (parentItem) {
                 RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                 if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -3266,7 +3271,7 @@ bool OpenParEMg::isValidObjectShow ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->isValidShow()) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) return true;
@@ -3280,7 +3285,7 @@ bool OpenParEMg::isValidObjectHide ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->isValidHide()) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) return true;
@@ -3301,7 +3306,7 @@ bool OpenParEMg::isValidObjectEdit ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -3328,7 +3333,7 @@ void OpenParEMg::editObject ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startEdit();
@@ -3337,11 +3342,11 @@ void OpenParEMg::editObject ()
     }
 }
 
-void OpenParEMg::findShowTopLevelItem (CustomTreeWidgetItem *item, bool hideItem)
+void OpenParEMg::findShowTopLevelItem (BaseItem *item, bool hideItem)
 {
     if (!item) return;
 
-    CustomTreeWidgetItem *parentItem=item->getParentItem();
+    BaseItem *parentItem=item->getParentItem();
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
     while (!(rootDrawingItem && rootDrawingItem->is_rootDrawing())) {
         item=parentItem;
@@ -3364,7 +3369,7 @@ void OpenParEMg::finishEditObject (bool cancel)
     } else {
         long unsigned int i=0;
         while (i < ui->drawingWindow->get_selectedItems_size()) {
-            CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+            BaseItem *item=ui->drawingWindow->get_selectedItem(i);
             if (item) {
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
                 if (drawingItem && drawingItem->is_drawing()) drawingItem->finishEdit();
@@ -3391,11 +3396,11 @@ bool OpenParEMg::isValidMergeSolids ()
     int solidCount=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
-                CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                BaseItem *parent=(BaseItem *)item->QTreeWidgetItem::parent();
                 if (parent) {
                     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
                     if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -3451,7 +3456,7 @@ void OpenParEMg::finishMergeSolids ()
     long unsigned int index1;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
         if (drawingItem && drawingItem->is_drawing()) {
             if (!item0) {
@@ -3576,7 +3581,7 @@ void OpenParEMg::finishSubtractSolids ()
     long unsigned int index1;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
         if (drawingItem && drawingItem->is_drawing()) {
             if (!item0) {
@@ -3681,7 +3686,7 @@ bool OpenParEMg::isValidObjectMove ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) count++;
@@ -3701,7 +3706,7 @@ void OpenParEMg::moveObject ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startMove();
@@ -3721,7 +3726,7 @@ void OpenParEMg::finishMoveObject (gp_Pnt p0, gp_Pnt p1)
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->finishMove(p0,p1);
@@ -3737,7 +3742,7 @@ bool OpenParEMg::isValidCopy ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) count++;
@@ -3756,16 +3761,16 @@ void OpenParEMg::copyDrawingItems ()
     //activeAction=true;  // no need since there is not a cancel option
     itemChangesStack.startNew();
 
-    std::vector<CustomTreeWidgetItem *> selectedList;
+    std::vector<BaseItem *> selectedList;
 
     // copy the selected items
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
-                CustomTreeWidgetItem *newItem=drawingItem->copy(&drawing);
+                BaseItem *newItem=drawingItem->copy(&drawing);
                 selectedList.push_back(newItem);
             }
         }
@@ -3806,7 +3811,7 @@ bool OpenParEMg::isValidObjectStretch ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -3831,7 +3836,7 @@ void OpenParEMg::stretchObject ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startStretch();
@@ -3847,7 +3852,7 @@ void OpenParEMg::finishStretchObject ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->finishStretch();
@@ -3861,7 +3866,7 @@ bool OpenParEMg::isValidDeletePoint ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -3884,7 +3889,7 @@ void OpenParEMg::deletePoint ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startDeletePoint();
@@ -3904,7 +3909,7 @@ void OpenParEMg::cancelDeletePoint ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->cancelDeletePoint();
@@ -3919,7 +3924,7 @@ bool OpenParEMg::isValidInsertPoint ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -3942,7 +3947,7 @@ void OpenParEMg::insertPoint ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startInsertPoint();
@@ -3974,7 +3979,7 @@ void OpenParEMg::cancelInsertPoint ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->cancelInsertPoint();
@@ -3989,11 +3994,11 @@ bool OpenParEMg::isValidCloseExistingPolyline ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
-                CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
+                BaseItem *parentItem=drawingItem->getParentItem();
                 if (parentItem) {
                     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                     if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -4013,7 +4018,7 @@ void OpenParEMg::closeExistingPolyline ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -4064,11 +4069,11 @@ bool OpenParEMg::isValidOpenExistingPolyline ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
-                CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
+                BaseItem *parentItem=drawingItem->getParentItem();
                 if (parentItem) {
                     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                     if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -4088,7 +4093,7 @@ void OpenParEMg::openExistingPolyline ()
 {   
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -4138,7 +4143,7 @@ bool OpenParEMg::isValidConvertToPolyline ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -4160,7 +4165,7 @@ void OpenParEMg::convertToPolyline ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->convertToPolyline();
@@ -4176,13 +4181,13 @@ bool OpenParEMg::isValidConvertToPath ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) {
-                    CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
+                    BaseItem *parentItem=drawingItem->getParentItem();
                     if (parentItem) {
                         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                         if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) count++;
@@ -4276,7 +4281,7 @@ void OpenParEMg::convertToPath ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -4303,7 +4308,7 @@ bool OpenParEMg::isValidRotateObject ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) count++;
@@ -4325,7 +4330,7 @@ void OpenParEMg::rotateObject ()
     // set up for undo/redo
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startRotate();
@@ -4355,7 +4360,7 @@ void OpenParEMg::finishRotateObject (double angle_, gp_Pnt startPoint_, gp_Pnt e
     std::vector<DrawingItem *> selectedList;
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) selectedList.push_back(drawingItem);
@@ -4384,7 +4389,7 @@ void OpenParEMg::createPortFromFace ()
 {
     //std::cout << "OpenParEMg::createPortFromFace" << std::endl; std::cout.flush();
 
-    std::vector<CustomTreeWidgetItem *> createdItemsList;
+    std::vector<BaseItem *> createdItemsList;
 
     int i=0;
     while (i < ui->drawingWindow->NbSelected()) {
@@ -4452,7 +4457,7 @@ void OpenParEMg::createPortFromFace ()
                 boundaryDatabase->push_path(newPath);
 
                 // add new path to the drawing
-                CustomTreeWidgetItem *item=newPath->get_item();
+                BaseItem *item=newPath->get_item();
                 if (item) {
                     // set color and transparency
                     Handle(AIS_Shape) shape=item->getShape();
@@ -4521,7 +4526,7 @@ bool OpenParEMg::isValidCreatePortFromPath ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) {
@@ -4546,12 +4551,12 @@ void OpenParEMg::createPortFromPath ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) {
                 if (pathItem->linkedItems_size() == 0) {
-                    Path *aPath=static_cast<Path *>(pathItem->get_OPEMobject());
+                    Path *aPath=static_cast<Path *>(pathItem->getPath());
                     if (aPath->is_closed()) {
 
                         // next available s-port number
@@ -4618,7 +4623,7 @@ void OpenParEMg::createPortFromPath ()
                         boundaryDatabase->push_port(newPort);
 
                         // draw it
-                        CustomTreeWidgetItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+                        BaseItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
                         port.setExpanded(true);
                         newPortItem->setExpanded(true);
                     }
@@ -4643,7 +4648,7 @@ void OpenParEMg::createBoundaryFromFace ()
 {
     //std::cout << "OpenParEMg::createBoundaryFromFace" << std::endl; std::cout.flush();
 
-    std::vector<CustomTreeWidgetItem *> createdItemsList;
+    std::vector<BaseItem *> createdItemsList;
 
     int i=0;
     while (i < ui->drawingWindow->NbSelected()) {
@@ -4695,7 +4700,7 @@ void OpenParEMg::createBoundaryFromFace ()
                 boundaryDatabase->push_path(newPath);
 
                 // add new path to the drawing
-                CustomTreeWidgetItem *item=newPath->get_item();
+                BaseItem *item=newPath->get_item();
                 if (item) {
                     // set color an transparency
                     Handle(AIS_Shape) shape=item->getShape();
@@ -4726,7 +4731,7 @@ void OpenParEMg::createBoundaryFromFace ()
                 boundaryDatabase->push_boundary(newBoundary);
 
                 // draw it
-                CustomTreeWidgetItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
+                BaseItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
                 boundary.setExpanded(true);
                 newBoundaryItem->setExpanded(true);
             }
@@ -4759,12 +4764,12 @@ void OpenParEMg::createBoundaryFromPath ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) {
                 if (pathItem->linkedItems_size() == 0) {
-                    Path *aPath=static_cast<Path *>(pathItem->get_OPEMobject());
+                    Path *aPath=static_cast<Path *>(pathItem->getPath());
                     if (aPath->is_closed()) {
 
                         // default boundary name
@@ -4804,7 +4809,7 @@ void OpenParEMg::createBoundaryFromPath ()
                         boundaryDatabase->push_boundary(newBoundary);
 
                         // draw it
-                        CustomTreeWidgetItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
+                        BaseItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
                         boundary.setExpanded(true);
                         newBoundaryItem->setExpanded(true);
                     }
@@ -4825,14 +4830,14 @@ bool OpenParEMg::isValidConvertToPort ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
                 // must be a polywire at the top level
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) {
-                    CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
+                    BaseItem *parentItem=drawingItem->getParentItem();
                     if (parentItem) {
                         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                         if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -4925,7 +4930,6 @@ void OpenParEMg::convertItemToPort (DrawingItem *item)
 
         ShapeData *newShapeData=newPortItem->getShapeData()->copyCreate();
         newShapeData->setCreate();
-        newShapeData->set(nullptr,nullptr,newPortItem);
         newPortItem->addShapeData(newShapeData);
 
         port.setExpanded(true);
@@ -4945,13 +4949,13 @@ void OpenParEMg::convertToPort ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) {
-                    CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
+                    BaseItem *parentItem=drawingItem->getParentItem();
                     if (parentItem) {
                         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                         if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -5027,7 +5031,6 @@ void OpenParEMg::convertItemToBoundary (DrawingItem *item)
         std::cout << "2.2 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
         ShapeData *newShapeData=newBoundaryItem->getShapeData()->copyCreate();
         newShapeData->setCreate();
-        newShapeData->set(nullptr,nullptr,newBoundaryItem);
         newBoundaryItem->addShapeData(newShapeData);
 
         std::cout << "2.3 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
@@ -5051,13 +5054,13 @@ void OpenParEMg::convertToBoundary ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) {
-                    CustomTreeWidgetItem *parentItem=drawingItem->getParentItem();
+                    BaseItem *parentItem=drawingItem->getParentItem();
                     if (parentItem) {
                         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                         if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -5080,7 +5083,7 @@ bool OpenParEMg::isValidReversePath ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) {
@@ -5091,7 +5094,7 @@ bool OpenParEMg::isValidReversePath ()
                     bool found=false;
                     long unsigned int j=0;
                     while (j < pathItem->linkedItems_size()) {
-                        CustomTreeWidgetItem *linkedItem=pathItem->get_linkedItem(j);
+                        BaseItem *linkedItem=pathItem->get_linkedItem(j);
                         if (linkedItem && linkedItem->is_integrationPathSegment()) {found=true; break;}
                         j++;
                     }
@@ -5172,7 +5175,7 @@ void OpenParEMg::renumberDimTag ()
     int count=1;
     int i=0;
     while (i < drawing.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
+        BaseItem *child=(BaseItem *)drawing.child(i);
 
         // SOLID
         if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
@@ -5204,7 +5207,7 @@ void OpenParEMg::setPhysicalGroups ()
     // check the first-level children for SOLID or COMPOUND
     int i=0;
     while (i < drawing.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *)drawing.child(i);
+        BaseItem *child=(BaseItem *)drawing.child(i);
 
         // SOLID
         if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
@@ -5256,7 +5259,7 @@ void OpenParEMg::setMaterials ()
 {
     int i=0;
     while (i < drawing.childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) drawing.child(i);
+        BaseItem *child=(BaseItem *) drawing.child(i);
 
         bool processMaterial=false;
         // SOLID
@@ -5303,9 +5306,12 @@ void OpenParEMg::assignMaterial ()
     delete materialSelection;
 
     if (selectedMaterial != "") {
-        clickedItem->set_Material(selectedMaterial);
-        clickedItem->setText(1,selectedMaterial);
-        projectChanged=true;
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(clickedItem);
+        if (drawingItem && drawingItem->is_drawing()) {
+            drawingItem->set_Material(selectedMaterial);
+            drawingItem->setText(1,selectedMaterial);
+            projectChanged=true;
+        }
         setMenusI(38);
     }
 }
@@ -5415,7 +5421,7 @@ void OpenParEMg::on_actionOpen_triggered ()
             long unsigned int i=0;
             while (i < boundaryDatabase->get_pathList_size()) {
                 Path *aPath=boundaryDatabase->get_path(i);
-                CustomTreeWidgetItem *item=aPath->get_item();
+                BaseItem *item=aPath->get_item();
                 if (item) insertToMapActivateItem(item);
                 i++;
             }
@@ -5909,7 +5915,7 @@ void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
     }
 }
 
-void OpenParEMg::insertToMapActivateItem (CustomTreeWidgetItem *item)
+void OpenParEMg::insertToMapActivateItem (BaseItem *item)
 {
     //std::cout << "OpenParEMg::addItemWithShape" << std::endl; std::cout.flush();
 
@@ -5986,7 +5992,7 @@ bool OpenParEMg::loadBrepFile (QString filePath, bool createName)
             if (!normalized.IsNull()) {
                 Handle(AIS_Shape) shape=new AIS_Shape(normalized);
                 if (!shape.IsNull()) {
-                    CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
+                    BaseItem *newItem=new BaseItem(0);
                     ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,shape);
                     newItem->addShapeData(newShapeData);
                     newItem->setText(0,getAISshapeName(shape));
@@ -6031,7 +6037,7 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
             if (!normalized.IsNull()) {
                 Handle(AIS_Shape) shape=new AIS_Shape(normalized);
                 if (!shape.IsNull()) {
-                    CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
+                    BaseItem *newItem=new BaseItem(0);
                     ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,shape);
                     newItem->addShapeData(newShapeData);
                     newItem->setText(0,getAISshapeName(shape));
@@ -6059,7 +6065,7 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
     return retval;
 }
 
-CustomTreeWidgetItem* get_vertexItem (CustomTreeWidgetItem *item)
+BaseItem* get_vertexItem (BaseItem *item)
 {
     if (!item) return nullptr;;
 
@@ -6069,7 +6075,7 @@ CustomTreeWidgetItem* get_vertexItem (CustomTreeWidgetItem *item)
 
     int i=0;
     while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+        BaseItem *child=(BaseItem *) item->child(i);
         if (get_vertexItem(child)) return child;
         i++;
     }
@@ -6082,7 +6088,7 @@ bool OpenParEMg::isValidSaveBrepFile ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
             if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -6115,7 +6121,7 @@ bool OpenParEMg::saveBrepFile (QString filePath)
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
             if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -6152,7 +6158,7 @@ bool OpenParEMg::saveStepFile (QString filePath)
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
             if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -6202,7 +6208,7 @@ bool OpenParEMg::saveBoundaryDatabase ()
     return true;
 }
 
-void OpenParEMg::increase_depth (CustomTreeWidgetItem *item)
+void OpenParEMg::increase_depth (BaseItem *item)
 {
     if (!item) return;
 
@@ -6210,13 +6216,13 @@ void OpenParEMg::increase_depth (CustomTreeWidgetItem *item)
 
     int i=0;
     while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+        BaseItem *child=(BaseItem *) item->child(i);
         increase_depth(child);
         i++;
     }
 }
 
-void OpenParEMg::decrease_depth (CustomTreeWidgetItem *item)
+void OpenParEMg::decrease_depth (BaseItem *item)
 {
     if (!item) return;
 
@@ -6224,13 +6230,13 @@ void OpenParEMg::decrease_depth (CustomTreeWidgetItem *item)
 
     int i=0;
     while (i < item->childCount()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) item->child(i);
+        BaseItem *child=(BaseItem *) item->child(i);
         decrease_depth(child);
         i++;
     }
 }
 
-void OpenParEMg::saveItem (std::ofstream *out, CustomTreeWidgetItem *item)
+void OpenParEMg::saveItem (std::ofstream *out, BaseItem *item)
 {
     if (!item) return;
 
@@ -6374,7 +6380,7 @@ int OpenParEMg::findEndNextBlock (std::vector<std::string> &inputData, int type,
 
 
 bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned int &startBlockIndex,
-                           long unsigned int &endBlockIndex, CustomTreeWidgetItem *parent, bool increaseDepth)
+                           long unsigned int &endBlockIndex, BaseItem *parent, bool increaseDepth)
 {
     //std::cout << "OpenParEMg::loadItem" << "  startBlockIndex=" << startBlockIndex << "  endBlockIndex=" << endBlockIndex << std::endl; std::cout.flush();
 
@@ -6406,8 +6412,8 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     if (polywire) {
         polywire->load(inputData,startBlockIndex,endBlockIndex,name,&objectCounts);
         polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
-        //CustomTreeWidgetItem *newItem=addItemShapeCreate(polywire,parent);
-        CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
+        //BaseItem *newItem=addItemShapeCreate(polywire,parent);
+        BaseItem *newItem=new BaseItem(0);
         Handle(AIS_Shape) dummy;
         ShapeData *newShapeData=new ShapeData(1,polywire,nullptr,dummy);
         newItem->addShapeData(newShapeData);
@@ -6433,7 +6439,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     if (typeStart == 8) loadBrep=true;
 
     if (process) {
-        CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem();
+        BaseItem *newItem=new BaseItem();
         Handle(AIS_Shape) dummy;
         ShapeData *newShapeData=new ShapeData(1,nullptr,process,dummy);
         newItem->addShapeData(newShapeData);
@@ -6526,7 +6532,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
         BRepTools::Read(shape,ss,builder);
 
         if (!shape.IsNull()) {
-            CustomTreeWidgetItem *newItem=new CustomTreeWidgetItem(0);
+            BaseItem *newItem=new BaseItem(0);
             Handle(AIS_Shape) aisShape=new AIS_Shape(shape);
             ShapeData *newShapeData=new ShapeData(1,polywire,nullptr,aisShape);
             newItem->addShapeData(newShapeData);
@@ -6733,7 +6739,7 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
 
     if (!item) return;
 
-    clickedItem=dynamic_cast<CustomTreeWidgetItem *>(item);
+    clickedItem=dynamic_cast<BaseItem *>(item);
     if (!clickedItem) return;
 
     // allow multiple selection on matched types only
@@ -6793,20 +6799,20 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
                         ui->drawingItemTree->indexFromItem(previousClickedItem,0).row();
 
                 if (count > 1) {  // forward
-                    CustomTreeWidgetItem *nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(previousClickedItem);
+                    BaseItem *nextItem=(BaseItem *)ui->drawingItemTree->itemBelow(previousClickedItem);
                     while (nextItem != clickedItem) {
                         if (nextItem->QTreeWidgetItem::parent() == clickedItem->QTreeWidgetItem::parent()) {
                             ui->drawingWindow->selectItem(nextItem);
                         }
-                        nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(nextItem);
+                        nextItem=(BaseItem *)ui->drawingItemTree->itemBelow(nextItem);
                     }
                 } else if (-count > 1) {  // reversed
-                    CustomTreeWidgetItem *nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(clickedItem);
+                    BaseItem *nextItem=(BaseItem *)ui->drawingItemTree->itemBelow(clickedItem);
                     while (nextItem != previousClickedItem) {
                         if (nextItem->QTreeWidgetItem::parent() == previousClickedItem->QTreeWidgetItem::parent()) {
                             ui->drawingWindow->selectItem(nextItem);
                         }
-                        nextItem=(CustomTreeWidgetItem *)ui->drawingItemTree->itemBelow(nextItem);
+                        nextItem=(BaseItem *)ui->drawingItemTree->itemBelow(nextItem);
                     }
                 }
 
@@ -6817,7 +6823,7 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
             }
         }
     } else {
-        CustomTreeWidgetItem *clickedItemKeep=clickedItem;
+        BaseItem *clickedItemKeep=clickedItem;
         clearTreeSelection();
         clickedItem=clickedItemKeep;
 
@@ -6943,7 +6949,7 @@ bool OpenParEMg::hasSelectedPaths ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) return true;
@@ -7129,7 +7135,7 @@ void OpenParEMg::drawMesh()
 
         // vertices
         if (elementTypes[e] == 15) {
-            CustomTreeWidgetItem *verticesItem=new CustomTreeWidgetItem(0);
+            MeshItem *verticesItem=new MeshItem(0);
             verticesItem->setText(0,"Vertices");
             verticesItem->set_itemType(3);
             verticesItem->setForeground(0,Qt::gray);
@@ -7153,7 +7159,7 @@ void OpenParEMg::drawMesh()
 
         // edges
         if (elementTypes[e] == 1) {
-            CustomTreeWidgetItem *edgesItem=new CustomTreeWidgetItem(0);
+            MeshItem *edgesItem=new MeshItem(0);
             edgesItem->setText(0,"Edges");
             edgesItem->set_itemType(3);
             edgesItem->setForeground(0,Qt::gray);
@@ -7178,13 +7184,13 @@ void OpenParEMg::drawMesh()
 
         // triangles
         if (elementTypes[e] == 2) {
-            CustomTreeWidgetItem *wiresItem=new CustomTreeWidgetItem(0);
+            MeshItem *wiresItem=new MeshItem(0);
             wiresItem->setText(0,"Wires");
             wiresItem->set_itemType(3);
             wiresItem->setForeground(0,Qt::gray);
             mesh.addChild(wiresItem);
 
-            CustomTreeWidgetItem *trianglesItem=new CustomTreeWidgetItem(0);
+            MeshItem *trianglesItem=new MeshItem(0);
             trianglesItem->setText(0,"Triangles");
             trianglesItem->set_itemType(3);
             trianglesItem->setForeground(0,Qt::gray);
@@ -7223,7 +7229,7 @@ void OpenParEMg::drawMesh()
 
         // tetrahedron
         if (elementTypes[e] == 4) {
-            CustomTreeWidgetItem *tetrahedronsItem=new CustomTreeWidgetItem(0);
+            MeshItem *tetrahedronsItem=new MeshItem(0);
             tetrahedronsItem->setText(0,"Tetrahedrons");
             tetrahedronsItem->set_itemType(3);
             tetrahedronsItem->setForeground(0,Qt::gray);
@@ -7269,9 +7275,6 @@ void OpenParEMg::drawMesh()
                 i+=4;
                 count++;
             }
-            // tetrahedronsItem->setSelected(false);
-            // ui->drawingWindow->showItem(tetrahedronsItem);
-            // ui->drawingWindow->unselectItem(tetrahedronsItem);
         }
 
         e++;
@@ -7286,14 +7289,14 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
 
     int i=0;
     while (i < mesh.childCount()) {
-        CustomTreeWidgetItem *item=(CustomTreeWidgetItem *) mesh.child(i);
+        MeshItem *meshItem=dynamic_cast<MeshItem *>(mesh.child(i));
 
         // remove from tracker
-        ui->drawingWindow->hideItem(item);
-        ui->drawingWindow->unselectItem(item);
+        ui->drawingWindow->hideItem(meshItem);
+        ui->drawingWindow->unselectItem(meshItem);
 
         // remove drawing shapes
-        std::vector<Handle(AIS_Shape)> *meshEntities=item->get_meshEntities();
+        std::vector<Handle(AIS_Shape)> *meshEntities=meshItem->get_meshEntities();
         long unsigned int j=0;
         while (j < meshEntities->size()) {
             ui->drawingWindow->deleteShape((*meshEntities)[j]);
@@ -8073,38 +8076,32 @@ void OpenParEMg::drawPath ()
     // enable selection on just the port
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             if (item->is_voltage() || item->is_current()) {
 
                 // mode parent
-                CustomTreeWidgetItem *modeParentItem=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+                ModeItem *modeItem=dynamic_cast<ModeItem *>(item->QTreeWidgetItem::parent());
 
                 // port parent
-                CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)modeParentItem->QTreeWidgetItem::parent();
+                PortItem *portItem=dynamic_cast<PortItem *>(modeItem->QTreeWidgetItem::parent());
 
                 // name for the integration path
                 if (item->is_voltage()) integrationPathName="v";
                 if (item->is_current()) integrationPathName="i";
                 integrationPathName.append(QString::number(port.childCount()));
-                integrationPathName.append(QString::number(portParentItem->childCount()-2));
+                integrationPathName.append(QString::number(portItem->childCount()-2));
 
-                // port shape
-                if (portParentItem->linkedItems_size() > 0) {
-
-                    // port shape
-                    CustomTreeWidgetItem *portItem=portParentItem->get_linkedItem(0);  // should just be one linked item to the port outline
-                    Handle(AIS_Shape) portShape=portItem->getShape();
-
-                    // port path
-                    Path *portPath=(Path *)portItem->get_OPEMobject();
+                // port outline
+                PathItem *pathItem=portItem->getPathItem();
+                if (pathItem) {
 
                     // select on vertices within the port path
-                    ui->drawingWindow->selectOnVertex(portPath);
+                    ui->drawingWindow->selectOnVertex(pathItem->getPath());
 
                     // get the normal to apply to the drawn Path
                     // Since the drawing is confined to the drawn Path, the normals will be the same.
-                    activePolywire->setNormal(portPath->get_normal());
+                    activePolywire->setNormal(pathItem->getPath()->get_normal());
                 }
 
                 startOperation(true);
@@ -8143,12 +8140,12 @@ bool OpenParEMg::isValidInsertAction ()
     //std::cout << "OpenParEMg::insertActionValid" << std::endl; std::cout.flush();
 
     int VIcount=0;
-    CustomTreeWidgetItem *VIitem;
+    BaseItem *VIitem;
     int pathCount=0;
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             if (item->is_voltage() || item->is_current()) {VIitem=item; VIcount++;}
 
@@ -8163,22 +8160,22 @@ bool OpenParEMg::isValidInsertAction ()
 
     // check that the paths are within the port
 
-    CustomTreeWidgetItem *modeParentItem=(CustomTreeWidgetItem *)VIitem->QTreeWidgetItem::parent();
-    CustomTreeWidgetItem *portParentItem=(CustomTreeWidgetItem *)modeParentItem->QTreeWidgetItem::parent();
+    ModeItem *modeItem=dynamic_cast<ModeItem *>(VIitem->QTreeWidgetItem::parent());
+    PortItem *portItem=dynamic_cast<PortItem *>(modeItem->QTreeWidgetItem::parent());
 
     // port outline
-    if (portParentItem->linkedItems_size() != 1) return false;
-    CustomTreeWidgetItem *linkedItem=portParentItem->get_linkedItem(0);
-    Path *portPath=static_cast<Path *>(linkedItem->get_OPEMobject());
+    PathItem *pathItem=portItem->getPathItem();
+    if (pathItem) return false;
+    Path *portPath=pathItem->getPath();
     if (!portPath) return false;
 
     i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem && pathItem->is_path()) {
-                Path *path=static_cast<Path *>(pathItem->get_OPEMobject());
+                Path *path=pathItem->getPath();
                 if (!portPath->is_path_inside(path)) {
                     return false;
                 }
@@ -8196,7 +8193,7 @@ void OpenParEMg::insertSelectedPath ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             if (item->is_voltage() || item->is_current()) insertPath(item);
         }
@@ -8251,7 +8248,7 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
 
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
@@ -8335,7 +8332,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     bool finishMove=false;
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
@@ -8360,7 +8357,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 
     // actions for which only one selected item is allowed or needed
     if (ui->drawingWindow->get_selectedItems_size() > 0) {
-        CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(0);
+        BaseItem *item=ui->drawingWindow->get_selectedItem(0);
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
 
@@ -8450,7 +8447,7 @@ void OpenParEMg::finishOperation (bool cancel, int source)
         if (activeAction) {
             long unsigned int i=0;
             while (i < ui->drawingWindow->get_selectedItems_size()) {
-                CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+                BaseItem *item=ui->drawingWindow->get_selectedItem(i);
                 if (item) {
                     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
                     if (drawingItem && drawingItem->is_drawing()) drawingItem->cancelOperation();
@@ -8475,7 +8472,7 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
         // long unsigned int i=0;
         // while (i < ui->drawingWindow->get_selectedItems_size()) {
-        //     CustomTreeWidgetItem *item=ui->drawingWindow->get_selectedItem(i);
+        //     BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         //     if (item) {
 
         //         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
@@ -8522,7 +8519,7 @@ void OpenParEMg::finishOperation (bool cancel, int source)
         //                 }
         //             }
 
-        //             CustomTreeWidgetItem *parent=(CustomTreeWidgetItem *)item->QTreeWidgetItem::parent();
+        //             BaseItem *parent=(BaseItem *)item->QTreeWidgetItem::parent();
         //             RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
         //             if (rootDrawingItem && rootDrawingItem->isRootDrawingItem()) ui->drawingWindow->showItem(rootDrawingItem);
         //         }
@@ -8573,7 +8570,7 @@ void OpenParEMg::finishOperation (bool cancel, int source)
     setMenusI(0);
 }
 
-void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
+void OpenParEMg::undoItem (BaseItem *item)
 {
     std::cout << "OpenParEMg::undoItem  item=" << item << std::endl; std::cout.flush();
 
@@ -8595,7 +8592,7 @@ void OpenParEMg::undoItem (CustomTreeWidgetItem *item)
     if (boundaryItem && boundaryItem->is_boundary()) boundaryItem->undo();
 }
 
-void OpenParEMg::redoItem (CustomTreeWidgetItem *item)
+void OpenParEMg::redoItem (BaseItem *item)
 {
     std::cout << "OpenParEMg::redoItem  item=" << item << std::endl; std::cout.flush();
 
@@ -8628,7 +8625,7 @@ void OpenParEMg::on_actionUndo_triggered ()
     std::cout << "OpenParEMg::on_actionUndo_triggered" << std::endl; std::cout.flush();
 
     itemChangesStack.readNew();
-    CustomTreeWidgetItem *item=itemChangesStack.getItem();
+    BaseItem *item=itemChangesStack.getItem();
     while (item) {
         //undoItem(item);
         std::cout << "   undo item" << std::endl; std::cout.flush();
@@ -8662,7 +8659,7 @@ void OpenParEMg::on_actionRedo_triggered ()
 
     itemChangesStack.redo();
     itemChangesStack.readNew();
-    CustomTreeWidgetItem *item=itemChangesStack.getItem();
+    BaseItem *item=itemChangesStack.getItem();
     while (item) {
         //redoItem(item);
 

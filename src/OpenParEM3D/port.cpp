@@ -27,7 +27,6 @@
 //#include <atomic>
 #include <filesystem>
 
-#include "port.hpp"
 #include "fem3D.hpp"
 #include "results.hpp"
 #include "petscsys.h"
@@ -1553,7 +1552,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     itemName->setForeground(0,Qt::gray);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     rootBoundaryItem->addChild(itemName);
-    itemName->set_OPEMobject(this);
+    itemName->setBoundary(this);
     set_item(itemName);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
@@ -1566,7 +1565,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
         PathItem *child=dynamic_cast<PathItem *>(rootPathItem->child(j));
         if (child->getPath() == path) {
             found=true;
-            itemName->push_linkedItem(child);
+            itemName->setPathItem(child);
             child->push_linkedItem(itemName);
 
             std::cout << "a isInMap=" << drawingWindow->isInMap(child->getShape()) << std::endl; std::cout.flush();
@@ -2648,7 +2647,7 @@ void IntegrationPath::removePath (Path *path)
 #ifdef HAS_GUI
 
 void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
-                            QTreeWidget *drawingItemTree, CustomTreeWidgetItem *pathItemTree, CustomTreeWidgetItem *itemVI)
+                            QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, BaseItem *itemVI)
 {
     // scale
 
@@ -2688,7 +2687,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, Cu
         name.append(pathNameList[i]->get_value().c_str());
 
         // tree item
-        SelectionItem *itemSegment=new SelectionItem(0);
+        PathItem *itemSegment=new PathItem(0);
         //itemSegment->set_AIS_Shape(drawingShape);
         itemSegment->setText(0,name);
         itemSegment->set_itemType(14);
@@ -2698,13 +2697,13 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, Cu
 
         // attach path
         Path *path=boundaryDatabase->get_pathList()[pathIndexList[i]];
-        itemSegment->set_OPEMobject((void *)path);
+        itemSegment->setPath(path);
 
         // attach item
         int j=0;
-        while (j < pathItemTree->childCount()) {
-            CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) pathItemTree->child(j);
-            if (child->get_OPEMobject() == path) {
+        while (j < rootPathItem->childCount()) {
+            PathItem *child=dynamic_cast<PathItem *>(rootPathItem->child(j));
+            if (child->getPath() == path) {
                 itemSegment->push_linkedItem(child);
                 child->push_linkedItem(itemSegment);
             }
@@ -4343,7 +4342,7 @@ void Mode::set_unmodified ()
 #ifdef HAS_GUI
 
 void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
-                 QTreeWidget *drawingItemTree, CustomTreeWidgetItem *pathItemTree, CustomTreeWidgetItem *itemName)
+                 QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, BaseItem *itemName)
 {
     // net
 
@@ -4354,14 +4353,14 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
         netname.append(QString::number(get_Sport()));
     }
 
-    item=new SelectionItem(0);
+    item=new ModeItem(0);
     item->setText(0,netname);
     item->set_itemType(5);
     item->setToolTip(0,"Mode and its net name.");
     item->setForeground(0,Qt::black);
     item->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
     itemName->addChild(item);
-    item->set_OPEMobject(this);
+    item->setMode(this);
 
     // S port
     SelectionItem *itemSport=new SelectionItem(0);
@@ -4406,7 +4405,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     long unsigned int i=0;
     while (i < integrationPathList.size()) {
         if (integrationPathList[i]->is_voltage()) {
-            integrationPathList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,pathItemTree,itemVoltage);
+            integrationPathList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,rootPathItem,itemVoltage);
         }
         i++;
     }
@@ -4424,7 +4423,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     i=0;
     while (i < integrationPathList.size()) {
         if (integrationPathList[i]->is_current()) {
-            integrationPathList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,pathItemTree,itemCurrent);
+            integrationPathList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,rootPathItem,itemCurrent);
         }
         i++;
     }
@@ -7235,7 +7234,7 @@ void Port::recalculatePathIndexList (std::vector<Path *> *pathList)
 
 #ifdef HAS_GUI
 void comboIndexChanged (int index, Port *port, Boundary *boundary, int type,
-                        CustomTreeWidgetItem *itemMaterial, CustomTreeWidgetItem *itemWaveImpedance)
+                        BaseItem *itemMaterial, BaseItem *itemWaveImpedance)
 {
     // Port: impedance definition
     if (port && type == 0) {
@@ -7255,10 +7254,12 @@ void comboIndexChanged (int index, Port *port, Boundary *boundary, int type,
 
         // for setting fill color and transparency
         Handle(AIS_Shape) shape;
-        CustomTreeWidgetItem *item=boundary->get_item();
-        if (item && item->linkedItems_size() > 0) {
-            CustomTreeWidgetItem *pathItem=item->get_linkedItem(0);
-            if (pathItem) shape=pathItem->getShape();
+        BoundaryItem *boundaryItem=boundary->get_item();
+        if (boundaryItem) {
+            PathItem *pathItem=boundaryItem->getPathItem();
+            if (pathItem) {
+                shape=pathItem->getShape();
+            }
         }
 
         if (index == 0) {
@@ -7310,14 +7311,12 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
 {
     // name
 
-    PortItem *itemName=new PortItem(0);
-    itemName->setText(0,get_name().c_str());
-    itemName->setForeground(0,Qt::gray);
-    itemName->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
-    itemName->setToolTip(0,"Port name.");
-    portWidgetItem->addChild(itemName);
-    itemName->set_OPEMobject(this);
-    set_item(itemName);
+    PortItem *portItem=new PortItem(0);
+    portItem->setText(0,get_name().c_str());
+    portItem->setForeground(0,Qt::gray);
+    portItem->setFlags(portItem->flags() & ~Qt::ItemIsEditable);
+    portItem->setToolTip(0,"Port name.");
+    portWidgetItem->addChild(portItem);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
     Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
@@ -7326,9 +7325,9 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     int j=0;
     while (j < pathWidgetItem->childCount()) {
         PathItem *child=dynamic_cast<PathItem *>(pathWidgetItem->child(j));
-        if (child->getPath()== path) {
-            itemName->push_linkedItem(child);
-            child->push_linkedItem(itemName);
+        if (child->getPath() == path) {
+            portItem->setPathItem(child);
+            child->push_linkedItem(portItem);
 
             emit relay->convertPathToFace(child);
 
@@ -7342,7 +7341,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
         }
         j++;
     }
-    drawingWindow->showItem(itemName);
+    drawingWindow->showItem(portItem);
 
     // impedance definition
 
@@ -7350,7 +7349,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     itemImpedanceDefinition->set_itemType(6);
     itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
-    itemName->addChild(itemImpedanceDefinition);
+    portItem->addChild(itemImpedanceDefinition);
 
     comboZdef=new CustomComboBox();
     comboZdef->set_itemTracker(drawingWindow->get_itemTracker());
@@ -7377,7 +7376,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     itemImpedanceCalculation->set_itemType(7);
     itemImpedanceCalculation->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
-    itemName->addChild(itemImpedanceCalculation);
+    portItem->addChild(itemImpedanceCalculation);
 
     CustomComboBox *comboZcalc=new CustomComboBox();
     comboZcalc->set_itemTracker(drawingWindow->get_itemTracker());
@@ -7390,14 +7389,14 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     if (is_modal()) comboZcalc->setCurrentIndex(1);
     drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
 
-    QObject::connect(comboZcalc, &CustomComboBox::CustomCurrentIndexChanged, &comboIndexChanged);
+    QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::setMenus);
 
     // modes
     struct point outline_normal=outline->get_normal();
     long unsigned int i=0;
     while (i < modeList.size()) {
-        modeList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,pathWidgetItem,itemName);
+        modeList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,pathWidgetItem,portItem);
         i++;
     }
 }
@@ -9871,7 +9870,7 @@ BoundaryItem* BoundaryDatabase::draw_boundary (Relay *relay, Boundary *boundary,
     return boundary->get_item();
 }
 
-// void BoundaryDatabase::set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), CustomTreeWidgetItem*> *drawingToItemMap)
+// void BoundaryDatabase::set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), BaseItem*> *drawingToItemMap)
 // {
 //     // ports
 //     long unsigned int i=0;

@@ -7,42 +7,10 @@
 #include <TopoDS_Iterator.hxx>
 
 ////////////////////////////////////////////////////////////////////////////////
-// RootDrawingItem
+// BaseItem
 ////////////////////////////////////////////////////////////////////////////////
 
-void BaseItem::promoteChildren ()
-{
-    long unsigned int i=0;
-    while (i < getChildrenSize()) {
-        CustomTreeWidgetItem *child=(CustomTreeWidgetItem *) getChild(i);
-        if (child) {
-            int index=indexOfChild(child);
-            takeChild(index);
-            getParentItem()->addChild(child);
-            child->setParentItem(getParentItem());
-            child->decrease_depth();
-            mw->ui->drawingWindow->showItem(child);
-        }
-        i++;
-    }
-}
 
-void BaseItem::demoteChildren ()
-{
-    long unsigned int i=0;
-    while (i < getChildrenSize()) {
-        CustomTreeWidgetItem *child=getChild(i);
-        if (child) {
-            int index=getParentItem()->indexOfChild(child);
-            getParentItem()->takeChild(index);
-            addChild(child);
-            child->setParentItem(this);
-            child->copy_depth(this);
-            child->increase_depth();
-        }
-        i++;
-    }
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // RootDrawingItem
@@ -66,6 +34,40 @@ void RootDrawingItem::showMenu (QMenu *menu)
 ////////////////////////////////////////////////////////////////////////////////
 // DrawingItem
 ////////////////////////////////////////////////////////////////////////////////
+
+void DrawingItem::promoteChildren ()
+{
+    long unsigned int i=0;
+    while (i < getChildrenSize()) {
+        BaseItem *child=dynamic_cast<BaseItem *>(getChild(i));
+        if (child) {
+            int index=indexOfChild(child);
+            takeChild(index);
+            getParentItem()->addChild(child);
+            child->setParentItem(getParentItem());
+            child->decrease_depth();
+            mw->ui->drawingWindow->showItem(child);
+        }
+        i++;
+    }
+}
+
+void DrawingItem::demoteChildren ()
+{
+    long unsigned int i=0;
+    while (i < getChildrenSize()) {
+        BaseItem *child=getChild(i);
+        if (child) {
+            int index=getParentItem()->indexOfChild(child);
+            getParentItem()->takeChild(index);
+            addChild(child);
+            child->setParentItem(this);
+            child->copy_depth(this);
+            child->increase_depth();
+        }
+        i++;
+    }
+}
 
 void DrawingItem::setForUndoRedo ()
 {   
@@ -537,7 +539,7 @@ void DrawingItem::extrude ()
     //mw->finishOperation(false,1);
 }
 
-DrawingItem* DrawingItem::copy (CustomTreeWidgetItem *parent)
+DrawingItem* DrawingItem::copy (BaseItem *parent)
 {
     DrawingItem *newItem=copyCreate();
     newItem->setMW(mw);
@@ -908,7 +910,7 @@ void DrawingItem::del ()
     shapeData->setDelete();
 
     // parentItem
-    CustomTreeWidgetItem *parentItem=getParentItem();
+    BaseItem *parentItem=getParentItem();
     if (parentItem) {
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
         if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -916,7 +918,7 @@ void DrawingItem::del ()
 
             // move children to parent
             while (childCount() > 0) {
-                CustomTreeWidgetItem* drawingChild=(CustomTreeWidgetItem *)takeChild(0);
+                BaseItem* drawingChild=(BaseItem *)takeChild(0);
                 rootDrawingItem->insertChild(insertIndex++,drawingChild);
                 drawingChild->setParentItem(rootDrawingItem);
                 drawingChild->decrease_depth();
@@ -947,8 +949,9 @@ void DrawingItem::del ()
 
 DrawingItem* DrawingItem::copyCreate ()
 {
-    std::cout << "DrawingItem::copyCreate" << std::endl; std::cout.flush();
+    //std::cout << "DrawingItem::copyCreate" << std::endl; std::cout.flush();
     DrawingItem *newItem=new DrawingItem();
+    if (!newItem) return nullptr;
 
     // copy just the current data
 
@@ -959,16 +962,10 @@ DrawingItem* DrawingItem::copyCreate ()
     newItem->dimTag=dimTag;
     newItem->forShowHide=forShowHide;
     newItem->itemType=itemType;
-    newItem->OPEMobject=OPEMobject;
     newItem->depth=depth;
-    long unsigned int i=0;
-    while (i < linkedItems.size()) {
-        newItem->linkedItems.push_back(linkedItems[i]);
-        i++;
-    }
+
     return newItem;
 }
-
 
 void DrawingItem::showMenu (QMenu *menu)
 {
@@ -1154,7 +1151,7 @@ void DrawingItem::undo ()
             if (process) {
                 int i=0;
                 while (i < childCount()) {
-                    CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+                    BaseItem *childItem=(BaseItem *) child(i);
                     childItem->undo();
                     mw->ui->drawingWindow->hideItem(childItem);
                     i++;
@@ -1205,7 +1202,7 @@ void DrawingItem::redo ()
 
         long unsigned int i=0;
         while (i < getChildrenSize()) {
-            CustomTreeWidgetItem *childItem=getChild(i);
+            BaseItem *childItem=getChild(i);
             if (childItem) {
                 int index=getParentItem()->indexOfChild(childItem);
                 if (index >= 0) {
@@ -1245,7 +1242,7 @@ void DrawingItem::redo ()
             if (process) {
                 int i=0;
                 while (i < childCount()) {
-                    CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+                    BaseItem *childItem=(BaseItem *) child(i);
                     childItem->redo();
                     i++;
                 }
@@ -1339,7 +1336,7 @@ void PathItem::del ()
     shapeData->setDelete();
 
     // parentItem
-    CustomTreeWidgetItem *parentItem=getParentItem();
+    BaseItem *parentItem=getParentItem();
     if (parentItem) {
         RootDrawingItem *rootPathItem=dynamic_cast<RootDrawingItem *>(parentItem);
         if (rootPathItem && rootPathItem->is_rootPath()) {
@@ -1394,7 +1391,7 @@ void PathItem::undo ()
         //     if (process) {
         //         int i=0;
         //         while (i < childCount()) {
-        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             BaseItem *childItem=(BaseItem *) child(i);
         //             childItem->undo();
         //             mw->ui->drawingWindow->hideItem(childItem);
         //             i++;
@@ -1485,7 +1482,7 @@ void PathItem::redo ()
         //     if (process) {
         //         int i=0;
         //         while (i < childCount()) {
-        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             BaseItem *childItem=(BaseItem *) child(i);
         //             childItem->redo();
         //             i++;
         //         }
@@ -1633,7 +1630,7 @@ void BoundaryItem::del ()
     shapeData->setDelete();
 
     // parentItem
-    CustomTreeWidgetItem *parentItem=getParentItem();
+    BaseItem *parentItem=getParentItem();
     if (parentItem) {
         RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(parentItem);
         if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) {
@@ -1685,7 +1682,7 @@ void BoundaryItem::undo ()
         //     if (process) {
         //         int i=0;
         //         while (i < childCount()) {
-        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             BaseItem *childItem=(BaseItem *) child(i);
         //             childItem->undo();
         //             mw->ui->drawingWindow->hideItem(childItem);
         //             i++;
@@ -1743,7 +1740,7 @@ void BoundaryItem::redo ()
         //     if (process) {
         //         int i=0;
         //         while (i < childCount()) {
-        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             BaseItem *childItem=(BaseItem *) child(i);
         //             childItem->redo();
         //             i++;
         //         }
@@ -1834,7 +1831,7 @@ void PortItem::del ()
     shapeData->setDelete();
 
     // parentItem
-    CustomTreeWidgetItem *parentItem=getParentItem();
+    BaseItem *parentItem=getParentItem();
     if (parentItem) {
         RootPortItem *rootPortItem=dynamic_cast<RootPortItem *>(parentItem);
         if (rootPortItem && rootPortItem->is_rootPort()) {
@@ -1886,7 +1883,7 @@ void PortItem::undo ()
         //     if (process) {
         //         int i=0;
         //         while (i < childCount()) {
-        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             BaseItem *childItem=(BaseItem *) child(i);
         //             childItem->undo();
         //             mw->ui->drawingWindow->hideItem(childItem);
         //             i++;
@@ -1944,7 +1941,7 @@ void PortItem::redo ()
         //     if (process) {
         //         int i=0;
         //         while (i < childCount()) {
-        //             CustomTreeWidgetItem *childItem=(CustomTreeWidgetItem *) child(i);
+        //             BaseItem *childItem=(BaseItem *) child(i);
         //             childItem->redo();
         //             i++;
         //         }
