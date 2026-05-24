@@ -1992,7 +1992,7 @@ void OpenParEMg::renameSportNet ()
     }
 }
 
-bool is_uniqueItem (std::vector<PortItem *> *portItemList, QTreeWidgetItem *item)
+bool is_uniqueItem (std::vector<PortItem *> *portItemList, BaseItem *item)
 {
     long unsigned int i=0;
     while (i < portItemList->size()) {
@@ -2010,8 +2010,13 @@ bool OpenParEMg::isValidDeleteValid ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_sport()) {
-            PortItem *portParentItem=(PortItem *)item->QTreeWidgetItem::parent();
-            if (is_uniqueItem(&portItemList,portParentItem)) portItemList.push_back(portParentItem);
+            PortItem *portItem=dynamic_cast<PortItem *>(item->QTreeWidgetItem::parent());
+            if (portItem && portItem->is_port()) {
+                if (is_uniqueItem(&portItemList,portItem)) {
+                    if (portItem->getPort()) portItemList.push_back(portItem);
+                    else {std::cout << "ASSERT: OpenParEMg::isValidDeleteValid found missing port in PortItem" << std::endl; std::cout.flush();}
+                }
+            }
         }
         i++;
     }
@@ -3515,11 +3520,11 @@ void OpenParEMg::finishMergeSolids ()
     // add it
     DrawingItem *newItem=new DrawingItem(0);
     newItem->setMW(this);
+    newItem->setParentItem(&drawing);
     ShapeData *newShapeData=new ShapeData(1,nullptr,merge,newAISshape);
     newItem->addShapeData(newShapeData);
     newItem->setText(0,merge->getName(&objectCounts));
     drawing.addChild(newItem);
-    newItem->setParentItem(&drawing);
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
     ui->drawingWindow->showItem(newItem);
     ui->drawingWindow->selectItem(newItem);
@@ -3640,11 +3645,11 @@ void OpenParEMg::finishSubtractSolids ()
     // add it
     DrawingItem *newItem=new DrawingItem(0);
     newItem->setMW(this);
+    newItem->setParentItem(&drawing);
     ShapeData *newShapeData=new ShapeData(1,nullptr,subtract,newAISshape);
     newItem->addShapeData(newShapeData);
     newItem->setText(0,subtract->getName(&objectCounts));
     drawing.addChild(newItem);
-    newItem->setParentItem(&drawing);
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
     ui->drawingWindow->showItem(newItem);
     ui->drawingWindow->selectItem(newItem);
@@ -4258,6 +4263,7 @@ PathItem* OpenParEMg::createPathFromDrawing (BaseItem *item, bool hasArrows)
     PathItem *newPathItem=new PathItem();
     if (newPathItem) {
         newPathItem->setMW(this);
+        newPathItem->setParentItem(&path);
 
         ShapeData *newShapeData=newPathItem->getShapeData()->copyCreate();
         newShapeData->setCreate();
@@ -4268,7 +4274,6 @@ PathItem* OpenParEMg::createPathFromDrawing (BaseItem *item, bool hasArrows)
         newPathItem->setText(0,QString::fromStdString(pathName));
         newPathItem->setPath(newPath);
 
-        newPathItem->setParentItem(&path);
         path.addChild(newPathItem);
         itemChangesStack.add(newPathItem);
 
@@ -4521,7 +4526,6 @@ void OpenParEMg::createPortFromFace ()
                 PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
                                                                   this,ui->drawingWindow,ui->drawingItemTree,
                                                                   &path,&port,&boundary,materialDatabase);
-                newPortItem->setMW(this);
                 port.setExpanded(true);
                 newPortItem->setExpanded(true);
             }
@@ -4648,7 +4652,6 @@ void OpenParEMg::createPortFromPath ()
                         BaseItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
                                                                           this,ui->drawingWindow,ui->drawingItemTree,
                                                                           &path,&port,&boundary,materialDatabase);
-                        newPortItem->setMW(this);
                         port.setExpanded(true);
                         newPortItem->setExpanded(true);
                     }
@@ -4759,7 +4762,6 @@ void OpenParEMg::createBoundaryFromFace ()
                 BaseItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,
                                                                           this,ui->drawingWindow,ui->drawingItemTree,
                                                                           &path,&boundary,materialDatabase);
-                newBoundaryItem->setMW(this);
                 boundary.setExpanded(true);
                 newBoundaryItem->setExpanded(true);
             }
@@ -4976,7 +4978,7 @@ void OpenParEMg::convertItemToPort (BaseItem *item)
 
 void OpenParEMg::convertToPort ()
 {
-    //std::cout << "OpenParEMg::convertToPort" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::convertToPort" << std::endl; std::cout.flush();
 
     itemChangesStack.startNew();
 
@@ -7180,6 +7182,7 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 15) {
             MeshItem *verticesItem=new MeshItem(0);
             verticesItem->setMW(this);
+            verticesItem->setParentItem(&mesh);
             verticesItem->setText(0,"Vertices");
             verticesItem->set_itemType(3);
             verticesItem->setForeground(0,Qt::gray);
@@ -7205,6 +7208,7 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 1) {
             MeshItem *edgesItem=new MeshItem(0);
             edgesItem->setMW(this);
+            edgesItem->setParentItem(&mesh);
             edgesItem->setText(0,"Edges");
             edgesItem->set_itemType(3);
             edgesItem->setForeground(0,Qt::gray);
@@ -7231,6 +7235,7 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 2) {
             MeshItem *wiresItem=new MeshItem(0);
             wiresItem->setMW(this);
+            wiresItem->setParentItem(&mesh);
             wiresItem->setText(0,"Wires");
             wiresItem->set_itemType(3);
             wiresItem->setForeground(0,Qt::gray);
@@ -7277,6 +7282,7 @@ void OpenParEMg::drawMesh()
         if (elementTypes[e] == 4) {
             MeshItem *tetrahedronsItem=new MeshItem(0);
             tetrahedronsItem->setMW(this);
+            tetrahedronsItem->setParentItem(&mesh);
             tetrahedronsItem->setText(0,"Tetrahedrons");
             tetrahedronsItem->set_itemType(3);
             tetrahedronsItem->setForeground(0,Qt::gray);
@@ -8054,11 +8060,6 @@ void OpenParEMg::finishDraw ()
 
     if (isIntegrationPath) {
 
-        //xxx
-        currentDrawingItem->finishDraw();
-        //currentDrawingItem=nullptr;
-
-
         // // default path name
 
         // std::string pathName=integrationPathName.toStdString();
@@ -8105,19 +8106,26 @@ void OpenParEMg::finishDraw ()
         //     itemChangesStack.add(pathItem);
         // }
 
-        // see if the path is within an existing port
+        // convert the drawn line to a path
+        std::cout << "place 1" << std::endl; std::cout.flush();
+        currentDrawingItem->finishDraw();
+        PathItem *pathItem=createPathFromDrawing(currentDrawingItem,true);
+        currentDrawingItem->del();
 
-        PathItem *pathItem=dynamic_cast<PathItem *>(currentDrawingItem);
+
+        // see if the path is within an existing port
         if (pathItem && pathItem->is_path()) {
             Port *port=boundaryDatabase->get_matchingPort(pathItem->getPath());
             // ToDo: fix
             //if (port) pathItem->set_portItem(port->get_item());
         }
 
-        ui->drawingWindow->selectItem(currentDrawingItem);
+        std::cout << "place 2" << std::endl; std::cout.flush();
+        ui->drawingWindow->selectItem(pathItem);
         ui->drawingWindow->selectItem(workingItem);  // select the original selected item
         insertSelectedPath();                        // relies on the newly created path already being selected
 
+        std::cout << "place 3" << std::endl; std::cout.flush();
         isIntegrationPath=false;
 
         currentDrawingItem=nullptr;
@@ -8139,91 +8147,29 @@ void OpenParEMg::finishDraw ()
     finishOperation(false,13);
 }
 
-void OpenParEMg::drawPath ()
-{
-    //std::cout << "OpenParEMg::drawPath" << std::endl; std::cout.flush();
-
-    // //xxx
-    // startOperation(true);
-    // activeAction=true;
-    // itemChangesStack.startNew();
-
-    // // to avoid stray clicks in the selection tree
-    // workingItem=clickedItem;
-
-    // // enable selection on just the port
-    // long unsigned int i=0;
-    // while (i < ui->drawingWindow->get_selectedItems_size()) {
-    //     BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-    //     if (item) {
-    //         if (item->is_voltage() || item->is_current()) {
-
-    //             // mode parent
-    //             ModeItem *modeItem=dynamic_cast<ModeItem *>(item->QTreeWidgetItem::parent());
-
-    //             // port parent
-    //             PortItem *portItem=dynamic_cast<PortItem *>(modeItem->QTreeWidgetItem::parent());
-
-    //             // name for the integration path
-    //             if (item->is_voltage()) integrationPathName="v";
-    //             if (item->is_current()) integrationPathName="i";
-    //             integrationPathName.append(QString::number(port.childCount()));
-    //             integrationPathName.append(QString::number(portItem->childCount()-2));
-
-    //             // port outline
-    //             PathItem *pathItem=portItem->getPathItem();
-    //             if (pathItem) {
-
-    //                 // select on vertices within the port path
-    //                 ui->drawingWindow->selectOnVertex(pathItem->getPath());
-
-    //                 // get the normal to apply to the drawn Path
-    //                 // Since the drawing is confined to the drawn Path, the normals will be the same.
-    //                 activePolywire->setNormal(pathItem->getPath()->get_normal());
-    //             }
-
-    //             startOperation(true);
-    //             ui->drawingWindow->set_pickFirstVertex(true);
-    //             activePolywire->setDrawEnable(true);
-    //         }
-    //     }
-    //     i++;
-    // }
-
-    // isIntegrationPath=true;
-
-    currentDrawingItem=new PathItem();
-    currentDrawingItem->setMW(this);
-    currentDrawingItem->setParentItem(&path);
-    currentDrawingItem->startLine();
-}
-
 void OpenParEMg::drawLinePath ()
 {
-    //std::cout << "OpenParEMg::drawLinePath" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::drawLinePath" << std::endl; std::cout.flush();
 
-    // activePolywire=new Line();
-    // activePolywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+    isIntegrationPath=true;
+    workingItem=clickedItem;
 
-    // drawPath();  // executes startDrawingOperation
-
-    currentDrawingItem=new PathItem();
+    currentDrawingItem=new DrawingItem();
     currentDrawingItem->setMW(this);
-    currentDrawingItem->setParentItem(&path);
+    currentDrawingItem->setParentItem(&drawing);
     currentDrawingItem->startLine();
 }
 
 void OpenParEMg::drawPolylinePath ()
 {
-    //std::cout << "OpenParEMg::drawPolylinePath" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::drawPolylinePath" << std::endl; std::cout.flush();
 
-    // activePolywire=new Polyline();
-    // activePolywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
+    isIntegrationPath=true;
+    workingItem=clickedItem;
 
-    // drawPath();  // executes startDrawingOperation
-
-    currentDrawingItem=new PathItem();
+    currentDrawingItem=new DrawingItem();
     currentDrawingItem->setMW(this);
+    currentDrawingItem->setParentItem(&drawing);
     currentDrawingItem->startPolyline();
 }
 

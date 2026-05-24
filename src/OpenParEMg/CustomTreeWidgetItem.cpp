@@ -229,7 +229,7 @@ void DrawingItem::finishDraw ()
     mw->activeAction=false;
     mw->restrictToDrawingPlane=false;
     mw->activePolywire=nullptr;
-    mw->workingItem=nullptr;
+    //mw->workingItem=nullptr;
 
     // mark as changed
     mw->drawingChanged=true;

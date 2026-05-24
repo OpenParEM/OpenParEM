@@ -1550,11 +1550,12 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     QString textName=QString::fromStdString(get_name());
     BoundaryItem *itemName=new BoundaryItem(0);
     itemName->setMW(mw);
+    itemName->setParentItem(rootBoundaryItem);
+    itemName->setBoundary(this);
     itemName->setText(0,textName);
     itemName->setForeground(0,Qt::gray);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
     rootBoundaryItem->addChild(itemName);
-    itemName->setBoundary(this);
     set_item(itemName);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
@@ -1596,6 +1597,8 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
 
     SelectionItem *itemType=new SelectionItem(0);
     itemType->setMW(mw);
+    itemType->setParentItem(itemName);
+    itemType->setParentItem(itemName);
     itemType->setFlags(itemType->flags() | Qt::ItemIsEditable);
     itemType->setToolTip(0,"Boundary type.");
     itemName->addChild(itemType);
@@ -1624,6 +1627,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
 
     SelectionItem *itemMaterial=new SelectionItem(0);
     itemMaterial->setMW(mw);
+    itemMaterial->setParentItem(itemName);
     itemMaterial->setFlags(itemMaterial->flags() | Qt::ItemIsEditable);
     itemMaterial->setToolTip(0,"Boundary material.");
     itemName->addChild(itemMaterial);
@@ -1647,6 +1651,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
 
     SelectionItem *itemWaveImpedance=new SelectionItem(0);
     itemWaveImpedance->setMW(mw);
+    itemWaveImpedance->setParentItem(itemName);
     itemWaveImpedance->setFlags(itemWaveImpedance->flags() | Qt::ItemIsEditable);
     itemWaveImpedance->setToolTip(0,"Wave impedance in Ohms.");
     itemName->addChild(itemWaveImpedance);
@@ -1669,6 +1674,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
         QString textDefault="default";
         SelectionItem *itemDefault=new SelectionItem(0);
         itemDefault->setMW(mw);
+        itemDefault->setParentItem(itemName);
         itemDefault->setText(0,textDefault);
         itemName->addChild(itemDefault);
     }
@@ -1752,6 +1758,7 @@ IntegrationPath::IntegrationPath (vector<Path *> *pathList, vector<Path *> *path
        // path name
        keywordPair *path=new keywordPair();
        path->push_alias("path");
+       std::cout << "(*pathsToAdd)[i]=" << (*pathsToAdd)[i] << std::endl; std::cout.flush();
        path->set_value((*pathsToAdd)[i]->get_name());
        path->set_positive_required(false);
        path->set_non_negative_required(false);
@@ -2660,6 +2667,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
     SelectionItem *itemScale=new SelectionItem(0);
     itemScale->setMW(mw);
+    itemScale->setParentItem(itemVI);
     itemScale->setText(0,"scale");
     itemScale->set_itemType(12);
     itemScale->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
@@ -2671,6 +2679,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
     SelectionItem *itemScaleValue=new SelectionItem(0);
     itemScaleValue->setMW(mw);
+    itemScaleValue->setParentItem(itemScale);
     itemScaleValue->set_itemType(13);
     itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
     itemScale->addChild(itemScaleValue);
@@ -2698,6 +2707,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
         // tree item
         PathItem *itemSegment=new PathItem(0);
         itemSegment->setMW(mw);
+        itemSegment->setParentItem(itemVI);
         //itemSegment->set_AIS_Shape(drawingShape);
         itemSegment->setText(0,name);
         itemSegment->set_itemType(14);
@@ -4366,17 +4376,19 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
     item=new ModeItem(0);
     item->setMW(mw);
+    item->setParentItem(itemName);
     item->setText(0,netname);
     item->set_itemType(5);
     item->setToolTip(0,"Mode and its net name.");
     item->setForeground(0,Qt::black);
     item->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
-    itemName->addChild(item);
     item->setMode(this);
+    itemName->addChild(item);
 
     // S port
     SelectionItem *itemSport=new SelectionItem(0);
     itemSport->setMW(mw);
+    itemSport->setParentItem(item);
     itemSport->setText(0,"S Port");
     itemSport->set_itemType(8);
     itemSport->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
@@ -4388,6 +4400,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
     SelectionItem *itemSportValue=new SelectionItem(0);
     itemSportValue->setMW(mw);
+    itemSportValue->setParentItem(itemSport);
     itemSportValue->set_itemType(9);
     itemSportValue->setToolTip(0,"S-parameter port number.");
     itemSportValue->setForeground(0,Qt::black);
@@ -4410,6 +4423,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
     SelectionItem *itemVoltage=new SelectionItem(0);
     itemVoltage->setMW(mw);
+    itemVoltage->setParentItem(item);
     itemVoltage->setText(0,"voltage");
     itemVoltage->set_itemType(10);
     itemVoltage->setFlags(item->flags() & ~Qt::ItemIsEditable);
@@ -4429,6 +4443,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
     SelectionItem *itemCurrent=new SelectionItem(0);
     itemCurrent->setMW(mw);
+    itemCurrent->setParentItem(item);
     itemCurrent->setText(0,"current");
     itemCurrent->set_itemType(11);
     itemCurrent->setFlags(item->flags() & ~Qt::ItemIsEditable);
@@ -7330,10 +7345,12 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
 
     PortItem *portItem=new PortItem(0);
     portItem->setMW(mw);
+    portItem->setParentItem(rootPortItem);
     portItem->setText(0,get_name().c_str());
     portItem->setForeground(0,Qt::gray);
     portItem->setFlags(portItem->flags() & ~Qt::ItemIsEditable);
     portItem->setToolTip(0,"Port name.");
+    portItem->setPort(this);
     rootPortItem->addChild(portItem);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
@@ -7365,6 +7382,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
 
     SelectionItem *itemImpedanceDefinition=new SelectionItem(0);
     itemImpedanceDefinition->setMW(mw);
+    itemImpedanceDefinition->setParentItem(portItem);
     itemImpedanceDefinition->set_itemType(6);
     itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
@@ -7393,6 +7411,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
 
     SelectionItem *itemImpedanceCalculation=new SelectionItem(0);
     itemImpedanceCalculation->setMW(mw);
+    itemImpedanceCalculation->setParentItem(portItem);
     itemImpedanceCalculation->set_itemType(7);
     itemImpedanceCalculation->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");

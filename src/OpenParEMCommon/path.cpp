@@ -1377,6 +1377,8 @@ bool Path::is_path_overlap (Path *test)
 
 bool Path::is_path_inside (Path *test)
 {
+    if (!test) return false;
+
    // check for points inside the path
    long unsigned int i=0;
    while (i < test->points.size()) {

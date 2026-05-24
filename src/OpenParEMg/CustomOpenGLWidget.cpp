@@ -491,7 +491,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
                         i++;
                     }
                 } else {
-                    std::cout << "place 1 clicked shape" << std::endl; std::cout.flush();
                     Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
                     if (!shape.IsNull()) {
                         emit relay->clearTreeSelection();

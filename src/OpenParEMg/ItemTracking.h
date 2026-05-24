@@ -684,13 +684,11 @@ public:
 
     void selectItemShape (Handle(AIS_Shape) shape)
     {
-        std::cout << "place 2 selectItemShape  shape.IsNull()=" << shape.IsNull() << std::endl;
         if (selectTracking) {std::cout << "ItemTracker::selectShape" << std::endl; std::cout.flush();}
 
         BaseItem *item=shapeToItemMap[shape];
         if (item) {
             //showItem(item);
-            std::cout << "place 3 item found" << std::endl; std::cout.flush();
             selectItem(item);  // mesh shapes are not in the map, so need to check for valid item
         }
     }
@@ -728,7 +726,6 @@ public:
 
     void selectItem (BaseItem *item)
     {
-        std::cout << "place 4 selectItem item=" << item << std::endl; std::cout.flush();
         if (selectTracking) {std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();}
         if (!item) return;
 

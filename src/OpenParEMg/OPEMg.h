@@ -679,7 +679,6 @@ private slots:
     void on_actionDrawPolycircle_triggered ();
     void on_actionDrawRectangle_triggered ();
     void finishDraw ();
-    void drawPath ();
     void drawLinePath ();
     void drawPolylinePath ();
     bool isValidInsertAction ();
