@@ -426,12 +426,12 @@ public:
     void copyDrawingItems ();
 
     bool isValidDeletePoint ();
-    void finishDeletePoint (DrawingItem *);
+    void finishDeletePoint (BaseItem *);
     void cancelDeletePoint ();
 
     bool isValidInsertPoint ();
-    void finishInsertPoint (DrawingItem *);
-    void finishStretchPoint (DrawingItem *);
+    void finishInsertPoint (BaseItem *);
+    void finishStretchPoint (BaseItem *);
     void cancelInsertPoint ();
 
     bool isValidCloseExistingPolyline ();
@@ -444,8 +444,8 @@ public:
     void convertToPolyline ();
 
     bool isValidConvertToPath ();
-    PathItem* createPathFromDrawing (DrawingItem *, bool);
-    void convertItemToPath (DrawingItem *);
+    PathItem* createPathFromDrawing (BaseItem *, bool);
+    void convertItemToPath (BaseItem *);
     void convertToPath ();
 
     bool isValidExtrudePolywire ();
@@ -656,9 +656,9 @@ private slots:
     void createPortFromPath ();
     void createBoundaryFromFace ();
     void createBoundaryFromPath ();
-    void convertItemToPort (DrawingItem *);
+    void convertItemToPort (BaseItem *);
     void convertToPort ();
-    void convertItemToBoundary (DrawingItem *);
+    void convertItemToBoundary (BaseItem *);
     void convertToBoundary ();
     void reversePathItem (PathItem *, bool);
     void reversePathItems ();

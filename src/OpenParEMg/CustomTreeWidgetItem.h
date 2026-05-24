@@ -399,10 +399,11 @@ public:
         set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
+        hasArrows=false;
     }
 
     void setMW (OpenParEMg *mw_) {mw=mw_;}
-    virtual void showMenu () {return;}
+    virtual void showMenu () {}
 
     QString get_name () {return text(0);}
 
@@ -416,10 +417,29 @@ public:
     void setPolywire (Polywire *polywire_) {dataStack.setPolywire(polywire_);}
     void setProcess (Process *process_) {dataStack.setProcess(process_);}
 
+    virtual bool hasP0 () {return false;}
+    virtual bool hasP1 () {return false;}
+
+    virtual void setP0 (gp_Pnt p0) {}
+    virtual void setP1 (gp_Pnt p1) {};
+
+    virtual void finishStretchPoint () {};
+    virtual void finishDeletePoint () {};
+    virtual void finishInsertPoint () {};
+
     ShapeData* getShapeData () {return dataStack.getShapeData();}
     Polywire* getPolywire () {return dataStack.getPolywire();}
     Process* getProcess () {return dataStack.getProcess();}
     Handle(AIS_Shape) getShape () {return dataStack.getShape();}
+
+    virtual bool getEnableMove () {return false;}
+    virtual bool getEnableStretch () {return false;}
+    virtual bool getEnableDeletePoint () {return false;}
+    virtual bool getEnableInsertPoint () {return false;}
+
+    virtual void setHasArrows (bool hasArrows_) {hasArrows=hasArrows_;}
+    virtual bool getHasArrows () {return hasArrows;}
+    virtual void del () {}
 
     void undo () {dataStack.undo();}
     void redo () {dataStack.redo();}
@@ -653,6 +673,7 @@ protected:
 
 
     int depth;                                         // item depth in the tree for saving formatted drawing files
+    bool hasArrows;                                    // whether to show arrows when drawing; used by DrawingItem and PathItem
 };
 
 
@@ -706,6 +727,8 @@ public:
         enableStretch=false;
         enableDeletePoint=false;
         enableInsertPoint=false;
+
+        hasArrows=false;
     }
 
     QString get_material () {return text(1);}
@@ -744,36 +767,36 @@ public:
     void finishEdit ();
 
     void startDeletePoint ();
-    void finishDeletePoint ();
+    void finishDeletePoint () override;
     void cancelDeletePoint ();
 
     void startInsertPoint ();
-    void finishInsertPoint ();
-    void finishStretchPoint ();
+    void finishInsertPoint () override;
+    void finishStretchPoint () override;
     void cancelInsertPoint ();
 
     void convertToPolyline ();
 
-    void del ();
+    void del () override;
 
     void showMenu (QMenu *);
 
     void setEnableMove (bool enableMove_) {enableMove=enableMove_;}
-    bool getEnableMove () {return enableMove;}
+    bool getEnableMove () override {return enableMove;}
 
     void setEnableStretch (bool enableStretch_) {enableStretch=enableStretch_;}
-    bool getEnableStretch () {return enableStretch;}
+    bool getEnableStretch () override {return enableStretch;}
 
     void setEnableDeletePoint (bool enableDeletePoint_) {enableDeletePoint=enableDeletePoint_;}
-    bool getEnableDeletePoint () {return enableDeletePoint;}
+    bool getEnableDeletePoint () override {return enableDeletePoint;}
 
     void setEnableInsertPoint (bool enableInsertPoint_) {enableInsertPoint=enableInsertPoint_;}
-    bool getEnableInsertPoint () {return enableInsertPoint;}
+    bool getEnableInsertPoint () override {return enableInsertPoint;}
 
-    void setP0 (gp_Pnt p0_) {p0=p0_; p0set=true;}
-    void setP1 (gp_Pnt p1_) {p1=p1_; p1set=true;}
-    bool hasP0 () {return p0set;}
-    bool hasP1 () {return p1set;}
+    void setP0 (gp_Pnt p0_) override {p0=p0_; p0set=true;}
+    void setP1 (gp_Pnt p1_) override {p1=p1_; p1set=true;}
+    bool hasP0 () override {return p0set;}
+    bool hasP1 () override {return p1set;}
     gp_Pnt getP0 () {return p0;}
     gp_Pnt getP1 () {return p1;}
     void resetP0P1 () {p0set=false; p1set=false;}
@@ -801,8 +824,13 @@ public:
     void undo ();
     void redo ();
 
-private:
+    void setHasArrows (bool hasArrows_) override {hasArrows=hasArrows_;}
+    bool getHasArrows () override {return hasArrows;}
+
+protected:
     QString material;                                  // material for this item - only valid for top-level SOLID and COMPOUND
+
+    bool hasArrows;                                    // flag for showing direction of the path
 
     Handle(AIS_Shape) animateShape;                    // temporary shape for animation during moving
     gp_Trsf aTrsf;
@@ -812,7 +840,6 @@ private:
     bool enableStretch;
     bool enableDeletePoint;
     bool enableInsertPoint;
-
 };
 
 class RootPathItem : public BaseItem
@@ -848,6 +875,8 @@ public:
         parentItem=nullptr;
 
         path=nullptr;
+
+        hasArrows=true;
     }
 
     long unsigned int linkedItems_size () {return linkedItems.size();}
@@ -863,9 +892,11 @@ public:
         }
     }
 
+    virtual void setHasArrows (bool hasArrows_) override {hasArrows=hasArrows_;}
+    bool getHasArrows () override {return hasArrows;}
 
     void showMenu (QMenu *);
-    void del ();
+    void del () override;
     void setPath (Path *path_) {path=path_;}
     Path* getPath () {return path;}
     void undo ();
@@ -873,8 +904,9 @@ public:
     void reverse ();
 
 private:
-    Path *path;    // related path from the boundary database
+    Path *path;                            // related path from the boundary database
     std::vector<BaseItem *> linkedItems;   // items that use this path item
+    bool hasArrows;
 };
 
 class RootBoundaryItem : public BaseItem
@@ -914,7 +946,7 @@ public:
     }
 
     void showMenu (QMenu *);
-    void del ();
+    void del () override;
     void setBoundary (Boundary *boundary_) {boundary=boundary_;}
     Boundary* getBoundary () {return boundary;}
     void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
@@ -964,7 +996,7 @@ public:
         pathItem=nullptr;
     }
     void showMenu (QMenu *);
-    void del ();
+    void del () override;
     void setPort (Port *port_) {port=port_;}
     Port* getPort () {return port;}
     void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}

@@ -7307,7 +7307,7 @@ void textValueChanged (QString text, IntegrationPath *integrationPath, BoundaryD
 }
 
 void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
-                 QTreeWidget *drawingItemTree, RootPathItem *pathWidgetItem, RootPortItem *portWidgetItem)
+                 QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, RootPortItem *rootPortItem)
 {
     // name
 
@@ -7316,15 +7316,15 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     portItem->setForeground(0,Qt::gray);
     portItem->setFlags(portItem->flags() & ~Qt::ItemIsEditable);
     portItem->setToolTip(0,"Port name.");
-    portWidgetItem->addChild(portItem);
+    rootPortItem->addChild(portItem);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
     Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
 
     // attach item
     int j=0;
-    while (j < pathWidgetItem->childCount()) {
-        PathItem *child=dynamic_cast<PathItem *>(pathWidgetItem->child(j));
+    while (j < rootPathItem->childCount()) {
+        PathItem *child=dynamic_cast<PathItem *>(rootPathItem->child(j));
         if (child->getPath() == path) {
             portItem->setPathItem(child);
             child->push_linkedItem(portItem);
@@ -7396,7 +7396,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     struct point outline_normal=outline->get_normal();
     long unsigned int i=0;
     while (i < modeList.size()) {
-        modeList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,pathWidgetItem,portItem);
+        modeList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,rootPathItem,portItem);
         i++;
     }
 }

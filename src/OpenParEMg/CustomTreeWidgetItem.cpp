@@ -147,7 +147,7 @@ void DrawingItem::startDraw ()
     mw->activePolywire->setNormal(normal.X(),normal.Y(),normal.Z());
     mw->activePolywire->set_viewerContext(mw->ui->drawingWindow->get_viewerContext());
     mw->activePolywire->setDrawEnable(true);
-    mw->activePolywire->setHasArrows(false);
+    mw->activePolywire->setHasArrows(getHasArrows());
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
@@ -161,7 +161,6 @@ void DrawingItem::startDraw ()
 
     mw->startOperation(true);
     mw->itemChangesStack.startNew();
-
 }
 
 void DrawingItem::startLine ()
@@ -201,8 +200,7 @@ void DrawingItem::finishDraw ()
 
     // add to the selection tree
     setText(0,mw->activePolywire->getName(&(mw->objectCounts)));
-    mw->drawing.addChild(this);
-    setParentItem(&(mw->drawing));
+    getParentItem()->addChild(this);
 
     // put into tracking, display, and select
     mw->ui->drawingWindow->insertItemToMap(getShape(),this);
@@ -235,9 +233,6 @@ void DrawingItem::finishDraw ()
 
     // mark as changed
     mw->drawingChanged=true;
-
-    // final universal cleanup
-    mw->finishOperation(false,13);
 }
 
 void DrawingItem::cancelDraw ()
