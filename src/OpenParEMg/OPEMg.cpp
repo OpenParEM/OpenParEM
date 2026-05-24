@@ -964,7 +964,7 @@ void OpenParEMg::expand (BaseItem *item)
     item->setExpanded(Standard_True);
     int i=0;
     while (i < item->childCount()) {
-        BaseItem *child=(BaseItem *) item->child(i);
+        BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
         expand(child);
         i++;
     }
@@ -976,7 +976,7 @@ void OpenParEMg::collapse (BaseItem *item)
     item->setExpanded(Standard_False);
     int i=0;
     while (i < item->childCount()) {
-        BaseItem *child=(BaseItem *) item->child(i);
+        BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
         collapse(child);
         i++;
     }

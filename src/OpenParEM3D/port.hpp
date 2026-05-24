@@ -225,7 +225,8 @@ class Boundary
 #ifdef HAS_GUI
       void set_item (BoundaryItem *item_) {item=item_;}
       BoundaryItem* get_item () {return item;}
-      void draw (Relay *, struct projectData *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *rootPathItem, RootBoundaryItem *, MaterialDatabase *);
+      void draw (Relay *, struct projectData *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *,
+                RootPathItem *rootPathItem, RootBoundaryItem *, MaterialDatabase *, BoundaryItem *);
 #endif
 };
 

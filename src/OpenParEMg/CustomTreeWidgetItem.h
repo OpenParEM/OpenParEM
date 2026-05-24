@@ -421,11 +421,13 @@ public:
     virtual bool hasP1 () {return false;}
 
     virtual void setP0 (gp_Pnt p0) {}
-    virtual void setP1 (gp_Pnt p1) {};
+    virtual void setP1 (gp_Pnt p1) {}
 
-    virtual void finishStretchPoint () {};
-    virtual void finishDeletePoint () {};
-    virtual void finishInsertPoint () {};
+    virtual void finishStretchPoint () {}
+    virtual void finishDeletePoint () {}
+    virtual void finishInsertPoint () {}
+
+    virtual void cancelOperation () {}
 
     ShapeData* getShapeData () {return dataStack.getShapeData();}
     Polywire* getPolywire () {return dataStack.getPolywire();}
@@ -635,9 +637,9 @@ public:
     BaseItem* getParentItem () {return parentItem;}
 
     void clearChildren () {children.clear();}
-    void push_child (DrawingItem *child) {children.push_back(child);}
+    void push_child (BaseItem *child) {children.push_back(child);}
     long unsigned int getChildrenSize () {return children.size();}
-    DrawingItem* getChild (long unsigned int i) {return children[i];}
+    BaseItem* getChild (long unsigned int i) {return children[i];}
 
     void convertPathToFace ()
     {
@@ -652,7 +654,7 @@ protected:
     OpenParEMg *mw;
     ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
     BaseItem *parentItem;                              // parent for undo/redo
-    std::vector<DrawingItem *> children;               // children for undo/redo
+    std::vector<BaseItem *> children;               // children for undo/redo
 
     std::pair<int,int> dimTag;                         //
     bool forShowHide;                                  // false - does not participate in item tree show/hide operations; true - does participate
@@ -741,7 +743,7 @@ public:
     void demoteChildren ();
 
     void setForUndoRedo ();
-    void cancelOperation ();
+    void cancelOperation () override;
 
     void startDraw ();
     void startLine ();

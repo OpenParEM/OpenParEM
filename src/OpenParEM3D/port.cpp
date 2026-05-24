@@ -1543,20 +1543,24 @@ void Boundary::recalculatePathIndexList (std::vector<Path *> *pathList)
 
 void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase,
                      OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                     RootPathItem *rootPathItem, RootBoundaryItem *rootBoundaryItem, MaterialDatabase *materialDatabase)
+                     RootPathItem *rootPathItem, RootBoundaryItem *rootBoundaryItem, MaterialDatabase *materialDatabase,
+                     BoundaryItem *boundaryItem)
 {
     // name
 
     QString textName=QString::fromStdString(get_name());
-    BoundaryItem *itemName=new BoundaryItem(0);
-    itemName->setMW(mw);
-    itemName->setParentItem(rootBoundaryItem);
-    itemName->setBoundary(this);
-    itemName->setText(0,textName);
-    itemName->setForeground(0,Qt::gray);
-    itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
-    rootBoundaryItem->addChild(itemName);
-    set_item(itemName);
+
+    if (!boundaryItem) {
+        boundaryItem=new BoundaryItem(0);
+    }
+    boundaryItem->setMW(mw);
+    boundaryItem->setParentItem(rootBoundaryItem);
+    boundaryItem->setBoundary(this);
+    boundaryItem->setText(0,textName);
+    boundaryItem->setForeground(0,Qt::gray);
+    boundaryItem->setFlags(boundaryItem->flags() | Qt::ItemIsEditable);
+    rootBoundaryItem->addChild(boundaryItem);
+    set_item(boundaryItem);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
     Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
@@ -1568,8 +1572,8 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
         PathItem *child=dynamic_cast<PathItem *>(rootPathItem->child(j));
         if (child->getPath() == path) {
             found=true;
-            itemName->setPathItem(child);
-            child->push_linkedItem(itemName);
+            boundaryItem->setPathItem(child);
+            child->push_linkedItem(boundaryItem);
 
             std::cout << "a isInMap=" << drawingWindow->isInMap(child->getShape()) << std::endl; std::cout.flush();
             emit relay->convertPathToFace(child);
@@ -1591,17 +1595,17 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
         j++;
     }
     std::cout << "found path for boundary = " << found << std::endl; std::cout.flush();
-    drawingWindow->showItem(itemName);
+    drawingWindow->showItem(boundaryItem);
 
     // type
 
     SelectionItem *itemType=new SelectionItem(0);
     itemType->setMW(mw);
-    itemType->setParentItem(itemName);
-    itemType->setParentItem(itemName);
+    itemType->setParentItem(boundaryItem);
+    itemType->setParentItem(boundaryItem);
     itemType->setFlags(itemType->flags() | Qt::ItemIsEditable);
     itemType->setToolTip(0,"Boundary type.");
-    itemName->addChild(itemType);
+    boundaryItem->addChild(itemType);
 
     CustomComboBox *comboType=new CustomComboBox();
     comboType->addItem("PEC");
@@ -1627,10 +1631,10 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
 
     SelectionItem *itemMaterial=new SelectionItem(0);
     itemMaterial->setMW(mw);
-    itemMaterial->setParentItem(itemName);
+    itemMaterial->setParentItem(boundaryItem);
     itemMaterial->setFlags(itemMaterial->flags() | Qt::ItemIsEditable);
     itemMaterial->setToolTip(0,"Boundary material.");
-    itemName->addChild(itemMaterial);
+    boundaryItem->addChild(itemMaterial);
 
     CustomComboBox *comboMaterial=new CustomComboBox();
     if (materialDatabase) {
@@ -1651,10 +1655,10 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
 
     SelectionItem *itemWaveImpedance=new SelectionItem(0);
     itemWaveImpedance->setMW(mw);
-    itemWaveImpedance->setParentItem(itemName);
+    itemWaveImpedance->setParentItem(boundaryItem);
     itemWaveImpedance->setFlags(itemWaveImpedance->flags() | Qt::ItemIsEditable);
     itemWaveImpedance->setToolTip(0,"Wave impedance in Ohms.");
-    itemName->addChild(itemWaveImpedance);
+    boundaryItem->addChild(itemWaveImpedance);
 
     CustomLineEdit *textWaveImpedance=new CustomLineEdit();
     textWaveImpedance->setText(QString::number(get_wave_impedance()));
@@ -1674,9 +1678,9 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
         QString textDefault="default";
         SelectionItem *itemDefault=new SelectionItem(0);
         itemDefault->setMW(mw);
-        itemDefault->setParentItem(itemName);
+        itemDefault->setParentItem(boundaryItem);
         itemDefault->setText(0,textDefault);
-        itemName->addChild(itemDefault);
+        boundaryItem->addChild(itemDefault);
     }
 }
 #endif
@@ -9890,7 +9894,7 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData,
     // boundaries
     i=0;
     while (i < boundaryList.size()) {
-        boundaryList[i]->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootBoundaryItem,materialDatabase);
+        boundaryList[i]->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootBoundaryItem,materialDatabase,nullptr);
         i++;
     }
 }
@@ -9910,7 +9914,7 @@ BoundaryItem* BoundaryDatabase::draw_boundary (Relay *relay, Boundary *boundary,
                                                RootPathItem *rootPathItem, RootBoundaryItem *rootBoundaryItem,
                                                MaterialDatabase *materialDatabase)
 {
-    boundary->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootBoundaryItem,materialDatabase);
+    boundary->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootBoundaryItem,materialDatabase,nullptr);
     return boundary->get_item();
 }
 

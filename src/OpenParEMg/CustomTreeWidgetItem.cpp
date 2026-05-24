@@ -1721,6 +1721,22 @@ void BoundaryItem::redo ()
         mw->boundary.addChild(this);
         setForeground(0,Qt::gray);
         mw->ui->drawingWindow->showItem(this);
+
+        // delete any previous children
+        int i=0;
+        while (i < childCount()) {
+            BaseItem *childItem=dynamic_cast<BaseItem *>(child(i));
+            if (childItem) delete childItem;
+            i++;
+        }
+
+        // rebuild the item from scratch
+        Boundary *boundary=getBoundary();
+        if (boundary) {
+            boundary->draw(mw->relay,&(mw->projData),mw->boundaryDatabase,mw,mw->ui->drawingWindow,mw->ui->drawingItemTree,
+                           &(mw->path),&(mw->boundary),mw->materialDatabase,this);
+        }
+
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         // mw->ui->drawingWindow->hideItem(this);
