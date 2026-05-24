@@ -2175,7 +2175,7 @@ void Path::addEdgePoints (TopoDS_Edge edge)
     points.push_back(point);
 }
 
-void Path::fill_wire_item (CustomOpenGLWidget *drawingWindow, PathItem *item)
+void Path::fill_wire_item (PathItem *item)
 {
     if (!item) return;
 
@@ -2189,16 +2189,18 @@ void Path::fill_wire_item (CustomOpenGLWidget *drawingWindow, PathItem *item)
     item->addShapeData(newShapeData);
 }
 
-void Path::create_wire_item (CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
+void Path::create_wire_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
 {
     item=new PathItem(0);
-    fill_wire_item(drawingWindow,item);
+    item->setMW(mw);
+    fill_wire_item(item);
     parentItem->addChild(item);
 }
 
-void Path::create_face_item (CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
+void Path::create_face_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
 {
     item=new PathItem(0);
+    item->setMW(mw);
     item->setPath(this);
     item->setText(0,QString::fromStdString(get_name()));
     item->setForeground(0,Qt::black);

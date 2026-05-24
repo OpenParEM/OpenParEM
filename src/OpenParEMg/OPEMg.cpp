@@ -2440,7 +2440,7 @@ void OpenParEMg::insertModeItems ()
             newMode->set_Sport(boundaryDatabase->get_SportCount()+1);
             port->push_mode(newMode);
 
-            newMode->draw(relay,boundaryDatabase,ui->drawingWindow,ui->drawingItemTree,&path,item);
+            newMode->draw(relay,boundaryDatabase,this,ui->drawingWindow,ui->drawingItemTree,&path,item);
         }
         i++;
     }
@@ -2893,7 +2893,7 @@ void OpenParEMg::createPath ()
             newPath->set_name(pathName);
             newPath->is_modified();
             newPath->addFacePoints(TopoDS::Face(selectedShape));
-            newPath->create_wire_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
+            newPath->create_wire_item(this,ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
 
             boundaryDatabase->push_path(newPath);
 
@@ -4471,7 +4471,7 @@ void OpenParEMg::createPortFromFace ()
                 newPath->set_name(pathName);
                 newPath->is_modified();
                 newPath->addFacePoints(TopoDS::Face(selectedShape));
-                newPath->create_face_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
+                newPath->create_face_item(this,ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
 
                 boundaryDatabase->push_path(newPath);
 
@@ -4518,7 +4518,9 @@ void OpenParEMg::createPortFromFace ()
                 boundaryDatabase->push_port(newPort);
 
                 // draw it
-                PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+                PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
+                                                                  this,ui->drawingWindow,ui->drawingItemTree,
+                                                                  &path,&port,&boundary,materialDatabase);
                 newPortItem->setMW(this);
                 port.setExpanded(true);
                 newPortItem->setExpanded(true);
@@ -4643,7 +4645,9 @@ void OpenParEMg::createPortFromPath ()
                         boundaryDatabase->push_port(newPort);
 
                         // draw it
-                        BaseItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+                        BaseItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
+                                                                          this,ui->drawingWindow,ui->drawingItemTree,
+                                                                          &path,&port,&boundary,materialDatabase);
                         newPortItem->setMW(this);
                         port.setExpanded(true);
                         newPortItem->setExpanded(true);
@@ -4716,7 +4720,7 @@ void OpenParEMg::createBoundaryFromFace ()
                 newPath->set_name(pathName);
                 newPath->is_modified();
                 newPath->addFacePoints(TopoDS::Face(selectedShape));
-                newPath->create_face_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
+                newPath->create_face_item(this,ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
 
                 boundaryDatabase->push_path(newPath);
 
@@ -4752,7 +4756,9 @@ void OpenParEMg::createBoundaryFromFace ()
                 boundaryDatabase->push_boundary(newBoundary);
 
                 // draw it
-                BaseItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
+                BaseItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,
+                                                                          this,ui->drawingWindow,ui->drawingItemTree,
+                                                                          &path,&boundary,materialDatabase);
                 newBoundaryItem->setMW(this);
                 boundary.setExpanded(true);
                 newBoundaryItem->setExpanded(true);
@@ -4831,7 +4837,9 @@ void OpenParEMg::createBoundaryFromPath ()
                         boundaryDatabase->push_boundary(newBoundary);
 
                         // draw it
-                        BaseItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
+                        BaseItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,
+                                                                                  this,ui->drawingWindow,ui->drawingItemTree,
+                                                                                  &path,&boundary,materialDatabase);
                         boundary.setExpanded(true);
                         newBoundaryItem->setExpanded(true);
                     }
@@ -4944,7 +4952,9 @@ void OpenParEMg::convertItemToPort (BaseItem *item)
     boundaryDatabase->push_port(newPort);
 
     // draw it
-    PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+    PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
+                                                      this,ui->drawingWindow,ui->drawingItemTree,
+                                                      &path,&port,&boundary,materialDatabase);
     if (newPortItem) {
         newPortItem->setMW(this);
         newPortItem->setParentItem(&boundary);
@@ -5044,7 +5054,9 @@ void OpenParEMg::convertItemToBoundary (BaseItem *item)
 
     std::cout << "2 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
     // draw it
-    BoundaryItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&boundary,materialDatabase);
+    BoundaryItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,
+                                                                  this,ui->drawingWindow,ui->drawingItemTree,
+                                                                  &path,&boundary,materialDatabase);
     if (newBoundaryItem) {
         std::cout << "2.1 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
         newBoundaryItem->setMW(this);
@@ -5439,7 +5451,9 @@ void OpenParEMg::on_actionOpen_triggered ()
             boundaryDatabase->set_unmodified();
             boundaryDatabase->assignPathNormals();  // to correctly orient arrow heads
             // ToDo: rename draw since this does not actually draw
-            boundaryDatabase->draw(relay,&projData,ui->drawingWindow,ui->drawingItemTree,&path,&port,&boundary,materialDatabase);
+            boundaryDatabase->draw(relay,&projData,
+                                   this,ui->drawingWindow,ui->drawingItemTree,
+                                   &path,&port,&boundary,materialDatabase);
 
             // add paths to the tree
             long unsigned int i=0;
@@ -7165,6 +7179,7 @@ void OpenParEMg::drawMesh()
         // vertices
         if (elementTypes[e] == 15) {
             MeshItem *verticesItem=new MeshItem(0);
+            verticesItem->setMW(this);
             verticesItem->setText(0,"Vertices");
             verticesItem->set_itemType(3);
             verticesItem->setForeground(0,Qt::gray);
@@ -7189,6 +7204,7 @@ void OpenParEMg::drawMesh()
         // edges
         if (elementTypes[e] == 1) {
             MeshItem *edgesItem=new MeshItem(0);
+            edgesItem->setMW(this);
             edgesItem->setText(0,"Edges");
             edgesItem->set_itemType(3);
             edgesItem->setForeground(0,Qt::gray);
@@ -7214,6 +7230,7 @@ void OpenParEMg::drawMesh()
         // triangles
         if (elementTypes[e] == 2) {
             MeshItem *wiresItem=new MeshItem(0);
+            wiresItem->setMW(this);
             wiresItem->setText(0,"Wires");
             wiresItem->set_itemType(3);
             wiresItem->setForeground(0,Qt::gray);
@@ -7259,6 +7276,7 @@ void OpenParEMg::drawMesh()
         // tetrahedron
         if (elementTypes[e] == 4) {
             MeshItem *tetrahedronsItem=new MeshItem(0);
+            tetrahedronsItem->setMW(this);
             tetrahedronsItem->setText(0,"Tetrahedrons");
             tetrahedronsItem->set_itemType(3);
             tetrahedronsItem->setForeground(0,Qt::gray);

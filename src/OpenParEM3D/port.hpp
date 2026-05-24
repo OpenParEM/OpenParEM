@@ -43,6 +43,8 @@
 #include "Relay.h"
 #endif
 
+class OpenParEMg;
+
 #define lapack_int int
 #define lapack_complex_double std::complex<double>
 
@@ -223,7 +225,7 @@ class Boundary
 #ifdef HAS_GUI
       void set_item (BoundaryItem *item_) {item=item_;}
       BoundaryItem* get_item () {return item;}
-      void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *rootPathItem, RootBoundaryItem *, MaterialDatabase *);
+      void draw (Relay *, struct projectData *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *rootPathItem, RootBoundaryItem *, MaterialDatabase *);
 #endif
 };
 
@@ -333,7 +335,7 @@ class IntegrationPath
 #ifdef HAS_GUI
       void set_item (BaseItem *item_) {item=item_;}
       BaseItem* get_item () {return item;}
-      void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, BaseItem *);
+      void draw (Relay *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, BaseItem *);
 #endif
 };
 
@@ -541,7 +543,7 @@ class Mode
 #ifdef HAS_GUI
       void set_item (ModeItem *item_) {item=item_;}
       ModeItem* get_item () {return item;}
-      void draw (Relay *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, BaseItem *);
+      void draw (Relay *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, BaseItem *);
 #endif
 };
 
@@ -783,7 +785,7 @@ class Port
 #ifdef HAS_GUI
       void set_item (PortItem *item_) {item=item_;}
       PortItem* get_item () {return item;}
-      void draw (Relay *, struct projectData *, BoundaryDatabase *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *);
+      void draw (Relay *, struct projectData *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *);
       void set_comboZdef ();
 #endif
 };
@@ -923,9 +925,9 @@ class BoundaryDatabase
       void renamePath (std::string, std::string);
       void deletePath (Path *);
 #ifdef HAS_GUI
-      void draw (Relay *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *, RootBoundaryItem *, MaterialDatabase *);
-      PortItem* draw_port (Relay *, Port *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *, RootBoundaryItem *, MaterialDatabase *);
-      BoundaryItem* draw_boundary (Relay *, Boundary *, struct projectData *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootBoundaryItem *, MaterialDatabase *);
+      void draw (Relay *, struct projectData *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *, RootBoundaryItem *, MaterialDatabase *);
+      PortItem* draw_port (Relay *, Port *, struct projectData *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *, RootBoundaryItem *, MaterialDatabase *);
+      BoundaryItem* draw_boundary (Relay *, Boundary *, struct projectData *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootBoundaryItem *, MaterialDatabase *);
       void set_comboZdef ();
 #endif
 };

@@ -37,6 +37,7 @@
 //#include "CustomOpenGLWidget.h"
 //#include "CustomTreeWidgetItem.h"
 
+class OpenParEMg;
 class CustomOpenGLWidget;
 class BaseItem;
 class RootPathItem;
@@ -156,9 +157,9 @@ class Path {
       bool getIsUsed () {return isUsed;}
 #ifdef HAS_GUI
       void set_normal (gp_Vec);
-      void fill_wire_item (CustomOpenGLWidget *, PathItem *);
-      void create_wire_item (CustomOpenGLWidget *, RootPathItem *);
-      void create_face_item (CustomOpenGLWidget *, RootPathItem *);
+      void fill_wire_item (PathItem *);
+      void create_wire_item (OpenParEMg *, CustomOpenGLWidget *, RootPathItem *);
+      void create_face_item (OpenParEMg *, CustomOpenGLWidget *, RootPathItem *);
       PathItem* get_item () {return item;}
       void set_portItem (PortItem *portItem_) {portItem=portItem_;}
       PortItem* get_portItem () {return portItem;}

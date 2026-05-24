@@ -1541,13 +1541,15 @@ void Boundary::recalculatePathIndexList (std::vector<Path *> *pathList)
 
 #ifdef HAS_GUI
 
-void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase,
+                     OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
                      RootPathItem *rootPathItem, RootBoundaryItem *rootBoundaryItem, MaterialDatabase *materialDatabase)
 {
     // name
 
     QString textName=QString::fromStdString(get_name());
     BoundaryItem *itemName=new BoundaryItem(0);
+    itemName->setMW(mw);
     itemName->setText(0,textName);
     itemName->setForeground(0,Qt::gray);
     itemName->setFlags(itemName->flags() | Qt::ItemIsEditable);
@@ -1593,6 +1595,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     // type
 
     SelectionItem *itemType=new SelectionItem(0);
+    itemType->setMW(mw);
     itemType->setFlags(itemType->flags() | Qt::ItemIsEditable);
     itemType->setToolTip(0,"Boundary type.");
     itemName->addChild(itemType);
@@ -1620,6 +1623,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     // material
 
     SelectionItem *itemMaterial=new SelectionItem(0);
+    itemMaterial->setMW(mw);
     itemMaterial->setFlags(itemMaterial->flags() | Qt::ItemIsEditable);
     itemMaterial->setToolTip(0,"Boundary material.");
     itemName->addChild(itemMaterial);
@@ -1642,6 +1646,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     // wave impedance
 
     SelectionItem *itemWaveImpedance=new SelectionItem(0);
+    itemWaveImpedance->setMW(mw);
     itemWaveImpedance->setFlags(itemWaveImpedance->flags() | Qt::ItemIsEditable);
     itemWaveImpedance->setToolTip(0,"Wave impedance in Ohms.");
     itemName->addChild(itemWaveImpedance);
@@ -1663,6 +1668,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     if (is_default) {
         QString textDefault="default";
         SelectionItem *itemDefault=new SelectionItem(0);
+        itemDefault->setMW(mw);
         itemDefault->setText(0,textDefault);
         itemName->addChild(itemDefault);
     }
@@ -2646,12 +2652,14 @@ void IntegrationPath::removePath (Path *path)
 
 #ifdef HAS_GUI
 
-void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
-                            QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, BaseItem *itemVI)
+void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
+                            OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+                            RootPathItem *rootPathItem, BaseItem *itemVI)
 {
     // scale
 
     SelectionItem *itemScale=new SelectionItem(0);
+    itemScale->setMW(mw);
     itemScale->setText(0,"scale");
     itemScale->set_itemType(12);
     itemScale->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
@@ -2662,6 +2670,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, Cu
     //QString disabledBackground="background: rgb(240,240,240);";
 
     SelectionItem *itemScaleValue=new SelectionItem(0);
+    itemScaleValue->setMW(mw);
     itemScaleValue->set_itemType(13);
     itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
     itemScale->addChild(itemScaleValue);
@@ -2688,6 +2697,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, Cu
 
         // tree item
         PathItem *itemSegment=new PathItem(0);
+        itemSegment->setMW(mw);
         //itemSegment->set_AIS_Shape(drawingShape);
         itemSegment->setText(0,name);
         itemSegment->set_itemType(14);
@@ -4341,8 +4351,9 @@ void Mode::set_unmodified ()
 
 #ifdef HAS_GUI
 
-void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
-                 QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, BaseItem *itemName)
+void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
+                 OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+                 RootPathItem *rootPathItem, BaseItem *itemName)
 {
     // net
 
@@ -4354,6 +4365,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     }
 
     item=new ModeItem(0);
+    item->setMW(mw);
     item->setText(0,netname);
     item->set_itemType(5);
     item->setToolTip(0,"Mode and its net name.");
@@ -4364,6 +4376,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
 
     // S port
     SelectionItem *itemSport=new SelectionItem(0);
+    itemSport->setMW(mw);
     itemSport->setText(0,"S Port");
     itemSport->set_itemType(8);
     itemSport->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
@@ -4374,6 +4387,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     // Sport number
 
     SelectionItem *itemSportValue=new SelectionItem(0);
+    itemSportValue->setMW(mw);
     itemSportValue->set_itemType(9);
     itemSportValue->setToolTip(0,"S-parameter port number.");
     itemSportValue->setForeground(0,Qt::black);
@@ -4395,6 +4409,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     // voltage integration paths
 
     SelectionItem *itemVoltage=new SelectionItem(0);
+    itemVoltage->setMW(mw);
     itemVoltage->setText(0,"voltage");
     itemVoltage->set_itemType(10);
     itemVoltage->setFlags(item->flags() & ~Qt::ItemIsEditable);
@@ -4405,7 +4420,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     long unsigned int i=0;
     while (i < integrationPathList.size()) {
         if (integrationPathList[i]->is_voltage()) {
-            integrationPathList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,rootPathItem,itemVoltage);
+            integrationPathList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,itemVoltage);
         }
         i++;
     }
@@ -4413,6 +4428,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     // current integration paths
 
     SelectionItem *itemCurrent=new SelectionItem(0);
+    itemCurrent->setMW(mw);
     itemCurrent->setText(0,"current");
     itemCurrent->set_itemType(11);
     itemCurrent->setFlags(item->flags() & ~Qt::ItemIsEditable);
@@ -4423,7 +4439,7 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase, CustomOpenGLW
     i=0;
     while (i < integrationPathList.size()) {
         if (integrationPathList[i]->is_current()) {
-            integrationPathList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,rootPathItem,itemCurrent);
+            integrationPathList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,itemCurrent);
         }
         i++;
     }
@@ -7306,12 +7322,14 @@ void textValueChanged (QString text, IntegrationPath *integrationPath, BoundaryD
     if (integrationPath) integrationPath->set_scale(text.toDouble());
 }
 
-void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase, CustomOpenGLWidget *drawingWindow,
+void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase,
+                 OpenParEMg *mw, CustomOpenGLWidget *drawingWindow,
                  QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, RootPortItem *rootPortItem)
 {
     // name
 
     PortItem *portItem=new PortItem(0);
+    portItem->setMW(mw);
     portItem->setText(0,get_name().c_str());
     portItem->setForeground(0,Qt::gray);
     portItem->setFlags(portItem->flags() & ~Qt::ItemIsEditable);
@@ -7346,6 +7364,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     // impedance definition
 
     SelectionItem *itemImpedanceDefinition=new SelectionItem(0);
+    itemImpedanceDefinition->setMW(mw);
     itemImpedanceDefinition->set_itemType(6);
     itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
@@ -7373,6 +7392,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     // impedance calculation
 
     SelectionItem *itemImpedanceCalculation=new SelectionItem(0);
+    itemImpedanceCalculation->setMW(mw);
     itemImpedanceCalculation->set_itemType(7);
     itemImpedanceCalculation->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
@@ -7396,7 +7416,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     struct point outline_normal=outline->get_normal();
     long unsigned int i=0;
     while (i < modeList.size()) {
-        modeList[i]->draw(relay,boundaryDatabase,drawingWindow,drawingItemTree,rootPathItem,portItem);
+        modeList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,portItem);
         i++;
     }
 }
@@ -9826,7 +9846,8 @@ void BoundaryDatabase::set_unmodified ()
 }
 
 #ifdef HAS_GUI
-void BoundaryDatabase::draw (Relay *relay, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+void BoundaryDatabase::draw (Relay *relay, struct projectData *projData,
+                             OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
                              RootPathItem *rootPathItem, RootPortItem *rootPortItem, RootBoundaryItem *rootBoundaryItem,
                              MaterialDatabase *materialDatabase)
 {
@@ -9835,7 +9856,7 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData, CustomO
     // paths
     long unsigned int i=0;
     while (i < pathList.size()) {
-        pathList[i]->create_wire_item(drawingWindow,rootPathItem);
+        pathList[i]->create_wire_item(mw,drawingWindow,rootPathItem);
         i++;
     }
 
@@ -9843,30 +9864,34 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData, CustomO
     i=0;
     while (i < portList.size()) {
         // create the AIS_Shape and the item, but the shape must be added to the drawing elsewhere
-        portList[i]->draw(relay,projData,this,drawingWindow,drawingItemTree,rootPathItem,rootPortItem);
+        portList[i]->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootPortItem);
         i++;
     }
 
     // boundaries
     i=0;
     while (i < boundaryList.size()) {
-        boundaryList[i]->draw(relay,projData,this,drawingWindow,drawingItemTree,rootPathItem,rootBoundaryItem,materialDatabase);
+        boundaryList[i]->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootBoundaryItem,materialDatabase);
         i++;
     }
 }
 
 // assumes that the port is in the boundary database
-PortItem* BoundaryDatabase::draw_port (Relay *relay, Port *port, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                                  RootPathItem *rootPathItem, RootPortItem *rootPortItem, RootBoundaryItem *rootBoundaryItem, MaterialDatabase *materialDatabase)
+PortItem* BoundaryDatabase::draw_port (Relay *relay, Port *port, struct projectData *projData,
+                                       OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+                                       RootPathItem *rootPathItem, RootPortItem *rootPortItem, RootBoundaryItem *rootBoundaryItem,
+                                       MaterialDatabase *materialDatabase)
 {
-    port->draw(relay,projData,this,drawingWindow,drawingItemTree,rootPathItem,rootPortItem);
+    port->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootPortItem);
     return port->get_item();
 }
 
-BoundaryItem* BoundaryDatabase::draw_boundary (Relay *relay, Boundary *boundary, struct projectData *projData, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                                      RootPathItem *rootPathItem, RootBoundaryItem *rootBoundaryItem, MaterialDatabase *materialDatabase)
+BoundaryItem* BoundaryDatabase::draw_boundary (Relay *relay, Boundary *boundary, struct projectData *projData,
+                                               OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
+                                               RootPathItem *rootPathItem, RootBoundaryItem *rootBoundaryItem,
+                                               MaterialDatabase *materialDatabase)
 {
-    boundary->draw(relay,projData,this,drawingWindow,drawingItemTree,rootPathItem,rootBoundaryItem,materialDatabase);
+    boundary->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootBoundaryItem,materialDatabase);
     return boundary->get_item();
 }
 
