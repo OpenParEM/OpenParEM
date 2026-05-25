@@ -5226,7 +5226,7 @@ void OpenParEMg::renumberDimTag ()
     int count=1;
     int i=0;
     while (i < drawing.childCount()) {
-        BaseItem *child=(BaseItem *)drawing.child(i);
+        DrawingItem *child=dynamic_cast<DrawingItem *>(drawing.child(i));
 
         // SOLID
         if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
@@ -5258,7 +5258,7 @@ void OpenParEMg::setPhysicalGroups ()
     // check the first-level children for SOLID or COMPOUND
     int i=0;
     while (i < drawing.childCount()) {
-        BaseItem *child=(BaseItem *)drawing.child(i);
+        DrawingItem *child=dynamic_cast<DrawingItem *>(drawing.child(i));
 
         // SOLID
         if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
@@ -5310,7 +5310,7 @@ void OpenParEMg::setMaterials ()
 {
     int i=0;
     while (i < drawing.childCount()) {
-        BaseItem *child=(BaseItem *) drawing.child(i);
+        DrawingItem *child=dynamic_cast<DrawingItem *>(drawing.child(i));
 
         bool processMaterial=false;
         // SOLID

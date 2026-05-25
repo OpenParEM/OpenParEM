@@ -396,7 +396,6 @@ public:
     {
         itemType=-1;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
         hasArrows=false;
@@ -499,12 +498,6 @@ public:
         return false;
     }
 
-
-    void set_dimTag (int dim, int tag) {dimTag.first=dim; dimTag.second=tag;}
-    void set_dimTag (std::pair<int,int> dimTag_) {dimTag=dimTag_;}
-    std::pair<int,int> get_dimTag () {return dimTag;}
-    bool is_solid () {if (dimTag.first == 3) return true; return false;}
-
     void deleteChildren (QTreeWidgetItem *item)
     {
         if (!item) return;
@@ -556,7 +549,6 @@ public:
         ShapeData *copyShapeData=dataStack.getShapeData()->copyCreate();
         newItem->dataStack.add(copyShapeData);
         newItem->setText(0,this->text(0).append("_copy"));
-        newItem->dimTag=dimTag;
         newItem->forShowHide=forShowHide;
         newItem->itemType=itemType;
         newItem->depth=depth;
@@ -615,8 +607,6 @@ public:
         if (is_scale()) std::cout << "   itemType=scale" << std::endl;
         if (is_scaleValue()) std::cout << "   itemType=scaleValue" << std::endl;
         if (is_integrationPathSegment()) std::cout << "   itemType=integrationPathSegment" << std::endl;
-        std::cout << "   dimTag.first=" << dimTag.first << std::endl
-                  << "   dimTag.second=" << dimTag.second << std::endl;
     }
 
     void reset ()
@@ -661,9 +651,7 @@ protected:
     OpenParEMg *mw;
     ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
     BaseItem *parentItem;                              // parent for undo/redo
-    std::vector<BaseItem *> children;               // children for undo/redo
-
-    std::pair<int,int> dimTag;                         //
+    std::vector<BaseItem *> children;                  // children for undo/redo
     bool forShowHide;                                  // false - does not participate in item tree show/hide operations; true - does participate
     int itemType;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh, 4 - path
                                                        // 5 - Sport (net), 6 - impedance definition, 7 - impedance calculation
@@ -708,7 +696,6 @@ public:
     {
         itemType=100;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
     }
@@ -727,9 +714,10 @@ public:
     {
         itemType=0;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
+
+        set_dimTag(-1,-1);          // for mesh items; invalid initialization
 
         p0set=false;
         p1set=false;
@@ -745,6 +733,11 @@ public:
     QString get_material () {return text(1);}
     void set_Material (QString material_) {material=material_;}
     QString get_Material () {return material;}
+
+    void set_dimTag (int dim, int tag) {dimTag.first=dim; dimTag.second=tag;}
+    void set_dimTag (std::pair<int,int> dimTag_) {dimTag=dimTag_;}
+    std::pair<int,int> get_dimTag () {return dimTag;}
+    bool is_solid () {if (dimTag.first == 3) return true; return false;}
 
     DrawingItem* copyCreate ();
 
@@ -846,6 +839,7 @@ public:
 
 protected:
     QString material;                                  // material for this item - only valid for top-level SOLID and COMPOUND
+    std::pair<int,int> dimTag;                         // supports meshing with gmsh
 
     bool hasArrows;                                    // flag for showing direction of the path
     bool isActive;
@@ -869,7 +863,6 @@ public:
     {
         itemType=104;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
     }
@@ -888,7 +881,6 @@ public:
     {
         itemType=4;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
 
@@ -942,7 +934,6 @@ public:
     {
         itemType=102;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
     }
@@ -961,7 +952,6 @@ public:
     {
         itemType=2;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
 
@@ -997,7 +987,6 @@ public:
     {
         itemType=101;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
     }
@@ -1017,7 +1006,6 @@ public:
     {
         itemType=1;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
 
@@ -1052,7 +1040,6 @@ public:
     {
         itemType=1;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
 
@@ -1080,7 +1067,6 @@ public:
     {
         itemType=103;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
     }
@@ -1099,7 +1085,6 @@ public:
     {
         itemType=3;
         forShowHide=true;
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
         depth=0;
         parentItem=nullptr;
     }
