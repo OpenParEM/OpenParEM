@@ -1684,6 +1684,7 @@ void BoundaryItem::undo ()
         // nothing to do
     } else if (shapeData->isCreate()) {
         std::cout << "   isCreate" << std::endl; std::cout.flush();
+
         // remove the item
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);

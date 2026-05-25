@@ -468,6 +468,7 @@ public:
     }
     int get_itemType () {return itemType;}
 
+    bool is_undefined () {if (itemType == -1) return true; return false;}
     bool is_drawing () {if (itemType == 0) return true; return false;}
     bool is_port () {if (itemType == 1) return true; return false;}
     bool is_boundary () {if (itemType == 2) return true; return false;}
@@ -564,6 +565,7 @@ public:
 
     void print_itemType ()
     {
+        if (is_undefined()) std::cout << "undefined" << std::endl;
         if (is_rootDrawing()) std::cout << "root drawing" << std::endl;
         if (is_drawing()) std::cout << "drawing" << std::endl;
         if (is_rootBoundary()) std::cout << "root boundary" << std::endl;
@@ -592,6 +594,7 @@ public:
         dataStack.print();
         std::cout << "   forShowHide=" << forShowHide << std::endl;
         std::cout << "   itemType=" << itemType << std::endl;
+        if (is_undefined()) std::cout << "   itemType=undefined" << std::endl;
         if (is_rootDrawing()) std::cout << "   itemType=rootDrawing" << std::endl;
         if (is_rootPort()) std::cout << "   itemType=rootPort" << std::endl;
         if (is_rootBoundary()) std::cout << "   itemType=rootBoundary" << std::endl;

@@ -468,13 +468,6 @@ public:
 
             PortItem *portItem=dynamic_cast<PortItem *>(item);
             hideItem(portItem->getPathItem());
-
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-                hideItem(child);
-                i++;
-            }
         } else if (item->is_rootBoundary()) {
             int i=0;
             while (i < item->childCount()) {
@@ -490,13 +483,6 @@ public:
 
             BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
             hideItem(boundaryItem->getPathItem());
-
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-                hideItem(child);
-                i++;
-            }
         } else if (item->is_rootMesh()) {
             int i=0;
             while (i < item->childCount()) {

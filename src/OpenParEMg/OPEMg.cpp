@@ -4599,7 +4599,7 @@ void OpenParEMg::createPortFromPath ()
             boundaryDatabase->push_port(newPort);
 
             // draw it
-            BaseItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
+            PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
                                                               this,ui->drawingWindow,ui->drawingItemTree,
                                                               &path,&port,&boundary,materialDatabase);
             ShapeData *newShapeData=newPortItem->getShapeData()->copyCreate();
@@ -4712,7 +4712,7 @@ void OpenParEMg::createBoundaryFromFace ()
                 boundaryDatabase->push_boundary(newBoundary);
 
                 // draw it
-                BaseItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,
+                BoundaryItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,
                                                                           this,ui->drawingWindow,ui->drawingItemTree,
                                                                           &path,&boundary,materialDatabase);
                 boundary.setExpanded(true);
