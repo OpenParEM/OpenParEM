@@ -6467,16 +6467,15 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     if (polywire) {
         polywire->load(inputData,startBlockIndex,endBlockIndex,name,&objectCounts);
         polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
-        //BaseItem *newItem=addItemShapeCreate(polywire,parent);
-        BaseItem *newItem=new BaseItem(0);
+        DrawingItem *newItem=new DrawingItem(0);
         newItem->setMW(this);
         Handle(AIS_Shape) dummy;
         ShapeData *newShapeData=new ShapeData(1,polywire,nullptr,dummy);
         newItem->addShapeData(newShapeData);
         newItem->setText(0,QString::fromStdString(name));
 
-        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(parent);
-        if (drawingItem && drawingItem->is_drawing()) newItem->copy_depth(parent);
+        DrawingItem *parentItem=dynamic_cast<DrawingItem *>(parent);
+        if (parentItem && parentItem->is_drawing()) newItem->copy_depth(parent);
 
         if (increaseDepth) newItem->increase_depth();
         parent->addChild(newItem);
@@ -6495,7 +6494,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     if (typeStart == 8) loadBrep=true;
 
     if (process) {
-        BaseItem *newItem=new BaseItem();
+        DrawingItem *newItem=new DrawingItem();
         newItem->setMW(this);
         Handle(AIS_Shape) dummy;
         ShapeData *newShapeData=new ShapeData(1,nullptr,process,dummy);
@@ -6589,7 +6588,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
         BRepTools::Read(shape,ss,builder);
 
         if (!shape.IsNull()) {
-            BaseItem *newItem=new BaseItem(0);
+            DrawingItem *newItem=new DrawingItem(0);
             newItem->setMW(this);
             Handle(AIS_Shape) aisShape=new AIS_Shape(shape);
             ShapeData *newShapeData=new ShapeData(1,polywire,nullptr,aisShape);
