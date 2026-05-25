@@ -922,6 +922,7 @@ public:
     bool getIsActive () override {return isActive;}
     void setIsActive (bool isActive_) override {isActive=isActive_;}
     void reverse ();
+    void showArrows (bool);
 
 private:
     Path *path;                            // related path from the boundary database

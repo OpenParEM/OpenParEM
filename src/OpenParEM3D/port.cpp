@@ -1576,11 +1576,8 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
             boundaryItem->setPathItem(child);
             child->push_linkedItem(boundaryItem);
 
-            std::cout << "a isInMap=" << drawingWindow->isInMap(child->getShape()) << std::endl; std::cout.flush();
             emit relay->convertPathToFace(child);
-            std::cout << "b isInMap=" << drawingWindow->isInMap(child->getShape()) << std::endl; std::cout.flush();
 
-            //xxx
             Handle(AIS_Shape) shape=child->getShape();
             if (!shape.IsNull()) {
                 shape->SetTransparency(0);
@@ -1591,11 +1588,9 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
                 if (is_radiation()) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
                 emit relay->setShaded(shape);
             }
-            std::cout << "c isInMap=" << drawingWindow->isInMap(child->getShape()) << std::endl; std::cout.flush();
         }
         j++;
     }
-    std::cout << "found path for boundary = " << found << std::endl; std::cout.flush();
     drawingWindow->showItem(boundaryItem);
 
     // type

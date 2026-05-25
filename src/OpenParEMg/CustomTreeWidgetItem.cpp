@@ -1446,6 +1446,27 @@ void PathItem::undo ()
     }
 }
 
+void PathItem::showArrows (bool show)
+{
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    ShapeData *shapeData=this->getShapeData();
+    Polywire *polywire=getPolywire();
+    if (polywire) {
+        polywire->setHasArrows(show);
+        shapeData->setShape(polywire->get_AIS_Shape());
+    }
+
+    mw->ui->drawingWindow->displayShape(getShape());
+    mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+    mw->ui->drawingWindow->showItem(this);
+    mw->ui->drawingWindow->activateItem(this);
+
+    hasArrows=show;
+}
+
 void PathItem::redo ()
 {
     std::cout << "PathItem::redo  this=" << this << std::endl; std::cout.flush();
@@ -1672,6 +1693,15 @@ void BoundaryItem::undo ()
         getParentItem()->removeChild(this);
         setIsActive(false);
 
+        // restore the arrows on the path
+        PathItem *pathItem=getPathItem();
+        std::cout << "1 place showArrows" << std::endl; std::cout.flush();
+        if (pathItem) {
+            std::cout << "2 place showArrows" << std::endl; std::cout.flush();
+            pathItem->removeLinkedItem(this);
+            pathItem->showArrows(true);
+        }
+
         dataStack.undo();
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
@@ -1705,8 +1735,13 @@ void BoundaryItem::undo ()
 
         dataStack.undo();
 
-
         mw->boundary.addChild(this);
+
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->push_linkedItem(this);
+            pathItem->showArrows(true);
+        }
 
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
         mw->ui->drawingWindow->displayShape(getShape());
@@ -1733,6 +1768,11 @@ void BoundaryItem::redo ()
         setForeground(0,Qt::gray);
         mw->ui->drawingWindow->showItem(this);
         setIsActive(true);
+
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->showArrows(false);
+        }
 
         // delete any previous children
         while (childCount() > 0) {

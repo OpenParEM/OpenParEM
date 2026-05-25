@@ -4251,8 +4251,6 @@ void OpenParEMg::convertToPath ()
         i++;
     }
 
-    // setMenusI(2020);
-    // ui->drawingWindow->updateViewer();
     finishOperation(false,1);
 }
 
@@ -4721,7 +4719,13 @@ void OpenParEMg::createBoundaryFromPath ()
 {
     //std::cout << "OpenParEMg::createBoundaryFromPath" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
+    itemChangesStack.startNew();
+
+    // create list of selected items
+
+    std::vector<PathItem *> selectedList;
+
+    int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
@@ -4730,52 +4734,75 @@ void OpenParEMg::createBoundaryFromPath ()
                 if (pathItem->linkedItems_size() == 0) {
                     Path *aPath=static_cast<Path *>(pathItem->getPath());
                     if (aPath->is_closed()) {
-
-                        // default boundary name
-
-                        std::string boundaryName="boundary";
-                        boundaryName.append(std::to_string(boundary.childCount()+1));
-
-                        int i=1;
-                        while (boundaryDatabase->boundaryNameExists(boundaryName)) {
-                            std::string testName=boundaryName;
-                            testName.append("_").append(std::to_string(i));
-                            if (boundaryDatabase->boundaryNameExists(testName)) {i++;}
-                            else {boundaryName=testName; break;}
-                        }
-
-                        // path name placed in a keywordPair
-                        keywordPair *kwPathName=new keywordPair();
-                        kwPathName->set_keyword("path");
-                        kwPathName->set_value(aPath->get_name());
-                        kwPathName->set_lineNumber(0);
-                        kwPathName->set_loaded(true);
-
-                        // boundary
-
-                        Boundary *newBoundary=new Boundary(0,0);
-                        newBoundary->set_name(boundaryName);
-                        newBoundary->set_outline(aPath);
-
-                        // default to radiation in free space
-                        newBoundary->set_type("radiation");
-                        newBoundary->set_wave_impedance(sqrt(4.0e-7*M_PI/8.8541878176e-12));  // free-space value
-
-                        // path info
-                        newBoundary->push_path(kwPathName,boundaryDatabase->get_path_index(aPath),false);
-
-                        // add to boundary database
-                        boundaryDatabase->push_boundary(newBoundary);
-
-                        // draw it
-                        BaseItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,
-                                                                                  this,ui->drawingWindow,ui->drawingItemTree,
-                                                                                  &path,&boundary,materialDatabase);
-                        boundary.setExpanded(true);
-                        newBoundaryItem->setExpanded(true);
+                        selectedList.push_back(pathItem);
                     }
                 }
             }
+        }
+        i++;
+    }
+
+    // create the boundaries
+
+    i=0;
+    while (i < selectedList.size()) {
+
+        Path *aPath=static_cast<Path *>(selectedList[i]->getPath());
+        if (aPath) {
+            // remove the arrows from the path
+            selectedList[i]->showArrows(false);
+
+            // default boundary name
+
+            std::string boundaryName="boundary";
+            boundaryName.append(std::to_string(boundary.childCount()+1));
+
+            int i=1;
+            while (boundaryDatabase->boundaryNameExists(boundaryName)) {
+                std::string testName=boundaryName;
+                testName.append("_").append(std::to_string(i));
+                if (boundaryDatabase->boundaryNameExists(testName)) {i++;}
+                else {boundaryName=testName; break;}
+            }
+
+            // path name placed in a keywordPair
+            keywordPair *kwPathName=new keywordPair();
+            kwPathName->set_keyword("path");
+            kwPathName->set_value(aPath->get_name());
+            kwPathName->set_lineNumber(0);
+            kwPathName->set_loaded(true);
+
+            // boundary
+
+            Boundary *newBoundary=new Boundary(0,0);
+            newBoundary->set_name(boundaryName);
+            newBoundary->set_outline(aPath);
+
+            // default to radiation in free space
+            newBoundary->set_type("radiation");
+            newBoundary->set_wave_impedance(sqrt(4.0e-7*M_PI/8.8541878176e-12));  // free-space value
+
+            // path info
+            newBoundary->push_path(kwPathName,boundaryDatabase->get_path_index(aPath),false);
+
+            // add to boundary database
+            boundaryDatabase->push_boundary(newBoundary);
+
+            // draw it
+            BoundaryItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,
+                                                                      this,ui->drawingWindow,ui->drawingItemTree,
+                                                                      &path,&boundary,materialDatabase);
+            newBoundaryItem->setMW(this);
+            newBoundaryItem->setParentItem(&boundary);
+
+            ShapeData *newShapeData=newBoundaryItem->getShapeData()->copyCreate();
+            newShapeData->setCreate();
+            newBoundaryItem->addShapeData(newShapeData);
+
+            boundary.setExpanded(true);
+            newBoundaryItem->setExpanded(true);
+
+            itemChangesStack.add(newBoundaryItem);
         }
         i++;
     }
