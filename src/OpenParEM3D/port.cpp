@@ -4382,7 +4382,6 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     modeItem->setForeground(0,Qt::black);
     modeItem->setFlags(modeItem->flags() & ~Qt::ItemIsEditable);
     modeItem->setMode(this);
-    std::cout << "3 portItem=" << portItem << " addChild=" << modeItem << std::endl; std::cout.flush();
     portItem->addChild(modeItem);
 
     // S port
@@ -4394,7 +4393,6 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     itemSport->setFlags(itemSport->flags() & ~Qt::ItemIsEditable);
     itemSport->setToolTip(0,"S-port number for the mode.");
     itemSport->setForeground(0,Qt::black);
-    std::cout << "1 modeItem=" << modeItem << " addChild=" << itemSport << std::endl; std::cout.flush();
     modeItem->addChild(itemSport);
 
     // Sport number
@@ -4406,7 +4404,6 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     itemSportValue->setToolTip(0,"S-parameter port number.");
     itemSportValue->setForeground(0,Qt::black);
     itemSportValue->setFlags(itemSportValue->flags() & ~Qt::ItemIsSelectable);
-    std::cout << "1 itemSport=" << itemSport << " addChild=" << itemSportValue << std::endl; std::cout.flush();
     itemSport->addChild(itemSportValue);
 
     CustomSpinBox *sportNumber=new CustomSpinBox();
@@ -4431,7 +4428,6 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     itemVoltage->setFlags(itemVoltage->flags() & ~Qt::ItemIsEditable);
     itemVoltage->setToolTip(0,"Voltage integration path.");
     itemVoltage->setForeground(0,Qt::black);
-    std::cout << "2 modeItem=" << modeItem << " addChild=" << itemVoltage << std::endl; std::cout.flush();
     modeItem->addChild(itemVoltage);
 
     long unsigned int i=0;
@@ -4452,7 +4448,6 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     itemCurrent->setFlags(itemCurrent->flags() & ~Qt::ItemIsEditable);
     itemCurrent->setToolTip(0,"Current integration path.");
     itemCurrent->setForeground(0,Qt::black);
-    std::cout << "3 modeItem=" << modeItem << " addChild=" << itemCurrent << std::endl; std::cout.flush();
     modeItem->addChild(itemCurrent);
 
     i=0;
@@ -7358,7 +7353,6 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     portItem->setForeground(0,Qt::gray);
     portItem->setFlags(portItem->flags() & ~Qt::ItemIsEditable);
     portItem->setToolTip(0,"Port name.");
-    std::cout << "rootPortItem=" << rootPortItem << " addChild=" << portItem << std::endl; std::cout.flush();
     rootPortItem->addChild(portItem);
     set_PortItem(portItem);
 
@@ -7395,7 +7389,6 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     itemImpedanceDefinition->set_itemType(6);
     itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
-    std::cout << "1 portItem=" << portItem << " addChild=" << itemImpedanceDefinition << std::endl; std::cout.flush();
     portItem->addChild(itemImpedanceDefinition);
 
     comboZdef=new CustomComboBox();
@@ -7425,7 +7418,6 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     itemImpedanceCalculation->set_itemType(7);
     itemImpedanceCalculation->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
-    std::cout << "2 portItem=" << portItem << " addChild=" << itemImpedanceCalculation << std::endl; std::cout.flush();
     portItem->addChild(itemImpedanceCalculation);
 
     CustomComboBox *comboZcalc=new CustomComboBox();

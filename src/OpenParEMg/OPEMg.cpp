@@ -4502,6 +4502,12 @@ void OpenParEMg::createPortFromPath ()
 {
     //std::cout << "OpenParEMg::createPortFromPath" << std::endl; std::cout.flush();
 
+    itemChangesStack.startNew();
+
+    // create list of selected items
+
+    std::vector<PathItem *> selectedList;
+
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
@@ -4511,79 +4517,99 @@ void OpenParEMg::createPortFromPath ()
                 if (pathItem->linkedItems_size() == 0) {
                     Path *aPath=static_cast<Path *>(pathItem->getPath());
                     if (aPath && aPath->is_closed()) {
-
-                        // next available s-port number
-                        int sport=boundaryDatabase->get_SportCount()+1;
-
-                        // default port name
-
-                        std::string portName="port";
-                        portName.append(std::to_string(sport));
-
-                        int i=1;
-                        while (boundaryDatabase->portNameExists(portName)) {
-                            std::string testName=portName;
-                            testName.append("_").append(std::to_string(i));
-                            if (boundaryDatabase->portNameExists(testName)) {i++;}
-                            else {portName=testName; break;}
-                        }
-
-                        // default net name
-
-                        std::string netName="net";
-                        netName.append(std::to_string(sport));
-
-                        i=1;
-                        while (boundaryDatabase->netNameExists(netName)) {
-                            std::string testName=netName;
-                            testName.append("_").append(std::to_string(i));
-                            if (boundaryDatabase->netNameExists(testName)) {i++;}
-                            else {netName=testName; break;}
-                        }
-
-                        // path name placed in a keywordPair
-                        keywordPair *kwPathName=new keywordPair();
-                        kwPathName->set_keyword("path");
-                        kwPathName->set_value(aPath->get_name());
-                        kwPathName->set_lineNumber(0);
-                        kwPathName->set_loaded(true);
-
-                        // port
-
-                        Port *newPort=new Port(0,0);
-                        newPort->set_name(portName);
-                        newPort->set_outline(aPath);
-
-                        // path info
-                        newPort->push_path(kwPathName,boundaryDatabase->get_path_index(aPath),false);
-
-                        // impedance
-                        if (boundaryDatabase->get_portList_size() == 0) {
-                            newPort->set_impedance_definition("PV");
-                            newPort->set_impedance_calculation("line");
-                        } else {
-                            newPort->set_impedance_definition(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_definition());
-                            newPort->set_impedance_calculation(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_calculation());
-                        }
-
-                        // must have at least one mode per port - default to sensible assumptions
-                        Mode *newMode=new Mode(0,0,newPort->get_impedance_calculation());
-                        newMode->set_net(netName);
-                        newMode->set_Sport(sport);
-                        newPort->push_mode(newMode);
-
-                        // add to boundary database
-                        boundaryDatabase->push_port(newPort);
-
-                        // draw it
-                        BaseItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
-                                                                          this,ui->drawingWindow,ui->drawingItemTree,
-                                                                          &path,&port,&boundary,materialDatabase);
-                        port.setExpanded(true);
-                        newPortItem->setExpanded(true);
+                        selectedList.push_back(pathItem);
                     }
                 }
             }
+        }
+        i++;
+    }
+
+    // create the ports
+
+    i=0;
+    while (i < selectedList.size()) {
+
+        Path *aPath=static_cast<Path *>(selectedList[i]->getPath());
+        if (aPath) {
+            // remove the arrows from the path
+            selectedList[i]->showArrows(false);
+
+            // next available s-port number
+            int sport=boundaryDatabase->get_SportCount()+1;
+
+            // default port name
+
+            std::string portName="port";
+            portName.append(std::to_string(sport));
+
+            int i=1;
+            while (boundaryDatabase->portNameExists(portName)) {
+                std::string testName=portName;
+                testName.append("_").append(std::to_string(i));
+                if (boundaryDatabase->portNameExists(testName)) {i++;}
+                else {portName=testName; break;}
+            }
+
+            // default net name
+
+            std::string netName="net";
+            netName.append(std::to_string(sport));
+
+            i=1;
+            while (boundaryDatabase->netNameExists(netName)) {
+                std::string testName=netName;
+                testName.append("_").append(std::to_string(i));
+                if (boundaryDatabase->netNameExists(testName)) {i++;}
+                else {netName=testName; break;}
+            }
+
+            // path name placed in a keywordPair
+            keywordPair *kwPathName=new keywordPair();
+            kwPathName->set_keyword("path");
+            kwPathName->set_value(aPath->get_name());
+            kwPathName->set_lineNumber(0);
+            kwPathName->set_loaded(true);
+
+            // port
+
+            Port *newPort=new Port(0,0);
+            newPort->set_name(portName);
+            newPort->set_outline(aPath);
+
+            // path info
+            newPort->push_path(kwPathName,boundaryDatabase->get_path_index(aPath),false);
+
+            // impedance
+            if (boundaryDatabase->get_portList_size() == 0) {
+                newPort->set_impedance_definition("PV");
+                newPort->set_impedance_calculation("line");
+            } else {
+                newPort->set_impedance_definition(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_definition());
+                newPort->set_impedance_calculation(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_calculation());
+            }
+
+            // must have at least one mode per port - default to sensible assumptions
+            Mode *newMode=new Mode(0,0,newPort->get_impedance_calculation());
+            newMode->set_net(netName);
+            newMode->set_Sport(sport);
+            newPort->push_mode(newMode);
+
+            // add to boundary database
+            boundaryDatabase->push_port(newPort);
+
+            // draw it
+            BaseItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
+                                                              this,ui->drawingWindow,ui->drawingItemTree,
+                                                              &path,&port,&boundary,materialDatabase);
+            ShapeData *newShapeData=newPortItem->getShapeData()->copyCreate();
+            newShapeData->setCreate();
+            newPortItem->addShapeData(newShapeData);
+
+            port.setExpanded(true);
+            newPortItem->setExpanded(true);
+
+            itemChangesStack.add(newPortItem);
         }
         i++;
     }

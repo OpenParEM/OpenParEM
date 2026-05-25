@@ -233,8 +233,6 @@ void DrawingItem::finishDraw ()
 
     // mark as changed
     mw->drawingChanged=true;
-
-    std::cout << "new DrawingItem=" << this << std::endl; std::cout.flush();
 }
 
 void DrawingItem::cancelDraw ()
@@ -1695,9 +1693,7 @@ void BoundaryItem::undo ()
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
-        std::cout << "1 place showArrows" << std::endl; std::cout.flush();
         if (pathItem) {
-            std::cout << "2 place showArrows" << std::endl; std::cout.flush();
             pathItem->removeLinkedItem(this);
             pathItem->showArrows(true);
         }
@@ -1742,6 +1738,8 @@ void BoundaryItem::undo ()
             pathItem->push_linkedItem(this);
             pathItem->showArrows(true);
         }
+
+        setIsActive(true);
 
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
         mw->ui->drawingWindow->displayShape(getShape());
@@ -1930,6 +1928,13 @@ void PortItem::undo ()
         getParentItem()->removeChild(this);
         setIsActive(false);
 
+        // restore the arrows on the path
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->removeLinkedItem(this);
+            pathItem->showArrows(true);
+        }
+
         dataStack.undo();
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
@@ -1963,8 +1968,14 @@ void PortItem::undo ()
 
         dataStack.undo();
 
-
         mw->port.addChild(this);
+
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->push_linkedItem(this);
+            pathItem->showArrows(true);
+        }
+
         setIsActive(true);
 
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
@@ -1994,6 +2005,11 @@ void PortItem::redo ()
         setForeground(0,Qt::gray);
         mw->ui->drawingWindow->showItem(this);
         setIsActive(true);
+
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->showArrows(false);
+        }
 
         // delete any previous children
         while (childCount() > 0) {
