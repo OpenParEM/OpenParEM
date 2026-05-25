@@ -400,6 +400,7 @@ public:
         depth=0;
         parentItem=nullptr;
         hasArrows=false;
+        isActive=false;
     }
 
     void setMW (OpenParEMg *mw_) {mw=mw_;}
@@ -443,9 +444,12 @@ public:
     virtual bool getHasArrows () {return hasArrows;}
     virtual void del () {}
 
-    void undo () {dataStack.undo();}
-    void redo () {dataStack.redo();}
+    virtual void undo () {}
+    virtual void redo () {}
     void pop () {dataStack.pop();}
+
+    virtual bool getIsActive () {return isActive;}
+    virtual void setIsActive (bool isActive_) {isActive=isActive_;}
 
     void set_itemType (int itemType_)
     {
@@ -630,8 +634,8 @@ public:
         }
     }
 
-    bool hasUndo () {return dataStack.hasUndo();}
-    bool hasRedo () {return dataStack.hasRedo();}
+    virtual bool hasUndo () {return false;}
+    virtual bool hasRedo () {return false;}
 
     void setParentItem (BaseItem *parentItem_) {parentItem=parentItem_;}
     BaseItem* getParentItem () {return parentItem;}
@@ -676,6 +680,7 @@ protected:
 
     int depth;                                         // item depth in the tree for saving formatted drawing files
     bool hasArrows;                                    // whether to show arrows when drawing; used by DrawingItem and PathItem
+    bool isActive;                                     // indicates whether the item is assigned to the tree
 };
 
 
@@ -731,6 +736,7 @@ public:
         enableInsertPoint=false;
 
         hasArrows=false;
+        isActive=true;
     }
 
     QString get_material () {return text(1);}
@@ -823,16 +829,23 @@ public:
         enableInsertPoint=false;
     }
 
-    void undo ();
-    void redo ();
+    void undo () override;
+    void redo () override;
+
+    bool hasUndo () override {return dataStack.hasUndo();}
+    bool hasRedo () override {return dataStack.hasRedo();}
 
     void setHasArrows (bool hasArrows_) override {hasArrows=hasArrows_;}
     bool getHasArrows () override {return hasArrows;}
+
+    bool getIsActive () override {return isActive;}
+    void setIsActive (bool isActive_) override {isActive=isActive_;}
 
 protected:
     QString material;                                  // material for this item - only valid for top-level SOLID and COMPOUND
 
     bool hasArrows;                                    // flag for showing direction of the path
+    bool isActive;
 
     Handle(AIS_Shape) animateShape;                    // temporary shape for animation during moving
     gp_Trsf aTrsf;
@@ -879,6 +892,7 @@ public:
         path=nullptr;
 
         hasArrows=true;
+        isActive=true;
     }
 
     long unsigned int linkedItems_size () {return linkedItems.size();}
@@ -901,8 +915,12 @@ public:
     void del () override;
     void setPath (Path *path_) {path=path_;}
     Path* getPath () {return path;}
-    void undo ();
-    void redo ();
+    void undo () override;
+    void redo () override;
+    bool hasUndo () override {return dataStack.hasUndo();}
+    bool hasRedo () override {return dataStack.hasRedo();}
+    bool getIsActive () override {return isActive;}
+    void setIsActive (bool isActive_) override {isActive=isActive_;}
     void reverse ();
 
 private:
@@ -945,6 +963,7 @@ public:
 
         boundary=nullptr;
         pathItem=nullptr;
+        isActive=true;
     }
 
     void showMenu (QMenu *);
@@ -953,8 +972,12 @@ public:
     Boundary* getBoundary () {return boundary;}
     void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
     PathItem* getPathItem () {return pathItem;}
-    void undo ();
-    void redo ();
+    void undo () override;
+    void redo () override;
+    bool hasUndo () override {return dataStack.hasUndo();}
+    bool hasRedo () override {return dataStack.hasRedo();}
+    bool getIsActive () override {return isActive;}
+    void setIsActive (bool isActive_) override {isActive=isActive_;}
 
 private:
     Boundary *boundary;
@@ -996,6 +1019,7 @@ public:
 
         port=nullptr;
         pathItem=nullptr;
+        isActive=true;
     }
     void showMenu (QMenu *);
     void del () override;
@@ -1003,8 +1027,12 @@ public:
     Port* getPort () {return port;}
     void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
     PathItem* getPathItem () {return pathItem;}
-    void undo ();
-    void redo ();
+    void undo () override;
+    void redo () override;
+    bool hasUndo () override {return dataStack.hasUndo();}
+    bool hasRedo () override {return dataStack.hasRedo();}
+    bool getIsActive () override {return isActive;}
+    void setIsActive (bool isActive_) override {isActive=isActive_;}
 
 private:
     Port *port;

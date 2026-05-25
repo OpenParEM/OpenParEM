@@ -511,12 +511,9 @@ void OpenParEMg::convertPathToFace (BaseItem *item)
     Handle(AIS_Shape) shape=item->getShape();
     if (shape.IsNull()) return;
 
-    std::cout << "a.1 isInMap=" << ui->drawingWindow->isInMap(item->getShape()) << std::endl; std::cout.flush();
-
     ui->drawingWindow->hideItem(item);
     ui->drawingWindow->removeItemFromMap(item);
     ui->drawingWindow->deleteShape(shape);
-    std::cout << "a.2 isInMap=" << ui->drawingWindow->isInMap(item->getShape()) << std::endl; std::cout.flush();
 
     PathItem* pathItem=nullptr;
 
@@ -527,7 +524,6 @@ void OpenParEMg::convertPathToFace (BaseItem *item)
     if (portItem && portItem->is_boundary()) pathItem=portItem->getPathItem();
 
     if (!pathItem) return;
-
 
     Path *path=static_cast<Path *>(pathItem->getPath());
     if (path) {
@@ -540,16 +536,13 @@ void OpenParEMg::convertPathToFace (BaseItem *item)
                 ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,newShape);
                 item->addShapeData(newShapeData);
 
-                std::cout << "a.3 isInMap=" << ui->drawingWindow->isInMap(item->getShape()) << std::endl; std::cout.flush();
                 ui->drawingWindow->showItem(item);
                 ui->drawingWindow->insertItemToMap(newShape,item);
                 ui->drawingWindow->displayShape(newShape);
                 ui->drawingWindow->activateItem(item);
-                std::cout << "a.4 isInMap=" << ui->drawingWindow->isInMap(item->getShape()) << std::endl; std::cout.flush();
             }
         }
     }
-    std::cout << "a.5 isInMap=" << ui->drawingWindow->isInMap(item->getShape()) << std::endl; std::cout.flush();
 }
 
 int OpenParEMg::check_changed ()
@@ -1828,11 +1821,13 @@ void OpenParEMg::deleteBoundaryItems ()
 {
     //std::cout << "OpenParEMg::deleteBoundaryItems" << std::endl; std::cout.flush();
 
+    itemChangesStack.startNew();
+
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BoundaryItem *item=dynamic_cast<BoundaryItem *>(ui->drawingWindow->get_selectedItem(i));
         if (item && item->is_boundary()) {
-            deleteBoundaryItem(item);
+            item->del();
         }
         i++;
     }
@@ -1840,26 +1835,7 @@ void OpenParEMg::deleteBoundaryItems ()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(26);
-}
-
-void OpenParEMg::deleteBoundaryItem (BoundaryItem *item)
-{
-    //std::cout << "OpenParEMg::deleteBoundaryItem" << std::endl; std::cout.flush();
-
-    // unlink the outline
-    Boundary *boundary=item->getBoundary();
-    Path *outline=boundary->get_outline();
-    PathItem *outlineItem=outline->get_item();
-    outlineItem->removeLinkedItem(item);
-
-    // remove from the boundary database
-    boundaryDatabase->deleteBoundary(item->text(0).toStdString());
-
-    ui->drawingWindow->deleteItem(item);
-    ui->drawingWindow->updateViewer();
-    setMenusI(24);
+    finishOperation(false,1);
 }
 
 void OpenParEMg::showRootMeshItems ()
@@ -2436,7 +2412,9 @@ void OpenParEMg::insertModeItems ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_port()) {
-            Port *port=boundaryDatabase->get_port(item->text(0).toStdString());
+
+            PortItem *portItem=dynamic_cast<PortItem *>(item);
+            Port *port=boundaryDatabase->get_port(portItem->text(0).toStdString());
 
             Mode *newMode=new Mode(0,0,port->get_impedance_calculation());
             std::string net="net";
@@ -2445,7 +2423,7 @@ void OpenParEMg::insertModeItems ()
             newMode->set_Sport(boundaryDatabase->get_SportCount()+1);
             port->push_mode(newMode);
 
-            newMode->draw(relay,boundaryDatabase,this,ui->drawingWindow,ui->drawingItemTree,&path,item);
+            newMode->draw(relay,boundaryDatabase,this,ui->drawingWindow,ui->drawingItemTree,&path,portItem);
         }
         i++;
     }
@@ -2492,57 +2470,6 @@ void OpenParEMg::renamePortItems ()
     }
 }
 
-void OpenParEMg::deletePortItem (PortItem * item)
-{
-    //std::cout << "OpenParEMg::deletePortItem" << std::endl; std::cout.flush();
-
-
-    // unlink the outline
-    Port *port=(Port *)item->getPort();
-    Path *outline=port->get_outline();
-    PathItem *outlineItem=outline->get_item();
-    outlineItem->removeLinkedItem(item);
-
-    // remove from the boundary database
-    boundaryDatabase->deletePort(item->text(0).toStdString());
-
-    // remove the integration paths
-    int i=0;
-    while (i < item->childCount()) {
-        BaseItem *child=(BaseItem *) item->child(i);
-        if (child->is_sport()) {
-            int j=0;
-            while (j < child->childCount()) {
-                BaseItem *grandChild=(BaseItem *) child->child(j);
-                if (grandChild->is_voltage() || grandChild->is_current()) {
-                    int k=0;
-                    while (k < grandChild->childCount()) {
-                        BaseItem *greatGrandChild=(BaseItem *) grandChild->child(k);
-                        if (greatGrandChild->is_integrationPathSegment()) {
-                            PathItem *ggcItem=dynamic_cast<PathItem *>(greatGrandChild);
-
-                            // unlink
-                            Path *aPath=static_cast<Path *>(ggcItem->getPath());
-                            PathItem *pathItem=aPath->get_item();
-                            pathItem->removeLinkedItem(greatGrandChild);
-
-                            // delete
-                            ui->drawingWindow->deleteItem(greatGrandChild);
-                        }
-                        k++;
-                    }
-                }
-                j++;
-            }
-        }
-        i++;
-    }
-
-    ui->drawingWindow->deleteItem(item);
-    ui->drawingWindow->updateViewer();
-    setMenusI(24);
-}
-
 void OpenParEMg::deleteRootPortItems ()
 {
     //std::cout << "OpenParEMg::deleteRootPortItems" << std::endl; std::cout.flush();
@@ -2553,8 +2480,9 @@ void OpenParEMg::deleteRootPortItems ()
         if (item && item->is_rootPort()) {
             int j=0;
             while (j < item->childCount()) {
-                PortItem *child=dynamic_cast<PortItem *>(item->child(j));
-                deletePortItem(child);
+                PortItem *childItem=dynamic_cast<PortItem *>(item->child(j));
+                //deletePortItem(child);
+                childItem->del();
             }
         }
         i++;
@@ -2563,20 +2491,22 @@ void OpenParEMg::deleteRootPortItems ()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
 
-    setMenusI(25);
-    ui->drawingWindow->updateViewer();
+    finishOperation(false,1);
 }
 
 void OpenParEMg::deletePortItems ()
 {
     //std::cout << "OpenParEMg::deletePortItems" << std::endl; std::cout.flush();
 
+    itemChangesStack.startNew();
+
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_port()) {
             PortItem *portItem=dynamic_cast<PortItem *>(item);
-            deletePortItem(portItem);
+            //deletePortItem(portItem);
+            portItem->del();
         }
         i++;
     }
@@ -2584,8 +2514,7 @@ void OpenParEMg::deletePortItems ()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(26);
+    finishOperation(false,1);
 }
 
 void OpenParEMg::deleteSportItem (BaseItem *item)
@@ -2908,7 +2837,7 @@ void OpenParEMg::createPath ()
 
             // see if the path is within an existing port
             Port *port=boundaryDatabase->get_matchingPort(newPath);
-            if (port) newPath->set_portItem(port->get_item());
+            if (port) newPath->set_portItem(port->get_PortItem());
         }
         i++;
     }
@@ -4957,9 +4886,10 @@ void OpenParEMg::convertItemToPort (BaseItem *item)
     PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
                                                       this,ui->drawingWindow,ui->drawingItemTree,
                                                       &path,&port,&boundary,materialDatabase);
+    std::cout << "newPortItem=" << newPortItem << std::endl; std::cout.flush();
     if (newPortItem) {
         newPortItem->setMW(this);
-        newPortItem->setParentItem(&boundary);
+        newPortItem->setParentItem(&port);
         newPortItem->setPathItem(pathItem);
         newPortItem->setExpanded(true);
 
@@ -4969,6 +4899,7 @@ void OpenParEMg::convertItemToPort (BaseItem *item)
 
         port.setExpanded(true);
 
+        newPortItem->print_itemType();
         itemChangesStack.add(newPortItem);
     }
 
@@ -4982,7 +4913,11 @@ void OpenParEMg::convertToPort ()
 
     itemChangesStack.startNew();
 
-    long unsigned int i=0;
+    // make a list of items to convert
+
+    std::vector<DrawingItem *> selectedList;
+
+    int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
@@ -4994,12 +4929,22 @@ void OpenParEMg::convertToPort ()
                     if (parentItem) {
                         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                         if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
-                            if (polywire->isClosed()) convertItemToPort(drawingItem);
+                            if (polywire->isClosed()) {
+                                //convertItemToPort(drawingItem);
+                                selectedList.push_back(drawingItem);
+                            }
                         }
                     }
                 }
             }
         }
+        i++;
+    }
+
+    // convert the selected items
+    i=0;
+    while (i < selectedList.size()) {
+        convertItemToPort(selectedList[i]);
         i++;
     }
 
@@ -5013,6 +4958,8 @@ bool OpenParEMg::isValidConvertToBoundary ()
 
 void OpenParEMg::convertItemToBoundary (BaseItem *item)
 {
+    std::cout << "OpenParEMg::convertItemToBoundary" << std::endl; std::cout.flush();
+
     item->setHasArrows(false);
     PathItem *pathItem=createPathFromDrawing(item,false);
     if (!pathItem) return;
@@ -5086,11 +5033,15 @@ void OpenParEMg::convertItemToBoundary (BaseItem *item)
 
 void OpenParEMg::convertToBoundary ()
 {
-    //std::cout << "OpenParEMg::convertToBoundary" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::convertToBoundary" << std::endl; std::cout.flush();
 
     itemChangesStack.startNew();
 
-    long unsigned int i=0;
+    // make a list of items to convert
+
+    std::vector<DrawingItem *> selectedList;
+
+    int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item) {
@@ -5102,12 +5053,21 @@ void OpenParEMg::convertToBoundary ()
                     if (parentItem) {
                         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                         if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
-                            if (polywire->isClosed()) convertItemToBoundary(drawingItem);
+                            if (polywire->isClosed()) {
+                                selectedList.push_back(drawingItem);
+                            }
                         }
                     }
                 }
             }
         }
+        i++;
+    }
+
+    // convert the items
+    i=0;
+    while (i < selectedList.size()) {
+        convertItemToBoundary(selectedList[i]);
         i++;
     }
 
@@ -8107,7 +8067,6 @@ void OpenParEMg::finishDraw ()
         // }
 
         // convert the drawn line to a path
-        std::cout << "place 1" << std::endl; std::cout.flush();
         currentDrawingItem->finishDraw();
         PathItem *pathItem=createPathFromDrawing(currentDrawingItem,true);
         currentDrawingItem->del();
@@ -8120,12 +8079,10 @@ void OpenParEMg::finishDraw ()
             //if (port) pathItem->set_portItem(port->get_item());
         }
 
-        std::cout << "place 2" << std::endl; std::cout.flush();
         ui->drawingWindow->selectItem(pathItem);
         ui->drawingWindow->selectItem(workingItem);  // select the original selected item
         insertSelectedPath();                        // relies on the newly created path already being selected
 
-        std::cout << "place 3" << std::endl; std::cout.flush();
         isIntegrationPath=false;
 
         currentDrawingItem=nullptr;
@@ -8630,56 +8587,6 @@ void OpenParEMg::finishOperation (bool cancel, int source)
     setMenusI(0);
 }
 
-void OpenParEMg::undoItem (BaseItem *item)
-{
-    std::cout << "OpenParEMg::undoItem  item=" << item << std::endl; std::cout.flush();
-
-    if (!item) return;
-
-    // must have ShapeData
-    ShapeData *shapeData=item->getShapeData();
-    if (!shapeData) return;
-
-    // ToDo: reduce this to one call when all the classes are in place
-
-    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-    if (drawingItem && drawingItem->is_drawing()) drawingItem->undo();
-
-    PathItem *pathItem=dynamic_cast<PathItem *>(item);
-    if (pathItem && pathItem->is_path()) pathItem->undo();
-
-    BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
-    if (boundaryItem && boundaryItem->is_boundary()) boundaryItem->undo();
-}
-
-void OpenParEMg::redoItem (BaseItem *item)
-{
-    std::cout << "OpenParEMg::redoItem  item=" << item << std::endl; std::cout.flush();
-
-    if (!item) return;
-
-    // must have ShapeData
-    ShapeData *shapeData=item->getShapeData();
-    if (!shapeData) return;
-
-    ShapeData *next=shapeData->getNext();
-    if (!next) return;
-
-    // ToDo: reduce this to one call when all the classes are in place
-
-    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-    if (drawingItem && drawingItem->is_drawing()) drawingItem->redo();
-
-    PathItem *pathItem=dynamic_cast<PathItem *>(item);
-    if (pathItem && pathItem->is_path()) pathItem->redo();
-
-    PortItem *portItem=dynamic_cast<PortItem *>(item);
-    if (portItem && portItem->is_port()) portItem->undo();
-
-    BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
-    if (boundaryItem && boundaryItem->is_boundary()) boundaryItem->redo();
-}
-
 void OpenParEMg::on_actionUndo_triggered ()
 {
     std::cout << "OpenParEMg::on_actionUndo_triggered" << std::endl; std::cout.flush();
@@ -8687,23 +8594,25 @@ void OpenParEMg::on_actionUndo_triggered ()
     itemChangesStack.readNew();
     BaseItem *item=itemChangesStack.getItem();
     while (item) {
-        //undoItem(item);
-        std::cout << "   undo item" << std::endl; std::cout.flush();
+        std::cout << "   undo item:" << std::endl; std::cout.flush();
+        item->print_itemType();
 
-        std::cout << "      check DrawingItem" << std::endl; std::cout.flush();
-        DrawingItem *drawingItem=static_cast<DrawingItem *>(item);
-        if (drawingItem && drawingItem->is_drawing()) drawingItem->undo();
+        // std::cout << "      check DrawingItem" << std::endl; std::cout.flush();
+        // DrawingItem *drawingItem=static_cast<DrawingItem *>(item);
+        // if (drawingItem && drawingItem->is_drawing()) drawingItem->undo();
 
-        std::cout << "      check PathItem" << std::endl; std::cout.flush();
-        PathItem *pathItem=static_cast<PathItem *>(item);
-        if (pathItem && pathItem->is_path()) pathItem->undo();
+        // std::cout << "      check PathItem" << std::endl; std::cout.flush();
+        // PathItem *pathItem=static_cast<PathItem *>(item);
+        // if (pathItem && pathItem->is_path()) pathItem->undo();
 
-        PortItem *portItem=dynamic_cast<PortItem *>(item);
-        if (portItem && portItem->is_port()) portItem->redo();
+        // PortItem *portItem=dynamic_cast<PortItem *>(item);
+        // if (portItem && portItem->is_port()) portItem->redo();
 
-        std::cout << "      check BoundaryItem" << std::endl; std::cout.flush();
-        BoundaryItem *boundaryItem=static_cast<BoundaryItem *>(item);
-        if (boundaryItem && boundaryItem->is_boundary()) boundaryItem->undo();
+        // std::cout << "      check BoundaryItem" << std::endl; std::cout.flush();
+        // BoundaryItem *boundaryItem=static_cast<BoundaryItem *>(item);
+        // if (boundaryItem && boundaryItem->is_boundary()) boundaryItem->undo();
+
+        item->undo();
 
         item=itemChangesStack.getItem();
     }
@@ -8715,22 +8624,25 @@ void OpenParEMg::on_actionUndo_triggered ()
 
 void OpenParEMg::on_actionRedo_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionRedo_triggered" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::on_actionRedo_triggered" << std::endl; std::cout.flush();
 
     itemChangesStack.redo();
     itemChangesStack.readNew();
     BaseItem *item=itemChangesStack.getItem();
     while (item) {
-        //redoItem(item);
+        std::cout << "   redo item:" << std::endl; std::cout.flush();
+        item->print_itemType();
 
-        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-        if (drawingItem && drawingItem->is_drawing()) drawingItem->redo();
+        // DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        // if (drawingItem && drawingItem->is_drawing()) drawingItem->redo();
 
-        PathItem *pathItem=dynamic_cast<PathItem *>(item);
-        if (pathItem && pathItem->is_path()) pathItem->redo();
+        // PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        // if (pathItem && pathItem->is_path()) pathItem->redo();
 
-        BoundaryItem *boundaryItem=static_cast<BoundaryItem *>(item);
-        if (boundaryItem && boundaryItem->is_boundary()) boundaryItem->redo();
+        // BoundaryItem *boundaryItem=static_cast<BoundaryItem *>(item);
+        // if (boundaryItem && boundaryItem->is_boundary()) boundaryItem->redo();
+
+        item->redo();
 
         item=itemChangesStack.getItem();
     }

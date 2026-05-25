@@ -233,6 +233,8 @@ void DrawingItem::finishDraw ()
 
     // mark as changed
     mw->drawingChanged=true;
+
+    std::cout << "new DrawingItem=" << this << std::endl; std::cout.flush();
 }
 
 void DrawingItem::cancelDraw ()
@@ -925,6 +927,7 @@ void DrawingItem::del ()
                 }
             }
 
+            setIsActive(false);
             rootDrawingItem->removeChild(this);
         }
 
@@ -964,7 +967,6 @@ DrawingItem* DrawingItem::copyCreate ()
 
 void DrawingItem::showMenu (QMenu *menu)
 {
-    std::cout << "place 3  menu=" << menu << std::endl; std::cout.flush();
     mw->assignMaterialAction=new QAction("Assign Material");
     mw->showAction=new QAction("Show");
     mw->hideAction=new QAction("Hide");
@@ -1128,6 +1130,7 @@ void DrawingItem::undo ()
         getParentItem()->removeChild(this);
 
         promoteChildren();
+        setIsActive(false);
 
         dataStack.undo();
         mw->findShowTopLevelItem(this,false);
@@ -1165,6 +1168,7 @@ void DrawingItem::undo ()
         getParentItem()->addChild(this);
 
         demoteChildren();
+        setIsActive(true);
 
         dataStack.undo();
 
@@ -1194,6 +1198,7 @@ void DrawingItem::redo ()
         copy_depth(getParentItem());
         increase_depth();
         getParentItem()->addChild(this);
+        setIsActive(true);
 
         long unsigned int i=0;
         while (i < getChildrenSize()) {
@@ -1258,6 +1263,7 @@ void DrawingItem::redo ()
         dataStack.redo();
 
         promoteChildren();
+        setIsActive(false);
         getParentItem()->removeChild(this);
         mw->findShowTopLevelItem(this,true);
     }
@@ -1344,6 +1350,7 @@ void PathItem::del ()
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(this->getShape());
+        setIsActive(false);
 
         mw->drawingChanged=true;
     }
@@ -1366,6 +1373,7 @@ void PathItem::undo ()
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
         getParentItem()->removeChild(this);
+        setIsActive(false);
 
         Path *path=static_cast<Path *>(getPath());
         if (path) path->setIsUsed(false);
@@ -1455,6 +1463,7 @@ void PathItem::redo ()
         dataStack.redo();
 
         mw->path.addChild(this);
+        setIsActive(true);
 
         Path *path=static_cast<Path *>(getPath());
         if (path) path->setIsUsed(true);
@@ -1639,6 +1648,7 @@ void BoundaryItem::del ()
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(this->getShape());
 
+        setIsActive(false);
         mw->drawingChanged=true;
     }
 }
@@ -1660,6 +1670,7 @@ void BoundaryItem::undo ()
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
         getParentItem()->removeChild(this);
+        setIsActive(false);
 
         dataStack.undo();
     } else if (shapeData->isEdit()) {
@@ -1721,13 +1732,12 @@ void BoundaryItem::redo ()
         mw->boundary.addChild(this);
         setForeground(0,Qt::gray);
         mw->ui->drawingWindow->showItem(this);
+        setIsActive(true);
 
         // delete any previous children
-        int i=0;
-        while (i < childCount()) {
-            BaseItem *childItem=dynamic_cast<BaseItem *>(child(i));
-            if (childItem) delete childItem;
-            i++;
+        while (childCount() > 0) {
+            QTreeWidgetItem* child=takeChild(0);
+            delete child;
         }
 
         // rebuild the item from scratch
@@ -1736,7 +1746,6 @@ void BoundaryItem::redo ()
             boundary->draw(mw->relay,&(mw->projData),mw->boundaryDatabase,mw,mw->ui->drawingWindow,mw->ui->drawingItemTree,
                            &(mw->path),&(mw->boundary),mw->materialDatabase,this);
         }
-
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         // mw->ui->drawingWindow->hideItem(this);
@@ -1856,6 +1865,7 @@ void PortItem::del ()
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(this->getShape());
 
+        setIsActive(false);
         mw->drawingChanged=true;
     }
 }
@@ -1872,11 +1882,13 @@ void PortItem::undo ()
         // nothing to do
     } else if (shapeData->isCreate()) {
         std::cout << "   isCreate" << std::endl; std::cout.flush();
+
         // remove the item
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
         getParentItem()->removeChild(this);
+        setIsActive(false);
 
         dataStack.undo();
     } else if (shapeData->isEdit()) {
@@ -1913,6 +1925,7 @@ void PortItem::undo ()
 
 
         mw->port.addChild(this);
+        setIsActive(true);
 
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
         mw->ui->drawingWindow->displayShape(getShape());
@@ -1934,10 +1947,25 @@ void PortItem::redo ()
         std::cout << "   isNoop" << std::endl; std::cout.flush();
         // should not occur
     } else if (next->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
+
         dataStack.redo();
         mw->port.addChild(this);
         setForeground(0,Qt::gray);
         mw->ui->drawingWindow->showItem(this);
+        setIsActive(true);
+
+        // delete any previous children
+        while (childCount() > 0) {
+            QTreeWidgetItem* child=takeChild(0);
+            delete child;
+        }
+
+        // rebuild the item from scratch
+        Port *port=getPort();
+        if (port) {
+            port->draw(mw->relay,&(mw->projData),mw->boundaryDatabase,mw,mw->ui->drawingWindow,mw->ui->drawingItemTree,&(mw->path),&(mw->port),this);
+        }
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         // mw->ui->drawingWindow->hideItem(this);

@@ -467,9 +467,6 @@ public:
 
     void debugPrintStats (int);
 
-    void undoItem (BaseItem *);
-    void redoItem (BaseItem *);
-
     void setScale ();
 
 private slots:
@@ -582,10 +579,6 @@ private slots:
     void unselectBoundaryItems ();
     void renameBoundaryItems ();
     void deleteBoundaryItems ();
-    void deleteBoundaryItem (BoundaryItem *);
-
-
-
 
     void showRootMeshItems ();
     void showMeshItems ();
@@ -612,7 +605,6 @@ private slots:
     void insertModeItems ();
     void unselectPortItems ();
     void renamePortItems ();
-    void deletePortItem (PortItem *);
     void deleteRootPortItems ();
     void deletePortItems ();
     void showNetItems ();

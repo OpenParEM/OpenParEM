@@ -955,7 +955,7 @@ public:
                     if (viewerContext->IsDisplayed(item->getShape())) {
 
                         BaseItem *parent=dynamic_cast<BaseItem *>(item->QTreeWidgetItem::parent());
-                        if (parent && parent->is_rootDrawing()) {
+                        if (parent && !parent->is_rootDrawing()) {
                             // parent must be a COMPOUND
                             //if (parent->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) count++;
 
@@ -967,7 +967,9 @@ public:
             i++;
         }
 
-        if (!performCheck) return false;
+        if (!performCheck) {
+            return false;
+        }
 
         // checks
         i=0;
@@ -982,10 +984,12 @@ public:
                     // nothing to do
                 } else {
                     // drawing
-                    if (!viewerContext->IsDisplayed(item->getShape())) return false;
+                    if (!viewerContext->IsDisplayed(item->getShape())) {
+                        return false;
+                    }
 
                     BaseItem *parent=dynamic_cast<BaseItem *>(item->QTreeWidgetItem::parent());
-                    if (parent && parent->is_rootDrawing()) {
+                    if (parent && !parent->is_rootDrawing()) {
                         // ToDo: probably have to generalize this at some point
 
                         // parent must be a COMPOUND

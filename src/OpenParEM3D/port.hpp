@@ -223,8 +223,8 @@ class Boundary
       bool snapToMeshBoundary (std::vector<Path *> *, mfem::Mesh *, std::string);
       void recalculatePathIndexList (std::vector<Path *> *);
 #ifdef HAS_GUI
-      void set_item (BoundaryItem *item_) {item=item_;}
-      BoundaryItem* get_item () {return item;}
+      void set_BoundaryItem (BoundaryItem *item_) {item=item_;}
+      BoundaryItem* get_BoundaryItem () {return item;}
       void draw (Relay *, struct projectData *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *,
                 RootPathItem *rootPathItem, RootBoundaryItem *, MaterialDatabase *, BoundaryItem *);
 #endif
@@ -454,7 +454,7 @@ class Mode
       bool net_is_updated=false;                           // flag to prevent updating net names more than once
       bool modified;
 #if HAS_GUI
-      ModeItem *item;
+      ModeItem *modeItem;
 #endif
    public:
       Mode(int,int,std::string);
@@ -542,9 +542,9 @@ class Mode
       void recalculatePathIndexList (std::vector<Path *> *);
       void removeIntegrationPath (std::string, Path *);
 #ifdef HAS_GUI
-      void set_item (ModeItem *item_) {item=item_;}
-      ModeItem* get_item () {return item;}
-      void draw (Relay *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, BaseItem *);
+      void set_ModeItem (ModeItem *item_) {modeItem=item_;}
+      ModeItem* get_ModeItem () {return modeItem;}
+      void draw (Relay *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, PortItem *);
 #endif
 };
 
@@ -784,9 +784,10 @@ class Port
       void renamePath (std::string, std::string);
       void recalculatePathIndexList (std::vector<Path *> *);
 #ifdef HAS_GUI
-      void set_item (PortItem *item_) {item=item_;}
-      PortItem* get_item () {return item;}
-      void draw (Relay *, struct projectData *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *);
+      void set_PortItem (PortItem *item_) {item=item_;}
+      PortItem* get_PortItem () {return item;}
+      void draw (Relay *, struct projectData *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *,
+                RootPathItem *, RootPortItem *, PortItem *);
       void set_comboZdef ();
 #endif
 };

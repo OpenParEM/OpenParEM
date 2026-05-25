@@ -1559,8 +1559,9 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     boundaryItem->setText(0,textName);
     boundaryItem->setForeground(0,Qt::gray);
     boundaryItem->setFlags(boundaryItem->flags() | Qt::ItemIsEditable);
+    boundaryItem->setToolTip(0,"Boundary name.");
     rootBoundaryItem->addChild(boundaryItem);
-    set_item(boundaryItem);
+    set_BoundaryItem(boundaryItem);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
     Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
@@ -1601,7 +1602,6 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
 
     SelectionItem *itemType=new SelectionItem(0);
     itemType->setMW(mw);
-    itemType->setParentItem(boundaryItem);
     itemType->setParentItem(boundaryItem);
     itemType->setFlags(itemType->flags() | Qt::ItemIsEditable);
     itemType->setToolTip(0,"Boundary type.");
@@ -3518,7 +3518,7 @@ Mode::Mode(int startLine_, int endLine_, std::string calculation_)
    calculation=calculation_;
    modified=true;
 #ifdef HAS_GUI
-   item=nullptr;
+   modeItem=nullptr;
 #endif
 }
 
@@ -4367,7 +4367,7 @@ void Mode::set_unmodified ()
 
 void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
                  OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                 RootPathItem *rootPathItem, BaseItem *itemName)
+                 RootPathItem *rootPathItem, PortItem *portItem)
 {
     // net
 
@@ -4378,27 +4378,29 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
         netname.append(QString::number(get_Sport()));
     }
 
-    item=new ModeItem(0);
-    item->setMW(mw);
-    item->setParentItem(itemName);
-    item->setText(0,netname);
-    item->set_itemType(5);
-    item->setToolTip(0,"Mode and its net name.");
-    item->setForeground(0,Qt::black);
-    item->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
-    item->setMode(this);
-    itemName->addChild(item);
+    ModeItem *modeItem=new ModeItem(0);
+    modeItem->setMW(mw);
+    modeItem->setParentItem(portItem);
+    modeItem->setText(0,netname);
+    modeItem->set_itemType(5);
+    modeItem->setToolTip(0,"Mode and its net name.");
+    modeItem->setForeground(0,Qt::black);
+    modeItem->setFlags(modeItem->flags() & ~Qt::ItemIsEditable);
+    modeItem->setMode(this);
+    std::cout << "3 portItem=" << portItem << " addChild=" << modeItem << std::endl; std::cout.flush();
+    portItem->addChild(modeItem);
 
     // S port
     SelectionItem *itemSport=new SelectionItem(0);
     itemSport->setMW(mw);
-    itemSport->setParentItem(item);
+    itemSport->setParentItem(modeItem);
     itemSport->setText(0,"S Port");
     itemSport->set_itemType(8);
-    itemSport->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
+    itemSport->setFlags(itemSport->flags() & ~Qt::ItemIsEditable);
     itemSport->setToolTip(0,"S-port number for the mode.");
     itemSport->setForeground(0,Qt::black);
-    item->addChild(itemSport);
+    std::cout << "1 modeItem=" << modeItem << " addChild=" << itemSport << std::endl; std::cout.flush();
+    modeItem->addChild(itemSport);
 
     // Sport number
 
@@ -4408,7 +4410,8 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     itemSportValue->set_itemType(9);
     itemSportValue->setToolTip(0,"S-parameter port number.");
     itemSportValue->setForeground(0,Qt::black);
-    itemSportValue->setFlags(itemName->flags() & ~Qt::ItemIsSelectable);
+    itemSportValue->setFlags(itemSportValue->flags() & ~Qt::ItemIsSelectable);
+    std::cout << "1 itemSport=" << itemSport << " addChild=" << itemSportValue << std::endl; std::cout.flush();
     itemSport->addChild(itemSportValue);
 
     CustomSpinBox *sportNumber=new CustomSpinBox();
@@ -4427,13 +4430,14 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
     SelectionItem *itemVoltage=new SelectionItem(0);
     itemVoltage->setMW(mw);
-    itemVoltage->setParentItem(item);
+    itemVoltage->setParentItem(modeItem);
     itemVoltage->setText(0,"voltage");
     itemVoltage->set_itemType(10);
-    itemVoltage->setFlags(item->flags() & ~Qt::ItemIsEditable);
+    itemVoltage->setFlags(itemVoltage->flags() & ~Qt::ItemIsEditable);
     itemVoltage->setToolTip(0,"Voltage integration path.");
     itemVoltage->setForeground(0,Qt::black);
-    item->addChild(itemVoltage);
+    std::cout << "2 modeItem=" << modeItem << " addChild=" << itemVoltage << std::endl; std::cout.flush();
+    modeItem->addChild(itemVoltage);
 
     long unsigned int i=0;
     while (i < integrationPathList.size()) {
@@ -4447,13 +4451,14 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
     SelectionItem *itemCurrent=new SelectionItem(0);
     itemCurrent->setMW(mw);
-    itemCurrent->setParentItem(item);
+    itemCurrent->setParentItem(modeItem);
     itemCurrent->setText(0,"current");
     itemCurrent->set_itemType(11);
-    itemCurrent->setFlags(item->flags() & ~Qt::ItemIsEditable);
+    itemCurrent->setFlags(itemCurrent->flags() & ~Qt::ItemIsEditable);
     itemCurrent->setToolTip(0,"Current integration path.");
     itemCurrent->setForeground(0,Qt::black);
-    item->addChild(itemCurrent);
+    std::cout << "3 modeItem=" << modeItem << " addChild=" << itemCurrent << std::endl; std::cout.flush();
+    modeItem->addChild(itemCurrent);
 
     i=0;
     while (i < integrationPathList.size()) {
@@ -7289,7 +7294,7 @@ void comboIndexChanged (int index, Port *port, Boundary *boundary, int type,
 
         // for setting fill color and transparency
         Handle(AIS_Shape) shape;
-        BoundaryItem *boundaryItem=boundary->get_item();
+        BoundaryItem *boundaryItem=boundary->get_BoundaryItem();
         if (boundaryItem) {
             PathItem *pathItem=boundaryItem->getPathItem();
             if (pathItem) {
@@ -7343,19 +7348,24 @@ void textValueChanged (QString text, IntegrationPath *integrationPath, BoundaryD
 
 void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase,
                  OpenParEMg *mw, CustomOpenGLWidget *drawingWindow,
-                 QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, RootPortItem *rootPortItem)
+                 QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, RootPortItem *rootPortItem,
+                 PortItem *portItem)
 {
     // name
 
-    PortItem *portItem=new PortItem(0);
+    if (!portItem) {
+        portItem=new PortItem(0);
+    }
     portItem->setMW(mw);
     portItem->setParentItem(rootPortItem);
+    portItem->setPort(this);
     portItem->setText(0,get_name().c_str());
     portItem->setForeground(0,Qt::gray);
     portItem->setFlags(portItem->flags() & ~Qt::ItemIsEditable);
     portItem->setToolTip(0,"Port name.");
-    portItem->setPort(this);
+    std::cout << "rootPortItem=" << rootPortItem << " addChild=" << portItem << std::endl; std::cout.flush();
     rootPortItem->addChild(portItem);
+    set_PortItem(portItem);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
     Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
@@ -7390,6 +7400,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     itemImpedanceDefinition->set_itemType(6);
     itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
+    std::cout << "1 portItem=" << portItem << " addChild=" << itemImpedanceDefinition << std::endl; std::cout.flush();
     portItem->addChild(itemImpedanceDefinition);
 
     comboZdef=new CustomComboBox();
@@ -7419,6 +7430,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     itemImpedanceCalculation->set_itemType(7);
     itemImpedanceCalculation->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
+    std::cout << "2 portItem=" << portItem << " addChild=" << itemImpedanceCalculation << std::endl; std::cout.flush();
     portItem->addChild(itemImpedanceCalculation);
 
     CustomComboBox *comboZcalc=new CustomComboBox();
@@ -9887,7 +9899,7 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData,
     i=0;
     while (i < portList.size()) {
         // create the AIS_Shape and the item, but the shape must be added to the drawing elsewhere
-        portList[i]->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootPortItem);
+        portList[i]->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootPortItem,nullptr);
         i++;
     }
 
@@ -9905,8 +9917,8 @@ PortItem* BoundaryDatabase::draw_port (Relay *relay, Port *port, struct projectD
                                        RootPathItem *rootPathItem, RootPortItem *rootPortItem, RootBoundaryItem *rootBoundaryItem,
                                        MaterialDatabase *materialDatabase)
 {
-    port->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootPortItem);
-    return port->get_item();
+    port->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootPortItem,nullptr);
+    return port->get_PortItem();
 }
 
 BoundaryItem* BoundaryDatabase::draw_boundary (Relay *relay, Boundary *boundary, struct projectData *projData,
@@ -9915,7 +9927,7 @@ BoundaryItem* BoundaryDatabase::draw_boundary (Relay *relay, Boundary *boundary,
                                                MaterialDatabase *materialDatabase)
 {
     boundary->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootBoundaryItem,materialDatabase,nullptr);
-    return boundary->get_item();
+    return boundary->get_BoundaryItem();
 }
 
 // void BoundaryDatabase::set_drawingToItemMap (std::unordered_map<Handle(AIS_Shape), BaseItem*> *drawingToItemMap)
@@ -9939,7 +9951,12 @@ void BoundaryDatabase::set_comboZdef ()
 {
     long unsigned int i=0;
     while (i < portList.size()) {
-        portList[i]->set_comboZdef();
+        if (portList[i]) {
+            PortItem *portItem=portList[i]->get_PortItem();
+            if (portItem && portItem->getIsActive()) {
+                portList[i]->set_comboZdef();
+            }
+        }
         i++;
     }
 }
