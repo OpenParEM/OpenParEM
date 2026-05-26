@@ -5083,7 +5083,7 @@ void OpenParEMg::on_actionOpen_triggered ()
         if (strcmp(projData.port_definition_file,"") != 0) {
             if (boundaryDatabase->load(projData.port_definition_file,projData.solution_check_closed_loop)) {
                 QMessageBox mb;
-                mb.critical(nullptr, "Info", "Boundaries require additional setup.");
+                mb.critical(nullptr, "Error", "Paths, ports, and/or boundaries are not complete and require additional setup.");
                 mb.setFixedSize(500, 200);
             }
 

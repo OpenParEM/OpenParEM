@@ -1564,7 +1564,16 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     set_BoundaryItem(boundaryItem);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
-    Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
+    //Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
+
+    if (pathIndexList.size() == 0) return;
+    long unsigned int index=pathIndexList[0];
+
+    std::vector<Path *> *pathList=boundaryDatabase->get_pathList_ptr();
+    if (pathList->size() < index+1) return;
+
+    Path *path=(*pathList)[index];
+    if (!path) return;
 
     // attach item
     bool found=false;
@@ -2715,7 +2724,8 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
         itemSegment->setToolTip(0,"Path segment for integration.");
 
         // attach path
-        Path *path=boundaryDatabase->get_pathList()[pathIndexList[i]];
+        std::vector<Path *> *pathList=boundaryDatabase->get_pathList_ptr();
+        Path *path=(*pathList)[pathIndexList[i]];
         itemSegment->setPath(path);
 
         // attach item
@@ -7206,7 +7216,11 @@ void Port::assignPathNormals (std::vector<Path *> *pathList)
 {
     long unsigned int i=0;
     while (i < modeList.size()) {
-        modeList[i]->assignPathNormals(outline->get_normal(),pathList);
+        if (modeList[i]) {
+            if (outline) {
+                modeList[i]->assignPathNormals(outline->get_normal(),pathList);
+            }
+        }
         i++;
     }
 }
@@ -7357,7 +7371,15 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     set_PortItem(portItem);
 
     // link paths -  assumes there is only one path, which is checked when loading the database
-    Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
+
+    if (pathIndexList.size() == 0) return;
+    long unsigned int index=pathIndexList[0];
+
+    std::vector<Path *> *pathList=boundaryDatabase->get_pathList_ptr();
+    if (pathList->size() < index+1) return;
+
+    Path *path=(*pathList)[index];
+    if (!path) return;
 
     // attach item
     int j=0;

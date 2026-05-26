@@ -849,7 +849,7 @@ class BoundaryDatabase
       bool is_modal ();
       bool is_mixed_mode ();
       bool create2Dmeshes (int, mfem::ParMesh *, std::vector<mfem::ParSubMesh> *);
-      std::vector<Path *> get_pathList () {return pathList;}
+      //std::vector<Path *> get_pathList () {return pathList;}
       std::vector<Path *>* get_pathList_ptr () {return &pathList;}
       Path* get_path (long unsigned int i) {return pathList[i];}
       void push_path (Path *path) {pathList.push_back(path);}
