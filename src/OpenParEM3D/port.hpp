@@ -824,6 +824,7 @@ class BoundaryDatabase
       long unsigned int get_boundaryListSize() {return boundaryList.size();}
       Boundary* get_boundary (long unsigned int i) {return boundaryList[i];}
       void push_boundary (Boundary *boundary) {boundaryList.push_back(boundary);}
+      void erase_boundary (long unsigned int i) {boundaryList.erase(boundaryList.begin()+i);}
       bool markMeshBoundaries (mfem::Mesh *mesh);
       bool createDefaultBoundary (struct projectData *, mfem::Mesh *, MaterialDatabase *, BoundaryDatabase *);
       bool inBlocks (int);
@@ -855,6 +856,7 @@ class BoundaryDatabase
       void push_path (Path *path) {pathList.push_back(path);}
       long unsigned int get_pathList_size () {return pathList.size();}
       long unsigned int get_path_index (Path *);
+      void erase_path (long unsigned int i) {pathList.erase(pathList.begin()+i);}
       int getLastAttribute ();
       void savePortMeshes (MeshMaterialList *, std::vector<mfem::ParSubMesh> *);
       void save2Dsetups (struct projectData *, double, GammaDatabase *);
@@ -907,6 +909,7 @@ class BoundaryDatabase
       long unsigned int get_portList_size () {return portList.size();}
       Port* get_port (long unsigned int i) {return portList[i];}
       void push_port (Port *port) {portList.push_back(port);}
+      void erase_port (long unsigned int i) {portList.erase(portList.begin()+i);}
       bool get_port_from_mode (Mode *, Port **, long unsigned int *);
       void reset();
       bool has_Ti ();

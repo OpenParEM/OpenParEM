@@ -345,6 +345,7 @@ public:
     int check_changed ();
     void closeWindow_triggered ();
 
+    void pruneBoundaryDatabase ();
     void saveProject ();
     void insertToMapActivateItem (BaseItem *);
     QString getAISshapeName (Handle(AIS_Shape));

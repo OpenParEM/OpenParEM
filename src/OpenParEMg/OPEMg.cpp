@@ -5376,6 +5376,119 @@ void OpenParEMg::on_actionFrequencyPlan_triggered ()
     setMenusI(46);
 }
 
+void OpenParEMg::pruneBoundaryDatabase ()
+{
+    std::vector<long unsigned int> deleteIndices;
+
+    // boundaries
+
+    long unsigned int i=0;
+    while (i < boundaryDatabase->get_boundaryListSize()) {
+        Boundary *aBoundary=boundaryDatabase->get_boundary(i);
+        if (aBoundary) {
+            bool found=false;
+            int j=0;
+            while (j < boundary.childCount()) {
+                BaseItem *item=dynamic_cast<BaseItem *>(boundary.child(i));
+                if (item) {
+                    BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
+                    if (boundaryItem && boundaryItem->is_boundary()) {
+                        Boundary *itemBoundary=boundaryItem->getBoundary();
+                        if (aBoundary == itemBoundary) {
+                            found=true;
+                            break;
+                        }
+                    }
+                }
+                j++;
+            }
+            if (!found) deleteIndices.push_back(i);
+        }
+        i++;
+    }
+
+    int j=deleteIndices.size()-1;
+    while (j >= 0) {
+        Boundary *boundary=boundaryDatabase->get_boundary(deleteIndices[j]);
+        if (boundary) {delete boundary; boundary=nullptr;}
+        boundaryDatabase->erase_boundary(deleteIndices[j]);
+        j--;
+    }
+
+    // ports
+
+    deleteIndices.clear();
+    i=0;
+    while (i < boundaryDatabase->get_portList_size()) {
+        Port *aPort=boundaryDatabase->get_port(i);
+        if (aPort) {
+            bool found=false;
+            int j=0;
+            while (j < port.childCount()) {
+                BaseItem *item=dynamic_cast<BaseItem *>(port.child(i));
+                if (item) {
+                    PortItem *portItem=dynamic_cast<PortItem *>(item);
+                    if (portItem && portItem->is_port()) {
+                        Port *itemPort=portItem->getPort();
+                        if (aPort == itemPort) {
+                            found=true;
+                            break;
+                        }
+                    }
+                }
+                j++;
+            }
+            if (!found) deleteIndices.push_back(i);
+        }
+        i++;
+    }
+
+    j=deleteIndices.size()-1;
+    while (j >= 0) {
+        Port *port=boundaryDatabase->get_port(deleteIndices[j]);
+        if (port) {delete port; port=nullptr;}
+        boundaryDatabase->erase_port(deleteIndices[j]);
+        j--;
+    }
+
+    // paths
+
+    deleteIndices.clear();
+    i=0;
+    while (i < boundaryDatabase->get_pathList_size()) {
+        Path *aPath=boundaryDatabase->get_path(i);
+        if (aPath) {
+            bool found=false;
+            int j=0;
+            while (j < path.childCount()) {
+                BaseItem *item=dynamic_cast<BaseItem *>(path.child(i));
+                if (item) {
+                    PathItem *pathItem=dynamic_cast<PathItem *>(item);
+                    if (pathItem && pathItem->is_path()) {
+                        Path *itemPath=pathItem->getPath();
+                        if (aPath == itemPath) {
+                            found=true;
+                            break;
+                        }
+                    }
+                }
+                j++;
+            }
+            if (!found) deleteIndices.push_back(i);
+        }
+        i++;
+    }
+
+    j=deleteIndices.size()-1;
+    while (j >= 0) {
+        Path *path=boundaryDatabase->get_path(deleteIndices[j]);
+        if (path) {delete path; path=nullptr;}
+        boundaryDatabase->erase_path(deleteIndices[j]);
+        j--;
+    }
+
+}
+
 void OpenParEMg::saveProject ()
 {
     // update included file names
@@ -5882,6 +5995,7 @@ bool OpenParEMg::saveBoundaryDatabase ()
 
     std::ofstream outputFile(filename.toStdString());
     if (outputFile.is_open()) {
+        pruneBoundaryDatabase();
         boundaryDatabase->save(&outputFile);
         outputFile.close();
         return false;
