@@ -291,6 +291,11 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(assignMaterialAction);
     initQActionList();
 
+    // signals to show the drawing tab when drawing actions are clicked
+    connect(ui->menuView, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
+    connect(ui->menuSelect, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
+    connect(ui->menuDraw, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
+    connect(ui->menuMesh, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
 
     /////////////////////////////////////////////////////////////////////////////
     // item selection tree
@@ -5284,6 +5289,14 @@ void OpenParEMg::setScale ()
     ui->drawingWindow->updateViewer();
 }
 
+void OpenParEMg::onMenuAboutToShow ()
+{
+    // bring drawing to the front
+    if (ui->tabs->currentWidget() != ui->drawingTab) {
+        ui->tabs->setCurrentWidget(ui->drawingTab);
+    }
+}
+
 void OpenParEMg::on_actionNew_triggered ()
 {
     resetProject();
@@ -6536,6 +6549,11 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
 
     if (!item) return;
 
+    // bring drawing to the front
+    if (ui->tabs->currentWidget() != ui->drawingTab) {
+        ui->tabs->setCurrentWidget(ui->drawingTab);
+    }
+
     clickedItem=dynamic_cast<BaseItem *>(item);
     if (!clickedItem) return;
 
@@ -7365,6 +7383,11 @@ void OpenParEMg::on_actionRun_triggered ()
     logLastChar='\0';
     iterationsLastChar='\0';
     dataLastChar='\0';
+
+    // bring log to the front
+    if (ui->tabs->currentWidget() != ui->logTab) {
+        ui->tabs->setCurrentWidget(ui->logTab);
+    }
 
     // install event filters in the tabs
 

@@ -473,6 +473,9 @@ public:
     void setScale ();
 
 private slots:
+
+    void onMenuAboutToShow ();
+
     // File
     void on_actionNew_triggered ();
     void on_actionOpen_triggered ();
