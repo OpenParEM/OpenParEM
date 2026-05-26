@@ -446,8 +446,9 @@ public:
 
     bool isValidConvertToPath ();
     PathItem* createPathFromDrawing (DrawingItem *, bool);
-    void convertItemToPath (DrawingItem *);
-    void convertToPath ();
+    void convertItemToPath (DrawingItem *, bool);
+    void convertDrawingToPath ();
+    void convertDrawingToPathN (bool);
 
     bool isValidExtrudePolywire ();
     void finishExtrudePolywire ();
@@ -653,11 +654,8 @@ private slots:
     void createBoundaryFromFace ();
     void createBoundaryFromPath ();
     void createBoundaryFromPathN (bool);
-    void convertItemToPort (DrawingItem *);
-    void convertToPort ();
-    void convertItemToBoundary (DrawingItem *);
-    void convertToBoundary ();
-    void reversePathItem (PathItem *, bool);
+    void convertDrawingToPort ();
+    void convertDrawingToBoundary ();
     void reversePathItems ();
     double getConversionFactor ();
     void extrudePolywire ();

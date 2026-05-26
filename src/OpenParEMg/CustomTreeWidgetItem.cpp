@@ -1013,7 +1013,7 @@ void DrawingItem::showMenu (QMenu *menu)
     connect(mw->closePolylineAction, &QAction::triggered, mw, &OpenParEMg::closeExistingPolyline);
     connect(mw->openPolylineAction, &QAction::triggered, mw, &OpenParEMg::openExistingPolyline);
     connect(mw->convertToPolylineAction, &QAction::triggered, mw, &OpenParEMg::convertToPolyline);
-    connect(mw->convertToPathAction, &QAction::triggered, mw, &OpenParEMg::convertToPath);
+    connect(mw->convertToPathAction, &QAction::triggered, mw, &OpenParEMg::convertDrawingToPath);
     connect(mw->rotateAction, &QAction::triggered, mw, &OpenParEMg::rotateObject);
     connect(mw->unselectAction, &QAction::triggered, mw, &OpenParEMg::unselectDrawingItems);
     connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renameDrawingItems);
@@ -1027,8 +1027,8 @@ void DrawingItem::showMenu (QMenu *menu)
     connect(mw->extrudeAction, &QAction::triggered, mw, &OpenParEMg::extrudePolywire);
     connect(mw->mergeAction, &QAction::triggered, mw, &OpenParEMg::mergeSolids);
     connect(mw->subtractAction, &QAction::triggered, mw, &OpenParEMg::subtractSolids);
-    connect(mw->convertToPortAction, &QAction::triggered, mw, &OpenParEMg::convertToPort);
-    connect(mw->convertToBoundaryAction, &QAction::triggered, mw, &OpenParEMg::convertToBoundary);
+    connect(mw->convertToPortAction, &QAction::triggered, mw, &OpenParEMg::convertDrawingToPort);
+    connect(mw->convertToBoundaryAction, &QAction::triggered, mw, &OpenParEMg::convertDrawingToBoundary);
     connect(mw->cancelAction, &QAction::triggered, mw, &OpenParEMg::cancelMenu);
 
     if (mw->isValidAssignMaterial()) menu->addAction(mw->assignMaterialAction);
