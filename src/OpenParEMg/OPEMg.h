@@ -405,6 +405,7 @@ public:
     void setPlaneToFaceAxis ();
 
     bool isValidCreatePath ();
+    bool isValidCreatePathFromFace ();
     bool isValidCreatePortFromFace ();
     bool isValidCreatePortFromPath ();
     bool isValidReversePath ();
@@ -444,8 +445,8 @@ public:
     void convertToPolyline ();
 
     bool isValidConvertToPath ();
-    PathItem* createPathFromDrawing (BaseItem *, bool);
-    void convertItemToPath (BaseItem *);
+    PathItem* createPathFromDrawing (DrawingItem *, bool);
+    void convertItemToPath (DrawingItem *);
     void convertToPath ();
 
     bool isValidExtrudePolywire ();
@@ -617,9 +618,9 @@ private slots:
 
     void assignMaterial ();
 
-    void cancelDrawingMenu ();
-    void cancelPathMenu ();
+    void cancelMenu ();
     void buildPathMenu (QMenu &menu);
+    void buildFaceMenu (QMenu &menu);
     void itemTreeContextMenu_triggered (const QPoint& pnt);
     void drawingWindowContextMenu_triggered (const QPoint& pnt);
 
@@ -644,13 +645,17 @@ private slots:
     void insertPoint ();
     void rotateObject ();
     void createPath ();
+    void createPathFromFace ();
+    void createPathFromFaceN (bool);
     void createPortFromFace ();
     void createPortFromPath ();
+    void createPortFromPathN (bool);
     void createBoundaryFromFace ();
     void createBoundaryFromPath ();
-    void convertItemToPort (BaseItem *);
+    void createBoundaryFromPathN (bool);
+    void convertItemToPort (DrawingItem *);
     void convertToPort ();
-    void convertItemToBoundary (BaseItem *);
+    void convertItemToBoundary (DrawingItem *);
     void convertToBoundary ();
     void reversePathItem (PathItem *, bool);
     void reversePathItems ();

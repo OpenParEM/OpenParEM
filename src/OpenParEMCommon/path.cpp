@@ -2216,6 +2216,7 @@ void Path::create_face_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, 
             ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,shape);
             item->addShapeData(newShapeData);
             parentItem->addChild(item);
+            item->setParentItem(parentItem);
         }
     }
 }

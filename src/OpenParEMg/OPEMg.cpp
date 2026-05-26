@@ -1017,7 +1017,7 @@ void OpenParEMg::buildPathMenu (QMenu &menu)
     connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deletePathItems);
     connect(showAction, &QAction::triggered, this, &OpenParEMg::showPathItems);
     connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePathItems);
-    connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelPathMenu);
+    connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelMenu);
 
     if (isValidShowPath()) menu.addAction(showAction);
     if (isValidHidePath()) menu.addAction(hideAction);
@@ -1029,16 +1029,31 @@ void OpenParEMg::buildPathMenu (QMenu &menu)
     menu.addAction(cancelAction);
 }
 
-void OpenParEMg::cancelDrawingMenu ()
+void OpenParEMg::buildFaceMenu (QMenu &menu)
 {
-    on_actionShape_triggered();
-    ui->drawingWindow->setSubshapeSelection(false);
-    ui->drawingWindow->setSetToPlane(false);
+    createPathAction=new QAction("Create Path");
+    createPathAction->setToolTip("Create a path from the face.");
+    createPortAction=new QAction("Create Port");
+    createPortAction->setToolTip("Create a port from the face.");
+    createBoundaryAction=new QAction("Create Boundary");
+    createBoundaryAction->setToolTip("Create a bounary from the face.");
+    cancelAction=new QAction("Cancel");
+
+    connect(createPathAction, &QAction::triggered, this, &OpenParEMg::createPathFromFace);
+    connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPortFromFace);
+    connect(createBoundaryAction, &QAction::triggered, this, &OpenParEMg::createBoundaryFromFace);
+    connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelMenu);
+
+    if (isValidCreatePathFromFace()) menu.addAction(createPathAction);
+    if (isValidCreatePortFromFace()) menu.addAction(createPortAction);
+    if (isValidCreateBoundaryFromFace()) menu.addAction(createBoundaryAction);
+    if (isValidDeletePath()) menu.addAction(deleteAction);
+    menu.addAction(cancelAction);
 }
 
-void OpenParEMg::cancelPathMenu ()
+void OpenParEMg::cancelMenu ()
 {
-    // nothing to do
+    finishOperation(false,1);
 }
 
 void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
@@ -1248,10 +1263,9 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
         }
     } else {
         // check for selected subshape
-        // ToDo: renable this; moved to DrawingItem.showMenu()
-        // if (ui->drawingWindow->get_selectedItems_size() == 0 && ui->drawingWindow->get_NbSelected()) {
-        //     buildDrawingMenu(menu);
-        // }
+        if (ui->drawingWindow->get_selectedItems_size() == 0 && ui->drawingWindow->get_NbSelected()) {
+            buildFaceMenu(menu);
+        }
 
         // check for selected items
         long unsigned int i=0;
@@ -4156,7 +4170,7 @@ bool OpenParEMg::isValidConvertToPath ()
 
 //xxx
 
-PathItem* OpenParEMg::createPathFromDrawing (BaseItem *item, bool hasArrows)
+PathItem* OpenParEMg::createPathFromDrawing (DrawingItem *item, bool hasArrows)
 {
     Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
     if (!polywire) return nullptr;
@@ -4218,7 +4232,7 @@ PathItem* OpenParEMg::createPathFromDrawing (BaseItem *item, bool hasArrows)
     return newPathItem;
 }
 
-void OpenParEMg::convertItemToPath (BaseItem *item)
+void OpenParEMg::convertItemToPath (DrawingItem *item)
 {
     PathItem *pathItem=createPathFromDrawing(item,true);
     if (pathItem) {
@@ -4339,139 +4353,9 @@ bool OpenParEMg::isValidCreatePortFromFace ()
 void OpenParEMg::createPortFromFace ()
 {
     //std::cout << "OpenParEMg::createPortFromFace" << std::endl; std::cout.flush();
-
-    std::vector<BaseItem *> createdItemsList;
-
-    int i=0;
-    while (i < ui->drawingWindow->NbSelected()) {
-        TopoDS_Shape selectedShape=ui->drawingWindow->get_selectedSubshape(i);
-        if (!selectedShape.IsNull()) {
-            if (selectedShape.ShapeType() == TopAbs_FACE) {
-
-                // next available s-port number
-                int sport=boundaryDatabase->get_SportCount()+1;
-
-                // default port name
-
-                std::string portName="port";
-                portName.append(std::to_string(sport));
-
-                int i=1;
-                while (boundaryDatabase->portNameExists(portName)) {
-                    std::string testName=portName;
-                    testName.append("_").append(std::to_string(i));
-                    if (boundaryDatabase->portNameExists(testName)) {i++;}
-                    else {portName=testName; break;}
-                }
-
-                // default net name
-
-                std::string netName="net";
-                netName.append(std::to_string(sport));
-
-                i=1;
-                while (boundaryDatabase->netNameExists(netName)) {
-                    std::string testName=netName;
-                    testName.append("_").append(std::to_string(i));
-                    if (boundaryDatabase->netNameExists(testName)) {i++;}
-                    else {netName=testName; break;}
-                }
-
-                // default path name
-
-                std::string pathName="port";
-                pathName.append(std::to_string(sport));
-
-                i=1;
-                while (boundaryDatabase->pathNameExists(pathName)) {
-                    std::string testName=pathName;
-                    testName.append("_").append(std::to_string(i));
-                    if (boundaryDatabase->pathNameExists(testName)) {i++;}
-                    else {pathName=testName; break;}
-                }
-
-                // path name placed in a keywordPair
-                keywordPair *kwPathName=new keywordPair();
-                kwPathName->set_keyword("path");
-                kwPathName->set_value(pathName);
-                kwPathName->set_lineNumber(0);
-                kwPathName->set_loaded(true);
-
-                // path
-
-                Path *newPath=new Path(0,0);
-                newPath->set_name(pathName);
-                newPath->is_modified();
-                newPath->addFacePoints(TopoDS::Face(selectedShape));
-                newPath->create_face_item(this,ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
-
-                boundaryDatabase->push_path(newPath);
-
-                // add new path to the drawing
-                BaseItem *item=newPath->get_item();
-                if (item) {
-                    // set color and transparency
-                    Handle(AIS_Shape) shape=item->getShape();
-                    if (!shape.IsNull()) {
-                        shape->SetColor(Quantity_NOC_MINTCREAM);  // X11 color wheel
-                        shape->SetTransparency(0.25);
-                        shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-                        ui->drawingWindow->setShaded(shape);
-                    }
-
-                    createdItemsList.push_back(item);
-                }
-
-                // port
-
-                Port *newPort=new Port(0,0);
-                newPort->set_name(portName);
-                newPort->set_outline(newPath);
-
-                // path info
-                newPort->push_path(kwPathName,boundaryDatabase->get_pathList_size()-1,false);
-
-                // impedance
-                if (boundaryDatabase->get_portList_size() == 0) {
-                    newPort->set_impedance_definition("PV");
-                    newPort->set_impedance_calculation("line");
-                } else {
-                    newPort->set_impedance_definition(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_definition());
-                    newPort->set_impedance_calculation(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_calculation());
-                }
-
-                // must have at least one mode per port - default to sensible assumptions
-                Mode *newMode=new Mode(0,0,newPort->get_impedance_calculation());
-                newMode->set_net(netName);
-                newMode->set_Sport(sport);
-                newPort->push_mode(newMode);
-
-                // add to boundary database
-                boundaryDatabase->push_port(newPort);
-
-                // draw it
-                PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
-                                                                  this,ui->drawingWindow,ui->drawingItemTree,
-                                                                  &path,&port,&boundary,materialDatabase);
-                port.setExpanded(true);
-                newPortItem->setExpanded(true);
-            }
-        }
-        i++;
-    }
-
-    // insert the items
-    i=0;
-    while (i < createdItemsList.size()) {
-        insertToMapActivateItem(createdItemsList[i]);
-        ui->drawingWindow->activateItem(createdItemsList[i]);
-        i++;
-    }
-
-    ui->drawingWindow->setSubshapeSelection(false);
-    on_actionShape_triggered();
-    setMenusI(37);
-    ui->drawingWindow->updateViewer();
+    itemChangesStack.startNew();
+    createPathFromFaceN(false);
+    createPortFromPathN(false);
 }
 
 bool OpenParEMg::isValidCreatePortFromPath ()
@@ -4500,9 +4384,14 @@ bool OpenParEMg::isValidCreatePortFromPath ()
 
 void OpenParEMg::createPortFromPath ()
 {
+    createPortFromPathN(true);
+}
+
+void OpenParEMg::createPortFromPathN (bool startNew)
+{
     //std::cout << "OpenParEMg::createPortFromPath" << std::endl; std::cout.flush();
 
-    itemChangesStack.startNew();
+    if (startNew) itemChangesStack.startNew();
 
     // create list of selected items
 
@@ -4620,46 +4509,36 @@ void OpenParEMg::createPortFromPath ()
     ui->drawingWindow->updateViewer();
 }
 
-bool OpenParEMg::isValidCreateBoundaryFromFace ()
+void OpenParEMg::createPathFromFace ()
 {
-    return isValidCreatePortFromFace();
+    createPathFromFaceN(true);
 }
 
-void OpenParEMg::createBoundaryFromFace ()
+void OpenParEMg::createPathFromFaceN (bool startNew)
 {
-    //std::cout << "OpenParEMg::createBoundaryFromFace" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::createPathFromFace" << std::endl; std::cout.flush();
+
+    if (startNew) itemChangesStack.startNew();
 
     std::vector<BaseItem *> createdItemsList;
 
     int i=0;
     while (i < ui->drawingWindow->NbSelected()) {
         TopoDS_Shape selectedShape=ui->drawingWindow->get_selectedSubshape(i);
+        std::cout << "place 1  i=" << i << std::endl; std::cout.flush();
         if (!selectedShape.IsNull()) {
             if (selectedShape.ShapeType() == TopAbs_FACE) {
 
-                // default boundary name
-
-                std::string boundaryName="boundary";
-                boundaryName.append(std::to_string(boundary.childCount()+1));
-
-                int i=1;
-                while (boundaryDatabase->boundaryNameExists(boundaryName)) {
-                    std::string testName=boundaryName;
-                    testName.append("_").append(std::to_string(i));
-                    if (boundaryDatabase->boundaryNameExists(testName)) {i++;}
-                    else {boundaryName=testName; break;}
-                }
-
                 // default path name
 
-                std::string pathName="boundary";
-                pathName.append(std::to_string(boundary.childCount()+1));
+                std::string pathName="path";
+                pathName.append(std::to_string(path.childCount()+1));
 
-                i=1;
+                int j=1;
                 while (boundaryDatabase->pathNameExists(pathName)) {
                     std::string testName=pathName;
                     testName.append("_").append(std::to_string(i));
-                    if (boundaryDatabase->pathNameExists(testName)) {i++;}
+                    if (boundaryDatabase->pathNameExists(testName)) {j++;}
                     else {pathName=testName; break;}
                 }
 
@@ -4679,48 +4558,22 @@ void OpenParEMg::createBoundaryFromFace ()
                 newPath->create_face_item(this,ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
 
                 boundaryDatabase->push_path(newPath);
+                std::cout << "place 2  i=" << i << std::endl; std::cout.flush();
 
                 // add new path to the drawing
-                BaseItem *item=newPath->get_item();
-                if (item) {
-                    // set color an transparency
-                    Handle(AIS_Shape) shape=item->getShape();
-                    if (!shape.IsNull()) {
-                        shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);  // X11 color wheel
-                        //shape->SetTransparency(0);
-                        shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-                        ui->drawingWindow->setShaded(shape);
-                    }
-
-                    createdItemsList.push_back(item);
+                PathItem *pathItem=newPath->get_item();
+                if (pathItem) {
+                    std::cout << "place 3  i=" << i << std::endl; std::cout.flush();
+                    itemChangesStack.add(pathItem);
+                    createdItemsList.push_back(pathItem);
                 }
-
-                // boundary
-
-                Boundary *newBoundary=new Boundary(0,0);
-                newBoundary->set_name(boundaryName);
-                newBoundary->set_outline(newPath);
-
-                // default to radiation in free space
-                newBoundary->set_type("radiation");
-                newBoundary->set_wave_impedance(sqrt(4.0e-7*M_PI/8.8541878176e-12));  // free-space value
-
-                // path info
-                newBoundary->push_path(kwPathName,boundaryDatabase->get_pathList_size()-1,false);
-
-                // add to boundary database
-                boundaryDatabase->push_boundary(newBoundary);
-
-                // draw it
-                BoundaryItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,
-                                                                          this,ui->drawingWindow,ui->drawingItemTree,
-                                                                          &path,&boundary,materialDatabase);
-                boundary.setExpanded(true);
-                newBoundaryItem->setExpanded(true);
             }
         }
         i++;
     }
+
+    // clear all selections
+    clearTreeSelection();
 
     // add the new items
     i=0;
@@ -4730,10 +4583,25 @@ void OpenParEMg::createBoundaryFromFace ()
         i++;
     }
 
-    ui->drawingWindow->setSubshapeSelection(false);
-    on_actionShape_triggered();
-    setMenusI(37);
-    ui->drawingWindow->updateViewer();
+    finishOperation(false,1);
+}
+
+bool OpenParEMg::isValidCreatePathFromFace ()
+{
+    return isValidCreatePortFromFace();
+}
+
+bool OpenParEMg::isValidCreateBoundaryFromFace ()
+{
+    return isValidCreatePortFromFace();
+}
+
+void OpenParEMg::createBoundaryFromFace ()
+{
+    //std::cout << "OpenParEMg::createBoundaryFromFace" << std::endl; std::cout.flush();
+    itemChangesStack.startNew();
+    createPathFromFaceN(false);
+    createBoundaryFromPathN(false);
 }
 
 bool OpenParEMg::isValidCreateBoundaryFromPath ()
@@ -4743,9 +4611,14 @@ bool OpenParEMg::isValidCreateBoundaryFromPath ()
 
 void OpenParEMg::createBoundaryFromPath ()
 {
+    createBoundaryFromPathN(true);
+}
+
+void OpenParEMg::createBoundaryFromPathN (bool startNew)
+{
     //std::cout << "OpenParEMg::createBoundaryFromPath" << std::endl; std::cout.flush();
 
-    itemChangesStack.startNew();
+    if (startNew) itemChangesStack.startNew();
 
     // create list of selected items
 
@@ -4868,7 +4741,7 @@ bool OpenParEMg::isValidConvertToPort ()
     return false;
 }
 
-void OpenParEMg::convertItemToPort (BaseItem *item)
+void OpenParEMg::convertItemToPort (DrawingItem *item)
 {
     item->setHasArrows(false);
     PathItem *pathItem=createPathFromDrawing(item,false);
@@ -5009,7 +4882,7 @@ bool OpenParEMg::isValidConvertToBoundary ()
     return isValidConvertToPort();
 }
 
-void OpenParEMg::convertItemToBoundary (BaseItem *item)
+void OpenParEMg::convertItemToBoundary (DrawingItem *item)
 {
     std::cout << "OpenParEMg::convertItemToBoundary" << std::endl; std::cout.flush();
 
@@ -5017,7 +4890,7 @@ void OpenParEMg::convertItemToBoundary (BaseItem *item)
     PathItem *pathItem=createPathFromDrawing(item,false);
     if (!pathItem) return;
 
-    std::cout << "1 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
+    //std::cout << "1 isInMap=" << ui->drawingWindow->isInMap(pathItem->getShape()) << std::endl; std::cout.flush();
 
     // default boundary name
 

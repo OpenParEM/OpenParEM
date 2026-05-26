@@ -1029,7 +1029,7 @@ void DrawingItem::showMenu (QMenu *menu)
     connect(mw->subtractAction, &QAction::triggered, mw, &OpenParEMg::subtractSolids);
     connect(mw->convertToPortAction, &QAction::triggered, mw, &OpenParEMg::convertToPort);
     connect(mw->convertToBoundaryAction, &QAction::triggered, mw, &OpenParEMg::convertToBoundary);
-    connect(mw->cancelAction, &QAction::triggered, mw, &OpenParEMg::cancelDrawingMenu);
+    connect(mw->cancelAction, &QAction::triggered, mw, &OpenParEMg::cancelMenu);
 
     if (mw->isValidAssignMaterial()) menu->addAction(mw->assignMaterialAction);
     if (mw->isValidObjectShow()) menu->addAction(mw->showAction);
@@ -1314,7 +1314,7 @@ void PathItem::showMenu (QMenu *menu)
     connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deletePathItems);
     connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showPathItems);
     connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hidePathItems);
-    connect(mw->cancelAction, &QAction::triggered, mw, &OpenParEMg::cancelPathMenu);
+    connect(mw->cancelAction, &QAction::triggered, mw, &OpenParEMg::cancelMenu);
 
     if (mw->isValidShowPath()) menu->addAction(mw->showAction);
     if (mw->isValidHidePath()) menu->addAction(mw->hideAction);
