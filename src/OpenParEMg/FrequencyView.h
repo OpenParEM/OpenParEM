@@ -56,6 +56,8 @@ private:
     int frequencyColWidth;
     int priorityColWidth;
     int restartColWidth;
+
+    double conversionFactor;    // for converting frequencies between Hz and kHz, MHz, or GHz
 };
 
 #endif // FREQUENCYVIEW_H

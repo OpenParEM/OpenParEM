@@ -45,9 +45,9 @@ FrequencyView::FrequencyView (QWidget *parent)
     scrollBarWidth=qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent);
     scrollBarOffset=0;
 
-    QStringList headers;
-    headers << "Frequency" << "Refinement Order" << "Restart";
-    ui->frequencyView->setHorizontalHeaderLabels(headers);
+    //QStringList headers;
+    //headers << "Frequency" << "Refinement Order" << "Restart";
+    //ui->frequencyView->setHorizontalHeaderLabels(headers);
 
     QTableWidgetItem *headerItem=ui->frequencyView->horizontalHeaderItem(0);
     if (headerItem) headerItem->setToolTip("Simulation frequencies.");
@@ -66,6 +66,29 @@ FrequencyView::~FrequencyView ()
 
 void FrequencyView::populate (struct projectData *projData)
 {
+    //xxx
+    std::cout << "FrequencyView::populate: projData->touchstone_frequency_unit = " << projData->touchstone_frequency_unit << std::endl; std::cout.flush();
+
+    // frequency conversions
+    if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) conversionFactor=1;
+    else if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) conversionFactor=1e3;
+    else if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) conversionFactor=1e6;
+    else if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) conversionFactor=1e9;
+
+    // headers
+    QStringList headers;
+    if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) {
+        headers << "Frequency, Hz" << "Refinement Order" << "Restart";
+    } else if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) {
+        headers << "Frequency, kHz" << "Refinement Order" << "Restart";
+    } else if  (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) {
+        headers << "Frequency, MHz" << "Refinement Order" << "Restart";
+    } else if  (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) {
+        headers << "Frequency, GHz" << "Refinement Order" << "Restart";
+    }
+    ui->frequencyView->setHorizontalHeaderLabels(headers);
+
+    // fill
     if (projData->inputFrequencyPlansCount > 0 &&
         !frequencyPlan.assemble(projData->refinement_frequency,projData->inputFrequencyPlansCount,projData->inputFrequencyPlans)) {
         int currentRow=0;
@@ -78,7 +101,7 @@ void FrequencyView::populate (struct projectData *projData)
                 ui->frequencyView->insertRow(currentRow);
 
                 QLineEdit *entry=new QLineEdit();
-                entry->setText(QString::number(frequency->get_frequency()));
+                entry->setText(QString::number(frequency->get_frequency()/conversionFactor));
                 entry->setAlignment(Qt::AlignHCenter);
                 entry->setReadOnly(true);
                 ui->frequencyView->setCellWidget(currentRow,0,entry);

@@ -85,8 +85,8 @@ void SimOptions::set_projData (struct projectData *a)
     if (referenceImpedance == 0) {
         ui->referenceImpedance->setEnabled(false);
         ui->referenceImpedanceLabel->setEnabled(false);
-        ui->frequencyUnit->setEnabled(false);
-        ui->frequencyUnitLabel->setEnabled(false);
+        ui->frequencyUnit->setEnabled(true);
+        ui->frequencyUnitLabel->setEnabled(true);
         ui->touchstoneFormat->setEnabled(false);
         ui->touchstoneFormatLabel->setEnabled(false);
         ui->normalizeSparam->setCheckState(Qt::Unchecked);

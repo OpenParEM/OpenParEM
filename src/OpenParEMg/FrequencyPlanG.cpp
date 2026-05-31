@@ -67,9 +67,9 @@ FrequencyPlanG::FrequencyPlanG (QWidget *parent)
     ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset);
     ui->frequencyTable->setColumnWidth(5,refineColWidth);
 
-    QStringList headers;
-    headers << "Type" << "Start" << "Stop" << "Step" << "Points Per Decade" << "Refine" << "current type";
-    ui->frequencyTable->setHorizontalHeaderLabels(headers);
+    //QStringList headers;
+    //headers << "Type" << "Start" << "Stop" << "Step" << "Points Per Decade" << "Refine" << "current type";
+    //ui->frequencyTable->setHorizontalHeaderLabels(headers);
 
     // number cell background colors
     enabledBackground="background: rgb(255,255,255);";
@@ -81,6 +81,8 @@ FrequencyPlanG::FrequencyPlanG (QWidget *parent)
     ui->AMR->setEnabled(true);
     ui->adaptiveFrequenciesLabel->setEnabled(false);
     ui->adaptiveFrequencies->setEnabled(false);
+
+    conversionFactor=1;
 }
 
 FrequencyPlanG::~FrequencyPlanG ()
@@ -91,6 +93,25 @@ FrequencyPlanG::~FrequencyPlanG ()
 void FrequencyPlanG::set_projData (struct projectData *a)
 {
     projData=a;
+
+    // frequency conversions
+    if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) conversionFactor=1;
+    else if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) conversionFactor=1e3;
+    else if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) conversionFactor=1e6;
+    else if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) conversionFactor=1e9;
+
+    // headers
+    QStringList headers;
+    if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) {
+        headers << "Type" << "Start, Hz" << "Stop, Hz" << "Step, Hz" << "Points Per Decade" << "Refine" << "current type";
+    } else if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) {
+        headers << "Type" << "Start, kHz" << "Stop, kHz" << "Step, kHz" << "Points Per Decade" << "Refine" << "current type";
+    } else if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) {
+        headers << "Type" << "Start, MHz" << "Stop, MHz" << "Step, MHz" << "Points Per Decade" << "Refine" << "current type";
+    } else if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) {
+        headers << "Type" << "Start, GHz" << "Stop, GHz" << "Step, GHz" << "Points Per Decade" << "Refine" << "current type";
+    }
+    ui->frequencyTable->setHorizontalHeaderLabels(headers);
 
     // AMR
 
@@ -185,7 +206,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
         // frequencies - linear
         if (projData->inputFrequencyPlans[i].type == 0) {
             CustomLineEdit *start=new CustomLineEdit();
-            start->setText(QString::number(projData->inputFrequencyPlans[i].start,'g'));
+            start->setText(QString::number(projData->inputFrequencyPlans[i].start/conversionFactor,'g'));
             start->setAlignment(Qt::AlignHCenter);
             start->setStyleSheet(enabledBackground);
             start->setValidator(&doubleValidator);
@@ -193,7 +214,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
             connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *stop=new CustomLineEdit();
-            stop->setText(QString::number(projData->inputFrequencyPlans[i].stop,'g'));
+            stop->setText(QString::number(projData->inputFrequencyPlans[i].stop/conversionFactor,'g'));
             stop->setAlignment(Qt::AlignHCenter);
             stop->setStyleSheet(enabledBackground);
             stop->setValidator(&doubleValidator);
@@ -201,7 +222,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
             connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *step=new CustomLineEdit();
-            step->setText(QString::number(projData->inputFrequencyPlans[i].step,'g'));
+            step->setText(QString::number(projData->inputFrequencyPlans[i].step/conversionFactor,'g'));
             step->setAlignment(Qt::AlignHCenter);
             step->setStyleSheet(enabledBackground);
             step->setValidator(&doubleValidator);
@@ -221,7 +242,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
         // frequencies - log
         if (projData->inputFrequencyPlans[i].type == 1) {
             CustomLineEdit *start=new CustomLineEdit();
-            start->setText(QString::number(projData->inputFrequencyPlans[i].start,'g'));
+            start->setText(QString::number(projData->inputFrequencyPlans[i].start/conversionFactor,'g'));
             start->setAlignment(Qt::AlignHCenter);
             start->setStyleSheet(enabledBackground);
             start->setValidator(&doubleValidator);
@@ -229,7 +250,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
             connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *stop=new CustomLineEdit();
-            stop->setText(QString::number(projData->inputFrequencyPlans[i].stop,'g'));
+            stop->setText(QString::number(projData->inputFrequencyPlans[i].stop/conversionFactor,'g'));
             stop->setAlignment(Qt::AlignHCenter);
             stop->setStyleSheet(enabledBackground);
             stop->setValidator(&doubleValidator);
@@ -257,7 +278,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
         // frequencies - frequency
         if (projData->inputFrequencyPlans[i].type == 2) {
             CustomLineEdit *start=new CustomLineEdit();
-            start->setText(QString::number(projData->inputFrequencyPlans[i].frequency,'g'));
+            start->setText(QString::number(projData->inputFrequencyPlans[i].frequency/conversionFactor,'g'));
             start->setAlignment(Qt::AlignHCenter);
             start->setStyleSheet(enabledBackground);
             start->setValidator(&doubleValidator);
@@ -349,7 +370,7 @@ void FrequencyPlanG::on_frequencyAdd_clicked ()
     connect(type,&QComboBox::currentIndexChanged,this,&FrequencyPlanG::typeComboBox_changed);
 
     CustomLineEdit *start=new CustomLineEdit();
-    start->setText(QString::number(1e9,'g'));
+    start->setText(QString::number(1e9/conversionFactor,'g'));
     start->setAlignment(Qt::AlignHCenter);
     start->setStyleSheet(enabledBackground);
     start->setValidator(&doubleValidator);
@@ -547,15 +568,15 @@ void FrequencyPlanG::get_projData ()
 
             QWidget *widget=ui->frequencyTable->cellWidget(i,1);
             CustomLineEdit *start=qobject_cast<CustomLineEdit *>(widget);
-            projData->inputFrequencyPlans[i].start=start->text().toDouble();
+            projData->inputFrequencyPlans[i].start=start->text().toDouble()*conversionFactor;
 
             widget=ui->frequencyTable->cellWidget(i,2);
             CustomLineEdit *stop=qobject_cast<CustomLineEdit *>(widget);
-            projData->inputFrequencyPlans[i].stop=stop->text().toDouble();
+            projData->inputFrequencyPlans[i].stop=stop->text().toDouble()*conversionFactor;
 
             widget=ui->frequencyTable->cellWidget(i,3);
             CustomLineEdit *step=qobject_cast<CustomLineEdit *>(widget);
-            projData->inputFrequencyPlans[i].step=step->text().toDouble();
+            projData->inputFrequencyPlans[i].step=step->text().toDouble()*conversionFactor;
 
             if (refine->isChecked()) projData->inputFrequencyPlans[i].refine=1;
             else projData->inputFrequencyPlans[i].refine=0;
@@ -571,11 +592,11 @@ void FrequencyPlanG::get_projData ()
 
             QWidget *widget=ui->frequencyTable->cellWidget(i,1);
             CustomLineEdit *start=qobject_cast<CustomLineEdit *>(widget);
-            projData->inputFrequencyPlans[i].start=start->text().toDouble();
+            projData->inputFrequencyPlans[i].start=start->text().toDouble()*conversionFactor;
 
             widget=ui->frequencyTable->cellWidget(i,2);
             CustomLineEdit *stop=qobject_cast<CustomLineEdit *>(widget);
-            projData->inputFrequencyPlans[i].stop=stop->text().toDouble();
+            projData->inputFrequencyPlans[i].stop=stop->text().toDouble()*conversionFactor;
 
             widget=ui->frequencyTable->cellWidget(i,4);
             QLineEdit *pointsPerDecade=qobject_cast<QLineEdit *>(widget);
@@ -595,7 +616,7 @@ void FrequencyPlanG::get_projData ()
 
             QWidget *widget=ui->frequencyTable->cellWidget(i,1);
             CustomLineEdit *frequency=qobject_cast<CustomLineEdit *>(widget);
-            projData->inputFrequencyPlans[i].frequency=frequency->text().toDouble();
+            projData->inputFrequencyPlans[i].frequency=frequency->text().toDouble()*conversionFactor;
 
             if (refine->isChecked()) projData->inputFrequencyPlans[i].refine=1;
             else projData->inputFrequencyPlans[i].refine=0;
@@ -1059,7 +1080,10 @@ void FrequencyPlanG::on_planView_clicked ()
 {
     if (check_inputs()) return;
 
-    // save the existing data so that a cancel can be used
+    // frequency unit
+    std::string frequency_unit=projData->touchstone_frequency_unit;
+
+    // save the existing pointer
     struct projectData *saveProjData=projData;
 
     // temp data holder
@@ -1067,7 +1091,12 @@ void FrequencyPlanG::on_planView_clicked ()
     init_project (&tempProjData);
     projData=&tempProjData;
 
-    // get the data
+    // init_project sets GHz as default, so align the frequency unit to the current data
+    if (projData->touchstone_frequency_unit) free(projData->touchstone_frequency_unit);
+    projData->touchstone_frequency_unit=(char *)malloc((frequency_unit.length()+1)*sizeof(char));
+    sprintf(projData->touchstone_frequency_unit,"%s",frequency_unit.c_str());
+
+    // populate the temporary project data with data from the form
     get_projData();
 
     // view it
@@ -1076,7 +1105,7 @@ void FrequencyPlanG::on_planView_clicked ()
     view->exec();
     delete view;
 
-    // clean up and restore the original data
+    // clean up and restore the original project data pointer
     free_project(&tempProjData);
     projData=saveProjData;
 }

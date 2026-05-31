@@ -78,6 +78,8 @@ private:
     int elasticColWidth;
     int elasticColAdj;
     bool simulationRunning;
+
+    double conversionFactor;    // for converting frequencies between Hz and kHz, MHz, or GHz
 };
 
 #endif // FREQUENCYPLANG_H
