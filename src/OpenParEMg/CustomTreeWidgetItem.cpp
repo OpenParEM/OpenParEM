@@ -1446,6 +1446,8 @@ void PathItem::undo ()
 
 void PathItem::showArrows (bool show)
 {
+    //std::cout << "PathItem::showArrows" << std::endl; std::cout.flush();
+
     mw->ui->drawingWindow->hideItem(this);
     mw->ui->drawingWindow->removeItemFromMap(this);
     mw->ui->drawingWindow->deleteShape(getShape());

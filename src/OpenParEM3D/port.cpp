@@ -1576,12 +1576,10 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     if (!path) return;
 
     // attach item
-    bool found=false;
     int j=0;
     while (j < rootPathItem->childCount()) {
         PathItem *child=dynamic_cast<PathItem *>(rootPathItem->child(j));
         if (child->getPath() == path) {
-            found=true;
             boundaryItem->setPathItem(child);
             child->push_linkedItem(boundaryItem);
 
@@ -9900,7 +9898,9 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData,
     // paths
     long unsigned int i=0;
     while (i < pathList.size()) {
-        pathList[i]->create_wire_item(mw,drawingWindow,rootPathItem);
+        //pathList[i]->create_wire_item(mw,drawingWindow,rootPathItem);
+        //xxx
+        pathList[i]->create_polywire_item(mw,drawingWindow,rootPathItem);
         i++;
     }
 

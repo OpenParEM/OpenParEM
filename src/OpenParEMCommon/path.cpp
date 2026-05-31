@@ -569,6 +569,15 @@ Path::Path(int startLine_, int endLine_)
    name.set_upperLimit(0);
    name.set_checkLimits(false);
 
+   // normal
+   normal.push_alias("normal");
+   normal.set_loaded(false);
+   normal.set_positive_required(false);
+   normal.set_non_negative_required(false);
+   normal.set_lowerLimit(0);
+   normal.set_upperLimit(0);
+   normal.set_checkLimits(false);
+
    // closed
    closed.push_alias("closed");
    closed.set_loaded(false);
@@ -587,9 +596,6 @@ Path::Path(int startLine_, int endLine_)
    phi=0;
    cos_phi_=cos(phi);
    sin_phi_=sin(phi);
-
-   hasNormal=false;
-   normal.dim=3; normal.x=-2; normal.y=-2; normal.z=-2;
 
    hasOutput=false;
    modified=true;
@@ -645,6 +651,8 @@ void Path::print (std::string indent)
    }
    if (closed.get_bool_value()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   closed=true\n",indent.c_str());}
    else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   closed=false\n",indent.c_str());}
+   if (normal.is_loaded()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   normal=(%g,%g%g)\n",indent.c_str(),
+                            normal.get_point_value().x,normal.get_point_value().y,normal.get_point_value().z);}
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   tol=%g\n",indent.c_str(),tol);
    if (rotated) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   rotated=true\n",indent.c_str());}
    else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   rotated=false\n",indent.c_str());}
@@ -660,11 +668,6 @@ void Path::print (std::string indent)
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   ymin=%g\n",indent.c_str(),ymin);
    if (dim == 3) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   zmax=%g\n",indent.c_str(),zmax);}
    if (dim == 3) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   zmin=%g\n",indent.c_str(),zmin);}
-   if (hasNormal) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   hasNormal=true\n",indent.c_str());}
-   else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   hasNormal=false\n",indent.c_str());}
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   normal.x=%g\n",indent.c_str(),normal.x);
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   normal.y=%g\n",indent.c_str(),normal.y);
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   normal.z=%g\n",indent.c_str(),normal.z);
    if (hasOutput) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   hasOutput=true\n",indent.c_str());}
    else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   hasOutput=false\n",indent.c_str());}
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndPath\n",indent.c_str());
@@ -672,6 +675,8 @@ void Path::print (std::string indent)
 
 void Path::save (std::ofstream *out)
 {
+    std::cout << "Path::save" << std::endl; std::cout.flush();
+
     if (!isUsed) return;
 
     PetscMPIInt rank;
@@ -680,6 +685,7 @@ void Path::save (std::ofstream *out)
     modified=false;
     if (rank != 0) return;
 
+    std::cout << "   saving" << std::endl; std::cout.flush();
     int dim=0;
     *out << "Path" << std::endl;
     *out << "   name=" << get_name() << std::endl;
@@ -688,11 +694,23 @@ void Path::save (std::ofstream *out)
     while (i < points.size()) {
         struct point p=points[i]->get_point_value();
         if (p.dim == 2) {*out << "   point=(" << p.x << "," << p.y << ")" << std::endl;}
-        if (get_point_dim(i) == 3) {*out << "   point=(" << p.x << "," << p.y << "," << p.z << ")" << std::endl;}
+        if (p.dim == 3) {*out << "   point=(" << p.x << "," << p.y << "," << p.z << ")" << std::endl;}
         i++;
     }
     if (closed.get_bool_value()) {*out << "   closed=true" << std::endl;}
     else {*out << "   closed=false" << std::endl;}
+
+    if (normal.is_loaded()) {
+        if (normal.get_point_value_dim() == 2) {
+            *out << "   normal=(" << normal.get_point_value().x << ","
+                                  << normal.get_point_value().y << ")" << std::endl;
+        }
+        if (normal.get_point_value_dim() == 3) {
+            *out << "   normal=(" << normal.get_point_value().x << ","
+                                  << normal.get_point_value().y << ","
+                                  << normal.get_point_value().z << ")" << std::endl;
+        }
+    }
 
     *out << "EndPath" << std::endl;
     *out << std::endl;
@@ -775,6 +793,13 @@ bool Path::load(int dim, std::string *indent, inputFile *inputs)
          if (closed.loadBool(&token, &value, lineNumber)) fail=true;
       }
 
+      if (normal.match_alias(&token)) {
+          normal.set_value(value);
+          normal.set_lineNumber(lineNumber);
+          normal.loadPoint(dim,&token,&value,lineNumber);
+          recognized++;
+      }
+
       // should recognize one keyword
       if (recognized != 1) {
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1098: Unrecognized keyword at line %d.\n",indent->c_str(),indent->c_str(),lineNumber);
@@ -784,7 +809,10 @@ bool Path::load(int dim, std::string *indent, inputFile *inputs)
    }
 
    calculateBoundingBox();
-   calculateNormal();
+
+   if (!normal.is_loaded()) {
+      calculateNormal();
+   }
 
    return fail;
 }
@@ -891,11 +919,11 @@ double Path::sum_of_angles (struct point pt)
    double theta1=0;
    long unsigned int i=0;
    while (i < points.size()-1) {
-      theta1+=signed_angle_between_two_lines (pt,points[i]->get_point_value(),points[i+1]->get_point_value(),normal);
+      theta1+=signed_angle_between_two_lines (pt,points[i]->get_point_value(),points[i+1]->get_point_value(),normal.get_point_value());
       i++;
    }
    if (is_closed()) {
-      theta1+=signed_angle_between_two_lines (pt,points[i]->get_point_value(),points[0]->get_point_value(),normal);
+      theta1+=signed_angle_between_two_lines (pt,points[i]->get_point_value(),points[0]->get_point_value(),normal.get_point_value());
    }
    return theta1;
 }
@@ -1009,8 +1037,7 @@ Path* Path::clone()
    newPath->ymin=ymin;
    newPath->zmax=zmax;
    newPath->zmin=zmin;
-   newPath->hasNormal=hasNormal;
-   newPath->normal=point_copy(normal);
+   newPath->normal.copy(normal);
 
    long unsigned int i=0;
    while (i < points.size()) {
@@ -1044,7 +1071,7 @@ void Path::calculateBoundingBox()
    }
 }
 
-// calculate a normal to the path
+// calculate a normal_pnt to the path
 // assumes that the path is planar
 bool Path::calculateNormal ()
 {
@@ -1103,16 +1130,15 @@ bool Path::calculateNormal ()
    pt1=point_subtraction(pt1,ptc);
    pt2=point_subtraction(pt2,ptc);
 
-   normal=point_normalize(point_cross_product(pt2,pt1));
-
-   hasNormal=true;
+   normal.set_point_value(point_normalize(point_cross_product(pt2,pt1)));
+   normal.set_loaded(true);
 
    return false;
 }
 
 Path* Path::rotateToXYplane ()
 {
-   if (!hasNormal) {
+    if (!normal.is_loaded()) {
       return nullptr;
    }
 
@@ -1129,12 +1155,12 @@ Path* Path::rotateToXYplane ()
    // rotation angles
 
    // phi
-   rotated->phi=-atan2(rotated->normal.y,rotated->normal.x);
+   rotated->phi=-atan2(rotated->normal.get_point_value().y,rotated->normal.get_point_value().x);
 
    // theta
    struct point pt0; pt0.dim=3; pt0.x=0; pt0.y=0; pt0.z=0;
    struct point ptz; ptz.dim=3; ptz.x=0; ptz.y=0; ptz.z=1;
-   rotated->theta=-angle_between_two_lines(pt0,rotated->normal,ptz);
+   rotated->theta=-angle_between_two_lines(pt0,rotated->normal.get_point_value(),ptz);
 
    // pre-calculation
    rotated->cos_theta_=cos(rotated->theta);
@@ -2039,19 +2065,18 @@ struct point Path::getInsidePoint ()
 
 void Path::assignPathNormal (struct point normal_)
 {
-    if (hasNormal) return;
-    normal=point_copy(normal_);
-    hasNormal=true;
+    if (normal.is_loaded()) return;
+    normal.set_point_value(normal_);
+    normal.set_loaded(true);
 }
 
 #ifdef HAS_GUI
 
 void Path::set_normal (gp_Vec a)
 {
-    normal.x=a.X();
-    normal.y=a.Y();
-    normal.z=a.Z();
-    normal.dim=3;
+    normal.set_point_value(a.X(),a.Y(),a.Z());
+    normal.set_point_value_dim(3);
+    normal.set_loaded(true);
 }
 
 TopoDS_Wire Path::create_TopoDS_Wire ()
@@ -2196,6 +2221,67 @@ void Path::create_wire_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, 
     item=new PathItem(0);
     item->setMW(mw);
     fill_wire_item(item);
+    parentItem->addChild(item);
+}
+
+void Path::create_polywire_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
+{
+    item=new PathItem(0);
+    item->setMW(mw);
+
+    if (points.size() < 2) {
+        // not a valid line
+        return;
+    } else if (points.size() == 2) {
+        Line *line=new Line();
+
+        long unsigned int i=0;
+        while (i < points.size()) {
+            gp_Pnt pnt(points[i]->get_point_value().x,
+                       points[i]->get_point_value().y,
+                       points[i]->get_point_value().z);
+            line->addPoint(pnt);
+            i++;
+        }
+
+        if (normal.is_loaded()) {
+            line->setNormal(normal.get_point_value());
+            line->setHasArrows(true);
+        }
+
+        ShapeData *newShapeData=new ShapeData(1,line,nullptr,line->get_AIS_Shape());
+        item->addShapeData(newShapeData);
+    } else {
+        Polyline *polyline=new Polyline();
+
+        long unsigned int i=0;
+        while (i < points.size()) {
+            gp_Pnt pnt(points[i]->get_point_value().x,
+                       points[i]->get_point_value().y,
+                       points[i]->get_point_value().z);
+            polyline->addPoint(pnt);
+            i++;
+        }
+
+        if (is_closed()) {
+            polyline->close();
+        }
+
+        if (normal.is_loaded()) {
+            polyline->setNormal(normal.get_point_value());
+            polyline->setHasArrows(true);
+        }
+
+        ShapeData *newShapeData=new ShapeData(1,polyline,nullptr,polyline->get_AIS_Shape());
+        item->addShapeData(newShapeData);
+    }
+
+    // cross reference
+    item->setPath(this);
+
+    // name
+    item->setText(0,QString::fromStdString(get_name()));
+
     parentItem->addChild(item);
 }
 

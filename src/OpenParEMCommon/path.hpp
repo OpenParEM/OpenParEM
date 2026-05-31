@@ -64,10 +64,11 @@ class Path {
       int endLine;
       keywordPair name;
       std::vector<keywordPair *> points;
-      keywordPair closed;
-      double tol=1e-11; // 1e-11
-      bool hasNormal;
-      struct point normal;
+      keywordPair closed;  // indicates whether the path is closed
+      keywordPair normal;  // optional on input - normal to the path for drawing arrows; generated as needed
+      double tol=1e-11;
+      //bool hasNormal;
+      //struct point normal_pnt;  // ToDo: replace with the keywordPair normal
       bool rotated;        // true if this path is rotated parallel to the x-y plane
       double theta;        // angle from z-axis to the normal vector of the plane in which the path sits
       double phi;          // rotation from the x-axis in the x-y plane to the normal vector of the plane
@@ -125,8 +126,8 @@ class Path {
       void subdivide (Path *);
       double sum_of_angles (struct point);
       bool calculateNormal ();
-      struct point get_normal () {return normal;}
-      void set_normal (struct point normal_) {normal=point_copy(normal_);}
+      struct point get_normal () {return normal.get_point_value();}
+      void set_normal (struct point normal_) {normal.set_point_value(normal_); normal.set_loaded(true);}
       bool is_rotated () {return rotated;}
       Path* rotateToXYplane ();
       void rotatePoint (double *, double *, double *, bool);
@@ -159,6 +160,7 @@ class Path {
       void set_normal (gp_Vec);
       void fill_wire_item (PathItem *);
       void create_wire_item (OpenParEMg *, CustomOpenGLWidget *, RootPathItem *);
+      void create_polywire_item (OpenParEMg *, CustomOpenGLWidget *, RootPathItem *);
       void create_face_item (OpenParEMg *, CustomOpenGLWidget *, RootPathItem *);
       PathItem* get_item () {return item;}
       void set_portItem (PortItem *portItem_) {portItem=portItem_;}

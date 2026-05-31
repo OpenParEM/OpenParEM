@@ -622,6 +622,9 @@ private slots:
     void hideIntegrationPathItems ();
 
     void assignMaterial ();
+    void crossReferencePaths ();
+    void resetPathArrowheads ();
+    void resetPathColors ();
 
     void cancelMenu ();
     void buildPathMenu (QMenu &menu);

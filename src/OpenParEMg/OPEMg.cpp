@@ -520,22 +520,27 @@ void OpenParEMg::convertPathToFace (BaseItem *item)
     ui->drawingWindow->removeItemFromMap(item);
     ui->drawingWindow->deleteShape(shape);
 
-    PathItem* pathItem=nullptr;
+    PathItem *convertPathItem=nullptr;
+
+    PathItem *pathItem=dynamic_cast<PathItem *>(item);
+    if (item && pathItem->is_path()) convertPathItem=pathItem;
 
     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
-    if (boundaryItem && boundaryItem->is_boundary()) pathItem=boundaryItem->getPathItem();
+    if (boundaryItem && boundaryItem->is_boundary()) convertPathItem=boundaryItem->getPathItem();
 
     PortItem *portItem=dynamic_cast<PortItem *>(item);
-    if (portItem && portItem->is_boundary()) pathItem=portItem->getPathItem();
+    if (portItem && portItem->is_port()) convertPathItem=portItem->getPathItem();
 
-    if (!pathItem) return;
+    if (!convertPathItem) return;
 
-    Path *path=static_cast<Path *>(pathItem->getPath());
+    std::cout << "convertPathItem=" << convertPathItem->text(0).toStdString() << std::endl; std::cout.flush();
+    Path *path=static_cast<Path *>(convertPathItem->getPath());
     if (path) {
         TopoDS_Wire wire=path->create_TopoDS_Wire();
         if (!wire.IsNull()) {
             BRepBuilderAPI_MakeFace faceMaker(wire);
             if (faceMaker.IsDone()) {
+                std::cout << "   converted to face" << std::endl; std::cout.flush();
                 TopoDS_Face face=faceMaker.Face();
                 Handle(AIS_Shape) newShape=new AIS_Shape(face);
                 ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,newShape);
@@ -4173,8 +4178,6 @@ bool OpenParEMg::isValidConvertToPath ()
     return false;
 }
 
-//xxx
-
 PathItem* OpenParEMg::createPathFromDrawing (DrawingItem *item, bool hasArrows)
 {
     Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
@@ -4998,6 +5001,142 @@ void OpenParEMg::assignMaterial ()
     }
 }
 
+void OpenParEMg::crossReferencePaths ()
+{
+    //std::cout << "OpenParEMg::crossReferencePaths" << std::endl; std::cout.flush();
+
+    int i=0;
+    while (i < port.childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port.child(i));
+        if (portItem && portItem->is_port()) {
+            Port *port=portItem->getPort();
+            if (port) {
+                Path *outline=port->get_outline();
+                if (outline) {
+                    int j=0;
+                    while (j < path.childCount()) {
+                        PathItem *pathItem=dynamic_cast<PathItem *>(path.child(j));
+                        if (pathItem && pathItem->is_path()) {
+                            if (pathItem->getPath() == outline) {
+                                portItem->setPathItem(pathItem);
+                                break;
+                            }
+                        }
+                        j++;
+                    }
+                }
+            }
+        }
+        i++;
+    }
+
+    {
+        int i=0;
+        while (i < boundary.childCount()) {
+            BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary.child(i));
+            if (boundaryItem && boundaryItem->is_boundary()) {
+                Boundary *boundary=boundaryItem->getBoundary();
+                if (boundary) {
+                    Path *outline=boundary->get_outline();
+                    if (outline) {
+                        int j=0;
+                        while (j < path.childCount()) {
+                            PathItem *pathItem=dynamic_cast<PathItem *>(path.child(j));
+                            if (pathItem && pathItem->is_path()) {
+                                if (pathItem->getPath() == outline) {
+                                    boundaryItem->setPathItem(pathItem);
+                                    break;
+                                }
+                            }
+                            j++;
+                        }
+                    }
+                }
+            }
+            i++;
+        }
+    }
+
+}
+
+void OpenParEMg::resetPathArrowheads ()
+{
+    //std::cout << "OpenParEMg::resetPathArrowheads" << std::endl; std::cout.flush();
+
+    int i=0;
+    while (i < port.childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port.child(i));
+        if (portItem && portItem->is_port()) {
+            PathItem *pathItem=portItem->getPathItem();
+            if (pathItem) {
+                pathItem->showArrows(false);
+            }
+        }
+        i++;
+    }
+
+    i=0;
+    while (i < boundary.childCount()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary.child(i));
+        if (boundaryItem && boundaryItem->is_boundary()) {
+            PathItem *pathItem=boundaryItem->getPathItem();
+            if (pathItem) {
+                pathItem->showArrows(false);
+            }
+        }
+        i++;
+    }
+}
+
+void OpenParEMg::resetPathColors ()
+{
+    std::cout << "OpenParEMg::resetPathColors" << std::endl; std::cout.flush();
+
+    int i=0;
+    while (i < port.childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port.child(i));
+        if (portItem && portItem->is_port()) {
+            PathItem *pathItem=portItem->getPathItem();
+            if (pathItem) {
+                Handle(AIS_Shape) shape=pathItem->getShape();
+                if (!shape.IsNull()) {
+                    std::cout << "         shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
+                    std::cout << "         setting shape" << std::endl; std::cout.flush();
+                    shape->SetColor(Quantity_NOC_MINTCREAM);
+                    shape->SetTransparency(0.25);
+                    shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+                }
+            }
+        }
+        i++;
+    }
+
+    i=0;
+    while (i < boundary.childCount()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary.child(i));
+        if (boundaryItem && boundaryItem->is_boundary()) {
+            Boundary *boundary=boundaryItem->getBoundary();
+            if (boundary) {
+                PathItem *pathItem=boundaryItem->getPathItem();
+                if (pathItem) {
+                    Handle(AIS_Shape) shape=pathItem->getShape();
+                    if (!shape.IsNull()) {
+                        shape->SetTransparency(0);
+                        shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+                        if (boundary->is_perfect_electric_conductor()) shape->SetColor(Quantity_NOC_GREENYELLOW);
+                        if (boundary->is_perfect_magnetic_conductor()) shape->SetColor(Quantity_NOC_CYAN);
+                        if (boundary->is_surface_impedance()) shape->SetColor(Quantity_NOC_GOLDENROD);
+                        if (boundary->is_radiation()) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
+                    }
+                }
+            }
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+}
+
 void OpenParEMg::dumpDrawingEntities ()
 {
     long unsigned int i=0;
@@ -5095,20 +5234,32 @@ void OpenParEMg::on_actionOpen_triggered ()
             // continue despite the errors
 
             boundaryDatabase->set_unmodified();
-            boundaryDatabase->assignPathNormals();  // to correctly orient arrow heads
+            //boundaryDatabase->assignPathNormals();  // to correctly orient arrow heads
+
             // ToDo: rename draw since this does not actually draw
             boundaryDatabase->draw(relay,&projData,
                                    this,ui->drawingWindow,ui->drawingItemTree,
                                    &path,&port,&boundary,materialDatabase);
 
-            // add paths to the tree
-            long unsigned int i=0;
-            while (i < boundaryDatabase->get_pathList_size()) {
-                Path *aPath=boundaryDatabase->get_path(i);
-                BaseItem *item=aPath->get_item();
-                if (item) insertToMapActivateItem(item);
+            // add paths to the selection map and activate
+            int i=0;
+            while (i < path.childCount()) {
+                PathItem *pathItem=dynamic_cast<PathItem *>(path.child(i));
+                if (pathItem) {
+                    ui->drawingWindow->insertItemToMap(pathItem->getShape(),pathItem);
+                    ui->drawingWindow->activateItem(pathItem);
+                }
                 i++;
             }
+
+            // cross-reference paths to port and boundary outlines
+            crossReferencePaths();
+
+            // hide arrows for ports and boundaries
+            resetPathArrowheads();
+
+            // set solid colors for ports and boundaries
+            resetPathColors();
         }
 
         // load mesh, if any, and draw
@@ -5116,7 +5267,7 @@ void OpenParEMg::on_actionOpen_triggered ()
             loadMeshFile(QString::fromStdString(projData.mesh_file));
         }
 
-        // load file
+        // load drawing
         bool drawingLoaded=false;
         if (loadDrawingFile()) {
         } else {
@@ -6360,8 +6511,13 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
                 objectCounts.solid++;
             }
 
+
             parent->addChild(newItem);
             newItem->setParentItem(parent);
+
+            ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
+            ui->drawingWindow->activateItem(newItem);
+
             reprocess(newItem);
             drawingChanged=true;
             ui->drawingWindow->showItem(newItem);
