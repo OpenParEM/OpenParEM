@@ -1446,7 +1446,7 @@ void PathItem::undo ()
 
 void PathItem::showArrows (bool show)
 {
-    std::cout << "PathItem::showArrows  show=" << show << std::endl; std::cout.flush();
+    //std::cout << "PathItem::showArrows  show=" << show << std::endl; std::cout.flush();
 
     mw->ui->drawingWindow->hideItem(this);
     mw->ui->drawingWindow->removeItemFromMap(this);
@@ -1454,8 +1454,6 @@ void PathItem::showArrows (bool show)
 
     ShapeData *shapeData=this->getShapeData();
     Polywire *polywire=getPolywire();
-    //xxx
-    std::cout << "   PathItem=" << this << "  polywire=" << polywire << std::endl; std::cout.flush();
     if (polywire) {
         std::cout << "   recalculating arrow shape" << std::endl; std::cout.flush();
         polywire->setHasArrows(show);
@@ -1665,14 +1663,19 @@ void BoundaryItem::del ()
             rootBoundaryItem->removeChild(this);
         }
 
-        mw->itemChangesStack.add(this);
-
-        // remove from display and tracking
-        mw->ui->drawingWindow->hideItem(this);
-        mw->ui->drawingWindow->removeItemFromMap(this);
-        mw->ui->drawingWindow->deleteShape(this->getShape());
-
         setIsActive(false);
+
+        // restore the arrows on the path
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->removeLinkedItem(this);
+            mw->ui->drawingWindow->showItem(pathItem);
+            mw->ui->drawingWindow->activateItem(pathItem);
+            mw->ui->drawingWindow->selectItem(pathItem);
+            pathItem->showArrows(true);
+        }
+
+        mw->itemChangesStack.add(this);
         mw->drawingChanged=true;
     }
 }
@@ -1691,17 +1694,12 @@ void BoundaryItem::undo ()
         std::cout << "   isCreate" << std::endl; std::cout.flush();
 
         // remove the item
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
         getParentItem()->removeChild(this);
         setIsActive(false);
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
-            //xxx
-            std::cout << "   undo pathItem=" << pathItem << "   polywire=" << pathItem->getPolywire() << std::endl; std::cout.flush();
             pathItem->removeLinkedItem(this);
             mw->ui->drawingWindow->showItem(pathItem);
             mw->ui->drawingWindow->activateItem(pathItem);
@@ -1713,48 +1711,33 @@ void BoundaryItem::undo ()
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
 
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
-
-        // dataStack.undo();
-
-        // ShapeData *shapeData=getShapeData();
-        // if (shapeData) {
-        //     Process *process=static_cast<Process *>(shapeData->getProcess());
-        //     if (process) {
-        //         int i=0;
-        //         while (i < childCount()) {
-        //             BaseItem *childItem=(BaseItem *) child(i);
-        //             childItem->undo();
-        //             mw->ui->drawingWindow->hideItem(childItem);
-        //             i++;
-        //         }
-        //     } else {
-        //         mw->reprocess(this);
-        //         mw->ui->drawingWindow->unselectItem(this);
-        //     }
-        // }
-
-        // mw->findShowTopLevelItem(this,false);
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
         dataStack.undo();
 
         mw->boundary.addChild(this);
+        setForeground(0,Qt::gray);
+        mw->ui->drawingWindow->showItem(this);
+        setIsActive(true);
 
         PathItem *pathItem=getPathItem();
         if (pathItem) {
-            pathItem->push_linkedItem(this);
-            pathItem->showArrows(true);
+            pathItem->showArrows(false);
         }
 
-        setIsActive(true);
+        // delete any previous children
+        while (childCount() > 0) {
+            QTreeWidgetItem* child=takeChild(0);
+            delete child;
+        }
 
-        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
-        mw->ui->drawingWindow->displayShape(getShape());
-        mw->ui->drawingWindow->activateItem(this);
+        // rebuild the item from scratch
+        Boundary *boundary=getBoundary();
+        if (boundary) {
+            boundary->draw(mw->relay,&(mw->projData),mw->boundaryDatabase,mw,mw->ui->drawingWindow,mw->ui->drawingItemTree,
+                           &(mw->path),&(mw->boundary),mw->materialDatabase,this);
+        }
     }
 }
 
@@ -1797,41 +1780,25 @@ void BoundaryItem::redo ()
         }
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
 
-        // dataStack.redo();
-
-        // ShapeData *shapeData=getShapeData();
-        // if (shapeData) {
-        //     Process *process=static_cast<Process *>(shapeData->getProcess());
-        //     if (process) {
-        //         int i=0;
-        //         while (i < childCount()) {
-        //             BaseItem *childItem=(BaseItem *) child(i);
-        //             childItem->redo();
-        //             i++;
-        //         }
-        //     }
-        // }
-
-        // mw->reprocess(this);
-        // mw->insertToMapActivateItem(this);
-        // mw->ui->drawingWindow->unselectItem(this);
-        // mw->findShowTopLevelItem(this,false);
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
-        // // remove this version from display and tracking
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
 
-        // dataStack.redo();
+        dataStack.redo();
 
-        // promoteChildren();
-        // getParentItem()->removeChild(this);
-        // mw->findShowTopLevelItem(this,true);
+        // remove the item
+        getParentItem()->removeChild(this);
+        setIsActive(false);
+
+        // restore the arrows on the path
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->removeLinkedItem(this);
+            mw->ui->drawingWindow->showItem(pathItem);
+            mw->ui->drawingWindow->activateItem(pathItem);
+            mw->ui->drawingWindow->selectItem(pathItem);
+            pathItem->showArrows(true);
+        }
     }
 }
 
@@ -1907,14 +1874,19 @@ void PortItem::del ()
             rootPortItem->removeChild(this);
         }
 
-        mw->itemChangesStack.add(this);
-
-        // remove from display and tracking
-        mw->ui->drawingWindow->hideItem(this);
-        mw->ui->drawingWindow->removeItemFromMap(this);
-        mw->ui->drawingWindow->deleteShape(this->getShape());
-
         setIsActive(false);
+
+        // restore the arrows on the path
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->removeLinkedItem(this);
+            mw->ui->drawingWindow->showItem(pathItem);
+            mw->ui->drawingWindow->activateItem(pathItem);
+            mw->ui->drawingWindow->selectItem(pathItem);
+            pathItem->showArrows(true);
+        }
+
+        mw->itemChangesStack.add(this);
         mw->drawingChanged=true;
     }
 }
@@ -1933,9 +1905,6 @@ void PortItem::undo ()
         std::cout << "   isCreate" << std::endl; std::cout.flush();
 
         // remove the item
-        mw->ui->drawingWindow->hideItem(this);
-        mw->ui->drawingWindow->removeItemFromMap(this);
-        mw->ui->drawingWindow->deleteShape(getShape());
         getParentItem()->removeChild(this);
         setIsActive(false);
 
@@ -1943,6 +1912,9 @@ void PortItem::undo ()
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
+            mw->ui->drawingWindow->showItem(pathItem);
+            mw->ui->drawingWindow->activateItem(pathItem);
+            mw->ui->drawingWindow->selectItem(pathItem);
             pathItem->showArrows(true);
         }
 
@@ -1950,48 +1922,32 @@ void PortItem::undo ()
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
 
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
-
-        // dataStack.undo();
-
-        // ShapeData *shapeData=getShapeData();
-        // if (shapeData) {
-        //     Process *process=static_cast<Process *>(shapeData->getProcess());
-        //     if (process) {
-        //         int i=0;
-        //         while (i < childCount()) {
-        //             BaseItem *childItem=(BaseItem *) child(i);
-        //             childItem->undo();
-        //             mw->ui->drawingWindow->hideItem(childItem);
-        //             i++;
-        //         }
-        //     } else {
-        //         mw->reprocess(this);
-        //         mw->ui->drawingWindow->unselectItem(this);
-        //     }
-        // }
-
-        // mw->findShowTopLevelItem(this,false);
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
         dataStack.undo();
 
         mw->port.addChild(this);
+        setForeground(0,Qt::gray);
+        mw->ui->drawingWindow->showItem(this);
+        setIsActive(true);
 
         PathItem *pathItem=getPathItem();
         if (pathItem) {
-            pathItem->push_linkedItem(this);
-            pathItem->showArrows(true);
+            pathItem->showArrows(false);
         }
 
-        setIsActive(true);
+        // delete any previous children
+        while (childCount() > 0) {
+            QTreeWidgetItem* child=takeChild(0);
+            delete child;
+        }
 
-        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
-        mw->ui->drawingWindow->displayShape(getShape());
-        mw->ui->drawingWindow->activateItem(this);
+        // rebuild the item from scratch
+        Port *port=getPort();
+        if (port) {
+            port->draw(mw->relay,&(mw->projData),mw->boundaryDatabase,mw,mw->ui->drawingWindow,mw->ui->drawingItemTree,&(mw->path),&(mw->port),this);
+        }
     }
 }
 
@@ -2035,40 +1991,22 @@ void PortItem::redo ()
         }
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
 
-        // dataStack.redo();
-
-        // ShapeData *shapeData=getShapeData();
-        // if (shapeData) {
-        //     Process *process=static_cast<Process *>(shapeData->getProcess());
-        //     if (process) {
-        //         int i=0;
-        //         while (i < childCount()) {
-        //             BaseItem *childItem=(BaseItem *) child(i);
-        //             childItem->redo();
-        //             i++;
-        //         }
-        //     }
-        // }
-
-        // mw->reprocess(this);
-        // mw->insertToMapActivateItem(this);
-        // mw->ui->drawingWindow->unselectItem(this);
-        // mw->findShowTopLevelItem(this,false);
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
-        // // remove this version from display and tracking
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
 
-        // dataStack.redo();
+        // remove the item
+        getParentItem()->removeChild(this);
+        setIsActive(false);
 
-        // promoteChildren();
-        // getParentItem()->removeChild(this);
-        // mw->findShowTopLevelItem(this,true);
+        // restore the arrows on the path
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->removeLinkedItem(this);
+            mw->ui->drawingWindow->showItem(pathItem);
+            mw->ui->drawingWindow->activateItem(pathItem);
+            mw->ui->drawingWindow->selectItem(pathItem);
+            pathItem->showArrows(true);
+        }
     }
 }
