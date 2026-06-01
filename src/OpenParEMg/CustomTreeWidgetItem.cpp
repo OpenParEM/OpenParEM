@@ -1446,7 +1446,7 @@ void PathItem::undo ()
 
 void PathItem::showArrows (bool show)
 {
-    //std::cout << "PathItem::showArrows" << std::endl; std::cout.flush();
+    std::cout << "PathItem::showArrows  show=" << show << std::endl; std::cout.flush();
 
     mw->ui->drawingWindow->hideItem(this);
     mw->ui->drawingWindow->removeItemFromMap(this);
@@ -1454,7 +1454,10 @@ void PathItem::showArrows (bool show)
 
     ShapeData *shapeData=this->getShapeData();
     Polywire *polywire=getPolywire();
+    //xxx
+    std::cout << "   PathItem=" << this << "  polywire=" << polywire << std::endl; std::cout.flush();
     if (polywire) {
+        std::cout << "   recalculating arrow shape" << std::endl; std::cout.flush();
         polywire->setHasArrows(show);
         shapeData->setShape(polywire->get_AIS_Shape());
     }
@@ -1688,16 +1691,21 @@ void BoundaryItem::undo ()
         std::cout << "   isCreate" << std::endl; std::cout.flush();
 
         // remove the item
-        mw->ui->drawingWindow->hideItem(this);
-        mw->ui->drawingWindow->removeItemFromMap(this);
-        mw->ui->drawingWindow->deleteShape(getShape());
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
         getParentItem()->removeChild(this);
         setIsActive(false);
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
+            //xxx
+            std::cout << "   undo pathItem=" << pathItem << "   polywire=" << pathItem->getPolywire() << std::endl; std::cout.flush();
             pathItem->removeLinkedItem(this);
+            mw->ui->drawingWindow->showItem(pathItem);
+            mw->ui->drawingWindow->activateItem(pathItem);
+            mw->ui->drawingWindow->selectItem(pathItem);
             pathItem->showArrows(true);
         }
 

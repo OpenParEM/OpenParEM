@@ -574,8 +574,6 @@ private slots:
     void showPortItems ();
     bool isValidRootPortHide ();
     void hidePortItems ();
-
-    //xxx
     bool isValidRootBoundaryShow ();
     void rootBoundaryShow ();
     bool isValidRootBoundaryHide ();

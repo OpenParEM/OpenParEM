@@ -533,7 +533,6 @@ void OpenParEMg::convertPathToFace (BaseItem *item)
 
     if (!convertPathItem) return;
 
-    std::cout << "convertPathItem=" << convertPathItem->text(0).toStdString() << std::endl; std::cout.flush();
     Path *path=static_cast<Path *>(convertPathItem->getPath());
     if (path) {
         TopoDS_Wire wire=path->create_TopoDS_Wire();
@@ -543,8 +542,8 @@ void OpenParEMg::convertPathToFace (BaseItem *item)
                 std::cout << "   converted to face" << std::endl; std::cout.flush();
                 TopoDS_Face face=faceMaker.Face();
                 Handle(AIS_Shape) newShape=new AIS_Shape(face);
-                ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,newShape);
-                item->addShapeData(newShapeData);
+                ShapeData *shapeData=convertPathItem->getShapeData();
+                shapeData->setShape(newShape);
 
                 ui->drawingWindow->showItem(item);
                 ui->drawingWindow->insertItemToMap(newShape,item);
@@ -4674,6 +4673,8 @@ void OpenParEMg::createBoundaryFromPathN (bool startNew)
 
         Path *aPath=static_cast<Path *>(selectedList[i]->getPath());
         if (aPath) {
+            std::cout << "   selected PathItem=" << selectedList[i] << "  polywire=" << selectedList[i]->getPolywire() << std::endl; std::cout.flush();
+
             // remove the arrows from the path
             selectedList[i]->showArrows(false);
 
@@ -8026,8 +8027,6 @@ void OpenParEMg::finishDraw ()
         // if (pathItem && pathItem->is_path()) {
         //     insertToMapActivateItem(pathItem);
         //     pathItem->setMW(this);
-
-        //     //xxx
         //     ShapeData *newShapeData=pathItem->getShapeData()->copyCreate();
         //     newShapeData->setCreate();
         //     newShapeData->getPolywire()->setHasArrows(true);
