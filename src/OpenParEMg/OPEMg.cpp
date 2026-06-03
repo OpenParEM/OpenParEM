@@ -8137,9 +8137,6 @@ void OpenParEMg::finishDraw ()
         // convert the drawn line to a path
         currentDrawingItem->finishDraw();
         PathItem *pathItem=createPathItemFromDrawing(currentDrawingItem,true);
-        //Path *aPath=createPathFromDrawing(currentDrawingItem,true);
-        Path *aPath=pathItem->getPath();
-
         currentDrawingItem->del();
 
 
@@ -8196,11 +8193,16 @@ void OpenParEMg::finishDraw ()
         // }
 
 
-        // next try
 
+        // assume a positive direction for the new integration path
+        QString newPathText="+";
+        newPathText.append(pathItem->text(0));
+
+        // item for the new integration path
         PathItem *newPathItem=new PathItem(0);
         newPathItem->setMW(this);
         newPathItem->setParentItem(workingItem);
+        newPathItem->setText(0,newPathText);
         ShapeData *newShapeData=newPathItem->getShapeData()->copyCreate();
         newShapeData->setCreate();
         newPathItem->addShapeData(newShapeData);
