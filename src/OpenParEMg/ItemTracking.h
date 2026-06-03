@@ -199,10 +199,20 @@ public:
             visibleItems.push_back(item);
 
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
-            long unsigned int i=0;
-            while (i < pathItem->linkedItems_size()) {
-                showItem(pathItem->get_linkedItem(i));
-                i++;
+            if (pathItem && pathItem->is_path()) {
+                long unsigned int i=0;
+                while (i < pathItem->linkedItems_size()) {
+                    showItem(pathItem->get_linkedItem(i));
+                    i++;
+                }
+            }
+        } else if (item->is_integrationPathSegment()) {
+            if (item->foreground(0) == Qt::black) return;  // avoid infinite loop due to crosslinking of paths
+
+            item->setForeground(0,Qt::black);
+            IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(item);
+            if (integrationPathItem && integrationPathItem->is_integrationPathSegment()) {
+                showItem(integrationPathItem->getPathItem());
             }
         } else if (item->is_rootPort()) {
             int i=0;
@@ -452,6 +462,14 @@ public:
             while (i < pathItem->linkedItems_size()) {
                 hideItem(pathItem->get_linkedItem(i));
                 i++;
+            }
+        } else if (item->is_integrationPathSegment()) {
+            if (item->foreground(0) == Qt::gray) return;  // avoid infinite loop due to crosslinking of paths
+
+            item->setForeground(0,Qt::gray);
+            IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(item);
+            if (integrationPathItem && integrationPathItem->is_integrationPathSegment()) {
+                showItem(integrationPathItem->getPathItem());
             }
         } else if (item->is_rootPort()) {
             int i=0;
@@ -737,11 +755,31 @@ public:
 
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem) {
-                long unsigned int i=0;
-                while (i < pathItem->linkedItems_size()) {
-                    selectItem(pathItem->get_linkedItem(i));
-                    i++;
+                if (pathItem->is_path() || pathItem->is_integrationPathSegment()) {
+                    long unsigned int i=0;
+                    while (i < pathItem->linkedItems_size()) {
+                        selectItem(pathItem->get_linkedItem(i));
+                        i++;
+                    }
                 }
+            }
+
+            IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(item);
+            if (integrationPathItem && integrationPathItem->is_integrationPathSegment()) {
+                PathItem *pathItem=integrationPathItem->getPathItem();
+                if (pathItem) selectItem(pathItem);
+            }
+
+            PortItem *portItem=dynamic_cast<PortItem *>(item);
+            if (portItem && portItem->is_port()) {
+                PathItem *pathItem=portItem->getPathItem();
+                if (pathItem) selectItem(pathItem);
+            }
+
+            BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
+            if (boundaryItem && boundaryItem->is_boundary()) {
+                PathItem *pathItem=boundaryItem->getPathItem();
+                if (pathItem) selectItem(pathItem);
             }
         }
     }

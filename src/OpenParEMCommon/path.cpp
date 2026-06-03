@@ -2283,6 +2283,7 @@ void Path::create_polywire_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWind
     item->setText(0,QString::fromStdString(get_name()));
 
     parentItem->addChild(item);
+    item->setParent(parentItem);
 }
 
 void Path::create_face_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)

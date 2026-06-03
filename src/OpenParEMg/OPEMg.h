@@ -318,6 +318,7 @@ class OpenParEMg : public QMainWindow
     Q_OBJECT
 
     friend class BaseItem;
+    friend class ScaleItem;
 
     friend class SelectionItem;
 
@@ -326,6 +327,7 @@ class OpenParEMg : public QMainWindow
 
     friend class RootPathItem;
     friend class PathItem;
+    friend class IntegrationPathItem;
 
     friend class RootPortItem;
     friend class PortItem;
@@ -345,6 +347,7 @@ public:
     int check_changed ();
     void closeWindow_triggered ();
 
+    void buildIntegrationPathList (std::vector<IntegrationPath *> *, BaseItem *);
     void pruneBoundaryDatabase ();
     void saveProject ();
     void insertToMapActivateItem (BaseItem *);
@@ -446,7 +449,8 @@ public:
     void convertToPolyline ();
 
     bool isValidConvertToPath ();
-    PathItem* createPathFromDrawing (DrawingItem *, bool);
+    Path* createPathFromDrawing (DrawingItem *, bool);
+    PathItem* createPathItemFromDrawing (DrawingItem *, bool);
     void convertItemToPath (DrawingItem *, bool);
     void convertDrawingToPath ();
     void convertDrawingToPathN (bool);
@@ -599,7 +603,7 @@ private slots:
     bool hasOneSelectedSport ();
     bool hasVoltage ();
     bool hasCurrent ();
-    void insertPath (BaseItem *);
+    void insertIntegrationPath (BaseItem *);
     //void selectItems ();
     bool isValidRenameDrawingItems ();
     void renameDrawingItems ();

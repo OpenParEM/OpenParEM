@@ -34,7 +34,9 @@
 class DrawingItem;
 class Port;
 class Mode;
+class IntegrationPath;
 class Boundary;
+class CustomLineEdit;
 
 // shape data with history for undo/redo
 
@@ -443,8 +445,8 @@ public:
     virtual bool getHasArrows () {return hasArrows;}
     virtual void del () {}
 
-    virtual void undo () {}
-    virtual void redo () {}
+    virtual void undo ();
+    virtual void redo ();
     void pop () {dataStack.pop();}
 
     virtual bool getIsActive () {return isActive;}
@@ -523,9 +525,6 @@ public:
         if (foreground(0) == Qt::black) return true;
         return false;
     }
-
-
-
 
     TopoDS_Shape rotateShape (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2, Handle(AIS_InteractiveContext) viewerContext)
     {
@@ -627,8 +626,8 @@ public:
         }
     }
 
-    virtual bool hasUndo () {return false;}
-    virtual bool hasRedo () {return false;}
+    virtual bool hasUndo () {return dataStack.hasUndo();}
+    virtual bool hasRedo () {return dataStack.hasRedo();}
 
     void setParentItem (BaseItem *parentItem_) {parentItem=parentItem_;}
     BaseItem* getParentItem () {return parentItem;}
@@ -686,6 +685,30 @@ private:
 
 
 };
+
+class ScaleItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    explicit ScaleItem (QObject *parent = nullptr)
+    {
+        integrationPath=nullptr;
+    }
+
+    void setIntegrationPath (IntegrationPath *integrationPath_) {integrationPath=integrationPath_;}
+    IntegrationPath* getIntegrationPath () {return integrationPath;}
+
+    void undo () override;
+    void redo () override;
+
+    bool hasUndo () override {return dataStack.hasUndo();}
+    bool hasRedo () override {return dataStack.hasRedo();}
+
+private:
+    IntegrationPath *integrationPath;
+};
+
 
 class RootDrawingItem : public BaseItem
 {
@@ -923,6 +946,41 @@ private:
     Path *path;                            // related path from the boundary database
     std::vector<BaseItem *> linkedItems;   // items that use this path item
     bool hasArrows;
+};
+
+class IntegrationPathItem : public DrawingItem
+{
+    Q_OBJECT
+
+public:
+    explicit IntegrationPathItem (QObject *parent = nullptr)
+    {
+        itemType=4;
+        forShowHide=true;
+        parentItem=nullptr;
+        isActive=true;
+
+        integrationPath=nullptr;
+        pathItem=nullptr;
+    }
+
+    void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
+    PathItem* getPathItem () {return pathItem;}
+
+    void setIntegrationPath (IntegrationPath *integrationPath_) {integrationPath=integrationPath_;}
+    IntegrationPath* getIntegrationPath () {return integrationPath;}
+
+    void showMenu (QMenu *);
+    void undo () override;
+    void redo () override;
+    bool hasUndo () override {return dataStack.hasUndo();}
+    bool hasRedo () override {return dataStack.hasRedo();}
+    bool getIsActive () override {return isActive;}
+    void setIsActive (bool isActive_) override {isActive=isActive_;}
+
+private:
+    IntegrationPath *integrationPath;
+    PathItem *pathItem;                  // base path for this integration path
 };
 
 class RootBoundaryItem : public BaseItem

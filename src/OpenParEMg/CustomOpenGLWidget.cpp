@@ -519,7 +519,7 @@ Handle(AIS_InteractiveObject) CustomOpenGLWidget::getLastSelected ()
 
 void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
 {
-    //std::cout << "CustomOpenGLWidget::mouseMoveEvent  polywire=" << polywire << std::endl; std::cout.flush();
+    //std::cout << "CustomOpenGLWidget::mouseMoveEvent" << std::endl; std::cout.flush();
 
     QOpenGLWidget::mouseMoveEvent(event);
 
@@ -580,7 +580,7 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
     if (UpdateMousePosition(position,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
                                      OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateViewer();
 
-    //std::cout << "exit CustomOpenGLWidget::mouseMoveEvent  polywire=" << polywire << std::endl; std::cout.flush();
+    //std::cout << "exit CustomOpenGLWidget::mouseMoveEvent" << std::endl; std::cout.flush();
 }
 
 void CustomOpenGLWidget::set_gridPlane (TopoDS_Face &face)

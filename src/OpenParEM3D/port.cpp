@@ -40,6 +40,7 @@
 #include "CustomLineEdit.h"
 #include "CustomComboBox.h"
 #include <QStandardItemModel>
+#include "OPEMg.h"
 #endif
 
 string convertLogic (int a)
@@ -2727,14 +2728,23 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
         itemSegment->setPath(path);
 
         // attach item
+        bool found=false;
         int j=0;
         while (j < rootPathItem->childCount()) {
             PathItem *child=dynamic_cast<PathItem *>(rootPathItem->child(j));
             if (child->getPath() == path) {
+                found=true;
                 itemSegment->push_linkedItem(child);
                 child->push_linkedItem(itemSegment);
             }
             j++;
+        }
+
+        if (!found) {
+            path->create_polywire_item(mw,drawingWindow,rootPathItem);
+            PathItem *newPathItem=path->get_item();
+            newPathItem->push_linkedItem(itemSegment);
+            itemSegment->push_linkedItem(newPathItem);
         }
 
         itemVI->addChild(itemSegment);
@@ -4512,7 +4522,7 @@ DifferentialPair::DifferentialPair (int startLine_, int endLine_)
 #endif
 }
 
-bool DifferentialPair::load(string *indent, inputFile *inputs)
+bool DifferentialPair::load (string *indent, inputFile *inputs)
 {
    bool fail=false;
 
@@ -4561,7 +4571,7 @@ bool DifferentialPair::inDifferentialPairBlock (int lineNumber)
    return false;
 }
 
-bool DifferentialPair::check(string *indent)
+bool DifferentialPair::check (string *indent)
 {
    bool fail=false;
 
@@ -7353,6 +7363,8 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
                  QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, RootPortItem *rootPortItem,
                  PortItem *portItem)
 {
+    std::cout << "Port::draw" << std::endl;  std::cout.flush();
+
     // name
 
     if (!portItem) {
@@ -7455,7 +7467,6 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::setMenus);
 
     // modes
-    struct point outline_normal=outline->get_normal();
     long unsigned int i=0;
     while (i < modeList.size()) {
         modeList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,portItem);

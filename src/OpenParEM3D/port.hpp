@@ -469,6 +469,9 @@ class Mode
       int get_Sport() {return Sport.get_int_value();}
       void set_Sport (int Sport_) {Sport.set_int_value(Sport_); Sport.set_loaded(true); modified=true;}
       int get_Sport_lineNumber() {return Sport.get_lineNumber();}
+      long unsigned int get_integrationPathList_size () {return integrationPathList.size();}
+      IntegrationPath* get_integrationPath (long unsigned int i) {return integrationPathList[i];}
+      void erase_integrationPath (long unsigned int i) {integrationPathList.erase(integrationPathList.begin()+i);}
       std::string get_type (long unsigned int i) {return integrationPathList[i]->get_type();}
       double get_alpha() {return fields.get_alpha();}
       double get_beta() {return fields.get_beta();}
@@ -700,6 +703,8 @@ class Port
       bool inBlock (int);
       bool inModeBlocks (int);
       bool findModeBlocks (inputFile *);
+      long unsigned int get_modeList_size () {return modeList.size();}
+      Mode* get_mode (long unsigned int i) {return modeList[i];}
       void push_mode (Mode *mode) {modeList.push_back(mode); modified=true;}
       bool inDifferentialPairBlocks (int);
       bool findLineBlocks (inputFile *);
