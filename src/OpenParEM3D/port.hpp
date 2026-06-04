@@ -794,6 +794,7 @@ class Port
       void draw (Relay *, struct projectData *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *,
                 RootPathItem *, RootPortItem *, PortItem *);
       void set_comboZdef ();
+      CustomComboBox* get_comboZdef () {return comboZdef;}
 #endif
 };
 

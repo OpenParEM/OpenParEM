@@ -1084,9 +1084,16 @@ public:
     bool getIsActive () override {return isActive;}
     void setIsActive (bool isActive_) override {isActive=isActive_;}
 
+    void setImpedanceDefinition (std::string impedanceDefinition_) {impedanceDefinition=QString::fromStdString(impedanceDefinition_);}
+    void setImpedanceCalculation (std::string impedanceCalculation_) {impedanceCalculation=QString::fromStdString(impedanceCalculation_);}
+
 private:
     Port *port;
     PathItem *pathItem;   // PathItem associated with this port
+
+    // for reconstruction widgets
+    QString impedanceDefinition;   // VI, PV, PI, invalid
+    QString impedanceCalculation;  // linee, modal
 };
 
 class ModeItem : public BaseItem

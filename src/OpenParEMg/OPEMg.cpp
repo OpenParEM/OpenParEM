@@ -4543,7 +4543,7 @@ void OpenParEMg::createPortFromPathN (bool startNew)
                                                               &path,&port,&boundary,materialDatabase);
             ShapeData *newShapeData=newPortItem->getShapeData()->copyCreate();
             newShapeData->setCreate();
-            newPortItem->setPathItem(selectedList[i]);
+            //newPortItem->setPathItem(selectedList[i]);
             newPortItem->addShapeData(newShapeData);
 
             port.setExpanded(true);
@@ -8090,55 +8090,10 @@ void OpenParEMg::finishDraw ()
 
     if (isIntegrationPath) {
 
-        // // default path name
-
-        // std::string pathName=integrationPathName.toStdString();
-
-        // int i=1;
-        // while (boundaryDatabase->pathNameExists(pathName)) {
-        //     std::string testName=pathName;
-        //     testName.append("_").append(std::to_string(i));
-        //     if (boundaryDatabase->pathNameExists(testName)) {i++;}
-        //     else {pathName=testName; break;}
-        // }
-
-        // // path name placed in a keywordPair
-        // keywordPair *kwPathName=new keywordPair();
-        // kwPathName->set_keyword("path");
-        // kwPathName->set_value(pathName);
-        // kwPathName->set_lineNumber(0);
-        // kwPathName->set_loaded(true);
-
-        // // path
-
-        // Path *newPath=new Path(0,0);
-        // newPath->set_name(pathName);
-        // newPath->is_modified();
-        // newPath->set_normal(activePolywire->getNormal());
-        // newPath->addWirePoints(activePolywire->buildWire());
-        // newPath->create_wire_item(ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
-
-        // boundaryDatabase->push_path(newPath);
-
-        // // add new path to the drawing
-        // PathItem *pathItem=newPath->get_item();
-        // if (pathItem && pathItem->is_path()) {
-        //     insertToMapActivateItem(pathItem);
-        //     pathItem->setMW(this);
-        //     ShapeData *newShapeData=pathItem->getShapeData()->copyCreate();
-        //     newShapeData->setCreate();
-        //     newShapeData->getPolywire()->setHasArrows(true);
-        //     newShapeData->setShape(newShapeData->getPolywire()->get_AIS_Shape());
-        //     pathItem->addShapeData(newShapeData);
-
-        //     itemChangesStack.add(pathItem);
-        // }
-
         // convert the drawn line to a path
         currentDrawingItem->finishDraw();
         PathItem *pathItem=createPathItemFromDrawing(currentDrawingItem,true);
         currentDrawingItem->del();
-
 
         //xxx
         // see if the path is within an existing port
@@ -8147,52 +8102,6 @@ void OpenParEMg::finishDraw ()
         //     // ToDo: fix
         //     //if (port) pathItem->set_portItem(port->get_item());
         // }
-
-        // // add the path to the voltage or current workingItem
-        // ui->drawingWindow->selectItem(pathItem);
-        // ui->drawingWindow->selectItem(workingItem);  // select the original selected item
-        // insertSelectedPath();                        // relies on the newly created path already being selected
-
-
-
-        // currently working just ok
-
-        // // add the integration path to the mode
-        // ModeItem *modeItem=dynamic_cast<ModeItem *>(workingItem->QTreeWidgetItem::parent());
-        // Mode *mode=modeItem->getMode();
-        // if (mode) {
-        //     std::vector<Path *> pathsToAdd;
-        //     pathsToAdd.push_back(aPath);
-
-        //     std::string type;
-        //     if (workingItem->is_voltage()) type="voltage";
-        //     if (workingItem->is_current()) type="current";
-        //     mode->addIntegrationPath(boundaryDatabase->get_pathList_ptr(),&pathsToAdd,type);
-        //     projectChanged=true;
-        // }
-
-        // // rebuild the port
-        // PortItem *portItem=dynamic_cast<PortItem *>(modeItem->QTreeWidgetItem::parent());
-        // if (portItem) {
-
-        //     Port *aPort=portItem->getPort();
-        //     port.removeChild(portItem);
-
-        //     // remove all children
-        //     foreach(auto i, portItem->takeChildren()) delete i;
-
-        //     if (aPort) {
-        //         aPort->draw(relay,&projData,boundaryDatabase,this,ui->drawingWindow,ui->drawingItemTree,&path,&port,portItem);
-        //         // PortItem *portItem=aPort->get_PortItem();
-        //         // ShapeData *newShapeData=portItem->getShapeData()->copyCreate();
-        //         // newShapeData->setCreate();
-        //         // portItem->addShapeData(newShapeData);
-        //         // portItem->setPathItem();
-        //         // itemChangesStack.add(portItem);
-        //     }
-        // }
-
-
 
         // assume a positive direction for the new integration path
         QString newPathText="+";
@@ -8211,24 +8120,12 @@ void OpenParEMg::finishDraw ()
         workingItem->addChild(newPathItem);
         itemChangesStack.add(newPathItem);
 
-
         isIntegrationPath=false;
-
         currentDrawingItem=nullptr;
     } else {
         currentDrawingItem->finishDraw();
         currentDrawingItem=nullptr;
     }
-
-    // restrictToDrawingPlane=false;
-
-    // activePolywire->deleteRubberband();
-
-    // activePolywire=nullptr;
-
-    // drawingChanged=true;
-    // workingItem=nullptr;
-    // ui->drawingWindow->removeSelectOnVertex();
 
     finishOperation(false,13);
 }

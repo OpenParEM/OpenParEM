@@ -7397,6 +7397,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
         PathItem *child=dynamic_cast<PathItem *>(rootPathItem->child(j));
         if (child->getPath() == path) {
             portItem->setPathItem(child);
+            std::cout << "port item set pathItem name=" << child->text(0).toStdString() << std::endl; std::cout.flush();
             child->push_linkedItem(portItem);
 
             emit relay->convertPathToFace(child);
@@ -7438,6 +7439,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     else comboZdef->setCurrentIndex(3);
     drawingItemTree->setItemWidget(itemImpedanceDefinition,0,comboZdef);
     itemImpedanceDefinition->setSizeHint(0,comboZdef->sizeHint());  // size hint for scaling; do not need to do the other combobox
+    portItem->setImpedanceDefinition(get_impedance_definition());
 
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::setMenus);
@@ -7462,6 +7464,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     if (is_line()) comboZcalc->setCurrentIndex(0);
     if (is_modal()) comboZcalc->setCurrentIndex(1);
     drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
+    portItem->setImpedanceCalculation(get_impedance_calculation());
 
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,relay,&Relay::setMenus);

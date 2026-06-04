@@ -773,6 +773,7 @@ public:
             PortItem *portItem=dynamic_cast<PortItem *>(item);
             if (portItem && portItem->is_port()) {
                 PathItem *pathItem=portItem->getPathItem();
+                std::cout << "pathItem=" << pathItem << std::endl; std::cout.flush();
                 if (pathItem) selectItem(pathItem);
             }
 

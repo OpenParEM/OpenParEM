@@ -1,6 +1,7 @@
 
 
 #include "CustomTreeWidgetItem.h"
+#include "CustomComboBox.h"
 #include "OPEMg.h"
 #include "ui_OPEMg.h"
 #include <BRepPrimAPI_MakePrism.hxx>
@@ -2187,15 +2188,86 @@ void PortItem::redo ()
 
         dataStack.redo();
 
-        // // rebuild the item from scratch
-        // Port *aPort=getPort();
-        // if (aPort) {
-        //     // remove all children
-        //     foreach(auto i, takeChildren()) delete i;
 
-        //     // draw
-        //     aPort->draw(mw->relay,&(mw->projData),mw->boundaryDatabase,mw,mw->ui->drawingWindow,mw->ui->drawingItemTree,&(mw->path),&(mw->port),this);
-        // }
+        // remove some children
+        int i=0;
+        while (i < childCount()) {
+            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+            if (baseItem && baseItem->is_impedanceCalculation()) {
+                int index=indexOfChild(baseItem);
+                this->takeChild(index);
+                delete baseItem;
+                break;
+            }
+            i++;
+        }
+
+        i=0;
+        while (i < childCount()) {
+            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+            if (baseItem && baseItem->is_impedanceDefinition()) {
+                int index=indexOfChild(baseItem);
+                this->takeChild(index);
+                delete baseItem;
+                break;
+            }
+            i++;
+        }
+
+        Port *port=getPort();
+        if (port) {
+
+            SelectionItem *itemImpedanceDefinition=new SelectionItem(0);
+            itemImpedanceDefinition->setMW(mw);
+            itemImpedanceDefinition->setParentItem(this);
+            itemImpedanceDefinition->set_itemType(6);
+            itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
+            itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
+            insertChild(0,itemImpedanceDefinition);
+
+            CustomComboBox *comboZdef=port->get_comboZdef();
+            comboZdef=new CustomComboBox();
+            comboZdef->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
+            comboZdef->addItem("VI");       // 0
+            comboZdef->addItem("PV");       // 1
+            comboZdef->addItem("PI");       // 2
+            comboZdef->addItem("invalid");  // 3
+            comboZdef->set_port(port);
+            comboZdef->set_boundary(nullptr);
+            comboZdef->set_type(0);
+            if (port->get_impedance_definition().compare("VI") == 0) comboZdef->setCurrentIndex(0);
+            else if (port->get_impedance_definition().compare("PV") == 0) comboZdef->setCurrentIndex(1);
+            else if (port->get_impedance_definition().compare("PI") == 0) comboZdef->setCurrentIndex(2);
+            else comboZdef->setCurrentIndex(3);
+            mw->ui->drawingItemTree->setItemWidget(itemImpedanceDefinition,0,comboZdef);
+            itemImpedanceDefinition->setSizeHint(0,comboZdef->sizeHint());  // size hint for scaling; do not need to do the other combobox
+
+            QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
+            QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+
+
+            SelectionItem *itemImpedanceCalculation=new SelectionItem(0);
+            itemImpedanceCalculation->setMW(mw);
+            itemImpedanceCalculation->setParentItem(this);
+            itemImpedanceCalculation->set_itemType(7);
+            itemImpedanceCalculation->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
+            itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
+            insertChild(1,itemImpedanceCalculation);
+
+            CustomComboBox *comboZcalc=new CustomComboBox();
+            comboZcalc->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
+            comboZcalc->addItem("line");
+            comboZcalc->addItem("modal");
+            comboZcalc->set_port(port);
+            comboZcalc->set_type(1);
+            comboZcalc->set_boundary(nullptr);
+            if (port->is_line()) comboZcalc->setCurrentIndex(0);
+            if (port->is_modal()) comboZcalc->setCurrentIndex(1);
+            mw->ui->drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
+
+            QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
+            QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+        }
 
         // remove the arrows on the path
         PathItem *pathItem=getPathItem();
