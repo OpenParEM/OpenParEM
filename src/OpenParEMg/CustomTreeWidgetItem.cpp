@@ -2269,14 +2269,24 @@ void PortItem::redo ()
             QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
         }
 
-        // remove the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
+
+            // remove the arrows on the path
             pathItem->push_linkedItem(this);
             mw->ui->drawingWindow->showItem(pathItem);
             mw->ui->drawingWindow->activateItem(pathItem);
             mw->ui->drawingWindow->selectItem(pathItem);
             pathItem->showArrows(false);
+
+            // make a solid color
+            Handle(AIS_Shape) shape=pathItem->getShape();
+            if (!shape.IsNull()) {
+                shape->SetColor(Quantity_NOC_MINTCREAM);
+                shape->SetTransparency(0.25);
+                shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+                mw->setShaded(shape);
+            }
         }
 
         mw->port.addChild(this);
