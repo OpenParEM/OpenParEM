@@ -71,6 +71,11 @@ public:
         type=shapeData->type;
         polywire=nullptr;
         process=nullptr;
+        impedance_calculation=shapeData->impedance_calculation;
+        impedance_definition=shapeData->impedance_definition;
+        boundary_type=shapeData->boundary_type;
+        boundary_material=shapeData->boundary_material;
+        wave_impedance=shapeData->wave_impedance;
         prior=shapeData->prior;
         next=shapeData->next;
         setPolywire(shapeData->getPolywire());
@@ -92,6 +97,11 @@ public:
             newShapeData->type=type;
             newShapeData->polywire=nullptr;
             newShapeData->process=nullptr;
+            newShapeData->impedance_definition=impedance_definition;
+            newShapeData->impedance_calculation=impedance_calculation;
+            newShapeData->boundary_type=boundary_type;
+            newShapeData->boundary_material=boundary_material;
+            newShapeData->wave_impedance=wave_impedance;
             newShapeData->prior=prior;
             newShapeData->next=next;
             if (polywire) newShapeData->polywire=polywire->copyCreate();
@@ -172,6 +182,20 @@ public:
     void setConvertToBoundary () {type=6;}
     void setReversePath () {type=7;}
 
+    void set_impedance_definition (std::string impedance_definition_) {impedance_definition=QString::fromStdString(impedance_definition_);}
+    void set_impedance_calculation (std::string impedance_calculation_) {impedance_calculation=QString::fromStdString(impedance_calculation_);}
+    QString get_impedance_definition () {return impedance_definition;}
+    QString get_impedance_calculation () {return impedance_calculation;}
+
+    void set_boundary_type (std::string boundary_type_) {boundary_type=QString::fromStdString(boundary_type_);}
+    QString get_boundary_type () {return boundary_type;}
+
+    void set_boundary_material (QString boundary_material_) {boundary_material=boundary_material_;}
+    QString get_boundary_material () {return boundary_material;}
+
+    void set_wave_impedance (double wave_impedance_) {wave_impedance=wave_impedance_;}
+    double get_wave_impedance () {return wave_impedance;}
+
     void setPrior (ShapeData *prior_) {prior=prior_;}
     void setNext (ShapeData *next_) {next=next_;}
 
@@ -194,6 +218,11 @@ public:
         else std::cout << "                  shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
         std::cout << "                  polywire=" << polywire << std::endl;
         std::cout << "                  process=" << process << std::endl;
+        std::cout << "                  impedance_definition=" << impedance_definition.toStdString() << std::endl;
+        std::cout << "                  impedance_calculation=" << impedance_calculation.toStdString() << std::endl;
+        std::cout << "                  boundary_type=" << boundary_type.toStdString() << std::endl;
+        std::cout << "                  boundary_material=" << boundary_material.toStdString() << std::endl;
+        std::cout << "                  wave_impedance=" << wave_impedance << std::endl;
         std::cout << "                  prior=" << prior << std::endl;
         std::cout << "                  next=" << next << std::endl;
     }
@@ -202,9 +231,19 @@ private:
     int type;                                          // 0 - noop; 1 - create; 2 - edit; 3 - delete;
                                                        // 4 - convert to path; 5 - convert to port; 6 - convert to boundary
                                                        // 7 - reverse path direction
-    Handle(AIS_Shape) shape;                           // for drawing
+
+    // for drawing
+    Handle(AIS_Shape) shape;                           // drawing shape
     Polywire *polywire;                                // Polywire object for this item
     Process *process;                                  // for drawing processing of children
+
+    // for widget reconstruction
+    QString impedance_definition;                      // VI, PV, PI, invalid
+    QString impedance_calculation;                     // line, modal
+    QString boundary_type;                             // perfect_electric_conductor, perfect_magnetic_conductor, surface_impedance, radiation
+    QString boundary_material;                         // material for the surface impedance
+    double wave_impedance;                             // for radiation boundary
+
     ShapeData *prior;                                  // prior ShapeData in ShapeDataStack
     ShapeData *next;                                   // next ShapeData in ShapeDataStack
 };
@@ -405,6 +444,8 @@ public:
     }
 
     void setMW (OpenParEMg *mw_) {mw=mw_;}
+    void startItemChange ();
+    void addItemChange ();
     virtual void showMenu () {}
 
     QString get_name () {return text(0);}
@@ -1031,6 +1072,8 @@ public:
     bool getIsActive () override {return isActive;}
     void setIsActive (bool isActive_) override {isActive=isActive_;}
 
+    void populate (Boundary *);
+
 private:
     Boundary *boundary;
     PathItem *pathItem;   // PathItem associated with this boundary
@@ -1084,8 +1127,7 @@ public:
     bool getIsActive () override {return isActive;}
     void setIsActive (bool isActive_) override {isActive=isActive_;}
 
-    void setImpedanceDefinition (std::string impedanceDefinition_) {impedanceDefinition=QString::fromStdString(impedanceDefinition_);}
-    void setImpedanceCalculation (std::string impedanceCalculation_) {impedanceCalculation=QString::fromStdString(impedanceCalculation_);}
+    void populate (Port *);
 
 private:
     Port *port;

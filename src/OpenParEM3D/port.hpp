@@ -657,7 +657,7 @@ class Port
 
 #ifdef HAS_GUI
       PortItem *item;
-      CustomComboBox *comboZdef;   // comboBox for the impedance definition
+      //CustomComboBox *comboZdef;   // comboBox for the impedance definition
 #endif
 
    public:
@@ -794,7 +794,7 @@ class Port
       void draw (Relay *, struct projectData *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *,
                 RootPathItem *, RootPortItem *, PortItem *);
       void set_comboZdef ();
-      CustomComboBox* get_comboZdef () {return comboZdef;}
+      //CustomComboBox* get_comboZdef () {return comboZdef;}
 #endif
 };
 

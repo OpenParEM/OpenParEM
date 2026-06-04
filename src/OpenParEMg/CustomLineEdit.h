@@ -23,33 +23,34 @@
 
 #include "ItemTracking.h"
 #include "port.hpp"
+#include "CustomTreeWidgetItem.h"
 #include <QLineEdit>
 #include <QFocusEvent>
 #include <QDebug>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
 
-void textValueChanged (QString, IntegrationPath *, BoundaryDatabase *);
+void textValueChanged (QString, BaseItem *, BoundaryDatabase *);
 
 class CustomLineEdit : public QLineEdit {
     Q_OBJECT
 
 public:
     CustomLineEdit(QWidget *parent = nullptr) : QLineEdit(parent) {
-        connect(this,&QLineEdit::textChanged,this,&CustomLineEdit::handleCustomTextChanged);
+        connect(this,&QLineEdit::editingFinished,this,&CustomLineEdit::handleFinishEdit);
         rx.setPattern("^[A-Za-z0-9_\\[\\]]*$");  // alphanumeric plus _,[, and ]
         rxValidator.setRegularExpression(rx);
         drawingTracker=nullptr;
-        integrationPath=nullptr;
+        baseItem=nullptr;
         boundaryDatabase=nullptr;
     }
 
     void set_rxValidator() {setValidator(&rxValidator);}
     void set_itemTracker (ItemTracker *drawingTracker_) {drawingTracker=drawingTracker_;}
-    void set_integrationPath (IntegrationPath *integrationPath_) {integrationPath=integrationPath_;}
+    void set_baseItem (BaseItem *baseItem_) {baseItem=baseItem_;}
     void set_boundaryDatabase (BoundaryDatabase *boundaryDatabase_) {boundaryDatabase=boundaryDatabase_;}
 
-    IntegrationPath* get_integrationPath () {return integrationPath;}
+    BaseItem* get_baseItem () {return baseItem;}
 
 protected:
     void focusInEvent(QFocusEvent *event) override
@@ -65,18 +66,18 @@ protected:
     }
 
 signals:
-    void CustomTextChanged (QString text, IntegrationPath *, BoundaryDatabase *);
+    void CustomEditFinished (QString text, BaseItem *, BoundaryDatabase *);
 
 private slots:
-    void handleCustomTextChanged (QString text) {
-        emit CustomTextChanged(text,integrationPath,boundaryDatabase);
+    void handleFinishEdit () {
+        emit CustomEditFinished(this->text(),baseItem,boundaryDatabase);
     }
 
 private:
     QRegularExpression rx;
     QRegularExpressionValidator rxValidator;
     ItemTracker *drawingTracker;
-    IntegrationPath *integrationPath;
+    BaseItem *baseItem;
     BoundaryDatabase *boundaryDatabase;
 };
 

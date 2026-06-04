@@ -25,8 +25,8 @@
 #include "port.hpp"
 #include "CustomTreeWidgetItem.h"
 
-void comboIndexChanged (int, Port *, Boundary *, int, BaseItem *, BaseItem *);
-void comboTextChanged (QString value, Boundary *);
+void comboIndexChanged (int, PortItem *, BoundaryItem *, int, BaseItem *, BaseItem *);
+void comboTextChanged (QString value, BoundaryItem *);
 
 class CustomComboBox : public QComboBox {
     Q_OBJECT
@@ -36,15 +36,15 @@ public:
         connect(this,&QComboBox::currentIndexChanged,this,&CustomComboBox::handleCurrentIndexChanged);
         connect(this,&QComboBox::currentTextChanged,this,&CustomComboBox::handleCurrentTextChanged);
         setFocusPolicy(Qt::ClickFocus);
-        port=nullptr;
-        boundary=nullptr;
+        portItem=nullptr;
+        boundaryItem=nullptr;
         itemMaterial=nullptr;
         itemWaveImpedance=nullptr;
         drawingTracker=nullptr;
     }
 
-    void set_port (Port *port_) {port=port_;}
-    void set_boundary (Boundary *boundary_) {boundary=boundary_;}
+    void set_portItem (PortItem *portItem_) {portItem=portItem_;}
+    void set_boundaryItem (BoundaryItem *boundaryItem_) {boundaryItem=boundaryItem_;}
     void set_type (int type_) {type=type_;}
     void set_itemMaterial (SelectionItem *itemMaterial_) {itemMaterial=itemMaterial_;}
     void set_itemWaveImpedance (SelectionItem *itemWaveImpedance_) {itemWaveImpedance=itemWaveImpedance_;}
@@ -64,20 +64,20 @@ protected:
     }
 
 signals:
-    void CustomCurrentIndexChanged (int, Port *, Boundary *, int, SelectionItem *, SelectionItem *);
-    void CustomCurrentTextChanged (QString, Boundary *);
+    void CustomCurrentIndexChanged (int, PortItem *, BoundaryItem *, int, SelectionItem *, SelectionItem *);
+    void CustomCurrentTextChanged (QString, BoundaryItem *);
 
 private slots:
     void handleCurrentIndexChanged (int index) {
-        emit CustomCurrentIndexChanged(index,port,boundary,type,itemMaterial,itemWaveImpedance);
+        emit CustomCurrentIndexChanged(index,portItem,boundaryItem,type,itemMaterial,itemWaveImpedance);
     }
     void handleCurrentTextChanged (QString text) {
-        emit CustomCurrentTextChanged(text,boundary);
+        emit CustomCurrentTextChanged(text,boundaryItem);
     }
 
 private:
-    Port *port;
-    Boundary *boundary;
+    PortItem *portItem;
+    BoundaryItem *boundaryItem;
     int type;  // 0 - Port: impedance definition
                // 1 - Port: impedance calculation
                // 2 - Boundary: boundary type

@@ -956,7 +956,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     ui->actionUndo->setEnabled(itemChangesStack.hasUndo());
     ui->actionRedo->setEnabled(itemChangesStack.hasRedo());
 
-    boundaryDatabase->set_comboZdef();
+    //boundaryDatabase->set_comboZdef();
 }
 
 void OpenParEMg::expand (BaseItem *item)
@@ -2155,27 +2155,29 @@ void OpenParEMg::insertIntegrationPath (BaseItem *VIitem)
         integrationPath=mode->addIntegrationPath(pathList,&pathsToAdd,VIitem->text(0).toStdString());
         addScaleToTree=true;
     } else {
-        // existing integration path
-        int i=0;
-        while (i < VIitem->childCount()) {
-            BaseItem *child=(BaseItem *)VIitem->child(i);
-            std::cout << "child->get_itemType()=" << child->get_itemType() << std::endl; std::cout.flush();
-            if (child->is_scale()) {
-                int j=0;
-                while (j < child->childCount()) {
-                    BaseItem *grandChild=(BaseItem *)child->child(j);
-                    std::cout << "   grandChild->get_itemType()=" << grandChild->get_itemType() << std::endl; std::cout.flush();
-                    if (grandChild->is_scaleValue()) {
-                        CustomLineEdit *scaleEdit=(CustomLineEdit *)ui->drawingItemTree->itemWidget(grandChild,0);
-                        integrationPath=scaleEdit->get_integrationPath();
+        // ToDo: Fix this when updating the methodology for handling tree undo/redo for integration paths
 
-                        integrationPath->addPaths(pathList,&pathsToAdd);
-                    }
-                    j++;
-                }
-            }
-            i++;
-        }
+        // existing integration path
+        // int i=0;
+        // while (i < VIitem->childCount()) {
+        //     BaseItem *child=(BaseItem *)VIitem->child(i);
+        //     if (child->is_scale()) {
+        //         int j=0;
+        //         while (j < child->childCount()) {
+        //             BaseItem *grandChild=(BaseItem *)child->child(j);
+        //             if (grandChild->is_scaleValue()) {
+        //                 if (grandChild->is_scaleValue()) {
+        //                     CustomLineEdit *scaleEdit=(CustomLineEdit *)ui->drawingItemTree->itemWidget(grandChild,0);
+        //                     integrationPath=scaleEdit->get_integrationPath();
+
+        //                     integrationPath->addPaths(pathList,&pathsToAdd);
+        //                 }
+        //             }
+        //             j++;
+        //         }
+        //     }
+        //     i++;
+        // }
     }
 
     if (!integrationPath) {
@@ -2206,6 +2208,7 @@ void OpenParEMg::insertIntegrationPath (BaseItem *VIitem)
         itemScaleValue->setIntegrationPath(integrationPath);
         itemScale->addChild(itemScaleValue);
         itemScaleValue->setParentItem(itemScale);
+        itemScaleValue->setIntegrationPath(integrationPath);
 
         newShapeData=itemScaleValue->getShapeData()->copyCreate();
         newShapeData->setCreate();
@@ -2215,14 +2218,14 @@ void OpenParEMg::insertIntegrationPath (BaseItem *VIitem)
         CustomLineEdit *scaleEdit=new CustomLineEdit();
         scaleEdit->setText(QString::number(1));   // default value
         scaleEdit->set_itemTracker(ui->drawingWindow->get_itemTracker());
-        scaleEdit->set_integrationPath(integrationPath);
+        scaleEdit->set_baseItem(itemScaleValue);
         scaleEdit->set_boundaryDatabase(boundaryDatabase);
         scaleEdit->setValidator(&doubleValidator);
         ui->drawingItemTree->setItemWidget(itemScaleValue,0,scaleEdit);
 
 
-        QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,&textValueChanged);
-        QObject::connect(scaleEdit,&CustomLineEdit::CustomTextChanged,relay,&Relay::setMenus);
+        QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,&textValueChanged);
+        QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,relay,&Relay::setMenus);
     }
 
     // add the integration path items to the tree
