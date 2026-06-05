@@ -73,7 +73,7 @@ void LengthInputForm::set_length (double *length_)
     }
 }
 
-void LengthInputForm::on_lineEdit_returnPressed ()
+void LengthInputForm::on_lineEdit_editingFinished ()
 {
     localLength=ui->lineEdit->text().toDouble();
     ui->OkButton->setEnabled(true);

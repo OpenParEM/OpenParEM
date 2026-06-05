@@ -48,8 +48,8 @@ private slots:
     void on_cancelButton_clicked ();
     void on_globalFile_stateChanged (int);
     void on_localFile_stateChanged (int);
-    void on_globalMaterialFile_returnPressed ();
-    void on_localMaterialFile_returnPressed ();
+    void on_globalMaterialFile_editingFinished ();
+    void on_localMaterialFile_editingFinished ();
 
 private:
     Ui::SelectMaterialsDatabase *ui;

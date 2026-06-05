@@ -45,8 +45,8 @@ private slots:
     void on_refinementVariable_activated (int);
     void on_refineOk_clicked ();
     void on_refineCancel_clicked ();
-    void on_relativeTol_returnPressed ();
-    void on_absoluteTol_returnPressed ();
+    void on_relativeTol_editingFinished ();
+    void on_absoluteTol_editingFinished ();
     void on_refineMin_valueChanged (int);
     void on_refineMax_valueChanged (int);
 

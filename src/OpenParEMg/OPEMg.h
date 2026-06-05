@@ -599,7 +599,7 @@ private slots:
     bool isValidDeleteValid ();
     void deleteSportItem (BaseItem *);
     void deleteSportItems ();
-    void rename_returnPressed ();
+    void rename_editingFinished ();
     bool hasOneSelectedSport ();
     bool hasVoltage ();
     bool hasCurrent ();

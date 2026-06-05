@@ -110,7 +110,7 @@ void LineEditForm::repopulate ()
     populate(&temp);
 }
 
-void LineEditForm::on_length_returnPressed ()
+void LineEditForm::on_length_editingFinished ()
 {
     if (ui->length->text().toDouble() == 0) return;
     length=ui->length->text().toDouble();
@@ -123,21 +123,21 @@ void LineEditForm::on_length_returnPressed ()
     ui->OkButton->setEnabled(isValid());
 }
 
-void LineEditForm::on_positionX_returnPressed ()
+void LineEditForm::on_positionX_editingFinished ()
 {
     p0.SetX(ui->positionX->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void LineEditForm::on_positionY_returnPressed ()
+void LineEditForm::on_positionY_editingFinished ()
 {
     p0.SetY(ui->positionY->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void LineEditForm::on_positionZ_returnPressed ()
+void LineEditForm::on_positionZ_editingFinished ()
 {
     p0.SetZ(ui->positionZ->text().toDouble()/conversionFactor);
     repopulate();
@@ -155,21 +155,21 @@ void LineEditForm::on_pick_clicked ()
     drawingWindow->updateViewer();
 }
 
-void LineEditForm::on_position2X_returnPressed ()
+void LineEditForm::on_position2X_editingFinished ()
 {
     p1.SetX(ui->position2X->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void LineEditForm::on_position2Y_returnPressed ()
+void LineEditForm::on_position2Y_editingFinished ()
 {
     p1.SetY(ui->position2Y->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void LineEditForm::on_position2Z_returnPressed ()
+void LineEditForm::on_position2Z_editingFinished ()
 {
     p1.SetZ(ui->position2Z->text().toDouble()/conversionFactor);
     repopulate();

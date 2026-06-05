@@ -36,16 +36,16 @@ public slots:
     void on_CancelButton_clicked ();
 
 private slots:
-    void on_centerPositionX_returnPressed ();
-    void on_centerPositionY_returnPressed ();
-    void on_centerPositionZ_returnPressed ();
+    void on_centerPositionX_editingFinished ();
+    void on_centerPositionY_editingFinished ();
+    void on_centerPositionZ_editingFinished ();
     void on_pickCenter_clicked ();
-    void on_radius_returnPressed ();
-    void on_firstPositionX_returnPressed ();
-    void on_firstPositionY_returnPressed ();
-    void on_firstPositionZ_returnPressed ();
+    void on_radius_editingFinished ();
+    void on_firstPositionX_editingFinished ();
+    void on_firstPositionY_editingFinished ();
+    void on_firstPositionZ_editingFinished ();
     void on_pickFirst_clicked ();
-    void on_vertexCount_returnPressed ();
+    void on_vertexCount_editingFinished ();
     void on_OkButton_clicked ();
 
 private:

@@ -48,8 +48,8 @@ private slots:
     void on_frequencyUnit_currentIndexChanged (int);
     void on_normalizeSparam_checkStateChanged (const Qt::CheckState &arg1);
     void on_touchstoneFormat_activated (int);
-    void on_tolerance2D_returnPressed ();
-    void on_tolerance3D_returnPressed ();
+    void on_tolerance2D_editingFinished ();
+    void on_tolerance3D_editingFinished ();
     void on_temperature_valueChanged (double);
     void on_iterationLimit_valueChanged (int);
     void on_checkHomogeneous_checkStateChanged (const Qt::CheckState &arg1);

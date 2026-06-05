@@ -118,21 +118,21 @@ void PolycircleEditForm::repopulate ()
     populate(&temp);
 }
 
-void PolycircleEditForm::on_centerPositionX_returnPressed ()
+void PolycircleEditForm::on_centerPositionX_editingFinished ()
 {
     centerPoint.SetX(ui->centerPositionX->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void PolycircleEditForm::on_centerPositionY_returnPressed ()
+void PolycircleEditForm::on_centerPositionY_editingFinished ()
 {
     centerPoint.SetY(ui->centerPositionY->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void PolycircleEditForm::on_centerPositionZ_returnPressed ()
+void PolycircleEditForm::on_centerPositionZ_editingFinished ()
 {
     centerPoint.SetZ(ui->centerPositionZ->text().toDouble()/conversionFactor);
     repopulate();
@@ -158,7 +158,7 @@ void PolycircleEditForm::on_pickCenter_clicked ()
 //     populate(&temp);
 // }
 
-void PolycircleEditForm::on_radius_returnPressed ()
+void PolycircleEditForm::on_radius_editingFinished ()
 {
     if (ui->radius->text().toDouble() < Precision::Confusion()) return;
     radius=ui->radius->text().toDouble()/conversionFactor;
@@ -176,21 +176,21 @@ void PolycircleEditForm::on_radius_returnPressed ()
     ui->OkButton->setEnabled(isValid());
 }
 
-void PolycircleEditForm::on_firstPositionX_returnPressed ()
+void PolycircleEditForm::on_firstPositionX_editingFinished ()
 {
     firstPoint.SetX(ui->firstPositionX->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void PolycircleEditForm::on_firstPositionY_returnPressed ()
+void PolycircleEditForm::on_firstPositionY_editingFinished ()
 {
     firstPoint.SetY(ui->firstPositionY->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void PolycircleEditForm::on_firstPositionZ_returnPressed ()
+void PolycircleEditForm::on_firstPositionZ_editingFinished ()
 {
     firstPoint.SetZ(ui->firstPositionZ->text().toDouble()/conversionFactor);
     repopulate();
@@ -208,7 +208,7 @@ void PolycircleEditForm::on_pickFirst_clicked ()
     drawingWindow->updateViewer();
 }
 
-void PolycircleEditForm::on_vertexCount_returnPressed ()
+void PolycircleEditForm::on_vertexCount_editingFinished ()
 {
     vertexCount=ui->vertexCount->text().toInt();
     repopulate();

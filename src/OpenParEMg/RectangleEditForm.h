@@ -53,18 +53,18 @@ public:
     void reject () override;
 
 private slots:
-    void on_positionX_returnPressed ();
-    void on_positionY_returnPressed ();
-    void on_positionZ_returnPressed ();
+    void on_positionX_editingFinished ();
+    void on_positionY_editingFinished ();
+    void on_positionZ_editingFinished ();
     void on_pick_clicked ();
 
-    void on_position2X_returnPressed ();
-    void on_position2Y_returnPressed ();
-    void on_position2Z_returnPressed ();
+    void on_position2X_editingFinished ();
+    void on_position2Y_editingFinished ();
+    void on_position2Z_editingFinished ();
     void on_pick2_clicked ();
 
-    void on_width_returnPressed ();
-    void on_height_returnPressed ();
+    void on_width_editingFinished ();
+    void on_height_editingFinished ();
     void on_OkButton_clicked ();
 
 public slots:

@@ -577,7 +577,7 @@ void SimOptions::on_temperature_valueChanged (double arg1)
     ui->simulateOptionOk->setEnabled(true);
 }
 
-void SimOptions::on_tolerance2D_returnPressed ()
+void SimOptions::on_tolerance2D_editingFinished ()
 {
     tolerance2D=ui->tolerance2D->text().toDouble();
     if (tolerance2D < 1e-15*(1-1e-14)) {
@@ -596,7 +596,7 @@ void SimOptions::on_tolerance2D_returnPressed ()
     ui->simulateOptionOk->setEnabled(true);
 }
 
-void SimOptions::on_tolerance3D_returnPressed ()
+void SimOptions::on_tolerance3D_editingFinished ()
 {
     tolerance3D=ui->tolerance3D->text().toDouble();
     if (tolerance3D < 1e-15*(1-1e-14)) {

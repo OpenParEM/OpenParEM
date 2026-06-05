@@ -167,7 +167,7 @@ void OPEMg_Refinement::on_refineCancel_clicked()
     close();
 }
 
-void OPEMg_Refinement::on_relativeTol_returnPressed()
+void OPEMg_Refinement::on_relativeTol_editingFinished()
 {
     double relativeTol=ui->relativeTol->text().toDouble();
     if (relativeTol < 1e-15*(1-1e-14)) {
@@ -187,7 +187,7 @@ void OPEMg_Refinement::on_relativeTol_returnPressed()
 }
 
 
-void OPEMg_Refinement::on_absoluteTol_returnPressed()
+void OPEMg_Refinement::on_absoluteTol_editingFinished()
 {
     double absoluteTol=ui->absoluteTol->text().toDouble();
     if (absoluteTol < 1e-15*(1-1e-14)) {

@@ -1455,7 +1455,7 @@ void OpenParEMg::renamePathItems ()
 
                 renameItem=pathItem;
                 renameEdit=name;
-                connect(name,&CustomLineEdit::returnPressed,this,&OpenParEMg::rename_returnPressed);
+                connect(name,&CustomLineEdit::editingFinished,this,&OpenParEMg::rename_editingFinished);
             }
         }
         i++;
@@ -1833,7 +1833,7 @@ void OpenParEMg::renameBoundaryItems ()
 
             renameItem=item;
             renameEdit=name;
-            connect(name,&CustomLineEdit::returnPressed,this,&OpenParEMg::rename_returnPressed);
+            connect(name,&CustomLineEdit::editingFinished,this,&OpenParEMg::rename_editingFinished);
         }
         i++;
     }
@@ -1984,7 +1984,7 @@ void OpenParEMg::renameSportNet ()
 
             renameItem=item;
             renameEdit=net;
-            connect(net,&CustomLineEdit::returnPressed,this,&OpenParEMg::rename_returnPressed);
+            connect(net,&CustomLineEdit::editingFinished,this,&OpenParEMg::rename_editingFinished);
         }
         i++;
     }
@@ -2260,9 +2260,9 @@ void OpenParEMg::insertIntegrationPath (BaseItem *VIitem)
     setMenusI(17);
 }
 
-void OpenParEMg::rename_returnPressed ()
+void OpenParEMg::rename_editingFinished ()
 {
-    //std::cout << "OpenParEMg::rename_returnPressed" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::rename_editingFinished" << std::endl; std::cout.flush();
 
     // new text
     QString newText=renameEdit->text();
@@ -2403,7 +2403,7 @@ void OpenParEMg::renameDrawingItems ()
 
                 renameItem=drawingItem;
                 renameEdit=name;
-                connect(name,&CustomLineEdit::returnPressed,this,&OpenParEMg::rename_returnPressed);
+                connect(name,&CustomLineEdit::editingFinished,this,&OpenParEMg::rename_editingFinished);
             }
         }
         i++;
@@ -2490,7 +2490,7 @@ void OpenParEMg::renamePortItems ()
 
             renameItem=item;
             renameEdit=name;
-            connect(name,&CustomLineEdit::returnPressed,this,&OpenParEMg::rename_returnPressed);
+            connect(name,&CustomLineEdit::editingFinished,this,&OpenParEMg::rename_editingFinished);
         }
         i++;
     }

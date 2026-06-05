@@ -70,7 +70,7 @@ void SelectMaterialsDatabase::set_projData (struct projectData *a)
         ui->globalMaterialFile->setEnabled(true);
         ui->selectGlobal->setEnabled(true);
 
-        emit ui->globalMaterialFile->returnPressed();
+        emit ui->globalMaterialFile->editingFinished();
     }
 
     ui->localFile->setChecked(false);
@@ -85,7 +85,7 @@ void SelectMaterialsDatabase::set_projData (struct projectData *a)
         ui->localMaterialFile->setEnabled(true);
         ui->selectLocal->setEnabled(true);
 
-        emit ui->localMaterialFile->returnPressed();
+        emit ui->localMaterialFile->editingFinished();
     }
 
     if (simulationRunning) {
@@ -107,12 +107,12 @@ void SelectMaterialsDatabase::on_selectLocal_clicked ()
 
     // return if user cancels
     if (localMaterialsFile.isNull()) {
-        emit ui->localMaterialFile->returnPressed();
+        emit ui->localMaterialFile->editingFinished();
         return;
     }
 
     ui->localMaterialFile->setText(localMaterialsFile);
-    emit ui->localMaterialFile->returnPressed();
+    emit ui->localMaterialFile->editingFinished();
 }
 
 void SelectMaterialsDatabase::on_selectGlobal_clicked ()
@@ -121,12 +121,12 @@ void SelectMaterialsDatabase::on_selectGlobal_clicked ()
 
     // return if user cancels
     if (globalMaterialsFile.isNull()) {
-        emit ui->globalMaterialFile->returnPressed();
+        emit ui->globalMaterialFile->editingFinished();
         return;
     }
 
     ui->globalMaterialFile->setText(globalMaterialsFile);
-    emit ui->globalMaterialFile->returnPressed();
+    emit ui->globalMaterialFile->editingFinished();
 }
 
 void SelectMaterialsDatabase::on_OkButton_clicked ()
@@ -200,7 +200,7 @@ void SelectMaterialsDatabase::on_globalFile_stateChanged (int arg1)
         ui->selectGlobal->setEnabled(false);
 
         ui->globalMaterialFile->setText("");
-        emit ui->globalMaterialFile->returnPressed();
+        emit ui->globalMaterialFile->editingFinished();
     } else {
         ui->globalFile->setChecked(true);
         ui->globalMaterialFile->setEnabled(true);
@@ -219,7 +219,7 @@ void SelectMaterialsDatabase::on_localFile_stateChanged (int arg1)
         ui->selectLocal->setEnabled(false);
 
         ui->localMaterialFile->setText("");
-        emit ui->localMaterialFile->returnPressed();
+        emit ui->localMaterialFile->editingFinished();
     } else {
         ui->localFile->setChecked(true);
         ui->localMaterialFile->setEnabled(true);
@@ -230,7 +230,7 @@ void SelectMaterialsDatabase::on_localFile_stateChanged (int arg1)
     if (localPath && localFilename || globalPath && globalFilename) ui->OkButton->setEnabled(true);
 }
 
-void SelectMaterialsDatabase::on_globalMaterialFile_returnPressed ()
+void SelectMaterialsDatabase::on_globalMaterialFile_editingFinished ()
 {
     MaterialDatabase testMaterialDatabase;
 
@@ -276,7 +276,7 @@ void SelectMaterialsDatabase::on_globalMaterialFile_returnPressed ()
     if (globalIsValid) ui->OkButton->setEnabled(true);
 }
 
-void SelectMaterialsDatabase::on_localMaterialFile_returnPressed ()
+void SelectMaterialsDatabase::on_localMaterialFile_editingFinished ()
 {
     MaterialDatabase testMaterialDatabase;
 

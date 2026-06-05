@@ -126,21 +126,21 @@ void RectangleEditForm::repopulateOffSize ()
     populate(&temp);
 }
 
-void RectangleEditForm::on_positionX_returnPressed ()
+void RectangleEditForm::on_positionX_editingFinished ()
 {
     p0.SetX(ui->positionX->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::on_positionY_returnPressed ()
+void RectangleEditForm::on_positionY_editingFinished ()
 {
     p0.SetY(ui->positionY->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::on_positionZ_returnPressed ()
+void RectangleEditForm::on_positionZ_editingFinished ()
 {
     p0.SetZ(ui->positionZ->text().toDouble()/conversionFactor);
     repopulate();
@@ -158,21 +158,21 @@ void RectangleEditForm::on_pick_clicked ()
     drawingWindow->updateViewer();
 }
 
-void RectangleEditForm::on_position2X_returnPressed ()
+void RectangleEditForm::on_position2X_editingFinished ()
 {
     p1.SetX(ui->position2X->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::on_position2Y_returnPressed ()
+void RectangleEditForm::on_position2Y_editingFinished ()
 {
     p1.SetY(ui->position2Y->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::on_position2Z_returnPressed ()
+void RectangleEditForm::on_position2Z_editingFinished ()
 {
     p1.SetZ(ui->position2Z->text().toDouble()/conversionFactor);
     repopulate();
@@ -190,14 +190,14 @@ void RectangleEditForm::on_pick2_clicked ()
     drawingWindow->updateViewer();
 }
 
-void RectangleEditForm::on_width_returnPressed ()
+void RectangleEditForm::on_width_editingFinished ()
 {
     width=ui->width->text().toDouble()/conversionFactor;
     repopulateOffSize();
     ui->OkButton->setEnabled(isValid());
 }
 
-void RectangleEditForm::on_height_returnPressed ()
+void RectangleEditForm::on_height_editingFinished ()
 {
     height=ui->height->text().toDouble()/conversionFactor;
     repopulateOffSize();

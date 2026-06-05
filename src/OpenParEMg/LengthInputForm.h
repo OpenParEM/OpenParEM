@@ -53,7 +53,7 @@ public:
     void print_point (gp_Pnt);
 
 private slots:
-    void on_lineEdit_returnPressed ();
+    void on_lineEdit_editingFinished ();
     void on_pickStart_clicked ();
     void on_pickEnd_clicked ();
     void on_OkButton_clicked ();
