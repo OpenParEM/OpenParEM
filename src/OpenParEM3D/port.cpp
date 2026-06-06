@@ -1551,21 +1551,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
 
     QString textName=QString::fromStdString(get_name());
 
-    if (!boundaryItem) {
-        boundaryItem=new BoundaryItem(0);
-    }
-    boundaryItem->setMW(mw);
-    boundaryItem->setParentItem(rootBoundaryItem);
-    boundaryItem->setBoundary(this);
-    boundaryItem->setText(0,textName);
-    boundaryItem->setForeground(0,Qt::gray);
-    boundaryItem->setFlags(boundaryItem->flags() | Qt::ItemIsEditable);
-    boundaryItem->setToolTip(0,"Boundary name.");
-    rootBoundaryItem->addChild(boundaryItem);
-    set_BoundaryItem(boundaryItem);
-
     // link paths -  assumes there is only one path, which is checked when loading the database
-    //Path *path=boundaryDatabase->get_pathList()[pathIndexList[0]];
 
     if (pathIndexList.size() == 0) return;
     long unsigned int index=pathIndexList[0];
@@ -1576,32 +1562,28 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     Path *path=(*pathList)[index];
     if (!path) return;
 
-    // attach item
+    // attach PathItem
+    PathItem *pathItem=nullptr;
     int j=0;
     while (j < rootPathItem->childCount()) {
         PathItem *child=dynamic_cast<PathItem *>(rootPathItem->child(j));
         if (child->getPath() == path) {
-            boundaryItem->setPathItem(child);
-            child->push_linkedItem(boundaryItem);
-
-            emit relay->convertPathToFace(child);
-
-            Handle(AIS_Shape) shape=child->getShape();
-            if (!shape.IsNull()) {
-                shape->SetTransparency(0);
-                shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-                if (is_perfect_electric_conductor()) shape->SetColor(Quantity_NOC_GREENYELLOW);
-                if (is_perfect_magnetic_conductor()) shape->SetColor(Quantity_NOC_CYAN);
-                if (is_surface_impedance()) shape->SetColor(Quantity_NOC_GOLDENROD);
-                if (is_radiation()) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
-                emit relay->setShaded(shape);
-            }
+            pathItem=child;
+            break;
         }
         j++;
     }
-    drawingWindow->showItem(boundaryItem);
 
-    boundaryItem->populate(this);
+    int boundary_type=0;
+    if (is_perfect_electric_conductor()) boundary_type=0;
+    else if (is_perfect_magnetic_conductor()) boundary_type=1;
+    else if (is_surface_impedance()) boundary_type=2;
+    else if (is_radiation()) boundary_type=3;
+
+    if (pathItem) {
+        boundaryItem=new BoundaryItem(mw,pathItem,boundary_type,get_wave_impedance(),QString::fromStdString(get_material()));
+        drawingWindow->showItem(boundaryItem);
+    }
 }
 #endif
 
@@ -2589,9 +2571,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 {
     // scale
 
-    SelectionItem *itemScale=new SelectionItem(0);
-    itemScale->setMW(mw);
-    itemScale->setParentItem(itemVI);
+    BaseItem *itemScale=new BaseItem(mw,itemVI);
     itemScale->setText(0,"scale");
     itemScale->set_itemType(12);
     itemScale->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
@@ -2601,9 +2581,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     //QString enabledBackground="background: rgb(255,255,255);";
     //QString disabledBackground="background: rgb(240,240,240);";
 
-    SelectionItem *itemScaleValue=new SelectionItem(0);
-    itemScaleValue->setMW(mw);
-    itemScaleValue->setParentItem(itemScale);
+    BaseItem *itemScaleValue=new BaseItem(mw,itemScale);
     itemScaleValue->set_itemType(13);
     itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
     itemScale->addChild(itemScaleValue);
@@ -2629,9 +2607,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
         name.append(pathNameList[i]->get_value().c_str());
 
         // tree item
-        PathItem *itemSegment=new PathItem(0);
-        itemSegment->setMW(mw);
-        itemSegment->setParentItem(itemVI);
+        PathItem *itemSegment=new PathItem(mw,itemVI);
         //itemSegment->set_AIS_Shape(drawingShape);
         itemSegment->setText(0,name);
         itemSegment->set_itemType(14);
@@ -4308,46 +4284,39 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
         netname.append(QString::number(get_Sport()));
     }
 
-    ModeItem *modeItem=new ModeItem(0);
-    modeItem->setMW(mw);
-    modeItem->setParentItem(portItem);
+
+    ModeItem *modeItem=new ModeItem(mw,portItem);
     modeItem->setText(0,netname);
     modeItem->set_itemType(5);
     modeItem->setToolTip(0,"Mode and its net name.");
     modeItem->setForeground(0,Qt::black);
     modeItem->setFlags(modeItem->flags() & ~Qt::ItemIsEditable);
-    modeItem->setMode(this);
     portItem->addChild(modeItem);
 
     // S port
-    SelectionItem *itemSport=new SelectionItem(0);
-    itemSport->setMW(mw);
-    itemSport->setParentItem(modeItem);
-    itemSport->setText(0,"S Port");
-    itemSport->set_itemType(8);
-    itemSport->setFlags(itemSport->flags() & ~Qt::ItemIsEditable);
-    itemSport->setToolTip(0,"S-port number for the mode.");
-    itemSport->setForeground(0,Qt::black);
-    modeItem->addChild(itemSport);
+    SportItem *sportItem=new SportItem(mw,modeItem);
+    sportItem->setText(0,"S Port");
+    sportItem->set_itemType(8);
+    sportItem->setFlags(sportItem->flags() & ~Qt::ItemIsEditable);
+    sportItem->setToolTip(0,"S-port number for the mode.");
+    sportItem->setForeground(0,Qt::black);
+    modeItem->addChild(sportItem);
 
     // Sport number
 
-    SelectionItem *itemSportValue=new SelectionItem(0);
-    itemSportValue->setMW(mw);
-    itemSportValue->setParentItem(itemSport);
-    itemSportValue->set_itemType(9);
-    itemSportValue->setToolTip(0,"S-parameter port number.");
-    itemSportValue->setForeground(0,Qt::black);
-    itemSportValue->setFlags(itemSportValue->flags() & ~Qt::ItemIsSelectable);
-    itemSport->addChild(itemSportValue);
+    SportNumberItem *sportNumberItem=new SportNumberItem(mw,sportItem);
+    sportNumberItem->set_itemType(9);
+    sportNumberItem->setToolTip(0,"S-parameter port number.");
+    sportNumberItem->setForeground(0,Qt::black);
+    sportNumberItem->setFlags(sportNumberItem->flags() & ~Qt::ItemIsSelectable);
+    sportItem->addChild(sportNumberItem);
 
     CustomSpinBox *sportNumber=new CustomSpinBox();
     sportNumber->set_itemTracker(drawingWindow->get_itemTracker());
-    sportNumber->set_mode(this);
-    sportNumber->set_boundaryDatabase(boundaryDatabase);
+    sportNumber->set_sportItem(sportItem);
     sportNumber->setMinimum(1);
     sportNumber->setValue(get_Sport());
-    drawingItemTree->setItemWidget(itemSportValue,0,sportNumber);
+    drawingItemTree->setItemWidget(sportNumberItem,0,sportNumber);
 
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,relay,&Relay::setMenus);
@@ -4355,40 +4324,34 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
     // voltage integration paths
 
-    SelectionItem *itemVoltage=new SelectionItem(0);
-    itemVoltage->setMW(mw);
-    itemVoltage->setParentItem(modeItem);
-    itemVoltage->setText(0,"voltage");
-    itemVoltage->set_itemType(10);
-    itemVoltage->setFlags(itemVoltage->flags() & ~Qt::ItemIsEditable);
-    itemVoltage->setToolTip(0,"Voltage integration path.");
-    itemVoltage->setForeground(0,Qt::black);
-    modeItem->addChild(itemVoltage);
+    VIItem *voltageItem=new VIItem(mw,modeItem,10);
+    voltageItem->setText(0,"voltage");
+    voltageItem->setFlags(voltageItem->flags() & ~Qt::ItemIsEditable);
+    voltageItem->setToolTip(0,"Voltage integration path.");
+    voltageItem->setForeground(0,Qt::black);
+    modeItem->addChild(voltageItem);
 
     long unsigned int i=0;
     while (i < integrationPathList.size()) {
         if (integrationPathList[i]->is_voltage()) {
-            integrationPathList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,itemVoltage);
+            integrationPathList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,voltageItem);
         }
         i++;
     }
 
     // current integration paths
 
-    SelectionItem *itemCurrent=new SelectionItem(0);
-    itemCurrent->setMW(mw);
-    itemCurrent->setParentItem(modeItem);
-    itemCurrent->setText(0,"current");
-    itemCurrent->set_itemType(11);
-    itemCurrent->setFlags(itemCurrent->flags() & ~Qt::ItemIsEditable);
-    itemCurrent->setToolTip(0,"Current integration path.");
-    itemCurrent->setForeground(0,Qt::black);
-    modeItem->addChild(itemCurrent);
+    VIItem *currentItem=new VIItem(mw,modeItem,11);
+    currentItem->setText(0,"current");
+    currentItem->setFlags(currentItem->flags() & ~Qt::ItemIsEditable);
+    currentItem->setToolTip(0,"Current integration path.");
+    currentItem->setForeground(0,Qt::black);
+    modeItem->addChild(currentItem);
 
     i=0;
     while (i < integrationPathList.size()) {
         if (integrationPathList[i]->is_current()) {
-            integrationPathList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,itemCurrent);
+            integrationPathList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,currentItem);
         }
         i++;
     }
@@ -7227,15 +7190,15 @@ void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryIte
 
     // Port: impedance definition
     if (portItem && type == 0) {
-        if (index == 0) newShapeData->set_impedance_definition("VI");
-        if (index == 1) newShapeData->set_impedance_definition("PV");
-        if (index == 2) newShapeData->set_impedance_definition("PI");
+        if (index == 0) newShapeData->set_impedance_definition(QString("VI"));
+        if (index == 1) newShapeData->set_impedance_definition(QString("PV"));
+        if (index == 2) newShapeData->set_impedance_definition(QString("PI"));
     }
 
     // Port: impedance calculation
     if (portItem && type == 1) {
-        if (index == 0) newShapeData->set_impedance_calculation("line");
-        if (index == 1) newShapeData->set_impedance_calculation("modal");
+        if (index == 0) newShapeData->set_impedance_calculation(QString("line"));
+        if (index == 1) newShapeData->set_impedance_calculation(QString("modal"));
     }
 
     // Boundary: type
@@ -7248,26 +7211,23 @@ void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryIte
             shape=pathItem->getShape();
         }
 
+        newShapeData->set_boundary_type(index);
         if (index == 0) {
-            newShapeData->set_boundary_type("perfect_electric_conductor");
             if (itemMaterial) itemMaterial->setHidden(true);
             if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
             if (!shape.IsNull()) shape->SetColor(Quantity_NOC_GREENYELLOW);  // X11 color wheel
         }
         if (index == 1) {
-            newShapeData->set_boundary_type("perfect_magnetic_conductor");
             if (itemMaterial) itemMaterial->setHidden(true);
             if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
             if (!shape.IsNull()) if (!shape.IsNull()) shape->SetColor(Quantity_NOC_CYAN);  // X11 color wheel
         }
         if (index == 2) {
-            newShapeData->set_boundary_type("surface_impedance");
             if (itemMaterial) itemMaterial->setHidden(false);
             if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
             if (!shape.IsNull()) if (!shape.IsNull()) shape->SetColor(Quantity_NOC_GOLDENROD);  // X11 color wheel
         }
         if (index == 3) {
-            newShapeData->set_boundary_type("radiation");
             if (itemMaterial) itemMaterial->setHidden(true);
             if (itemWaveImpedance) itemWaveImpedance->setHidden(false);
             if (!shape.IsNull()) if (!shape.IsNull()) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);  // X11 color wheel
@@ -7281,7 +7241,7 @@ void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryIte
 
 void comboTextChanged (QString text, BoundaryItem *boundaryItem)
 {
-    if (boundaryItem) {
+    if (boundaryItem && boundaryItem->is_boundary()) {
         ShapeData *newShapeData=boundaryItem->getShapeData()->copyCreate();
         newShapeData->setEdit();
         newShapeData->set_boundary_material(text);
@@ -7291,9 +7251,25 @@ void comboTextChanged (QString text, BoundaryItem *boundaryItem)
     }
 }
 
-void spinValueChanged (int value, Mode *mode, BoundaryDatabase *boundaryDatabase)
+void spinValueChanged (int value, SportItem *sportItem)
 {
-    if (mode) mode->set_Sport(value);
+    if (sportItem && sportItem->is_sport()) {
+        ShapeData *newShapeData=sportItem->getShapeData()->copyCreate();
+
+        // change the name to match if the user has not changed it
+        QString net="net";
+        net.append(QString::number(newShapeData->get_Sport()));
+        if (sportItem->text(0).compare(net) == 0) {
+            QString net="net";
+            net.append(QString::number(value));
+        }
+
+        newShapeData->setEdit();
+        newShapeData->set_Sport(value);
+        sportItem->addShapeData(newShapeData);
+        sportItem->startItemChange();
+        sportItem->addItemChange();
+    }
 }
 
 void textValueChanged (QString text, BaseItem *baseItem, BoundaryDatabase *boundaryDatabase)
@@ -7325,21 +7301,6 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
 {
     std::cout << "Port::draw" << std::endl;  std::cout.flush();
 
-    // name
-
-    if (!portItem) {
-        portItem=new PortItem(0);
-    }
-    portItem->setMW(mw);
-    portItem->setParentItem(rootPortItem);
-    portItem->setPort(this);
-    portItem->setText(0,get_name().c_str());
-    portItem->setForeground(0,Qt::gray);
-    portItem->setFlags(portItem->flags() & ~Qt::ItemIsEditable);
-    portItem->setToolTip(0,"Port name.");
-    rootPortItem->addChild(portItem);
-    set_PortItem(portItem);
-
     // link paths -  assumes there is only one path, which is checked when loading the database
 
     if (pathIndexList.size() == 0) return;
@@ -7352,35 +7313,23 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     if (!path) return;
 
     // attach item
+    PathItem *pathItem=nullptr;
     int j=0;
     while (j < rootPathItem->childCount()) {
         PathItem *child=dynamic_cast<PathItem *>(rootPathItem->child(j));
         if (child->getPath() == path) {
-            portItem->setPathItem(child);
-            std::cout << "port item set pathItem name=" << child->text(0).toStdString() << std::endl; std::cout.flush();
-            child->push_linkedItem(portItem);
-
-            emit relay->convertPathToFace(child);
-
-            Handle(AIS_Shape) shape=child->getShape();
-            if (!shape.IsNull()) {
-                shape->SetColor(Quantity_NOC_MINTCREAM);
-                shape->SetTransparency(0.25);
-                shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-                emit relay->setShaded(shape);
-            }
+            pathItem=child;
+            break;
         }
         j++;
     }
-    drawingWindow->showItem(portItem);
 
-    portItem->populate(this);
+    QString impedance_calculation=QString::fromStdString(get_impedance_calculation());
+    QString impedance_definition=QString::fromStdString(get_impedance_definition());
 
-    // modes
-    long unsigned int i=0;
-    while (i < modeList.size()) {
-        modeList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,portItem);
-        i++;
+    if (pathItem) {
+        portItem=new PortItem(mw,pathItem,impedance_calculation,impedance_definition);
+        drawingWindow->showItem(portItem);
     }
 }
 

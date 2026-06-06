@@ -46,8 +46,8 @@ public:
     void set_portItem (PortItem *portItem_) {portItem=portItem_;}
     void set_boundaryItem (BoundaryItem *boundaryItem_) {boundaryItem=boundaryItem_;}
     void set_type (int type_) {type=type_;}
-    void set_itemMaterial (SelectionItem *itemMaterial_) {itemMaterial=itemMaterial_;}
-    void set_itemWaveImpedance (SelectionItem *itemWaveImpedance_) {itemWaveImpedance=itemWaveImpedance_;}
+    void set_itemMaterial (BaseItem *itemMaterial_) {itemMaterial=itemMaterial_;}
+    void set_itemWaveImpedance (BaseItem *itemWaveImpedance_) {itemWaveImpedance=itemWaveImpedance_;}
     void set_itemTracker (ItemTracker *drawingTracker_) {drawingTracker=drawingTracker_;}
 
 protected:
@@ -64,7 +64,7 @@ protected:
     }
 
 signals:
-    void CustomCurrentIndexChanged (int, PortItem *, BoundaryItem *, int, SelectionItem *, SelectionItem *);
+    void CustomCurrentIndexChanged (int, PortItem *, BoundaryItem *, int, BaseItem *, BaseItem *);
     void CustomCurrentTextChanged (QString, BoundaryItem *);
 
 private slots:
@@ -81,8 +81,8 @@ private:
     int type;  // 0 - Port: impedance definition
                // 1 - Port: impedance calculation
                // 2 - Boundary: boundary type
-    SelectionItem *itemMaterial;
-    SelectionItem *itemWaveImpedance;
+    BaseItem *itemMaterial;
+    BaseItem *itemWaveImpedance;
     ItemTracker *drawingTracker;
 };
 

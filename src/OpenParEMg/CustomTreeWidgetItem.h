@@ -48,23 +48,25 @@ public:
     {
         // default to noop
         type=0;
+        Sport=0;
         polywire=nullptr;
         process=nullptr;
         prior=nullptr;
         next=nullptr;
     }
 
-    ShapeData (int type_,Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
-    {
-        type=type_;
-        polywire=nullptr;
-        process=nullptr;
-        prior=nullptr;
-        next=nullptr;
-        setPolywire(polywire_);
-        setProcess(process_);
-        setShape(shape_);
-    }
+    // ShapeData (int type_,Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    // {
+    //     type=type_;
+    //     Sport=0;
+    //     polywire=nullptr;
+    //     process=nullptr;
+    //     prior=nullptr;
+    //     next=nullptr;
+    //     setPolywire(polywire_);
+    //     setProcess(process_);
+    //     setShape(shape_);
+    // }
 
     ShapeData (ShapeData *shapeData)
     {
@@ -76,6 +78,7 @@ public:
         boundary_type=shapeData->boundary_type;
         boundary_material=shapeData->boundary_material;
         wave_impedance=shapeData->wave_impedance;
+        Sport=shapeData->Sport;
         prior=shapeData->prior;
         next=shapeData->next;
         setPolywire(shapeData->getPolywire());
@@ -90,6 +93,31 @@ public:
         if (!shape.IsNull()) {shape.Nullify();}
     }
 
+    void copy (ShapeData *shapeData) {
+        type=shapeData->type;
+
+        if (polywire) delete polywire;
+        polywire=shapeData->polywire->copyCreate();
+
+        if (process) delete process;
+        process=shapeData->process->copyCreate();
+
+
+        impedance_definition=shapeData->impedance_definition;
+        impedance_calculation=shapeData->impedance_calculation;
+        boundary_type=shapeData->boundary_type;
+        boundary_material=shapeData->boundary_material;
+        wave_impedance=shapeData->wave_impedance;
+        Sport=shapeData->Sport;
+        //prior=shapeData->prior;
+        //next=shapeData->next;
+
+        if (shape.IsNull()) shape.Nullify();
+        if (!shapeData->getShape().IsNull()) {
+            shape=new AIS_Shape(shapeData->getShape()->Shape());
+        }
+    }
+
     ShapeData* copyCreate ()
     {
         ShapeData *newShapeData=new ShapeData();
@@ -102,6 +130,7 @@ public:
             newShapeData->boundary_type=boundary_type;
             newShapeData->boundary_material=boundary_material;
             newShapeData->wave_impedance=wave_impedance;
+            newShapeData->Sport=Sport;
             newShapeData->prior=prior;
             newShapeData->next=next;
             if (polywire) newShapeData->polywire=polywire->copyCreate();
@@ -184,17 +213,22 @@ public:
 
     void set_impedance_definition (std::string impedance_definition_) {impedance_definition=QString::fromStdString(impedance_definition_);}
     void set_impedance_calculation (std::string impedance_calculation_) {impedance_calculation=QString::fromStdString(impedance_calculation_);}
+    void set_impedance_definition (QString impedance_definition_) {impedance_definition=impedance_definition_;}
+    void set_impedance_calculation (QString impedance_calculation_) {impedance_calculation=impedance_calculation_;}
     QString get_impedance_definition () {return impedance_definition;}
     QString get_impedance_calculation () {return impedance_calculation;}
 
-    void set_boundary_type (std::string boundary_type_) {boundary_type=QString::fromStdString(boundary_type_);}
-    QString get_boundary_type () {return boundary_type;}
+    void set_boundary_type (int boundary_type_) {boundary_type=boundary_type_;}
+    int get_boundary_type () {return boundary_type;}
 
     void set_boundary_material (QString boundary_material_) {boundary_material=boundary_material_;}
     QString get_boundary_material () {return boundary_material;}
 
     void set_wave_impedance (double wave_impedance_) {wave_impedance=wave_impedance_;}
     double get_wave_impedance () {return wave_impedance;}
+
+    void set_Sport (int Sport_) {Sport=Sport_;}
+    int get_Sport () {return Sport;}
 
     void setPrior (ShapeData *prior_) {prior=prior_;}
     void setNext (ShapeData *next_) {next=next_;}
@@ -220,9 +254,10 @@ public:
         std::cout << "                  process=" << process << std::endl;
         std::cout << "                  impedance_definition=" << impedance_definition.toStdString() << std::endl;
         std::cout << "                  impedance_calculation=" << impedance_calculation.toStdString() << std::endl;
-        std::cout << "                  boundary_type=" << boundary_type.toStdString() << std::endl;
+        std::cout << "                  boundary_type=" << boundary_type<< std::endl;
         std::cout << "                  boundary_material=" << boundary_material.toStdString() << std::endl;
         std::cout << "                  wave_impedance=" << wave_impedance << std::endl;
+        std::cout << "                  Sport=" << Sport << std::endl;
         std::cout << "                  prior=" << prior << std::endl;
         std::cout << "                  next=" << next << std::endl;
     }
@@ -240,9 +275,10 @@ private:
     // for widget reconstruction
     QString impedance_definition;                      // VI, PV, PI, invalid
     QString impedance_calculation;                     // line, modal
-    QString boundary_type;                             // perfect_electric_conductor, perfect_magnetic_conductor, surface_impedance, radiation
+    int boundary_type;                                 // 0 - PEC, 1 - PMC, 2 - surface_impedance, 3 - radiation
     QString boundary_material;                         // material for the surface impedance
     double wave_impedance;                             // for radiation boundary
+    int Sport;                                         // S-parameter port number
 
     ShapeData *prior;                                  // prior ShapeData in ShapeDataStack
     ShapeData *next;                                   // next ShapeData in ShapeDataStack
@@ -271,11 +307,11 @@ public:
 
     long unsigned int getSize () {return shapeDataList.size();}
 
-    void add (int action_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
-    {
-        ShapeData *shapeData=new ShapeData(action_,polywire_,process_,shape_);
-        add(shapeData);
-    }
+    // void add (int action_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    // {
+    //     ShapeData *shapeData=new ShapeData(action_,polywire_,process_,shape_);
+    //     add(shapeData);
+    // }
 
     void add (ShapeData *shapeData)
     {
@@ -433,27 +469,22 @@ class BaseItem : public QObject, public QTreeWidgetItem {
     Q_OBJECT
 
 public:
-    BaseItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type)
-    {
-        itemType=-1;
-        forShowHide=true;
-        depth=0;
-        parentItem=nullptr;
-        hasArrows=false;
-        isActive=false;
-    }
 
-    void setMW (OpenParEMg *mw_) {mw=mw_;}
+    BaseItem () {}
+    BaseItem (OpenParEMg *, BaseItem *);
+
     void startItemChange ();
     void addItemChange ();
-    virtual void showMenu () {}
+
+    virtual bool isValidShow () {return false;}
+    virtual bool isValidHide () {return false;}
+    virtual void show () {}
+    virtual void hide () {}
+    virtual void showMenu (QMenu *) {}
 
     QString get_name () {return text(0);}
 
-    void copy_depth (BaseItem *item) {depth=item->depth;}
-    int get_depth () {return depth;}
-    void increase_depth () {depth++;}
-    void decrease_depth () {depth--;}
+
 
     void addShapeData (ShapeData *shapeData_) {dataStack.add(shapeData_);}
     void setShape (Handle(AIS_Shape) shape_) {dataStack.setShape(shape_);}
@@ -482,32 +513,13 @@ public:
     virtual bool getEnableDeletePoint () {return false;}
     virtual bool getEnableInsertPoint () {return false;}
 
-    virtual void setHasArrows (bool hasArrows_) {hasArrows=hasArrows_;}
-    virtual bool getHasArrows () {return hasArrows;}
     virtual void del () {}
 
     virtual void undo ();
     virtual void redo ();
     void pop () {dataStack.pop();}
 
-    virtual bool getIsActive () {return isActive;}
-    virtual void setIsActive (bool isActive_) {isActive=isActive_;}
-
-    void set_itemType (int itemType_)
-    {
-        itemType=itemType_;
-        forShowHide=false;
-        if (is_drawing()) forShowHide=true;
-        if (is_port()) forShowHide=true;
-        if (is_boundary()) forShowHide=true;
-        if (is_mesh()) forShowHide=true;
-        if (is_path()) forShowHide=true;
-        if (is_integrationPathSegment()) forShowHide=true;
-        if (is_rootDrawing()) forShowHide=true;
-        if (is_rootPort()) forShowHide=true;
-        if (is_rootBoundary()) forShowHide=true;
-        if (is_rootMesh()) forShowHide=true;
-    }
+    void set_itemType (int itemType_) {itemType=itemType_;}
     int get_itemType () {return itemType;}
 
     bool is_undefined () {if (itemType == -1) return true; return false;}
@@ -553,19 +565,19 @@ public:
         }
     }
 
-    bool isValidShow ()
-    {
-        if (!forShowHide) return false;
-        if (foreground(0) == Qt::gray) return true;
-        return false;
-    }
+    // bool isValidShow ()
+    // {
+    //     if (!forShowHide) return false;
+    //     if (foreground(0) == Qt::gray) return true;
+    //     return false;
+    // }
 
-    bool isValidHide ()
-    {
-        if (!forShowHide) return false;
-        if (foreground(0) == Qt::black) return true;
-        return false;
-    }
+    // bool isValidHide ()
+    // {
+    //     if (!forShowHide) return false;
+    //     if (foreground(0) == Qt::black) return true;
+    //     return false;
+    // }
 
     TopoDS_Shape rotateShape (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2, Handle(AIS_InteractiveContext) viewerContext)
     {
@@ -589,9 +601,7 @@ public:
         ShapeData *copyShapeData=dataStack.getShapeData()->copyCreate();
         newItem->dataStack.add(copyShapeData);
         newItem->setText(0,this->text(0).append("_copy"));
-        newItem->forShowHide=forShowHide;
         newItem->itemType=itemType;
-        newItem->depth=depth;
         return newItem;
     }
 
@@ -624,7 +634,6 @@ public:
     {
         std::cout << "BaseItem:" << std::endl;
         dataStack.print();
-        std::cout << "   forShowHide=" << forShowHide << std::endl;
         std::cout << "   itemType=" << itemType << std::endl;
         if (is_undefined()) std::cout << "   itemType=undefined" << std::endl;
         if (is_rootDrawing()) std::cout << "   itemType=rootDrawing" << std::endl;
@@ -670,7 +679,6 @@ public:
     virtual bool hasUndo () {return dataStack.hasUndo();}
     virtual bool hasRedo () {return dataStack.hasRedo();}
 
-    void setParentItem (BaseItem *parentItem_) {parentItem=parentItem_;}
     BaseItem* getParentItem () {return parentItem;}
 
     void clearChildren () {children.clear();}
@@ -692,7 +700,6 @@ protected:
     ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
     BaseItem *parentItem;                              // parent for undo/redo
     std::vector<BaseItem *> children;                  // children for undo/redo
-    bool forShowHide;                                  // false - does not participate in item tree show/hide operations; true - does participate
     int itemType;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh, 4 - path
                                                        // 5 - Sport (net), 6 - impedance definition, 7 - impedance calculation
                                                        // 8 - Sport label, 9 - Sport number,
@@ -706,34 +713,22 @@ protected:
                                                        // 104 - root path item
 
 
-
-
-
-    int depth;                                         // item depth in the tree for saving formatted drawing files
-    bool hasArrows;                                    // whether to show arrows when drawing; used by DrawingItem and PathItem
-    bool isActive;                                     // indicates whether the item is assigned to the tree
+    // int depth;                                         // item depth in the tree for saving formatted drawing files
+    // bool hasArrows;                                    // whether to show arrows when drawing; used by DrawingItem and PathItem
+    // bool isActive;                                     // indicates whether the item is assigned to the tree
 };
 
-
-class SelectionItem : public BaseItem
-{
-    Q_OBJECT
-
-public:
-    explicit SelectionItem (QObject *parent = nullptr) {}
-
-private:
-
-
-};
 
 class ScaleItem : public BaseItem
 {
     Q_OBJECT
 
 public:
-    explicit ScaleItem (QObject *parent = nullptr)
+    ScaleItem (OpenParEMg *mw_, BaseItem *parentItem_)
     {
+        mw=mw_;
+        parentItem=parentItem_;
+        itemType=12;
         integrationPath=nullptr;
     }
 
@@ -756,14 +751,20 @@ class RootDrawingItem : public BaseItem
     Q_OBJECT
 
 public:
-    explicit RootDrawingItem (QObject *parent = nullptr)
+    RootDrawingItem (OpenParEMg *mw_)
     {
+        mw=mw_;
         itemType=100;
-        forShowHide=true;
-        depth=0;
         parentItem=nullptr;
     }
-    void showMenu (QMenu *);
+
+    bool isValidShow () override;
+    bool isValidHide () override;
+    bool isValidSelectAll ();
+    void show () override;
+    void hide () override;
+    void selectAll ();
+    void showMenu (QMenu *) override;
 
 private:
 
@@ -774,25 +775,11 @@ class DrawingItem : public BaseItem
     Q_OBJECT
 
 public:
-    explicit DrawingItem (QObject *parent = nullptr)
-    {
-        itemType=0;
-        forShowHide=true;
-        depth=0;
-        parentItem=nullptr;
+    DrawingItem () {}
+    DrawingItem (OpenParEMg *, BaseItem *);
 
-        set_dimTag(-1,-1);          // for mesh items; invalid initialization
-
-        p0set=false;
-        p1set=false;
-        enableMove=false;
-        enableStretch=false;
-        enableDeletePoint=false;
-        enableInsertPoint=false;
-
-        hasArrows=false;
-        isActive=true;
-    }
+    void setParentItem (BaseItem *parentItem_) {parentItem=parentItem_;}
+    BaseItem* getParentItem () {return parentItem;}
 
     QString get_material () {return text(1);}
     void set_Material (QString material_) {material=material_;}
@@ -802,6 +789,15 @@ public:
     void set_dimTag (std::pair<int,int> dimTag_) {dimTag=dimTag_;}
     std::pair<int,int> get_dimTag () {return dimTag;}
     bool is_solid () {if (dimTag.first == 3) return true; return false;}
+
+    void copy_depth (DrawingItem *item) {
+        if (item) depth=item->depth;
+        else depth=0;
+    }
+    void set_depth (int depth_) {depth=depth_;}
+    int get_depth () {return depth;}
+    void increase_depth () {depth++;}
+    void decrease_depth () {depth--;}
 
     DrawingItem* copyCreate ();
 
@@ -847,7 +843,11 @@ public:
 
     void del () override;
 
-    void showMenu (QMenu *);
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
 
     void setEnableMove (bool enableMove_) {enableMove=enableMove_;}
     bool getEnableMove () override {return enableMove;}
@@ -895,18 +895,10 @@ public:
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
 
-    void setHasArrows (bool hasArrows_) override {hasArrows=hasArrows_;}
-    bool getHasArrows () override {return hasArrows;}
-
-    bool getIsActive () override {return isActive;}
-    void setIsActive (bool isActive_) override {isActive=isActive_;}
-
 protected:
     QString material;                                  // material for this item - only valid for top-level SOLID and COMPOUND
     std::pair<int,int> dimTag;                         // supports meshing with gmsh
-
-    bool hasArrows;                                    // flag for showing direction of the path
-    bool isActive;
+    int depth;                                         // item depth in the tree for saving formatted drawing files
 
     Handle(AIS_Shape) animateShape;                    // temporary shape for animation during moving
     gp_Trsf aTrsf;
@@ -923,14 +915,18 @@ class RootPathItem : public BaseItem
     Q_OBJECT
 
 public:
-    explicit RootPathItem (QObject *parent = nullptr)
+    RootPathItem (OpenParEMg *mw_)
     {
+        mw=mw_;
         itemType=104;
-        forShowHide=true;
-        depth=0;
         parentItem=nullptr;
     }
-    void showMenu (QMenu *);
+
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
 
 private:
 
@@ -941,18 +937,7 @@ class PathItem : public DrawingItem
     Q_OBJECT
 
 public:
-    explicit PathItem (QObject *parent = nullptr)
-    {
-        itemType=4;
-        forShowHide=true;
-        depth=0;
-        parentItem=nullptr;
-
-        path=nullptr;
-
-        hasArrows=true;
-        isActive=true;
-    }
+    PathItem (OpenParEMg *, BaseItem *);
 
     long unsigned int linkedItems_size () {return linkedItems.size();}
     void push_linkedItem (BaseItem *linkedItem) {linkedItems.push_back(linkedItem);}
@@ -967,10 +952,14 @@ public:
         }
     }
 
-    virtual void setHasArrows (bool hasArrows_) override {hasArrows=hasArrows_;}
-    bool getHasArrows () override {return hasArrows;}
+    void setHasArrows (bool hasArrows_)  {hasArrows=hasArrows_;}
+    bool getHasArrows () {return hasArrows;}
 
-    void showMenu (QMenu *);
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
     void del () override;
     void setPath (Path *path_) {path=path_;}
     Path* getPath () {return path;}
@@ -978,8 +967,6 @@ public:
     void redo () override;
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
-    bool getIsActive () override {return isActive;}
-    void setIsActive (bool isActive_) override {isActive=isActive_;}
     void reverse ();
     void showArrows (bool);
 
@@ -989,21 +976,12 @@ private:
     bool hasArrows;
 };
 
-class IntegrationPathItem : public DrawingItem
+class IntegrationPathItem : public BaseItem
 {
     Q_OBJECT
 
-public:
-    explicit IntegrationPathItem (QObject *parent = nullptr)
-    {
-        itemType=4;
-        forShowHide=true;
-        parentItem=nullptr;
-        isActive=true;
-
-        integrationPath=nullptr;
-        pathItem=nullptr;
-    }
+public:   
+    IntegrationPathItem (OpenParEMg *, BaseItem *);
 
     void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
     PathItem* getPathItem () {return pathItem;}
@@ -1011,13 +989,15 @@ public:
     void setIntegrationPath (IntegrationPath *integrationPath_) {integrationPath=integrationPath_;}
     IntegrationPath* getIntegrationPath () {return integrationPath;}
 
-    void showMenu (QMenu *);
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
     void undo () override;
     void redo () override;
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
-    bool getIsActive () override {return isActive;}
-    void setIsActive (bool isActive_) override {isActive=isActive_;}
 
 private:
     IntegrationPath *integrationPath;
@@ -1029,53 +1009,46 @@ class RootBoundaryItem : public BaseItem
     Q_OBJECT
 
 public:
-    explicit RootBoundaryItem (QObject *parent = nullptr)
+    RootBoundaryItem (OpenParEMg *mw_)
     {
+        mw=mw_;
         itemType=102;
-        forShowHide=true;
-        depth=0;
         parentItem=nullptr;
     }
-    void showMenu (QMenu *);
+
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
 
 private:
 
 };
 
-class BoundaryItem : public DrawingItem
+class BoundaryItem : public BaseItem
 {
     Q_OBJECT
 
 public:
-    explicit BoundaryItem (QObject *parent = nullptr)
-    {
-        itemType=2;
-        forShowHide=true;
-        depth=0;
-        parentItem=nullptr;
+    BoundaryItem (OpenParEMg *, PathItem *, int, double, QString);
 
-        boundary=nullptr;
-        pathItem=nullptr;
-        isActive=true;
-    }
-
-    void showMenu (QMenu *);
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
     void del () override;
-    void setBoundary (Boundary *boundary_) {boundary=boundary_;}
-    Boundary* getBoundary () {return boundary;}
     void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
     PathItem* getPathItem () {return pathItem;}
     void undo () override;
     void redo () override;
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
-    bool getIsActive () override {return isActive;}
-    void setIsActive (bool isActive_) override {isActive=isActive_;}
 
     void populate (Boundary *);
 
 private:
-    Boundary *boundary;
     PathItem *pathItem;   // PathItem associated with this boundary
 };
 
@@ -1084,58 +1057,48 @@ class RootPortItem : public BaseItem
     Q_OBJECT
 
 public:
-    explicit RootPortItem (QObject *parent = nullptr)
+    RootPortItem (OpenParEMg *mw_)
     {
+        mw=mw_;
         itemType=101;
-        forShowHide=true;
-        depth=0;
         parentItem=nullptr;
     }
-    void showMenu (QMenu *);
+
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
 
 
 private:
 
 };
 
-class PortItem : public DrawingItem
+class PortItem : public BaseItem
 {
     Q_OBJECT
 
 public:
-    explicit PortItem (QObject *parent = nullptr)
-    {
-        itemType=1;
-        forShowHide=true;
-        depth=0;
-        parentItem=nullptr;
+    PortItem (OpenParEMg *, PathItem *, QString, QString);
 
-        port=nullptr;
-        pathItem=nullptr;
-        isActive=true;
-    }
-    void showMenu (QMenu *);
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
     void del () override;
-    void setPort (Port *port_) {port=port_;}
-    Port* getPort () {return port;}
     void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
     PathItem* getPathItem () {return pathItem;}
     void undo () override;
     void redo () override;
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
-    bool getIsActive () override {return isActive;}
-    void setIsActive (bool isActive_) override {isActive=isActive_;}
 
     void populate (Port *);
 
 private:
-    Port *port;
     PathItem *pathItem;   // PathItem associated with this port
-
-    // for reconstruction widgets
-    QString impedanceDefinition;   // VI, PV, PI, invalid
-    QString impedanceCalculation;  // linee, modal
 };
 
 class ModeItem : public BaseItem
@@ -1143,59 +1106,119 @@ class ModeItem : public BaseItem
     Q_OBJECT
 
 public:
-    explicit ModeItem (QObject *parent = nullptr)
-    {
-        itemType=1;
-        forShowHide=true;
-        depth=0;
-        parentItem=nullptr;
-
-        mode=nullptr;
-        portItem=nullptr;
-    }
-    void showMenu (QMenu *);
-    void setMode (Mode *mode_) {mode=mode_;}
-    Mode* getMode () {return mode;}
+    ModeItem () {}
+    ModeItem (OpenParEMg *, PortItem *);
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    bool isValidDelete ();
+    void unlinkPaths (BaseItem *);
+    void del () override;
+    void showMenu (QMenu *) override;
     void setPortItem (PortItem *portItem_) {portItem=portItem_;}
     PortItem* getPortItem () {return portItem;}
 
-
 private:
-    Mode *mode;
     PortItem *portItem;   // PortItem associated with this port
 };
+
+class SportItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    SportItem () {}
+    SportItem (OpenParEMg *, ModeItem *);
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
+    void setPortItem (ModeItem *modeItem_) {modeItem=modeItem_;}
+    ModeItem* getModeItem () {return modeItem;}
+
+private:
+    ModeItem *modeItem;
+};
+
+class SportNumberItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    SportNumberItem () {}
+    SportNumberItem (OpenParEMg *, SportItem *);
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
+    void setSportItem (SportItem *sportItem_) {sportItem=sportItem_;}
+    SportItem* getSportItem () {return sportItem;}
+
+private:
+    SportItem *sportItem;
+};
+
+class VIItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    VIItem () {}
+    VIItem (OpenParEMg *, ModeItem *, int);
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
+    void setModeItem (ModeItem *modeItem_) {modeItem=modeItem_;}
+    ModeItem* getModeItem () {return modeItem;}
+    void drawLinePath ();
+    void drawPolylinePath ();
+    bool isValidInsertSelectedPath ();
+    void insertSelectedPath ();
+
+private:
+    ModeItem *modeItem;
+};
+
+
 
 class RootMeshItem : public BaseItem
 {
     Q_OBJECT
 
 public:
-    explicit RootMeshItem (QObject *parent = nullptr)
+    RootMeshItem (OpenParEMg *mw_)
     {
+        mw=mw_;
         itemType=103;
-        forShowHide=true;
-        depth=0;
         parentItem=nullptr;
     }
-    void showMenu (QMenu *);
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
 
 private:
 
 };
 
-class MeshItem : public DrawingItem
+class MeshItem : public BaseItem
 {
     Q_OBJECT
 
 public:
-    explicit MeshItem (QObject *parent = nullptr)
-    {
-        itemType=3;
-        forShowHide=true;
-        depth=0;
-        parentItem=nullptr;
-    }
+    MeshItem (OpenParEMg *);
 
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void showMenu (QMenu *) override;
     std::vector<Handle(AIS_Shape)>* get_meshEntities () {return &meshEntities;}
     long unsigned int get_meshEntitiesSize () {return meshEntities.size();}
     Handle(AIS_Shape) get_meshEntity (long unsigned int i) {return meshEntities[i];}

@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "OPEMg.h"
+#include "CustomSpinBox.h"
 #include "DrawingPreferences.h"
 #include "Process.h"
 #include "ui_OPEMg.h"
@@ -244,11 +245,11 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     // drawing window
     /////////////////////////////////////////////////////////////////////////////
 
-    ui->drawingWindow->set_drawingItemTree(&drawing);
-    ui->drawingWindow->set_portItemTree(&port);
-    ui->drawingWindow->set_boundaryItemTree(&boundary);
-    ui->drawingWindow->set_meshItemTree(&mesh);
-    ui->drawingWindow->set_pathItemTree(&path);
+    ui->drawingWindow->set_drawingItemTree(drawing);
+    ui->drawingWindow->set_portItemTree(port);
+    ui->drawingWindow->set_boundaryItemTree(boundary);
+    ui->drawingWindow->set_meshItemTree(mesh);
+    ui->drawingWindow->set_pathItemTree(path);
     ui->drawingWindow->set_relay(relay);
 
     QActionList.push_back(showAction);
@@ -301,12 +302,12 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     // item selection tree
     /////////////////////////////////////////////////////////////////////////////
 
-    drawing.setMW(this);
-    path.setMW(this);
-    port.setMW(this);
-    boundary.setMW(this);
+    drawing=new RootDrawingItem(this);
+    path=new RootPathItem(this);
+    port=new RootPortItem(this);
+    boundary=new RootBoundaryItem(this);
 
-    mesh.set_itemType(103);
+    mesh=new RootMeshItem(this);
 
     ui->drawingItemTree->setHeaderHidden(true);
     ui->drawingItemTree->setColumnCount(2);
@@ -316,24 +317,24 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     // five base list items: drawing, path, port, boundary, and mesh
 
-    drawing.setText(0,"Drawing");
-    ui->drawingItemTree->addTopLevelItem(&drawing);
+    drawing->setText(0,"Drawing");
+    ui->drawingItemTree->addTopLevelItem(drawing);
 
-    path.setText(0,"Path");
-    ui->drawingItemTree->addTopLevelItem(&path);
-    path.setForeground(0,Qt::black);
+    path->setText(0,"Path");
+    ui->drawingItemTree->addTopLevelItem(path);
+    path->setForeground(0,Qt::black);
 
-    port.setText(0,"Port");
-    ui->drawingItemTree->addTopLevelItem(&port);
-    port.setForeground(0,Qt::black);
+    port->setText(0,"Port");
+    ui->drawingItemTree->addTopLevelItem(port);
+    port->setForeground(0,Qt::black);
 
-    boundary.setText(0,"Boundary");
-    ui->drawingItemTree->addTopLevelItem(&boundary);
-    boundary.setForeground(0,Qt::black);
+    boundary->setText(0,"Boundary");
+    ui->drawingItemTree->addTopLevelItem(boundary);
+    boundary->setForeground(0,Qt::black);
 
-    mesh.setText(0,"Mesh");
-    ui->drawingItemTree->addTopLevelItem(&mesh);
-    mesh.setForeground(0,Qt::black);
+    mesh->setText(0,"Mesh");
+    ui->drawingItemTree->addTopLevelItem(mesh);
+    mesh->setForeground(0,Qt::black);
 
     // context menu
     ui->drawingItemTree->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -351,19 +352,21 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     ui->menuRun->setToolTipsVisible(true);
 
-    drawing.setForeground(0,Qt::black);
-    path.setForeground(0,Qt::black);
-    port.setForeground(0,Qt::black);
-    boundary.setForeground(0,Qt::black);
-    mesh.setForeground(0,Qt::black);
+    drawing->setForeground(0,Qt::black);
+    path->setForeground(0,Qt::black);
+    port->setForeground(0,Qt::black);
+    boundary->setForeground(0,Qt::black);
+    mesh->setForeground(0,Qt::black);
 
     // drawing is always a COMPOUND
     BRep_Builder builder;
     TopoDS_Compound compound;
     builder.MakeCompound(compound);
     Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-    ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,newShape);
-    drawing.addShapeData(newShapeData);
+    ShapeData *newShapeData=drawing->getShapeData();
+    newShapeData->setCreate();
+    newShapeData->setShape(newShape);
+    drawing->addShapeData(newShapeData);
 
     ui->drawingItemTree->setCurrentItem(nullptr);
 
@@ -671,7 +674,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    itemChangesStack.print();
+    //itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
@@ -774,7 +777,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionDrawingPlaneSetToFace->setEnabled(false);
         ui->actionDrawingPlaneSetToFaceAxis->setEnabled(false);
         ui->actionMeshGenerate->setEnabled(false);
-        if (drawing.childCount() > 0) {
+        if (drawing->childCount() > 0) {
             ui->actionExportBrep->setEnabled(isValidSaveBrepFile());
             ui->actionExportStep->setEnabled(isValidSaveStepFile());
             ui->actionFitSelected->setEnabled(true);
@@ -790,7 +793,7 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionMeshGenerate->setEnabled(true);
         }
 
-        if (mesh.childCount() > 0) {
+        if (mesh->childCount() > 0) {
             ui->actionFitAll->setEnabled(true);
             ui->actionMenuSelection->setEnabled(true);
             ui->actionWireframe->setEnabled(true);
@@ -1004,38 +1007,38 @@ void OpenParEMg::collapseAllItems ()
 }
 
 // ToDo: when all new classes are complete, remove this
-void OpenParEMg::buildPathMenu (QMenu &menu)
-{
-    createPortAction=new QAction("Create Port");
-    createPortAction->setToolTip("Create a port from the path.");
-    createBoundaryAction=new QAction("Create Boundary");
-    createBoundaryAction->setToolTip("Create a bounary from the path.");
-    reversePathAction=new QAction("Reverse Direction");
-    reversePathAction->setToolTip("Reverse the direction of the path.");
-    renameAction=new QAction("Rename",this);
-    deleteAction=new QAction("Delete",this);
-    showAction=new QAction("Show",this);
-    hideAction=new QAction("Hide",this);
-    cancelAction=new QAction("Cancel");
+// void OpenParEMg::buildPathMenu (QMenu &menu)
+// {
+//     createPortAction=new QAction("Create Port");
+//     createPortAction->setToolTip("Create a port from the path.");
+//     createBoundaryAction=new QAction("Create Boundary");
+//     createBoundaryAction->setToolTip("Create a bounary from the path.");
+//     reversePathAction=new QAction("Reverse Direction");
+//     reversePathAction->setToolTip("Reverse the direction of the path.");
+//     renameAction=new QAction("Rename",this);
+//     deleteAction=new QAction("Delete",this);
+//     showAction=new QAction("Show",this);
+//     hideAction=new QAction("Hide",this);
+//     cancelAction=new QAction("Cancel");
 
-    connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPortFromPath);
-    connect(createBoundaryAction, &QAction::triggered, this, &OpenParEMg::createBoundaryFromPath);
-    connect(reversePathAction, &QAction::triggered, this, &OpenParEMg::reversePathItems);
-    connect(renameAction, &QAction::triggered, this, &OpenParEMg::renamePathItems);
-    connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deletePathItems);
-    connect(showAction, &QAction::triggered, this, &OpenParEMg::showPathItems);
-    connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePathItems);
-    connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelMenu);
+//     connect(createPortAction, &QAction::triggered, this, &OpenParEMg::createPortFromPath);
+//     connect(createBoundaryAction, &QAction::triggered, this, &OpenParEMg::createBoundaryFromPath);
+//     connect(reversePathAction, &QAction::triggered, this, &OpenParEMg::reversePathItems);
+//     connect(renameAction, &QAction::triggered, this, &OpenParEMg::renamePathItems);
+//     connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deletePathItems);
+//     connect(showAction, &QAction::triggered, this, &OpenParEMg::showPathItems);
+//     connect(hideAction, &QAction::triggered, this, &OpenParEMg::hidePathItems);
+//     connect(cancelAction, &QAction::triggered, this, &OpenParEMg::cancelMenu);
 
-    if (isValidShowPath()) menu.addAction(showAction);
-    if (isValidHidePath()) menu.addAction(hideAction);
-    if (ui->drawingWindow->get_pathSelectedCount() == 1) menu.addAction(renameAction);
-    if (isValidCreatePortFromPath()) menu.addAction(createPortAction);
-    if (isValidCreateBoundaryFromPath()) menu.addAction(createBoundaryAction);
-    if (isValidReversePath()) menu.addAction(reversePathAction);
-    if (isValidDeletePath()) menu.addAction(deleteAction);
-    menu.addAction(cancelAction);
-}
+//     if (isValidShowPath()) menu.addAction(showAction);
+//     if (isValidHidePath()) menu.addAction(hideAction);
+//     if (ui->drawingWindow->get_pathSelectedCount() == 1) menu.addAction(renameAction);
+//     if (isValidCreatePortFromPath()) menu.addAction(createPortAction);
+//     if (isValidCreateBoundaryFromPath()) menu.addAction(createBoundaryAction);
+//     if (isValidReversePath()) menu.addAction(reversePathAction);
+//     if (isValidDeletePath()) menu.addAction(deleteAction);
+//     menu.addAction(cancelAction);
+// }
 
 void OpenParEMg::buildFaceMenu (QMenu &menu)
 {
@@ -1076,137 +1079,139 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
 
     // ToDo: when all the classes are in place, reduce this to just one call
 
-    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(clickedItem);
-    if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) rootDrawingItem->showMenu(&menu);
+    clickedItem->showMenu(&menu);
 
-    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(clickedItem);
-    if (drawingItem && drawingItem->is_drawing()) drawingItem->showMenu(&menu);
+    // RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(clickedItem);
+    // if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) rootDrawingItem->showMenu(&menu);
 
-    RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(clickedItem);
-    if (rootPathItem && rootPathItem->is_rootPath()) rootPathItem->showMenu(&menu);
+    // DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(clickedItem);
+    // if (drawingItem && drawingItem->is_drawing()) drawingItem->showMenu(&menu);
 
-    PathItem *pathItem=dynamic_cast<PathItem *>(clickedItem);
-    if (pathItem && pathItem->is_path()) pathItem->showMenu(&menu);
+    // RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(clickedItem);
+    // if (rootPathItem && rootPathItem->is_rootPath()) rootPathItem->showMenu(&menu);
 
-    RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(clickedItem);
-    if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) rootBoundaryItem->showMenu(&menu);
+    // PathItem *pathItem=dynamic_cast<PathItem *>(clickedItem);
+    // if (pathItem && pathItem->is_path()) pathItem->showMenu(&menu);
 
-    BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(clickedItem);
-    if (boundaryItem && boundaryItem->is_boundary()) boundaryItem->showMenu(&menu);
+    // RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(clickedItem);
+    // if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) rootBoundaryItem->showMenu(&menu);
 
-    RootPortItem *rootPortItem=dynamic_cast<RootPortItem *>(clickedItem);
-    if (rootPortItem && rootPortItem->is_rootPort()) rootPortItem->showMenu(&menu);
+    // BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(clickedItem);
+    // if (boundaryItem && boundaryItem->is_boundary()) boundaryItem->showMenu(&menu);
 
-    PortItem *portItem=dynamic_cast<PortItem *>(clickedItem);
-    if (portItem && portItem->is_port()) portItem->showMenu(&menu);
+    // RootPortItem *rootPortItem=dynamic_cast<RootPortItem *>(clickedItem);
+    // if (rootPortItem && rootPortItem->is_rootPort()) rootPortItem->showMenu(&menu);
+
+    // PortItem *portItem=dynamic_cast<PortItem *>(clickedItem);
+    // if (portItem && portItem->is_port()) portItem->showMenu(&menu);
 
 
     if (clickedItem->is_rootMesh()) {
 
-        showAction=new QAction("Show",this);
-        hideAction=new QAction("Hide",this);
-        expandAllAction=new QAction("Expand All",this);
-        collapseAllAction=new QAction("Collapse All",this);
+        // showAction=new QAction("Show",this);
+        // hideAction=new QAction("Hide",this);
+        // expandAllAction=new QAction("Expand All",this);
+        // collapseAllAction=new QAction("Collapse All",this);
 
-        connect(showAction, &QAction::triggered, this, &OpenParEMg::showRootMeshItems);
-        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideRootMeshItems);
-        connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
-        connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
+        // connect(showAction, &QAction::triggered, this, &OpenParEMg::showRootMeshItems);
+        // connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideRootMeshItems);
+        // connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
+        // connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        if (isValidRootMeshShow()) menu.addAction(showAction);
-        if (isValidRootMeshHide()) menu.addAction(hideAction);
-        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
-        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
+        // if (isValidRootMeshShow()) menu.addAction(showAction);
+        // if (isValidRootMeshHide()) menu.addAction(hideAction);
+        // if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        // if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
     if (clickedItem->is_mesh()) {
 
-        showAction=new QAction("Show",this);
-        hideAction=new QAction("Hide",this);
+        // showAction=new QAction("Show",this);
+        // hideAction=new QAction("Hide",this);
 
-        connect(showAction, &QAction::triggered, this, &OpenParEMg::showMeshItems);
-        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideMeshItems);
+        // connect(showAction, &QAction::triggered, this, &OpenParEMg::showMeshItems);
+        // connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideMeshItems);
 
-        if (isValidObjectShow()) menu.addAction(showAction);
-        if (isValidObjectHide()) menu.addAction(hideAction);
+        // if (isValidObjectShow()) menu.addAction(showAction);
+        // if (isValidObjectHide()) menu.addAction(hideAction);
     }
 
     if (clickedItem->is_sportLabel()) {
-        expandAllAction=new QAction("Expand All",this);
-        collapseAllAction=new QAction("Collapse All",this);
+        // expandAllAction=new QAction("Expand All",this);
+        // collapseAllAction=new QAction("Collapse All",this);
 
-        connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
-        connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
+        // connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
+        // connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
-        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
+        // if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        // if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
     if (clickedItem->is_sport()) {
 
-        showAction=new QAction("Show",this);
-        hideAction=new QAction("Hide",this);
-        renameAction=new QAction("Rename",this);
-        deleteAction=new QAction("Delete",this);
-        expandAllAction=new QAction("Expand All",this);
-        collapseAllAction=new QAction("Collapse All",this);
+        // showAction=new QAction("Show",this);
+        // hideAction=new QAction("Hide",this);
+        // renameAction=new QAction("Rename",this);
+        // deleteAction=new QAction("Delete",this);
+        // expandAllAction=new QAction("Expand All",this);
+        // collapseAllAction=new QAction("Collapse All",this);
 
-        connect(showAction, &QAction::triggered, this, &OpenParEMg::showNetItems);
-        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideNetItems);
-        connect(renameAction, &QAction::triggered, this, &OpenParEMg::renameSportNet);
-        connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteSportItems);
-        connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
-        connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
+        // connect(showAction, &QAction::triggered, this, &OpenParEMg::showNetItems);
+        // connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideNetItems);
+        // connect(renameAction, &QAction::triggered, this, &OpenParEMg::renameSportNet);
+        // connect(deleteAction, &QAction::triggered, this, &OpenParEMg::deleteSportItems);
+        // connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
+        // connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        if (ui->drawingWindow->isNetValidShow()) menu.addAction(showAction);
-        if (ui->drawingWindow->isNetValidHide()) menu.addAction(hideAction);
-        if (ui->drawingWindow->get_selectedItems_count() == 1) menu.addAction(renameAction);
-        if (isValidDeleteValid()) menu.addAction(deleteAction);
-        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
-        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
+        // if (ui->drawingWindow->isNetValidShow()) menu.addAction(showAction);
+        // if (ui->drawingWindow->isNetValidHide()) menu.addAction(hideAction);
+        // if (ui->drawingWindow->get_selectedItems_count() == 1) menu.addAction(renameAction);
+        // if (isValidDeleteMode()) menu.addAction(deleteAction);
+        // if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        // if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
     if (clickedItem->is_voltage() || clickedItem->is_current()) {
 
-        showAction=new QAction("Show",this);
-        hideAction=new QAction("Hide",this);
-        drawPathAction=new QAction("Draw Line Path");
-        drawPolylineAction=new QAction("Draw Polyline Path");
-        insertAction=new QAction("Add Path");
-        expandAllAction=new QAction("Expand All",this);
-        collapseAllAction=new QAction("Collapse All",this);
+        // showAction=new QAction("Show",this);
+        // hideAction=new QAction("Hide",this);
+        // drawPathAction=new QAction("Draw Line Path");
+        // drawPolylineAction=new QAction("Draw Polyline Path");
+        // insertAction=new QAction("Add Path");
+        // expandAllAction=new QAction("Expand All",this);
+        // collapseAllAction=new QAction("Collapse All",this);
 
-        connect(showAction, &QAction::triggered, this, &OpenParEMg::showVIItems);
-        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideVIItems);
-        connect(drawPathAction, &QAction::triggered, this, &OpenParEMg::drawLinePath);
-        connect(drawPolylineAction, &QAction::triggered, this, &OpenParEMg::drawPolylinePath);
-        connect(insertAction, &QAction::triggered, this, &OpenParEMg::insertSelectedPath);
-        connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
-        connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
+        // connect(showAction, &QAction::triggered, this, &OpenParEMg::showVIItems);
+        // connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideVIItems);
+        // connect(drawPathAction, &QAction::triggered, this, &OpenParEMg::drawLinePath);
+        // connect(drawPolylineAction, &QAction::triggered, this, &OpenParEMg::drawPolylinePath);
+        // connect(insertAction, &QAction::triggered, this, &OpenParEMg::insertSelectedPath);
+        // connect(expandAllAction, &QAction::triggered, this, &OpenParEMg::expandAllItems);
+        // connect(collapseAllAction, &QAction::triggered, this, &OpenParEMg::collapseAllItems);
 
-        if (isValidObjectShow()) menu.addAction(showAction);
-        if (isValidObjectHide()) menu.addAction(hideAction);
-        if (ui->drawingWindow->get_selectedItems_count() == 1 && clickedItem->foreground(0) == Qt::black) menu.addAction(drawPathAction);
-        if (ui->drawingWindow->get_selectedItems_count() == 1 && clickedItem->foreground(0) == Qt::black) menu.addAction(drawPolylineAction);
-        if (isValidInsertAction()) menu.addAction(insertAction);
-        if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
-        if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
+        // if (isValidObjectShow()) menu.addAction(showAction);
+        // if (isValidObjectHide()) menu.addAction(hideAction);
+        // if (ui->drawingWindow->get_selectedItems_count() == 1 && clickedItem->foreground(0) == Qt::black) menu.addAction(drawPathAction);
+        // if (ui->drawingWindow->get_selectedItems_count() == 1 && clickedItem->foreground(0) == Qt::black) menu.addAction(drawPolylineAction);
+        // if (isValidInsertAction()) menu.addAction(insertAction);
+        // if (!clickedItem->isExpanded()) menu.addAction(expandAllAction);
+        // if (clickedItem->isExpanded()) menu.addAction(collapseAllAction);
     }
 
-    if (clickedItem->is_integrationPathSegment()) {
+    // if (clickedItem->is_integrationPathSegment()) {
 
-        removeAction=new QAction("Remove",this);
-        showAction=new QAction("Show",this);
-        hideAction=new QAction("Hide",this);
+    //     removeAction=new QAction("Remove",this);
+    //     showAction=new QAction("Show",this);
+    //     hideAction=new QAction("Hide",this);
 
-        connect(removeAction, &QAction::triggered, this, &OpenParEMg::removeIntegrationPathItems);
-        connect(showAction, &QAction::triggered, this, &OpenParEMg::showIntegrationPathItems);
-        connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideIntegrationPathItems);
+    //     //connect(removeAction, &QAction::triggered, this, &OpenParEMg::removeIntegrationPathItems);
+    //     connect(showAction, &QAction::triggered, this, &OpenParEMg::showIntegrationPathItems);
+    //     connect(hideAction, &QAction::triggered, this, &OpenParEMg::hideIntegrationPathItems);
 
-        if (isValidShowPath()) menu.addAction(showAction);
-        if (isValidHidePath()) menu.addAction(hideAction);
-        menu.addAction(removeAction);
-    }
+    //     if (isValidShowPath()) menu.addAction(showAction);
+    //     if (isValidHidePath()) menu.addAction(hideAction);
+    //     menu.addAction(removeAction);
+    // }
 
     if (clickedItem->is_scale()) {
         expandAllAction=new QAction("Expand All",this);
@@ -1301,7 +1306,8 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 
                 // ToDo: convert the remaining items
                 if (/*item->is_path() ||*/ item->is_port() || item->is_boundary() || item->is_integrationPathSegment()) {
-                    buildPathMenu(menu);
+                    //buildPathMenu(menu);
+                    item->showMenu(&menu);
                     break;
                 }
             }
@@ -1313,53 +1319,53 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
     freeQActionList();
 }
 
-bool OpenParEMg::isValidRootDrawingShow ()
-{
-    int i=0;
-    while (i < drawing.childCount()) {
-        BaseItem *child=(BaseItem *) drawing.child(i);
-        if (child->isValidShow()) return true;
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidRootDrawingShow ()
+// {
+//     int i=0;
+//     while (i < drawing.childCount()) {
+//         BaseItem *child=(BaseItem *) drawing.child(i);
+//         if (child->isValidShow()) return true;
+//         i++;
+//     }
+//     return false;
+// }
 
-bool OpenParEMg::isValidRootDrawingHide ()
-{
-    int i=0;
-    while (i < drawing.childCount()) {
-        BaseItem *child=(BaseItem *) drawing.child(i);
-        if (child->isValidHide()) return true;
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidRootDrawingHide ()
+// {
+//     int i=0;
+//     while (i < drawing.childCount()) {
+//         BaseItem *child=(BaseItem *) drawing.child(i);
+//         if (child->isValidHide()) return true;
+//         i++;
+//     }
+//     return false;
+// }
 
-bool OpenParEMg::isValidRootDrawingSelectAll ()
-{
-    int i=0;
-    while (i < drawing.childCount()) {
-        BaseItem *child=(BaseItem *) drawing.child(i);
-        if (!child->isSelected()) return true;
-        i++;
-    }
-    return true;
-}
+// bool OpenParEMg::isValidRootDrawingSelectAll ()
+// {
+//     int i=0;
+//     while (i < drawing->childCount()) {
+//         BaseItem *child=(BaseItem *) drawing.child(i);
+//         if (!child->isSelected()) return true;
+//         i++;
+//     }
+//     return true;
+// }
 
-void OpenParEMg::rootDrawingSelectAll ()
-{
-    ui->drawingWindow->hideItem(&drawing);
-    ui->drawingWindow->unselectItem(&drawing);
-    ui->drawingItemTree->setCurrentItem(nullptr);
+// void OpenParEMg::rootDrawingSelectAll ()
+// {
+//     ui->drawingWindow->hideItem(mw->drawing);
+//     ui->drawingWindow->unselectItem(&drawing);
+//     ui->drawingItemTree->setCurrentItem(nullptr);
 
-    int i=0;
-    while (i < drawing.childCount()) {
-        BaseItem *child=(BaseItem *) drawing.child(i);
-        ui->drawingWindow->showItem(child);
-        ui->drawingWindow->selectItem(child);
-        i++;
-    }
-}
+//     int i=0;
+//     while (i < drawing.childCount()) {
+//         BaseItem *child=(BaseItem *) drawing.child(i);
+//         ui->drawingWindow->showItem(child);
+//         ui->drawingWindow->selectItem(child);
+//         i++;
+//     }
+// }
 
 // all must be the same type
 bool OpenParEMg::isValidDrawingShow ()
@@ -1367,75 +1373,75 @@ bool OpenParEMg::isValidDrawingShow ()
     return true;
 }
 
-void OpenParEMg::rootDrawingShow ()
-{
-    //std::cout << "OpenParEMg::showRootDrawingItems" << std::endl; std::cout.flush();
+// void OpenParEMg::rootDrawingShow ()
+// {
+//     //std::cout << "OpenParEMg::showRootDrawingItems" << std::endl; std::cout.flush();
 
-    ui->drawingWindow->hideItem(&drawing);
-    drawing.setForeground(0,Qt::black);
+//     ui->drawingWindow->hideItem(&drawing);
+//     drawing.setForeground(0,Qt::black);
 
-    int i=0;
-    while (i < drawing.childCount()) {
-        BaseItem *child=(BaseItem *) drawing.child(i);
-        child->setForeground(0,Qt::gray);
-        ui->drawingWindow->showItem(child);
-        i++;
-    }
+//     int i=0;
+//     while (i < drawing.childCount()) {
+//         BaseItem *child=(BaseItem *) drawing.child(i);
+//         child->setForeground(0,Qt::gray);
+//         ui->drawingWindow->showItem(child);
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-}
+//     ui->drawingWindow->updateViewer();
+// }
 
-void OpenParEMg::showDrawingItems ()
-{
-    //std::cout << "OpenParEMg::showDrawingItems" << std::endl; std::cout.flush();
+// void OpenParEMg::showDrawingItems ()
+// {
+//     //std::cout << "OpenParEMg::showDrawingItems" << std::endl; std::cout.flush();
 
-    int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem && drawingItem->is_drawing()) ui->drawingWindow->showItem(drawingItem);
-        }
-        i++;
-    }
+//     int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item) {
+//             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+//             if (drawingItem && drawingItem->is_drawing()) ui->drawingWindow->showItem(drawingItem);
+//         }
+//         i++;
+//     }
 
-    ui->drawingItemTree->setCurrentItem(nullptr);
-    ui->drawingWindow->updateViewer();
-    setMenusI(1);
-}
+//     ui->drawingItemTree->setCurrentItem(nullptr);
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(1);
+// }
 
-void OpenParEMg::rootDrawingHide ()
-{
-    //std::cout << "OpenParEMg::hideRootDrawingItems" << std::endl; std::cout.flush();
+// void OpenParEMg::rootDrawingHide ()
+// {
+//     //std::cout << "OpenParEMg::hideRootDrawingItems" << std::endl; std::cout.flush();
 
-    ui->drawingWindow->hideItem(&drawing);
-    drawing.setForeground(0,Qt::black);
+//     ui->drawingWindow->hideItem(&drawing);
+//     drawing.setForeground(0,Qt::black);
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(2);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(2);
+// }
 
-void OpenParEMg::hideDrawingItems ()
-{
-    //std::cout << "OpenParEMg::hideDrawingItems" << std::endl; std::cout.flush();
+// void OpenParEMg::hideDrawingItems ()
+// {
+//     //std::cout << "OpenParEMg::hideDrawingItems" << std::endl; std::cout.flush();
 
-    int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem && drawingItem->is_drawing()) {
-                ui->drawingWindow->hideItem(drawingItem);
-                ui->drawingWindow->unselectItem(drawingItem,i);
-            }
-        }
-        i++;
-    }
+//     int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item) {
+//             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+//             if (drawingItem && drawingItem->is_drawing()) {
+//                 ui->drawingWindow->hideItem(drawingItem);
+//                 ui->drawingWindow->unselectItem(drawingItem,i);
+//             }
+//         }
+//         i++;
+//     }
 
-    ui->drawingItemTree->setCurrentItem(nullptr);
-    ui->drawingWindow->updateViewer();
-    setMenusI(3);
-}
+//     ui->drawingItemTree->setCurrentItem(nullptr);
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(3);
+// }
 
 void OpenParEMg::renamePathItems ()
 {
@@ -1483,54 +1489,54 @@ void OpenParEMg::deletePathItems ()
     setMenusI(4);
 }
 
-void OpenParEMg::showRootPathItems ()
-{
-    //std::cout << "OpenParEMg::showRootPathItems" << std::endl; std::cout.flush();
+// void OpenParEMg::showRootPathItems ()
+// {
+//     //std::cout << "OpenParEMg::showRootPathItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(item);
-            if (rootPathItem && rootPathItem->is_rootPath()) ui->drawingWindow->showItem(rootPathItem);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item) {
+//             RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(item);
+//             if (rootPathItem && rootPathItem->is_rootPath()) ui->drawingWindow->showItem(rootPathItem);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(5);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(5);
+// }
 
-bool OpenParEMg::isValidRootPathShow ()
-{
-    int i=0;
-    while (i < path.childCount()) {
-        BaseItem *child=(BaseItem *) path.child(i);
-        if (child && child->foreground(0) == Qt::gray) return true;
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidRootPathShow ()
+// {
+//     int i=0;
+//     while (i < path.childCount()) {
+//         BaseItem *child=(BaseItem *) path.child(i);
+//         if (child && child->foreground(0) == Qt::gray) return true;
+//         i++;
+//     }
+//     return false;
+// }
 
-void OpenParEMg::hideRootPathItems ()
-{
-    //std::cout << "OpenParEMg::hideRootPathItems" << std::endl; std::cout.flush();
+// void OpenParEMg::hideRootPathItems ()
+// {
+//     //std::cout << "OpenParEMg::hideRootPathItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(item);
-            if (rootPathItem && rootPathItem->is_rootPath()) {
-                ui->drawingWindow->hideItem(rootPathItem);
-            }
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item) {
+//             RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(item);
+//             if (rootPathItem && rootPathItem->is_rootPath()) {
+//                 ui->drawingWindow->hideItem(rootPathItem);
+//             }
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(6);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(6);
+// }
 
 bool OpenParEMg::isValidDeletePath ()
 {
@@ -1547,19 +1553,19 @@ bool OpenParEMg::isValidDeletePath ()
     return true;
 }
 
-bool OpenParEMg::isValidShowPath ()
-{
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->isValidShow()) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
-            if (pathItem && pathItem->is_path()) return false;
-        }
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidShowPath ()
+// {
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->isValidShow()) {
+//             PathItem *pathItem=dynamic_cast<PathItem *>(item);
+//             if (pathItem && pathItem->is_path()) return false;
+//         }
+//         i++;
+//     }
+//     return false;
+// }
 
 void OpenParEMg::showPathItems ()
 {
@@ -1579,32 +1585,32 @@ void OpenParEMg::showPathItems ()
     setMenusI(7);
 }
 
-bool OpenParEMg::isValidRootPathHide ()
-{
-    int i=0;
-    while (i < path.childCount()) {
-        BaseItem *child=(BaseItem *) path.child(i);
-        if (child && child->foreground(0) == Qt::black) return true;
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidRootPathHide ()
+// {
+//     int i=0;
+//     while (i < path.childCount()) {
+//         BaseItem *child=(BaseItem *) path.child(i);
+//         if (child && child->foreground(0) == Qt::black) return true;
+//         i++;
+//     }
+//     return false;
+// }
 
-bool OpenParEMg::isValidHidePath ()
-{
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->isValidHide()) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
-            if (pathItem && pathItem->is_path()) return true;
+// bool OpenParEMg::isValidHidePath ()
+// {
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->isValidHide()) {
+//             PathItem *pathItem=dynamic_cast<PathItem *>(item);
+//             if (pathItem && pathItem->is_path()) return true;
 
-            if (/*item->is_path() ||*/ item->is_port() || item->is_boundary() || item->is_integrationPathSegment()) return true;
-        }
-        i++;
-    }
-    return false;
-}
+//             if (/*item->is_path() ||*/ item->is_port() || item->is_boundary() || item->is_integrationPathSegment()) return true;
+//         }
+//         i++;
+//     }
+//     return false;
+// }
 
 void OpenParEMg::hidePathItems ()
 {
@@ -1624,181 +1630,181 @@ void OpenParEMg::hidePathItems ()
     setMenusI(8);
 }
 
-bool OpenParEMg::isValidRootPortShow ()
-{
-    int i=0;
-    while (i < port.childCount()) {
-        BaseItem *child=(BaseItem *) port.child(i);
-        if (child && child->foreground(0) == Qt::gray) return true;
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidRootPortShow ()
+// {
+//     int i=0;
+//     while (i < port.childCount()) {
+//         BaseItem *child=(BaseItem *) port.child(i);
+//         if (child && child->foreground(0) == Qt::gray) return true;
+//         i++;
+//     }
+//     return false;
+// }
 
-void OpenParEMg::rootPortShow ()
-{
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_rootPort()) {
-            ui->drawingWindow->showItem(item);
-        }
-        i++;
-    }
+// void OpenParEMg::rootPortShow ()
+// {
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_rootPort()) {
+//             ui->drawingWindow->showItem(item);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(9);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(9);
+// }
 
-void OpenParEMg::showPortItems ()
-{
-    //std::cout << "OpenParEMg::showPortItems" << std::endl; std::cout.flush();
+// void OpenParEMg::showPortItems ()
+// {
+//     //std::cout << "OpenParEMg::showPortItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_port()) {
-            ui->drawingWindow->showItem(item);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_port()) {
+//             ui->drawingWindow->showItem(item);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(10);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(10);
+// }
 
-bool OpenParEMg::isValidRootPortHide ()
-{
-    int i=0;
-    while (i < port.childCount()) {
-        BaseItem *child=(BaseItem *) port.child(i);
-        if (child && child->foreground(0) == Qt::black) return true;
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidRootPortHide ()
+// {
+//     int i=0;
+//     while (i < port.childCount()) {
+//         BaseItem *child=(BaseItem *) port.child(i);
+//         if (child && child->foreground(0) == Qt::black) return true;
+//         i++;
+//     }
+//     return false;
+// }
 
-void OpenParEMg::rootPortHide ()
-{
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_rootPort()) {
-            ui->drawingWindow->hideItem(item);
-        }
-        i++;
-    }
+// void OpenParEMg::rootPortHide ()
+// {
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_rootPort()) {
+//             ui->drawingWindow->hideItem(item);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(11);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(11);
+// }
 
-void OpenParEMg::hidePortItems ()
-{
-    //std::cout << "OpenParEMg::hidePortItems" << std::endl; std::cout.flush();
+// void OpenParEMg::hidePortItems ()
+// {
+//     //std::cout << "OpenParEMg::hidePortItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_port()) {
-            ui->drawingWindow->hideItem(item);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_port()) {
+//             ui->drawingWindow->hideItem(item);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(12);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(12);
+// }
 
-bool OpenParEMg::isValidRootBoundaryShow ()
-{
-    int i=0;
-    while (i < boundary.childCount()) {
-        BaseItem *child=(BaseItem *) boundary.child(i);
-        if (child && child->foreground(0) == Qt::gray) return true;
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidRootBoundaryShow ()
+// {
+//     int i=0;
+//     while (i < boundary.childCount()) {
+//         BaseItem *child=(BaseItem *) boundary->child(i);
+//         if (child && child->foreground(0) == Qt::gray) return true;
+//         i++;
+//     }
+//     return false;
+// }
 
-void OpenParEMg::rootBoundaryShow ()
-{
-    //std::cout << "OpenParEMg::showRootBoundaryItems" << std::endl; std::cout.flush();
+// void OpenParEMg::rootBoundaryShow ()
+// {
+//     //std::cout << "OpenParEMg::showRootBoundaryItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_rootBoundary()) {
-            ui->drawingWindow->showItem(item);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_rootBoundary()) {
+//             ui->drawingWindow->showItem(item);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(9);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(9);
+// }
 
-bool OpenParEMg::isValidRootBoundaryHide ()
-{
-    int i=0;
-    while (i < boundary.childCount()) {
-        BaseItem *child=(BaseItem *) boundary.child(i);
-        if (child && child->foreground(0) == Qt::black) return true;
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidRootBoundaryHide ()
+// {
+//     int i=0;
+//     while (i < boundary.childCount()) {
+//         BaseItem *child=(BaseItem *) boundary.child(i);
+//         if (child && child->foreground(0) == Qt::black) return true;
+//         i++;
+//     }
+//     return false;
+// }
 
-void OpenParEMg::rootBoundaryHide ()
-{
-    //std::cout << "OpenParEMg::hideRootBoundaryItems" << std::endl; std::cout.flush();
+// void OpenParEMg::rootBoundaryHide ()
+// {
+//     //std::cout << "OpenParEMg::hideRootBoundaryItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_rootBoundary()) {
-            ui->drawingWindow->hideItem(item);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_rootBoundary()) {
+//             ui->drawingWindow->hideItem(item);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(11);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(11);
+// }
 
-void OpenParEMg::showBoundaryItems ()
-{
-    //std::cout << "OpenParEMg::showBoundaryItems" << std::endl; std::cout.flush();
+// void OpenParEMg::showBoundaryItems ()
+// {
+//     //std::cout << "OpenParEMg::showBoundaryItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_boundary()) {
-            ui->drawingWindow->showItem(item);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_boundary()) {
+//             ui->drawingWindow->showItem(item);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(10);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(10);
+// }
 
-void OpenParEMg::hideBoundaryItems ()
-{
-    //std::cout << "OpenParEMg::hideBoundaryItems" << std::endl; std::cout.flush();
+// void OpenParEMg::hideBoundaryItems ()
+// {
+//     //std::cout << "OpenParEMg::hideBoundaryItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_boundary()) {
-            ui->drawingWindow->hideItem(item);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_boundary()) {
+//             ui->drawingWindow->hideItem(item);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(12);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(12);
+// }
 
 void OpenParEMg::unselectBoundaryItems()
 {
@@ -1860,113 +1866,113 @@ void OpenParEMg::deleteBoundaryItems ()
     finishOperation(false,1);
 }
 
-void OpenParEMg::showRootMeshItems ()
-{
-    //std::cout << "OpenParEMg::showRootMeshItems" << std::endl; std::cout.flush();
+// void OpenParEMg::showRootMeshItems ()
+// {
+//     //std::cout << "OpenParEMg::showRootMeshItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_rootMesh()) {
-            int j=0;
-            while (j < item->childCount()) {
-                BaseItem *child=(BaseItem *) item->child(j);
-                ui->drawingWindow->showItem(child);
-                child->setForeground(0,Qt::black);
-                j++;
-            }
-        }
-        // } else {
-        //     ui->drawingWindow->showItem(item);
-        // }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_rootMesh()) {
+//             int j=0;
+//             while (j < item->childCount()) {
+//                 BaseItem *child=(BaseItem *) item->child(j);
+//                 ui->drawingWindow->showItem(child);
+//                 child->setForeground(0,Qt::black);
+//                 j++;
+//             }
+//         }
+//         // } else {
+//         //     ui->drawingWindow->showItem(item);
+//         // }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(13);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(13);
+// }
 
-bool OpenParEMg::isValidRootMeshShow ()
-{
-    int i=0;
-    while (i < mesh.childCount()) {
-        BaseItem *child=(BaseItem *) mesh.child(i);
-        if (child->foreground(0) == Qt::gray) return true;
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidRootMeshShow ()
+// {
+//     int i=0;
+//     while (i < mesh.childCount()) {
+//         BaseItem *child=(BaseItem *) mesh.child(i);
+//         if (child->foreground(0) == Qt::gray) return true;
+//         i++;
+//     }
+//     return false;
+// }
 
-void OpenParEMg::hideRootMeshItems ()
-{
-    //std::cout << "OpenParEMg::hideRootMeshItems" << std::endl; std::cout.flush();
+// void OpenParEMg::hideRootMeshItems ()
+// {
+//     //std::cout << "OpenParEMg::hideRootMeshItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_rootMesh()) {
-            int j=0;
-            while (j < item->childCount()) {
-                BaseItem *child=(BaseItem *) item->child(j);
-                ui->drawingWindow->hideItem(child);
-                child->setForeground(0,Qt::gray);
-                j++;
-            }
-        }
-        // } else {
-        //   ui->drawingWindow->hideItem(item);
-        // }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_rootMesh()) {
+//             int j=0;
+//             while (j < item->childCount()) {
+//                 BaseItem *child=(BaseItem *) item->child(j);
+//                 ui->drawingWindow->hideItem(child);
+//                 child->setForeground(0,Qt::gray);
+//                 j++;
+//             }
+//         }
+//         // } else {
+//         //   ui->drawingWindow->hideItem(item);
+//         // }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(14);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(14);
+// }
 
-void OpenParEMg::showMeshItems ()
-{
-    //std::cout << "OpenParEMg::showMeshItems" << std::endl; std::cout.flush();
+// void OpenParEMg::showMeshItems ()
+// {
+//     //std::cout << "OpenParEMg::showMeshItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_mesh()) {
-            ui->drawingWindow->showItem(item);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_mesh()) {
+//             ui->drawingWindow->showItem(item);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(15);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(15);
+// }
 
-bool OpenParEMg::isValidRootMeshHide ()
-{
-    int i=0;
-    while (i < mesh.childCount()) {
-        BaseItem *child=(BaseItem *) mesh.child(i);
-        if (child->foreground(0) == Qt::black) return true;
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidRootMeshHide ()
+// {
+//     int i=0;
+//     while (i < mesh.childCount()) {
+//         BaseItem *child=(BaseItem *) mesh.child(i);
+//         if (child->foreground(0) == Qt::black) return true;
+//         i++;
+//     }
+//     return false;
+// }
 
-void OpenParEMg::hideMeshItems ()
-{
-    //std::cout << "OpenParEMg::hideMeshItems" << std::endl; std::cout.flush();
+// void OpenParEMg::hideMeshItems ()
+// {
+//     //std::cout << "OpenParEMg::hideMeshItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_mesh()) {
-            ui->drawingWindow->hideItem(item);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_mesh()) {
+//             ui->drawingWindow->hideItem(item);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(16);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(16);
+// }
 
 void OpenParEMg::renameSportNet ()
 {
@@ -2000,52 +2006,10 @@ bool is_uniqueItem (std::vector<PortItem *> *portItemList, BaseItem *item)
     return true;
 }
 
-bool OpenParEMg::isValidDeleteValid ()
-{
-    // get a list of unique port items
-    std::vector<PortItem *> portItemList;
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_sport()) {
-            PortItem *portItem=dynamic_cast<PortItem *>(item->QTreeWidgetItem::parent());
-            if (portItem && portItem->is_port()) {
-                if (is_uniqueItem(&portItemList,portItem)) {
-                    if (portItem->getPort()) portItemList.push_back(portItem);
-                    else {std::cout << "ASSERT: OpenParEMg::isValidDeleteValid found missing port in PortItem" << std::endl; std::cout.flush();}
-                }
-            }
-        }
-        i++;
-    }
-
-    // cycle through the ports
-    long unsigned int j=0;
-    while (j < portItemList.size()) {
-
-        // number of modes on this port
-        Port *port=portItemList[j]->getPort();
-        int modeCount=port->get_modeCount();
-
-        // count the number of selected modes on this port
-        int selectedCount=0;
-        long unsigned int k=0;
-        while (i < ui->drawingWindow->get_selectedItems_size()) {
-            BaseItem *item=ui->drawingWindow->get_selectedItem(k);
-            if (item && item->is_sport()) {
-                PortItem *portParentItem=(PortItem *)item->QTreeWidgetItem::parent();
-                if (portParentItem == portItemList[j]) selectedCount++;
-            }
-            k++;
-        }
-
-        if (modeCount == selectedCount) return false;
-
-        j++;
-    }
-
-    return true;
-}
+// bool OpenParEMg::isValidDeleteMode ()
+// {
+//     return true;
+// }
 
 bool OpenParEMg::hasOneSelectedSport ()
 {
@@ -2068,8 +2032,12 @@ bool OpenParEMg::hasVoltage ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         ModeItem *modeItem=dynamic_cast<ModeItem *>(ui->drawingWindow->get_selectedItem(i));
         if (modeItem && modeItem->is_sport()) {
-            Mode *mode=modeItem->getMode();
-            if (mode && mode->has_voltage()) return true;
+            int j=0;
+            while (j < modeItem->childCount()) {
+                VIItem *viItem=dynamic_cast<VIItem *>(modeItem->child(j));
+                if (viItem && viItem->is_voltage()) return true;
+                j++;
+            }
         }
         i++;
     }
@@ -2082,9 +2050,11 @@ bool OpenParEMg::hasCurrent ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         ModeItem *modeItem=dynamic_cast<ModeItem *>(ui->drawingWindow->get_selectedItem(i));
         if (modeItem && modeItem->is_sport()) {
-            Mode *mode=(Mode *)modeItem->getMode();
-            if (mode) {
-                if (mode->has_current()) return true;
+            int j=0;
+            while (j < modeItem->childCount()) {
+                VIItem *viItem=dynamic_cast<VIItem *>(modeItem->child(j));
+                if (viItem && viItem->is_current()) return true;
+                j++;
             }
         }
         i++;
@@ -2143,118 +2113,119 @@ void OpenParEMg::insertIntegrationPath (BaseItem *VIitem)
         i++;
     }
 
-    // add an integration path
-    std::vector<Path *> *pathList=boundaryDatabase->get_pathList_ptr();
-    Mode *mode=modeItem->getMode();
-    IntegrationPath *integrationPath=nullptr;
+    // ToDo
+    // // add an integration path
+    // std::vector<Path *> *pathList=boundaryDatabase->get_pathList_ptr();
+    // Mode *mode=modeItem->getMode();
+    // IntegrationPath *integrationPath=nullptr;
 
-    // add paths to the mode
-    bool addScaleToTree=false;
-    if (VIitem->childCount() == 0) {
-        // new integration path
-        integrationPath=mode->addIntegrationPath(pathList,&pathsToAdd,VIitem->text(0).toStdString());
-        addScaleToTree=true;
-    } else {
-        // ToDo: Fix this when updating the methodology for handling tree undo/redo for integration paths
+    // // add paths to the mode
+    // bool addScaleToTree=false;
+    // if (VIitem->childCount() == 0) {
+    //     // new integration path
+    //     integrationPath=mode->addIntegrationPath(pathList,&pathsToAdd,VIitem->text(0).toStdString());
+    //     addScaleToTree=true;
+    // } else {
+    //     // ToDo: Fix this when updating the methodology for handling tree undo/redo for integration paths
 
-        // existing integration path
-        // int i=0;
-        // while (i < VIitem->childCount()) {
-        //     BaseItem *child=(BaseItem *)VIitem->child(i);
-        //     if (child->is_scale()) {
-        //         int j=0;
-        //         while (j < child->childCount()) {
-        //             BaseItem *grandChild=(BaseItem *)child->child(j);
-        //             if (grandChild->is_scaleValue()) {
-        //                 if (grandChild->is_scaleValue()) {
-        //                     CustomLineEdit *scaleEdit=(CustomLineEdit *)ui->drawingItemTree->itemWidget(grandChild,0);
-        //                     integrationPath=scaleEdit->get_integrationPath();
+    //     // existing integration path
+    //     // int i=0;
+    //     // while (i < VIitem->childCount()) {
+    //     //     BaseItem *child=(BaseItem *)VIitem->child(i);
+    //     //     if (child->is_scale()) {
+    //     //         int j=0;
+    //     //         while (j < child->childCount()) {
+    //     //             BaseItem *grandChild=(BaseItem *)child->child(j);
+    //     //             if (grandChild->is_scaleValue()) {
+    //     //                 if (grandChild->is_scaleValue()) {
+    //     //                     CustomLineEdit *scaleEdit=(CustomLineEdit *)ui->drawingItemTree->itemWidget(grandChild,0);
+    //     //                     integrationPath=scaleEdit->get_integrationPath();
 
-        //                     integrationPath->addPaths(pathList,&pathsToAdd);
-        //                 }
-        //             }
-        //             j++;
-        //         }
-        //     }
-        //     i++;
-        // }
-    }
+    //     //                     integrationPath->addPaths(pathList,&pathsToAdd);
+    //     //                 }
+    //     //             }
+    //     //             j++;
+    //     //         }
+    //     //     }
+    //     //     i++;
+    //     // }
+    // }
 
-    if (!integrationPath) {
-        std::cout << "ASSERT: OpenParEMg::insertPath failed to find an integration path" << std::endl; std::cout.flush();
-        return;
-    }
+    // if (!integrationPath) {
+    //     std::cout << "ASSERT: OpenParEMg::insertPath failed to find an integration path" << std::endl; std::cout.flush();
+    //     return;
+    // }
 
-    if (addScaleToTree) {
-        BaseItem *itemScale=new BaseItem(0);
-        itemScale->setMW(this);
-        itemScale->setText(0,"scale");
-        itemScale->set_itemType(12);
-        itemScale->setFlags(VIitem->flags() & ~Qt::ItemIsEditable);
-        itemScale->setToolTip(0,"Scale factor for the integration path.");
-        VIitem->addChild(itemScale);
-        itemScale->setParentItem(VIitem);
+    // if (addScaleToTree) {
+    //     BaseItem *itemScale=new BaseItem(0);
+    //     itemScale->setMW(this);
+    //     itemScale->setText(0,"scale");
+    //     itemScale->set_itemType(12);
+    //     itemScale->setFlags(VIitem->flags() & ~Qt::ItemIsEditable);
+    //     itemScale->setToolTip(0,"Scale factor for the integration path.");
+    //     VIitem->addChild(itemScale);
+    //     itemScale->setParentItem(VIitem);
 
-        ShapeData *newShapeData=itemScale->getShapeData()->copyCreate();
-        newShapeData->setCreate();
-        itemScale->addShapeData(newShapeData);
-        //itemChangesStack.add(itemScale);
-
-
-        ScaleItem *itemScaleValue=new ScaleItem(0);
-        itemScaleValue->setMW(this);
-        itemScaleValue->set_itemType(13);
-        itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
-        itemScaleValue->setIntegrationPath(integrationPath);
-        itemScale->addChild(itemScaleValue);
-        itemScaleValue->setParentItem(itemScale);
-        itemScaleValue->setIntegrationPath(integrationPath);
-
-        newShapeData=itemScaleValue->getShapeData()->copyCreate();
-        newShapeData->setCreate();
-        itemScaleValue->addShapeData(newShapeData);
-        //itemChangesStack.add(itemScaleValue);
-
-        CustomLineEdit *scaleEdit=new CustomLineEdit();
-        scaleEdit->setText(QString::number(1));   // default value
-        scaleEdit->set_itemTracker(ui->drawingWindow->get_itemTracker());
-        scaleEdit->set_baseItem(itemScaleValue);
-        scaleEdit->set_boundaryDatabase(boundaryDatabase);
-        scaleEdit->setValidator(&doubleValidator);
-        ui->drawingItemTree->setItemWidget(itemScaleValue,0,scaleEdit);
+    //     ShapeData *newShapeData=itemScale->getShapeData()->copyCreate();
+    //     newShapeData->setCreate();
+    //     itemScale->addShapeData(newShapeData);
+    //     //itemChangesStack.add(itemScale);
 
 
-        QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,&textValueChanged);
-        QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,relay,&Relay::setMenus);
-    }
+    //     ScaleItem *itemScaleValue=new ScaleItem(0);
+    //     itemScaleValue->setMW(this);
+    //     itemScaleValue->set_itemType(13);
+    //     itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
+    //     itemScaleValue->setIntegrationPath(integrationPath);
+    //     itemScale->addChild(itemScaleValue);
+    //     itemScaleValue->setParentItem(itemScale);
+    //     itemScaleValue->setIntegrationPath(integrationPath);
 
-    // add the integration path items to the tree
-    i=0;
-    while (i < pathsToAdd.size()) {
-        QString pathText="+";
-        pathText.append(pathsToAdd[i]->get_name());
+    //     newShapeData=itemScaleValue->getShapeData()->copyCreate();
+    //     newShapeData->setCreate();
+    //     itemScaleValue->addShapeData(newShapeData);
+    //     //itemChangesStack.add(itemScaleValue);
 
-        IntegrationPathItem *integrationPathItem=new IntegrationPathItem(0);
-        integrationPathItem->setMW(this);
-        integrationPathItem->setText(0,pathText);
-        integrationPathItem->setFlags(VIitem->flags());
-        integrationPathItem->setToolTip(0,"Path segment for integration.");
-        integrationPathItem->set_itemType(14);
-        integrationPathItem->setForeground(0,Qt::gray);
-        integrationPathItem->setIntegrationPath(integrationPath);
-        VIitem->addChild(integrationPathItem);
-        integrationPathItem->setParentItem(VIitem);
-        pathItemList[i]->push_linkedItem(integrationPathItem);
-        integrationPathItem->setPathItem(pathItemList[i]);
-        ui->drawingWindow->showItem(integrationPathItem);
+    //     CustomLineEdit *scaleEdit=new CustomLineEdit();
+    //     scaleEdit->setText(QString::number(1));   // default value
+    //     scaleEdit->set_itemTracker(ui->drawingWindow->get_itemTracker());
+    //     scaleEdit->set_baseItem(itemScaleValue);
+    //     scaleEdit->set_boundaryDatabase(boundaryDatabase);
+    //     scaleEdit->setValidator(&doubleValidator);
+    //     ui->drawingItemTree->setItemWidget(itemScaleValue,0,scaleEdit);
 
-        ShapeData *newShapeData=integrationPathItem->getShapeData()->copyCreate();
-        newShapeData->setCreate();
-        integrationPathItem->addShapeData(newShapeData);
-        //itemChangesStack.add(integrationPathItem);
 
-        i++;
-    }
+    //     QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,&textValueChanged);
+    //     QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,relay,&Relay::setMenus);
+    // }
+
+    // // add the integration path items to the tree
+    // i=0;
+    // while (i < pathsToAdd.size()) {
+    //     QString pathText="+";
+    //     pathText.append(pathsToAdd[i]->get_name());
+
+    //     IntegrationPathItem *integrationPathItem=new IntegrationPathItem(0);
+    //     integrationPathItem->setMW(this);
+    //     integrationPathItem->setText(0,pathText);
+    //     integrationPathItem->setFlags(VIitem->flags());
+    //     integrationPathItem->setToolTip(0,"Path segment for integration.");
+    //     integrationPathItem->set_itemType(14);
+    //     integrationPathItem->setForeground(0,Qt::gray);
+    //     integrationPathItem->setIntegrationPath(integrationPath);
+    //     VIitem->addChild(integrationPathItem);
+    //     integrationPathItem->setParentItem(VIitem);
+    //     pathItemList[i]->push_linkedItem(integrationPathItem);
+    //     integrationPathItem->setPathItem(pathItemList[i]);
+    //     ui->drawingWindow->showItem(integrationPathItem);
+
+    //     ShapeData *newShapeData=integrationPathItem->getShapeData()->copyCreate();
+    //     newShapeData->setCreate();
+    //     integrationPathItem->addShapeData(newShapeData);
+    //     //itemChangesStack.add(integrationPathItem);
+
+    //     i++;
+    // }
 
     ui->drawingWindow->updateViewer();
     setMenusI(17);
@@ -2287,26 +2258,26 @@ void OpenParEMg::rename_editingFinished ()
             }
 
             // change the database
-            boundaryDatabase->renamePath(originalText.toStdString(),newText.toStdString());
+            //boundaryDatabase->renamePath(originalText.toStdString(),newText.toStdString());
         }
 
-        if (renameItem->is_port()) {
-            PortItem *portItem=dynamic_cast<PortItem *>(renameItem);
-            Port *port=portItem->getPort();
-            if (port) port->set_name(newText.toStdString());
-        }
+        // if (renameItem->is_port()) {
+        //     PortItem *portItem=dynamic_cast<PortItem *>(renameItem);
+        //     Port *port=portItem->getPort();
+        //     if (port) port->set_name(newText.toStdString());
+        // }
 
-        if (renameItem->is_boundary()) {
-            BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(renameItem);
-            Boundary *boundary=boundaryItem->getBoundary();
-            if (boundary) boundary->set_name(newText.toStdString());
-        }
+        // if (renameItem->is_boundary()) {
+        //     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(renameItem);
+        //     Boundary *boundary=boundaryItem->getBoundary();
+        //     if (boundary) boundary->set_name(newText.toStdString());
+        // }
 
-        if (renameItem->is_sport()) {
-            ModeItem *modeItem=dynamic_cast<ModeItem *>(renameItem);
-            Mode *mode=modeItem->getMode();
-            if (mode) mode->set_net(newText.toStdString());
-        }
+        // if (renameItem->is_sport()) {
+        //     ModeItem *modeItem=dynamic_cast<ModeItem *>(renameItem);
+        //     Mode *mode=modeItem->getMode();
+        //     if (mode) mode->set_net(newText.toStdString());
+        // }
     }
 
     // replace
@@ -2430,26 +2401,42 @@ void OpenParEMg::deleteDrawingItems ()
     finishOperation(false,100);
 }
 
+void OpenParEMg::largestSportNumber (BaseItem *baseItem, int *Sport)
+{
+    if (!baseItem) return;
+
+    if (baseItem->is_sportNumber()) {
+        ShapeData *shapeData=baseItem->getShapeData();
+        if (shapeData) {
+            int testSport=shapeData->get_Sport();
+            if (testSport > *Sport) *Sport=testSport;
+        }
+    }
+
+    int i=0;
+    while (i < baseItem->childCount()) {
+        BaseItem *childItem=dynamic_cast<BaseItem *>(baseItem->child(i));
+        largestSportNumber(childItem,Sport);
+        i++;
+    }
+}
+
 void OpenParEMg::insertModeItems ()
 {
     //std::cout << "OpenParEMg::insertModeItems" << std::endl; std::cout.flush();
+
+    itemChangesStack.startNew();
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
         if (item && item->is_port()) {
-
             PortItem *portItem=dynamic_cast<PortItem *>(item);
-            Port *port=boundaryDatabase->get_port(portItem->text(0).toStdString());
-
-            Mode *newMode=new Mode(0,0,port->get_impedance_calculation());
-            std::string net="net";
-            net.append(std::to_string(boundaryDatabase->get_SportCount()+1));
-            newMode->set_net(net);
-            newMode->set_Sport(boundaryDatabase->get_SportCount()+1);
-            port->push_mode(newMode);
-
-            newMode->draw(relay,boundaryDatabase,this,ui->drawingWindow,ui->drawingItemTree,&path,portItem);
+            if (portItem && portItem->is_port()) {
+                ModeItem *newModeItem=new ModeItem(this,portItem);
+                portItem->addChild(newModeItem);
+                itemChangesStack.add(portItem);
+            }
         }
         i++;
     }
@@ -2543,273 +2530,274 @@ void OpenParEMg::deletePortItems ()
     finishOperation(false,1);
 }
 
-void OpenParEMg::deleteSportItem (BaseItem *item)
-{
-    //std::cout << "OpenParEMg::deleteSportItem" << std::endl; std::cout.flush();
+// void OpenParEMg::deleteSportItem (BaseItem *item)
+// {
+//     //std::cout << "OpenParEMg::deleteSportItem" << std::endl; std::cout.flush();
 
-    if (!item) return;
+//     if (!item) return;
 
-    // port
-    BaseItem *parentItem=(BaseItem *)item->QTreeWidgetItem::parent();
-    Port *port=boundaryDatabase->get_port(parentItem->text(0).toStdString());
+//     // port
+//     BaseItem *parentItem=(BaseItem *)item->QTreeWidgetItem::parent();
+//     Port *port=boundaryDatabase->get_port(parentItem->text(0).toStdString());
 
-    // remove from the port
-    port->deleteMode(item->text(0).toStdString());
+//     // remove from the port
+//     port->deleteMode(item->text(0).toStdString());
 
-    // remove the integration paths
-    int i=0;
-    while (i < item->childCount()) {
-        BaseItem *child=(BaseItem *)item->child(i);
-        if (child->is_voltage() || child->is_current()) {
-            int j=0;
-            while (j < child->childCount()) {
-                BaseItem *grandChild=(BaseItem *)child->child(j);
-                if (grandChild->is_integrationPathSegment()) {
+//     // remove the integration paths
+//     int i=0;
+//     while (i < item->childCount()) {
+//         BaseItem *child=(BaseItem *)item->child(i);
+//         if (child->is_voltage() || child->is_current()) {
+//             int j=0;
+//             while (j < child->childCount()) {
+//                 BaseItem *grandChild=(BaseItem *)child->child(j);
+//                 if (grandChild->is_integrationPathSegment()) {
 
-                    PathItem *gcItem=dynamic_cast<PathItem *>(grandChild);
+//                     PathItem *gcItem=dynamic_cast<PathItem *>(grandChild);
 
-                    // unlink
-                    Path *aPath=static_cast<Path *>(gcItem->getPath());
-                    PathItem *pathItem=aPath->get_item();
-                    pathItem->removeLinkedItem(grandChild);
+//                     // unlink
+//                     Path *aPath=static_cast<Path *>(gcItem->getPath());
+//                     PathItem *pathItem=aPath->get_item();
+//                     pathItem->removeLinkedItem(grandChild);
 
-                    ui->drawingWindow->deleteItem(grandChild);
-                }
-                j++;
-            }
-        }
-        i++;
-    }
+//                     ui->drawingWindow->deleteItem(grandChild);
+//                 }
+//                 j++;
+//             }
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->deleteItem(item);
-    setMenusI(27);
-}
+//     ui->drawingWindow->deleteItem(item);
+//     setMenusI(27);
+// }
 
-void OpenParEMg::deleteSportItems ()
-{
-    //std::cout << "OpenParEMg::deleteSportItems" << std::endl; std::cout.flush();
+// void OpenParEMg::deleteSportItems ()
+// {
+//     //std::cout << "OpenParEMg::deleteSportItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_sport()) {
-            deleteSportItem(item);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_sport()) {
+//             deleteSportItem(item);
+//         }
+//         i++;
+//     }
 
-    clickedItem=nullptr;
-    previousClickedItem=nullptr;
+//     clickedItem=nullptr;
+//     previousClickedItem=nullptr;
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(28);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(28);
+// }
 
-void OpenParEMg::showNetItems ()
-{
-    //std::cout << "OpenParEMg::showNetItems" << std::endl; std::cout.flush();
+// void OpenParEMg::showNetItems ()
+// {
+//     //std::cout << "OpenParEMg::showNetItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_sport()) {
-            ui->drawingWindow->showItem(item);
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_sport()) {
+//             ui->drawingWindow->showItem(item);
 
-            int j=0;
-            while (j < item->childCount()) {
-                BaseItem *child=(BaseItem *) item->child(j);
-                if (child->is_voltage() || child->is_current()) {
-                    //child->setForeground(0,Qt::black);
-                    int k=0;
-                    while (k < child->childCount()) {
-                        BaseItem *grandChild=(BaseItem *) child->child(k);
-                        if (grandChild->is_integrationPathSegment()) {
-                            ui->drawingWindow->showItem(grandChild);
-                            grandChild->setForeground(0,Qt::black);
-                        }
-                        k++;
-                    }
-                }
-                j++;
-            }
-        }
-        i++;
-    }
+//             int j=0;
+//             while (j < item->childCount()) {
+//                 BaseItem *child=(BaseItem *) item->child(j);
+//                 if (child->is_voltage() || child->is_current()) {
+//                     //child->setForeground(0,Qt::black);
+//                     int k=0;
+//                     while (k < child->childCount()) {
+//                         BaseItem *grandChild=(BaseItem *) child->child(k);
+//                         if (grandChild->is_integrationPathSegment()) {
+//                             ui->drawingWindow->showItem(grandChild);
+//                             grandChild->setForeground(0,Qt::black);
+//                         }
+//                         k++;
+//                     }
+//                 }
+//                 j++;
+//             }
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(29);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(29);
+// }
 
-void OpenParEMg::showVIItems ()
-{
-    //std::cout << "OpenParEMg::showVIItems" << std::endl; std::cout.flush();
+// void OpenParEMg::showVIItems ()
+// {
+//     //std::cout << "OpenParEMg::showVIItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            if (item->is_voltage() || item->is_current()) {
-                ui->drawingWindow->showItem(item);
-            }
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item) {
+//             if (item->is_voltage() || item->is_current()) {
+//                 ui->drawingWindow->showItem(item);
+//             }
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(30);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(30);
+// }
 
-void OpenParEMg::removeIntegrationPathItems ()
-{
-    //std::cout << "OpenParEMg::removeIntegrationPathItems" << std::endl; std::cout.flush();
+// ToDo:
+// void OpenParEMg::removeIntegrationPathItems ()
+// {
+//     //std::cout << "OpenParEMg::removeIntegrationPathItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_integrationPathSegment()) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_integrationPathSegment()) {
+//             PathItem *pathItem=dynamic_cast<PathItem *>(item);
 
-            BaseItem *VIParentItem=(BaseItem *)item->QTreeWidgetItem::parent();
-            ModeItem *modeParentItem=dynamic_cast<ModeItem *>(VIParentItem->QTreeWidgetItem::parent());
+//             BaseItem *VIParentItem=(BaseItem *)item->QTreeWidgetItem::parent();
+//             ModeItem *modeParentItem=dynamic_cast<ModeItem *>(VIParentItem->QTreeWidgetItem::parent());
 
-            Mode *mode=modeParentItem->getMode();
-            if (mode) {
+//             Mode *mode=modeParentItem->getMode();
+//             if (mode) {
 
 
-                // remove path
-                std::string type=VIParentItem->text(0).toStdString();
-                mode->removeIntegrationPath(VIParentItem->text(0).toStdString(),pathItem->getPath());
+//                 // remove path
+//                 std::string type=VIParentItem->text(0).toStdString();
+//                 mode->removeIntegrationPath(VIParentItem->text(0).toStdString(),pathItem->getPath());
 
-                // remove from linked items
-                int j=0;
-                while (j < path.childCount()) {
-                    PathItem *childItem=dynamic_cast<PathItem *>(path.child(j));
-                    childItem->removeLinkedItem(pathItem);
-                    j++;
-                }
+//                 // remove from linked items
+//                 int j=0;
+//                 while (j < path.childCount()) {
+//                     PathItem *childItem=dynamic_cast<PathItem *>(path.child(j));
+//                     childItem->removeLinkedItem(pathItem);
+//                     j++;
+//                 }
 
-                // remove item
-                ui->drawingWindow->hideItem(item);
-                ui->drawingWindow->deleteItem(item);
+//                 // remove item
+//                 ui->drawingWindow->hideItem(item);
+//                 ui->drawingWindow->deleteItem(item);
 
-                // remove scale if there are no paths
-                bool hasPaths=false;
-                j=0;
-                while (j < VIParentItem->childCount()) {
-                    BaseItem *child=(BaseItem *) VIParentItem->child(j);
-                    if (child->is_integrationPathSegment()) {hasPaths=true; break;}
-                    j++;
-                }
-                if (!hasPaths) {
-                    int j=0;
-                    while (j < VIParentItem->childCount()) {
-                        BaseItem *child=(BaseItem *) VIParentItem->child(j);
-                        if (child->is_scale()) {
-                            ui->drawingWindow->deleteItem(child);
-                            break;
-                        }
-                        j++;
-                    }
-                }
-            }
-        }
-        i++;
-    }
+//                 // remove scale if there are no paths
+//                 bool hasPaths=false;
+//                 j=0;
+//                 while (j < VIParentItem->childCount()) {
+//                     BaseItem *child=(BaseItem *) VIParentItem->child(j);
+//                     if (child->is_integrationPathSegment()) {hasPaths=true; break;}
+//                     j++;
+//                 }
+//                 if (!hasPaths) {
+//                     int j=0;
+//                     while (j < VIParentItem->childCount()) {
+//                         BaseItem *child=(BaseItem *) VIParentItem->child(j);
+//                         if (child->is_scale()) {
+//                             ui->drawingWindow->deleteItem(child);
+//                             break;
+//                         }
+//                         j++;
+//                     }
+//                 }
+//             }
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(31);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(31);
+// }
 
-void OpenParEMg::showIntegrationPathItems ()
-{
-    std::cout << "OpenParEMg::showIntegrationPathItems" << std::endl; std::cout.flush();
+// void OpenParEMg::showIntegrationPathItems ()
+// {
+//     std::cout << "OpenParEMg::showIntegrationPathItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_integrationPathSegment()) {
-            ui->drawingWindow->showItem(item);
-            item->setForeground(0,Qt::black);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_integrationPathSegment()) {
+//             ui->drawingWindow->showItem(item);
+//             item->setForeground(0,Qt::black);
+//         }
+//         i++;
+//     }
 
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
+//     showAction->setEnabled(ui->drawingWindow->isValidShow());
+//     hideAction->setEnabled(ui->drawingWindow->isValidHide());
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(32);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(32);
+// }
 
-void OpenParEMg::hideNetItems ()
-{
-    std::cout << "OpenParEMg::hideNetItems" << std::endl; std::cout.flush();
+// void OpenParEMg::hideNetItems ()
+// {
+//     std::cout << "OpenParEMg::hideNetItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_sport()) {
-            int j=0;
-            while (j < item->childCount()) {
-                BaseItem *child=(BaseItem *) item->child(j);
-                if (child->is_voltage() || child->is_current()) {
-                    //child->setForeground(0,Qt::gray);
-                    int k=0;
-                    while (k < child->childCount()) {
-                        BaseItem *grandChild=(BaseItem *) child->child(k);
-                        if (grandChild->is_integrationPathSegment()) {
-                            ui->drawingWindow->hideItem(grandChild);
-                            grandChild->setForeground(0,Qt::gray);
-                        }
-                        k++;
-                    }
-                }
-                j++;
-            }
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_sport()) {
+//             int j=0;
+//             while (j < item->childCount()) {
+//                 BaseItem *child=(BaseItem *) item->child(j);
+//                 if (child->is_voltage() || child->is_current()) {
+//                     //child->setForeground(0,Qt::gray);
+//                     int k=0;
+//                     while (k < child->childCount()) {
+//                         BaseItem *grandChild=(BaseItem *) child->child(k);
+//                         if (grandChild->is_integrationPathSegment()) {
+//                             ui->drawingWindow->hideItem(grandChild);
+//                             grandChild->setForeground(0,Qt::gray);
+//                         }
+//                         k++;
+//                     }
+//                 }
+//                 j++;
+//             }
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(33);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(33);
+// }
 
-void OpenParEMg::hideVIItems ()
-{
-    std::cout << "OpenParEMg::hideVIItems" << std::endl; std::cout.flush();
+// void OpenParEMg::hideVIItems ()
+// {
+//     std::cout << "OpenParEMg::hideVIItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            if (item->is_voltage() || item->is_current()) {
-                ui->drawingWindow->hideItem(item);
-            }
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item) {
+//             if (item->is_voltage() || item->is_current()) {
+//                 ui->drawingWindow->hideItem(item);
+//             }
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(34);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(34);
+// }
 
-void OpenParEMg::hideIntegrationPathItems ()
-{
-    std::cout << "OpenParEMg::hideIntegrationPathItems" << std::endl; std::cout.flush();
+// void OpenParEMg::hideIntegrationPathItems ()
+// {
+//     std::cout << "OpenParEMg::hideIntegrationPathItems" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_integrationPathSegment()) {
-            ui->drawingWindow->hideItem(item);
-            item->setForeground(0,Qt::gray);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->is_integrationPathSegment()) {
+//             ui->drawingWindow->hideItem(item);
+//             item->setForeground(0,Qt::gray);
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-    setMenusI(35);
-}
+//     ui->drawingWindow->updateViewer();
+//     setMenusI(35);
+// }
 
 bool OpenParEMg::isValidCreatePath ()
 {
@@ -2830,7 +2818,7 @@ void OpenParEMg::createPath ()
             // default path name
 
             std::string pathName="path";
-            pathName.append(std::to_string(path.childCount()+1));
+            pathName.append(std::to_string(path->childCount()+1));
 
             int i=1;
             while (boundaryDatabase->pathNameExists(pathName)) {
@@ -2853,7 +2841,7 @@ void OpenParEMg::createPath ()
             newPath->set_name(pathName);
             newPath->is_modified();
             newPath->addFacePoints(TopoDS::Face(selectedShape));
-            newPath->create_wire_item(this,ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
+            newPath->create_wire_item(this,ui->drawingWindow,path);  // create item and add as child to path; creates AIS_Shape
 
             boundaryDatabase->push_path(newPath);
 
@@ -2985,8 +2973,8 @@ void OpenParEMg::reprocess (BaseItem *item)
 
         // cycle through the top-level children and add to the compound
         int i=0;
-        while (i < drawing.childCount()) {
-            DrawingItem *child=(DrawingItem *)drawing.child(i);
+        while (i < drawing->childCount()) {
+            DrawingItem *child=dynamic_cast<DrawingItem *>(drawing->child(i));
             if (child && !child->getShape().IsNull()) {
                 builder.Add(compound,child->getShape()->Shape());
             }
@@ -3247,33 +3235,33 @@ bool OpenParEMg::isValidAssignMaterial ()
     return false;
 }
 
-bool OpenParEMg::isValidObjectShow ()
-{
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->isValidShow()) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem && drawingItem->is_drawing()) return true;
-        }
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidObjectShow ()
+// {
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->isValidShow()) {
+//             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+//             if (drawingItem && drawingItem->is_drawing()) return true;
+//         }
+//         i++;
+//     }
+//     return false;
+// }
 
-bool OpenParEMg::isValidObjectHide ()
-{
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->isValidHide()) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem && drawingItem->is_drawing()) return true;
-        }
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::isValidObjectHide ()
+// {
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item && item->isValidHide()) {
+//             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+//             if (drawingItem && drawingItem->is_drawing()) return true;
+//         }
+//         i++;
+//     }
+//     return false;
+// }
 
 bool OpenParEMg::isValidObjectDelete ()
 {
@@ -3473,13 +3461,12 @@ void OpenParEMg::finishMergeSolids ()
     Merge *merge=new Merge();
 
     // add it
-    DrawingItem *newItem=new DrawingItem(0);
-    newItem->setMW(this);
-    newItem->setParentItem(&drawing);
-    ShapeData *newShapeData=new ShapeData(1,nullptr,merge,newAISshape);
-    newItem->addShapeData(newShapeData);
+    DrawingItem *newItem=new DrawingItem(this,drawing);
+    ShapeData *shapeData=newItem->getShapeData();
+    shapeData->setProcess(merge);
+    shapeData->setShape(newAISshape);
     newItem->setText(0,merge->getName(&objectCounts));
-    drawing.addChild(newItem);
+    drawing->addChild(newItem);
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
     ui->drawingWindow->showItem(newItem);
     ui->drawingWindow->selectItem(newItem);
@@ -3491,13 +3478,13 @@ void OpenParEMg::finishMergeSolids ()
 
     // move the objects in the selection tree
 
-    int index=drawing.indexOfChild(item0);
-    drawing.takeChild(index);
+    int index=drawing->indexOfChild(item0);
+    drawing->takeChild(index);
     newItem->addChild(item0);
     item0->setParentItem(newItem);
 
-    index=drawing.indexOfChild(item1);
-    drawing.takeChild(index);
+    index=drawing->indexOfChild(item1);
+    drawing->takeChild(index);
     newItem->addChild(item1);
     item1->setParentItem(newItem);
 
@@ -3518,7 +3505,7 @@ void OpenParEMg::finishMergeSolids ()
     increase_depth(item1);
 
     // rebuild top level
-    reprocess(&drawing);
+    reprocess(drawing);
 
     ui->drawingWindow->hideItem(item0);
     ui->drawingWindow->unselectItem(item0,index0);
@@ -3598,13 +3585,12 @@ void OpenParEMg::finishSubtractSolids ()
     Subtract *subtract=new Subtract();
 
     // add it
-    DrawingItem *newItem=new DrawingItem(0);
-    newItem->setMW(this);
-    newItem->setParentItem(&drawing);
-    ShapeData *newShapeData=new ShapeData(1,nullptr,subtract,newAISshape);
-    newItem->addShapeData(newShapeData);
+    DrawingItem *newItem=new DrawingItem(this,drawing);
+    ShapeData *shapeData=newItem->getShapeData();
+    shapeData->setProcess(subtract);
+    shapeData->setShape(newAISshape);
     newItem->setText(0,subtract->getName(&objectCounts));
-    drawing.addChild(newItem);
+    drawing->addChild(newItem);
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
     ui->drawingWindow->showItem(newItem);
     ui->drawingWindow->selectItem(newItem);
@@ -3616,13 +3602,13 @@ void OpenParEMg::finishSubtractSolids ()
 
     // move the object in the selection tree
 
-    int index=drawing.indexOfChild(item0);
-    drawing.takeChild(index);
+    int index=drawing->indexOfChild(item0);
+    drawing->takeChild(index);
     newItem->addChild(item0);
     item0->setParentItem(newItem);
 
-    index=drawing.indexOfChild(item1);
-    drawing.takeChild(index);
+    index=drawing->indexOfChild(item1);
+    drawing->takeChild(index);
     newItem->addChild(item1);
     item1->setParentItem(newItem);
 
@@ -3643,7 +3629,7 @@ void OpenParEMg::finishSubtractSolids ()
     increase_depth(item1);
 
     // rebuild top level
-    reprocess(&drawing);
+    reprocess(drawing);
 
     ui->drawingWindow->hideItem(item0);
     ui->drawingWindow->unselectItem(item0,index0);
@@ -3750,7 +3736,7 @@ void OpenParEMg::copyDrawingItems ()
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
-                BaseItem *newItem=drawingItem->copy(&drawing);
+                BaseItem *newItem=drawingItem->copy(drawing);
                 selectedList.push_back(newItem);
             }
         }
@@ -4160,17 +4146,14 @@ bool OpenParEMg::isValidConvertToPath ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem && drawingItem->is_drawing()) {
-                Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
-                if (polywire) {
-                    BaseItem *parentItem=drawingItem->getParentItem();
-                    if (parentItem) {
-                        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
-                        if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) count++;
-                    }
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (drawingItem && drawingItem->is_drawing()) {
+            Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
+            if (polywire) {
+                BaseItem *parentItem=drawingItem->getParentItem();
+                if (parentItem) {
+                    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
+                    if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) count++;
                 }
             }
         }
@@ -4178,6 +4161,40 @@ bool OpenParEMg::isValidConvertToPath ()
     }
     if (count > 0 && count == ui->drawingWindow->get_selectedItems_count()) return true;
     return false;
+}
+
+void OpenParEMg::convertDrawingToPath ()
+{
+    convertDrawingToPathN(true);
+}
+
+void OpenParEMg::convertDrawingToPathN (bool startNew)
+{
+    if (startNew) itemChangesStack.startNew();
+
+    std::vector<DrawingItem *> selectedList;
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+        if (item) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+            if (drawingItem && drawingItem->is_drawing()) {
+                Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
+                if (polywire) selectedList.push_back(drawingItem);
+            }
+        }
+        i++;
+    }
+
+    bool useArrows=startNew;
+    i=0;
+    while (i < selectedList.size()) {
+        convertItemToPath(selectedList[i],useArrows);
+        i++;
+    }
+
+    finishOperation(false,1);
 }
 
 Path* OpenParEMg::createPathFromDrawing (DrawingItem *item, bool hasArrows)
@@ -4248,21 +4265,16 @@ PathItem* OpenParEMg::createPathItemFromDrawing (DrawingItem *item, bool hasArro
     boundaryDatabase->push_path(newPath);
 
     // create a path item
-    PathItem *newPathItem=new PathItem();
+    PathItem *newPathItem=new PathItem(this,path);
     if (newPathItem) {
-        newPathItem->setMW(this);
-        newPathItem->setParentItem(&path);
-
-        ShapeData *newShapeData=newPathItem->getShapeData()->copyCreate();
-        newShapeData->setCreate();
-        newShapeData->setPolywire(polywire->copyCreate());
-        newShapeData->getPolywire()->setHasArrows(hasArrows);
-        newShapeData->setShape(newShapeData->getPolywire()->get_AIS_Shape());
-        newPathItem->addShapeData(newShapeData);
+        ShapeData *shapeData=newPathItem->getShapeData();
+        shapeData->setPolywire(polywire->copyCreate());
+        shapeData->getPolywire()->setHasArrows(hasArrows);
+        shapeData->setShape(shapeData->getPolywire()->get_AIS_Shape());
         newPathItem->setText(0,QString::fromStdString(pathName));
         newPathItem->setPath(newPath);
 
-        path.addChild(newPathItem);
+        path->addChild(newPathItem);
         itemChangesStack.add(newPathItem);
 
         // show the new PathItem
@@ -4277,46 +4289,12 @@ PathItem* OpenParEMg::createPathItemFromDrawing (DrawingItem *item, bool hasArro
     return newPathItem;
 }
 
-void OpenParEMg::convertItemToPath (DrawingItem *item, bool useArrows)
+void OpenParEMg::convertItemToPath (DrawingItem *drawingItem, bool useArrows)
 {
-    PathItem *pathItem=createPathItemFromDrawing(item,useArrows);
+    PathItem *pathItem=createPathItemFromDrawing(drawingItem,useArrows);
     if (pathItem) {
-        item->del();
+        drawingItem->del();
     }
-}
-
-void OpenParEMg::convertDrawingToPath ()
-{
-    convertDrawingToPathN(true);
-}
-
-void OpenParEMg::convertDrawingToPathN (bool startNew)
-{
-    if (startNew) itemChangesStack.startNew();
-
-    std::vector<DrawingItem *> selectedList;
-
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
-            if (drawingItem && drawingItem->is_drawing()) {
-                Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
-                if (polywire) selectedList.push_back(drawingItem);
-            }
-        }
-        i++;
-    }
-
-    bool useArrows=startNew;
-    i=0;
-    while (i < selectedList.size()) {
-        convertItemToPath(selectedList[i],useArrows);
-        i++;
-    }
-
-    finishOperation(false,1);
 }
 
 bool OpenParEMg::isValidRotateObject ()
@@ -4493,67 +4471,75 @@ void OpenParEMg::createPortFromPathN (bool startNew)
                 else {portName=testName; break;}
             }
 
-            // default net name
 
-            std::string netName="net";
-            netName.append(std::to_string(sport));
+            // // default net name
 
-            i=1;
-            while (boundaryDatabase->netNameExists(netName)) {
-                std::string testName=netName;
-                testName.append("_").append(std::to_string(i));
-                if (boundaryDatabase->netNameExists(testName)) {i++;}
-                else {netName=testName; break;}
+            // std::string netName="net";
+            // netName.append(std::to_string(sport));
+
+            // i=1;
+            // while (boundaryDatabase->netNameExists(netName)) {
+            //     std::string testName=netName;
+            //     testName.append("_").append(std::to_string(i));
+            //     if (boundaryDatabase->netNameExists(testName)) {i++;}
+            //     else {netName=testName; break;}
+            // }
+
+            // // path name placed in a keywordPair
+            // keywordPair *kwPathName=new keywordPair();
+            // kwPathName->set_keyword("path");
+            // kwPathName->set_value(aPath->get_name());
+            // kwPathName->set_lineNumber(0);
+            // kwPathName->set_loaded(true);
+
+            // // port
+
+            // Port *newPort=new Port(0,0);
+            // newPort->set_name(portName);
+            // newPort->set_outline(aPath);
+
+            // // path info
+            // newPort->push_path(kwPathName,boundaryDatabase->get_path_index(aPath),false);
+
+            // // impedance
+            // if (boundaryDatabase->get_portList_size() == 0) {
+            //     newPort->set_impedance_definition("PV");
+            //     newPort->set_impedance_calculation("line");
+            // } else {
+            //     newPort->set_impedance_definition(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_definition());
+            //     newPort->set_impedance_calculation(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_calculation());
+            // }
+
+            // // must have at least one mode per port - default to sensible assumptions
+            // Mode *newMode=new Mode(0,0,newPort->get_impedance_calculation());
+            // newMode->set_net(netName);
+            // newMode->set_Sport(sport);
+            // newPort->push_mode(newMode);
+
+            // // add to boundary database
+            // boundaryDatabase->push_port(newPort);
+
+            // // draw it
+            // PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
+            //                                                   this,ui->drawingWindow,ui->drawingItemTree,
+            //                                                   &path,&port,&boundary,materialDatabase);
+            // ShapeData *newShapeData=newPortItem->getShapeData()->copyCreate();
+            // newShapeData->setCreate();
+            // //newPortItem->setPathItem(selectedList[i]);
+            // newPortItem->addShapeData(newShapeData);
+
+            //PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calculation_, QString impedance_definition_)
+            QString impedance_calculation="invalid";
+            QString impedance_definition="line";
+            PortItem *newPortItem=new PortItem(this,selectedList[i],impedance_calculation,impedance_definition);
+            if (newPortItem) {
+                convertedItems.push_back(newPortItem);
+                itemChangesStack.add(newPortItem);
+
+                port->addChild(newPortItem);
+                port->setExpanded(true);
+                newPortItem->setExpanded(true);
             }
-
-            // path name placed in a keywordPair
-            keywordPair *kwPathName=new keywordPair();
-            kwPathName->set_keyword("path");
-            kwPathName->set_value(aPath->get_name());
-            kwPathName->set_lineNumber(0);
-            kwPathName->set_loaded(true);
-
-            // port
-
-            Port *newPort=new Port(0,0);
-            newPort->set_name(portName);
-            newPort->set_outline(aPath);
-
-            // path info
-            newPort->push_path(kwPathName,boundaryDatabase->get_path_index(aPath),false);
-
-            // impedance
-            if (boundaryDatabase->get_portList_size() == 0) {
-                newPort->set_impedance_definition("PV");
-                newPort->set_impedance_calculation("line");
-            } else {
-                newPort->set_impedance_definition(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_definition());
-                newPort->set_impedance_calculation(boundaryDatabase->get_port(boundaryDatabase->get_portList_size()-1)->get_impedance_calculation());
-            }
-
-            // must have at least one mode per port - default to sensible assumptions
-            Mode *newMode=new Mode(0,0,newPort->get_impedance_calculation());
-            newMode->set_net(netName);
-            newMode->set_Sport(sport);
-            newPort->push_mode(newMode);
-
-            // add to boundary database
-            boundaryDatabase->push_port(newPort);
-
-            // draw it
-            PortItem *newPortItem=boundaryDatabase->draw_port(relay,newPort,&projData,
-                                                              this,ui->drawingWindow,ui->drawingItemTree,
-                                                              &path,&port,&boundary,materialDatabase);
-            ShapeData *newShapeData=newPortItem->getShapeData()->copyCreate();
-            newShapeData->setCreate();
-            //newPortItem->setPathItem(selectedList[i]);
-            newPortItem->addShapeData(newShapeData);
-
-            port.setExpanded(true);
-            newPortItem->setExpanded(true);
-
-            convertedItems.push_back(newPortItem);
-            itemChangesStack.add(newPortItem);
         }
         i++;
     }
@@ -4593,7 +4579,7 @@ void OpenParEMg::createPathFromFaceN (bool startNew)
                 // default path name
 
                 std::string pathName="path";
-                pathName.append(std::to_string(path.childCount()+1));
+                pathName.append(std::to_string(path->childCount()+1));
 
                 int j=1;
                 while (boundaryDatabase->pathNameExists(pathName)) {
@@ -4616,7 +4602,7 @@ void OpenParEMg::createPathFromFaceN (bool startNew)
                 newPath->set_name(pathName);
                 newPath->is_modified();
                 newPath->addFacePoints(TopoDS::Face(selectedShape));
-                newPath->create_face_item(this,ui->drawingWindow,&path);  // create item and add as child to path; creates AIS_Shape
+                newPath->create_face_item(this,ui->drawingWindow,path);  // create item and add as child to path; creates AIS_Shape
 
                 boundaryDatabase->push_path(newPath);
 
@@ -4707,66 +4693,18 @@ void OpenParEMg::createBoundaryFromPathN (bool startNew)
     i=0;
     while (i < selectedList.size()) {
 
-        Path *aPath=static_cast<Path *>(selectedList[i]->getPath());
-        if (aPath) {
-            std::cout << "   selected PathItem=" << selectedList[i] << "  polywire=" << selectedList[i]->getPolywire() << std::endl; std::cout.flush();
+        // default to radiation
+        double default_wave_impedance=sqrt(M_PI*4e-7/8.8541878176e-12);
+        QString boundary_material;
+        BoundaryItem *newBoundaryItem=new BoundaryItem(this,selectedList[i],0,default_wave_impedance,boundary_material);
 
-            // remove the arrows from the path
-            selectedList[i]->showArrows(false);
+        boundary->addChild(newBoundaryItem);
+        boundary->setExpanded(true);
+        newBoundaryItem->setExpanded(true);
 
-            // default boundary name
+        convertedItems.push_back(newBoundaryItem);
+        itemChangesStack.add(newBoundaryItem);
 
-            std::string boundaryName="boundary";
-            boundaryName.append(std::to_string(boundary.childCount()+1));
-
-            int i=1;
-            while (boundaryDatabase->boundaryNameExists(boundaryName)) {
-                std::string testName=boundaryName;
-                testName.append("_").append(std::to_string(i));
-                if (boundaryDatabase->boundaryNameExists(testName)) {i++;}
-                else {boundaryName=testName; break;}
-            }
-
-            // path name placed in a keywordPair
-            keywordPair *kwPathName=new keywordPair();
-            kwPathName->set_keyword("path");
-            kwPathName->set_value(aPath->get_name());
-            kwPathName->set_lineNumber(0);
-            kwPathName->set_loaded(true);
-
-            // boundary
-
-            Boundary *newBoundary=new Boundary(0,0);
-            newBoundary->set_name(boundaryName);
-            newBoundary->set_outline(aPath);
-
-            // default to radiation in free space
-            newBoundary->set_type("radiation");
-            newBoundary->set_wave_impedance(sqrt(4.0e-7*M_PI/8.8541878176e-12));  // free-space value
-
-            // path info
-            newBoundary->push_path(kwPathName,boundaryDatabase->get_path_index(aPath),false);
-
-            // add to boundary database
-            boundaryDatabase->push_boundary(newBoundary);
-
-            // draw it
-            BoundaryItem *newBoundaryItem=boundaryDatabase->draw_boundary(relay,newBoundary,&projData,
-                                                                      this,ui->drawingWindow,ui->drawingItemTree,
-                                                                      &path,&boundary,materialDatabase);
-            newBoundaryItem->setMW(this);
-            newBoundaryItem->setParentItem(&boundary);
-
-            ShapeData *newShapeData=newBoundaryItem->getShapeData()->copyCreate();
-            newShapeData->setCreate();
-            newBoundaryItem->addShapeData(newShapeData);
-
-            boundary.setExpanded(true);
-            newBoundaryItem->setExpanded(true);
-
-            convertedItems.push_back(newBoundaryItem);
-            itemChangesStack.add(newBoundaryItem);
-        }
         i++;
     }
 
@@ -4896,8 +4834,8 @@ void OpenParEMg::renumberDimTag ()
 
     int count=1;
     int i=0;
-    while (i < drawing.childCount()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(drawing.child(i));
+    while (i < drawing->childCount()) {
+        DrawingItem *child=dynamic_cast<DrawingItem *>(drawing->child(i));
 
         // SOLID
         if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
@@ -4928,8 +4866,8 @@ void OpenParEMg::setPhysicalGroups ()
 
     // check the first-level children for SOLID or COMPOUND
     int i=0;
-    while (i < drawing.childCount()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(drawing.child(i));
+    while (i < drawing->childCount()) {
+        DrawingItem *child=dynamic_cast<DrawingItem *>(drawing->child(i));
 
         // SOLID
         if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
@@ -4980,8 +4918,8 @@ void OpenParEMg::setPhysicalGroups ()
 void OpenParEMg::setMaterials ()
 {
     int i=0;
-    while (i < drawing.childCount()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(drawing.child(i));
+    while (i < drawing->childCount()) {
+        DrawingItem *child=dynamic_cast<DrawingItem *>(drawing->child(i));
 
         bool processMaterial=false;
         // SOLID
@@ -5012,7 +4950,7 @@ void OpenParEMg::setMaterials ()
 void OpenParEMg::assignMaterial ()
 {
     // Cannot assign material to existing mesh
-    if (mesh.childCount() > 0) {
+    if (mesh->childCount() > 0) {
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this,"OpenParEMg","Materials cannot be assigned to an existing mesh.  Do you want to delete the mesh?",QMessageBox::Yes|QMessageBox::No);
         if (reply != QMessageBox::Yes) return;
@@ -5042,57 +4980,69 @@ void OpenParEMg::crossReferencePaths ()
 {
     //std::cout << "OpenParEMg::crossReferencePaths" << std::endl; std::cout.flush();
 
-    int i=0;
-    while (i < port.childCount()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(port.child(i));
-        if (portItem && portItem->is_port()) {
-            Port *port=portItem->getPort();
-            if (port) {
-                Path *outline=port->get_outline();
-                if (outline) {
-                    int j=0;
-                    while (j < path.childCount()) {
-                        PathItem *pathItem=dynamic_cast<PathItem *>(path.child(j));
-                        if (pathItem && pathItem->is_path()) {
-                            if (pathItem->getPath() == outline) {
-                                portItem->setPathItem(pathItem);
-                                break;
-                            }
-                        }
-                        j++;
-                    }
-                }
-            }
-        }
-        i++;
-    }
+    // ToDo: finish?
+    // int i=0;
+    // while (i < port.childCount()) {
+    //     PortItem *portItem=dynamic_cast<PortItem *>(port.child(i));
+    //     if (portItem && portItem->is_port()) {
+    //         Port *port=portItem->getPort();
+    //         if (port) {
+    //             Path *outline=port->get_outline();
+    //             if (outline) {
+    //                 int j=0;
+    //                 while (j < path.childCount()) {
+    //                     PathItem *pathItem=dynamic_cast<PathItem *>(path.child(j));
+    //                     if (pathItem && pathItem->is_path()) {
+    //                         if (pathItem->getPath() == outline) {
+    //                             portItem->setPathItem(pathItem);
+    //                             break;
+    //                         }
+    //                     }
+    //                     j++;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     i++;
+    // }
 
-    {
-        int i=0;
-        while (i < boundary.childCount()) {
-            BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary.child(i));
-            if (boundaryItem && boundaryItem->is_boundary()) {
-                Boundary *boundary=boundaryItem->getBoundary();
-                if (boundary) {
-                    Path *outline=boundary->get_outline();
-                    if (outline) {
-                        int j=0;
-                        while (j < path.childCount()) {
-                            PathItem *pathItem=dynamic_cast<PathItem *>(path.child(j));
-                            if (pathItem && pathItem->is_path()) {
-                                if (pathItem->getPath() == outline) {
-                                    boundaryItem->setPathItem(pathItem);
-                                    break;
-                                }
-                            }
-                            j++;
-                        }
-                    }
-                }
-            }
-            i++;
-        }
-    }
+    // ToDo: finish?
+    // {
+    //     int i=0;
+    //     while (i < boundary.childCount()) {
+    //         BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary.child(i));
+    //         if (boundaryItem && boundaryItem->is_boundary()) {
+    //             PathItem *boundaryPathItem=boundaryItem->getPathItem();
+    //             if (boundaryPathItem && boundaryPathItem->is_path()) {
+    //                 int j=0;
+    //                 while (j < path.childCount()) {
+    //                     PathItem *pathItem=dynamic_cast<PathItem *>(path.child(j));
+    //                     if (pathItem && pathItem->is_path()) {
+
+    //                     }
+    //                     j++;
+    //                 }
+
+
+    //                 Path *outline=boundary->get_outline();
+    //                 if (outline) {
+    //                     int j=0;
+    //                     while (j < path.childCount()) {
+    //                         PathItem *pathItem=dynamic_cast<PathItem *>(path.child(j));
+    //                         if (pathItem && pathItem->is_path()) {
+    //                             if (pathItem->getPath() == outline) {
+    //                                 boundaryItem->setPathItem(pathItem);
+    //                                 break;
+    //                             }
+    //                         }
+    //                         j++;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         i++;
+    //     }
+    // }
 
 }
 
@@ -5101,8 +5051,8 @@ void OpenParEMg::resetPathArrowheads ()
     //std::cout << "OpenParEMg::resetPathArrowheads" << std::endl; std::cout.flush();
 
     int i=0;
-    while (i < port.childCount()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(port.child(i));
+    while (i < port->childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
         if (portItem && portItem->is_port()) {
             PathItem *pathItem=portItem->getPathItem();
             if (pathItem) {
@@ -5113,8 +5063,8 @@ void OpenParEMg::resetPathArrowheads ()
     }
 
     i=0;
-    while (i < boundary.childCount()) {
-        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary.child(i));
+    while (i < boundary->childCount()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary->child(i));
         if (boundaryItem && boundaryItem->is_boundary()) {
             PathItem *pathItem=boundaryItem->getPathItem();
             if (pathItem) {
@@ -5125,54 +5075,54 @@ void OpenParEMg::resetPathArrowheads ()
     }
 }
 
-void OpenParEMg::resetPathColors ()
-{
-    std::cout << "OpenParEMg::resetPathColors" << std::endl; std::cout.flush();
+// void OpenParEMg::resetPathColors ()
+// {
+//     std::cout << "OpenParEMg::resetPathColors" << std::endl; std::cout.flush();
 
-    int i=0;
-    while (i < port.childCount()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(port.child(i));
-        if (portItem && portItem->is_port()) {
-            PathItem *pathItem=portItem->getPathItem();
-            if (pathItem) {
-                Handle(AIS_Shape) shape=pathItem->getShape();
-                if (!shape.IsNull()) {
-                    std::cout << "         shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
-                    std::cout << "         setting shape" << std::endl; std::cout.flush();
-                    shape->SetColor(Quantity_NOC_MINTCREAM);
-                    shape->SetTransparency(0.25);
-                    shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-                }
-            }
-        }
-        i++;
-    }
+//     int i=0;
+//     while (i < port.childCount()) {
+//         PortItem *portItem=dynamic_cast<PortItem *>(port.child(i));
+//         if (portItem && portItem->is_port()) {
+//             PathItem *pathItem=portItem->getPathItem();
+//             if (pathItem) {
+//                 Handle(AIS_Shape) shape=pathItem->getShape();
+//                 if (!shape.IsNull()) {
+//                     std::cout << "         shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
+//                     std::cout << "         setting shape" << std::endl; std::cout.flush();
+//                     shape->SetColor(Quantity_NOC_MINTCREAM);
+//                     shape->SetTransparency(0.25);
+//                     shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+//                 }
+//             }
+//         }
+//         i++;
+//     }
 
-    i=0;
-    while (i < boundary.childCount()) {
-        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary.child(i));
-        if (boundaryItem && boundaryItem->is_boundary()) {
-            Boundary *boundary=boundaryItem->getBoundary();
-            if (boundary) {
-                PathItem *pathItem=boundaryItem->getPathItem();
-                if (pathItem) {
-                    Handle(AIS_Shape) shape=pathItem->getShape();
-                    if (!shape.IsNull()) {
-                        shape->SetTransparency(0);
-                        shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-                        if (boundary->is_perfect_electric_conductor()) shape->SetColor(Quantity_NOC_GREENYELLOW);
-                        if (boundary->is_perfect_magnetic_conductor()) shape->SetColor(Quantity_NOC_CYAN);
-                        if (boundary->is_surface_impedance()) shape->SetColor(Quantity_NOC_GOLDENROD);
-                        if (boundary->is_radiation()) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
-                    }
-                }
-            }
-        }
-        i++;
-    }
+//     i=0;
+//     while (i < boundary.childCount()) {
+//         BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary.child(i));
+//         if (boundaryItem && boundaryItem->is_boundary()) {
+//             Boundary *boundary=boundaryItem->getBoundary();
+//             if (boundary) {
+//                 PathItem *pathItem=boundaryItem->getPathItem();
+//                 if (pathItem) {
+//                     Handle(AIS_Shape) shape=pathItem->getShape();
+//                     if (!shape.IsNull()) {
+//                         shape->SetTransparency(0);
+//                         shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+//                         if (boundary->is_perfect_electric_conductor()) shape->SetColor(Quantity_NOC_GREENYELLOW);
+//                         if (boundary->is_perfect_magnetic_conductor()) shape->SetColor(Quantity_NOC_CYAN);
+//                         if (boundary->is_surface_impedance()) shape->SetColor(Quantity_NOC_GOLDENROD);
+//                         if (boundary->is_radiation()) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
+//                     }
+//                 }
+//             }
+//         }
+//         i++;
+//     }
 
-    ui->drawingWindow->updateViewer();
-}
+//     ui->drawingWindow->updateViewer();
+// }
 
 void OpenParEMg::dumpDrawingEntities ()
 {
@@ -5276,12 +5226,12 @@ void OpenParEMg::on_actionOpen_triggered ()
             // ToDo: rename draw since this does not actually draw
             boundaryDatabase->draw(relay,&projData,
                                    this,ui->drawingWindow,ui->drawingItemTree,
-                                   &path,&port,&boundary,materialDatabase);
+                                   path,port,boundary,materialDatabase);
 
             // add paths to the selection map and activate
             int i=0;
-            while (i < path.childCount()) {
-                PathItem *pathItem=dynamic_cast<PathItem *>(path.child(i));
+            while (i < path->childCount()) {
+                PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
                 if (pathItem) {
                     ui->drawingWindow->insertItemToMap(pathItem->getShape(),pathItem);
                     ui->drawingWindow->activateItem(pathItem);
@@ -5290,13 +5240,13 @@ void OpenParEMg::on_actionOpen_triggered ()
             }
 
             // cross-reference paths to port and boundary outlines
-            crossReferencePaths();
+            //crossReferencePaths();
 
             // hide arrows for ports and boundaries
             resetPathArrowheads();
 
             // set solid colors for ports and boundaries
-            resetPathColors();
+            //resetPathColors();
         }
 
         // load mesh, if any, and draw
@@ -5388,15 +5338,17 @@ void OpenParEMg::resetDrawing ()
     ui->drawingWindow->updateViewer();
 
     // selection tree
-    drawing.reset();
+    drawing->reset();
 
     // drawing is always a COMPOUND
     BRep_Builder builder;
     TopoDS_Compound compound;
     builder.MakeCompound(compound);
     Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-    ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,newShape);
-    drawing.addShapeData(newShapeData);
+    ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    newShapeData->setShape(newShape);
+    drawing->addShapeData(newShapeData);
 
     //reset the tracking
     ui->drawingWindow->reset();
@@ -5444,10 +5396,10 @@ void OpenParEMg::resetProject ()
 
     // reset selection tree
     //drawing.reset();
-    path.reset();
-    port.reset();
-    boundary.reset();
-    mesh.reset();
+    path->reset();
+    port->reset();
+    boundary->reset();
+    mesh->reset();
 
     resetLockouts();
 
@@ -5593,156 +5545,156 @@ void OpenParEMg::buildIntegrationPathList (std::vector<IntegrationPath *> *list,
     }
 }
 
-void OpenParEMg::pruneBoundaryDatabase ()
-{
-    std::vector<long unsigned int> deleteIndices;
+// void OpenParEMg::pruneBoundaryDatabase ()
+// {
+//     std::vector<long unsigned int> deleteIndices;
 
-    // boundaries
+//     // boundaries
 
-    long unsigned int i=0;
-    while (i < boundaryDatabase->get_boundaryListSize()) {
-        Boundary *aBoundary=boundaryDatabase->get_boundary(i);
-        if (aBoundary) {
-            bool found=false;
-            int j=0;
-            while (j < boundary.childCount()) {
-                BaseItem *item=dynamic_cast<BaseItem *>(boundary.child(i));
-                if (item) {
-                    BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
-                    if (boundaryItem && boundaryItem->is_boundary()) {
-                        Boundary *itemBoundary=boundaryItem->getBoundary();
-                        if (aBoundary == itemBoundary) {
-                            found=true;
-                            break;
-                        }
-                    }
-                }
-                j++;
-            }
-            if (!found) deleteIndices.push_back(i);
-        }
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < boundaryDatabase->get_boundaryListSize()) {
+//         Boundary *aBoundary=boundaryDatabase->get_boundary(i);
+//         if (aBoundary) {
+//             bool found=false;
+//             int j=0;
+//             while (j < boundary.childCount()) {
+//                 BaseItem *item=dynamic_cast<BaseItem *>(boundary.child(i));
+//                 if (item) {
+//                     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
+//                     if (boundaryItem && boundaryItem->is_boundary()) {
+//                         Boundary *itemBoundary=boundaryItem->getBoundary();
+//                         if (aBoundary == itemBoundary) {
+//                             found=true;
+//                             break;
+//                         }
+//                     }
+//                 }
+//                 j++;
+//             }
+//             if (!found) deleteIndices.push_back(i);
+//         }
+//         i++;
+//     }
 
-    int j=deleteIndices.size()-1;
-    while (j >= 0) {
-        Boundary *boundary=boundaryDatabase->get_boundary(deleteIndices[j]);
-        if (boundary) {delete boundary; boundary=nullptr;}
-        boundaryDatabase->erase_boundary(deleteIndices[j]);
-        j--;
-    }
+//     int j=deleteIndices.size()-1;
+//     while (j >= 0) {
+//         Boundary *boundary=boundaryDatabase->get_boundary(deleteIndices[j]);
+//         if (boundary) {delete boundary; boundary=nullptr;}
+//         boundaryDatabase->erase_boundary(deleteIndices[j]);
+//         j--;
+//     }
 
-    // ports
+//     // ports
 
-    deleteIndices.clear();
-    i=0;
-    while (i < boundaryDatabase->get_portList_size()) {
-        Port *aPort=boundaryDatabase->get_port(i);
-        if (aPort) {
-            bool found=false;
-            int j=0;
-            while (j < port.childCount()) {
-                BaseItem *item=dynamic_cast<BaseItem *>(port.child(i));
-                if (item) {
-                    PortItem *portItem=dynamic_cast<PortItem *>(item);
-                    if (portItem && portItem->is_port()) {
-                        Port *itemPort=portItem->getPort();
-                        if (aPort == itemPort) {
-                            found=true;
-                            break;
-                        }
-                    }
-                }
-                j++;
-            }
-            if (!found) deleteIndices.push_back(i);
-        }
-        i++;
-    }
+//     deleteIndices.clear();
+//     i=0;
+//     while (i < boundaryDatabase->get_portList_size()) {
+//         Port *aPort=boundaryDatabase->get_port(i);
+//         if (aPort) {
+//             bool found=false;
+//             int j=0;
+//             while (j < port.childCount()) {
+//                 BaseItem *item=dynamic_cast<BaseItem *>(port.child(i));
+//                 if (item) {
+//                     PortItem *portItem=dynamic_cast<PortItem *>(item);
+//                     if (portItem && portItem->is_port()) {
+//                         Port *itemPort=portItem->getPort();
+//                         if (aPort == itemPort) {
+//                             found=true;
+//                             break;
+//                         }
+//                     }
+//                 }
+//                 j++;
+//             }
+//             if (!found) deleteIndices.push_back(i);
+//         }
+//         i++;
+//     }
 
-    j=deleteIndices.size()-1;
-    while (j >= 0) {
-        Port *port=boundaryDatabase->get_port(deleteIndices[j]);
-        if (port) {delete port; port=nullptr;}
-        boundaryDatabase->erase_port(deleteIndices[j]);
-        j--;
-    }
+//     j=deleteIndices.size()-1;
+//     while (j >= 0) {
+//         Port *port=boundaryDatabase->get_port(deleteIndices[j]);
+//         if (port) {delete port; port=nullptr;}
+//         boundaryDatabase->erase_port(deleteIndices[j]);
+//         j--;
+//     }
 
-    // paths
+//     // paths
 
-    deleteIndices.clear();
-    i=0;
-    while (i < boundaryDatabase->get_pathList_size()) {
-        Path *aPath=boundaryDatabase->get_path(i);
-        if (aPath) {
-            bool found=false;
-            int j=0;
-            while (j < path.childCount()) {
-                BaseItem *item=dynamic_cast<BaseItem *>(path.child(i));
-                if (item) {
-                    PathItem *pathItem=dynamic_cast<PathItem *>(item);
-                    if (pathItem && pathItem->is_path()) {
-                        Path *itemPath=pathItem->getPath();
-                        if (aPath == itemPath) {
-                            found=true;
-                            break;
-                        }
-                    }
-                }
-                j++;
-            }
-            if (!found) deleteIndices.push_back(i);
-        }
-        i++;
-    }
+//     deleteIndices.clear();
+//     i=0;
+//     while (i < boundaryDatabase->get_pathList_size()) {
+//         Path *aPath=boundaryDatabase->get_path(i);
+//         if (aPath) {
+//             bool found=false;
+//             int j=0;
+//             while (j < path.childCount()) {
+//                 BaseItem *item=dynamic_cast<BaseItem *>(path.child(i));
+//                 if (item) {
+//                     PathItem *pathItem=dynamic_cast<PathItem *>(item);
+//                     if (pathItem && pathItem->is_path()) {
+//                         Path *itemPath=pathItem->getPath();
+//                         if (aPath == itemPath) {
+//                             found=true;
+//                             break;
+//                         }
+//                     }
+//                 }
+//                 j++;
+//             }
+//             if (!found) deleteIndices.push_back(i);
+//         }
+//         i++;
+//     }
 
-    j=deleteIndices.size()-1;
-    while (j >= 0) {
-        Path *path=boundaryDatabase->get_path(deleteIndices[j]);
-        if (path) {delete path; path=nullptr;}
-        boundaryDatabase->erase_path(deleteIndices[j]);
-        j--;
-    }
+//     j=deleteIndices.size()-1;
+//     while (j >= 0) {
+//         Path *path=boundaryDatabase->get_path(deleteIndices[j]);
+//         if (path) {delete path; path=nullptr;}
+//         boundaryDatabase->erase_path(deleteIndices[j]);
+//         j--;
+//     }
 
-    // integrationPaths
+//     // integrationPaths
 
-    std::vector<IntegrationPath *> integrationPathList;
-    buildIntegrationPathList (&integrationPathList,&port);
+//     std::vector<IntegrationPath *> integrationPathList;
+//     buildIntegrationPathList (&integrationPathList,&port);
 
-    i=0;
-    while (i < boundaryDatabase->get_portList_size()) {
-        Port *aPort=boundaryDatabase->get_port(i);
-        if (aPort) {
-            long unsigned int j=0;
-            while (j < aPort->get_modeList_size()) {
-                Mode *aMode=aPort->get_mode(i);
-                if (aMode) {
-                    long unsigned int k=0;
-                    while (k < aMode->get_integrationPathList_size()) {
-                        IntegrationPath *aIntegrationPath=aMode->get_integrationPath(k);
-                        if (aIntegrationPath) {
-                            bool found=false;
-                            long unsigned int m=0;
-                            while (m < integrationPathList.size()) {
-                                if (integrationPathList[m] == aIntegrationPath) {
-                                    found=true;
-                                    break;
-                                }
-                                m++;
-                            }
-                            if (!found) {
-                                aMode->erase_integrationPath(k);
-                            }
-                        }
-                        k++;
-                    }
-                }
-                j++;
-            }
-        }
-        i++;
-    }
-}
+//     i=0;
+//     while (i < boundaryDatabase->get_portList_size()) {
+//         Port *aPort=boundaryDatabase->get_port(i);
+//         if (aPort) {
+//             long unsigned int j=0;
+//             while (j < aPort->get_modeList_size()) {
+//                 Mode *aMode=aPort->get_mode(i);
+//                 if (aMode) {
+//                     long unsigned int k=0;
+//                     while (k < aMode->get_integrationPathList_size()) {
+//                         IntegrationPath *aIntegrationPath=aMode->get_integrationPath(k);
+//                         if (aIntegrationPath) {
+//                             bool found=false;
+//                             long unsigned int m=0;
+//                             while (m < integrationPathList.size()) {
+//                                 if (integrationPathList[m] == aIntegrationPath) {
+//                                     found=true;
+//                                     break;
+//                                 }
+//                                 m++;
+//                             }
+//                             if (!found) {
+//                                 aMode->erase_integrationPath(k);
+//                             }
+//                         }
+//                         k++;
+//                     }
+//                 }
+//                 j++;
+//             }
+//         }
+//         i++;
+//     }
+// }
 
 void OpenParEMg::saveProject ()
 {
@@ -5757,7 +5709,7 @@ void OpenParEMg::saveProject ()
     }
 
     // mesh_file
-    if (mesh.childCount() > 0 && strcmp(projData.mesh_file,"") == 0 ) {
+    if (mesh->childCount() > 0 && strcmp(projData.mesh_file,"") == 0 ) {
         QString meshFile=projectName;
         meshFile.append(".msh");
         cstrFromQString (&(projData.mesh_file),meshFile);
@@ -5793,7 +5745,7 @@ void OpenParEMg::saveProject ()
     }
 
     // mesh
-    if (mesh.childCount() > 0 && meshChanged) {
+    if (mesh->childCount() > 0 && meshChanged) {
         std::cout << "Saved mesh file" << std::endl; std::cout.flush();
         on_actionMeshSave_triggered();
         meshChanged=false;
@@ -6039,13 +5991,11 @@ bool OpenParEMg::loadBrepFile (QString filePath, bool createName)
             if (!normalized.IsNull()) {
                 Handle(AIS_Shape) shape=new AIS_Shape(normalized);
                 if (!shape.IsNull()) {
-                    BaseItem *newItem=new BaseItem(0);
-                    newItem->setMW(this);
-                    ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,shape);
-                    newItem->addShapeData(newShapeData);
+                    DrawingItem *newItem=new DrawingItem(this,drawing);
+                    ShapeData *shapeData=newItem->getShapeData();
+                    shapeData->setShape(shape);
                     newItem->setText(0,getAISshapeName(shape));
-                    drawing.addChild(newItem);
-                    newItem->setParentItem(&drawing);
+                    drawing->addChild(newItem);
                     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
                     ui->drawingWindow->showItem(newItem);
                     ui->drawingWindow->selectItem(newItem);
@@ -6085,13 +6035,11 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
             if (!normalized.IsNull()) {
                 Handle(AIS_Shape) shape=new AIS_Shape(normalized);
                 if (!shape.IsNull()) {
-                    BaseItem *newItem=new BaseItem(0);
-                    newItem->setMW(this);
-                    ShapeData *newShapeData=new ShapeData(1,nullptr,nullptr,shape);
-                    newItem->addShapeData(newShapeData);
+                    DrawingItem *newItem=new DrawingItem(this,drawing);
+                    ShapeData *shapeData=newItem->getShapeData();
+                    shapeData->setShape(shape);
                     newItem->setText(0,getAISshapeName(shape));
-                    drawing.addChild(newItem);
-                    newItem->setParentItem(&drawing);
+                    drawing->addChild(newItem);
                     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
                     ui->drawingWindow->showItem(newItem);
                     ui->drawingWindow->selectItem(newItem);
@@ -6250,7 +6198,7 @@ bool OpenParEMg::saveBoundaryDatabase ()
 
     std::ofstream outputFile(filename.toStdString());
     if (outputFile.is_open()) {
-        pruneBoundaryDatabase();
+        //pruneBoundaryDatabase();
         boundaryDatabase->save(&outputFile);
         outputFile.close();
         return false;
@@ -6258,7 +6206,7 @@ bool OpenParEMg::saveBoundaryDatabase ()
     return true;
 }
 
-void OpenParEMg::increase_depth (BaseItem *item)
+void OpenParEMg::increase_depth (DrawingItem *item)
 {
     if (!item) return;
 
@@ -6266,13 +6214,13 @@ void OpenParEMg::increase_depth (BaseItem *item)
 
     int i=0;
     while (i < item->childCount()) {
-        BaseItem *child=(BaseItem *) item->child(i);
-        increase_depth(child);
+        DrawingItem *child=dynamic_cast<DrawingItem *>(item->child(i));
+        if (child) increase_depth(child);
         i++;
     }
 }
 
-void OpenParEMg::decrease_depth (BaseItem *item)
+void OpenParEMg::decrease_depth (DrawingItem *item)
 {
     if (!item) return;
 
@@ -6280,8 +6228,8 @@ void OpenParEMg::decrease_depth (BaseItem *item)
 
     int i=0;
     while (i < item->childCount()) {
-        BaseItem *child=(BaseItem *) item->child(i);
-        decrease_depth(child);
+        DrawingItem *child=dynamic_cast<DrawingItem *>(item->child(i));
+        if (child) decrease_depth(child);
         i++;
     }
 }
@@ -6430,7 +6378,7 @@ int OpenParEMg::findEndNextBlock (std::vector<std::string> &inputData, int type,
 
 
 bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned int &startBlockIndex,
-                           long unsigned int &endBlockIndex, BaseItem *parent, bool increaseDepth)
+                           long unsigned int &endBlockIndex, BaseItem *baseParent, bool increaseDepth)
 {
     //std::cout << "OpenParEMg::loadItem" << "  startBlockIndex=" << startBlockIndex << "  endBlockIndex=" << endBlockIndex << std::endl; std::cout.flush();
 
@@ -6462,19 +6410,16 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     if (polywire) {
         polywire->load(inputData,startBlockIndex,endBlockIndex,name,&objectCounts);
         polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
-        DrawingItem *newItem=new DrawingItem(0);
-        newItem->setMW(this);
-        Handle(AIS_Shape) dummy;
-        ShapeData *newShapeData=new ShapeData(1,polywire,nullptr,dummy);
-        newItem->addShapeData(newShapeData);
+        DrawingItem *newItem=new DrawingItem(this,baseParent);
+        ShapeData *shapeData=newItem->getShapeData();
+        shapeData->setPolywire(polywire);
         newItem->setText(0,QString::fromStdString(name));
 
-        DrawingItem *parentItem=dynamic_cast<DrawingItem *>(parent);
-        if (parentItem && parentItem->is_drawing()) newItem->copy_depth(parent);
+        DrawingItem *parentItem=dynamic_cast<DrawingItem *>(baseParent);
+        if (parentItem && parentItem->is_drawing()) newItem->copy_depth(parentItem);
 
         if (increaseDepth) newItem->increase_depth();
-        parent->addChild(newItem);
-        newItem->setParentItem(parent);
+        baseParent->addChild(newItem);
         reprocess(newItem);
         drawingChanged=true;
         ui->drawingWindow->showItem(newItem);
@@ -6489,13 +6434,10 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     if (typeStart == 8) loadBrep=true;
 
     if (process) {
-        DrawingItem *newItem=new DrawingItem();
-        newItem->setMW(this);
-        Handle(AIS_Shape) dummy;
-        ShapeData *newShapeData=new ShapeData(1,nullptr,process,dummy);
-        newItem->addShapeData(newShapeData);
-        parent->addChild(newItem);
-        newItem->setParentItem(parent);
+        DrawingItem *newItem=new DrawingItem(this,baseParent);
+        ShapeData *shapeData=newItem->getShapeData();
+        shapeData->setProcess(process);
+        baseParent->addChild(newItem);
 
         // extrude
         if (typeStart == 5) {
@@ -6507,8 +6449,8 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             std::string name;
             if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
                 newItem->setText(0,QString::fromStdString(name));
-                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(parent);
-                if (drawingItem && drawingItem->is_drawing()) newItem->copy_depth(parent);
+                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseParent);
+                if (drawingItem && drawingItem->is_drawing()) newItem->copy_depth(drawingItem);
                 if (increaseDepth) newItem->increase_depth();
                 objectCounts.extrude++;
             }
@@ -6545,8 +6487,8 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             std::string name;
             if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
                 newItem->setText(0,QString::fromStdString(name));
-                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(parent);
-                if (drawingItem && drawingItem->is_drawing()) newItem->copy_depth(parent);
+                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseParent);
+                if (drawingItem && drawingItem->is_drawing()) newItem->copy_depth(drawingItem);
                 if (increaseDepth) newItem->increase_depth();
                 if (typeStart == 6) objectCounts.merge++;
                 if (typeStart == 7) objectCounts.subtract++;
@@ -6583,11 +6525,11 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
         BRepTools::Read(shape,ss,builder);
 
         if (!shape.IsNull()) {
-            DrawingItem *newItem=new DrawingItem(0);
-            newItem->setMW(this);
+            DrawingItem *newItem=new DrawingItem(this,baseParent);
             Handle(AIS_Shape) aisShape=new AIS_Shape(shape);
-            ShapeData *newShapeData=new ShapeData(1,polywire,nullptr,aisShape);
-            newItem->addShapeData(newShapeData);
+            ShapeData *shapeData=newItem->getShapeData();
+            shapeData->setPolywire(polywire);
+            shapeData->setShape(aisShape);
 
             // name
             long unsigned int localStartBlockIndex=startBlockIndex+1;
@@ -6596,15 +6538,14 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             std::string name;
             if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
                 newItem->setText(0,QString::fromStdString(name));
-                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(parent);
-                if (drawingItem && drawingItem->is_drawing()) newItem->copy_depth(parent);
+                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseParent);
+                if (drawingItem && drawingItem->is_drawing()) newItem->copy_depth(drawingItem);
                 if (increaseDepth) newItem->increase_depth();
                 objectCounts.solid++;
             }
 
 
-            parent->addChild(newItem);
-            newItem->setParentItem(parent);
+            baseParent->addChild(newItem);
 
             ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
             ui->drawingWindow->activateItem(newItem);
@@ -6627,7 +6568,7 @@ bool OpenParEMg::saveDrawingFile (QString filename)
         outputFile << std::setprecision(15);
         outputFile << "#OpenParEMgDrawing 1.0" << std::endl;
         outputFile << std::endl;
-        saveItem(&outputFile,&drawing);
+        saveItem(&outputFile,drawing);
         outputFile.close();
         drawingChanged=false;
         itemChangesStack.clear();
@@ -6668,7 +6609,7 @@ bool OpenParEMg::loadDrawingFile ()
     // load
     long unsigned int startBlockIndex=0;
     long unsigned int endBlockIndex=0;
-    while (loadItem(inputData,startBlockIndex,endBlockIndex,&drawing,false)) {
+    while (loadItem(inputData,startBlockIndex,endBlockIndex,drawing,false)) {
         //startBlockIndex=endBlockIndex;
     }
 
@@ -7153,11 +7094,11 @@ void OpenParEMg::keyReleaseEvent (QKeyEvent *event)
 void OpenParEMg::on_actionShowAll_triggered()
 {
     ui->drawingWindow->unselectAllItems();
-    rootDrawingShow();
-    ui->drawingWindow->showItem(&path);
-    ui->drawingWindow->showItem(&port);
-    ui->drawingWindow->showItem(&boundary);
-    ui->drawingWindow->showItem(&mesh);
+    drawing->show();
+    ui->drawingWindow->showItem(path);
+    ui->drawingWindow->showItem(port);
+    ui->drawingWindow->showItem(boundary);
+    ui->drawingWindow->showItem(mesh);
     clickedItem=nullptr;
     previousClickedItem=nullptr;
     ui->drawingWindow->updateViewer();
@@ -7208,13 +7149,11 @@ void OpenParEMg::drawMesh()
 
         // vertices
         if (elementTypes[e] == 15) {
-            MeshItem *verticesItem=new MeshItem(0);
-            verticesItem->setMW(this);
-            verticesItem->setParentItem(&mesh);
+            MeshItem *verticesItem=new MeshItem(this);
             verticesItem->setText(0,"Vertices");
             verticesItem->set_itemType(3);
             verticesItem->setForeground(0,Qt::gray);
-            mesh.insertChild(0,verticesItem);
+            mesh->insertChild(0,verticesItem);
 
             int count=0;
             std::vector<std::size_t> conn=nodeTagsPerElem[e];
@@ -7234,13 +7173,11 @@ void OpenParEMg::drawMesh()
 
         // edges
         if (elementTypes[e] == 1) {
-            MeshItem *edgesItem=new MeshItem(0);
-            edgesItem->setMW(this);
-            edgesItem->setParentItem(&mesh);
+            MeshItem *edgesItem=new MeshItem(this);
             edgesItem->setText(0,"Edges");
             edgesItem->set_itemType(3);
             edgesItem->setForeground(0,Qt::gray);
-            mesh.addChild(edgesItem);
+            mesh->addChild(edgesItem);
 
             int count=0;
             std::vector<std::size_t> conn=nodeTagsPerElem[e];
@@ -7261,19 +7198,17 @@ void OpenParEMg::drawMesh()
 
         // triangles
         if (elementTypes[e] == 2) {
-            MeshItem *wiresItem=new MeshItem(0);
-            wiresItem->setMW(this);
-            wiresItem->setParentItem(&mesh);
+            MeshItem *wiresItem=new MeshItem(this);
             wiresItem->setText(0,"Wires");
             wiresItem->set_itemType(3);
             wiresItem->setForeground(0,Qt::gray);
-            mesh.addChild(wiresItem);
+            mesh->addChild(wiresItem);
 
-            MeshItem *trianglesItem=new MeshItem(0);
+            MeshItem *trianglesItem=new MeshItem(this);
             trianglesItem->setText(0,"Triangles");
             trianglesItem->set_itemType(3);
             trianglesItem->setForeground(0,Qt::gray);
-            mesh.addChild(trianglesItem);
+            mesh->addChild(trianglesItem);
 
             int count=0;
             std::vector<std::size_t> conn=nodeTagsPerElem[e];
@@ -7308,13 +7243,11 @@ void OpenParEMg::drawMesh()
 
         // tetrahedron
         if (elementTypes[e] == 4) {
-            MeshItem *tetrahedronsItem=new MeshItem(0);
-            tetrahedronsItem->setMW(this);
-            tetrahedronsItem->setParentItem(&mesh);
+            MeshItem *tetrahedronsItem=new MeshItem(this);
             tetrahedronsItem->setText(0,"Tetrahedrons");
             tetrahedronsItem->set_itemType(3);
             tetrahedronsItem->setForeground(0,Qt::gray);
-            mesh.addChild(tetrahedronsItem);
+            mesh->addChild(tetrahedronsItem);
 
             int count=0;
             std::vector<std::size_t> conn=nodeTagsPerElem[e];
@@ -7369,8 +7302,8 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
     std::cout << "OpenParEMg::deleteMesh" << std::endl; std::cout.flush();
 
     int i=0;
-    while (i < mesh.childCount()) {
-        MeshItem *meshItem=dynamic_cast<MeshItem *>(mesh.child(i));
+    while (i < mesh->childCount()) {
+        MeshItem *meshItem=dynamic_cast<MeshItem *>(mesh->child(i));
 
         // remove from tracker
         ui->drawingWindow->hideItem(meshItem);
@@ -7398,14 +7331,14 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
     }
 
     ui->drawingWindow->updateViewer();
-    mesh.deleteChildren(&mesh);
+    mesh->deleteChildren(mesh);
     drawingEntities.clear();
     gmsh::clear();
 }
 
 void OpenParEMg::on_actionMeshGenerate_triggered ()
 {
-    if (mesh.childCount() > 0) {
+    if (mesh->childCount() > 0) {
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this,"OpenParEMg","Delete the existing mesh?",QMessageBox::Yes|QMessageBox::No);
         if (reply != QMessageBox::Yes) return;
@@ -7415,10 +7348,10 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
     // reset dimTags
     renumberDimTag();
-    reprocess(&drawing);
+    reprocess(drawing);
 
     // generate mesh
-    TopoDS_Shape shape=drawing.getShape()->Shape();
+    TopoDS_Shape shape=drawing->getShape()->Shape();
     gmsh::model::occ::importShapesNativePointer((void *) &shape,drawingEntities,false);
     gmsh::model::occ::synchronize();
     gmsh::model::mesh::generate();
@@ -7435,7 +7368,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
     drawMesh();
     setPhysicalGroups();
-    ui->drawingWindow->showItem(&mesh);
+    ui->drawingWindow->showItem(mesh);
 
     ui->drawingWindow->updateViewer();
     setMenusI(63);
@@ -7445,7 +7378,7 @@ void OpenParEMg::loadMeshFile (QString meshfile)
 {
     if (QFile::exists(meshfile)) {
 
-        if (mesh.childCount() > 0) {
+        if (mesh->childCount() > 0) {
             QMessageBox::StandardButton reply;
             reply = QMessageBox::question(this,"OpenParEMg","Delete the existing mesh?",QMessageBox::Yes|QMessageBox::No);
             if (reply != QMessageBox::Yes) return;
@@ -7481,7 +7414,7 @@ void OpenParEMg::on_actionMeshLoad_triggered ()
     if (meshfile.isNull()) return;
 
     loadMeshFile(meshfile);
-    ui->drawingWindow->showItem(&mesh);
+    ui->drawingWindow->showItem(mesh);
     setMenusI(65);
 }
 
@@ -8056,33 +7989,25 @@ void OpenParEMg::cancelDraw ()
 
 void OpenParEMg::on_actionDrawLine_triggered ()
 {
-    currentDrawingItem=new DrawingItem();
-    currentDrawingItem->setMW(this);
-    currentDrawingItem->setParentItem(&drawing);
+    currentDrawingItem=new DrawingItem(this,drawing);
     currentDrawingItem->startLine();
 }
 
 void OpenParEMg::on_actionDrawPolyline_triggered ()
 {
-    currentDrawingItem=new DrawingItem();
-    currentDrawingItem->setMW(this);
-    currentDrawingItem->setParentItem(&drawing);
+    currentDrawingItem=new DrawingItem(this,drawing);
     currentDrawingItem->startPolyline();
 }
 
 void OpenParEMg::on_actionDrawPolycircle_triggered ()
 {
-    currentDrawingItem=new DrawingItem();
-    currentDrawingItem->setMW(this);
-    currentDrawingItem->setParentItem(&drawing);
+    currentDrawingItem=new DrawingItem(this,drawing);
     currentDrawingItem->startPolycircle();
 }
 
 void OpenParEMg::on_actionDrawRectangle_triggered ()
 {
-    currentDrawingItem=new DrawingItem();
-    currentDrawingItem->setMW(this);
-    currentDrawingItem->setParentItem(&drawing);
+    currentDrawingItem=new DrawingItem(this,drawing);
     currentDrawingItem->startRectangle();
 }
 
@@ -8111,13 +8036,8 @@ void OpenParEMg::finishDraw ()
         newPathText.append(pathItem->text(0));
 
         // item for the new integration path
-        PathItem *newPathItem=new PathItem(0);
-        newPathItem->setMW(this);
-        newPathItem->setParentItem(workingItem);
+        PathItem *newPathItem=new PathItem(this,workingItem);
         newPathItem->setText(0,newPathText);
-        ShapeData *newShapeData=newPathItem->getShapeData()->copyCreate();
-        newShapeData->setCreate();
-        newPathItem->addShapeData(newShapeData);
         newPathItem->push_linkedItem(pathItem);
         pathItem->push_linkedItem(newPathItem);
         workingItem->addChild(newPathItem);
@@ -8133,97 +8053,97 @@ void OpenParEMg::finishDraw ()
     finishOperation(false,13);
 }
 
-void OpenParEMg::drawLinePath ()
-{
-    std::cout << "OpenParEMg::drawLinePath" << std::endl; std::cout.flush();
+// void OpenParEMg::drawLinePath ()
+// {
+//     std::cout << "OpenParEMg::drawLinePath" << std::endl; std::cout.flush();
 
-    isIntegrationPath=true;
-    workingItem=clickedItem;
+//     isIntegrationPath=true;
+//     workingItem=clickedItem;
 
-    currentDrawingItem=new DrawingItem();
-    currentDrawingItem->setMW(this);
-    currentDrawingItem->setParentItem(&drawing);
-    currentDrawingItem->startLine();
-}
+//     currentDrawingItem=new DrawingItem();
+//     currentDrawingItem->setMW(this);
+//     currentDrawingItem->setParentItem(&drawing);
+//     currentDrawingItem->startLine();
+// }
 
-void OpenParEMg::drawPolylinePath ()
-{
-    std::cout << "OpenParEMg::drawPolylinePath" << std::endl; std::cout.flush();
+// void OpenParEMg::drawPolylinePath ()
+// {
+//     std::cout << "OpenParEMg::drawPolylinePath" << std::endl; std::cout.flush();
 
-    isIntegrationPath=true;
-    workingItem=clickedItem;
+//     isIntegrationPath=true;
+//     workingItem=clickedItem;
 
-    currentDrawingItem=new DrawingItem();
-    currentDrawingItem->setMW(this);
-    currentDrawingItem->setParentItem(&drawing);
-    currentDrawingItem->startPolyline();
-}
+//     currentDrawingItem=new DrawingItem();
+//     currentDrawingItem->setMW(this);
+//     currentDrawingItem->setParentItem(&drawing);
+//     currentDrawingItem->startPolyline();
+// }
 
-bool OpenParEMg::isValidInsertAction ()
-{
-    //std::cout << "OpenParEMg::insertActionValid" << std::endl; std::cout.flush();
+// bool OpenParEMg::isValidInsertAction ()
+// {
+//     //std::cout << "OpenParEMg::insertActionValid" << std::endl; std::cout.flush();
 
-    int VIcount=0;
-    BaseItem *VIitem;
-    int pathCount=0;
+//     int VIcount=0;
+//     BaseItem *VIitem;
+//     int pathCount=0;
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            if (item->is_voltage() || item->is_current()) {VIitem=item; VIcount++;}
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item) {
+//             if (item->is_voltage() || item->is_current()) {VIitem=item; VIcount++;}
 
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
-            if (pathItem && pathItem->is_path()) pathCount++;
-        }
-        i++;
-    }
+//             PathItem *pathItem=dynamic_cast<PathItem *>(item);
+//             if (pathItem && pathItem->is_path()) pathCount++;
+//         }
+//         i++;
+//     }
 
-    if (VIcount != 1) return false;
-    if (pathCount == 0) return false;
+//     if (VIcount != 1) return false;
+//     if (pathCount == 0) return false;
 
-    // check that the paths are within the port
+//     // check that the paths are within the port
 
-    ModeItem *modeItem=dynamic_cast<ModeItem *>(VIitem->QTreeWidgetItem::parent());
-    PortItem *portItem=dynamic_cast<PortItem *>(modeItem->QTreeWidgetItem::parent());
+//     ModeItem *modeItem=dynamic_cast<ModeItem *>(VIitem->QTreeWidgetItem::parent());
+//     PortItem *portItem=dynamic_cast<PortItem *>(modeItem->QTreeWidgetItem::parent());
 
-    // port outline
-    PathItem *pathItem=portItem->getPathItem();
-    if (pathItem) return false;
-    Path *portPath=pathItem->getPath();
-    if (!portPath) return false;
+//     // port outline
+//     PathItem *pathItem=portItem->getPathItem();
+//     if (pathItem) return false;
+//     Path *portPath=pathItem->getPath();
+//     if (!portPath) return false;
 
-    i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
-            if (pathItem && pathItem->is_path()) {
-                Path *path=pathItem->getPath();
-                if (!portPath->is_path_inside(path)) {
-                    return false;
-                }
-            }
-        }
-        i++;
-    }
+//     i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item) {
+//             PathItem *pathItem=dynamic_cast<PathItem *>(item);
+//             if (pathItem && pathItem->is_path()) {
+//                 Path *path=pathItem->getPath();
+//                 if (!portPath->is_path_inside(path)) {
+//                     return false;
+//                 }
+//             }
+//         }
+//         i++;
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
-void OpenParEMg::insertSelectedPath ()
-{
-    //std::cout << "OpenParEMg::insertSelectedPath" << std::endl; std::cout.flush();
+// void OpenParEMg::insertSelectedPath ()
+// {
+//     //std::cout << "OpenParEMg::insertSelectedPath" << std::endl; std::cout.flush();
 
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            if (item->is_voltage() || item->is_current()) insertIntegrationPath(item);
-        }
-        i++;
-    }
-}
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *item=ui->drawingWindow->get_selectedItem(i);
+//         if (item) {
+//             if (item->is_voltage() || item->is_current()) insertIntegrationPath(item);
+//         }
+//         i++;
+//     }
+// }
 
 void OpenParEMg::deleteLastPoint ()
 {

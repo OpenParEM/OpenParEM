@@ -2,6 +2,7 @@
 
 #include "CustomTreeWidgetItem.h"
 #include "CustomComboBox.h"
+#include "CustomSpinBox.h"
 #include "OPEMg.h"
 #include "ui_OPEMg.h"
 #include <BRepPrimAPI_MakePrism.hxx>
@@ -10,6 +11,28 @@
 ////////////////////////////////////////////////////////////////////////////////
 // BaseItem
 ////////////////////////////////////////////////////////////////////////////////
+
+// BaseItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type)
+// {
+//     itemType=-1;
+//     depth=0;
+//     parentItem=nullptr;
+//     hasArrows=false;
+//     isActive=false;
+// }
+
+BaseItem::BaseItem (OpenParEMg *mw_, BaseItem *parentItem_)
+{
+    mw=mw_;
+    parentItem=parentItem_;
+    itemType=-1;
+    setText(0,"BaseItem");
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    addShapeData(newShapeData);
+}
+
 
 void BaseItem::startItemChange () {mw->itemChangesStack.startNew();}
 void BaseItem::addItemChange () {mw->itemChangesStack.add(this);}
@@ -23,19 +46,8 @@ void BaseItem::undo ()
 
     if (shapeData->isNoop()) {
         std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // nothing to do
     } else if (shapeData->isCreate()) {
         std::cout << "   isCreate" << std::endl; std::cout.flush();
-        mw->ui->drawingWindow->unselectItem(this);
-        mw->ui->drawingWindow->hideItem(this);
-
-        BaseItem *parentItem=getParentItem();
-        if (parentItem) {
-            getParentItem()->removeChild(this);
-        }
-        setIsActive(false);
-
-        dataStack.undo();
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
     } else if (shapeData->isDelete()) {
@@ -55,29 +67,8 @@ void BaseItem::redo ()
 
     if (next->isNoop()) {
         std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // should not occur
     } else if (next->isCreate()) {
         std::cout << "   isCreate" << std::endl; std::cout.flush();
-        dataStack.redo();
-        std::cout << "place 1" << std::endl; std::cout.flush();
-
-        BaseItem *parentItem=getParentItem();
-        if (parentItem) {
-            std::cout << "parentItem->get_itemType()=" << parentItem->get_itemType() << std::endl; std::cout.flush();
-            mw->expand(&(mw->port));
-            mw->expand(&(mw->path));
-            {QMessageBox mb; mb.critical(nullptr, "Debug", "place 1"); mw->ui->drawingWindow->updateViewer();}
-            getParentItem()->addChild(this);
-        }
-        {QMessageBox mb; mb.critical(nullptr, "Debug", "place 2"); mw->ui->drawingWindow->updateViewer();}
-        std::cout << "place 2" << std::endl; std::cout.flush();
-
-        mw->ui->drawingWindow->showItem(this);
-        std::cout << "place 3" << std::endl; std::cout.flush();
-        mw->ui->drawingWindow->activateItem(this);
-        std::cout << "place 4" << std::endl; std::cout.flush();
-        setIsActive(true);
-        std::cout << "place 5" << std::endl; std::cout.flush();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
     } else if (next->isDelete()) {
@@ -104,7 +95,6 @@ void ScaleItem::undo ()
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
         getParentItem()->removeChild(this);
-        setIsActive(false);
 
         dataStack.undo();
     } else if (shapeData->isEdit()) {
@@ -147,7 +137,6 @@ void ScaleItem::redo ()
 
         mw->ui->drawingWindow->showItem(this);
         mw->ui->drawingWindow->activateItem(this);
-        setIsActive(true);
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
     } else if (next->isDelete()) {
@@ -160,30 +149,125 @@ void ScaleItem::redo ()
 // RootDrawingItem
 ////////////////////////////////////////////////////////////////////////////////
 
+bool RootDrawingItem::isValidShow ()
+{
+    int i=0;
+    while (i < mw->drawing->childCount()) {
+        DrawingItem *child=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
+        if (child->isValidShow()) return true;
+        i++;
+    }
+    return false;
+}
+
+bool RootDrawingItem::isValidHide ()
+{
+    int i=0;
+    while (i < mw->drawing->childCount()) {
+        DrawingItem *child=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
+        if (child->isValidHide()) return true;
+        i++;
+    }
+    return false;
+}
+
+bool RootDrawingItem::isValidSelectAll ()
+{
+    int i=0;
+    while (i < mw->drawing->childCount()) {
+        DrawingItem *child=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
+        if (!child->isSelected()) return true;
+        i++;
+    }
+    return true;
+}
+
+void RootDrawingItem::show ()
+{
+    mw->ui->drawingWindow->hideItem(mw->drawing);
+    mw->drawing->setForeground(0,Qt::black);
+
+    int i=0;
+    while (i < mw->drawing->childCount()) {
+        DrawingItem *child=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
+        child->setForeground(0,Qt::gray);
+        mw->ui->drawingWindow->showItem(child);
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+}
+
+void RootDrawingItem::hide ()
+{
+    mw->ui->drawingWindow->hideItem(mw->drawing);
+    mw->drawing->setForeground(0,Qt::black);
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(2);
+}
+
+void RootDrawingItem::selectAll ()
+{
+    mw->ui->drawingWindow->hideItem(mw->drawing);
+    mw->ui->drawingWindow->unselectItem(mw->drawing);
+    mw->ui->drawingItemTree->setCurrentItem(nullptr);
+
+    int i=0;
+    while (i < mw->drawing->childCount()) {
+        DrawingItem *child=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
+        mw->ui->drawingWindow->showItem(child);
+        mw->ui->drawingWindow->selectItem(child);
+        i++;
+    }
+}
+
 void RootDrawingItem::showMenu (QMenu *menu)
 {
     mw->showAction=new QAction("Show",this);
     mw->hideAction=new QAction("Hide",this);
     mw->selectAllAction=new QAction("Select All");
 
-    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::rootDrawingShow);
-    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::rootDrawingHide);
-    connect(mw->selectAllAction, &QAction::triggered, mw, &OpenParEMg::rootDrawingSelectAll);
+    connect(mw->showAction, &QAction::triggered, this, &RootDrawingItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &RootDrawingItem::hide);
+    connect(mw->selectAllAction, &QAction::triggered, this, &RootDrawingItem::selectAll);
 
-    if (mw->isValidRootDrawingShow()) menu->addAction(mw->showAction);
-    if (mw->isValidRootDrawingHide()) menu->addAction(mw->hideAction);
-    if (mw->isValidRootDrawingSelectAll()) menu->addAction(mw->selectAllAction);
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
+    if (isValidSelectAll()) menu->addAction(mw->selectAllAction);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // DrawingItem
 ////////////////////////////////////////////////////////////////////////////////
 
+DrawingItem::DrawingItem (OpenParEMg *mw_, BaseItem *parentItem_)
+{
+    mw=mw_;
+    parentItem=parentItem_;
+    itemType=0;
+    setText(0,"DrawingItem");
+
+    depth=0;
+    set_dimTag(-1,-1);          // for mesh items; invalid initialization
+
+    p0set=false;
+    p1set=false;
+    enableMove=false;
+    enableStretch=false;
+    enableDeletePoint=false;
+    enableInsertPoint=false;
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    addShapeData(newShapeData);
+}
+
 void DrawingItem::promoteChildren ()
 {
     long unsigned int i=0;
     while (i < getChildrenSize()) {
-        BaseItem *child=dynamic_cast<BaseItem *>(getChild(i));
+        DrawingItem *child=dynamic_cast<DrawingItem *>(getChild(i));
         if (child) {
             int index=indexOfChild(child);
             takeChild(index);
@@ -200,7 +284,7 @@ void DrawingItem::demoteChildren ()
 {
     long unsigned int i=0;
     while (i < getChildrenSize()) {
-        BaseItem *child=getChild(i);
+        DrawingItem *child=dynamic_cast<DrawingItem *>(getChild(i));
         if (child) {
             int index=getParentItem()->indexOfChild(child);
             getParentItem()->takeChild(index);
@@ -291,12 +375,10 @@ void DrawingItem::startDraw ()
     mw->activePolywire->setNormal(normal.X(),normal.Y(),normal.Z());
     mw->activePolywire->set_viewerContext(mw->ui->drawingWindow->get_viewerContext());
     mw->activePolywire->setDrawEnable(true);
-    mw->activePolywire->setHasArrows(getHasArrows());
+    mw->activePolywire->setHasArrows(false);
 
-    ShapeData *newShapeData=getShapeData()->copyCreate();
-    newShapeData->setCreate();
+    ShapeData *newShapeData=getShapeData();
     newShapeData->setPolywire(mw->activePolywire);
-    addShapeData(newShapeData);
 
     mw->restrictToDrawingPlane=true;
     mw->activeAction=true;
@@ -641,15 +723,14 @@ void DrawingItem::extrude ()
             newExtrude->set_length(mw->length);
 
             // add it
-            DrawingItem *newItem=new DrawingItem(0);
-            newItem->setMW(mw);
+            DrawingItem *newItem=new DrawingItem(mw,mw->drawing);
             newItem->setText(0,newExtrude->getName(&(mw->objectCounts)));
-            ShapeData *newShapeData=new ShapeData(1,nullptr,newExtrude,newShape);
-            newItem->addShapeData(newShapeData);
+            ShapeData *shapeData=newItem->getShapeData();
+            shapeData->setProcess(newExtrude);
+            shapeData->setShape(newShape);
             mw->itemChangesStack.add(newItem);
 
-            mw->drawing.addChild(newItem);
-            newItem->setParentItem(&(mw->drawing));
+            mw->drawing->addChild(newItem);
             newExtrude=nullptr;
 
             mw->ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
@@ -681,7 +762,6 @@ void DrawingItem::extrude ()
 DrawingItem* DrawingItem::copy (BaseItem *parent)
 {
     DrawingItem *newItem=copyCreate();
-    newItem->setMW(mw);
     mw->itemChangesStack.add(newItem);
 
     ShapeData *shapeData=newItem->getShapeData();
@@ -703,7 +783,7 @@ DrawingItem* DrawingItem::copy (BaseItem *parent)
     if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
         rootDrawingItem->addChild(newItem);
         newItem->setParentItem(rootDrawingItem);
-        newItem->copy_depth(rootDrawingItem);
+        newItem->set_depth(0);
     }
 
     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(parent);
@@ -1057,7 +1137,7 @@ void DrawingItem::del ()
 
             // move children to parent
             while (childCount() > 0) {
-                BaseItem* drawingChild=(BaseItem *)takeChild(0);
+                DrawingItem* drawingChild=dynamic_cast<DrawingItem *>(takeChild(0));
                 rootDrawingItem->insertChild(insertIndex++,drawingChild);
                 drawingChild->setParentItem(rootDrawingItem);
                 drawingChild->decrease_depth();
@@ -1069,7 +1149,6 @@ void DrawingItem::del ()
                 }
             }
 
-            setIsActive(false);
             rootDrawingItem->removeChild(this);
         }
 
@@ -1081,7 +1160,7 @@ void DrawingItem::del ()
         mw->ui->drawingWindow->deleteShape(this->getShape());
 
         // reset the top-level compound
-        mw->reprocess(&(mw->drawing));
+        mw->reprocess(mw->drawing);
 
         mw->drawingChanged=true;
     }
@@ -1090,21 +1169,58 @@ void DrawingItem::del ()
 DrawingItem* DrawingItem::copyCreate ()
 {
     //std::cout << "DrawingItem::copyCreate" << std::endl; std::cout.flush();
-    DrawingItem *newItem=new DrawingItem();
+    DrawingItem *newItem=new DrawingItem(mw,parentItem);
     if (!newItem) return nullptr;
 
     // copy just the current data
 
-    ShapeData *copyShapeData=dataStack.getShapeData()->copyCreate();
-    newItem->dataStack.add(copyShapeData);
+    ShapeData *shapeData=newItem->getShapeData();
+    shapeData->copy(getShapeData());
     newItem->setText(0,this->text(0).append("_copy"));
     newItem->aTrsf=aTrsf;
     newItem->dimTag=dimTag;
-    newItem->forShowHide=forShowHide;
     newItem->itemType=itemType;
     newItem->depth=depth;
 
     return newItem;
+}
+
+bool DrawingItem::isValidShow ()
+{
+    if (foreground(0) == Qt::gray) return true;
+    return false;
+}
+
+bool DrawingItem::isValidHide ()
+{
+    if (foreground(0) == Qt::black) return true;
+    return false;
+}
+
+void DrawingItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item) mw->ui->drawingWindow->showItem(item);
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(30);
+}
+
+void DrawingItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item) mw->ui->drawingWindow->hideItem(item);
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(34);
 }
 
 void DrawingItem::showMenu (QMenu *menu)
@@ -1147,8 +1263,8 @@ void DrawingItem::showMenu (QMenu *menu)
     mw->cancelAction=new QAction("Cancel");
 
     connect(mw->assignMaterialAction, &QAction::triggered, mw, &OpenParEMg::assignMaterial);
-    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showDrawingItems);
-    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideDrawingItems);
+    connect(mw->showAction, &QAction::triggered, this, &DrawingItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &DrawingItem::hide);
     connect(mw->editAction, &QAction::triggered, mw, &OpenParEMg::editObject);
     connect(mw->moveAction, &QAction::triggered, mw, &OpenParEMg::moveObject);
     connect(mw->stretchAction, &QAction::triggered, mw, &OpenParEMg::stretchObject);
@@ -1176,8 +1292,8 @@ void DrawingItem::showMenu (QMenu *menu)
     connect(mw->cancelAction, &QAction::triggered, mw, &OpenParEMg::cancelMenu);
 
     if (mw->isValidAssignMaterial()) menu->addAction(mw->assignMaterialAction);
-    if (mw->isValidObjectShow()) menu->addAction(mw->showAction);
-    if (mw->isValidObjectHide()) menu->addAction(mw->hideAction);
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
     if (mw->isValidCopy()) menu->addAction(mw->copyAction);
     if (mw->isValidRenameDrawingItems()) menu->addAction(mw->renameAction);
     if (mw->isValidObjectDelete()) menu->addAction(mw->deleteAction);
@@ -1272,7 +1388,6 @@ void DrawingItem::undo ()
         getParentItem()->removeChild(this);
 
         promoteChildren();
-        setIsActive(false);
 
         dataStack.undo();
         mw->findShowTopLevelItem(this,false);
@@ -1305,12 +1420,12 @@ void DrawingItem::undo ()
         mw->findShowTopLevelItem(this,false);
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
-        copy_depth(getParentItem());
+        DrawingItem *parentItem=dynamic_cast<DrawingItem *>(getParentItem());
+        copy_depth(parentItem);
         increase_depth();
         getParentItem()->addChild(this);
 
         demoteChildren();
-        setIsActive(true);
 
         dataStack.undo();
 
@@ -1337,14 +1452,15 @@ void DrawingItem::redo ()
         std::cout << "   isCreate" << std::endl; std::cout.flush();
         dataStack.redo();
 
-        copy_depth(getParentItem());
+        DrawingItem *parentItem=dynamic_cast<DrawingItem *>(getParentItem());
+        copy_depth(parentItem);
+
         increase_depth();
         getParentItem()->addChild(this);
-        setIsActive(true);
 
         long unsigned int i=0;
         while (i < getChildrenSize()) {
-            BaseItem *childItem=getChild(i);
+            DrawingItem *childItem=dynamic_cast<DrawingItem *>(getChild(i));
             if (childItem) {
                 int index=getParentItem()->indexOfChild(childItem);
                 if (index >= 0) {
@@ -1405,7 +1521,6 @@ void DrawingItem::redo ()
         dataStack.redo();
 
         promoteChildren();
-        setIsActive(false);
         getParentItem()->removeChild(this);
         mw->findShowTopLevelItem(this,true);
     }
@@ -1415,6 +1530,58 @@ void DrawingItem::redo ()
 // RootPathItem
 ////////////////////////////////////////////////////////////////////////////////
 
+bool RootPathItem::isValidShow ()
+{
+    int i=0;
+    while (i < mw->path->childCount()) {
+        PathItem *child=dynamic_cast<PathItem *>(mw->path->child(i));
+        if (child && child->foreground(0) == Qt::gray) return true;
+        i++;
+    }
+    return false;
+}
+
+bool RootPathItem::isValidHide ()
+{
+    int i=0;
+    while (i < mw->path->childCount()) {
+        PathItem *child=dynamic_cast<PathItem *>(mw->path->child(i));
+        if (child && child->foreground(0) == Qt::black) return true;
+        i++;
+    }
+    return false;
+}
+
+void RootPathItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (rootPathItem && is_rootPath()) {
+            mw->ui->drawingWindow->showItem(rootPathItem);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(5);
+}
+
+void RootPathItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (rootPathItem && rootPathItem->is_rootPath()) {
+            mw->ui->drawingWindow->hideItem(rootPathItem);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(6);
+}
+
 void RootPathItem::showMenu (QMenu *menu)
 {
     mw->showAction=new QAction("Show",this);
@@ -1422,13 +1589,13 @@ void RootPathItem::showMenu (QMenu *menu)
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
-    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showRootPathItems);
-    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideRootPathItems);
+    connect(mw->showAction, &QAction::triggered, this, &RootPathItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &RootPathItem::hide);
     connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
     connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
-    if (mw->isValidRootPathShow()) menu->addAction(mw->showAction);
-    if (mw->isValidRootPathHide()) menu->addAction(mw->hideAction);
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
     if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
     if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
 }
@@ -1436,6 +1603,58 @@ void RootPathItem::showMenu (QMenu *menu)
 ////////////////////////////////////////////////////////////////////////////////
 // PathItem
 ////////////////////////////////////////////////////////////////////////////////
+
+PathItem::PathItem (OpenParEMg *mw_, BaseItem *parentItem_)
+{
+    mw=mw_;
+    parentItem=parentItem_;
+    itemType=4;
+    setText(0,"PathItem");
+    path=nullptr;
+    hasArrows=true;
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    addShapeData(newShapeData);
+}
+
+bool PathItem::isValidShow ()
+{
+    if (foreground(0) == Qt::gray) return true;
+    return false;
+}
+
+bool PathItem::isValidHide ()
+{
+    if (foreground(0) == Qt::black) return true;
+    return false;
+}
+
+void PathItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item) mw->ui->drawingWindow->showItem(item);
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(30);
+}
+
+void PathItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item) mw->ui->drawingWindow->hideItem(item);
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(34);
+}
 
 void PathItem::showMenu (QMenu *menu)
 {
@@ -1456,12 +1675,12 @@ void PathItem::showMenu (QMenu *menu)
     connect(mw->reversePathAction, &QAction::triggered, mw, &OpenParEMg::reversePathItems);
     connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renamePathItems);
     connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deletePathItems);
-    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showPathItems);
-    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hidePathItems);
+    connect(mw->showAction, &QAction::triggered, this, &PathItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &PathItem::hide);
     connect(mw->cancelAction, &QAction::triggered, mw, &OpenParEMg::cancelMenu);
 
-    if (mw->isValidShowPath()) menu->addAction(mw->showAction);
-    if (mw->isValidHidePath()) menu->addAction(mw->hideAction);
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
     if (mw->ui->drawingWindow->get_pathSelectedCount() == 1) menu->addAction(mw->renameAction);
     if (mw->isValidCreatePortFromPath()) menu->addAction(mw->createPortAction);
     if (mw->isValidCreateBoundaryFromPath()) menu->addAction(mw->createBoundaryAction);
@@ -1492,7 +1711,6 @@ void PathItem::del ()
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(this->getShape());
-        setIsActive(false);
 
         mw->drawingChanged=true;
     }
@@ -1515,7 +1733,6 @@ void PathItem::undo ()
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
         getParentItem()->removeChild(this);
-        setIsActive(false);
 
         Path *path=static_cast<Path *>(getPath());
         if (path) path->setIsUsed(false);
@@ -1647,7 +1864,6 @@ void PathItem::redo ()
         BaseItem *parentItem=getParentItem();
         if (parentItem) parentItem->addChild(this);
         //mw->path.addChild(this);
-        setIsActive(true);
 
         Path *path=static_cast<Path *>(getPath());
         if (path) path->setIsUsed(true);
@@ -1722,7 +1938,7 @@ void PathItem::redo ()
 
 void PathItem::reverse ()
 {
-    setForUndoRedo();
+    //setForUndoRedo();
 
     ShapeData *shapeData=getShapeData();
     shapeData->setReversePath();
@@ -1760,6 +1976,69 @@ void PathItem::reverse ()
 // IntegrationPathItem
 ////////////////////////////////////////////////////////////////////////////////
 
+IntegrationPathItem::IntegrationPathItem (OpenParEMg *mw_, BaseItem *parentItem_)
+{
+    mw=mw_;
+    parentItem=parentItem_;
+    itemType=4;
+
+    integrationPath=nullptr;
+    pathItem=nullptr;
+}
+
+bool IntegrationPathItem::isValidShow ()
+{
+    if (foreground(0) == Qt::gray) return true;
+    return false;
+}
+
+bool IntegrationPathItem::isValidHide ()
+{
+    if (foreground(0) == Qt::black) return true;
+    return false;
+}
+
+void IntegrationPathItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item) mw->ui->drawingWindow->showItem(item);
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(30);
+}
+
+void IntegrationPathItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item) mw->ui->drawingWindow->hideItem(item);
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(34);
+}
+
+void IntegrationPathItem::showMenu (QMenu *menu)
+{
+    mw->removeAction=new QAction("Remove",this);
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+
+    //connect(removeAction, &QAction::triggered, this, &IntegrationPathItem::removeIntegrationPathItems);
+    connect(mw->showAction, &QAction::triggered, this, &IntegrationPathItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &IntegrationPathItem::hide);
+
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
+    menu->addAction(mw->removeAction);
+}
+
 void IntegrationPathItem::undo ()
 {
     std::cout << "IntegrationPathItem::undo  this=" << this << std::endl; std::cout.flush();
@@ -1775,7 +2054,6 @@ void IntegrationPathItem::undo ()
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
         getParentItem()->removeChild(this);
-        setIsActive(false);
 
         // remove linked item
         PathItem *pathItem=getPathItem();
@@ -1812,7 +2090,6 @@ void IntegrationPathItem::redo ()
 
         mw->ui->drawingWindow->showItem(this);
         mw->ui->drawingWindow->activateItem(this);
-        setIsActive(true);
 
         // add linked item
         PathItem *pathItem=getPathItem();
@@ -1830,6 +2107,62 @@ void IntegrationPathItem::redo ()
 // RootBoundaryItem
 ////////////////////////////////////////////////////////////////////////////////
 
+bool RootBoundaryItem::isValidShow ()
+{
+    int i=0;
+    while (i < mw->boundary->childCount()) {
+        RootBoundaryItem *child=dynamic_cast<RootBoundaryItem *>(mw->boundary->child(i));
+        if (child && child->is_rootBoundary()) {
+            if (child->foreground(0) == Qt::gray) return true;
+        }
+        i++;
+    }
+    return false;
+}
+
+bool RootBoundaryItem::isValidHide ()
+{
+    int i=0;
+    while (i < mw->boundary->childCount()) {
+        RootBoundaryItem *child=dynamic_cast<RootBoundaryItem *>(mw->boundary->child(i));
+        if (child && child->is_rootBoundary()) {
+            if (child->foreground(0) == Qt::black) return true;
+        }
+        i++;
+    }
+    return false;
+}
+
+void RootBoundaryItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) {
+            mw->ui->drawingWindow->showItem(rootBoundaryItem);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(9);
+}
+
+void RootBoundaryItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) {
+            mw->ui->drawingWindow->hideItem(rootBoundaryItem);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(11);
+}
+
 void RootBoundaryItem::showMenu (QMenu *menu)
 {
     mw->showAction=new QAction("Show",this);
@@ -1837,13 +2170,13 @@ void RootBoundaryItem::showMenu (QMenu *menu)
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
-    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::rootBoundaryShow);
-    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::rootBoundaryHide);
+    connect(mw->showAction, &QAction::triggered, this, &RootBoundaryItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &RootBoundaryItem::hide);
     connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
     connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
-    if (mw->isValidRootBoundaryShow()) menu->addAction(mw->showAction);
-    if (mw->isValidRootBoundaryHide()) menu->addAction(mw->hideAction);
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
     if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
     if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
 }
@@ -1851,6 +2184,214 @@ void RootBoundaryItem::showMenu (QMenu *menu)
 ////////////////////////////////////////////////////////////////////////////////
 // BoundaryItem
 ////////////////////////////////////////////////////////////////////////////////
+
+BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_type_, double wave_impedance_, QString boundary_material_)
+{
+    mw=mw_;
+    parentItem=mw->boundary;
+    itemType=2;
+    pathItem=pathItem_;
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    newShapeData->set_wave_impedance(wave_impedance_);
+    newShapeData->set_boundary_type(boundary_type_);
+    newShapeData->set_boundary_material(boundary_material_);
+    addShapeData(newShapeData);
+
+    QString name="boundary";
+    name.append(QString::number(mw->boundary->childCount()+1));
+    setText(0,name);
+
+    setToolTip(0,"Boundary name.");
+
+    if (pathItem) {
+
+        // process the path
+        pathItem->push_linkedItem(this);
+        mw->convertPathToFace(pathItem);
+        pathItem->showArrows(false);
+
+        Handle(AIS_Shape) shape=pathItem->getShape();
+        if (!shape.IsNull()) {
+            shape->SetTransparency(0);
+            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+            if (boundary_type_ == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
+            else if (boundary_type_ == 1) shape->SetColor(Quantity_NOC_CYAN);
+            else if (boundary_type_ == 2) shape->SetColor(Quantity_NOC_GOLDENROD);
+            else if (boundary_type_ == 3) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
+            mw->setShaded(shape);
+        }
+    }
+
+    // type
+
+    BaseItem *itemType=new BaseItem(mw,this);
+    itemType->setFlags(itemType->flags() | Qt::ItemIsEditable);
+    itemType->setToolTip(0,"Boundary type.");
+    addChild(itemType);
+
+    CustomComboBox *comboType=new CustomComboBox();
+    const QSignalBlocker blockerZdef(comboType);
+    comboType->addItem("PEC");
+    comboType->addItem("PMC");
+    comboType->addItem("Zs");
+    comboType->addItem("Radiation");
+    comboType->set_portItem(nullptr);
+    comboType->set_boundaryItem(this);
+    comboType->set_type(2);
+
+    comboType->setCurrentIndex(boundary_type_);
+    mw->ui->drawingItemTree->setItemWidget(itemType,0,comboType);
+
+    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
+    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::updateViewer);
+
+    // boundary type dependent data
+
+    // material
+
+    BaseItem *itemMaterial=new BaseItem(mw,this);
+    itemMaterial->setFlags(itemMaterial->flags() | Qt::ItemIsEditable);
+    itemMaterial->setToolTip(0,"Boundary material.");
+    addChild(itemMaterial);
+
+    CustomComboBox *comboMaterial=new CustomComboBox();
+    const QSignalBlocker blockerMaterial(comboMaterial);
+    if (mw->materialDatabase) {
+        long unsigned int i=0;
+        while (i < mw->materialDatabase->get_size()) {
+            Material *material=mw->materialDatabase->get_material(i);
+            // Todo: add only conductors
+            comboMaterial->addItem(QString::fromStdString(material->get_name()->get_value()));
+            i++;
+        }
+    }
+    mw->ui->drawingItemTree->setItemWidget(itemMaterial,0,comboMaterial);
+
+    QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentTextChanged, &comboTextChanged);
+    QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+
+    // wave impedance
+
+    BaseItem *itemWaveImpedance=new BaseItem(mw,this);
+    itemWaveImpedance->setFlags(itemWaveImpedance->flags() | Qt::ItemIsEditable);
+    itemWaveImpedance->setToolTip(0,"Wave impedance in Ohms.");
+    addChild(itemWaveImpedance);
+
+    QDoubleValidator doubleValidator;
+    doubleValidator.setBottom(0);
+
+    CustomLineEdit *textWaveImpedance=new CustomLineEdit();
+    const QSignalBlocker blockerWaveImpedance(textWaveImpedance);
+    textWaveImpedance->setText(QString::number(wave_impedance_));
+    textWaveImpedance->setValidator(&doubleValidator);
+    textWaveImpedance->set_baseItem(this);
+    mw->ui->drawingItemTree->setItemWidget(itemWaveImpedance,0,textWaveImpedance);
+
+    //xxx
+    QObject::connect(textWaveImpedance,&CustomLineEdit::CustomEditFinished,&textValueChanged);
+
+
+    // set initial visibility
+    std::cout << "boundary_type_=" << boundary_type_ << std::endl; std::cout.flush();
+    if (boundary_type_ == 0) {  // PEC
+        itemWaveImpedance->setHidden(true);
+        itemMaterial->setHidden(true);
+    } else if (boundary_type_ == 1) {  // PMC
+        itemWaveImpedance->setHidden(true);
+        itemMaterial->setHidden(true);
+    } else if (boundary_type_ == 2) {  // Zs
+        itemWaveImpedance->setHidden(true);
+    } else if (boundary_type_ == 3) {  // radiation
+        std::cout << "   itemMaterial=" << itemMaterial << std::endl; std::cout.flush();
+        itemMaterial->setHidden(true);
+    }
+
+    // set the CustomTreeWidget items so they can be hidden as needed depending on type
+    comboType->set_itemMaterial(itemMaterial);
+    comboType->set_itemWaveImpedance(itemWaveImpedance);
+
+    // set the shape color
+    PathItem *pathItem=getPathItem();
+    if (pathItem) {
+        Handle(AIS_Shape) shape=pathItem->getShape();
+        if (!shape.IsNull()) {
+            shape->SetTransparency(0);
+            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+            if (boundary_type_ == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
+            else if (boundary_type_ == 1) shape->SetColor(Quantity_NOC_CYAN);
+            else if (boundary_type_ == 2) shape->SetColor(Quantity_NOC_GOLDENROD);
+            else if (boundary_type_ == 3) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
+            mw->setShaded(shape);
+        }
+    }
+
+    mw->itemChangesStack.add(this);
+}
+
+bool BoundaryItem::isValidShow ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BoundaryItem *portItem=dynamic_cast<BoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (portItem && portItem->is_port()) {
+            PathItem *pathItem=portItem->getPathItem();
+            if (pathItem && pathItem->is_path()) {
+                if (pathItem->isValidShow()) return true;
+            }
+        }
+        i++;
+    }
+    return false;
+}
+
+bool BoundaryItem::isValidHide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (boundaryItem && boundaryItem->is_boundary()) {
+            PathItem *pathItem=boundaryItem->getPathItem();
+            if (pathItem && pathItem->is_path()) {
+                if (pathItem->isValidHide()) return true;
+            }
+        }
+        i++;
+    }
+    return false;
+}
+
+void BoundaryItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (boundaryItem && boundaryItem->is_boundary()) {
+            mw->ui->drawingWindow->showItem(boundaryItem);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(10);
+}
+
+void BoundaryItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (boundaryItem && boundaryItem->is_boundary()) {
+            mw->ui->drawingWindow->hideItem(boundaryItem);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(10);
+}
 
 void BoundaryItem::showMenu (QMenu *menu)
 {
@@ -1862,16 +2403,16 @@ void BoundaryItem::showMenu (QMenu *menu)
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
-    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showBoundaryItems);
-    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideBoundaryItems);
+    connect(mw->showAction, &QAction::triggered, this, &BoundaryItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &BoundaryItem::hide);
     connect(mw->unselectAction, &QAction::triggered, mw, &OpenParEMg::unselectBoundaryItems);
     connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renameBoundaryItems);
     connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deleteBoundaryItems);
     connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
     connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
-    if (mw->isValidShowPath()) menu->addAction(mw->showAction);
-    if (mw->isValidHidePath()) menu->addAction(mw->hideAction);
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
     if (mw->ui->drawingWindow->hasBoundarySelectedItems()) menu->addAction(mw->unselectAction);
     if (mw->ui->drawingWindow->get_boundarySelectedCount() == 1) menu->addAction(mw->renameAction);
     menu->addAction(mw->deleteAction);
@@ -1881,7 +2422,7 @@ void BoundaryItem::showMenu (QMenu *menu)
 
 void BoundaryItem::del ()
 {
-    setForUndoRedo();
+    //setForUndoRedo();
 
     // mark as delete
     ShapeData *shapeData=getShapeData();
@@ -1894,8 +2435,6 @@ void BoundaryItem::del ()
         if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) {
             rootBoundaryItem->removeChild(this);
         }
-
-        setIsActive(false);
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
@@ -1937,7 +2476,6 @@ void BoundaryItem::undo ()
 
         // remove the item
         getParentItem()->removeChild(this);
-        setIsActive(false);
 
         dataStack.undo();
     } else if (shapeData->isEdit()) {
@@ -1962,10 +2500,9 @@ void BoundaryItem::undo ()
 
         dataStack.undo();
 
-        mw->boundary.addChild(this);
+        mw->boundary->addChild(this);
         setForeground(0,Qt::gray);
         mw->ui->drawingWindow->showItem(this);
-        setIsActive(true);
 
         PathItem *pathItem=getPathItem();
         if (pathItem) {
@@ -1979,11 +2516,7 @@ void BoundaryItem::undo ()
         }
 
         // rebuild the item from scratch
-        Boundary *boundary=getBoundary();
-        if (boundary) {
-            boundary->draw(mw->relay,&(mw->projData),mw->boundaryDatabase,mw,mw->ui->drawingWindow,mw->ui->drawingItemTree,
-                           &(mw->path),&(mw->boundary),mw->materialDatabase,this);
-        }
+        populate(nullptr);
     }
 }
 
@@ -2017,7 +2550,7 @@ void BoundaryItem::redo ()
 
         populate(nullptr);
 
-        mw->boundary.addChild(this);
+        mw->boundary->addChild(this);
 
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
@@ -2035,7 +2568,7 @@ void BoundaryItem::redo ()
 
         populate(nullptr);
 
-        mw->port.addChild(this);
+        mw->port->addChild(this);
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
@@ -2043,7 +2576,6 @@ void BoundaryItem::redo ()
 
         // remove the item
         getParentItem()->removeChild(this);
-        setIsActive(false);
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
@@ -2064,20 +2596,10 @@ void BoundaryItem::populate (Boundary *boundary)
     QDoubleValidator doubleValidator;
     doubleValidator.setBottom(0);
 
-    QString boundary_type;
+    int boundary_type;
     QString boundary_material;
     double wave_impedance;
-    ShapeData *shapeData;
-    if (boundary) {
-        shapeData=getShapeData()->copyCreate();
-        shapeData->setCreate();
-        shapeData->set_boundary_type(boundary->get_type());
-        shapeData->set_boundary_material(QString::fromStdString(boundary->get_material()));
-        shapeData->set_wave_impedance(boundary->get_wave_impedance());
-        addShapeData(shapeData);
-    } else {
-        shapeData=getShapeData();
-    }
+    ShapeData *shapeData=shapeData=getShapeData();
 
     boundary_type=shapeData->get_boundary_type();
     boundary_material=shapeData->get_boundary_material();
@@ -2086,9 +2608,7 @@ void BoundaryItem::populate (Boundary *boundary)
 
     // type
 
-    SelectionItem *itemType=new SelectionItem(0);
-    itemType->setMW(mw);
-    itemType->setParentItem(this);
+    BaseItem *itemType=new BaseItem(mw,this);
     itemType->setFlags(itemType->flags() | Qt::ItemIsEditable);
     itemType->setToolTip(0,"Boundary type.");
     addChild(itemType);
@@ -2102,11 +2622,7 @@ void BoundaryItem::populate (Boundary *boundary)
     comboType->set_portItem(nullptr);
     comboType->set_boundaryItem(this);
     comboType->set_type(2);
-
-    if (boundary_type.compare("perfect_electric_conductor") == 0) comboType->setCurrentIndex(0);
-    else if (boundary_type.compare("perfect_magnetic_conductor") == 0) comboType->setCurrentIndex(1);
-    else if (boundary_type.compare("surface_impedance") == 0) comboType->setCurrentIndex(2);
-    else if (boundary_type.compare("radiation") == 0) comboType->setCurrentIndex(3);
+    comboType->setCurrentIndex(boundary_type);
     mw->ui->drawingItemTree->setItemWidget(itemType,0,comboType);
 
     QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
@@ -2117,9 +2633,7 @@ void BoundaryItem::populate (Boundary *boundary)
 
     // material
 
-    SelectionItem *itemMaterial=new SelectionItem(0);
-    itemMaterial->setMW(mw);
-    itemMaterial->setParentItem(this);
+    BaseItem *itemMaterial=new BaseItem(mw,this);
     itemMaterial->setFlags(itemMaterial->flags() | Qt::ItemIsEditable);
     itemMaterial->setToolTip(0,"Boundary material.");
     addChild(itemMaterial);
@@ -2142,9 +2656,7 @@ void BoundaryItem::populate (Boundary *boundary)
 
     // wave impedance
 
-    SelectionItem *itemWaveImpedance=new SelectionItem(0);
-    itemWaveImpedance->setMW(mw);
-    itemWaveImpedance->setParentItem(this);
+    BaseItem *itemWaveImpedance=new BaseItem(mw,this);
     itemWaveImpedance->setFlags(itemWaveImpedance->flags() | Qt::ItemIsEditable);
     itemWaveImpedance->setToolTip(0,"Wave impedance in Ohms.");
     addChild(itemWaveImpedance);
@@ -2161,15 +2673,17 @@ void BoundaryItem::populate (Boundary *boundary)
 
 
     // set initial visibility
-    if (boundary_type.compare("perfect_electric_conductor") == 0) {
+    std::cout << "boundary_type=" << boundary_type << std::endl; std::cout.flush();
+    if (boundary_type == 0) {
         itemWaveImpedance->setHidden(true);
         itemMaterial->setHidden(true);
-    } else if (boundary_type.compare("perfect_magnetic_conductor") == 0) {
+    } else if (boundary_type == 1) {
         itemWaveImpedance->setHidden(true);
         itemMaterial->setHidden(true);
-    } else if (boundary_type.compare("surface_impedance") == 0) {
+    } else if (boundary_type == 2) {
         itemWaveImpedance->setHidden(true);
-    } else if (boundary_type.compare("radiation") == 0) {
+    } else if (boundary_type == 3) {
+        std::cout << "   itemMaterial=" << itemMaterial << std::endl; std::cout.flush();
         itemMaterial->setHidden(true);
     }
 
@@ -2184,17 +2698,17 @@ void BoundaryItem::populate (Boundary *boundary)
         if (!shape.IsNull()) {
             shape->SetTransparency(0);
             shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-            if (boundary_type.compare("perfect_electric_conductor") == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
-            else if (boundary_type.compare("perfect_magnetic_conductor") == 0) shape->SetColor(Quantity_NOC_CYAN);
-            else if (boundary_type.compare("surface_impedance") == 0) shape->SetColor(Quantity_NOC_GOLDENROD);
-            else if (boundary_type.compare("radiation") == 0) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
+            if (boundary_type == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
+            else if (boundary_type == 1) shape->SetColor(Quantity_NOC_CYAN);
+            else if (boundary_type == 2) shape->SetColor(Quantity_NOC_GOLDENROD);
+            else if (boundary_type == 3) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
             mw->setShaded(shape);
         }
     }
 
     // if (boundary->is_default_boundary()) {
     //     QString textDefault="default";
-    //     SelectionItem *itemDefault=new SelectionItem(0);
+    //     BaseItem *itemDefault=new BaseItem(0);
     //     itemDefault->setMW(mw);
     //     itemDefault->setParentItem(this);
     //     itemDefault->setText(0,textDefault);
@@ -2206,6 +2720,62 @@ void BoundaryItem::populate (Boundary *boundary)
 // RootPortItem
 ////////////////////////////////////////////////////////////////////////////////
 
+bool RootPortItem::isValidShow ()
+{
+    int i=0;
+    while (i < mw->port->childCount()) {
+        PortItem *child=dynamic_cast<PortItem *>(mw->port->child(i));
+        if (child && child->is_port()) {
+            if (child->foreground(0) == Qt::gray) return true;
+        }
+        i++;
+    }
+    return false;
+}
+
+bool RootPortItem::isValidHide ()
+{
+    int i=0;
+    while (i < mw->port->childCount()) {
+        PortItem *child=dynamic_cast<PortItem *>(mw->port->child(i));
+        if (child && child->is_port()) {
+            if (child->foreground(0) == Qt::black) return true;
+        }
+        i++;
+    }
+    return false;
+}
+
+void RootPortItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        RootPortItem *rootPortItem=dynamic_cast<RootPortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (rootPortItem && rootPortItem->is_rootPort()) {
+            mw->ui->drawingWindow->showItem(rootPortItem);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(9);
+}
+
+void RootPortItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        RootPortItem *rootPortItem=dynamic_cast<RootPortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (rootPortItem && rootPortItem->is_rootPort()) {
+            mw->ui->drawingWindow->hideItem(rootPortItem);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(11);
+}
+
 void RootPortItem::showMenu (QMenu *menu)
 {
     mw->showAction=new QAction("Show",this);
@@ -2213,13 +2783,13 @@ void RootPortItem::showMenu (QMenu *menu)
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
-    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::rootPortShow);
-    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::rootPortHide);
+    connect(mw->showAction, &QAction::triggered, this, &RootPortItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &RootPortItem::hide);
     connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
     connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
-    if (mw->isValidRootPortShow()) menu->addAction(mw->showAction);
-    if (mw->isValidRootPortHide()) menu->addAction(mw->hideAction);
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
     if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
     if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
 }
@@ -2227,6 +2797,164 @@ void RootPortItem::showMenu (QMenu *menu)
 ////////////////////////////////////////////////////////////////////////////////
 // PortItem
 ////////////////////////////////////////////////////////////////////////////////
+
+PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calculation_, QString impedance_definition_)
+{
+    mw=mw_;
+    parentItem=mw->port;
+    itemType=2;
+    pathItem=pathItem_;
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    newShapeData->set_impedance_calculation(impedance_calculation_);
+    newShapeData->set_impedance_definition(impedance_definition_);
+    addShapeData(newShapeData);
+
+    QString name="port";
+    name.append(QString::number(mw->port->childCount()+1));
+    setText(0,name);
+
+    setToolTip(0,"Port name.");
+
+    if (pathItem) {
+
+        // process the path
+        pathItem->push_linkedItem(this);
+        mw->convertPathToFace(pathItem);
+        pathItem->showArrows(false);
+
+        Handle(AIS_Shape) shape=pathItem->getShape();
+        if (!shape.IsNull()) {
+            shape->SetColor(Quantity_NOC_MINTCREAM);
+            shape->SetTransparency(0.25);
+            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+            mw->setShaded(shape);
+        }
+    }
+
+
+    QString impedance_definition=newShapeData->get_impedance_definition();
+    QString impedance_calculation=newShapeData->get_impedance_calculation();
+
+    // impedance definition
+
+    BaseItem *itemImpedanceDefinition=new BaseItem(mw,this);
+    itemImpedanceDefinition->set_itemType(6);
+    itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
+    itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
+    addChild(itemImpedanceDefinition);
+
+    CustomComboBox *comboZdef=new CustomComboBox();
+    const QSignalBlocker blockerZdef(comboZdef);
+    comboZdef->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
+    comboZdef->addItem("VI");       // 0
+    comboZdef->addItem("PV");       // 1
+    comboZdef->addItem("PI");       // 2
+    comboZdef->addItem("invalid");  // 3
+    comboZdef->set_portItem(this);
+    comboZdef->set_boundaryItem(nullptr);
+    comboZdef->set_type(0);
+    if (impedance_definition.compare("VI") == 0) comboZdef->setCurrentIndex(0);
+    else if (impedance_definition.compare("PV") == 0) comboZdef->setCurrentIndex(1);
+    else if (impedance_definition.compare("PI") == 0) comboZdef->setCurrentIndex(2);
+    else comboZdef->setCurrentIndex(3);
+    mw->ui->drawingItemTree->setItemWidget(itemImpedanceDefinition,0,comboZdef);
+    itemImpedanceDefinition->setSizeHint(0,comboZdef->sizeHint());  // size hint for scaling; do not need to do the other combobox
+
+    QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
+    QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+
+    // impedance calculation
+
+    BaseItem *itemImpedanceCalculation=new BaseItem(mw,this);
+    itemImpedanceCalculation->set_itemType(7);
+    itemImpedanceCalculation->setFlags(itemImpedanceCalculation->flags() & ~Qt::ItemIsSelectable);
+    itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
+    addChild(itemImpedanceCalculation);
+
+    CustomComboBox *comboZcalc=new CustomComboBox();
+    const QSignalBlocker blockerZcalc(comboZcalc);
+    comboZcalc->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
+    comboZcalc->addItem("line");
+    comboZcalc->addItem("modal");
+    comboZcalc->set_portItem(this);
+    comboZcalc->set_type(1);
+    comboZcalc->set_boundaryItem(nullptr);
+
+    if (impedance_calculation.compare("line") == 0) comboZcalc->setCurrentIndex(0);
+    else if (impedance_calculation.compare("modal") == 0) comboZcalc->setCurrentIndex(1);
+    mw->ui->drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
+
+    QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
+    QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+
+    // add one default mode since at least one mode is required
+    ModeItem *newModeItem=new ModeItem(mw,this);
+    addChild(newModeItem);
+}
+
+bool PortItem::isValidShow ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (portItem && portItem->is_port()) {
+            PathItem *pathItem=portItem->getPathItem();
+            if (pathItem && pathItem->is_path()) {
+                if (pathItem->isValidShow()) return true;
+            }
+        }
+        i++;
+    }
+    return false;
+}
+
+bool PortItem::isValidHide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (portItem && portItem->is_port()) {
+            PathItem *pathItem=portItem->getPathItem();
+            if (pathItem && pathItem->is_path()) {
+                if (pathItem->isValidHide()) return true;
+            }
+        }
+        i++;
+    }
+    return false;
+}
+
+void PortItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (portItem && portItem->is_port()) {
+            mw->ui->drawingWindow->showItem(portItem);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(10);
+}
+
+void PortItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (portItem && portItem->is_port()) {
+            mw->ui->drawingWindow->hideItem(portItem);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(10);
+}
 
 void PortItem::showMenu (QMenu *menu)
 {
@@ -2239,8 +2967,8 @@ void PortItem::showMenu (QMenu *menu)
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
-    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showPortItems);
-    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hidePortItems);
+    connect(mw->showAction, &QAction::triggered, this, &PortItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &PortItem::hide);
     connect(mw->unselectAction, &QAction::triggered, mw, &OpenParEMg::unselectPortItems);
     connect(mw->insertAction, &QAction::triggered, mw, &OpenParEMg::insertModeItems);
     connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renamePortItems);
@@ -2248,8 +2976,8 @@ void PortItem::showMenu (QMenu *menu)
     connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
     connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
-    if (mw->isValidShowPath()) menu->addAction(mw->showAction);
-    if (mw->isValidHidePath()) menu->addAction(mw->hideAction);
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
     if (mw->ui->drawingWindow->hasPortSelectedItems()) menu->addAction(mw->unselectAction);
     if (mw->ui->drawingWindow->get_portSelectedCount() == 1) menu->addAction(mw->renameAction);
     menu->addAction(mw->insertAction);
@@ -2260,7 +2988,7 @@ void PortItem::showMenu (QMenu *menu)
 
 void PortItem::del ()
 {
-    setForUndoRedo();
+    //setForUndoRedo();
 
     // mark as delete
     ShapeData *shapeData=getShapeData();
@@ -2274,8 +3002,6 @@ void PortItem::del ()
             rootPortItem->removeChild(this);
         }
 
-        setIsActive(false);
-
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
@@ -2286,7 +3012,6 @@ void PortItem::del ()
             pathItem->showArrows(true);
         }
 
-        mw->itemChangesStack.add(this);
         mw->drawingChanged=true;
     }
 }
@@ -2299,11 +3024,9 @@ void PortItem::populate (Port *port)
     QString impedance_calculation;
     ShapeData *shapeData;
     if (port) {
-        shapeData=getShapeData()->copyCreate();
-        shapeData->setCreate();
+        shapeData=getShapeData();
         shapeData->set_impedance_definition(port->get_impedance_definition());
         shapeData->set_impedance_calculation(port->get_impedance_calculation());
-        addShapeData(shapeData);
     } else {
         shapeData=getShapeData();
     }
@@ -2313,9 +3036,7 @@ void PortItem::populate (Port *port)
 
     // impedance definition
 
-    SelectionItem *itemImpedanceDefinition=new SelectionItem(0);
-    itemImpedanceDefinition->setMW(mw);
-    itemImpedanceDefinition->setParentItem(this);
+    BaseItem *itemImpedanceDefinition=new BaseItem(mw,this);
     itemImpedanceDefinition->set_itemType(6);
     itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
@@ -2345,9 +3066,7 @@ void PortItem::populate (Port *port)
 
     // impedance calculation
 
-    SelectionItem *itemImpedanceCalculation=new SelectionItem(0);
-    itemImpedanceCalculation->setMW(mw);
-    itemImpedanceCalculation->setParentItem(this);
+    BaseItem *itemImpedanceCalculation=new BaseItem(mw,this);
     itemImpedanceCalculation->set_itemType(7);
     itemImpedanceCalculation->setFlags(itemImpedanceCalculation->flags() & ~Qt::ItemIsSelectable);
     itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
@@ -2369,6 +3088,111 @@ void PortItem::populate (Port *port)
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
 }
+
+// void PortItem::addModeItem ()
+// {
+//     int Sport=0;
+//     ModeItem *newModeItem=new ModeItem(0);
+//     if (newModeItem) {
+//         ShapeData *newShapeData=newModeItem->getShapeData()->copyCreate();
+//         newShapeData->setCreate();
+//         newModeItem->setMW(mw);
+//         newModeItem->setParentItem(this);
+//         newModeItem->set_itemType(5);
+//         newModeItem->setToolTip(0,"Mode and its net name.");
+//         newModeItem->addShapeData(newShapeData);
+
+//         newModeItem->setPortItem(this);
+//         addChild(newModeItem);
+
+//         // set the S-parameter port number to the next available
+//         mw->largestSportNumber(&(mw->port),&Sport);
+//         Sport++;
+//         newShapeData->set_Sport(Sport);
+
+//         // unique net name based on Sport number
+//         QString net="net";
+//         net.append(QString::number(newShapeData->get_Sport()));
+//         newModeItem->setText(0,net);
+
+//         mw->itemChangesStack.add(newModeItem);
+//     }
+
+//     BaseItem *newSportItem=nullptr;
+//     if (newModeItem) {
+//         newSportItem=new BaseItem(0);
+//         if (newSportItem) {
+//             ShapeData *newShapeData=newSportItem->getShapeData()->copyCreate();
+//             newShapeData->setCreate();
+//             newSportItem->setMW(mw);
+//             newSportItem->setParentItem(newModeItem);
+//             newSportItem->setText(0,"S Port");
+//             newSportItem->setToolTip(0,"S-parameter port number for the mode.");
+//             newSportItem->set_itemType(8);
+//             newSportItem->addShapeData(newShapeData);
+//             newModeItem->addChild(newSportItem);
+//         }
+//         mw->itemChangesStack.add(newSportItem);
+//     }
+
+//     BaseItem *newSportNumberItem=nullptr;
+//     if (newSportItem) {
+//         newSportNumberItem=new BaseItem(0);
+//         if (newSportNumberItem) {
+//             ShapeData *newShapeData=newSportNumberItem->getShapeData()->copyCreate();
+//             newShapeData->setCreate();
+//             newSportNumberItem->setMW(mw);
+//             newSportNumberItem->setParentItem(newSportItem);
+//             newSportNumberItem->set_itemType(9);
+//             newSportNumberItem->addShapeData(newShapeData);
+//             newSportItem->addChild(newSportNumberItem);
+
+//             CustomSpinBox *sportNumber=new CustomSpinBox();
+//             sportNumber->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
+//             sportNumber->set_modeItem(newModeItem);
+//             sportNumber->setMinimum(1);
+//             sportNumber->setValue(Sport);
+//             mw->ui->drawingItemTree->setItemWidget(newSportNumberItem,0,sportNumber);
+
+//             QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
+//             QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::setMenus);
+
+//             mw->itemChangesStack.add(newSportNumberItem);
+//         }
+//     }
+
+//     if (newModeItem) {
+//         BaseItem *newVoltageItem=new BaseItem(0);
+//         if (newVoltageItem) {
+//             ShapeData *newShapeData=newVoltageItem->getShapeData()->copyCreate();
+//             newShapeData->setCreate();
+//             newVoltageItem->setMW(mw);
+//             newVoltageItem->setParentItem(newModeItem);
+//             newVoltageItem->set_itemType(10);
+//             newVoltageItem->setText(0,"voltage");
+//             newVoltageItem->setToolTip(0,"Voltage integration path.");
+//             newVoltageItem->addShapeData(newShapeData);
+//             newModeItem->addChild(newVoltageItem);
+
+//             mw->itemChangesStack.add(newVoltageItem);
+//         }
+
+//         BaseItem *newCurrentItem=new BaseItem(0);
+//         if (newCurrentItem) {
+//             ShapeData *newShapeData=newCurrentItem->getShapeData()->copyCreate();
+//             newShapeData->setCreate();
+//             newCurrentItem->setMW(mw);
+//             newCurrentItem->setParentItem(newModeItem);
+//             newCurrentItem->set_itemType(11);
+//             newCurrentItem->setText(0,"current");
+//             newCurrentItem->setToolTip(0,"Current integration path.");
+//             newCurrentItem->addShapeData(newShapeData);
+//             newModeItem->addChild(newCurrentItem);
+
+//             mw->itemChangesStack.add(newCurrentItem);
+//         }
+//     }
+// }
 
 void PortItem::undo ()
 {
@@ -2395,7 +3219,6 @@ void PortItem::undo ()
 
         // remove the item
         getParentItem()->removeChild(this);
-        setIsActive(false);
 
         dataStack.undo();
     } else if (shapeData->isEdit()) {
@@ -2431,17 +3254,17 @@ void PortItem::undo ()
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
-        dataStack.undo();
+        // dataStack.undo();
 
-        // rebuild the item from scratch
-        Port *aPort=getPort();
-        if (aPort) {
-            // remove all children
-            foreach(auto i, takeChildren()) delete i;
+        // // rebuild the item from scratch
+        // Port *aPort=getPort();
+        // if (aPort) {
+        //     // remove all children
+        //     foreach(auto i, takeChildren()) delete i;
 
-            // draw
-            aPort->draw(mw->relay,&(mw->projData),mw->boundaryDatabase,mw,mw->ui->drawingWindow,mw->ui->drawingItemTree,&(mw->path),&(mw->port),this);
-        }
+        //     // draw
+        //     aPort->draw(mw->relay,&(mw->projData),mw->boundaryDatabase,mw,mw->ui->drawingWindow,mw->ui->drawingItemTree,&(mw->path),&(mw->port),this);
+        // }
     }
 }
 
@@ -2491,7 +3314,7 @@ void PortItem::redo ()
 
         populate(nullptr);
 
-        mw->port.addChild(this);
+        mw->port->addChild(this);
 
         //xxx
         //{mw->expandAllItems(); mw->ui->drawingWindow->updateViewer(); QMessageBox mb; mb.critical(nullptr, "Debug", "place y3");}
@@ -2540,7 +3363,601 @@ void PortItem::redo ()
 
         // delete the item
         getParentItem()->removeChild(this);
-        setIsActive(false);
-
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ModeItem
+////////////////////////////////////////////////////////////////////////////////
+
+ModeItem::ModeItem (OpenParEMg *mw_, PortItem *portItem_)
+{
+    mw=mw_;
+    parentItem=portItem_;
+    itemType=5;
+    portItem=portItem_;
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    addShapeData(newShapeData);
+
+    int Sport=0;
+    if (portItem_) {
+        ShapeData *shapeData=portItem_->getShapeData();
+        Sport=shapeData->get_Sport();
+    }
+
+    QString name="net";
+    name.append(QString::number(Sport));
+    setText(0,name);
+
+    setToolTip(0,"Port name.");
+
+    SportItem *newSportItem=new SportItem(mw,this);
+    addChild(newSportItem);
+
+    VIItem *newVoltageItem=new VIItem(mw,this,10);
+    addChild(newVoltageItem);
+
+    VIItem *newCurrentItem=new VIItem(mw,this,11);
+    addChild(newCurrentItem);
+}
+
+bool ModeItem::isValidShow ()
+{
+    return mw->ui->drawingWindow->isNetValidShow();
+}
+
+bool ModeItem::isValidHide ()
+{
+    return mw->ui->drawingWindow->isNetValidHide();
+}
+
+void ModeItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_sport()) {
+            mw->ui->drawingWindow->showItem(item);
+
+            int j=0;
+            while (j < item->childCount()) {
+                BaseItem *child=(BaseItem *) item->child(j);
+                if (child->is_voltage() || child->is_current()) {
+                    //child->setForeground(0,Qt::black);
+                    int k=0;
+                    while (k < child->childCount()) {
+                        BaseItem *grandChild=(BaseItem *) child->child(k);
+                        if (grandChild->is_integrationPathSegment()) {
+                            mw->ui->drawingWindow->showItem(grandChild);
+                            grandChild->setForeground(0,Qt::black);
+                        }
+                        k++;
+                    }
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(29);
+}
+
+void ModeItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_sport()) {
+            int j=0;
+            while (j < item->childCount()) {
+                BaseItem *child=(BaseItem *) item->child(j);
+                if (child->is_voltage() || child->is_current()) {
+                    //child->setForeground(0,Qt::gray);
+                    int k=0;
+                    while (k < child->childCount()) {
+                        BaseItem *grandChild=(BaseItem *) child->child(k);
+                        if (grandChild->is_integrationPathSegment()) {
+                            mw->ui->drawingWindow->hideItem(grandChild);
+                            grandChild->setForeground(0,Qt::gray);
+                        }
+                        k++;
+                    }
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(33);
+}
+
+bool ModeItem::isValidDelete () {return true;}
+
+void ModeItem::unlinkPaths (BaseItem *baseItem)
+{
+    if (!baseItem) return;
+
+    IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(baseItem);
+    if (integrationPathItem && is_integrationPathSegment()) {
+        PathItem *pathItem=integrationPathItem->getPathItem();
+        pathItem->removeLinkedItem(integrationPathItem);
+        // ToDo: null out the path item in integrationPathItem?
+    }
+
+    int i=0;
+    while (i < baseItem->childCount()) {
+        BaseItem *childItem=dynamic_cast<BaseItem *>(baseItem->child(i));
+        unlinkPaths(childItem);
+        i++;
+    }
+}
+
+void ModeItem::del ()
+{
+    mw->itemChangesStack.startNew();
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setDelete();
+    addShapeData(newShapeData);
+
+    unlinkPaths(this);
+    PortItem *portItem=getPortItem();
+    if (portItem) {
+        portItem->removeChild(this);
+    }
+
+    mw->itemChangesStack.add(this);
+
+    mw->clickedItem=nullptr;
+    mw->previousClickedItem=nullptr;
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(28);
+}
+
+void ModeItem::showMenu (QMenu *menu)
+{
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+    mw->renameAction=new QAction("Rename",this);
+    mw->deleteAction=new QAction("Delete",this);
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
+
+    connect(mw->showAction, &QAction::triggered, this, &ModeItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &ModeItem::hide);
+    connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renameSportNet);
+    connect(mw->deleteAction, &QAction::triggered, this, &ModeItem::del);
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
+    if (mw->ui->drawingWindow->get_selectedItems_count() == 1) menu->addAction(mw->renameAction);
+    if (isValidDelete()) menu->addAction(mw->deleteAction);
+    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// SportItem
+////////////////////////////////////////////////////////////////////////////////
+
+SportItem::SportItem (OpenParEMg *mw_, ModeItem *modeItem_)
+{
+    mw=mw_;
+    parentItem=modeItem_;
+    itemType=8;
+    modeItem=modeItem_;
+    setText(0,"S Port");
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    addShapeData(newShapeData);
+
+    SportNumberItem *newSportNumberItem=new SportNumberItem(mw,this);
+    addChild(newSportNumberItem);
+}
+
+bool SportItem::isValidShow () {return false;}
+bool SportItem::isValidHide () {return false;}
+void SportItem::show () {}
+void SportItem::hide () {}
+
+void SportItem::showMenu (QMenu *menu)
+{
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
+
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+
+    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// SportNumberItem
+////////////////////////////////////////////////////////////////////////////////
+
+SportNumberItem::SportNumberItem (OpenParEMg *mw_, SportItem *sportItem_)
+{
+    mw=mw_;
+    parentItem=sportItem_;
+    itemType=9;
+    sportItem=sportItem_;
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    addShapeData(newShapeData);
+
+    int Sport=1;
+    ModeItem *modeItem=sportItem_->getModeItem();
+    if (modeItem) {
+        PortItem *portItem=modeItem->getPortItem();
+        if (portItem) {
+            ShapeData *shapeData=portItem->getShapeData();
+            Sport=shapeData->get_Sport();
+        }
+    }
+
+    setToolTip(0,"S-parameter port number.");
+
+    CustomSpinBox *sportNumber=new CustomSpinBox();
+    sportNumber->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
+    sportNumber->set_sportItem(sportItem_);
+    sportNumber->setMinimum(1);
+    Sport=1;
+    std::cout << "Sport=" << Sport << std::endl; std::cout.flush();
+    sportNumber->setValue(Sport);
+    mw->ui->drawingItemTree->setItemWidget(this,0,sportNumber);
+
+    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
+    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::setMenus);
+}
+
+bool SportNumberItem::isValidShow () {return false;}
+bool SportNumberItem::isValidHide () {return false;}
+void SportNumberItem::show () {}
+void SportNumberItem::hide () {}
+
+void SportNumberItem::showMenu (QMenu *menu)
+{
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
+
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+
+    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// VIItem
+////////////////////////////////////////////////////////////////////////////////
+
+VIItem::VIItem (OpenParEMg *mw_, ModeItem *modeItem_, int itemType_)
+{
+    mw=mw_;
+    parentItem=modeItem_;
+    itemType=itemType_;
+    modeItem=modeItem_;
+    parentItem=modeItem_;
+
+    if (itemType_ == 10) setText(0,"voltage");
+    else if (itemType_ == 11) setText(0,"current");
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    addShapeData(newShapeData);
+}
+
+bool VIItem::isValidShow ()
+{
+    if (foreground(0) == Qt::gray) return true;
+    return false;
+}
+
+bool VIItem::isValidHide ()
+{
+    if (foreground(0) == Qt::black) return true;
+    return false;
+}
+
+void VIItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item) {
+            if (item->is_voltage() || item->is_current()) {
+                mw->ui->drawingWindow->showItem(item);
+            }
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(30);
+}
+
+void VIItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item) {
+            if (item->is_voltage() || item->is_current()) {
+                mw->ui->drawingWindow->hideItem(item);
+            }
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(34);
+}
+
+void VIItem::showMenu (QMenu *menu)
+{
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+    mw->drawPathAction=new QAction("Draw Line Path");
+    mw->drawPolylineAction=new QAction("Draw Polyline Path");
+    mw->insertAction=new QAction("Add Path");
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
+
+    connect(mw->showAction, &QAction::triggered, this, &VIItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &VIItem::hide);
+    connect(mw->drawPathAction, &QAction::triggered, this, &VIItem::drawLinePath);
+    connect(mw->drawPolylineAction, &QAction::triggered, this, &VIItem::drawPolylinePath);
+    connect(mw->insertAction, &QAction::triggered, this, &VIItem::insertSelectedPath);
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
+    if (mw->ui->drawingWindow->get_selectedItems_count() == 1 && mw->clickedItem->foreground(0) == Qt::black) menu->addAction(mw->drawPathAction);
+    if (mw->ui->drawingWindow->get_selectedItems_count() == 1 && mw->clickedItem->foreground(0) == Qt::black) menu->addAction(mw->drawPolylineAction);
+    if (isValidInsertSelectedPath()) menu->addAction(mw->insertAction);
+    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+}
+
+void VIItem::drawLinePath ()
+{
+    mw->isIntegrationPath=true;
+    mw->workingItem=mw->clickedItem;
+
+    mw->currentDrawingItem=new DrawingItem(mw,mw->drawing);
+    mw->currentDrawingItem->startLine();
+}
+
+void VIItem::drawPolylinePath ()
+{
+    mw->isIntegrationPath=true;
+    mw->workingItem=mw->clickedItem;
+
+    mw->currentDrawingItem=new DrawingItem(mw,mw->drawing);
+    mw->currentDrawingItem->startPolyline();
+}
+
+bool VIItem::isValidInsertSelectedPath ()
+{
+    int VIcount=0;
+    BaseItem *VIitem;
+    int pathCount=0;
+
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item) {
+            if (item->is_voltage() || item->is_current()) {VIitem=item; VIcount++;}
+
+            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+            if (pathItem && pathItem->is_path()) pathCount++;
+        }
+        i++;
+    }
+
+    if (VIcount != 1) return false;
+    if (pathCount == 0) return false;
+
+    // check that the paths are within the port
+
+    ModeItem *modeItem=dynamic_cast<ModeItem *>(VIitem->QTreeWidgetItem::parent());
+    PortItem *portItem=dynamic_cast<PortItem *>(modeItem->QTreeWidgetItem::parent());
+
+    // port outline
+    PathItem *pathItem=portItem->getPathItem();
+    if (pathItem) return false;
+    Path *portPath=pathItem->getPath();
+    if (!portPath) return false;
+
+    i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+            if (pathItem && pathItem->is_path()) {
+                Path *path=pathItem->getPath();
+                if (!portPath->is_path_inside(path)) {
+                    return false;
+                }
+            }
+        }
+        i++;
+    }
+
+    return true;
+}
+
+void VIItem::insertSelectedPath ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item) {
+            if (item->is_voltage() || item->is_current()) mw->insertIntegrationPath(item);
+        }
+        i++;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// RootMeshItem
+////////////////////////////////////////////////////////////////////////////////
+
+bool RootMeshItem::isValidShow ()
+{
+    int i=0;
+    while (i < mw->mesh->childCount()) {
+        BaseItem *child=dynamic_cast<BaseItem *>(mw->mesh->child(i));
+        if (child->foreground(0) == Qt::gray) return true;
+        i++;
+    }
+    return false;
+}
+
+bool RootMeshItem::isValidHide ()
+{
+    int i=0;
+    while (i < mw->mesh->childCount()) {
+        BaseItem *child=dynamic_cast<BaseItem *>(mw->mesh->child(i));
+        if (child->foreground(0) == Qt::black) return true;
+        i++;
+    }
+    return false;
+}
+
+void RootMeshItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_rootMesh()) {
+            int j=0;
+            while (j < item->childCount()) {
+                BaseItem *child=dynamic_cast<BaseItem *>(item->child(j));
+                mw->ui->drawingWindow->showItem(child);
+                child->setForeground(0,Qt::black);
+                j++;
+            }
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(13);
+}
+
+void RootMeshItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_rootMesh()) {
+            int j=0;
+            while (j < item->childCount()) {
+                BaseItem *child=dynamic_cast<BaseItem *>(item->child(j));
+                mw->ui->drawingWindow->hideItem(child);
+                child->setForeground(0,Qt::gray);
+                j++;
+            }
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(14);
+}
+
+void RootMeshItem::showMenu (QMenu *menu)
+{
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
+
+    connect(mw->showAction, &QAction::triggered, this, &RootMeshItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &RootMeshItem::hide);
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
+    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// MeshItem
+////////////////////////////////////////////////////////////////////////////////
+
+MeshItem::MeshItem (OpenParEMg *mw_)
+{
+    mw=mw_;
+    parentItem=mw->mesh;
+    itemType=3;
+}
+
+bool MeshItem::isValidShow ()
+{
+    if (foreground(0) == Qt::gray) return true;
+    return false;
+}
+
+bool MeshItem::isValidHide ()
+{
+    if (foreground(0) == Qt::black) return true;
+    return false;
+}
+
+void MeshItem::show ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_mesh()) {
+            mw->ui->drawingWindow->showItem(item);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(15);
+}
+
+void MeshItem::hide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
+        if (item && item->is_mesh()) {
+            mw->ui->drawingWindow->hideItem(item);
+        }
+        i++;
+    }
+
+    mw->ui->drawingWindow->updateViewer();
+    mw->setMenusI(16);
+}
+
+void MeshItem::showMenu (QMenu *menu)
+{
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+
+    connect(mw->showAction, &QAction::triggered, this, &MeshItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &MeshItem::hide);
+
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
 }
