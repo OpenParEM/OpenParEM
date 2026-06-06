@@ -383,12 +383,6 @@ public:
     void drawMesh ();
     void deleteMesh (bool);
 
-    //bool isValidRootDrawingShow ();
-    //bool isValidRootDrawingHide ();
-
-
-    //bool isValidRootDrawingSelectAll ();
-
     bool hasSelectedPaths ();
     void clearTreeSelection ();
 
@@ -406,8 +400,6 @@ public:
     void startOperation (bool);
 
     bool isValidAssignMaterial ();
-    //bool isValidObjectShow ();
-    //bool isValidObjectHide ();
     bool isValidObjectDelete ();
 
     bool isValidSetPlane ();
@@ -556,61 +548,25 @@ private slots:
 
     // Functionality
 
-    //void rootDrawingSelectAll ();
     void on_drawingItemTree_itemClicked(QTreeWidgetItem *item, int column);
     void expand (BaseItem *);
     void collapse (BaseItem *);
     void expandAllItems ();
     void collapseAllItems ();
-    bool isValidDrawingShow ();
-    //void rootDrawingShow ();
-    //void showDrawingItems ();
-    //void rootDrawingHide ();
-    //void hideDrawingItems ();
     void renamePathItems ();
     void deletePathItems ();
-    //void showRootPathItems ();
     bool isValidDeletePath ();
-    //bool isValidShowPath ();
     void showPathItems ();
-    //bool isValidRootPathShow ();
-    //void hideRootPathItems ();
-    //bool isValidHidePath ();
     void hidePathItems ();
-    //bool isValidRootPathHide ();
-    //void rootPortHide ();
-    //bool isValidRootPortShow ();
-    //void rootPortShow ();
-    //void showPortItems ();
-    //bool isValidRootPortHide ();
-    //void hidePortItems ();
-    //bool isValidRootBoundaryShow ();
-    //void rootBoundaryShow ();
-    //bool isValidRootBoundaryHide ();
-    //void rootBoundaryHide ();
-    //void showBoundaryItems ();
-    //void hideBoundaryItems ();
     void unselectBoundaryItems ();
     void renameBoundaryItems ();
     void deleteBoundaryItems ();
-
-    //void showRootMeshItems ();
-    //void showMeshItems ();
-    //bool isValidRootMeshShow ();
-    //void hideRootMeshItems ();
-    //void hideMeshItems ();
-    //bool isValidRootMeshHide ();
-    //void addSportNet ();
     void renameSportNet ();
-    //bool isValidDeleteMode ();
-    //void deleteSportItem (BaseItem *);
-    //void deleteSportItems ();
     void rename_editingFinished ();
     bool hasOneSelectedSport ();
     bool hasVoltage ();
     bool hasCurrent ();
     void insertIntegrationPath (BaseItem *);
-    //void selectItems ();
     bool isValidRenameDrawingItems ();
     void renameDrawingItems ();
     void unselectRootDrawingItems ();
@@ -622,13 +578,6 @@ private slots:
     void renamePortItems ();
     void deleteRootPortItems ();
     void deletePortItems ();
-    //void showNetItems ();
-    //void hideNetItems ();
-    //void showVIItems ();
-    //void hideVIItems ();
-    //void removeIntegrationPathItems ();
-    //void showIntegrationPathItems ();
-    //void hideIntegrationPathItems ();
 
     void assignMaterial ();
     void crossReferencePaths ();
@@ -636,7 +585,6 @@ private slots:
     //void resetPathColors ();
 
     void cancelMenu ();
-    //void buildPathMenu (QMenu &menu);
     void buildFaceMenu (QMenu &menu);
     void itemTreeContextMenu_triggered (const QPoint& pnt);
     void drawingWindowContextMenu_triggered (const QPoint& pnt);
@@ -690,10 +638,6 @@ private slots:
     void on_actionDrawPolycircle_triggered ();
     void on_actionDrawRectangle_triggered ();
     void finishDraw ();
-    //void drawLinePath ();
-    //void drawPolylinePath ();
-    //bool isValidInsertAction ();
-    //void insertSelectedPath ();
     void finishPolyline ();
     void deleteLastPoint ();
     void closePolyline ();
@@ -807,10 +751,7 @@ private:
     // lockouts
     bool projectFileLoaded;  // project setup variable including paths
     bool projectChanged;
-    // bool brepFileLoaded;     // drawing (brep or step)
-    // bool brepChanged;
     bool drawingChanged;
-    //bool meshFileLoaded;     // mesh
     bool meshChanged;
     bool drawingPlaneShown;
     bool simulationRunning;
