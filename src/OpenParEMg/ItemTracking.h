@@ -302,7 +302,7 @@ public:
                 i++;
             }
             item->setForeground(0,Qt::black);
-        } else if (item->is_scale()) {
+        } else if (item->is_scaleLabel()) {
             // nothing to do
         } else if (item->is_impedanceDefinition()) {
             // nothing to do
@@ -551,7 +551,7 @@ public:
             }
             item->setForeground(0,Qt::gray);
             nullifyVisibleItem(item);
-        } else if (item->is_scale()) {
+        } else if (item->is_scaleLabel()) {
             // nothing to do
         } else if (item->is_scaleValue()) {
             // nothing to do

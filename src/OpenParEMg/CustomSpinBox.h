@@ -5,7 +5,7 @@
 #include <QSpinBox>
 #include <QWheelEvent>
 
-void spinValueChanged (int value, SportItem *);
+void spinValueChanged (int value, SportNumberItem *);
 
 class CustomSpinBox : public QSpinBox
 {
@@ -18,11 +18,11 @@ public:
         connect(this,&QSpinBox::valueChanged,this,&CustomSpinBox::handleCustomValueChanged);
         setFocusPolicy(Qt::ClickFocus);
         drawingTracker=nullptr;
-        sportItem=nullptr;
+        sportNumberItem=nullptr;
     }
 
     void set_itemTracker (ItemTracker *drawingTracker_) {drawingTracker=drawingTracker_;}
-    void set_sportItem (SportItem *sportItem_) {sportItem=sportItem_;}
+    void set_sportNumberItem (SportNumberItem *sportNumberItem_) {sportNumberItem=sportNumberItem_;}
 
 protected:
     void focusInEvent(QFocusEvent *event) override
@@ -38,16 +38,16 @@ protected:
     }
 
 signals:
-    void CustomValueChanged (int, SportItem *);
+    void CustomValueChanged (int, SportNumberItem *);
 
 private slots:
     void handleCustomValueChanged (int index) {
-        emit CustomValueChanged(index,sportItem);
+        emit CustomValueChanged(index,sportNumberItem);
     }
 
 private:
     ItemTracker *drawingTracker;
-    SportItem *sportItem;
+    SportNumberItem *sportNumberItem;
 };
 
 #endif // CUSTOMSPINBOX_H

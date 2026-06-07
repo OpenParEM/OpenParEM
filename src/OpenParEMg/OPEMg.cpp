@@ -19,7 +19,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "OPEMg.h"
-#include "CustomSpinBox.h"
 #include "DrawingPreferences.h"
 #include "Process.h"
 #include "ui_OPEMg.h"
@@ -1010,7 +1009,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
     clickedItem->showMenu(&menu);
 
     // ToDo: move this menu when the scale item is fully implemented
-    if (clickedItem->is_scale()) {
+    if (clickedItem->is_scaleLabel()) {
         expandAllAction=new QAction("Expand All",this);
         collapseAllAction=new QAction("Collapse All",this);
 
@@ -4186,7 +4185,6 @@ void OpenParEMg::on_actionOpen_triggered ()
             setMaterials();
         }
 
-
         ui->drawingWindow->fitAll();
         ui->drawingWindow->updateViewer();
 
@@ -6758,20 +6756,36 @@ void OpenParEMg::finishDraw ()
         //     //if (port) pathItem->set_portItem(port->get_item());
         // }
 
-        // assume a positive direction for the new integration path
-        QString newPathText="+";
-        newPathText.append(pathItem->text(0));
+        // cast
+        VIItem *viItem=dynamic_cast<VIItem *>(workingItem);
+        if (viItem) {
+            if (viItem->is_voltage() || viItem->is_current()) {
 
-        // item for the new integration path
-        PathItem *newPathItem=new PathItem(this,workingItem);
-        newPathItem->setText(0,newPathText);
-        newPathItem->push_linkedItem(pathItem);
-        pathItem->push_linkedItem(newPathItem);
-        workingItem->addChild(newPathItem);
-        itemChangesStack.add(newPathItem);
+                // assume a positive direction for the new integration path
+                QString newPathText="+";
+                newPathText.append(pathItem->text(0));
 
-        isIntegrationPath=false;
-        currentDrawingItem=nullptr;
+                // item for the new integration path
+                PathItem *newPathItem=new PathItem(this,viItem);
+                newPathItem->set_itemType(14);  // integration path segment
+                newPathItem->setText(0,newPathText);
+                newPathItem->push_linkedItem(pathItem);
+                pathItem->push_linkedItem(newPathItem);
+                workingItem->addChild(newPathItem);
+                itemChangesStack.add(newPathItem);
+
+                // add scale, if needed
+                if (!viItem->hasScale()) {
+                    ScaleLabelItem *scaleLabelItem=viItem->addScaleItem();
+                    if (scaleLabelItem && scaleLabelItem->is_scaleLabel()) {
+                        itemChangesStack.add(scaleLabelItem);
+                    }
+                }
+
+                isIntegrationPath=false;
+                currentDrawingItem=nullptr;
+            }
+        }
     } else {
         currentDrawingItem->finishDraw();
         currentDrawingItem=nullptr;

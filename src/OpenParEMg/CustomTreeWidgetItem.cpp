@@ -27,12 +27,86 @@ BaseItem::BaseItem (OpenParEMg *mw_, BaseItem *parentItem_)
     parentItem=parentItem_;
     itemType=-1;
     setText(0,"BaseItem");
+    setForeground(0,Qt::black);
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
     addShapeData(newShapeData);
 }
 
+void BaseItem::restoreWidgets (BaseItem *baseItem)
+{
+    std::cout << "BaseItem::restoreWidgets  baseItem=" << baseItem << std::endl; std::cout.flush();
+
+    if (!baseItem) return;
+
+    std::cout << "                          itemType=" << baseItem->get_itemType() << std::endl; std::cout.flush();
+    std::cout << "                          parent->itemType=" << baseItem->getParentItem()->get_itemType() << std::endl; std::cout.flush();
+
+    std::cout << " sorting enabled=" << mw->ui->drawingItemTree->isSortingEnabled() << std::endl; std::cout.flush();
+
+    if (baseItem && baseItem->is_impedanceCalculation()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(baseItem->getParentItem());
+        if (portItem && is_port()) {
+            ShapeData *shapeData=portItem->getShapeData();
+            QString impedance_calculation=shapeData->get_impedance_calculation();
+            portItem->insertImpedanceCalculationWidget(baseItem,impedance_calculation);
+        }
+    }
+
+    if (baseItem && baseItem->is_impedanceDefinition()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(baseItem->getParentItem());
+        if (portItem && is_port()) {
+            ShapeData *shapeData=portItem->getShapeData();
+            QString impedance_definition=shapeData->get_impedance_definition();
+            portItem->insertImpedanceDefinitionWidget(baseItem,impedance_definition);
+        }
+    }
+
+    if (baseItem && baseItem->is_sportNumber()) {
+        SportItem *sportItem=dynamic_cast<SportItem *>(baseItem->getParentItem());
+        if (sportItem && sportItem->is_sportLabel()) {
+            ShapeData *shapeData=baseItem->getShapeData();
+            int Sport=shapeData->get_Sport();
+            sportItem->insertSportNumberWidget(baseItem,Sport);
+        }
+    }
+
+    if (baseItem && baseItem->is_scaleValue()) {
+        ScaleValueItem *scaleValueItem=dynamic_cast<ScaleValueItem *>(baseItem);
+        if (scaleValueItem && scaleValueItem->is_scaleValue()) {
+            ShapeData *shapeData=baseItem->getShapeData();
+            double scale=shapeData->get_scale();
+            scaleValueItem->insertScaleValueWidget(scale);
+
+            // // make sure the scale is on top of the paths
+            // std::cout << "place 1" << std::endl; std::cout.flush();
+            // ScaleLabelItem *scaleLabelItem=scaleValueItem->getScaleLabelItem();
+            // if (scaleLabelItem && scaleLabelItem->is_scaleLabel()) {
+            //     std::cout << "place 2" << std::endl; std::cout.flush();
+            //     VIItem *viItem=scaleLabelItem->getVIItem();
+            //     if (viItem) {
+            //         std::cout << "place 3" << std::endl; std::cout.flush();
+            //         if (viItem->is_voltage() || viItem->is_current()) {
+            //             std::cout << "place 4" << std::endl; std::cout.flush();
+            //             int index=viItem->indexOfChild(scaleValueItem);
+            //             viItem->takeChild(index);
+            //             viItem->insertChild(0,scaleValueItem);
+            //         }
+            //     }
+            // }
+        }
+    }
+
+    if (baseItem) {
+        int i=0;
+        while (i < baseItem->childCount()) {
+            BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(i));
+            if (child) restoreWidgets(child);
+            i++;
+        }
+    }
+}
 
 void BaseItem::startItemChange () {mw->itemChangesStack.startNew();}
 void BaseItem::addItemChange () {mw->itemChangesStack.add(this);}
@@ -77,12 +151,28 @@ void BaseItem::redo ()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// ScaleItem
+// ScaleLabelItem
 ////////////////////////////////////////////////////////////////////////////////
 
-void ScaleItem::undo ()
+ScaleLabelItem::ScaleLabelItem (OpenParEMg *mw_, VIItem *parentItem_)
 {
-    std::cout << "ScaleItem::undo  this=" << this << std::endl; std::cout.flush();
+    mw=mw_;
+    parentItem=parentItem_;
+    itemType=12;
+    viItem=parentItem_;
+    setForeground(0,Qt::black);
+    setText(0,"Scale");
+    setFlags(flags() & ~Qt::ItemIsEditable);
+    setToolTip(0,"Scale factor for the integration path.");
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    addShapeData(newShapeData);
+}
+
+void ScaleLabelItem::undo ()
+{
+    std::cout << "ScaleLabelItem::undo  this=" << this << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -92,10 +182,7 @@ void ScaleItem::undo ()
         // nothing to do
     } else if (shapeData->isCreate()) {
         std::cout << "   isCreate" << std::endl; std::cout.flush();
-        mw->ui->drawingWindow->unselectItem(this);
-        mw->ui->drawingWindow->hideItem(this);
-        getParentItem()->removeChild(this);
-
+        parentItem->removeChild(this);
         dataStack.undo();
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
@@ -104,9 +191,9 @@ void ScaleItem::undo ()
     }
 }
 
-void ScaleItem::redo ()
+void ScaleLabelItem::redo ()
 {
-    std::cout << "ScaleItem::redo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "ScaleLabelItem::redo  this=" << this << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -120,25 +207,107 @@ void ScaleItem::redo ()
     } else if (next->isCreate()) {
         std::cout << "   isCreate" << std::endl; std::cout.flush();
         dataStack.redo();
-
-        getParentItem()->addChild(this);
-
-        QDoubleValidator doubleValidator;
-        doubleValidator.setBottom(0);
-
-        CustomLineEdit *scaleEdit=new CustomLineEdit();
-        scaleEdit->setText(QString::number(1));   // default value
-        scaleEdit->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
-        scaleEdit->set_baseItem(integrationPath->get_item());
-        scaleEdit->set_boundaryDatabase(mw->boundaryDatabase);
-        scaleEdit->setValidator(&doubleValidator);
-        mw->ui->drawingItemTree->setItemWidget(this,0,scaleEdit);
-
-
-        mw->ui->drawingWindow->showItem(this);
-        mw->ui->drawingWindow->activateItem(this);
+        parentItem->addChild(this);
+        restoreWidgets(this);
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
+    } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+    } else if (next->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ScaleValueItem
+////////////////////////////////////////////////////////////////////////////////
+
+ScaleValueItem::ScaleValueItem (OpenParEMg *mw_, ScaleLabelItem *parentItem_)
+{
+    mw=mw_;
+    parentItem=parentItem_;
+    itemType=13;
+    scaleLabelItem=parentItem_;
+    setForeground(0,Qt::black);
+    setFlags(flags() & ~Qt::ItemIsSelectable);
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    newShapeData->set_scale(1); // default
+    addShapeData(newShapeData);
+}
+
+
+void ScaleValueItem::insertScaleValueWidget (double scale)
+{
+    QDoubleValidator doubleValidator;
+    doubleValidator.setBottom(0);
+
+    CustomLineEdit *scaleEdit=new CustomLineEdit();
+    const QSignalBlocker blocker(scaleEdit);
+    scaleEdit->setValidator(&doubleValidator);
+    scaleEdit->setText(QString::number(scale,'g'));
+    scaleEdit->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
+    scaleEdit->set_baseItem(this);
+    mw->ui->drawingItemTree->setItemWidget(this,0,scaleEdit);
+
+    QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,&textValueChanged);
+}
+
+void ScaleValueItem::undo ()
+{
+    std::cout << "ScaleItem::undo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    if (shapeData->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // nothing to do
+    } else if (shapeData->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
+
+
+    } else if (shapeData->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+
+        dataStack.undo();
+
+        CustomLineEdit *scaleEdit=dynamic_cast<CustomLineEdit *>(mw->ui->drawingItemTree->itemWidget(this,0));
+        const QSignalBlocker blocker(scaleEdit);
+        ShapeData *shapeData=getShapeData();
+        scaleEdit->setText(QString::number(shapeData->get_scale()));
+    } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+    }
+}
+
+void ScaleValueItem::redo ()
+{
+    std::cout << "ScaleValueItem::redo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    ShapeData *next=shapeData->getNext();
+    if (!next) return;
+
+    if (next->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // should not occur
+    } else if (next->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
+    } else if (next->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+
+        dataStack.redo();
+
+        CustomLineEdit *scaleEdit=dynamic_cast<CustomLineEdit *>(mw->ui->drawingItemTree->itemWidget(this,0));
+        const QSignalBlocker blocker(scaleEdit);
+        ShapeData *shapeData=getShapeData();
+        scaleEdit->setText(QString::number(shapeData->get_scale()));
+    } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
     }
@@ -247,6 +416,7 @@ DrawingItem::DrawingItem (OpenParEMg *mw_, BaseItem *parentItem_)
     parentItem=parentItem_;
     itemType=0;
     setText(0,"DrawingItem");
+    setForeground(0,Qt::black);
 
     depth=0;
     set_dimTag(-1,-1);          // for mesh items; invalid initialization
@@ -1610,6 +1780,7 @@ PathItem::PathItem (OpenParEMg *mw_, BaseItem *parentItem_)
     parentItem=parentItem_;
     itemType=4;
     setText(0,"PathItem");
+    setForeground(0,Qt::black);
     path=nullptr;
     hasArrows=true;
 
@@ -1980,7 +2151,9 @@ IntegrationPathItem::IntegrationPathItem (OpenParEMg *mw_, BaseItem *parentItem_
 {
     mw=mw_;
     parentItem=parentItem_;
-    itemType=4;
+    itemType=14;
+    setText(0,"IntegrationPathItem");
+    setForeground(0,Qt::black);
 
     integrationPath=nullptr;
     pathItem=nullptr;
@@ -2192,6 +2365,9 @@ BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_t
     itemType=2;
     pathItem=pathItem_;
 
+    setFlags(flags() | Qt::ItemIsEditable);
+    setToolTip(0,"Boundary type.");
+
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
     newShapeData->set_wave_impedance(wave_impedance_);
@@ -2202,8 +2378,7 @@ BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_t
     QString name="boundary";
     name.append(QString::number(mw->boundary->childCount()+1));
     setText(0,name);
-
-    setToolTip(0,"Boundary name.");
+    setForeground(0,Qt::black);
 
     if (pathItem) {
 
@@ -2330,6 +2505,9 @@ BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_t
 
     mw->itemChangesStack.add(this);
 }
+
+// void BoundaryItem::startItemChange () {mw->itemChangesStack.startNew();}
+// void BoundaryItem::addItemChange () {mw->itemChangesStack.add(this);}
 
 bool BoundaryItem::isValidShow ()
 {
@@ -2609,8 +2787,6 @@ void BoundaryItem::populate (Boundary *boundary)
     // type
 
     BaseItem *itemType=new BaseItem(mw,this);
-    itemType->setFlags(itemType->flags() | Qt::ItemIsEditable);
-    itemType->setToolTip(0,"Boundary type.");
     addChild(itemType);
 
     CustomComboBox *comboType=new CustomComboBox();
@@ -2802,18 +2978,22 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
 {
     mw=mw_;
     parentItem=mw->port;
-    itemType=2;
+    itemType=1;
     pathItem=pathItem_;
+
+    int Sport=mw->port->childCount()+1;
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
     newShapeData->set_impedance_calculation(impedance_calculation_);
     newShapeData->set_impedance_definition(impedance_definition_);
+    newShapeData->set_Sport(Sport);
     addShapeData(newShapeData);
 
     QString name="port";
-    name.append(QString::number(mw->port->childCount()+1));
+    name.append(QString::number(Sport));
     setText(0,name);
+    setForeground(0,Qt::black);
 
     setToolTip(0,"Port name.");
 
@@ -2833,18 +3013,19 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
         }
     }
 
-
-    QString impedance_definition=newShapeData->get_impedance_definition();
-    QString impedance_calculation=newShapeData->get_impedance_calculation();
-
     // impedance definition
+    addImpedanceDefinitionItem();
 
-    BaseItem *itemImpedanceDefinition=new BaseItem(mw,this);
-    itemImpedanceDefinition->set_itemType(6);
-    itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
-    itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
-    addChild(itemImpedanceDefinition);
+    // impedance calculation
+    addImpedanceCalculationItem();
 
+    // add one default mode since at least one mode is required
+    ModeItem *newModeItem=new ModeItem(mw,this);
+    addChild(newModeItem);
+}
+
+void PortItem::insertImpedanceDefinitionWidget (BaseItem *itemImpedanceDefinition, QString impedance_definition)
+{
     CustomComboBox *comboZdef=new CustomComboBox();
     const QSignalBlocker blockerZdef(comboZdef);
     comboZdef->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
@@ -2864,15 +3045,24 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
 
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+}
 
-    // impedance calculation
+void PortItem::addImpedanceDefinitionItem ()
+{
+    ShapeData *shapeData=getShapeData();
+    QString impedance_definition=shapeData->get_impedance_definition();
 
-    BaseItem *itemImpedanceCalculation=new BaseItem(mw,this);
-    itemImpedanceCalculation->set_itemType(7);
-    itemImpedanceCalculation->setFlags(itemImpedanceCalculation->flags() & ~Qt::ItemIsSelectable);
-    itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
-    addChild(itemImpedanceCalculation);
+    BaseItem *itemImpedanceDefinition=new BaseItem(mw,this);
+    itemImpedanceDefinition->set_itemType(6);
+    itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
+    itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
+    addChild(itemImpedanceDefinition);
 
+    insertImpedanceDefinitionWidget(itemImpedanceDefinition,impedance_definition);
+}
+
+void PortItem::insertImpedanceCalculationWidget (BaseItem *itemImpedanceCalculation, QString impedance_calculation)
+{
     CustomComboBox *comboZcalc=new CustomComboBox();
     const QSignalBlocker blockerZcalc(comboZcalc);
     comboZcalc->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
@@ -2888,10 +3078,22 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
 
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+}
 
-    // add one default mode since at least one mode is required
-    ModeItem *newModeItem=new ModeItem(mw,this);
-    addChild(newModeItem);
+void PortItem::addImpedanceCalculationItem ()
+{
+    std::cout << "place 3" << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    QString impedance_calculation=shapeData->get_impedance_calculation();
+
+    BaseItem *itemImpedanceCalculation=new BaseItem(mw,this);
+    itemImpedanceCalculation->set_itemType(7);
+    itemImpedanceCalculation->setFlags(itemImpedanceCalculation->flags() & ~Qt::ItemIsSelectable);
+    itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
+    addChild(itemImpedanceCalculation);
+
+    insertImpedanceCalculationWidget(itemImpedanceCalculation,impedance_calculation);
 }
 
 bool PortItem::isValidShow ()
@@ -3287,34 +3489,35 @@ void PortItem::redo ()
         dataStack.redo();
 
 
-        // remove some children
-        int i=0;
-        while (i < childCount()) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-            if (baseItem && baseItem->is_impedanceCalculation()) {
-                int index=indexOfChild(baseItem);
-                this->takeChild(index);
-                delete baseItem;
-                break;
-            }
-            i++;
-        }
+        // // remove some children
+        // int i=0;
+        // while (i < childCount()) {
+        //     BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        //     if (baseItem && baseItem->is_impedanceCalculation()) {
+        //         int index=indexOfChild(baseItem);
+        //         this->takeChild(index);
+        //         delete baseItem;
+        //         break;
+        //     }
+        //     i++;
+        // }
 
-        i=0;
-        while (i < childCount()) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-            if (baseItem && baseItem->is_impedanceDefinition()) {
-                int index=indexOfChild(baseItem);
-                this->takeChild(index);
-                delete baseItem;
-                break;
-            }
-            i++;
-        }
+        // i=0;
+        // while (i < childCount()) {
+        //     BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        //     if (baseItem && baseItem->is_impedanceDefinition()) {
+        //         int index=indexOfChild(baseItem);
+        //         this->takeChild(index);
+        //         delete baseItem;
+        //         break;
+        //     }
+        //     i++;
+        // }
 
-        populate(nullptr);
+        // populate(nullptr);
 
         mw->port->addChild(this);
+        restoreWidgets(this);
 
         //xxx
         //{mw->expandAllItems(); mw->ui->drawingWindow->updateViewer(); QMessageBox mb; mb.critical(nullptr, "Debug", "place y3");}
@@ -3381,17 +3584,19 @@ ModeItem::ModeItem (OpenParEMg *mw_, PortItem *portItem_)
     newShapeData->setCreate();
     addShapeData(newShapeData);
 
-    int Sport=0;
+    // transfer the Sport number from the port to the mode
     if (portItem_) {
         ShapeData *shapeData=portItem_->getShapeData();
-        Sport=shapeData->get_Sport();
+        newShapeData->set_Sport(shapeData->get_Sport());
     }
 
     QString name="net";
-    name.append(QString::number(Sport));
+    name.append(QString::number(newShapeData->get_Sport()));
     setText(0,name);
+    setForeground(0,Qt::black);
 
-    setToolTip(0,"Port name.");
+    setToolTip(0,"Mode and its net name.");
+    setFlags(flags() & ~Qt::ItemIsEditable);
 
     SportItem *newSportItem=new SportItem(mw,this);
     addChild(newSportItem);
@@ -3402,6 +3607,9 @@ ModeItem::ModeItem (OpenParEMg *mw_, PortItem *portItem_)
     VIItem *newCurrentItem=new VIItem(mw,this,11);
     addChild(newCurrentItem);
 }
+
+// void ModeItem::startItemChange () {mw->itemChangesStack.startNew();}
+// void ModeItem::addItemChange () {mw->itemChangesStack.add(this);}
 
 bool ModeItem::isValidShow ()
 {
@@ -3555,13 +3763,46 @@ SportItem::SportItem (OpenParEMg *mw_, ModeItem *modeItem_)
     itemType=8;
     modeItem=modeItem_;
     setText(0,"S Port");
+    setForeground(0,Qt::black);
+    setFlags(flags() & ~Qt::ItemIsEditable);
+    setToolTip(0,"S-parameter port number for the mode.");
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
     addShapeData(newShapeData);
 
-    SportNumberItem *newSportNumberItem=new SportNumberItem(mw,this);
-    addChild(newSportNumberItem);
+    SportNumberItem *sportNumberItem=new SportNumberItem(mw,this);
+    addChild(sportNumberItem);
+
+    // get the next S-parameter port number
+    int Sport=0;
+    ModeItem *modeItem=getModeItem();
+    if (modeItem) {
+        PortItem *portItem=modeItem->getPortItem();
+        if (portItem) {
+            ShapeData *shapeData=portItem->getShapeData();
+            Sport=shapeData->get_Sport();
+        }
+    }
+
+    // spin box for changing the port number
+    insertSportNumberWidget(sportNumberItem,Sport);
+}
+
+void SportItem::insertSportNumberWidget (BaseItem *baseItem, int Sport)
+{
+    SportNumberItem *sportNumberItem=dynamic_cast<SportNumberItem *>(baseItem);
+
+    CustomSpinBox *sportNumber=new CustomSpinBox();
+    const QSignalBlocker blocker(sportNumber);
+    sportNumber->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
+    sportNumber->set_sportNumberItem(sportNumberItem);
+    sportNumber->setMinimum(1);
+    sportNumber->setValue(Sport);
+    mw->ui->drawingItemTree->setItemWidget(baseItem,0,sportNumber);
+
+    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
+    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::setMenus);
 }
 
 bool SportItem::isValidShow () {return false;}
@@ -3592,34 +3833,19 @@ SportNumberItem::SportNumberItem (OpenParEMg *mw_, SportItem *sportItem_)
     itemType=9;
     sportItem=sportItem_;
 
+    setForeground(0,Qt::black);
+    setFlags(flags() & ~Qt::ItemIsSelectable);
+    setToolTip(0,"S-parameter port number.");
+
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
     addShapeData(newShapeData);
 
-    int Sport=1;
-    ModeItem *modeItem=sportItem_->getModeItem();
-    if (modeItem) {
-        PortItem *portItem=modeItem->getPortItem();
-        if (portItem) {
-            ShapeData *shapeData=portItem->getShapeData();
-            Sport=shapeData->get_Sport();
-        }
-    }
-
     setToolTip(0,"S-parameter port number.");
-
-    CustomSpinBox *sportNumber=new CustomSpinBox();
-    sportNumber->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
-    sportNumber->set_sportItem(sportItem_);
-    sportNumber->setMinimum(1);
-    Sport=1;
-    std::cout << "Sport=" << Sport << std::endl; std::cout.flush();
-    sportNumber->setValue(Sport);
-    mw->ui->drawingItemTree->setItemWidget(this,0,sportNumber);
-
-    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
-    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::setMenus);
 }
+
+// void SportNumberItem::startItemChange () {mw->itemChangesStack.startNew();}
+// void SportNumberItem::addItemChange () {mw->itemChangesStack.add(this);}
 
 bool SportNumberItem::isValidShow () {return false;}
 bool SportNumberItem::isValidHide () {return false;}
@@ -3628,14 +3854,71 @@ void SportNumberItem::hide () {}
 
 void SportNumberItem::showMenu (QMenu *menu)
 {
-    mw->expandAllAction=new QAction("Expand All",this);
-    mw->collapseAllAction=new QAction("Collapse All",this);
+    // mw->expandAllAction=new QAction("Expand All",this);
+    // mw->collapseAllAction=new QAction("Collapse All",this);
 
-    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
-    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+    // connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    // connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
-    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
-    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    // if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+    // if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+}
+
+void SportNumberItem::undo ()
+{
+    std::cout << "SportNumberItem::undo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    if (shapeData->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // nothing to do
+    } else if (shapeData->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
+    } else if (shapeData->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+
+        dataStack.undo();
+
+        CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
+        const QSignalBlocker blocker(sportNumber);
+        ShapeData *shapeData=getShapeData();
+        sportNumber->setValue(shapeData->get_Sport());
+    } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+    }
+}
+
+void SportNumberItem::redo ()
+{
+    std::cout << "SportNumberItem::redo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    ShapeData *next=shapeData->getNext();
+    if (!next) return;
+
+    if (next->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // should not occur
+    } else if (next->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
+    } else if (next->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+
+        dataStack.redo();
+
+        CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
+        const QSignalBlocker blocker(sportNumber);
+        ShapeData *shapeData=getShapeData();
+        sportNumber->setValue(shapeData->get_Sport());
+    } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+    } else if (next->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3650,8 +3933,16 @@ VIItem::VIItem (OpenParEMg *mw_, ModeItem *modeItem_, int itemType_)
     modeItem=modeItem_;
     parentItem=modeItem_;
 
-    if (itemType_ == 10) setText(0,"voltage");
-    else if (itemType_ == 11) setText(0,"current");
+    if (itemType_ == 10) {
+        setText(0,"voltage");
+        setToolTip(0,"Voltage integration path.");
+    } else if (itemType_ == 11) {
+        setText(0,"current");
+        setToolTip(0,"Current integration path.");
+    }
+
+    setFlags(flags() & ~Qt::ItemIsEditable);
+    setForeground(0,Qt::black);
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
@@ -3667,6 +3958,12 @@ bool VIItem::isValidShow ()
 bool VIItem::isValidHide ()
 {
     if (foreground(0) == Qt::black) return true;
+    return false;
+}
+
+bool VIItem::isValidDrawPath ()
+{
+    if (mw->ui->drawingWindow->get_selectedItems_count() == 1 && mw->clickedItem->foreground(0) == Qt::black) return true;
     return false;
 }
 
@@ -3724,8 +4021,8 @@ void VIItem::showMenu (QMenu *menu)
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    if (mw->ui->drawingWindow->get_selectedItems_count() == 1 && mw->clickedItem->foreground(0) == Qt::black) menu->addAction(mw->drawPathAction);
-    if (mw->ui->drawingWindow->get_selectedItems_count() == 1 && mw->clickedItem->foreground(0) == Qt::black) menu->addAction(mw->drawPolylineAction);
+    if (isValidDrawPath()) menu->addAction(mw->drawPathAction);
+    if (isValidDrawPath()) menu->addAction(mw->drawPolylineAction);
     if (isValidInsertSelectedPath()) menu->addAction(mw->insertAction);
     if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
     if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
@@ -3809,6 +4106,34 @@ void VIItem::insertSelectedPath ()
         }
         i++;
     }
+}
+
+bool VIItem::hasScale ()
+{
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *scaleLabelItem=dynamic_cast<BaseItem *>(child(i));
+        if (scaleLabelItem && scaleLabelItem->is_scaleLabel()) return true;
+        i++;
+    }
+    return false;
+}
+
+ScaleLabelItem* VIItem::addScaleItem ()
+{
+    // label
+    ScaleLabelItem *scaleLabelItem=new ScaleLabelItem(mw,this);
+    insertChild(0,scaleLabelItem);
+
+    // value
+
+    ScaleValueItem *scaleValueItem=new ScaleValueItem(mw,scaleLabelItem);
+    scaleLabelItem->addChild(scaleValueItem);
+
+    ShapeData *shapeData=scaleValueItem->getShapeData();
+    scaleValueItem->insertScaleValueWidget(shapeData->get_scale());
+
+    return scaleLabelItem;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3906,6 +4231,8 @@ MeshItem::MeshItem (OpenParEMg *mw_)
     mw=mw_;
     parentItem=mw->mesh;
     itemType=3;
+    setText(0,"MeshItem");
+    setForeground(0,Qt::black);
 }
 
 bool MeshItem::isValidShow ()

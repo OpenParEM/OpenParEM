@@ -37,6 +37,8 @@ class Mode;
 class IntegrationPath;
 class Boundary;
 class CustomLineEdit;
+class VIItem;
+class SportNumberItem;
 
 // shape data with history for undo/redo
 
@@ -49,6 +51,7 @@ public:
         // default to noop
         type=0;
         Sport=0;
+        scale=1;
         polywire=nullptr;
         process=nullptr;
         prior=nullptr;
@@ -79,6 +82,7 @@ public:
         boundary_material=shapeData->boundary_material;
         wave_impedance=shapeData->wave_impedance;
         Sport=shapeData->Sport;
+        scale=shapeData->scale;
         prior=shapeData->prior;
         next=shapeData->next;
         setPolywire(shapeData->getPolywire());
@@ -109,6 +113,7 @@ public:
         boundary_material=shapeData->boundary_material;
         wave_impedance=shapeData->wave_impedance;
         Sport=shapeData->Sport;
+        scale=shapeData->scale;
         //prior=shapeData->prior;
         //next=shapeData->next;
 
@@ -131,6 +136,7 @@ public:
             newShapeData->boundary_material=boundary_material;
             newShapeData->wave_impedance=wave_impedance;
             newShapeData->Sport=Sport;
+            newShapeData->scale=scale;
             newShapeData->prior=prior;
             newShapeData->next=next;
             if (polywire) newShapeData->polywire=polywire->copyCreate();
@@ -230,6 +236,9 @@ public:
     void set_Sport (int Sport_) {Sport=Sport_;}
     int get_Sport () {return Sport;}
 
+    void set_scale (double scale_) {scale=scale_;}
+    double get_scale () {return scale;}
+
     void setPrior (ShapeData *prior_) {prior=prior_;}
     void setNext (ShapeData *next_) {next=next_;}
 
@@ -258,6 +267,7 @@ public:
         std::cout << "                  boundary_material=" << boundary_material.toStdString() << std::endl;
         std::cout << "                  wave_impedance=" << wave_impedance << std::endl;
         std::cout << "                  Sport=" << Sport << std::endl;
+        std::cout << "                  scale=" << scale << std::endl;
         std::cout << "                  prior=" << prior << std::endl;
         std::cout << "                  next=" << next << std::endl;
     }
@@ -279,6 +289,7 @@ private:
     QString boundary_material;                         // material for the surface impedance
     double wave_impedance;                             // for radiation boundary
     int Sport;                                         // S-parameter port number
+    double scale;                                      // scale factor for integration paths
 
     ShapeData *prior;                                  // prior ShapeData in ShapeDataStack
     ShapeData *next;                                   // next ShapeData in ShapeDataStack
@@ -473,8 +484,13 @@ public:
     BaseItem () {}
     BaseItem (OpenParEMg *, BaseItem *);
 
+    // virtual void startItemChange ();
+    // virtual void addItemChange ();
+
     void startItemChange ();
     void addItemChange ();
+
+    void restoreWidgets (BaseItem *);
 
     virtual bool isValidShow () {return false;}
     virtual bool isValidHide () {return false;}
@@ -535,7 +551,7 @@ public:
     bool is_sportNumber () {if (itemType == 9) return true; return false;}
     bool is_voltage () {if (itemType == 10) return true; return false;}
     bool is_current () {if (itemType == 11) return true; return false;}
-    bool is_scale () {if (itemType == 12) return true; return false;}
+    bool is_scaleLabel () {if (itemType == 12) return true; return false;}
     bool is_scaleValue () {if (itemType == 13) return true; return false;}
     bool is_integrationPathSegment () {if (itemType == 14) return true; return false;}
     bool is_rootDrawing () {if (itemType == 100) return true; return false;}
@@ -625,8 +641,8 @@ public:
         if (is_sportNumber()) std::cout << "sport number" << std::endl;
         if (is_voltage()) std::cout << "voltage" << std::endl;
         if (is_current()) std::cout << "current" << std::endl;
-        if (is_scale()) std::cout << "scale" << std::endl;
-        if (is_scaleValue()) std::cout << "scaleValue" << std::endl;
+        if (is_scaleLabel()) std::cout << "scale label" << std::endl;
+        if (is_scaleValue()) std::cout << "scale value" << std::endl;
         if (is_integrationPathSegment()) std::cout << "integration path segment" << std::endl;
     }
 
@@ -653,7 +669,7 @@ public:
         if (is_sport()) std::cout << "   item=sportNet" << std::endl;
         if (is_voltage()) std::cout << "   itemType=voltage" << std::endl;
         if (is_current()) std::cout << "   itemType=current" << std::endl;
-        if (is_scale()) std::cout << "   itemType=scale" << std::endl;
+        if (is_scaleLabel()) std::cout << "   itemType=scale" << std::endl;
         if (is_scaleValue()) std::cout << "   itemType=scaleValue" << std::endl;
         if (is_integrationPathSegment()) std::cout << "   itemType=integrationPathSegment" << std::endl;
     }
@@ -704,7 +720,7 @@ protected:
                                                        // 5 - Sport (net), 6 - impedance definition, 7 - impedance calculation
                                                        // 8 - Sport label, 9 - Sport number,
                                                        // 10 - voltage, 11 - current
-                                                       // 12 - scale, 13 - scale value
+                                                       // 12 - scale label, 13 - scale value
                                                        // 14 - integration path segment
                                                        // 100 - root drawing item
                                                        // 101 - root port item
@@ -718,22 +734,34 @@ protected:
     // bool isActive;                                     // indicates whether the item is assigned to the tree
 };
 
-
-class ScaleItem : public BaseItem
+class ScaleLabelItem : public BaseItem
 {
     Q_OBJECT
 
 public:
-    ScaleItem (OpenParEMg *mw_, BaseItem *parentItem_)
-    {
-        mw=mw_;
-        parentItem=parentItem_;
-        itemType=12;
-        integrationPath=nullptr;
-    }
+    ScaleLabelItem (OpenParEMg *mw_, VIItem *parentItem_);
 
-    void setIntegrationPath (IntegrationPath *integrationPath_) {integrationPath=integrationPath_;}
-    IntegrationPath* getIntegrationPath () {return integrationPath;}
+    void setVIItem (VIItem *viItem_) {viItem=viItem_;}
+    VIItem* getVIItem () {return viItem;}
+
+    void undo () override;
+    void redo () override;
+
+private:
+    VIItem *viItem;
+};
+
+class ScaleValueItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    ScaleValueItem (OpenParEMg *mw_, ScaleLabelItem *parentItem_);
+
+    void insertScaleValueWidget (double);
+
+    void setScaleLabelItem (ScaleLabelItem *scaleLabelItem_) {scaleLabelItem=scaleLabelItem_;}
+    ScaleLabelItem* getScaleLabelItem () {return scaleLabelItem;}
 
     void undo () override;
     void redo () override;
@@ -742,7 +770,7 @@ public:
     bool hasRedo () override {return dataStack.hasRedo();}
 
 private:
-    IntegrationPath *integrationPath;
+    ScaleLabelItem *scaleLabelItem;
 };
 
 
@@ -1033,6 +1061,9 @@ class BoundaryItem : public BaseItem
 public:
     BoundaryItem (OpenParEMg *, PathItem *, int, double, QString);
 
+    // void startItemChange () override;
+    // void addItemChange () override;
+
     bool isValidShow () override;
     bool isValidHide () override;
     void show () override;
@@ -1082,6 +1113,11 @@ class PortItem : public BaseItem
 public:
     PortItem (OpenParEMg *, PathItem *, QString, QString);
 
+    void insertImpedanceDefinitionWidget (BaseItem *, QString);
+    void addImpedanceDefinitionItem ();
+    void insertImpedanceCalculationWidget (BaseItem *, QString);
+    void addImpedanceCalculationItem ();
+
     bool isValidShow () override;
     bool isValidHide () override;
     void show () override;
@@ -1108,6 +1144,10 @@ class ModeItem : public BaseItem
 public:
     ModeItem () {}
     ModeItem (OpenParEMg *, PortItem *);
+
+    // void startItemChange () override;
+    // void addItemChange () override;
+
     bool isValidShow () override;
     bool isValidHide () override;
     void show () override;
@@ -1130,6 +1170,9 @@ class SportItem : public BaseItem
 public:
     SportItem () {}
     SportItem (OpenParEMg *, ModeItem *);
+
+    void insertSportNumberWidget (BaseItem *, int);
+
     bool isValidShow () override;
     bool isValidHide () override;
     void show () override;
@@ -1149,10 +1192,16 @@ class SportNumberItem : public BaseItem
 public:
     SportNumberItem () {}
     SportNumberItem (OpenParEMg *, SportItem *);
+
+    // void startItemChange () override;
+    // void addItemChange () override;
+
     bool isValidShow () override;
     bool isValidHide () override;
     void show () override;
     void hide () override;
+    void undo () override;
+    void redo () override;
     void showMenu (QMenu *) override;
     void setSportItem (SportItem *sportItem_) {sportItem=sportItem_;}
     SportItem* getSportItem () {return sportItem;}
@@ -1170,6 +1219,7 @@ public:
     VIItem (OpenParEMg *, ModeItem *, int);
     bool isValidShow () override;
     bool isValidHide () override;
+    bool isValidDrawPath ();
     void show () override;
     void hide () override;
     void showMenu (QMenu *) override;
@@ -1179,6 +1229,8 @@ public:
     void drawPolylinePath ();
     bool isValidInsertSelectedPath ();
     void insertSelectedPath ();
+    bool hasScale ();
+    ScaleLabelItem* addScaleItem ();
 
 private:
     ModeItem *modeItem;

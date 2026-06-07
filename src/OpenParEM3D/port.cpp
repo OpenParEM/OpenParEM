@@ -2587,6 +2587,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     itemScale->addChild(itemScaleValue);
 
     CustomLineEdit *scaleEdit=new CustomLineEdit();
+    const QSignalBlocker blockerWaveImpedance(scaleEdit);
     scaleEdit->setText(QString::number(get_scale(),'g'));
     scaleEdit->set_itemTracker(drawingWindow->get_itemTracker());
     scaleEdit->set_baseItem(get_item());
@@ -4287,33 +4288,21 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
     ModeItem *modeItem=new ModeItem(mw,portItem);
     modeItem->setText(0,netname);
-    modeItem->set_itemType(5);
-    modeItem->setToolTip(0,"Mode and its net name.");
-    modeItem->setForeground(0,Qt::black);
-    modeItem->setFlags(modeItem->flags() & ~Qt::ItemIsEditable);
     portItem->addChild(modeItem);
 
     // S port
     SportItem *sportItem=new SportItem(mw,modeItem);
-    sportItem->setText(0,"S Port");
-    sportItem->set_itemType(8);
-    sportItem->setFlags(sportItem->flags() & ~Qt::ItemIsEditable);
-    sportItem->setToolTip(0,"S-port number for the mode.");
-    sportItem->setForeground(0,Qt::black);
     modeItem->addChild(sportItem);
 
     // Sport number
 
     SportNumberItem *sportNumberItem=new SportNumberItem(mw,sportItem);
-    sportNumberItem->set_itemType(9);
-    sportNumberItem->setToolTip(0,"S-parameter port number.");
-    sportNumberItem->setForeground(0,Qt::black);
-    sportNumberItem->setFlags(sportNumberItem->flags() & ~Qt::ItemIsSelectable);
     sportItem->addChild(sportNumberItem);
 
     CustomSpinBox *sportNumber=new CustomSpinBox();
+    const QSignalBlocker blockerWaveImpedance(sportNumber);
     sportNumber->set_itemTracker(drawingWindow->get_itemTracker());
-    sportNumber->set_sportItem(sportItem);
+    sportNumber->set_sportNumberItem(sportNumberItem);
     sportNumber->setMinimum(1);
     sportNumber->setValue(get_Sport());
     drawingItemTree->setItemWidget(sportNumberItem,0,sportNumber);
@@ -4325,10 +4314,6 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     // voltage integration paths
 
     VIItem *voltageItem=new VIItem(mw,modeItem,10);
-    voltageItem->setText(0,"voltage");
-    voltageItem->setFlags(voltageItem->flags() & ~Qt::ItemIsEditable);
-    voltageItem->setToolTip(0,"Voltage integration path.");
-    voltageItem->setForeground(0,Qt::black);
     modeItem->addChild(voltageItem);
 
     long unsigned int i=0;
@@ -4342,10 +4327,6 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     // current integration paths
 
     VIItem *currentItem=new VIItem(mw,modeItem,11);
-    currentItem->setText(0,"current");
-    currentItem->setFlags(currentItem->flags() & ~Qt::ItemIsEditable);
-    currentItem->setToolTip(0,"Current integration path.");
-    currentItem->setForeground(0,Qt::black);
     modeItem->addChild(currentItem);
 
     i=0;
@@ -7251,24 +7232,37 @@ void comboTextChanged (QString text, BoundaryItem *boundaryItem)
     }
 }
 
-void spinValueChanged (int value, SportItem *sportItem)
+void spinValueChanged (int value, SportNumberItem *sportNumberItem)
 {
-    if (sportItem && sportItem->is_sport()) {
-        ShapeData *newShapeData=sportItem->getShapeData()->copyCreate();
+    if (sportNumberItem && sportNumberItem->is_sportNumber()) {
 
-        // change the name to match if the user has not changed it
-        QString net="net";
-        net.append(QString::number(newShapeData->get_Sport()));
-        if (sportItem->text(0).compare(net) == 0) {
-            QString net="net";
-            net.append(QString::number(value));
-        }
+        // see if the user has changed the net name
+        // ShapeData *shapeData=sportNumberItem->getShapeData();
+        // QString defaultNet="net";
+        // defaultNet.append(QString::number(shapeData->get_Sport()));
+        // if (sportNumberItem->text(0).compare(defaultNet) == 0) {
 
+        //     // default is being used, so ok to change
+        //     ShapeData *newShapeData=shapeData->copyCreate();
+        //     newShapeData->setEdit();
+        //     newShapeData->set_Sport(value);
+        //     sportNumberItem->addShapeData(newShapeData);
+        //     sportNumberItem->startItemChange();
+        //     sportNumberItem->addItemChange();
+
+        //     QString newNet="net";
+        //     newNet.append(QString::number(value));
+        //     sportNumberItem->setText(0,newNet);
+        // }
+
+
+
+        ShapeData *newShapeData=sportNumberItem->getShapeData()->copyCreate();
         newShapeData->setEdit();
         newShapeData->set_Sport(value);
-        sportItem->addShapeData(newShapeData);
-        sportItem->startItemChange();
-        sportItem->addItemChange();
+        sportNumberItem->addShapeData(newShapeData);
+        sportNumberItem->startItemChange();
+        sportNumberItem->addItemChange();
     }
 }
 
@@ -7292,6 +7286,16 @@ void textValueChanged (QString text, BaseItem *baseItem, BoundaryDatabase *bound
         boundaryItem->addItemChange();
     }
 
+    // scaleItem for integration path scaling
+    ScaleValueItem *scaleItem=dynamic_cast<ScaleValueItem *>(baseItem);
+    if (scaleItem && scaleItem->is_scaleValue()) {
+        ShapeData *newShapeData=scaleItem->getShapeData()->copyCreate();
+        newShapeData->setEdit();
+        newShapeData->set_scale(text.toDouble());
+        scaleItem->addShapeData(newShapeData);
+        scaleItem->startItemChange();
+        scaleItem->addItemChange();
+    }
 }
 
 void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *boundaryDatabase,

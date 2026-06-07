@@ -333,7 +333,7 @@ class OpenParEMg : public QMainWindow
     friend class SportItem;
     friend class SportNumberItem;
     friend class VIItem;
-    friend class ScaleItem;
+    friend class ScaleValueItem;
 
     friend class RootBoundaryItem;
     friend class BoundaryItem;
