@@ -673,7 +673,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    //itemChangesStack.print();
+    itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
@@ -1534,13 +1534,25 @@ void OpenParEMg::rename_editingFinished ()
 
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(renameItem);
         if (drawingItem && drawingItem->is_drawing()) {
-            // nothing to do
+            ShapeData *newShapeData=drawingItem->getShapeData()->copyCreate();
+            newShapeData->setChangeName();
+            newShapeData->set_name(newText);
+            drawingItem->addShapeData(newShapeData);
+
+            itemChangesStack.startNew();
+            itemChangesStack.add(drawingItem);
         }
 
         PathItem *pathItem=dynamic_cast<PathItem *>(renameItem);
         if (pathItem && pathItem->is_path()) {
 
-            // item itself is now changed
+            ShapeData *newShapeData=pathItem->getShapeData()->copyCreate();
+            newShapeData->setChangeName();
+            newShapeData->set_name(newText);
+            pathItem->addShapeData(newShapeData);
+
+            itemChangesStack.startNew();
+            itemChangesStack.add(drawingItem);
 
             // change the names of the linked items
             long unsigned int i=0;
@@ -4282,11 +4294,6 @@ void OpenParEMg::resetDrawing ()
     TopoDS_Compound compound;
     builder.MakeCompound(compound);
     Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-    //ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
-
-    // ShapeData *newShapeData=new ShapeData();
-    // newShapeData->setNoop();
-    // drawing->addShapeData(newShapeData);
 
     ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
     newShapeData->setCreate();

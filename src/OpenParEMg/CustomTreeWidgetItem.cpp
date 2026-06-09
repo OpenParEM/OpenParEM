@@ -134,6 +134,8 @@ void BaseItem::undo ()
         std::cout << "   isEdit" << std::endl; std::cout.flush();
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+    } else if (shapeData->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
     }
 }
 
@@ -155,6 +157,8 @@ void BaseItem::redo ()
         std::cout << "   isEdit" << std::endl; std::cout.flush();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+    } else if (next->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
     }
 }
 
@@ -196,6 +200,8 @@ void ScaleLabelItem::undo ()
         std::cout << "   isEdit" << std::endl; std::cout.flush();
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+    }else if (shapeData->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
     }
 }
 
@@ -223,6 +229,8 @@ void ScaleLabelItem::redo ()
         std::cout << "   isDelete" << std::endl; std::cout.flush();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+    } else if (next->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
     }
 }
 
@@ -274,8 +282,6 @@ void ScaleValueItem::undo ()
         // nothing to do
     } else if (shapeData->isCreate()) {
         std::cout << "   isCreate" << std::endl; std::cout.flush();
-
-
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
 
@@ -287,6 +293,8 @@ void ScaleValueItem::undo ()
         scaleEdit->setText(QString::number(shapeData->get_scale()));
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+    } else if (shapeData->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
     }
 }
 
@@ -318,6 +326,8 @@ void ScaleValueItem::redo ()
         std::cout << "   isDelete" << std::endl; std::cout.flush();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+    } else if (next->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
     }
 }
 
@@ -438,6 +448,7 @@ DrawingItem::DrawingItem (OpenParEMg *mw_, BaseItem *parentItem_)
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
+    newShapeData->set_name(text(0));
     addShapeData(newShapeData);
 }
 
@@ -604,6 +615,7 @@ void DrawingItem::finishDraw ()
 
     // add to the selection tree
     setText(0,mw->activePolywire->getName(&(mw->objectCounts)));
+    shapeData->set_name(text(0));
     getParentItem()->addChild(this);
 
     // put into tracking, display, and select
@@ -906,6 +918,7 @@ void DrawingItem::extrude ()
             ShapeData *shapeData=newItem->getShapeData();
             shapeData->setProcess(newExtrude);
             shapeData->setShape(newShape);
+            shapeData->set_name(newItem->text(0));
             mw->itemChangesStack.add(newItem);
 
             mw->drawing->addChild(newItem);
@@ -1324,7 +1337,9 @@ void DrawingItem::del ()
 
                 // set the materials
                 if (!text(1).isNull()) {
-                    if (!drawingChild->getPolywire()) drawingChild->setText(1,text(1));
+                    if (!drawingChild->getPolywire()) {
+                        drawingChild->setText(1,text(1));
+                    }
                 }
             }
 
@@ -1357,6 +1372,7 @@ DrawingItem* DrawingItem::copyCreate ()
     ShapeData *shapeData=newItem->getShapeData();
     shapeData->copy(getShapeData());
     newItem->setText(0,this->text(0).append("_copy"));
+    shapeData->set_name(newItem->text(0));
     newItem->aTrsf=aTrsf;
     newItem->dimTag=dimTag;
     newItem->itemType=itemType;
@@ -1612,6 +1628,10 @@ void DrawingItem::undo ()
         mw->reprocess(this);
         mw->ui->drawingWindow->unselectItem(this);
         mw->findShowTopLevelItem(this,false);
+    } else if (shapeData->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.undo();
+        setText(0,getShapeData()->get_name());
     }
 }
 
@@ -1703,6 +1723,10 @@ void DrawingItem::redo ()
         promoteChildren();
         getParentItem()->removeChild(this);
         mw->findShowTopLevelItem(this,true);
+    } else if (next->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.redo();
+        setText(0,getShapeData()->get_name());
     }
 }
 
@@ -1798,6 +1822,7 @@ PathItem::PathItem (OpenParEMg *mw_, BaseItem *parentItem_)
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
+    newShapeData->set_name(text(0));
     addShapeData(newShapeData);
 }
 
@@ -2000,6 +2025,10 @@ void PathItem::undo ()
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
         mw->ui->drawingWindow->displayShape(getShape());
         mw->ui->drawingWindow->activateItem(this);
+    } else if (shapeData->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.undo();
+        setText(0,getShapeData()->get_name());
     }
 }
 
@@ -2116,6 +2145,10 @@ void PathItem::redo ()
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
         mw->ui->drawingWindow->displayShape(getShape());
         mw->ui->drawingWindow->activateItem(this);
+    } else if (next->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.redo();
+        setText(0,getShapeData()->get_name());
     }
 }
 
@@ -2392,6 +2425,7 @@ BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_t
     QString name="boundary";
     name.append(QString::number(mw->boundary->childCount()+1));
     setText(0,name);
+    newShapeData->set_name(text(0));
     setForeground(0,Qt::black);
 
     if (pathItem) {
@@ -2768,6 +2802,10 @@ void BoundaryItem::undo ()
         }
 
         restoreWidgets(this);
+    } else if (shapeData->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.undo();
+        setText(0,getShapeData()->get_name());
     }
 }
 
@@ -2812,6 +2850,10 @@ void BoundaryItem::redo ()
             mw->ui->drawingWindow->selectItem(pathItem);
             pathItem->showArrows(true);
         }
+    } else if (next->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.redo();
+        setText(0,getShapeData()->get_name());
     }
 }
 
@@ -2918,6 +2960,7 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
     QString name="port";
     name.append(QString::number(Sport));
     setText(0,name);
+    newShapeData->set_name(text(0));
     setForeground(0,Qt::black);
 
     setToolTip(0,"Port name.");
@@ -3190,6 +3233,10 @@ void PortItem::undo ()
         //     // draw
         //     aPort->draw(mw->relay,&(mw->projData),mw->boundaryDatabase,mw,mw->ui->drawingWindow,mw->ui->drawingItemTree,&(mw->path),&(mw->port),this);
         // }
+    } else if (shapeData->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.undo();
+        setText(0,getShapeData()->get_name());
     }
 }
 
@@ -3231,6 +3278,10 @@ void PortItem::redo ()
 
         // delete the item
         getParentItem()->removeChild(this);
+    } else if (next->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.redo();
+        setText(0,getShapeData()->get_name());
     }
 }
 
@@ -3258,6 +3309,7 @@ ModeItem::ModeItem (OpenParEMg *mw_, PortItem *portItem_)
     QString name="net";
     name.append(QString::number(newShapeData->get_Sport()));
     setText(0,name);
+    newShapeData->set_name(text(0));
     setForeground(0,Qt::black);
 
     setToolTip(0,"Mode and its net name.");
@@ -3542,6 +3594,8 @@ void SportNumberItem::undo ()
         sportNumber->setValue(shapeData->get_Sport());
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+    } else if (shapeData->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();;
     }
 }
 
@@ -3573,6 +3627,8 @@ void SportNumberItem::redo ()
         std::cout << "   isDelete" << std::endl; std::cout.flush();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+    } else if (next->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
     }
 }
 

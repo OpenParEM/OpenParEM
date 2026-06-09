@@ -52,6 +52,7 @@ public:
         type=0;
         Sport=0;
         scale=1;
+        name="name";
         polywire=nullptr;
         process=nullptr;
         prior=nullptr;
@@ -77,6 +78,7 @@ public:
         if (process) {delete process; process=nullptr;}
         if (shapeData->process) {process=shapeData->process->copyCreate();}
 
+        name=shapeData->name;
         impedance_definition=shapeData->impedance_definition;
         impedance_calculation=shapeData->impedance_calculation;
         boundary_type=shapeData->boundary_type;
@@ -100,6 +102,7 @@ public:
             newShapeData->type=type;
             newShapeData->polywire=nullptr;
             newShapeData->process=nullptr;
+            newShapeData->name=name;
             newShapeData->impedance_definition=impedance_definition;
             newShapeData->impedance_calculation=impedance_calculation;
             newShapeData->boundary_type=boundary_type;
@@ -177,6 +180,7 @@ public:
     bool isConvertToPort () {if (type == 5) return true; return false;}
     bool isConvertToBoundary () {if (type == 6) return true; return false;}
     bool isReversePath () {if (type == 7) return true; return false;}
+    bool isChangeName () {if (type == 8) return true; return false;}
 
     void setNoop () {type=0;}
     void setCreate () {type=1;}
@@ -186,13 +190,16 @@ public:
     void setConvertToPort () {type=5;}
     void setConvertToBoundary () {type=6;}
     void setReversePath () {type=7;}
+    void setChangeName () {type=8;}
 
+    void set_name (QString name_) {name=name_;}
     void set_impedance_definition (std::string impedance_definition_) {impedance_definition=QString::fromStdString(impedance_definition_);}
     void set_impedance_calculation (std::string impedance_calculation_) {impedance_calculation=QString::fromStdString(impedance_calculation_);}
     void set_impedance_definition (QString impedance_definition_) {impedance_definition=impedance_definition_;}
     void set_impedance_calculation (QString impedance_calculation_) {impedance_calculation=impedance_calculation_;}
     QString get_impedance_definition () {return impedance_definition;}
     QString get_impedance_calculation () {return impedance_calculation;}
+    QString get_name () {return name;}
 
     void set_boundary_type (int boundary_type_) {boundary_type=boundary_type_;}
     int get_boundary_type () {return boundary_type;}
@@ -226,6 +233,8 @@ public:
         if (isConvertToPort()) std::cout << "                  type=convertToPort" << std::endl;
         if (isConvertToBoundary()) std::cout << "                  type=convertToBoundary" << std::endl;
         if (isReversePath()) std::cout << "                  type=reversePath" << std::endl;
+        if (isChangeName()) std::cout << "                  type=changeName" << std::endl;
+
 
         if (shape.IsNull()) std::cout << "                  shape=null" << std::endl;
         else {
@@ -236,6 +245,7 @@ public:
         }
         std::cout << "                  polywire=" << polywire << std::endl;
         std::cout << "                  process=" << process << std::endl;
+        std::cout << "                  name=" << name.toStdString() << std::endl;
         std::cout << "                  impedance_definition=" << impedance_definition.toStdString() << std::endl;
         std::cout << "                  impedance_calculation=" << impedance_calculation.toStdString() << std::endl;
         std::cout << "                  boundary_type=" << boundary_type<< std::endl;
@@ -251,6 +261,7 @@ private:
     int type;                                          // 0 - noop; 1 - create; 2 - edit; 3 - delete;
                                                        // 4 - convert to path; 5 - convert to port; 6 - convert to boundary
                                                        // 7 - reverse path direction
+                                                       // 8 - change name
 
     // for drawing
     Handle(AIS_Shape) shape;                           // drawing shape
@@ -258,6 +269,7 @@ private:
     Process *process;                                  // for drawing processing of children
 
     // for widget reconstruction
+    QString name;                                      // name for the item
     QString impedance_definition;                      // VI, PV, PI, invalid
     QString impedance_calculation;                     // line, modal
     int boundary_type;                                 // 0 - PEC, 1 - PMC, 2 - surface_impedance, 3 - radiation
@@ -345,6 +357,11 @@ public:
     {
         if (!process_) return;
         current->setProcess(process_);
+    }
+
+    void setName (QString name)
+    {
+        current->set_name(name);
     }
 
     // from current location
@@ -479,8 +496,6 @@ public:
     virtual void showMenu (QMenu *) {}
 
     QString get_name () {return text(0);}
-
-
 
     void addShapeData (ShapeData *shapeData_) {dataStack.add(shapeData_);}
     void setShape (Handle(AIS_Shape) shape_) {dataStack.setShape(shape_);}
