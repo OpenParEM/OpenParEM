@@ -465,6 +465,14 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     restrictToDrawingPlane=false;
     activeAction=false;
 
+    lineEdit=nullptr;
+    rectangleEdit=nullptr;
+    polycircleEdit=nullptr;
+
+    currentDrawingItem=nullptr;
+    renameEdit=nullptr;
+    renameItem=nullptr;
+
     /////////////////////////////////////////////////////////////////////////////
 
     ui->drawingItemTree->show();
@@ -492,17 +500,14 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     close_event=nullptr;
 
-    // show buffer sizes
-    // QSurfaceFormat fmt=ui->drawingWindow->format();
-    // std::cout << "Depth: " << fmt.depthBufferSize() << std::endl; std::cout.flush();
-    // std::cout << "Stencil: " << fmt.stencilBufferSize()<< std::endl; std::cout.flush();
-
     PetscInitializeNoArguments();
 }
 
 OpenParEMg::~OpenParEMg ()
 {
     std::cout << "OpenParEMg::~OpenParEMg" << std::endl; std::cout.flush();
+
+    ui->drawingWindow->shutdown();
 
     freeQActionList();
 
@@ -511,6 +516,7 @@ OpenParEMg::~OpenParEMg ()
     if (request) MPI_Request_free(request);
     gmsh::finalize();
     PetscFinalize();
+
     delete ui;
 }
 
@@ -582,8 +588,10 @@ int OpenParEMg::check_changed ()
     return retVal;
 }
 
-void OpenParEMg::closeWindow_triggered()
+void OpenParEMg::closeWindow_triggered ()
 {
+    std::cout << "OpenParEMg::closeWindow_triggered" << std::endl; std::cout.flush();
+
     if (lengthInputForm) {delete lengthInputForm; lengthInputForm=nullptr;}
     if (vectorInputForm) {delete vectorInputForm; vectorInputForm=nullptr;}
     if (lengthEditForm) {delete lengthEditForm; lengthEditForm=nullptr;}
@@ -604,6 +612,7 @@ void OpenParEMg::closeWindow_triggered()
             return;
         }
     }
+
     if (close_event) close_event->accept();
 }
 
@@ -7152,6 +7161,8 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
     ui->drawingWindow->updateViewer();
     setMenusI(0);
+
+    std::cout << "exit OpenParEMg::finishOperation  cancel=" << cancel << "  source=" << source << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::on_actionUndo_triggered ()

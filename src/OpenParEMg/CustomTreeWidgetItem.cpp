@@ -653,22 +653,33 @@ void DrawingItem::finishDraw ()
 
 void DrawingItem::cancelDraw ()
 {
+    std::cout << "DrawingItem::cancelDraw" << std::endl; std::cout.flush();
+
     // take care of shapes
     if (!animateShape.IsNull()) animateShape.Nullify();
-    if ( mw->activePolywire) {
+    std::cout << "place e0" << std::endl; std::cout.flush();
+    if (mw->activePolywire) {
+        std::cout << "place f1" << std::endl; std::cout.flush();
         mw->activePolywire->deleteRubberband();
+        std::cout << "place f2" << std::endl; std::cout.flush();
         mw->activePolywire=nullptr;
+        std::cout << "place f3" << std::endl; std::cout.flush();
     }
 
+    std::cout << "place e1" << std::endl; std::cout.flush();
     cancelOperation();
+    std::cout << "place e2" << std::endl; std::cout.flush();
     mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
 
+    std::cout << "place e3" << std::endl; std::cout.flush();
     // remove the current undo/redo item
     mw->itemChangesStack.pop_back();
 
+    std::cout << "place e4" << std::endl; std::cout.flush();
     mw->activeAction=false;
 
     mw->ui->drawingWindow->updateViewer();
+    std::cout << "exit DrawingItem::cancelDraw" << std::endl; std::cout.flush();
 }
 
 void DrawingItem::startMove ()

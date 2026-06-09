@@ -6,6 +6,10 @@ set(CMAKE_VERBOSE_MAKEFILE 1)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD 11)
 
+# for leak detection (very slow)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g")
+#set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
+
 add_compile_options (-DHAS_GUI -DHAS_MPI)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Svg)

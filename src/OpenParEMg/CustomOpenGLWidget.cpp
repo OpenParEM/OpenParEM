@@ -74,8 +74,8 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
 
     // graphics driver
     graphicDriver=new OpenGl_GraphicDriver(displayConnection);
-    graphicDriver->ChangeOptions().buffersNoSwap = true;
-    graphicDriver->ChangeOptions().useSystemBuffer = false;
+    graphicDriver->ChangeOptions().buffersNoSwap=true;
+    graphicDriver->ChangeOptions().useSystemBuffer=false;
 
     // 3D viewer
     viewer=new V3d_Viewer(graphicDriver);
@@ -133,19 +133,11 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     viewerContext->SetAutoActivateSelection(Standard_False);
 }
 
-CustomOpenGLWidget::~CustomOpenGLWidget ()
-{
-    viewerContext->RemoveAll(false);
-    viewerContext.Nullify();
-    view->Remove();
-    view.Nullify();
-    viewer.Nullify();
-
-    if (drawingTracker) delete drawingTracker;
-
-    makeCurrent();
-    displayConnection.Nullify();
-}
+// CustomOpenGLWidget::~CustomOpenGLWidget()
+// {
+//     std::cout << "CustomOpenGLWidget::~CustomOpenGLWidget" << std::endl; std::cout.flush();
+//     std::cout << "exit CustomOpenGLWidget::~CustomOpenGLWidget" << std::endl; std::cout.flush();
+// }
 
 void CustomOpenGLWidget::initializeGL ()
 {

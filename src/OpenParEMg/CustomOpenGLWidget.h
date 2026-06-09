@@ -51,7 +51,6 @@ class CustomOpenGLWidget : public QOpenGLWidget, public AIS_ViewController
     Q_OBJECT
 public:
     CustomOpenGLWidget (QWidget *parent = nullptr);
-    virtual ~CustomOpenGLWidget ();
 
     void set_wireframe (bool state)
     {
@@ -60,7 +59,7 @@ public:
     }
 
     void set_drawingItemTree (RootDrawingItem *rootDrawingItem_) {rootDrawingItem=rootDrawingItem_;}
-        void set_pathItemTree (RootPathItem *rootPathItem_) {rootPathItem=rootPathItem_;}
+    void set_pathItemTree (RootPathItem *rootPathItem_) {rootPathItem=rootPathItem_;}
     void set_portItemTree (RootPortItem *rootPortItem_) {rootPortItem=rootPortItem_;}
     void set_boundaryItemTree (RootBoundaryItem *rootBoundaryItem_) {rootBoundaryItem=rootBoundaryItem_;}
     void set_meshItemTree (RootMeshItem *rootMeshItem_) {rootMeshItem=rootMeshItem_;}
@@ -503,6 +502,7 @@ public:
     void finishPickVertex (bool);
 
     Handle(AIS_InteractiveContext) get_viewerContext () {return viewerContext;}
+    Handle(V3d_View) get_view () {return view;}
 
     gp_Dir get_normal () {return view->Viewer()->PrivilegedPlane().Direction();}
 
@@ -557,6 +557,26 @@ public:
     }
 
     bool isInMap (Handle(AIS_Shape) shape) {return drawingTracker->isInMap(shape);}
+
+    void shutdown()
+    {
+        //std::cout << "CustomOpenGLWidget::shutdown" << std::endl; std::cout.flush();
+
+        makeCurrent();
+
+        if (!viewerContext.IsNull())
+            viewerContext->RemoveAll(Standard_False);
+
+        viewCube.Nullify();
+        focusView.Nullify();
+        view.Nullify();
+        viewerContext.Nullify();
+        viewer.Nullify();
+        graphicDriver.Nullify();
+
+        doneCurrent();
+        //std::cout << "exit CustomOpenGLWidget::shutdown" << std::endl; std::cout.flush();
+    }
 
 protected:
     void initializeGL () override;

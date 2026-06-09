@@ -125,8 +125,6 @@ public:
         deleteTracking=false;
     }
 
-    ~ItemTracker() {}
-
     // show
 
     void reshowVisibleItems () {
