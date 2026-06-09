@@ -59,11 +59,11 @@ protected:
         QLineEdit::focusInEvent(event);
     }
 
-    // void focusOutEvent(QFocusEvent *event) override
-    // {
-    //     if (QLineEdit::isModified()) QLineEdit::returnPressed();
-    //     QLineEdit::focusOutEvent(event);
-    // }
+    void focusOutEvent(QFocusEvent *event) override
+    {
+        if (QLineEdit::isModified()) QLineEdit::returnPressed();
+        QLineEdit::focusOutEvent(event);
+    }
 
 signals:
     void CustomEditFinished (QString text, BaseItem *, BoundaryDatabase *);

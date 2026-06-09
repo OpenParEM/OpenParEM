@@ -58,38 +58,6 @@ public:
         next=nullptr;
     }
 
-    // ShapeData (int type_,Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
-    // {
-    //     type=type_;
-    //     Sport=0;
-    //     polywire=nullptr;
-    //     process=nullptr;
-    //     prior=nullptr;
-    //     next=nullptr;
-    //     setPolywire(polywire_);
-    //     setProcess(process_);
-    //     setShape(shape_);
-    // }
-
-    ShapeData (ShapeData *shapeData)
-    {
-        type=shapeData->type;
-        polywire=nullptr;
-        process=nullptr;
-        impedance_calculation=shapeData->impedance_calculation;
-        impedance_definition=shapeData->impedance_definition;
-        boundary_type=shapeData->boundary_type;
-        boundary_material=shapeData->boundary_material;
-        wave_impedance=shapeData->wave_impedance;
-        Sport=shapeData->Sport;
-        scale=shapeData->scale;
-        prior=shapeData->prior;
-        next=shapeData->next;
-        setPolywire(shapeData->getPolywire());
-        setProcess(shapeData->getProcess());
-        setShape(shapeData->getShape());
-    }
-
     ~ShapeData ()
     {
         if (polywire) {delete polywire; polywire=nullptr;}
@@ -98,14 +66,16 @@ public:
     }
 
     void copy (ShapeData *shapeData) {
+
+        if (!shapeData) return;
+
         type=shapeData->type;
 
-        if (polywire) delete polywire;
-        polywire=shapeData->polywire->copyCreate();
+        if (polywire) {delete polywire; polywire=nullptr;}
+        if (shapeData->polywire) {polywire=shapeData->polywire->copyCreate();}
 
-        if (process) delete process;
-        process=shapeData->process->copyCreate();
-
+        if (process) {delete process; process=nullptr;}
+        if (shapeData->process) {process=shapeData->process->copyCreate();}
 
         impedance_definition=shapeData->impedance_definition;
         impedance_calculation=shapeData->impedance_calculation;
@@ -117,7 +87,7 @@ public:
         //prior=shapeData->prior;
         //next=shapeData->next;
 
-        if (shape.IsNull()) shape.Nullify();
+        if (!shape.IsNull()) shape.Nullify();
         if (!shapeData->getShape().IsNull()) {
             shape=new AIS_Shape(shapeData->getShape()->Shape());
         }
@@ -258,7 +228,12 @@ public:
         if (isReversePath()) std::cout << "                  type=reversePath" << std::endl;
 
         if (shape.IsNull()) std::cout << "                  shape=null" << std::endl;
-        else std::cout << "                  shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
+        else {
+            if (shape->Shape().IsNull()) std::cout << "                  shape->Shape()=null" << std::endl;
+            else {
+                std::cout << "                  shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl;
+            }
+        }
         std::cout << "                  polywire=" << polywire << std::endl;
         std::cout << "                  process=" << process << std::endl;
         std::cout << "                  impedance_definition=" << impedance_definition.toStdString() << std::endl;
@@ -430,7 +405,10 @@ public:
     {
         long unsigned int i=0;
         while (i < shapeDataList.size()) {
-            if (shapeDataList[i]) {delete shapeDataList[i]; shapeDataList[i]=nullptr;}
+            if (shapeDataList[i]) {
+                delete shapeDataList[i];
+                shapeDataList[i]=nullptr;
+            }
             i++;
         }
         shapeDataList.clear();
@@ -481,11 +459,8 @@ class BaseItem : public QObject, public QTreeWidgetItem {
 
 public:
 
-    BaseItem () {}
+    BaseItem ();
     BaseItem (OpenParEMg *, BaseItem *);
-
-    // virtual void startItemChange ();
-    // virtual void addItemChange ();
 
     void startItemChange ();
     void addItemChange ();
@@ -554,6 +529,9 @@ public:
     bool is_scaleLabel () {if (itemType == 12) return true; return false;}
     bool is_scaleValue () {if (itemType == 13) return true; return false;}
     bool is_integrationPathSegment () {if (itemType == 14) return true; return false;}
+    bool is_boundaryType () {if (itemType == 20) return true; return false;}
+    bool is_boundaryWaveImpedance () {if (itemType == 21) return true; return false;}
+    bool is_boundaryMaterial () {if (itemType == 22) return true; return false;}
     bool is_rootDrawing () {if (itemType == 100) return true; return false;}
     bool is_rootPort () {if (itemType == 101) return true; return false;}
     bool is_rootBoundary () {if (itemType == 102) return true; return false;}
@@ -644,6 +622,9 @@ public:
         if (is_scaleLabel()) std::cout << "scale label" << std::endl;
         if (is_scaleValue()) std::cout << "scale value" << std::endl;
         if (is_integrationPathSegment()) std::cout << "integration path segment" << std::endl;
+        if (is_boundaryType()) std::cout << "boundary type" << std::endl;
+        if (is_boundaryWaveImpedance()) std::cout << "boundary wave impedance" << std::endl;
+        if (is_boundaryMaterial()) std::cout << "boundary wave material" << std::endl;
     }
 
     void print ()
@@ -672,6 +653,9 @@ public:
         if (is_scaleLabel()) std::cout << "   itemType=scale" << std::endl;
         if (is_scaleValue()) std::cout << "   itemType=scaleValue" << std::endl;
         if (is_integrationPathSegment()) std::cout << "   itemType=integrationPathSegment" << std::endl;
+        if (is_boundaryType()) std::cout << "   itemType=boundary type" << std::endl;
+        if (is_boundaryWaveImpedance()) std::cout << "   itemType=boundary wave impedance" << std::endl;
+        if (is_boundaryMaterial()) std::cout << "   itemType=boundary wave material" << std::endl;
     }
 
     void reset ()
@@ -713,7 +697,7 @@ private slots:
 
 protected:
     OpenParEMg *mw;
-    ShapeDataStack dataStack;                          // drawing object data with history for undo/redo
+    ShapeDataStack dataStack;                          // history for undo/redo
     BaseItem *parentItem;                              // parent for undo/redo
     std::vector<BaseItem *> children;                  // children for undo/redo
     int itemType;                                      // 0 - drawing, 1 - port, 2 - boundary, 3 - mesh, 4 - path
@@ -722,6 +706,9 @@ protected:
                                                        // 10 - voltage, 11 - current
                                                        // 12 - scale label, 13 - scale value
                                                        // 14 - integration path segment
+                                                       // 20 - boundary type
+                                                       // 21 - boundary wave impedance
+                                                       // 22 - boundary material
                                                        // 100 - root drawing item
                                                        // 101 - root port item
                                                        // 102 - root boundary item
@@ -1061,9 +1048,8 @@ class BoundaryItem : public BaseItem
 public:
     BoundaryItem (OpenParEMg *, PathItem *, int, double, QString);
 
-    // void startItemChange () override;
-    // void addItemChange () override;
-
+    void insertItemWidgets (BaseItem *, BaseItem *, BaseItem *);
+    void resetWidgets ();
     bool isValidShow () override;
     bool isValidHide () override;
     void show () override;
@@ -1076,8 +1062,6 @@ public:
     void redo () override;
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
-
-    void populate (Boundary *);
 
 private:
     PathItem *pathItem;   // PathItem associated with this boundary
@@ -1130,8 +1114,6 @@ public:
     void redo () override;
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
-
-    void populate (Port *);
 
 private:
     PathItem *pathItem;   // PathItem associated with this port

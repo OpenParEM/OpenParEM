@@ -7146,6 +7146,73 @@ void Port::recalculatePathIndexList (std::vector<Path *> *pathList)
 }
 
 #ifdef HAS_GUI
+
+void comboRefresh (int index, PortItem *portItem, BoundaryItem *boundaryItem, int type,
+                        BaseItem *itemMaterial, BaseItem *itemWaveImpedance)
+{
+    std::cout << "comboRefresh  PortItem=" << portItem << "  BoundaryItem=" << boundaryItem
+              << "  index=" << index << "  type=" << type << std::endl; std::cout.flush();
+
+    ShapeData *shapeData;
+    if (portItem) {
+        shapeData=portItem->getShapeData();
+    }
+
+    if (boundaryItem) {
+        shapeData=boundaryItem->getShapeData();
+    }
+
+    // Port: impedance definition
+    if (portItem && type == 0) {
+        if (index == 0) shapeData->set_impedance_definition(QString("VI"));
+        if (index == 1) shapeData->set_impedance_definition(QString("PV"));
+        if (index == 2) shapeData->set_impedance_definition(QString("PI"));
+    }
+
+    // Port: impedance calculation
+    if (portItem && type == 1) {
+        if (index == 0) shapeData->set_impedance_calculation(QString("line"));
+        if (index == 1) shapeData->set_impedance_calculation(QString("modal"));
+    }
+
+    // Boundary: type
+    if (boundaryItem && type == 2) {
+
+        // for setting fill color and transparency
+        Handle(AIS_Shape) shape;
+        PathItem *pathItem=boundaryItem->getPathItem();
+        if (pathItem) {
+            shape=pathItem->getShape();
+        }
+
+        shapeData->set_boundary_type(index);
+        if (index == 0) {
+            if (itemMaterial) itemMaterial->setHidden(true);
+            if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
+            if (!shape.IsNull()) shape->SetColor(Quantity_NOC_GREENYELLOW);  // X11 color wheel
+        }
+        if (index == 1) {
+            if (itemMaterial) itemMaterial->setHidden(true);
+            if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
+            if (!shape.IsNull()) if (!shape.IsNull()) shape->SetColor(Quantity_NOC_CYAN);  // X11 color wheel
+        }
+        if (index == 2) {
+            if (itemMaterial) itemMaterial->setHidden(false);
+            if (itemWaveImpedance) itemWaveImpedance->setHidden(true);
+            if (!shape.IsNull()) if (!shape.IsNull()) shape->SetColor(Quantity_NOC_GOLDENROD);  // X11 color wheel
+        }
+        if (index == 3) {
+            if (itemMaterial) itemMaterial->setHidden(true);
+            if (itemWaveImpedance) itemWaveImpedance->setHidden(false);
+            if (!shape.IsNull()) if (!shape.IsNull()) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);  // X11 color wheel
+        }
+    }
+
+    //newShapeData->print();
+
+    return;
+}
+
 void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryItem, int type,
                         BaseItem *itemMaterial, BaseItem *itemWaveImpedance)
 {

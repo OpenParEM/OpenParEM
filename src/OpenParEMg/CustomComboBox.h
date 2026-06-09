@@ -25,6 +25,7 @@
 #include "port.hpp"
 #include "CustomTreeWidgetItem.h"
 
+void comboRefresh (int, PortItem *, BoundaryItem *, int, BaseItem *, BaseItem *);
 void comboIndexChanged (int, PortItem *, BoundaryItem *, int, BaseItem *, BaseItem *);
 void comboTextChanged (QString value, BoundaryItem *);
 

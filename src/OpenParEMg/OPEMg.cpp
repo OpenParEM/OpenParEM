@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "OPEMg.h"
+#include "CustomComboBox.h"
 #include "DrawingPreferences.h"
 #include "Process.h"
 #include "ui_OPEMg.h"
@@ -305,7 +306,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     path=new RootPathItem(this);
     port=new RootPortItem(this);
     boundary=new RootBoundaryItem(this);
-
     mesh=new RootMeshItem(this);
 
     ui->drawingItemTree->setHeaderHidden(true);
@@ -362,7 +362,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     TopoDS_Compound compound;
     builder.MakeCompound(compound);
     Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-    ShapeData *newShapeData=drawing->getShapeData();
+    ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
     newShapeData->setCreate();
     newShapeData->setShape(newShape);
     drawing->addShapeData(newShapeData);
@@ -3613,11 +3613,32 @@ void OpenParEMg::createBoundaryFromPathN (bool startNew)
         // default to radiation
         double default_wave_impedance=sqrt(M_PI*4e-7/8.8541878176e-12);
         QString boundary_material;
-        BoundaryItem *newBoundaryItem=new BoundaryItem(this,selectedList[i],0,default_wave_impedance,boundary_material);
+        BoundaryItem *newBoundaryItem=new BoundaryItem(this,selectedList[i],3,default_wave_impedance,boundary_material);
 
         boundary->addChild(newBoundaryItem);
         boundary->setExpanded(true);
         newBoundaryItem->setExpanded(true);
+
+        // hack: cycle through the comboBox to get it to show properly
+        // otherwise, the material item will not hide
+        { // begin hack
+        BaseItem *boundaryType=nullptr;
+        BaseItem *boundaryWaveImpedance=nullptr;
+        BaseItem *boundaryMaterial=nullptr;
+
+        int j=0;
+        while (j < newBoundaryItem->childCount()) {
+            BaseItem *baseItem=dynamic_cast<BaseItem *>(newBoundaryItem->child(j));
+            if (baseItem) {
+                if (baseItem->is_boundaryType()) boundaryType=baseItem;
+                else if (baseItem->is_boundaryWaveImpedance()) boundaryWaveImpedance=baseItem;
+                else if (baseItem->is_boundaryMaterial()) boundaryMaterial=baseItem;
+            }
+            j++;
+        }
+        ShapeData *shapeData=newBoundaryItem->getShapeData();
+        comboRefresh(shapeData->get_boundary_type(),nullptr,newBoundaryItem,2,boundaryMaterial,boundaryWaveImpedance);
+        } // end hack
 
         convertedItems.push_back(newBoundaryItem);
         itemChangesStack.add(newBoundaryItem);
@@ -4244,7 +4265,7 @@ void OpenParEMg::printLockouts ()
 
 void OpenParEMg::resetDrawing ()
 {
-    //std::cout << "OpenParEMg::resetDrawing  drawing=" << &drawing << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::resetDrawing  drawing=" << &drawing << std::endl; std::cout.flush();
 
     // mesh
     deleteMesh(false);
@@ -4261,7 +4282,13 @@ void OpenParEMg::resetDrawing ()
     TopoDS_Compound compound;
     builder.MakeCompound(compound);
     Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-    ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
+    //ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
+
+    ShapeData *newShapeData=new ShapeData();
+    newShapeData->setNoop();
+    drawing->addShapeData(newShapeData);
+
+    newShapeData=drawing->getShapeData()->copyCreate();
     newShapeData->setCreate();
     newShapeData->setShape(newShape);
     drawing->addShapeData(newShapeData);
@@ -4311,7 +4338,7 @@ void OpenParEMg::resetProject ()
     boundaryDatabase=new BoundaryDatabase();
 
     // reset selection tree
-    //drawing.reset();
+    //drawing.reset();  // reset in resetDrawing() above
     path->reset();
     port->reset();
     boundary->reset();

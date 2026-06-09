@@ -12,14 +12,7 @@
 // BaseItem
 ////////////////////////////////////////////////////////////////////////////////
 
-// BaseItem (QTreeWidgetItem *parent = nullptr, int type=Type) : QTreeWidgetItem(parent,type)
-// {
-//     itemType=-1;
-//     depth=0;
-//     parentItem=nullptr;
-//     hasArrows=false;
-//     isActive=false;
-// }
+BaseItem::BaseItem () {}
 
 BaseItem::BaseItem (OpenParEMg *mw_, BaseItem *parentItem_)
 {
@@ -36,14 +29,29 @@ BaseItem::BaseItem (OpenParEMg *mw_, BaseItem *parentItem_)
 
 void BaseItem::restoreWidgets (BaseItem *baseItem)
 {
-    std::cout << "BaseItem::restoreWidgets  baseItem=" << baseItem << std::endl; std::cout.flush();
-
     if (!baseItem) return;
 
-    std::cout << "                          itemType=" << baseItem->get_itemType() << std::endl; std::cout.flush();
-    std::cout << "                          parent->itemType=" << baseItem->getParentItem()->get_itemType() << std::endl; std::cout.flush();
+    if (baseItem && baseItem->is_boundary()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(baseItem);
+        if (boundaryItem && boundaryItem->is_boundary()) {
+            BaseItem *boundaryType=nullptr;
+            BaseItem *boundaryWaveImpedance=nullptr;
+            BaseItem *boundaryMaterial=nullptr;
 
-    std::cout << " sorting enabled=" << mw->ui->drawingItemTree->isSortingEnabled() << std::endl; std::cout.flush();
+            int i=0;
+            while (i < boundaryItem->childCount()) {
+                BaseItem *baseItem=dynamic_cast<BaseItem *>(boundaryItem->child(i));
+                if (baseItem) {
+                    if (baseItem->is_boundaryType()) boundaryType=baseItem;
+                    else if (baseItem->is_boundaryWaveImpedance()) boundaryWaveImpedance=baseItem;
+                    else if (baseItem->is_boundaryMaterial()) boundaryMaterial=baseItem;
+                }
+                i++;
+            }
+
+            boundaryItem->insertItemWidgets(boundaryType,boundaryWaveImpedance,boundaryMaterial);
+        }
+    }
 
     if (baseItem && baseItem->is_impedanceCalculation()) {
         PortItem *portItem=dynamic_cast<PortItem *>(baseItem->getParentItem());
@@ -1058,6 +1066,7 @@ void DrawingItem::startEdit ()
                 mw->lengthEditForm->set_conversionFactor(mw->getConversionFactor());
                 mw->length=extrude->get_length();
                 mw->lengthEditForm->set_length(&(mw->length));
+                mw->lengthEditForm->set_extrusionDirection(&(mw->extrusionDirection));
                 mw->lengthEditForm->set_drawingWindow(mw->ui->drawingWindow);
                 mw->lengthEditForm->set_relay(mw->relay);
                 mw->lengthEditForm->setModal(false);
@@ -1339,6 +1348,7 @@ void DrawingItem::del ()
 DrawingItem* DrawingItem::copyCreate ()
 {
     //std::cout << "DrawingItem::copyCreate" << std::endl; std::cout.flush();
+
     DrawingItem *newItem=new DrawingItem(mw,parentItem);
     if (!newItem) return nullptr;
 
@@ -1766,8 +1776,10 @@ void RootPathItem::showMenu (QMenu *menu)
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
-    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2350,8 +2362,10 @@ void RootBoundaryItem::showMenu (QMenu *menu)
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
-    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2402,112 +2416,104 @@ BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_t
     // type
 
     BaseItem *itemType=new BaseItem(mw,this);
+    itemType->set_itemType(20);
     itemType->setFlags(itemType->flags() | Qt::ItemIsEditable);
     itemType->setToolTip(0,"Boundary type.");
     addChild(itemType);
 
-    CustomComboBox *comboType=new CustomComboBox();
-    const QSignalBlocker blockerZdef(comboType);
-    comboType->addItem("PEC");
-    comboType->addItem("PMC");
-    comboType->addItem("Zs");
-    comboType->addItem("Radiation");
-    comboType->set_portItem(nullptr);
-    comboType->set_boundaryItem(this);
-    comboType->set_type(2);
-
-    comboType->setCurrentIndex(boundary_type_);
-    mw->ui->drawingItemTree->setItemWidget(itemType,0,comboType);
-
-    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
-    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
-    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::updateViewer);
-
-    // boundary type dependent data
-
-    // material
-
-    BaseItem *itemMaterial=new BaseItem(mw,this);
-    itemMaterial->setFlags(itemMaterial->flags() | Qt::ItemIsEditable);
-    itemMaterial->setToolTip(0,"Boundary material.");
-    addChild(itemMaterial);
-
-    CustomComboBox *comboMaterial=new CustomComboBox();
-    const QSignalBlocker blockerMaterial(comboMaterial);
-    if (mw->materialDatabase) {
-        long unsigned int i=0;
-        while (i < mw->materialDatabase->get_size()) {
-            Material *material=mw->materialDatabase->get_material(i);
-            // Todo: add only conductors
-            comboMaterial->addItem(QString::fromStdString(material->get_name()->get_value()));
-            i++;
-        }
-    }
-    mw->ui->drawingItemTree->setItemWidget(itemMaterial,0,comboMaterial);
-
-    QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentTextChanged, &comboTextChanged);
-    QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
-
     // wave impedance
-
     BaseItem *itemWaveImpedance=new BaseItem(mw,this);
+    itemWaveImpedance->set_itemType(21);
     itemWaveImpedance->setFlags(itemWaveImpedance->flags() | Qt::ItemIsEditable);
     itemWaveImpedance->setToolTip(0,"Wave impedance in Ohms.");
     addChild(itemWaveImpedance);
 
+    // material
+    BaseItem *itemMaterial=new BaseItem(mw,this);
+    itemMaterial->set_itemType(22);
+    itemMaterial->setFlags(itemMaterial->flags() | Qt::ItemIsEditable);
+    itemMaterial->setToolTip(0,"Boundary material.");
+    addChild(itemMaterial);
+
+    // insert the widgets
+    insertItemWidgets(itemType,itemWaveImpedance,itemMaterial);
+}
+
+void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpedance, BaseItem *itemMaterial)
+{
+    std::cout << "BoundaryItem::insertItemWidgets" << std::endl; std::cout.flush();
+
     QDoubleValidator doubleValidator;
     doubleValidator.setBottom(0);
 
-    CustomLineEdit *textWaveImpedance=new CustomLineEdit();
-    const QSignalBlocker blockerWaveImpedance(textWaveImpedance);
-    textWaveImpedance->setText(QString::number(wave_impedance_));
-    textWaveImpedance->setValidator(&doubleValidator);
-    textWaveImpedance->set_baseItem(this);
-    mw->ui->drawingItemTree->setItemWidget(itemWaveImpedance,0,textWaveImpedance);
+    ShapeData *shapeData=getShapeData();
+    double wave_impedance=shapeData->get_wave_impedance();
+    int boundary_type=shapeData->get_boundary_type();
+    QString boundary_material=shapeData->get_boundary_material();
 
-    //xxx
-    QObject::connect(textWaveImpedance,&CustomLineEdit::CustomEditFinished,&textValueChanged);
+    // type
 
+    if (itemType) {
+        CustomComboBox *comboType=new CustomComboBox();
+        const QSignalBlocker blockerZdef(comboType);
+        comboType->addItem("PEC");
+        comboType->addItem("PMC");
+        comboType->addItem("Zs");
+        comboType->addItem("Radiation");
+        comboType->set_portItem(nullptr);
+        comboType->set_boundaryItem(this);
+        comboType->set_type(2);
 
-    // set initial visibility
-    std::cout << "boundary_type_=" << boundary_type_ << std::endl; std::cout.flush();
-    if (boundary_type_ == 0) {  // PEC
-        itemWaveImpedance->setHidden(true);
-        itemMaterial->setHidden(true);
-    } else if (boundary_type_ == 1) {  // PMC
-        itemWaveImpedance->setHidden(true);
-        itemMaterial->setHidden(true);
-    } else if (boundary_type_ == 2) {  // Zs
-        itemWaveImpedance->setHidden(true);
-    } else if (boundary_type_ == 3) {  // radiation
-        std::cout << "   itemMaterial=" << itemMaterial << std::endl; std::cout.flush();
-        itemMaterial->setHidden(true);
+        comboType->setCurrentIndex(boundary_type);
+        mw->ui->drawingItemTree->setItemWidget(itemType,0,comboType);
+
+        QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
+        QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+        QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::updateViewer);
+
+        // set the CustomTreeWidget items so they can be hidden as needed depending on type
+        comboType->set_itemMaterial(itemMaterial);
+        comboType->set_itemWaveImpedance(itemWaveImpedance);
     }
 
-    // set the CustomTreeWidget items so they can be hidden as needed depending on type
-    comboType->set_itemMaterial(itemMaterial);
-    comboType->set_itemWaveImpedance(itemWaveImpedance);
+    // wave impedance
 
-    // set the shape color
-    PathItem *pathItem=getPathItem();
-    if (pathItem) {
-        Handle(AIS_Shape) shape=pathItem->getShape();
-        if (!shape.IsNull()) {
-            shape->SetTransparency(0);
-            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-            if (boundary_type_ == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
-            else if (boundary_type_ == 1) shape->SetColor(Quantity_NOC_CYAN);
-            else if (boundary_type_ == 2) shape->SetColor(Quantity_NOC_GOLDENROD);
-            else if (boundary_type_ == 3) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
-            mw->setShaded(shape);
+    if (itemWaveImpedance) {
+        CustomLineEdit *textWaveImpedance=new CustomLineEdit();
+        const QSignalBlocker blockerWaveImpedance(textWaveImpedance);
+        textWaveImpedance->setText(QString::number(wave_impedance));
+        textWaveImpedance->setValidator(&doubleValidator);
+        textWaveImpedance->set_baseItem(this);
+        mw->ui->drawingItemTree->setItemWidget(itemWaveImpedance,0,textWaveImpedance);
+
+        QObject::connect(textWaveImpedance,&CustomLineEdit::CustomEditFinished,&textValueChanged);
+    }
+
+    // material
+
+    if (itemMaterial) {
+        CustomComboBox *comboMaterial=new CustomComboBox();
+        const QSignalBlocker blockerMaterial(comboMaterial);
+        if (mw->materialDatabase) {
+            // ToDo:: re-implement
+            // long unsigned int i=0;
+            // while (i < mw->materialDatabase->get_size()) {
+            //     Material *material=mw->materialDatabase->get_material(i);
+            //     // Todo: add only conductors
+            //     comboMaterial->addItem(QString::fromStdString(material->get_name()->get_value()));
+            //     i++;
+            // }
+            comboMaterial->addItem("none");
         }
+        mw->ui->drawingItemTree->setItemWidget(itemMaterial,0,comboMaterial);
+        comboMaterial->setCurrentText(boundary_material);
+
+        QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentTextChanged, &comboTextChanged);
+        QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
     }
 
-    mw->itemChangesStack.add(this);
+    resetWidgets();
 }
-
-// void BoundaryItem::startItemChange () {mw->itemChangesStack.startNew();}
-// void BoundaryItem::addItemChange () {mw->itemChangesStack.add(this);}
 
 bool BoundaryItem::isValidShow ()
 {
@@ -2594,8 +2600,10 @@ void BoundaryItem::showMenu (QMenu *menu)
     if (mw->ui->drawingWindow->hasBoundarySelectedItems()) menu->addAction(mw->unselectAction);
     if (mw->ui->drawingWindow->get_boundarySelectedCount() == 1) menu->addAction(mw->renameAction);
     menu->addAction(mw->deleteAction);
-    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
-    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
 }
 
 void BoundaryItem::del ()
@@ -2629,6 +2637,91 @@ void BoundaryItem::del ()
     }
 }
 
+void BoundaryItem::resetWidgets ()
+{
+    std::cout << "BoundaryItem::resetWidgets" << std::endl; std::cout.flush();
+
+    BaseItem *boundaryType=nullptr;
+    BaseItem *boundaryWaveImpedance=nullptr;
+    BaseItem *boundaryMaterial=nullptr;
+
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) {
+            if (baseItem->is_boundaryType()) boundaryType=baseItem;
+            else if (baseItem->is_boundaryWaveImpedance()) boundaryWaveImpedance=baseItem;
+            else if (baseItem->is_boundaryMaterial()) boundaryMaterial=baseItem;
+        }
+        i++;
+    }
+
+    ShapeData *shapeData=getShapeData();
+    int boundary_type=shapeData->get_boundary_type();
+    double wave_impedance=shapeData->get_wave_impedance();
+    QString boundary_material=shapeData->get_boundary_material();
+
+    CustomComboBox *comboType=nullptr;
+    if (boundaryType) {
+        comboType=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(boundaryType,0));
+        if (comboType) {
+            const QSignalBlocker blocker(comboType);
+            comboType->setCurrentIndex(boundary_type);
+        }
+    }
+
+    CustomLineEdit *itemWaveImpedance=nullptr;
+    if (boundaryWaveImpedance) {
+        itemWaveImpedance=dynamic_cast<CustomLineEdit *>(mw->ui->drawingItemTree->itemWidget(boundaryWaveImpedance,0));
+        if (itemWaveImpedance) {
+            const QSignalBlocker blocker(itemWaveImpedance);
+            itemWaveImpedance->setText(QString::number(wave_impedance));
+        }
+    }
+
+    CustomComboBox *itemMaterial=nullptr;
+    if (boundaryMaterial) {
+        itemMaterial=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(boundaryMaterial,0));
+        if (itemMaterial) {
+            const QSignalBlocker blockerMaterial(itemMaterial);
+            //itemMaterial->setCurrentText(boundary_material);
+            itemMaterial->setCurrentText("none");
+        }
+    }
+
+    // set visibility
+    if (boundaryWaveImpedance && boundaryMaterial) {
+        if (boundary_type == 0) {  // PEC
+            boundaryWaveImpedance->setHidden(true);
+            boundaryMaterial->setHidden(true);
+        } else if (boundary_type == 1) {  // PMC
+            boundaryWaveImpedance->setHidden(true);
+            boundaryMaterial->setHidden(true);
+        } else if (boundary_type == 2) {  // Zs
+            boundaryWaveImpedance->setHidden(true);
+            boundaryMaterial->setHidden(false);
+        } else if (boundary_type == 3) {  // radiation
+            boundaryWaveImpedance->setHidden(false);
+            boundaryMaterial->setHidden(true);
+        }
+    }
+
+    // set the shape color
+    PathItem *pathItem=getPathItem();
+    if (pathItem) {
+        Handle(AIS_Shape) shape=pathItem->getShape();
+        if (!shape.IsNull()) {
+            shape->SetTransparency(0);
+            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+            if (boundary_type == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
+            else if (boundary_type == 1) shape->SetColor(Quantity_NOC_CYAN);
+            else if (boundary_type == 2) shape->SetColor(Quantity_NOC_GOLDENROD);
+            else if (boundary_type == 3) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
+            mw->setShaded(shape);
+        }
+    }
+}
+
 void BoundaryItem::undo ()
 {
     std::cout << "BoundaryItem::undo  this=" << this << std::endl; std::cout.flush();
@@ -2658,21 +2751,8 @@ void BoundaryItem::undo ()
         dataStack.undo();
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
-
         dataStack.undo();
-
-        // remove all children
-        while (childCount() > 0) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(0));
-            if (baseItem) {
-                int index=indexOfChild(baseItem);
-                this->takeChild(index);
-                delete baseItem;
-            }
-        }
-
-        populate(nullptr);
-
+        resetWidgets();
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
@@ -2687,14 +2767,7 @@ void BoundaryItem::undo ()
             pathItem->showArrows(false);
         }
 
-        // delete any previous children
-        while (childCount() > 0) {
-            QTreeWidgetItem* child=takeChild(0);
-            delete child;
-        }
-
-        // rebuild the item from scratch
-        populate(nullptr);
+        restoreWidgets(this);
     }
 }
 
@@ -2715,38 +2788,13 @@ void BoundaryItem::redo ()
         std::cout << "   isCreate" << std::endl; std::cout.flush();
 
         dataStack.redo();
-
-        // remove all children
-        while (childCount() > 0) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(0));
-            if (baseItem) {
-                int index=indexOfChild(baseItem);
-                this->takeChild(index);
-                delete baseItem;
-            }
-        }
-
-        populate(nullptr);
-
         mw->boundary->addChild(this);
+        restoreWidgets(this);
 
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.redo();
-
-        // remove all children
-        while (childCount() > 0) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(0));
-            if (baseItem) {
-                int index=indexOfChild(baseItem);
-                this->takeChild(index);
-                delete baseItem;
-            }
-        }
-
-        populate(nullptr);
-
-        mw->port->addChild(this);
+        resetWidgets();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
@@ -2765,131 +2813,6 @@ void BoundaryItem::redo ()
             pathItem->showArrows(true);
         }
     }
-}
-
-void BoundaryItem::populate (Boundary *boundary)
-{
-    //std::cout << "BoundaryItem::populate" << std::endl; std::cout.flush();
-
-    QDoubleValidator doubleValidator;
-    doubleValidator.setBottom(0);
-
-    int boundary_type;
-    QString boundary_material;
-    double wave_impedance;
-    ShapeData *shapeData=shapeData=getShapeData();
-
-    boundary_type=shapeData->get_boundary_type();
-    boundary_material=shapeData->get_boundary_material();
-    wave_impedance=shapeData->get_wave_impedance();
-
-
-    // type
-
-    BaseItem *itemType=new BaseItem(mw,this);
-    addChild(itemType);
-
-    CustomComboBox *comboType=new CustomComboBox();
-    const QSignalBlocker blockerZdef(comboType);
-    comboType->addItem("PEC");
-    comboType->addItem("PMC");
-    comboType->addItem("Zs");
-    comboType->addItem("Radiation");
-    comboType->set_portItem(nullptr);
-    comboType->set_boundaryItem(this);
-    comboType->set_type(2);
-    comboType->setCurrentIndex(boundary_type);
-    mw->ui->drawingItemTree->setItemWidget(itemType,0,comboType);
-
-    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
-    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
-    QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::updateViewer);
-
-    // boundary type dependent data
-
-    // material
-
-    BaseItem *itemMaterial=new BaseItem(mw,this);
-    itemMaterial->setFlags(itemMaterial->flags() | Qt::ItemIsEditable);
-    itemMaterial->setToolTip(0,"Boundary material.");
-    addChild(itemMaterial);
-
-    CustomComboBox *comboMaterial=new CustomComboBox();
-    const QSignalBlocker blockerMaterial(comboMaterial);
-    if (mw->materialDatabase) {
-        long unsigned int i=0;
-        while (i < mw->materialDatabase->get_size()) {
-            Material *material=mw->materialDatabase->get_material(i);
-            // Todo: add only conductors
-            comboMaterial->addItem(QString::fromStdString(material->get_name()->get_value()));
-            i++;
-        }
-    }
-    mw->ui->drawingItemTree->setItemWidget(itemMaterial,0,comboMaterial);
-
-    QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentTextChanged, &comboTextChanged);
-    QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
-
-    // wave impedance
-
-    BaseItem *itemWaveImpedance=new BaseItem(mw,this);
-    itemWaveImpedance->setFlags(itemWaveImpedance->flags() | Qt::ItemIsEditable);
-    itemWaveImpedance->setToolTip(0,"Wave impedance in Ohms.");
-    addChild(itemWaveImpedance);
-
-    CustomLineEdit *textWaveImpedance=new CustomLineEdit();
-    const QSignalBlocker blockerWaveImpedance(textWaveImpedance);
-    textWaveImpedance->setText(QString::number(wave_impedance));
-    textWaveImpedance->setValidator(&doubleValidator);
-    textWaveImpedance->set_baseItem(this);
-    mw->ui->drawingItemTree->setItemWidget(itemWaveImpedance,0,textWaveImpedance);
-
-    //xxx
-    QObject::connect(textWaveImpedance,&CustomLineEdit::CustomEditFinished,&textValueChanged);
-
-
-    // set initial visibility
-    std::cout << "boundary_type=" << boundary_type << std::endl; std::cout.flush();
-    if (boundary_type == 0) {
-        itemWaveImpedance->setHidden(true);
-        itemMaterial->setHidden(true);
-    } else if (boundary_type == 1) {
-        itemWaveImpedance->setHidden(true);
-        itemMaterial->setHidden(true);
-    } else if (boundary_type == 2) {
-        itemWaveImpedance->setHidden(true);
-    } else if (boundary_type == 3) {
-        std::cout << "   itemMaterial=" << itemMaterial << std::endl; std::cout.flush();
-        itemMaterial->setHidden(true);
-    }
-
-    // set the CustomTreeWidget items so they can be hidden as needed depending on type
-    comboType->set_itemMaterial(itemMaterial);
-    comboType->set_itemWaveImpedance(itemWaveImpedance);
-
-    // set the shape color
-    PathItem *pathItem=getPathItem();
-    if (pathItem) {
-        Handle(AIS_Shape) shape=pathItem->getShape();
-        if (!shape.IsNull()) {
-            shape->SetTransparency(0);
-            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-            if (boundary_type == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
-            else if (boundary_type == 1) shape->SetColor(Quantity_NOC_CYAN);
-            else if (boundary_type == 2) shape->SetColor(Quantity_NOC_GOLDENROD);
-            else if (boundary_type == 3) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
-            mw->setShaded(shape);
-        }
-    }
-
-    // if (boundary->is_default_boundary()) {
-    //     QString textDefault="default";
-    //     BaseItem *itemDefault=new BaseItem(0);
-    //     itemDefault->setMW(mw);
-    //     itemDefault->setParentItem(this);
-    //     itemDefault->setText(0,textDefault);
-    //     addChild(itemDefault);
-    // }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2966,8 +2889,10 @@ void RootPortItem::showMenu (QMenu *menu)
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
-    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3184,8 +3109,10 @@ void PortItem::showMenu (QMenu *menu)
     if (mw->ui->drawingWindow->get_portSelectedCount() == 1) menu->addAction(mw->renameAction);
     menu->addAction(mw->insertAction);
     menu->addAction(mw->deleteAction);
-    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
-    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
 }
 
 void PortItem::del ()
@@ -3218,184 +3145,6 @@ void PortItem::del ()
     }
 }
 
-void PortItem::populate (Port *port)
-{
-    //std::cout << "PortItem::populate" << std::endl; std::cout.flush();
-
-    QString impedance_definition;
-    QString impedance_calculation;
-    ShapeData *shapeData;
-    if (port) {
-        shapeData=getShapeData();
-        shapeData->set_impedance_definition(port->get_impedance_definition());
-        shapeData->set_impedance_calculation(port->get_impedance_calculation());
-    } else {
-        shapeData=getShapeData();
-    }
-
-    impedance_definition=shapeData->get_impedance_definition();
-    impedance_calculation=shapeData->get_impedance_calculation();
-
-    // impedance definition
-
-    BaseItem *itemImpedanceDefinition=new BaseItem(mw,this);
-    itemImpedanceDefinition->set_itemType(6);
-    itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
-    itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
-    insertChild(0,itemImpedanceDefinition);
-
-    //CustomComboBox *comboZdef=port->get_comboZdef();
-    //comboZdef=new CustomComboBox();
-    CustomComboBox *comboZdef=new CustomComboBox();
-    const QSignalBlocker blockerZdef(comboZdef);
-    comboZdef->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
-    comboZdef->addItem("VI");       // 0
-    comboZdef->addItem("PV");       // 1
-    comboZdef->addItem("PI");       // 2
-    comboZdef->addItem("invalid");  // 3
-    comboZdef->set_portItem(this);
-    comboZdef->set_boundaryItem(nullptr);
-    comboZdef->set_type(0);
-    if (impedance_definition.compare("VI") == 0) comboZdef->setCurrentIndex(0);
-    else if (impedance_definition.compare("PV") == 0) comboZdef->setCurrentIndex(1);
-    else if (impedance_definition.compare("PI") == 0) comboZdef->setCurrentIndex(2);
-    else comboZdef->setCurrentIndex(3);
-    mw->ui->drawingItemTree->setItemWidget(itemImpedanceDefinition,0,comboZdef);
-    itemImpedanceDefinition->setSizeHint(0,comboZdef->sizeHint());  // size hint for scaling; do not need to do the other combobox
-
-    QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
-    QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
-
-    // impedance calculation
-
-    BaseItem *itemImpedanceCalculation=new BaseItem(mw,this);
-    itemImpedanceCalculation->set_itemType(7);
-    itemImpedanceCalculation->setFlags(itemImpedanceCalculation->flags() & ~Qt::ItemIsSelectable);
-    itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
-    insertChild(1,itemImpedanceCalculation);
-
-    CustomComboBox *comboZcalc=new CustomComboBox();
-    const QSignalBlocker blockerZcalc(comboZcalc);
-    comboZcalc->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
-    comboZcalc->addItem("line");
-    comboZcalc->addItem("modal");
-    comboZcalc->set_portItem(this);
-    comboZcalc->set_type(1);
-    comboZcalc->set_boundaryItem(nullptr);
-
-    if (impedance_calculation.compare("line") == 0) comboZcalc->setCurrentIndex(0);
-    else if (impedance_calculation.compare("modal") == 0) comboZcalc->setCurrentIndex(1);
-    mw->ui->drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
-
-    QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
-    QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
-}
-
-// void PortItem::addModeItem ()
-// {
-//     int Sport=0;
-//     ModeItem *newModeItem=new ModeItem(0);
-//     if (newModeItem) {
-//         ShapeData *newShapeData=newModeItem->getShapeData()->copyCreate();
-//         newShapeData->setCreate();
-//         newModeItem->setMW(mw);
-//         newModeItem->setParentItem(this);
-//         newModeItem->set_itemType(5);
-//         newModeItem->setToolTip(0,"Mode and its net name.");
-//         newModeItem->addShapeData(newShapeData);
-
-//         newModeItem->setPortItem(this);
-//         addChild(newModeItem);
-
-//         // set the S-parameter port number to the next available
-//         mw->largestSportNumber(&(mw->port),&Sport);
-//         Sport++;
-//         newShapeData->set_Sport(Sport);
-
-//         // unique net name based on Sport number
-//         QString net="net";
-//         net.append(QString::number(newShapeData->get_Sport()));
-//         newModeItem->setText(0,net);
-
-//         mw->itemChangesStack.add(newModeItem);
-//     }
-
-//     BaseItem *newSportItem=nullptr;
-//     if (newModeItem) {
-//         newSportItem=new BaseItem(0);
-//         if (newSportItem) {
-//             ShapeData *newShapeData=newSportItem->getShapeData()->copyCreate();
-//             newShapeData->setCreate();
-//             newSportItem->setMW(mw);
-//             newSportItem->setParentItem(newModeItem);
-//             newSportItem->setText(0,"S Port");
-//             newSportItem->setToolTip(0,"S-parameter port number for the mode.");
-//             newSportItem->set_itemType(8);
-//             newSportItem->addShapeData(newShapeData);
-//             newModeItem->addChild(newSportItem);
-//         }
-//         mw->itemChangesStack.add(newSportItem);
-//     }
-
-//     BaseItem *newSportNumberItem=nullptr;
-//     if (newSportItem) {
-//         newSportNumberItem=new BaseItem(0);
-//         if (newSportNumberItem) {
-//             ShapeData *newShapeData=newSportNumberItem->getShapeData()->copyCreate();
-//             newShapeData->setCreate();
-//             newSportNumberItem->setMW(mw);
-//             newSportNumberItem->setParentItem(newSportItem);
-//             newSportNumberItem->set_itemType(9);
-//             newSportNumberItem->addShapeData(newShapeData);
-//             newSportItem->addChild(newSportNumberItem);
-
-//             CustomSpinBox *sportNumber=new CustomSpinBox();
-//             sportNumber->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
-//             sportNumber->set_modeItem(newModeItem);
-//             sportNumber->setMinimum(1);
-//             sportNumber->setValue(Sport);
-//             mw->ui->drawingItemTree->setItemWidget(newSportNumberItem,0,sportNumber);
-
-//             QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
-//             QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::setMenus);
-
-//             mw->itemChangesStack.add(newSportNumberItem);
-//         }
-//     }
-
-//     if (newModeItem) {
-//         BaseItem *newVoltageItem=new BaseItem(0);
-//         if (newVoltageItem) {
-//             ShapeData *newShapeData=newVoltageItem->getShapeData()->copyCreate();
-//             newShapeData->setCreate();
-//             newVoltageItem->setMW(mw);
-//             newVoltageItem->setParentItem(newModeItem);
-//             newVoltageItem->set_itemType(10);
-//             newVoltageItem->setText(0,"voltage");
-//             newVoltageItem->setToolTip(0,"Voltage integration path.");
-//             newVoltageItem->addShapeData(newShapeData);
-//             newModeItem->addChild(newVoltageItem);
-
-//             mw->itemChangesStack.add(newVoltageItem);
-//         }
-
-//         BaseItem *newCurrentItem=new BaseItem(0);
-//         if (newCurrentItem) {
-//             ShapeData *newShapeData=newCurrentItem->getShapeData()->copyCreate();
-//             newShapeData->setCreate();
-//             newCurrentItem->setMW(mw);
-//             newCurrentItem->setParentItem(newModeItem);
-//             newCurrentItem->set_itemType(11);
-//             newCurrentItem->setText(0,"current");
-//             newCurrentItem->setToolTip(0,"Current integration path.");
-//             newCurrentItem->addShapeData(newShapeData);
-//             newModeItem->addChild(newCurrentItem);
-
-//             mw->itemChangesStack.add(newCurrentItem);
-//         }
-//     }
-// }
-
 void PortItem::undo ()
 {
     std::cout << "PortItem::undo  this=" << this << std::endl; std::cout.flush();
@@ -3426,33 +3175,7 @@ void PortItem::undo ()
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.undo();
-
-        // remove some children
-        int i=0;
-        while (i < childCount()) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-            if (baseItem && baseItem->is_impedanceCalculation()) {
-                int index=indexOfChild(baseItem);
-                this->takeChild(index);
-                delete baseItem;
-                break;
-            }
-            i++;
-        }
-
-        i=0;
-        while (i < childCount()) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-            if (baseItem && baseItem->is_impedanceDefinition()) {
-                int index=indexOfChild(baseItem);
-                this->takeChild(index);
-                delete baseItem;
-                break;
-            }
-            i++;
-        }
-
-        populate(nullptr);
+        restoreWidgets(this);
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
@@ -3487,70 +3210,12 @@ void PortItem::redo ()
         std::cout << "   isCreate" << std::endl; std::cout.flush();
 
         dataStack.redo();
-
-
-        // // remove some children
-        // int i=0;
-        // while (i < childCount()) {
-        //     BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-        //     if (baseItem && baseItem->is_impedanceCalculation()) {
-        //         int index=indexOfChild(baseItem);
-        //         this->takeChild(index);
-        //         delete baseItem;
-        //         break;
-        //     }
-        //     i++;
-        // }
-
-        // i=0;
-        // while (i < childCount()) {
-        //     BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-        //     if (baseItem && baseItem->is_impedanceDefinition()) {
-        //         int index=indexOfChild(baseItem);
-        //         this->takeChild(index);
-        //         delete baseItem;
-        //         break;
-        //     }
-        //     i++;
-        // }
-
-        // populate(nullptr);
-
         mw->port->addChild(this);
         restoreWidgets(this);
-
-        //xxx
-        //{mw->expandAllItems(); mw->ui->drawingWindow->updateViewer(); QMessageBox mb; mb.critical(nullptr, "Debug", "place y3");}
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.redo();
-
-        // remove some children
-        int i=0;
-        while (i < childCount()) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-            if (baseItem && baseItem->is_impedanceCalculation()) {
-                int index=indexOfChild(baseItem);
-                this->takeChild(index);
-                delete baseItem;
-                break;
-            }
-            i++;
-        }
-
-        i=0;
-        while (i < childCount()) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-            if (baseItem && baseItem->is_impedanceDefinition()) {
-                int index=indexOfChild(baseItem);
-                this->takeChild(index);
-                delete baseItem;
-                break;
-            }
-            i++;
-        }
-
-        populate(nullptr);
+        restoreWidgets(this);
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
@@ -3607,9 +3272,6 @@ ModeItem::ModeItem (OpenParEMg *mw_, PortItem *portItem_)
     VIItem *newCurrentItem=new VIItem(mw,this,11);
     addChild(newCurrentItem);
 }
-
-// void ModeItem::startItemChange () {mw->itemChangesStack.startNew();}
-// void ModeItem::addItemChange () {mw->itemChangesStack.add(this);}
 
 bool ModeItem::isValidShow ()
 {
@@ -3748,8 +3410,10 @@ void ModeItem::showMenu (QMenu *menu)
     if (isValidHide()) menu->addAction(mw->hideAction);
     if (mw->ui->drawingWindow->get_selectedItems_count() == 1) menu->addAction(mw->renameAction);
     if (isValidDelete()) menu->addAction(mw->deleteAction);
-    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
-    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3818,8 +3482,10 @@ void SportItem::showMenu (QMenu *menu)
     connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
     connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
-    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
-    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3844,9 +3510,6 @@ SportNumberItem::SportNumberItem (OpenParEMg *mw_, SportItem *sportItem_)
     setToolTip(0,"S-parameter port number.");
 }
 
-// void SportNumberItem::startItemChange () {mw->itemChangesStack.startNew();}
-// void SportNumberItem::addItemChange () {mw->itemChangesStack.add(this);}
-
 bool SportNumberItem::isValidShow () {return false;}
 bool SportNumberItem::isValidHide () {return false;}
 void SportNumberItem::show () {}
@@ -3854,14 +3517,6 @@ void SportNumberItem::hide () {}
 
 void SportNumberItem::showMenu (QMenu *menu)
 {
-    // mw->expandAllAction=new QAction("Expand All",this);
-    // mw->collapseAllAction=new QAction("Collapse All",this);
-
-    // connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
-    // connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
-
-    // if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
-    // if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
 }
 
 void SportNumberItem::undo ()
@@ -4024,8 +3679,10 @@ void VIItem::showMenu (QMenu *menu)
     if (isValidDrawPath()) menu->addAction(mw->drawPathAction);
     if (isValidDrawPath()) menu->addAction(mw->drawPolylineAction);
     if (isValidInsertSelectedPath()) menu->addAction(mw->insertAction);
-    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
-    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
 }
 
 void VIItem::drawLinePath ()
@@ -4218,8 +3875,10 @@ void RootMeshItem::showMenu (QMenu *menu)
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
-    if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
