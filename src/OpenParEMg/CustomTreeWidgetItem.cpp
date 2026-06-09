@@ -167,14 +167,27 @@ void BaseItem::undo ()
 
     if (shapeData->isNoop()) {
         std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // nothing to do
     } else if (shapeData->isCreate()) {
         std::cout << "   isCreate" << std::endl; std::cout.flush();
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+        getParentItem()->removeChild(this);
+        dataStack.undo();
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
+        dataStack.undo();
+        restoreWidgets(this);
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+        dataStack.redo();
+        getParentItem()->addChild(this);
+        restoreWidgets(this);
     } else if (shapeData->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.undo();
+        setText(0,getShapeData()->get_name());
     }
 }
 
@@ -190,14 +203,34 @@ void BaseItem::redo ()
 
     if (next->isNoop()) {
         std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // should not occur
     } else if (next->isCreate()) {
         std::cout << "   isCreate" << std::endl; std::cout.flush();
+        dataStack.redo();
+
+        Handle(AIS_Shape) shape=getShape();
+        if (!shape.IsNull()) {
+            mw->ui->drawingWindow->displayShape(shape);
+            mw->ui->drawingWindow->insertItemToMap(shape,this);
+        }
+
+        getParentItem()->addChild(this);
+        restoreWidgets(this);
+        expandToItemPlus1();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
+        dataStack.redo();
+        restoreWidgets(this);
+        expandToItemPlus1();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+        getParentItem()->removeChild(this);
+        dataStack.undo();
     } else if (next->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.redo();
+        setText(0,getShapeData()->get_name());
+        expandToItem();
     }
 }
 
@@ -220,58 +253,6 @@ ScaleLabelItem::ScaleLabelItem (OpenParEMg *mw_, VIItem *parentItem_)
     newShapeData->setCreate();
     newShapeData->set_name(text(0));
     addShapeData(newShapeData);
-}
-
-void ScaleLabelItem::undo ()
-{
-    std::cout << "ScaleLabelItem::undo  this=" << this << std::endl; std::cout.flush();
-
-    ShapeData *shapeData=getShapeData();
-    if (!shapeData) return;
-
-    if (shapeData->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // nothing to do
-    } else if (shapeData->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-        parentItem->removeChild(this);
-        dataStack.undo();
-    } else if (shapeData->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-    } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-    }else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-    }
-}
-
-void ScaleLabelItem::redo ()
-{
-    std::cout << "ScaleLabelItem::redo  this=" << this << std::endl; std::cout.flush();
-
-    ShapeData *shapeData=getShapeData();
-    if (!shapeData) return;
-
-    ShapeData *next=shapeData->getNext();
-    if (!next) return;
-
-    if (next->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // should not occur
-    } else if (next->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-        dataStack.redo();
-        parentItem->addChild(this);
-        restoreWidgets(this);
-    } else if (next->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-    } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-    } else if (next->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-    } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -309,69 +290,6 @@ void ScaleValueItem::insertScaleValueWidget (double scale)
 
     QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,&textValueChanged);
 }
-
-void ScaleValueItem::undo ()
-{
-    std::cout << "ScaleItem::undo  this=" << this << std::endl; std::cout.flush();
-
-    ShapeData *shapeData=getShapeData();
-    if (!shapeData) return;
-
-    if (shapeData->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // nothing to do
-    } else if (shapeData->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-    } else if (shapeData->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-
-        dataStack.undo();
-
-        CustomLineEdit *scaleEdit=dynamic_cast<CustomLineEdit *>(mw->ui->drawingItemTree->itemWidget(this,0));
-        const QSignalBlocker blocker(scaleEdit);
-        ShapeData *shapeData=getShapeData();
-        scaleEdit->setText(QString::number(shapeData->get_scale()));
-    } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-    } else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-    }
-}
-
-void ScaleValueItem::redo ()
-{
-    std::cout << "ScaleValueItem::redo  this=" << this << std::endl; std::cout.flush();
-
-    ShapeData *shapeData=getShapeData();
-    if (!shapeData) return;
-
-    ShapeData *next=shapeData->getNext();
-    if (!next) return;
-
-    if (next->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // should not occur
-    } else if (next->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-    } else if (next->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-
-        dataStack.redo();
-
-        CustomLineEdit *scaleEdit=dynamic_cast<CustomLineEdit *>(mw->ui->drawingItemTree->itemWidget(this,0));
-        const QSignalBlocker blocker(scaleEdit);
-        ShapeData *shapeData=getShapeData();
-        scaleEdit->setText(QString::number(shapeData->get_scale()));
-        expandToItemPlus1();
-    } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-    } else if (next->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-    } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-    }
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // RootDrawingItem
@@ -1681,9 +1599,10 @@ void DrawingItem::undo ()
         mw->ui->drawingWindow->unselectItem(this);
         mw->findShowTopLevelItem(this,false);
     } else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        dataStack.undo();
-        setText(0,getShapeData()->get_name());
+        // std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        // dataStack.undo();
+        // setText(0,getShapeData()->get_name());
+        BaseItem::undo();
     }
 }
 
@@ -1777,10 +1696,11 @@ void DrawingItem::redo ()
         getParentItem()->removeChild(this);
         mw->findShowTopLevelItem(this,true);
     } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        dataStack.redo();
-        setText(0,getShapeData()->get_name());
-        expandToItem();
+        // std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        // dataStack.redo();
+        // setText(0,getShapeData()->get_name());
+        // expandToItem();
+        BaseItem::redo();
     }
 }
 
@@ -1985,16 +1905,7 @@ void PathItem::undo ()
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
-    if (shapeData->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // nothing to do
-    } else if (shapeData->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-        // remove the item
-        mw->ui->drawingWindow->hideItem(this);
-        mw->ui->drawingWindow->removeItemFromMap(this);
-        mw->ui->drawingWindow->deleteShape(getShape());
-        getParentItem()->removeChild(this);
+    if (shapeData->isCreate()) {
 
         Path *path=static_cast<Path *>(getPath());
         if (path) path->setIsUsed(false);
@@ -2011,50 +1922,6 @@ void PathItem::undo ()
             }
             i++;
         }
-
-        dataStack.undo();
-    } else if (shapeData->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
-
-        // dataStack.undo();
-
-        // ShapeData *shapeData=getShapeData();
-        // if (shapeData) {
-        //     Process *process=static_cast<Process *>(shapeData->getProcess());
-        //     if (process) {
-        //         int i=0;
-        //         while (i < childCount()) {
-        //             BaseItem *childItem=(BaseItem *) child(i);
-        //             childItem->undo();
-        //             mw->ui->drawingWindow->hideItem(childItem);
-        //             i++;
-        //         }
-        //     } else {
-        //         mw->reprocess(this);
-        //         mw->ui->drawingWindow->unselectItem(this);
-        //     }
-        // }
-
-        // mw->findShowTopLevelItem(this,false);
-    } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-
-        dataStack.undo();
-
-        Path *path=static_cast<Path *>(getPath());
-        if (path) path->setIsUsed(true);
-
-        BaseItem *parentItem=getParentItem();
-        if (parentItem) parentItem->addChild(this);
-        //mw->path.addChild(this);
-
-        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
-        mw->ui->drawingWindow->displayShape(getShape());
-        mw->ui->drawingWindow->activateItem(this);
     } else if (shapeData->isReversePath()) {
         std::cout << "   isReversePath" << std::endl; std::cout.flush();
         mw->ui->drawingWindow->hideItem(this);
@@ -2079,11 +1946,9 @@ void PathItem::undo ()
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
         mw->ui->drawingWindow->displayShape(getShape());
         mw->ui->drawingWindow->activateItem(this);
-    } else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        dataStack.undo();
-        setText(0,getShapeData()->get_name());
     }
+
+    BaseItem::undo();
 }
 
 void PathItem::showArrows (bool show)
@@ -2153,62 +2018,7 @@ void PathItem::redo ()
     ShapeData *next=shapeData->getNext();
     if (!next) return;
 
-    if (next->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // should not occur
-    } else if (next->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-        dataStack.redo();
-
-        BaseItem *parentItem=getParentItem();
-        if (parentItem) parentItem->addChild(this);
-        //mw->path.addChild(this);
-
-        Path *path=static_cast<Path *>(getPath());
-        if (path) path->setIsUsed(true);
-
-        mw->ui->drawingWindow->displayShape(getShape());
-        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
-        setForeground(0,Qt::gray);
-        mw->ui->drawingWindow->showItem(this);
-    } else if (next->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
-
-        // dataStack.redo();
-
-        // ShapeData *shapeData=getShapeData();
-        // if (shapeData) {
-        //     Process *process=static_cast<Process *>(shapeData->getProcess());
-        //     if (process) {
-        //         int i=0;
-        //         while (i < childCount()) {
-        //             BaseItem *childItem=(BaseItem *) child(i);
-        //             childItem->redo();
-        //             i++;
-        //         }
-        //     }
-        // }
-
-        // mw->reprocess(this);
-        // mw->insertToMapActivateItem(this);
-        // mw->ui->drawingWindow->unselectItem(this);
-        // mw->findShowTopLevelItem(this,false);
-    } else if (next->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-        // // remove this version from display and tracking
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
-
-        // dataStack.redo();
-
-        // promoteChildren();
-        // getParentItem()->removeChild(this);
-        // mw->findShowTopLevelItem(this,true);
-    } else if (next->isReversePath()) {
+    if (next->isReversePath()) {
         std::cout << "   isReversePath" << std::endl; std::cout.flush();
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
@@ -2233,12 +2043,9 @@ void PathItem::redo ()
         mw->ui->drawingWindow->displayShape(getShape());
         mw->ui->drawingWindow->activateItem(this);
         expandToItem();
-    } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        dataStack.redo();
-        setText(0,getShapeData()->get_name());
-        expandToItem();
     }
+
+    BaseItem::redo();
 }
 
 void PathItem::reverse ()
@@ -2358,27 +2165,16 @@ void IntegrationPathItem::undo ()
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
-    if (shapeData->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // nothing to do
-    } else if (shapeData->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-        mw->ui->drawingWindow->unselectItem(this);
-        mw->ui->drawingWindow->hideItem(this);
-        getParentItem()->removeChild(this);
+    if (shapeData->isCreate()) {
 
         // remove linked item
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
         }
-
-        dataStack.undo();
-    } else if (shapeData->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-    } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
     }
+
+    BaseItem::undo();
 }
 
 void IntegrationPathItem::redo ()
@@ -2391,28 +2187,16 @@ void IntegrationPathItem::redo ()
     ShapeData *next=shapeData->getNext();
     if (!next) return;
 
-    if (next->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // should not occur
-    } else if (next->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-        dataStack.redo();
-
-        getParentItem()->addChild(this);
-
-        mw->ui->drawingWindow->showItem(this);
-        mw->ui->drawingWindow->activateItem(this);
+    if (next->isCreate()) {
 
         // add linked item
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
         }
-    } else if (next->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-    } else if (next->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
     }
+
+    BaseItem::redo();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2754,9 +2538,6 @@ void BoundaryItem::del ()
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
-            mw->ui->drawingWindow->showItem(pathItem);
-            mw->ui->drawingWindow->activateItem(pathItem);
-            mw->ui->drawingWindow->selectItem(pathItem);
             pathItem->showArrows(true);
         }
 
@@ -2857,50 +2638,21 @@ void BoundaryItem::undo ()
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
-    if (shapeData->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // nothing to do
-    } else if (shapeData->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
+    if (shapeData->isCreate()) {
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
-            mw->ui->drawingWindow->showItem(pathItem);
-            mw->ui->drawingWindow->activateItem(pathItem);
-            mw->ui->drawingWindow->selectItem(pathItem);
             pathItem->showArrows(true);
         }
 
-        // remove the item
-        getParentItem()->removeChild(this);
-
-        dataStack.undo();
-    } else if (shapeData->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-        dataStack.undo();
-        resetWidgets();
     } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-
-        dataStack.undo();
-
-        mw->boundary->addChild(this);
-        setForeground(0,Qt::gray);
-        mw->ui->drawingWindow->showItem(this);
-
         PathItem *pathItem=getPathItem();
-        if (pathItem) {
-            pathItem->showArrows(false);
-        }
-
-        restoreWidgets(this);
-    } else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        dataStack.undo();
-        setText(0,getShapeData()->get_name());
+        if (pathItem) pathItem->showArrows(false);
     }
+
+    BaseItem::undo();
 }
 
 void BoundaryItem::redo ()
@@ -2913,44 +2665,17 @@ void BoundaryItem::redo ()
     ShapeData *next=shapeData->getNext();
     if (!next) return;
 
-    if (next->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // should not occur
-    } else if (next->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-
-        dataStack.redo();
-        mw->boundary->addChild(this);
-        restoreWidgets(this);
-        expandToItemPlus1();
-    } else if (next->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-        dataStack.redo();
-        resetWidgets();
-        expandToItemPlus1();
-    } else if (next->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-
-        dataStack.redo();
-
-        // remove the item
-        getParentItem()->removeChild(this);
+    if (next->isDelete()) {
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
-            mw->ui->drawingWindow->showItem(pathItem);
-            mw->ui->drawingWindow->activateItem(pathItem);
-            mw->ui->drawingWindow->selectItem(pathItem);
             pathItem->showArrows(true);
         }
-    } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        dataStack.redo();
-        setText(0,getShapeData()->get_name());
-        expandToItem();
     }
+
+    BaseItem::redo();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3274,9 +2999,6 @@ void PortItem::del ()
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
-            mw->ui->drawingWindow->showItem(pathItem);
-            mw->ui->drawingWindow->activateItem(pathItem);
-            mw->ui->drawingWindow->selectItem(pathItem);
             pathItem->showArrows(true);
         }
 
@@ -3291,49 +3013,17 @@ void PortItem::undo ()
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
-    if (shapeData->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // nothing to do
-    } else if (shapeData->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
+    if (shapeData->isCreate()) {
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
-            mw->ui->drawingWindow->showItem(pathItem);
-            mw->ui->drawingWindow->activateItem(pathItem);
-            mw->ui->drawingWindow->selectItem(pathItem);
             pathItem->showArrows(true);
         }
-
-        // remove the item
-        getParentItem()->removeChild(this);
-
-        dataStack.undo();
-    } else if (shapeData->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-        dataStack.undo();
-        restoreWidgets(this);
-    } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-
-        // dataStack.undo();
-
-        // // rebuild the item from scratch
-        // Port *aPort=getPort();
-        // if (aPort) {
-        //     // remove all children
-        //     foreach(auto i, takeChildren()) delete i;
-
-        //     // draw
-        //     aPort->draw(mw->relay,&(mw->projData),mw->boundaryDatabase,mw,mw->ui->drawingWindow,mw->ui->drawingItemTree,&(mw->path),&(mw->port),this);
-        // }
-    } else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        dataStack.undo();
-        setText(0,getShapeData()->get_name());
     }
+
+    BaseItem::undo();
 }
 
 void PortItem::redo ()
@@ -3346,41 +3036,18 @@ void PortItem::redo ()
     ShapeData *next=shapeData->getNext();
     if (!next) return;
 
-    if (next->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // should not occur
-    } else if (next->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-        dataStack.redo();
-        mw->port->addChild(this);
-        restoreWidgets(this);
-        expandToItemPlus1();
-    } else if (next->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-        dataStack.redo();
-        restoreWidgets(this);
-        expandToItemPlus1();
-    } else if (next->isDelete()) {
+    if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
-            mw->ui->drawingWindow->showItem(pathItem);
-            mw->ui->drawingWindow->activateItem(pathItem);
-            mw->ui->drawingWindow->selectItem(pathItem);
             pathItem->showArrows(true);
         }
-
-        // delete the item
-        getParentItem()->removeChild(this);
-    } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        dataStack.redo();
-        setText(0,getShapeData()->get_name());
-        expandToItem();
     }
+
+    BaseItem::redo();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3495,71 +3162,6 @@ void ModeItem::hide ()
 
     mw->ui->drawingWindow->updateViewer();
     mw->setMenusI(33);
-}
-
-void ModeItem::undo ()
-{
-    std::cout << "ModeItem::undo  this=" << this << std::endl; std::cout.flush();
-
-    ShapeData *shapeData=getShapeData();
-    if (!shapeData) return;
-
-    if (shapeData->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // nothing to do
-    } else if (shapeData->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-        getParentItem()->removeChild(this);
-        dataStack.undo();
-    } else if (shapeData->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-        dataStack.undo();
-        restoreWidgets(this);
-    } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-        dataStack.redo();
-        mw->port->addChild(this);
-        restoreWidgets(this);
-    } else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        dataStack.undo();
-        setText(0,getShapeData()->get_name());
-    }
-}
-
-void ModeItem::redo ()
-{
-    std::cout << "ModeItem::redo  this=" << this << std::endl; std::cout.flush();
-
-    ShapeData *shapeData=getShapeData();
-    if (!shapeData) return;
-
-    ShapeData *next=shapeData->getNext();
-    if (!next) return;
-
-    if (next->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // should not occur
-    } else if (next->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-        dataStack.redo();
-        mw->port->addChild(this);
-        restoreWidgets(this);
-    } else if (next->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-        dataStack.redo();
-        restoreWidgets(this);
-        expandToItemPlus1();
-    } else if (next->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-        getParentItem()->removeChild(this);
-        dataStack.undo();
-    } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        dataStack.redo();
-        setText(0,getShapeData()->get_name());
-        expandToItem();
-    }
 }
 
 bool ModeItem::isValidDelete () {return true;}
@@ -3732,68 +3334,6 @@ void SportNumberItem::hide () {}
 
 void SportNumberItem::showMenu (QMenu *menu)
 {
-}
-
-void SportNumberItem::undo ()
-{
-    std::cout << "SportNumberItem::undo  this=" << this << std::endl; std::cout.flush();
-
-    ShapeData *shapeData=getShapeData();
-    if (!shapeData) return;
-
-    if (shapeData->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // nothing to do
-    } else if (shapeData->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-    } else if (shapeData->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-
-        dataStack.undo();
-
-        CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
-        const QSignalBlocker blocker(sportNumber);
-        ShapeData *shapeData=getShapeData();
-        sportNumber->setValue(shapeData->get_Sport());
-    } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-    } else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();;
-    }
-}
-
-void SportNumberItem::redo ()
-{
-    std::cout << "SportNumberItem::redo  this=" << this << std::endl; std::cout.flush();
-
-    ShapeData *shapeData=getShapeData();
-    if (!shapeData) return;
-
-    ShapeData *next=shapeData->getNext();
-    if (!next) return;
-
-    if (next->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
-        // should not occur
-    } else if (next->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
-    } else if (next->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
-
-        dataStack.redo();
-
-        CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
-        const QSignalBlocker blocker(sportNumber);
-        ShapeData *shapeData=getShapeData();
-        sportNumber->setValue(shapeData->get_Sport());
-        expandToItemPlus1();
-    } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-    } else if (next->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-    } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -755,9 +755,6 @@ public:
     void setVIItem (VIItem *viItem_) {viItem=viItem_;}
     VIItem* getVIItem () {return viItem;}
 
-    void undo () override;
-    void redo () override;
-
 private:
     VIItem *viItem;
 };
@@ -773,9 +770,6 @@ public:
 
     void setScaleLabelItem (ScaleLabelItem *scaleLabelItem_) {scaleLabelItem=scaleLabelItem_;}
     ScaleLabelItem* getScaleLabelItem () {return scaleLabelItem;}
-
-    void undo () override;
-    void redo () override;
 
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
@@ -1160,8 +1154,6 @@ public:
     bool isValidHide () override;
     void show () override;
     void hide () override;
-    void undo () override;
-    void redo () override;
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
 
@@ -1213,8 +1205,6 @@ public:
     bool isValidHide () override;
     void show () override;
     void hide () override;
-    void undo () override;
-    void redo () override;
     void showMenu (QMenu *) override;
     void setSportItem (SportItem *sportItem_) {sportItem=sportItem_;}
     SportItem* getSportItem () {return sportItem;}
