@@ -413,6 +413,11 @@ public:
         }
         shapeDataList.clear();
         current=nullptr;
+
+        // always put a noop at the bottom of the stack
+        ShapeData *noop=new ShapeData();
+        current=noop;
+        shapeDataList.push_back(noop);
     }
 
     void pop ()

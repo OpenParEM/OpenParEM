@@ -4265,7 +4265,7 @@ void OpenParEMg::printLockouts ()
 
 void OpenParEMg::resetDrawing ()
 {
-    std::cout << "OpenParEMg::resetDrawing  drawing=" << &drawing << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::resetDrawing  drawing=" << &drawing << std::endl; std::cout.flush();
 
     // mesh
     deleteMesh(false);
@@ -4284,11 +4284,11 @@ void OpenParEMg::resetDrawing ()
     Handle(AIS_Shape) newShape=new AIS_Shape(compound);
     //ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
 
-    ShapeData *newShapeData=new ShapeData();
-    newShapeData->setNoop();
-    drawing->addShapeData(newShapeData);
+    // ShapeData *newShapeData=new ShapeData();
+    // newShapeData->setNoop();
+    // drawing->addShapeData(newShapeData);
 
-    newShapeData=drawing->getShapeData()->copyCreate();
+    ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
     newShapeData->setCreate();
     newShapeData->setShape(newShape);
     drawing->addShapeData(newShapeData);

@@ -2639,7 +2639,7 @@ void BoundaryItem::del ()
 
 void BoundaryItem::resetWidgets ()
 {
-    std::cout << "BoundaryItem::resetWidgets" << std::endl; std::cout.flush();
+    //std::cout << "BoundaryItem::resetWidgets" << std::endl; std::cout.flush();
 
     BaseItem *boundaryType=nullptr;
     BaseItem *boundaryWaveImpedance=nullptr;
