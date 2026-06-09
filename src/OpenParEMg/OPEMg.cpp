@@ -198,6 +198,14 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::OpenParEMg)
 {
+    // set depth and stencil buffer sizes
+    QSurfaceFormat format;
+    format.setDepthBufferSize(24);
+    format.setStencilBufferSize(8);
+    format.setRenderableType(QSurfaceFormat::OpenGL);
+    QSurfaceFormat::setDefaultFormat(format);
+
+    // start
     ui->setupUi(this);
 
     MPI_PORT_COMM=nullptr;
@@ -483,6 +491,11 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     setMenus();
 
     close_event=nullptr;
+
+    // show buffer sizes
+    // QSurfaceFormat fmt=ui->drawingWindow->format();
+    // std::cout << "Depth: " << fmt.depthBufferSize() << std::endl; std::cout.flush();
+    // std::cout << "Stencil: " << fmt.stencilBufferSize()<< std::endl; std::cout.flush();
 
     PetscInitializeNoArguments();
 }
