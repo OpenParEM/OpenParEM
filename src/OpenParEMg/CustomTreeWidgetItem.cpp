@@ -24,6 +24,7 @@ BaseItem::BaseItem (OpenParEMg *mw_, BaseItem *parentItem_)
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
+    newShapeData->set_name(text(0));
     addShapeData(newShapeData);
 }
 
@@ -119,6 +120,44 @@ void BaseItem::restoreWidgets (BaseItem *baseItem)
 void BaseItem::startItemChange () {mw->itemChangesStack.startNew();}
 void BaseItem::addItemChange () {mw->itemChangesStack.add(this);}
 
+void BaseItem::rename (QString name)
+{
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setChangeName();
+    newShapeData->set_name(name);
+    addShapeData(newShapeData);
+
+    mw->itemChangesStack.startNew();
+    mw->itemChangesStack.add(this);
+}
+
+void BaseItem::expandToItem ()
+{
+    BaseItem *item=getParentItem();
+    for (BaseItem* p = item; p; p = p->getParentItem())
+    {
+        p->setExpanded(true);
+    }
+
+    //mw->ui->drawingItemTree->setCurrentItem(this);
+    mw->ui->drawingWindow->unselectAllItems();
+    mw->ui->drawingWindow->selectItem(this);
+    mw->ui->drawingItemTree->scrollToItem(this);
+}
+
+void BaseItem::expandToItemPlus1 ()
+{
+    BaseItem *item=this;
+    for (BaseItem* p = item; p; p = p->getParentItem())
+    {
+        p->setExpanded(true);
+    }
+
+    mw->ui->drawingWindow->unselectAllItems();
+    mw->ui->drawingWindow->selectItem(this);
+    mw->ui->drawingItemTree->scrollToItem(this);
+}
+
 void BaseItem::undo ()
 {
     std::cout << "BaseItem::undo  this=" << this << std::endl; std::cout.flush();
@@ -179,6 +218,7 @@ ScaleLabelItem::ScaleLabelItem (OpenParEMg *mw_, VIItem *parentItem_)
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
+    newShapeData->set_name(text(0));
     addShapeData(newShapeData);
 }
 
@@ -322,6 +362,7 @@ void ScaleValueItem::redo ()
         const QSignalBlocker blocker(scaleEdit);
         ShapeData *shapeData=getShapeData();
         scaleEdit->setText(QString::number(shapeData->get_scale()));
+        expandToItemPlus1();
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
     } else if (next->isDelete()) {
@@ -1722,6 +1763,7 @@ void DrawingItem::redo ()
         mw->insertToMapActivateItem(this);
         mw->ui->drawingWindow->unselectItem(this);
         mw->findShowTopLevelItem(this,false);
+        expandToItemPlus1();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
         // remove this version from display and tracking
@@ -1738,6 +1780,7 @@ void DrawingItem::redo ()
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
         dataStack.redo();
         setText(0,getShapeData()->get_name());
+        expandToItem();
     }
 }
 
@@ -2067,6 +2110,39 @@ void PathItem::showArrows (bool show)
     hasArrows=show;
 }
 
+void PathItem::rename (QString name)
+{
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setChangeName();
+    newShapeData->set_name(name);
+    addShapeData(newShapeData);
+
+    mw->itemChangesStack.startNew();
+    mw->itemChangesStack.add(this);
+
+    // change the names of the linked items
+    long unsigned int i=0;
+    while (i < linkedItems_size()) {
+        BaseItem *item=get_linkedItem(i);
+        if (item->is_integrationPathSegment()) {
+            ShapeData *newShapeData=item->getShapeData()->copyCreate();
+            newShapeData->setChangeName();
+
+            // new name, preserving the sign
+            QChar direction=newShapeData->get_name().front();
+            QString integrationText=direction;
+            integrationText.append(name);
+            item->setText(0,integrationText);
+            newShapeData->set_name(integrationText);
+
+            item->addShapeData(newShapeData);
+
+            mw->itemChangesStack.add(item);
+        }
+        i++;
+    }
+}
+
 void PathItem::redo ()
 {
     std::cout << "PathItem::redo  this=" << this << std::endl; std::cout.flush();
@@ -2156,10 +2232,12 @@ void PathItem::redo ()
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
         mw->ui->drawingWindow->displayShape(getShape());
         mw->ui->drawingWindow->activateItem(this);
+        expandToItem();
     } else if (next->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
         dataStack.redo();
         setText(0,getShapeData()->get_name());
+        expandToItem();
     }
 }
 
@@ -2213,6 +2291,11 @@ IntegrationPathItem::IntegrationPathItem (OpenParEMg *mw_, BaseItem *parentItem_
 
     integrationPath=nullptr;
     pathItem=nullptr;
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    newShapeData->set_name(text(0));
+    addShapeData(newShapeData);
 }
 
 bool IntegrationPathItem::isValidShow ()
@@ -2839,11 +2922,12 @@ void BoundaryItem::redo ()
         dataStack.redo();
         mw->boundary->addChild(this);
         restoreWidgets(this);
-
+        expandToItemPlus1();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.redo();
         resetWidgets();
+        expandToItemPlus1();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
@@ -2865,6 +2949,7 @@ void BoundaryItem::redo ()
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
         dataStack.redo();
         setText(0,getShapeData()->get_name());
+        expandToItem();
     }
 }
 
@@ -3266,14 +3351,15 @@ void PortItem::redo ()
         // should not occur
     } else if (next->isCreate()) {
         std::cout << "   isCreate" << std::endl; std::cout.flush();
-
         dataStack.redo();
         mw->port->addChild(this);
         restoreWidgets(this);
+        expandToItemPlus1();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.redo();
         restoreWidgets(this);
+        expandToItemPlus1();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
@@ -3293,6 +3379,7 @@ void PortItem::redo ()
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
         dataStack.redo();
         setText(0,getShapeData()->get_name());
+        expandToItem();
     }
 }
 
@@ -3408,6 +3495,71 @@ void ModeItem::hide ()
 
     mw->ui->drawingWindow->updateViewer();
     mw->setMenusI(33);
+}
+
+void ModeItem::undo ()
+{
+    std::cout << "ModeItem::undo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    if (shapeData->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // nothing to do
+    } else if (shapeData->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        getParentItem()->removeChild(this);
+        dataStack.undo();
+    } else if (shapeData->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        dataStack.undo();
+        restoreWidgets(this);
+    } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        dataStack.redo();
+        mw->port->addChild(this);
+        restoreWidgets(this);
+    } else if (shapeData->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.undo();
+        setText(0,getShapeData()->get_name());
+    }
+}
+
+void ModeItem::redo ()
+{
+    std::cout << "ModeItem::redo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    ShapeData *next=shapeData->getNext();
+    if (!next) return;
+
+    if (next->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // should not occur
+    } else if (next->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        dataStack.redo();
+        mw->port->addChild(this);
+        restoreWidgets(this);
+    } else if (next->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        dataStack.redo();
+        restoreWidgets(this);
+        expandToItemPlus1();
+    } else if (next->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        getParentItem()->removeChild(this);
+        dataStack.undo();
+    } else if (next->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.redo();
+        setText(0,getShapeData()->get_name());
+        expandToItem();
+    }
 }
 
 bool ModeItem::isValidDelete () {return true;}
@@ -3634,6 +3786,7 @@ void SportNumberItem::redo ()
         const QSignalBlocker blocker(sportNumber);
         ShapeData *shapeData=getShapeData();
         sportNumber->setValue(shapeData->get_Sport());
+        expandToItemPlus1();
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
     } else if (next->isDelete()) {
@@ -3668,6 +3821,7 @@ VIItem::VIItem (OpenParEMg *mw_, ModeItem *modeItem_, int itemType_)
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
+    newShapeData->set_name(text(0));
     addShapeData(newShapeData);
 }
 

@@ -2609,8 +2609,11 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
         // tree item
         PathItem *itemSegment=new PathItem(mw,itemVI);
-        //itemSegment->set_AIS_Shape(drawingShape);
+        ShapeData *newShapeData=itemSegment->getShapeData()->copyCreate();
+        newShapeData->setCreate();
+        itemSegment->addShapeData(newShapeData);
         itemSegment->setText(0,name);
+        newShapeData->set_name(itemSegment->text(0));
         itemSegment->set_itemType(14);
         itemSegment->setForeground(0,Qt::gray);
         itemSegment->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
@@ -4287,7 +4290,6 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
 
     ModeItem *modeItem=new ModeItem(mw,portItem);
-    modeItem->setText(0,netname);
     portItem->addChild(modeItem);
 
     // S port

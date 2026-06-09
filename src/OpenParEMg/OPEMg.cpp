@@ -505,7 +505,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
 OpenParEMg::~OpenParEMg ()
 {
-    std::cout << "OpenParEMg::~OpenParEMg" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::~OpenParEMg" << std::endl; std::cout.flush();
 
     ui->drawingWindow->shutdown();
 
@@ -1553,37 +1553,7 @@ void OpenParEMg::rename_editingFinished ()
     // new text
     QString newText=renameEdit->text();
     if (originalText.compare(newText) != 0) {
-
-        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(renameItem);
-        if (drawingItem && drawingItem->is_drawing()) {
-            ShapeData *newShapeData=drawingItem->getShapeData()->copyCreate();
-            newShapeData->setChangeName();
-            newShapeData->set_name(newText);
-            drawingItem->addShapeData(newShapeData);
-
-            itemChangesStack.startNew();
-            itemChangesStack.add(drawingItem);
-        }
-
-        PathItem *pathItem=dynamic_cast<PathItem *>(renameItem);
-        if (pathItem && pathItem->is_path()) {
-
-            ShapeData *newShapeData=pathItem->getShapeData()->copyCreate();
-            newShapeData->setChangeName();
-            newShapeData->set_name(newText);
-            pathItem->addShapeData(newShapeData);
-
-            itemChangesStack.startNew();
-            itemChangesStack.add(drawingItem);
-
-            // change the names of the linked items
-            long unsigned int i=0;
-            while (i < pathItem->linkedItems_size()) {
-                BaseItem *item=pathItem->get_linkedItem(i);
-                if (item->is_integrationPathSegment()) item->setText(0,newText);
-                i++;
-            }
-        }
+        renameItem->rename(newText);
     }
 
     // replace
@@ -1672,6 +1642,7 @@ void OpenParEMg::renameDrawingItems ()
         if (item) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
             if (drawingItem && drawingItem->is_drawing()) {
+                drawingItem->expandToItem();
                 CustomLineEdit *name=new CustomLineEdit();
                 name->setText(drawingItem->text(0));
                 originalText=drawingItem->text(0);
@@ -2475,6 +2446,7 @@ void OpenParEMg::finishMergeSolids ()
     shapeData->setProcess(merge);
     shapeData->setShape(newAISshape);
     newItem->setText(0,merge->getName(&objectCounts));
+    shapeData->set_name(newItem->text(0));
     drawing->addChild(newItem);
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
     ui->drawingWindow->showItem(newItem);
@@ -2599,6 +2571,7 @@ void OpenParEMg::finishSubtractSolids ()
     shapeData->setProcess(subtract);
     shapeData->setShape(newAISshape);
     newItem->setText(0,subtract->getName(&objectCounts));
+    shapeData->set_name(newItem->text(0));
     drawing->addChild(newItem);
     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
     ui->drawingWindow->showItem(newItem);
@@ -3024,6 +2997,11 @@ void OpenParEMg::closeExistingPolyline ()
                     polywire->close();
                     reprocess(drawingItem);
                     drawingItem->setText(0,polywire->getName(&objectCounts));
+                    newShapeData=drawingItem->getShapeData()->copyCreate();
+                    newShapeData->setChangeName();
+                    newShapeData->set_name(drawingItem->text(0));
+                    drawingItem->addShapeData(newShapeData);
+                    itemChangesStack.add(drawingItem);
                     drawingItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
                     ui->drawingWindow->showItem(drawingItem);
                     ui->drawingWindow->selectItem(drawingItem);
@@ -3098,6 +3076,11 @@ void OpenParEMg::openExistingPolyline ()
                     polywire->open();
                     reprocess(drawingItem);
                     drawingItem->setText(0,polywire->getName(&objectCounts));
+                    newShapeData=drawingItem->getShapeData()->copyCreate();
+                    newShapeData->setChangeName();
+                    newShapeData->set_name(drawingItem->text(0));
+                    drawingItem->addShapeData(newShapeData);
+                    itemChangesStack.add(drawingItem);
                     drawingItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
                     ui->drawingWindow->showItem(drawingItem);
                     ui->drawingWindow->selectItem(drawingItem);
@@ -3281,6 +3264,7 @@ PathItem* OpenParEMg::createPathItemFromDrawing (DrawingItem *item, bool hasArro
         shapeData->getPolywire()->setHasArrows(hasArrows);
         shapeData->setShape(shapeData->getPolywire()->get_AIS_Shape());
         newPathItem->setText(0,QString::fromStdString(pathName));
+        shapeData->set_name(newPathItem->text(0));
         newPathItem->setPath(newPath);
 
         path->addChild(newPathItem);
@@ -4816,6 +4800,7 @@ bool OpenParEMg::loadBrepFile (QString filePath, bool createName)
                     ShapeData *shapeData=newItem->getShapeData();
                     shapeData->setShape(shape);
                     newItem->setText(0,getAISshapeName(shape));
+                    shapeData->set_name(newItem->text(0));
                     drawing->addChild(newItem);
                     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
                     ui->drawingWindow->showItem(newItem);
@@ -4860,6 +4845,7 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
                     ShapeData *shapeData=newItem->getShapeData();
                     shapeData->setShape(shape);
                     newItem->setText(0,getAISshapeName(shape));
+                    shapeData->set_name(newItem->text(0));
                     drawing->addChild(newItem);
                     ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
                     ui->drawingWindow->showItem(newItem);
@@ -5234,6 +5220,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
         ShapeData *shapeData=newItem->getShapeData();
         shapeData->setPolywire(polywire);
         newItem->setText(0,QString::fromStdString(name));
+        shapeData->set_name(newItem->text(0));
 
         DrawingItem *parentItem=dynamic_cast<DrawingItem *>(baseParent);
         if (parentItem && parentItem->is_drawing()) newItem->copy_depth(parentItem);
@@ -5269,6 +5256,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             std::string name;
             if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
                 newItem->setText(0,QString::fromStdString(name));
+                shapeData->set_name(newItem->text(0));
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseParent);
                 if (drawingItem && drawingItem->is_drawing()) newItem->copy_depth(drawingItem);
                 if (increaseDepth) newItem->increase_depth();
@@ -5358,6 +5346,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             std::string name;
             if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
                 newItem->setText(0,QString::fromStdString(name));
+                shapeData->set_name(newItem->text(0));
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseParent);
                 if (drawingItem && drawingItem->is_drawing()) newItem->copy_depth(drawingItem);
                 if (increaseDepth) newItem->increase_depth();
@@ -6825,6 +6814,7 @@ void OpenParEMg::finishDraw ()
                 PathItem *newPathItem=new PathItem(this,viItem);
                 newPathItem->set_itemType(14);  // integration path segment
                 newPathItem->setText(0,newPathText);
+                newPathItem->getShapeData()->set_name(newPathItem->text(0));
                 newPathItem->push_linkedItem(pathItem);
                 pathItem->push_linkedItem(newPathItem);
                 workingItem->addChild(newPathItem);

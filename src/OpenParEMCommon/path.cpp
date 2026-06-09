@@ -2208,19 +2208,21 @@ void Path::fill_wire_item (PathItem *item)
 
     item->setPath(this);
     item->setText(0,QString::fromStdString(get_name()));
-    item->setForeground(0,Qt::black);
 
     TopoDS_Wire wire=create_TopoDS_Wire();
     Handle(AIS_Shape) shape=new AIS_Shape(wire);
-    ShapeData *newShapeData=item->getShapeData()->copyCreate();
-    newShapeData->setCreate();
-    newShapeData->setShape(shape);
-    item->addShapeData(newShapeData);
+    ShapeData *shapeData=item->getShapeData();
+    shapeData->setCreate();
+    shapeData->setShape(shape);
+    shapeData->set_name(item->text(0));
 }
 
 void Path::create_wire_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
 {
     item=new PathItem(mw,parentItem);
+    ShapeData *newShapeData=item->getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    item->addShapeData(newShapeData);
     fill_wire_item(item);
     parentItem->addChild(item);
 }
@@ -2287,6 +2289,7 @@ void Path::create_polywire_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWind
 
     // name
     item->setText(0,QString::fromStdString(get_name()));
+    item->getShapeData()->set_name(item->text(0));
 
     parentItem->addChild(item);
     item->setParentItem(parentItem);
@@ -2297,7 +2300,6 @@ void Path::create_face_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, 
     item=new PathItem(mw,parentItem);
     item->setPath(this);
     item->setText(0,QString::fromStdString(get_name()));
-    item->setForeground(0,Qt::black);
 
     TopoDS_Wire wire=create_TopoDS_Wire();
     if (!wire.IsNull()) {
@@ -2308,6 +2310,7 @@ void Path::create_face_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, 
             ShapeData *newShapeData=item->getShapeData()->copyCreate();
             newShapeData->setCreate();
             newShapeData->setShape(shape);
+            newShapeData->set_name(item->text(0));
             item->addShapeData(newShapeData);
             parentItem->addChild(item);
         }

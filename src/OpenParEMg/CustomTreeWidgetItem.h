@@ -489,6 +489,10 @@ public:
 
     void restoreWidgets (BaseItem *);
 
+    virtual void rename (QString);
+    void expandToItem ();
+    void expandToItemPlus1 ();
+
     virtual bool isValidShow () {return false;}
     virtual bool isValidHide () {return false;}
     virtual void show () {}
@@ -990,6 +994,8 @@ public:
     void setHasArrows (bool hasArrows_)  {hasArrows=hasArrows_;}
     bool getHasArrows () {return hasArrows;}
 
+    void rename (QString) override;
+
     bool isValidShow () override;
     bool isValidHide () override;
     void show () override;
@@ -1154,6 +1160,11 @@ public:
     bool isValidHide () override;
     void show () override;
     void hide () override;
+    void undo () override;
+    void redo () override;
+    bool hasUndo () override {return dataStack.hasUndo();}
+    bool hasRedo () override {return dataStack.hasRedo();}
+
     bool isValidDelete ();
     void unlinkPaths (BaseItem *);
     void del () override;
