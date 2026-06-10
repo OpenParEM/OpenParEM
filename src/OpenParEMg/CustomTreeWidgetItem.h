@@ -499,8 +499,6 @@ public:
     virtual void hide () {}
     virtual void showMenu (QMenu *) {}
 
-    QString get_name () {return text(0);}
-
     void addShapeData (ShapeData *shapeData_) {dataStack.add(shapeData_);}
     void setShape (Handle(AIS_Shape) shape_) {dataStack.setShape(shape_);}
     void setPolywire (Polywire *polywire_) {dataStack.setPolywire(polywire_);}
@@ -922,6 +920,8 @@ public:
         enableInsertPoint=false;
     }
 
+    PathItem* createPath (bool);
+
     void undo () override;
     void redo () override;
 
@@ -1016,13 +1016,10 @@ class IntegrationPathItem : public BaseItem
     Q_OBJECT
 
 public:   
-    IntegrationPathItem (OpenParEMg *, BaseItem *);
+    IntegrationPathItem (OpenParEMg *, BaseItem *, PathItem *);
 
     void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
     PathItem* getPathItem () {return pathItem;}
-
-    void setIntegrationPath (IntegrationPath *integrationPath_) {integrationPath=integrationPath_;}
-    IntegrationPath* getIntegrationPath () {return integrationPath;}
 
     bool isValidShow () override;
     bool isValidHide () override;
@@ -1034,8 +1031,9 @@ public:
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
 
+    void del () override;
+    void flipSign ();
 private:
-    IntegrationPath *integrationPath;
     PathItem *pathItem;                  // base path for this integration path
 };
 
@@ -1236,6 +1234,8 @@ public:
     void insertSelectedPath ();
     bool hasScale ();
     ScaleLabelItem* addScaleItem ();
+    PathItem* createIntegrationPathItemFromDrawing (DrawingItem *, bool);
+    void convertItemToPath (DrawingItem *, bool);
 
 private:
     ModeItem *modeItem;

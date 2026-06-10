@@ -362,7 +362,6 @@ public:
     int check_changed ();
     void closeWindow_triggered ();
 
-    void buildIntegrationPathList (std::vector<IntegrationPath *> *, BaseItem *);
     //void pruneBoundaryDatabase ();
     void saveProject ();
     void insertToMapActivateItem (BaseItem *);
@@ -456,9 +455,6 @@ public:
     void convertToPolyline ();
 
     bool isValidConvertToPath ();
-    Path* createPathFromDrawing (DrawingItem *, bool);
-    PathItem* createPathItemFromDrawing (DrawingItem *, bool);
-    void convertItemToPath (DrawingItem *, bool);
     void convertDrawingToPath ();
     void convertDrawingToPathN (bool);
 
@@ -562,6 +558,8 @@ private slots:
     void collapse (BaseItem *);
     void expandAllItems ();
     void collapseAllItems ();
+    bool pathNameExists (QString);
+    void uniqueifyPathName (QString& pathName);
     void renamePathItems ();
     void deletePathItems ();
     bool isValidDeletePath ();
@@ -587,6 +585,8 @@ private slots:
     void renamePortItems ();
     void deleteRootPortItems ();
     void deletePortItems ();
+    void deleteModeItems ();
+    void deleteIntegrationPathItems ();
 
     void assignMaterial ();
     void crossReferencePaths ();

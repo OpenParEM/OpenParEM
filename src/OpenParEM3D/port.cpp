@@ -2569,6 +2569,8 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
                             OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
                             RootPathItem *rootPathItem, BaseItem *itemVI)
 {
+    std::cout << "IntegrationPath::draw" << std::endl;  std::cout.flush();
+
     // scale
 
     BaseItem *itemScale=new BaseItem(mw,itemVI);
@@ -2644,6 +2646,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
             itemSegment->push_linkedItem(newPathItem);
         }
 
+        std::cout << "place 2" << std::endl; std::cout.flush();
         itemVI->addChild(itemSegment);
         drawingWindow->showItem(itemSegment);
 
@@ -3479,6 +3482,8 @@ bool Mode::findIntegrationPathBlocks(inputFile *inputs)
 
 IntegrationPath* Mode::addIntegrationPath (vector<Path *> *pathList, vector<Path *> *pathsToAdd, string type)
 {
+    std::cout << "Mode::addIntegrationPath" << std::endl; std::cout.flush();
+
     IntegrationPath *integrationPath=new IntegrationPath(pathList,pathsToAdd,type);
     integrationPathList.push_back(integrationPath);
     modified=true;

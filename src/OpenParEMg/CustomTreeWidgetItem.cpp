@@ -190,7 +190,7 @@ void BaseItem::undo ()
         restoreWidgets(this);
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
-        dataStack.redo();
+        dataStack.undo();
 
         Handle(AIS_Shape) shape=getShape();
         if (!shape.IsNull()) {
@@ -249,7 +249,7 @@ void BaseItem::redo ()
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
         getParentItem()->removeChild(this);
-        dataStack.undo();
+        dataStack.redo();
     } else if (next->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
         dataStack.redo();
@@ -1308,11 +1308,15 @@ void DrawingItem::convertToPolyline ()
 
 void DrawingItem::del ()
 {
-    setForUndoRedo();
+    // remove from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
 
     // mark as delete
-    ShapeData *shapeData=getShapeData();
-    shapeData->setDelete();
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setDelete();
+    addShapeData(newShapeData);
 
     // parentItem
     BaseItem *parentItem=getParentItem();
@@ -1341,11 +1345,6 @@ void DrawingItem::del ()
         }
 
         mw->itemChangesStack.add(this);
-
-        // remove from display and tracking
-        mw->ui->drawingWindow->hideItem(this);
-        mw->ui->drawingWindow->removeItemFromMap(this);
-        mw->ui->drawingWindow->deleteShape(this->getShape());
 
         // reset the top-level compound
         mw->reprocess(mw->drawing);
@@ -1557,6 +1556,57 @@ void DrawingItem::moveAnimateShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_Interactive
     animateShape->SetLocalTransformation(aTrsf);
 
     viewerContext->Redisplay(animateShape,Standard_True);
+}
+
+PathItem* DrawingItem::createPath (bool hasArrows)
+{
+    std::cout << "DrawingItem::createPath" << std::endl; std::cout.flush();
+
+    Polywire *polywire=static_cast<Polywire *>(getPolywire());
+    if (!polywire) return nullptr;
+
+    // default path name
+    QString pathName=text(0);
+    mw->uniqueifyPathName(pathName);
+
+    // path name placed in a keywordPair
+    keywordPair *kwPathName=new keywordPair();
+    kwPathName->set_keyword("path");
+    kwPathName->set_value(pathName.toStdString());
+    kwPathName->set_lineNumber(0);
+    kwPathName->set_loaded(true);
+
+    // new path for the path database
+    Path *newPath=new Path(0,0);
+    newPath->set_name(pathName.toStdString());
+    newPath->is_modified();
+    newPath->set_normal(polywire->getNormal());
+    newPath->addWirePoints(polywire->buildWire());
+
+    // create a path item
+    PathItem *newPathItem=new PathItem(mw,mw->path);
+    if (newPathItem) {
+        ShapeData *newShapeData=newPathItem->getShapeData()->copyCreate();
+        newShapeData->setPolywire(polywire->copyCreate());
+        newShapeData->getPolywire()->setHasArrows(hasArrows);
+        newShapeData->setShape(newShapeData->getPolywire()->get_AIS_Shape());
+        newPathItem->setText(0,pathName);
+        newShapeData->set_name(newPathItem->text(0));
+        newPathItem->setPath(newPath);
+        newPathItem->addShapeData(newShapeData);
+
+        mw->path->addChild(newPathItem);
+        mw->itemChangesStack.add(newPathItem);
+
+        // show the new PathItem
+        mw->ui->drawingWindow->displayShape(newPathItem->getShape());
+        mw->ui->drawingWindow->insertItemToMap(newPathItem->getShape(),newPathItem);
+        newPathItem->setForeground(0,Qt::gray);
+        mw->ui->drawingWindow->showItem(newPathItem);
+        mw->ui->drawingWindow->selectItem(newPathItem);
+    }
+
+    return newPathItem;
 }
 
 void DrawingItem::undo ()
@@ -1897,27 +1947,26 @@ void PathItem::showMenu (QMenu *menu)
 
 void PathItem::del ()
 {
-    setForUndoRedo();
+    // remove from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
 
     // mark as delete
-    ShapeData *shapeData=getShapeData();
-    shapeData->setDelete();
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setDelete();
+    addShapeData(newShapeData);
 
     // parentItem
     BaseItem *parentItem=getParentItem();
     if (parentItem) {
-        RootDrawingItem *rootPathItem=dynamic_cast<RootDrawingItem *>(parentItem);
+        RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(parentItem);
         if (rootPathItem && rootPathItem->is_rootPath()) {
+            int insertIndex=rootPathItem->indexOfChild(this);
             rootPathItem->removeChild(this);
         }
 
         mw->itemChangesStack.add(this);
-
-        // remove from display and tracking
-        mw->ui->drawingWindow->hideItem(this);
-        mw->ui->drawingWindow->removeItemFromMap(this);
-        mw->ui->drawingWindow->deleteShape(this->getShape());
-
         mw->drawingChanged=true;
     }
 }
@@ -2074,10 +2123,10 @@ void PathItem::redo ()
 
 void PathItem::reverse ()
 {
-    //setForUndoRedo();
-
-    ShapeData *shapeData=getShapeData();
-    shapeData->setReversePath();
+    // mark
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setReversePath();
+    addShapeData(newShapeData);
 
     // remove the old version from display and tracking
     mw->ui->drawingWindow->hideItem(this);
@@ -2112,7 +2161,7 @@ void PathItem::reverse ()
 // IntegrationPathItem
 ////////////////////////////////////////////////////////////////////////////////
 
-IntegrationPathItem::IntegrationPathItem (OpenParEMg *mw_, BaseItem *parentItem_)
+IntegrationPathItem::IntegrationPathItem (OpenParEMg *mw_, BaseItem *parentItem_, PathItem *pathItem_)
 {
     mw=mw_;
     parentItem=parentItem_;
@@ -2120,8 +2169,7 @@ IntegrationPathItem::IntegrationPathItem (OpenParEMg *mw_, BaseItem *parentItem_
     setText(0,"IntegrationPathItem");
     setForeground(0,Qt::black);
 
-    integrationPath=nullptr;
-    pathItem=nullptr;
+    pathItem=pathItem_;
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
@@ -2169,17 +2217,20 @@ void IntegrationPathItem::hide ()
 
 void IntegrationPathItem::showMenu (QMenu *menu)
 {
-    mw->removeAction=new QAction("Remove",this);
+    mw->renameAction=new QAction("Flip Sign",this);
+    mw->deleteAction=new QAction("Delete",this);
     mw->showAction=new QAction("Show",this);
     mw->hideAction=new QAction("Hide",this);
 
-    //connect(removeAction, &QAction::triggered, this, &IntegrationPathItem::removeIntegrationPathItems);
+    connect(mw->renameAction, &QAction::triggered, this, &IntegrationPathItem::flipSign);
+    connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deleteIntegrationPathItems);
     connect(mw->showAction, &QAction::triggered, this, &IntegrationPathItem::show);
     connect(mw->hideAction, &QAction::triggered, this, &IntegrationPathItem::hide);
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    menu->addAction(mw->removeAction);
+    menu->addAction(mw->renameAction);
+    menu->addAction(mw->deleteAction);
 }
 
 void IntegrationPathItem::undo ()
@@ -2190,11 +2241,21 @@ void IntegrationPathItem::undo ()
     if (!shapeData) return;
 
     if (shapeData->isCreate()) {
+        std::cout << "isCreate" << std::endl; std::cout.flush();
 
-        // remove linked item
+        // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
+            pathItem->showArrows(true);
+        }
+    } else if (shapeData->isDelete()) {
+
+        // remove the arrows from the path
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->push_linkedItem(this);
+            pathItem->showArrows(false);
         }
     }
 
@@ -2213,14 +2274,102 @@ void IntegrationPathItem::redo ()
 
     if (next->isCreate()) {
 
-        // add linked item
+        // remove the arrows from the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
+            pathItem->showArrows(false);
+        }
+    } else if (next->isDelete()) {
+
+        // restore the arrows on the path
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->removeLinkedItem(this);
+            pathItem->showArrows(true);
         }
     }
 
     BaseItem::redo();
+}
+
+void IntegrationPathItem::del ()
+{
+    std::cout << "IntegrationPathItem::del" << std::endl; std::cout.flush();
+
+    if (pathItem) {
+        pathItem->removeLinkedItem(this);
+
+        if (pathItem->linkedItems_size() == 0) {
+            pathItem->del();
+        }
+    }
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setDelete();
+    addShapeData(newShapeData);
+
+    startItemChange();
+    addItemChange();
+
+    if (parentItem) {
+        parentItem->removeChild(this);
+
+        // look for other integration paths
+        bool found=false;
+        int i=0;
+        while (i < parentItem->childCount()) {
+            IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(parentItem->child(i));
+            if (integrationPathItem && integrationPathItem->is_integrationPathSegment()) {
+                found=true;
+                break;
+            }
+            i++;
+        }
+
+        // remove the scale
+        if (!found) {
+            int i=0;
+            while (i < parentItem->childCount()) {
+                ScaleLabelItem *scaleLabelItem=dynamic_cast<ScaleLabelItem *>(parentItem->child(i));
+                if (scaleLabelItem && scaleLabelItem->is_scaleLabel()) {
+                    ShapeData *newShapeData=scaleLabelItem->getShapeData()->copyCreate();
+                    newShapeData->setDelete();
+                    scaleLabelItem->addShapeData(newShapeData);
+                    mw->itemChangesStack.add(scaleLabelItem);
+
+                    BaseItem *scaleLabelParentItem=scaleLabelItem->getParentItem();
+                    if (scaleLabelParentItem) {
+                        scaleLabelParentItem->removeChild(scaleLabelItem);
+                    }
+                }
+                i++;
+            }
+        }
+    }
+
+    mw->finishOperation(true,1);
+
+    std::cout << "exit IntegrationPathItem::del" << std::endl; std::cout.flush();
+}
+
+void IntegrationPathItem::flipSign ()
+{
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setChangeName();
+    addShapeData(newShapeData);
+
+    startItemChange();
+    addItemChange();
+
+    QChar direction=newShapeData->get_name().front();
+    QString newName;
+    if (direction == QChar('+')) newName="-";
+    if (direction == QChar('-')) newName="+";
+    newName.append(newShapeData->get_name().sliced(1));
+
+    newShapeData->set_name(newName);
+    setText(0,newName);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2545,13 +2694,44 @@ void BoundaryItem::showMenu (QMenu *menu)
     }
 }
 
+// void BoundaryItem::del ()
+// {
+//     // mark
+//     ShapeData *newShapeData=getShapeData()->copyCreate();
+//     newShapeData->setDelete();
+//     addShapeData(newShapeData);
+
+//     // parentItem
+//     BaseItem *parentItem=getParentItem();
+//     if (parentItem) {
+//         RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(parentItem);
+//         if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) {
+//             rootBoundaryItem->removeChild(this);
+//         }
+
+//         // restore the arrows on the path
+//         PathItem *pathItem=getPathItem();
+//         if (pathItem) {
+//             pathItem->removeLinkedItem(this);
+//             pathItem->showArrows(true);
+//         }
+
+//         mw->itemChangesStack.add(this);
+//         mw->drawingChanged=true;
+//     }
+// }
+
 void BoundaryItem::del ()
 {
-    //setForUndoRedo();
+    // remove from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
 
-    // mark as delete
-    ShapeData *shapeData=getShapeData();
-    shapeData->setDelete();
+    // mark
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setDelete();
+    addShapeData(newShapeData);
 
     // parentItem
     BaseItem *parentItem=getParentItem();
@@ -2569,7 +2749,7 @@ void BoundaryItem::del ()
         }
 
         mw->itemChangesStack.add(this);
-        mw->drawingChanged=true;
+        mw->projectChanged=true;
     }
 }
 
@@ -2906,8 +3086,6 @@ void PortItem::insertImpedanceCalculationWidget (BaseItem *itemImpedanceCalculat
 
 void PortItem::addImpedanceCalculationItem ()
 {
-    std::cout << "place 3" << std::endl; std::cout.flush();
-
     ShapeData *shapeData=getShapeData();
     QString impedance_calculation=shapeData->get_impedance_calculation();
 
@@ -3016,11 +3194,15 @@ void PortItem::showMenu (QMenu *menu)
 
 void PortItem::del ()
 {
-    //setForUndoRedo();
+    // remove from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
 
-    // mark as delete
-    ShapeData *shapeData=getShapeData();
-    shapeData->setDelete();
+    // mark
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setDelete();
+    addShapeData(newShapeData);
 
     // parentItem
     BaseItem *parentItem=getParentItem();
@@ -3037,7 +3219,8 @@ void PortItem::del ()
             pathItem->showArrows(true);
         }
 
-        mw->drawingChanged=true;
+        mw->itemChangesStack.add(this);
+        mw->projectChanged=true;
     }
 }
 
@@ -3238,7 +3421,6 @@ void ModeItem::unlinkPaths (BaseItem *baseItem)
 
 void ModeItem::del ()
 {
-    mw->itemChangesStack.startNew();
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setDelete();
     addShapeData(newShapeData);
@@ -3270,7 +3452,7 @@ void ModeItem::showMenu (QMenu *menu)
     connect(mw->showAction, &QAction::triggered, this, &ModeItem::show);
     connect(mw->hideAction, &QAction::triggered, this, &ModeItem::hide);
     connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renameSportNet);
-    connect(mw->deleteAction, &QAction::triggered, this, &ModeItem::del);
+    connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deleteModeItems);
     connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
     connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
@@ -3565,8 +3747,48 @@ bool VIItem::isValidInsertSelectedPath ()
     return true;
 }
 
+PathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem, bool hasArrows)
+{
+    std::cout << "VIItem::createIntegrationPathItemFromDrawing" << std::endl; std::cout.flush();
+
+    // create a path item
+    PathItem *newPathItem=drawingItem->createPath(hasArrows);
+
+    // create an integration path item
+    IntegrationPathItem *newIntegrationPathItem=new IntegrationPathItem(mw,this,newPathItem);
+    if (newIntegrationPathItem) {
+        ShapeData *newShapeData=newIntegrationPathItem->getShapeData()->copyCreate();
+        newShapeData->setCreate();
+        newIntegrationPathItem->addShapeData(newShapeData);
+
+        QString name="+";
+        name.append(newPathItem->text(0));
+        newIntegrationPathItem->setText(0,name);
+        newShapeData->set_name(newIntegrationPathItem->text(0));
+
+        std::cout << "place 1" << std::endl; std::cout.flush();
+        addChild(newIntegrationPathItem);
+        mw->itemChangesStack.add(newIntegrationPathItem);
+
+        newPathItem->push_linkedItem(newIntegrationPathItem);
+    }
+    return newPathItem;
+}
+
+void VIItem::convertItemToPath (DrawingItem *drawingItem, bool useArrows)
+{
+    std::cout << "VIItem::convertItemToPath" << std::endl; std::cout.flush();
+
+    PathItem *pathItem=createIntegrationPathItemFromDrawing(drawingItem,useArrows);
+    if (pathItem) {
+        drawingItem->del();
+    }
+}
+
 void VIItem::insertSelectedPath ()
 {
+    std::cout << "VIItem::insertSelectedPath" << std::endl; std::cout.flush();
+
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
