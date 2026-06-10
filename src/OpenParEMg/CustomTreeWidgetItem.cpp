@@ -165,6 +165,8 @@ void BaseItem::undo ()
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
+    shapeData->print();
+
     if (shapeData->isNoop()) {
         std::cout << "   isNoop" << std::endl; std::cout.flush();
         // nothing to do
@@ -182,8 +184,18 @@ void BaseItem::undo ()
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
         dataStack.redo();
+
+        Handle(AIS_Shape) shape=getShape();
+        if (!shape.IsNull()) {
+            mw->ui->drawingWindow->displayShape(shape);
+            mw->ui->drawingWindow->insertItemToMap(shape,this);
+        }
+
         getParentItem()->addChild(this);
+        mw->ui->drawingWindow->showItem(this);
+        mw->ui->drawingWindow->activateItem(this);
         restoreWidgets(this);
+        expandToItemPlus1();
     } else if (shapeData->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
         dataStack.undo();
@@ -215,6 +227,8 @@ void BaseItem::redo ()
         }
 
         getParentItem()->addChild(this);
+        mw->ui->drawingWindow->showItem(this);
+        mw->ui->drawingWindow->activateItem(this);
         restoreWidgets(this);
         expandToItemPlus1();
     } else if (next->isEdit()) {
@@ -224,6 +238,9 @@ void BaseItem::redo ()
         expandToItemPlus1();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
         getParentItem()->removeChild(this);
         dataStack.undo();
     } else if (next->isChangeName()) {
@@ -1962,7 +1979,7 @@ void PathItem::showArrows (bool show)
     ShapeData *shapeData=this->getShapeData();
     Polywire *polywire=getPolywire();
     if (polywire) {
-        std::cout << "   recalculating arrow shape" << std::endl; std::cout.flush();
+        //std::cout << "   recalculating arrow shape" << std::endl; std::cout.flush();
         polywire->setHasArrows(show);
         shapeData->setShape(polywire->get_AIS_Shape());
     }
@@ -2648,8 +2665,13 @@ void BoundaryItem::undo ()
         }
 
     } else if (shapeData->isDelete()) {
+
+        // remove the arrows from the path
         PathItem *pathItem=getPathItem();
-        if (pathItem) pathItem->showArrows(false);
+        if (pathItem) {
+            pathItem->push_linkedItem(this);
+            pathItem->showArrows(false);
+        }
     }
 
     BaseItem::undo();
@@ -2665,7 +2687,15 @@ void BoundaryItem::redo ()
     ShapeData *next=shapeData->getNext();
     if (!next) return;
 
-    if (next->isDelete()) {
+    if (next->isCreate()) {
+
+        // remove the arrows from the path
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->push_linkedItem(this);
+            pathItem->showArrows(false);
+        }
+    } else if (next->isDelete()) {
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
@@ -3014,12 +3044,21 @@ void PortItem::undo ()
     if (!shapeData) return;
 
     if (shapeData->isCreate()) {
+        std::cout << "isCreate" << std::endl; std::cout.flush();
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
             pathItem->showArrows(true);
+        }
+    } else if (shapeData->isDelete()) {
+
+        // remove the arrows from the path
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->push_linkedItem(this);
+            pathItem->showArrows(false);
         }
     }
 
@@ -3036,8 +3075,15 @@ void PortItem::redo ()
     ShapeData *next=shapeData->getNext();
     if (!next) return;
 
-    if (next->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
+    if (next->isCreate()) {
+
+        // remove the arrows from the path
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->push_linkedItem(this);
+            pathItem->showArrows(false);
+        }
+    } else if (next->isDelete()) {
 
         // restore the arrows on the path
         PathItem *pathItem=getPathItem();

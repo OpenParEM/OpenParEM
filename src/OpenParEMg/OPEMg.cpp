@@ -695,7 +695,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    itemChangesStack.print();
+    //itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
@@ -3456,11 +3456,11 @@ void OpenParEMg::createPortFromPathN (bool startNew)
             std::string portName="port";
             portName.append(std::to_string(sport));
 
-            int i=1;
+            int j=1;
             while (boundaryDatabase->portNameExists(portName)) {
                 std::string testName=portName;
-                testName.append("_").append(std::to_string(i));
-                if (boundaryDatabase->portNameExists(testName)) {i++;}
+                testName.append("_").append(std::to_string(j));
+                if (boundaryDatabase->portNameExists(testName)) {j++;}
                 else {portName=testName; break;}
             }
 

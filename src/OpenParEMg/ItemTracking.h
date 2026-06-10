@@ -482,8 +482,8 @@ public:
             item->setForeground(0,Qt::gray);
             nullifyVisibleItem(item);
 
-            PortItem *portItem=dynamic_cast<PortItem *>(item);
-            hideItem(portItem->getPathItem());
+            // PortItem *portItem=dynamic_cast<PortItem *>(item);
+            // hideItem(portItem->getPathItem());
         } else if (item->is_rootBoundary()) {
             int i=0;
             while (i < item->childCount()) {
@@ -497,8 +497,8 @@ public:
             item->setForeground(0,Qt::gray);
             nullifyVisibleItem(item);
 
-            BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
-            hideItem(boundaryItem->getPathItem());
+            // BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
+            // hideItem(boundaryItem->getPathItem());
         } else if (item->is_rootMesh()) {
             int i=0;
             while (i < item->childCount()) {
