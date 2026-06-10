@@ -2297,6 +2297,17 @@ void IntegrationPathItem::del ()
 {
     std::cout << "IntegrationPathItem::del" << std::endl; std::cout.flush();
 
+    // remove from display and tracking
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setDelete();
+    addShapeData(newShapeData);
+
+    mw->itemChangesStack.add(this);
+
     if (pathItem) {
         pathItem->removeLinkedItem(this);
 
@@ -2304,13 +2315,6 @@ void IntegrationPathItem::del ()
             pathItem->del();
         }
     }
-
-    ShapeData *newShapeData=getShapeData()->copyCreate();
-    newShapeData->setDelete();
-    addShapeData(newShapeData);
-
-    startItemChange();
-    addItemChange();
 
     if (parentItem) {
         parentItem->removeChild(this);
@@ -2693,33 +2697,6 @@ void BoundaryItem::showMenu (QMenu *menu)
         if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
     }
 }
-
-// void BoundaryItem::del ()
-// {
-//     // mark
-//     ShapeData *newShapeData=getShapeData()->copyCreate();
-//     newShapeData->setDelete();
-//     addShapeData(newShapeData);
-
-//     // parentItem
-//     BaseItem *parentItem=getParentItem();
-//     if (parentItem) {
-//         RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(parentItem);
-//         if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) {
-//             rootBoundaryItem->removeChild(this);
-//         }
-
-//         // restore the arrows on the path
-//         PathItem *pathItem=getPathItem();
-//         if (pathItem) {
-//             pathItem->removeLinkedItem(this);
-//             pathItem->showArrows(true);
-//         }
-
-//         mw->itemChangesStack.add(this);
-//         mw->drawingChanged=true;
-//     }
-// }
 
 void BoundaryItem::del ()
 {
