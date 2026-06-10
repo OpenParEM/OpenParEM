@@ -54,6 +54,13 @@ void BaseItem::restoreWidgets (BaseItem *baseItem)
         }
     }
 
+    if (baseItem && baseItem->is_port()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(baseItem);
+        if (portItem && is_port()) {
+            portItem->setSolidColor();
+        }
+    }
+
     if (baseItem && baseItem->is_impedanceCalculation()) {
         PortItem *portItem=dynamic_cast<PortItem *>(baseItem->getParentItem());
         if (portItem && is_port()) {
@@ -2323,24 +2330,7 @@ BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_t
     newShapeData->set_name(text(0));
     setForeground(0,Qt::black);
 
-    if (pathItem) {
-
-        // process the path
-        pathItem->push_linkedItem(this);
-        mw->convertPathToFace(pathItem);
-        pathItem->showArrows(false);
-
-        Handle(AIS_Shape) shape=pathItem->getShape();
-        if (!shape.IsNull()) {
-            shape->SetTransparency(0);
-            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-            if (boundary_type_ == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
-            else if (boundary_type_ == 1) shape->SetColor(Quantity_NOC_CYAN);
-            else if (boundary_type_ == 2) shape->SetColor(Quantity_NOC_GOLDENROD);
-            else if (boundary_type_ == 3) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
-            mw->setShaded(shape);
-        }
-    }
+    setSolidColor();
 
     // type
 
@@ -2366,6 +2356,26 @@ BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_t
 
     // insert the widgets
     insertItemWidgets(itemType,itemWaveImpedance,itemMaterial);
+}
+
+void BoundaryItem::setSolidColor ()
+{
+    PathItem *pathItem=getPathItem();
+    if (pathItem) {
+        ShapeData *shapeData=getShapeData();
+        int boundary_type=shapeData->get_boundary_type();
+
+        Handle(AIS_Shape) shape=pathItem->getShape();
+        if (!shape.IsNull()) {
+            shape->SetTransparency(0);
+            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+            if (boundary_type == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
+            else if (boundary_type == 1) shape->SetColor(Quantity_NOC_CYAN);
+            else if (boundary_type == 2) shape->SetColor(Quantity_NOC_GOLDENROD);
+            else if (boundary_type == 3) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
+            mw->setShaded(shape);
+        }
+    }
 }
 
 void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpedance, BaseItem *itemMaterial)
@@ -2633,19 +2643,7 @@ void BoundaryItem::resetWidgets ()
     }
 
     // set the shape color
-    PathItem *pathItem=getPathItem();
-    if (pathItem) {
-        Handle(AIS_Shape) shape=pathItem->getShape();
-        if (!shape.IsNull()) {
-            shape->SetTransparency(0);
-            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-            if (boundary_type == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
-            else if (boundary_type == 1) shape->SetColor(Quantity_NOC_CYAN);
-            else if (boundary_type == 2) shape->SetColor(Quantity_NOC_GOLDENROD);
-            else if (boundary_type == 3) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
-            mw->setShaded(shape);
-        }
-    }
+    setSolidColor();
 }
 
 void BoundaryItem::undo ()
@@ -2822,14 +2820,7 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
         pathItem->push_linkedItem(this);
         mw->convertPathToFace(pathItem);
         pathItem->showArrows(false);
-
-        Handle(AIS_Shape) shape=pathItem->getShape();
-        if (!shape.IsNull()) {
-            shape->SetColor(Quantity_NOC_MINTCREAM);
-            shape->SetTransparency(0.25);
-            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-            mw->setShaded(shape);
-        }
+        setSolidColor();
     }
 
     // impedance definition
@@ -2841,6 +2832,20 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
     // add one default mode since at least one mode is required
     ModeItem *newModeItem=new ModeItem(mw,this);
     addChild(newModeItem);
+}
+
+void PortItem::setSolidColor ()
+{
+    PathItem *pathItem=getPathItem();
+    if (pathItem) {
+        Handle(AIS_Shape) shape=pathItem->getShape();
+        if (!shape.IsNull()) {
+            shape->SetColor(Quantity_NOC_MINTCREAM);
+            shape->SetTransparency(0.25);
+            shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
+            mw->setShaded(shape);
+        }
+    }
 }
 
 void PortItem::insertImpedanceDefinitionWidget (BaseItem *itemImpedanceDefinition, QString impedance_definition)

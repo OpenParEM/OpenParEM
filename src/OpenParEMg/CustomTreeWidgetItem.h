@@ -1068,6 +1068,7 @@ class BoundaryItem : public BaseItem
 public:
     BoundaryItem (OpenParEMg *, PathItem *, int, double, QString);
 
+    void setSolidColor ();
     void insertItemWidgets (BaseItem *, BaseItem *, BaseItem *);
     void resetWidgets ();
     bool isValidShow () override;
@@ -1117,6 +1118,7 @@ class PortItem : public BaseItem
 public:
     PortItem (OpenParEMg *, PathItem *, QString, QString);
 
+    void setSolidColor ();
     void insertImpedanceDefinitionWidget (BaseItem *, QString);
     void addImpedanceDefinitionItem ();
     void insertImpedanceCalculationWidget (BaseItem *, QString);
