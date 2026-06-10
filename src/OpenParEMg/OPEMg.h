@@ -198,7 +198,16 @@ public:
             }
         } else {
             if (itemChangesList.size() > 0) {
-                current=itemChangesList[0];
+
+                // find the most recent entry with prior=0
+                int i=itemChangesList.size()-1;
+                while (i >= 0) {
+                    if (itemChangesList[i]->getPrior() == 0) {
+                        current=itemChangesList[i];
+                        break;
+                    }
+                    i--;
+                }
             }
         }
         readIndex=0;

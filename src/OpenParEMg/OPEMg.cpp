@@ -695,7 +695,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    //itemChangesStack.print();
+    itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
