@@ -140,13 +140,12 @@ void BaseItem::rename (QString name)
 
 void BaseItem::expandToItem ()
 {
-    BaseItem *item=getParentItem();
-    for (BaseItem* p = item; p; p = p->getParentItem())
+    BaseItem *baseItem=getParentItem();
+    for (BaseItem* p = baseItem; p; p = p->getParentItem())
     {
         p->setExpanded(true);
     }
 
-    //mw->ui->drawingItemTree->setCurrentItem(this);
     mw->ui->drawingWindow->unselectAllItems();
     mw->ui->drawingWindow->selectItem(this);
     mw->ui->drawingItemTree->scrollToItem(this);
@@ -154,8 +153,8 @@ void BaseItem::expandToItem ()
 
 void BaseItem::expandToItemPlus1 ()
 {
-    BaseItem *item=this;
-    for (BaseItem* p = item; p; p = p->getParentItem())
+    BaseItem *baseItem=this;
+    for (BaseItem* p = baseItem; p; p = p->getParentItem())
     {
         p->setExpanded(true);
     }
@@ -469,7 +468,7 @@ void DrawingItem::demoteChildren ()
     }
 }
 
-void DrawingItem::setForUndoRedo ()
+void DrawingItem::setForUndoRedo (bool withMidPoints)
 {   
     // clone the item onto itself for undo/redo
     // Do this before deleting the shape below
@@ -491,7 +490,7 @@ void DrawingItem::setForUndoRedo ()
     mw->ui->drawingWindow->showItem(this);
 
     // reset the selection filters
-    mw->startOperation(true);
+    mw->startOperation(withMidPoints);
 }
 
 void DrawingItem::cancelOperation ()
@@ -628,7 +627,6 @@ void DrawingItem::finishDraw ()
     mw->activeAction=false;
     mw->restrictToDrawingPlane=false;
     mw->activePolywire=nullptr;
-    //mw->workingItem=nullptr;
 
     // mark as changed
     mw->drawingChanged=true;
@@ -640,29 +638,20 @@ void DrawingItem::cancelDraw ()
 
     // take care of shapes
     if (!animateShape.IsNull()) animateShape.Nullify();
-    std::cout << "place e0" << std::endl; std::cout.flush();
     if (mw->activePolywire) {
-        std::cout << "place f1" << std::endl; std::cout.flush();
         mw->activePolywire->deleteRubberband();
-        std::cout << "place f2" << std::endl; std::cout.flush();
         mw->activePolywire=nullptr;
-        std::cout << "place f3" << std::endl; std::cout.flush();
     }
 
-    std::cout << "place e1" << std::endl; std::cout.flush();
     cancelOperation();
-    std::cout << "place e2" << std::endl; std::cout.flush();
     mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
 
-    std::cout << "place e3" << std::endl; std::cout.flush();
     // remove the current undo/redo item
     mw->itemChangesStack.pop_back();
 
-    std::cout << "place e4" << std::endl; std::cout.flush();
     mw->activeAction=false;
 
-    mw->ui->drawingWindow->updateViewer();
-    std::cout << "exit DrawingItem::cancelDraw" << std::endl; std::cout.flush();
+    mw->finishOperation(false,1);
 }
 
 void DrawingItem::startMove ()
@@ -671,7 +660,7 @@ void DrawingItem::startMove ()
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
-        setForUndoRedo();
+        setForUndoRedo(true);
         resetOperation();
         setAnimate(mw->ui->drawingWindow->get_viewerContext());
         setEnableMove(true);
@@ -687,13 +676,12 @@ void DrawingItem::startMove ()
             setAnimate(mw->ui->drawingWindow->get_viewerContext());
             setEnableMove(true);
             processChild->startMove();
-            //mw->ui->drawingWindow->hideItem(processChild);
             i++;
         }
     }
 
     if (!polywire && !process) {
-        setForUndoRedo();
+        setForUndoRedo(true);
         resetOperation();
         setAnimate(mw->ui->drawingWindow->get_viewerContext());
         setEnableMove(true);
@@ -746,13 +734,14 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 
     resetOperation();
     mw->findShowTopLevelItem(this,false);
+    mw->finishOperation(false,1);
 }
 
 void DrawingItem::startRotate ()
 {
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
-        setForUndoRedo();
+        setForUndoRedo(true);
         resetOperation();
         mw->itemChangesStack.add(this);
     }
@@ -770,7 +759,7 @@ void DrawingItem::startRotate ()
     }
 
     if (!polywire && !process) {
-        setForUndoRedo();
+        setForUndoRedo(true);
         resetOperation();
         mw->itemChangesStack.add(this);
     }
@@ -828,16 +817,15 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
 
 void DrawingItem::startStretch ()
 {
-    setForUndoRedo();
+    setForUndoRedo(false);
     resetOperation();
     setEnableStretch(true);
 
-    // set the drawing plane
+    // get the drawing plane
     mw->currentPrivilegedPlane=mw->ui->drawingWindow->get_gridPlane();
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
-        polywire->drawStretchRubberband();
         gp_Pln plane=polywire->getPlane();
         mw->ui->drawingWindow->set_gridPlane(plane);
     }
@@ -854,9 +842,7 @@ void DrawingItem::finishStretch ()
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (!polywire) return;
-    //polywire->deleteRubberband();
 
-    //mw->finishStretchPoint(this);
     finishStretchPoint();
 }
 
@@ -999,7 +985,7 @@ DrawingItem* DrawingItem::copy (BaseItem *parent)
 
 void DrawingItem::startEdit ()
 {
-    setForUndoRedo();
+    setForUndoRedo(false);
 
     // polywire to edit
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
@@ -1122,7 +1108,7 @@ void DrawingItem::finishEdit ()
 
 void DrawingItem::startDeletePoint ()
 {
-    setForUndoRedo();
+    setForUndoRedo(false);
 
     Handle(AIS_Shape) shape=getShape();
     if (!shape.IsNull()) {
@@ -1178,6 +1164,7 @@ void DrawingItem::finishDeletePoint ()
     resetOperation();
     mw->activeAction=false;
     mw->findShowTopLevelItem(this,false);
+    mw->finishOperation(false,1);
 }
 
 void DrawingItem::cancelDeletePoint ()
@@ -1187,7 +1174,7 @@ void DrawingItem::cancelDeletePoint ()
 
 void DrawingItem::startInsertPoint ()
 {
-    setForUndoRedo();
+    setForUndoRedo(false);
 
     Handle(AIS_Shape) shape=getShape();
     if (!shape.IsNull()) {
@@ -1283,7 +1270,7 @@ void DrawingItem::cancelInsertPoint ()
 
 void DrawingItem::convertToPolyline ()
 {
-    setForUndoRedo();
+    setForUndoRedo(false);
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -1390,8 +1377,8 @@ void DrawingItem::show ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item) mw->ui->drawingWindow->showItem(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) mw->ui->drawingWindow->showItem(baseItem);
         i++;
     }
 
@@ -1403,8 +1390,8 @@ void DrawingItem::hide ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item) mw->ui->drawingWindow->hideItem(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) mw->ui->drawingWindow->hideItem(baseItem);
         i++;
     }
 
@@ -1646,7 +1633,7 @@ void DrawingItem::undo ()
             if (process) {
                 int i=0;
                 while (i < childCount()) {
-                    BaseItem *childItem=(BaseItem *) child(i);
+                    BaseItem *childItem=dynamic_cast<BaseItem *>(child(i));
                     childItem->undo();
                     mw->ui->drawingWindow->hideItem(childItem);
                     i++;
@@ -1745,7 +1732,7 @@ void DrawingItem::redo ()
             if (process) {
                 int i=0;
                 while (i < childCount()) {
-                    BaseItem *childItem=(BaseItem *) child(i);
+                    BaseItem *childItem=dynamic_cast<BaseItem *>(child(i));
                     childItem->redo();
                     i++;
                 }
@@ -1890,8 +1877,8 @@ void PathItem::show ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item) mw->ui->drawingWindow->showItem(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) mw->ui->drawingWindow->showItem(baseItem);
         i++;
     }
 
@@ -1903,8 +1890,8 @@ void PathItem::hide ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item) mw->ui->drawingWindow->hideItem(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) mw->ui->drawingWindow->hideItem(baseItem);
         i++;
     }
 
@@ -2057,21 +2044,21 @@ void PathItem::rename (QString name)
     // change the names of the linked items
     long unsigned int i=0;
     while (i < linkedItems_size()) {
-        BaseItem *item=get_linkedItem(i);
-        if (item->is_integrationPathSegment()) {
-            ShapeData *newShapeData=item->getShapeData()->copyCreate();
+        BaseItem *baseItem=get_linkedItem(i);
+        if (baseItem->is_integrationPathSegment()) {
+            ShapeData *newShapeData=baseItem->getShapeData()->copyCreate();
             newShapeData->setChangeName();
 
             // new name, preserving the sign
             QChar direction=newShapeData->get_name().front();
             QString integrationText=direction;
             integrationText.append(name);
-            item->setText(0,integrationText);
+            baseItem->setText(0,integrationText);
             newShapeData->set_name(integrationText);
 
-            item->addShapeData(newShapeData);
+            baseItem->addShapeData(newShapeData);
 
-            mw->itemChangesStack.add(item);
+            mw->itemChangesStack.add(baseItem);
         }
         i++;
     }
@@ -2186,8 +2173,8 @@ void IntegrationPathItem::show ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item) mw->ui->drawingWindow->showItem(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) mw->ui->drawingWindow->showItem(baseItem);
         i++;
     }
 
@@ -2199,8 +2186,8 @@ void IntegrationPathItem::hide ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item) mw->ui->drawingWindow->hideItem(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) mw->ui->drawingWindow->hideItem(baseItem);
         i++;
     }
 
@@ -3276,18 +3263,18 @@ void ModeItem::show ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_sport()) {
-            mw->ui->drawingWindow->showItem(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_sport()) {
+            mw->ui->drawingWindow->showItem(baseItem);
 
             int j=0;
-            while (j < item->childCount()) {
-                BaseItem *child=(BaseItem *) item->child(j);
+            while (j < baseItem->childCount()) {
+                BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(j));
                 if (child->is_voltage() || child->is_current()) {
                     //child->setForeground(0,Qt::black);
                     int k=0;
                     while (k < child->childCount()) {
-                        BaseItem *grandChild=(BaseItem *) child->child(k);
+                        BaseItem *grandChild=dynamic_cast<BaseItem *>(child->child(k));
                         if (grandChild->is_integrationPathSegment()) {
                             mw->ui->drawingWindow->showItem(grandChild);
                             grandChild->setForeground(0,Qt::black);
@@ -3309,16 +3296,16 @@ void ModeItem::hide ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_sport()) {
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_sport()) {
             int j=0;
-            while (j < item->childCount()) {
-                BaseItem *child=(BaseItem *) item->child(j);
+            while (j < baseItem->childCount()) {
+                BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(j));
                 if (child->is_voltage() || child->is_current()) {
                     //child->setForeground(0,Qt::gray);
                     int k=0;
                     while (k < child->childCount()) {
-                        BaseItem *grandChild=(BaseItem *) child->child(k);
+                        BaseItem *grandChild=dynamic_cast<BaseItem *>(child->child(k));
                         if (grandChild->is_integrationPathSegment()) {
                             mw->ui->drawingWindow->hideItem(grandChild);
                             grandChild->setForeground(0,Qt::gray);
@@ -3558,10 +3545,10 @@ void VIItem::show ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            if (item->is_voltage() || item->is_current()) {
-                mw->ui->drawingWindow->showItem(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            if (baseItem->is_voltage() || baseItem->is_current()) {
+                mw->ui->drawingWindow->showItem(baseItem);
             }
         }
         i++;
@@ -3575,10 +3562,10 @@ void VIItem::hide ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            if (item->is_voltage() || item->is_current()) {
-                mw->ui->drawingWindow->hideItem(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            if (baseItem->is_voltage() || baseItem->is_current()) {
+                mw->ui->drawingWindow->hideItem(baseItem);
             }
         }
         i++;
@@ -3643,11 +3630,11 @@ bool VIItem::isValidInsertSelectedPath ()
 
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            if (item->is_voltage() || item->is_current()) {VIitem=item; VIcount++;}
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            if (baseItem->is_voltage() || baseItem->is_current()) {VIitem=baseItem; VIcount++;}
 
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->is_path()) pathCount++;
         }
         i++;
@@ -3658,8 +3645,8 @@ bool VIItem::isValidInsertSelectedPath ()
 
     // check that the paths are within the port
 
-    ModeItem *modeItem=dynamic_cast<ModeItem *>(VIitem->QTreeWidgetItem::parent());
-    PortItem *portItem=dynamic_cast<PortItem *>(modeItem->QTreeWidgetItem::parent());
+    ModeItem *modeItem=dynamic_cast<ModeItem *>(VIitem->getParentItem());
+    PortItem *portItem=dynamic_cast<PortItem *>(modeItem->getParentItem());
 
     // port outline
     PathItem *pathItem=portItem->getPathItem();
@@ -3669,9 +3656,9 @@ bool VIItem::isValidInsertSelectedPath ()
 
     i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->is_path()) {
                 Path *path=pathItem->getPath();
                 if (!portPath->is_path_inside(path)) {
@@ -3729,9 +3716,9 @@ void VIItem::insertSelectedPath ()
 
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            if (item->is_voltage() || item->is_current()) mw->insertIntegrationPath(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            if (baseItem->is_voltage() || baseItem->is_current()) mw->insertIntegrationPath(baseItem);
         }
         i++;
     }
@@ -3795,11 +3782,11 @@ void RootMeshItem::show ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_rootMesh()) {
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_rootMesh()) {
             int j=0;
-            while (j < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(j));
+            while (j < baseItem->childCount()) {
+                BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(j));
                 mw->ui->drawingWindow->showItem(child);
                 child->setForeground(0,Qt::black);
                 j++;
@@ -3816,11 +3803,11 @@ void RootMeshItem::hide ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_rootMesh()) {
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_rootMesh()) {
             int j=0;
-            while (j < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(j));
+            while (j < baseItem->childCount()) {
+                BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(j));
                 mw->ui->drawingWindow->hideItem(child);
                 child->setForeground(0,Qt::gray);
                 j++;
@@ -3882,9 +3869,9 @@ void MeshItem::show ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_mesh()) {
-            mw->ui->drawingWindow->showItem(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_mesh()) {
+            mw->ui->drawingWindow->showItem(baseItem);
         }
         i++;
     }
@@ -3897,9 +3884,9 @@ void MeshItem::hide ()
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=mw->ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_mesh()) {
-            mw->ui->drawingWindow->hideItem(item);
+        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_mesh()) {
+            mw->ui->drawingWindow->hideItem(baseItem);
         }
         i++;
     }

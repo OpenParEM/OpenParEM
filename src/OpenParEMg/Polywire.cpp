@@ -241,6 +241,7 @@ Polywire::Polywire(QObject *parent)
     modified=false;
     closed=false;
     reverseExtrusionDirection=false;
+    hasArrows=false;
 }
 
 void Polywire::deleteRubberband ()
@@ -448,6 +449,7 @@ Line::Line (Line *line)
     editIndex=line->editIndex;
     closed=line->closed;
     reverseExtrusionDirection=line->reverseExtrusionDirection;
+    hasArrows=false;
 
     long unsigned int i=0;
     while (i < line->shapePoints.size()) {
@@ -1233,6 +1235,7 @@ Rectangle::Rectangle (Rectangle *rectangle)
     editIndex=rectangle->editIndex;
     closed=rectangle->closed;
     reverseExtrusionDirection=rectangle->reverseExtrusionDirection;
+    hasArrows=false;
 
     long unsigned int i=0;
     while (i < rectangle->shapePoints.size()) {
@@ -1964,6 +1967,7 @@ Polycircle::Polycircle (Polycircle *polycircle)
 
     viewerContext=polycircle->viewerContext;
     modified=polycircle->modified;
+    hasArrows=false;
 }
 
 void Polycircle::drawRubberband ()

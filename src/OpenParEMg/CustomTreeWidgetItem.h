@@ -835,7 +835,7 @@ public:
     void promoteChildren ();
     void demoteChildren ();
 
-    void setForUndoRedo ();
+    void setForUndoRedo (bool);
     void cancelOperation () override;
 
     void startDraw ();

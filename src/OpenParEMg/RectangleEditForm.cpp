@@ -238,7 +238,7 @@ void RectangleEditForm::on_CancelButton_clicked()
 
 void RectangleEditForm::pickVertexFinished (gp_Pnt point)
 {
-    this->setEnabled(true);
+    setEnabled(true);
 
     if (pickPoint) {
         pickPoint=false;

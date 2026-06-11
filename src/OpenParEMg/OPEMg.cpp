@@ -531,25 +531,25 @@ void OpenParEMg::setShaded (Handle(AIS_Shape) shape)
     ui->drawingWindow->setShaded(shape);
 }
 
-void OpenParEMg::convertPathToFace (BaseItem *item)
+void OpenParEMg::convertPathToFace (BaseItem *baseItem)
 {
-    if (!item) return;
-    Handle(AIS_Shape) shape=item->getShape();
+    if (!baseItem) return;
+    Handle(AIS_Shape) shape=baseItem->getShape();
     if (shape.IsNull()) return;
 
-    ui->drawingWindow->hideItem(item);
-    ui->drawingWindow->removeItemFromMap(item);
+    ui->drawingWindow->hideItem(baseItem);
+    ui->drawingWindow->removeItemFromMap(baseItem);
     ui->drawingWindow->deleteShape(shape);
 
     PathItem *convertPathItem=nullptr;
 
-    PathItem *pathItem=dynamic_cast<PathItem *>(item);
-    if (item && pathItem->is_path()) convertPathItem=pathItem;
+    PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
+    if (pathItem && pathItem->is_path()) convertPathItem=pathItem;
 
-    BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
+    BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(baseItem);
     if (boundaryItem && boundaryItem->is_boundary()) convertPathItem=boundaryItem->getPathItem();
 
-    PortItem *portItem=dynamic_cast<PortItem *>(item);
+    PortItem *portItem=dynamic_cast<PortItem *>(baseItem);
     if (portItem && portItem->is_port()) convertPathItem=portItem->getPathItem();
 
     if (!convertPathItem) return;
@@ -565,10 +565,10 @@ void OpenParEMg::convertPathToFace (BaseItem *item)
                 ShapeData *shapeData=convertPathItem->getShapeData();
                 shapeData->setShape(newShape);
 
-                ui->drawingWindow->showItem(item);
-                ui->drawingWindow->insertItemToMap(newShape,item);
+                ui->drawingWindow->showItem(baseItem);
+                ui->drawingWindow->insertItemToMap(newShape,baseItem);
                 ui->drawingWindow->displayShape(newShape);
-                ui->drawingWindow->activateItem(item);
+                ui->drawingWindow->activateItem(baseItem);
             }
         }
     }
@@ -690,7 +690,6 @@ void OpenParEMg::setMenusI (int placeIndex)
 {
     //std::cout << "OpenParEMg::setMenusI  place=" << placeIndex << std::endl; std::cout.flush();
 
-    bool boundaryDatabaseChanged=boundaryDatabase->is_modified();
     ui->drawingWindow->compactSelectedItems();
     ui->drawingWindow->compactVisibleItems();
 
@@ -712,7 +711,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionNew->setEnabled(false);
         ui->actionOpen->setEnabled(false);
         ui->actionSave->setEnabled(false);
-        if (projectChanged || boundaryDatabaseChanged || drawingChanged || meshChanged) {
+        if (projectChanged || drawingChanged || meshChanged) {
             if (strcmp(projData.project_name,"") != 0) ui->actionSave->setEnabled(true);
         }
         ui->actionSaveAs->setEnabled(true);
@@ -824,7 +823,7 @@ void OpenParEMg::setMenusI (int placeIndex)
             // end run block
         }
 
-        if (projectChanged || meshChanged || boundaryDatabaseChanged) {
+        if (projectChanged || meshChanged) {
             ui->actionRun->setEnabled(false);
             ui->actionRun->setToolTip("OpenParEM3D is running.");
             ui->actionStop->setEnabled(false);
@@ -944,29 +943,27 @@ void OpenParEMg::setMenusI (int placeIndex)
 
     ui->actionUndo->setEnabled(itemChangesStack.hasUndo());
     ui->actionRedo->setEnabled(itemChangesStack.hasRedo());
-
-    //boundaryDatabase->set_comboZdef();
 }
 
-void OpenParEMg::expand (BaseItem *item)
+void OpenParEMg::expand (BaseItem *baseItem)
 {
-    if (!item) return;
-    item->setExpanded(Standard_True);
+    if (!baseItem) return;
+    baseItem->setExpanded(Standard_True);
     int i=0;
-    while (i < item->childCount()) {
-        BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
+    while (i < baseItem->childCount()) {
+        BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(i));
         expand(child);
         i++;
     }
 }
 
-void OpenParEMg::collapse (BaseItem *item)
+void OpenParEMg::collapse (BaseItem *baseItem)
 {
-    if (!item) return;
-    item->setExpanded(Standard_False);
+    if (!baseItem) return;
+    baseItem->setExpanded(Standard_False);
     int i=0;
-    while (i < item->childCount()) {
-        BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
+    while (i < baseItem->childCount()) {
+        BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(i));
         collapse(child);
         i++;
     }
@@ -976,8 +973,8 @@ void OpenParEMg::expandAllItems ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        expand(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        expand(baseItem);
         i++;
     }
 }
@@ -986,8 +983,8 @@ void OpenParEMg::collapseAllItems ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        collapse(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        collapse(baseItem);
         i++;
     }
 }
@@ -1023,7 +1020,7 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
 {
     std::cout << "OpenParEMg::itemTreeContextMenu_triggered" << std::endl; std::cout.flush();
 
-    clickedItem=(BaseItem *)ui->drawingItemTree->itemAt(pnt);
+    clickedItem=dynamic_cast<BaseItem *>(ui->drawingItemTree->itemAt(pnt));
     if (!clickedItem) return;
     if (!clickedItem->isSelected()) return;
 
@@ -1101,9 +1098,9 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
         // check for selected items
         long unsigned int i=0;
         while (i < ui->drawingWindow->get_selectedItems_size()) {
-            BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-            if (item) {
-                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+            BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+            if (baseItem) {
+                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
                 if (drawingItem && drawingItem->is_drawing()) {
                     if (drawingItem->getEnableDeletePoint()) {
                         cancelAction=new QAction("Cancel");
@@ -1119,13 +1116,12 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
                     break;
                 }
 
-                PathItem *pathItem=dynamic_cast<PathItem *>(item);
+                PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
                 if (pathItem && pathItem->is_path()) pathItem->showMenu(&menu);
 
                 // ToDo: convert the remaining items
-                if (/*item->is_path() ||*/ item->is_port() || item->is_boundary() || item->is_integrationPathSegment()) {
-                    //buildPathMenu(menu);
-                    item->showMenu(&menu);
+                if (/*item->is_path() ||*/ baseItem->is_port() || baseItem->is_boundary() || baseItem->is_integrationPathSegment()) {
+                    baseItem->showMenu(&menu);
                     break;
                 }
             }
@@ -1168,9 +1164,9 @@ void OpenParEMg::renamePathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->is_path()) {
                 CustomLineEdit *name=new CustomLineEdit();
                 name->setText(pathItem->text(0));
@@ -1195,9 +1191,9 @@ void OpenParEMg::deletePathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->is_path()) {
                 pathItem->del();
             }
@@ -1214,9 +1210,9 @@ bool OpenParEMg::isValidDeletePath ()
     // see if any have linked items
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->linkedItems_size() > 0) return false;
         }
         i++;
@@ -1230,10 +1226,10 @@ void OpenParEMg::showPathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
-            if (pathItem && pathItem->is_path()) ui->drawingWindow->showItem(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
+            if (pathItem && pathItem->is_path()) ui->drawingWindow->showItem(baseItem);
         }
         i++;
     }
@@ -1248,9 +1244,9 @@ void OpenParEMg::hidePathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->is_path()) ui->drawingWindow->hideItem(pathItem);
         }
         i++;
@@ -1266,9 +1262,9 @@ void OpenParEMg::unselectBoundaryItems()
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_boundary()) {
-            ui->drawingWindow->unselectItem(item,i);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_boundary()) {
+            ui->drawingWindow->unselectItem(baseItem,i);
         }
         i++;
     }
@@ -1283,15 +1279,15 @@ void OpenParEMg::renameBoundaryItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_boundary()) {
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_boundary()) {
             CustomLineEdit *name=new CustomLineEdit();
-            name->setText(item->text(0));
-            originalText=item->text(0);
+            name->setText(baseItem->text(0));
+            originalText=baseItem->text(0);
             name->set_rxValidator();
-            ui->drawingItemTree->setItemWidget(item,0,name);
+            ui->drawingItemTree->setItemWidget(baseItem,0,name);
 
-            renameItem=item;
+            renameItem=baseItem;
             renameEdit=name;
             connect(name,&CustomLineEdit::editingFinished,this,&OpenParEMg::rename_editingFinished);
         }
@@ -1326,15 +1322,15 @@ void OpenParEMg::renameSportNet ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_sport()) {
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_sport()) {
             CustomLineEdit *net=new CustomLineEdit();
-            net->setText(item->text(0));
-            originalText=item->text(0);
+            net->setText(baseItem->text(0));
+            originalText=baseItem->text(0);
             net->set_rxValidator();
-            ui->drawingItemTree->setItemWidget(item,0,net);
+            ui->drawingItemTree->setItemWidget(baseItem,0,net);
 
-            renameItem=item;
+            renameItem=baseItem;
             renameEdit=net;
             connect(net,&CustomLineEdit::editingFinished,this,&OpenParEMg::rename_editingFinished);
         }
@@ -1342,11 +1338,11 @@ void OpenParEMg::renameSportNet ()
     }
 }
 
-bool is_uniqueItem (std::vector<PortItem *> *portItemList, BaseItem *item)
+bool is_uniqueItem (std::vector<PortItem *> *portItemList, BaseItem *baseItem)
 {
     long unsigned int i=0;
     while (i < portItemList->size()) {
-        if ((*portItemList)[i] == item) return false;
+        if ((*portItemList)[i] == baseItem) return false;
         i++;
     }
     return true;
@@ -1357,8 +1353,8 @@ bool OpenParEMg::hasOneSelectedSport ()
     bool found=false;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_sport()) {
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_sport()) {
             if (found) return false;
             found=true;
         }
@@ -1428,8 +1424,8 @@ void OpenParEMg::insertIntegrationPath (BaseItem *VIitem)
 
     // check that the selected paths can be used on the port
 
-    ModeItem *modeItem=dynamic_cast<ModeItem *>(VIitem->QTreeWidgetItem::parent());
-    PortItem *portItem=dynamic_cast<PortItem *>(modeItem->QTreeWidgetItem::parent());
+    ModeItem *modeItem=dynamic_cast<ModeItem *>(VIitem->getParentItem());
+    PortItem *portItem=dynamic_cast<PortItem *>(modeItem->getParentItem());
 
     // port outline
     PathItem *portPathItem=portItem->getPathItem();
@@ -1453,120 +1449,6 @@ void OpenParEMg::insertIntegrationPath (BaseItem *VIitem)
         }
         i++;
     }
-
-    // ToDo
-    // // add an integration path
-    // std::vector<Path *> *pathList=boundaryDatabase->get_pathList_ptr();
-    // Mode *mode=modeItem->getMode();
-    // IntegrationPath *integrationPath=nullptr;
-
-    // // add paths to the mode
-    // bool addScaleToTree=false;
-    // if (VIitem->childCount() == 0) {
-    //     // new integration path
-    //     integrationPath=mode->addIntegrationPath(pathList,&pathsToAdd,VIitem->text(0).toStdString());
-    //     addScaleToTree=true;
-    // } else {
-    //     // ToDo: Fix this when updating the methodology for handling tree undo/redo for integration paths
-
-    //     // existing integration path
-    //     // int i=0;
-    //     // while (i < VIitem->childCount()) {
-    //     //     BaseItem *child=(BaseItem *)VIitem->child(i);
-    //     //     if (child->is_scale()) {
-    //     //         int j=0;
-    //     //         while (j < child->childCount()) {
-    //     //             BaseItem *grandChild=(BaseItem *)child->child(j);
-    //     //             if (grandChild->is_scaleValue()) {
-    //     //                 if (grandChild->is_scaleValue()) {
-    //     //                     CustomLineEdit *scaleEdit=(CustomLineEdit *)ui->drawingItemTree->itemWidget(grandChild,0);
-    //     //                     integrationPath=scaleEdit->get_integrationPath();
-
-    //     //                     integrationPath->addPaths(pathList,&pathsToAdd);
-    //     //                 }
-    //     //             }
-    //     //             j++;
-    //     //         }
-    //     //     }
-    //     //     i++;
-    //     // }
-    // }
-
-    // if (!integrationPath) {
-    //     std::cout << "ASSERT: OpenParEMg::insertPath failed to find an integration path" << std::endl; std::cout.flush();
-    //     return;
-    // }
-
-    // if (addScaleToTree) {
-    //     BaseItem *itemScale=new BaseItem(0);
-    //     itemScale->setMW(this);
-    //     itemScale->setText(0,"scale");
-    //     itemScale->set_itemType(12);
-    //     itemScale->setFlags(VIitem->flags() & ~Qt::ItemIsEditable);
-    //     itemScale->setToolTip(0,"Scale factor for the integration path.");
-    //     VIitem->addChild(itemScale);
-    //     itemScale->setParentItem(VIitem);
-
-    //     ShapeData *newShapeData=itemScale->getShapeData()->copyCreate();
-    //     newShapeData->setCreate();
-    //     itemScale->addShapeData(newShapeData);
-    //     //itemChangesStack.add(itemScale);
-
-
-    //     ScaleItem *itemScaleValue=new ScaleItem(0);
-    //     itemScaleValue->setMW(this);
-    //     itemScaleValue->set_itemType(13);
-    //     itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
-    //     itemScaleValue->setIntegrationPath(integrationPath);
-    //     itemScale->addChild(itemScaleValue);
-    //     itemScaleValue->setParentItem(itemScale);
-    //     itemScaleValue->setIntegrationPath(integrationPath);
-
-    //     newShapeData=itemScaleValue->getShapeData()->copyCreate();
-    //     newShapeData->setCreate();
-    //     itemScaleValue->addShapeData(newShapeData);
-    //     //itemChangesStack.add(itemScaleValue);
-
-    //     CustomLineEdit *scaleEdit=new CustomLineEdit();
-    //     scaleEdit->setText(QString::number(1));   // default value
-    //     scaleEdit->set_itemTracker(ui->drawingWindow->get_itemTracker());
-    //     scaleEdit->set_baseItem(itemScaleValue);
-    //     scaleEdit->set_boundaryDatabase(boundaryDatabase);
-    //     scaleEdit->setValidator(&doubleValidator);
-    //     ui->drawingItemTree->setItemWidget(itemScaleValue,0,scaleEdit);
-
-
-    //     QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,&textValueChanged);
-    //     QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,relay,&Relay::setMenus);
-    // }
-
-    // // add the integration path items to the tree
-    // i=0;
-    // while (i < pathsToAdd.size()) {
-    //     QString pathText="+";
-    //     pathText.append(pathsToAdd[i]->get_name());
-
-    //     IntegrationPathItem *integrationPathItem=new IntegrationPathItem(0);
-    //     integrationPathItem->setMW(this);
-    //     integrationPathItem->setText(0,pathText);
-    //     integrationPathItem->setFlags(VIitem->flags());
-    //     integrationPathItem->setToolTip(0,"Path segment for integration.");
-    //     integrationPathItem->set_itemType(14);
-    //     integrationPathItem->setForeground(0,Qt::gray);
-    //     integrationPathItem->setIntegrationPath(integrationPath);
-    //     VIitem->addChild(integrationPathItem);
-    //     integrationPathItem->setParentItem(VIitem);
-    //     pathItemList[i]->push_linkedItem(integrationPathItem);
-    //     integrationPathItem->setPathItem(pathItemList[i]);
-    //     ui->drawingWindow->showItem(integrationPathItem);
-
-    //     ShapeData *newShapeData=integrationPathItem->getShapeData()->copyCreate();
-    //     newShapeData->setCreate();
-    //     integrationPathItem->addShapeData(newShapeData);
-    //     //itemChangesStack.add(integrationPathItem);
-
-    //     i++;
-    // }
 
     ui->drawingWindow->updateViewer();
     setMenusI(17);
@@ -1603,10 +1485,10 @@ void OpenParEMg::unselectRootDrawingItems()
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
-            if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) ui->drawingWindow->unselectItem(item,i);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
+            if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) ui->drawingWindow->unselectItem(rootDrawingItem,i);
         }
         i++;
     }
@@ -1627,9 +1509,9 @@ void OpenParEMg::unselectDrawingItems()
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 ui->drawingWindow->unselectItem(drawingItem,i);
             }
@@ -1645,12 +1527,12 @@ void OpenParEMg::unselectDrawingItems()
 bool OpenParEMg::isValidRenameDrawingItems ()
 {
     int count=0;
-    QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
+    QList<QTreeWidgetItem *> items=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < items.count()) {
-        BaseItem *item=(BaseItem *)items[i];
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(items[i]);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) count++;
         }
         i++;
@@ -1664,9 +1546,9 @@ void OpenParEMg::renameDrawingItems ()
     QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < items.count()) {
-        BaseItem *item=(BaseItem *)items[i];
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(items[i]);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 drawingItem->expandToItem();
                 CustomLineEdit *name=new CustomLineEdit();
@@ -1693,9 +1575,9 @@ void OpenParEMg::deleteDrawingItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 drawingItem->del();
             }
@@ -1734,9 +1616,9 @@ void OpenParEMg::insertModeItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_port()) {
-            PortItem *portItem=dynamic_cast<PortItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_port()) {
+            PortItem *portItem=dynamic_cast<PortItem *>(baseItem);
             if (portItem && portItem->is_port()) {
                 ModeItem *newModeItem=new ModeItem(this,portItem);
                 portItem->addChild(newModeItem);
@@ -1755,9 +1637,9 @@ void OpenParEMg::unselectPortItems()
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_port()) {
-            ui->drawingWindow->unselectItem(item,i);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_port()) {
+            ui->drawingWindow->unselectItem(baseItem,i);
         }
         i++;
     }
@@ -1772,15 +1654,15 @@ void OpenParEMg::renamePortItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_port()) {
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_port()) {
             CustomLineEdit *name=new CustomLineEdit();
-            name->setText(item->text(0));
-            originalText=item->text(0);
+            name->setText(baseItem->text(0));
+            originalText=baseItem->text(0);
             name->set_rxValidator();
-            ui->drawingItemTree->setItemWidget(item,0,name);
+            ui->drawingItemTree->setItemWidget(baseItem,0,name);
 
-            renameItem=item;
+            renameItem=baseItem;
             renameEdit=name;
             connect(name,&CustomLineEdit::editingFinished,this,&OpenParEMg::rename_editingFinished);
         }
@@ -1794,12 +1676,11 @@ void OpenParEMg::deleteRootPortItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_rootPort()) {
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_rootPort()) {
             int j=0;
-            while (j < item->childCount()) {
-                PortItem *childItem=dynamic_cast<PortItem *>(item->child(j));
-                //deletePortItem(child);
+            while (j < baseItem->childCount()) {
+                PortItem *childItem=dynamic_cast<PortItem *>(baseItem->child(j));
                 childItem->del();
             }
         }
@@ -1820,10 +1701,12 @@ void OpenParEMg::deletePortItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_port()) {
-            PortItem *portItem=dynamic_cast<PortItem *>(item);
-            portItem->del();
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_port()) {
+            PortItem *portItem=dynamic_cast<PortItem *>(baseItem);
+            if (portItem && portItem->is_port()) {
+                portItem->del();
+            }
         }
         i++;
     }
@@ -1842,10 +1725,12 @@ void OpenParEMg::deleteModeItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_sport()) {
-            ModeItem *modeItem=dynamic_cast<ModeItem *>(item);
-            modeItem->del();
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_sport()) {
+            ModeItem *modeItem=dynamic_cast<ModeItem *>(baseItem);
+            if (modeItem && modeItem->is_sport()) {
+                modeItem->del();
+            }
         }
         i++;
     }
@@ -1864,10 +1749,12 @@ void OpenParEMg::deleteIntegrationPathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item && item->is_integrationPathSegment()) {
-            IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(item);
-            integrationPathItem->del();
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_integrationPathSegment()) {
+            IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(baseItem);
+            if (integrationPathItem && integrationPathItem->is_integrationPathSegment()) {
+                integrationPathItem->del();
+            }
         }
         i++;
     }
@@ -1916,8 +1803,8 @@ void OpenParEMg::createPath ()
             newPath->create_wire_item(this,ui->drawingWindow,path);  // create item and add as child to path; creates AIS_Shape
 
             // save the items for later
-            BaseItem *item=newPath->get_item();
-            if (item) insertToMapActivateItem(item);
+            BaseItem *baseItem=newPath->get_item();
+            if (baseItem) insertToMapActivateItem(baseItem);
 
             // see if the path is within an existing port
             Port *port=boundaryDatabase->get_matchingPort(newPath);
@@ -1939,11 +1826,11 @@ bool OpenParEMg::isValidExtrudePolywire ()
     QList<QTreeWidgetItem*> items=ui->drawingItemTree->selectedItems();
     int i=0;
     while (i < items.count()) {
-        BaseItem *item=(BaseItem *)items[i];
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(items[i]);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
-                BaseItem *parent=(BaseItem *)drawingItem->QTreeWidgetItem::parent();
+                BaseItem *parent=drawingItem->getParentItem();
                 if (parent) {
                     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
                     if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -2003,9 +1890,9 @@ void OpenParEMg::finishExtrudePolywire ()
         std::vector<DrawingItem *> selectedItems;
         int i=0;
         while (i < ui->drawingWindow->get_selectedItems_size()) {
-            BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-            if (item) {
-                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+            BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+            if (baseItem) {
+                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
                 if (drawingItem && drawingItem->is_drawing()) selectedItems.push_back(drawingItem);
             }
             i++;
@@ -2026,15 +1913,15 @@ void OpenParEMg::finishExtrudePolywire ()
 
 // stop on incomplete structures - happens while loading a drawing
 // eventually, everything loads and the reprocess completes
-void OpenParEMg::reprocess (BaseItem *item)
+void OpenParEMg::reprocess (BaseItem *baseItem)
 {
     //std::cout << "OpenParEMg::reprocess  item=" << item << std::endl; std::cout.flush();
 
     bool stop=false;
 
-    if (!item) return;
+    if (!baseItem) return;
 
-    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
     if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
 
         TopoDS_Compound compound;
@@ -2053,13 +1940,13 @@ void OpenParEMg::reprocess (BaseItem *item)
 
         Handle(AIS_Shape) newAISshape=new AIS_Shape(compound);
 
-        ShapeData *shapeData=item->getShapeData();
+        ShapeData *shapeData=baseItem->getShapeData();
         shapeData->setShape(newAISshape);
 
         return;
     }
 
-    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
     if (drawingItem && drawingItem->is_drawing()) {
 
         Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
@@ -2068,7 +1955,7 @@ void OpenParEMg::reprocess (BaseItem *item)
             ShapeData *shapeData=drawingItem->getShapeData();
             shapeData->setShape(polywire->get_AIS_Shape());
 
-            ui->drawingWindow->insertItemToMap(item->getShape(),drawingItem);
+            ui->drawingWindow->insertItemToMap(baseItem->getShape(),drawingItem);
             ui->drawingWindow->activateItem(drawingItem);
         }
 
@@ -2260,7 +2147,7 @@ void OpenParEMg::reprocess (BaseItem *item)
 
     // recursively work to the top of the tree
     if (!stop) {
-        reprocess(item->getParentItem());
+        reprocess(baseItem->getParentItem());
     }
     //std::cout << "exit OpenParEMg::reprocess  item=" << item << std::endl; std::cout.flush();
 }
@@ -2275,11 +2162,11 @@ bool OpenParEMg::isValidSetPlane ()
 bool OpenParEMg::isValidAssignMaterial ()
 {
     if (ui->drawingWindow->get_selectedItems_size() != 1) return false;
-    BaseItem *item=ui->drawingWindow->get_selectedItem(0);
-    if (item) {
-        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+    BaseItem *baseItem=ui->drawingWindow->get_selectedItem(0);
+    if (baseItem) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
         if (drawingItem && drawingItem->is_drawing()) {
-            BaseItem *parentItem=(BaseItem *)drawingItem->QTreeWidgetItem::parent();
+            BaseItem *parentItem=drawingItem->getParentItem();
             if (parentItem) {
                 RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
                 if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -2316,9 +2203,9 @@ bool OpenParEMg::isValidObjectEdit ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire && polywire->canEdit()) count++;
@@ -2343,29 +2230,29 @@ void OpenParEMg::editObject ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startEdit();
         }
         i++;
     }
 }
 
-void OpenParEMg::findShowTopLevelItem (BaseItem *item, bool hideItem)
+void OpenParEMg::findShowTopLevelItem (BaseItem *baseItem, bool hideItem)
 {
-    if (!item) return;
+    if (!baseItem) return;
 
-    BaseItem *parentItem=item->getParentItem();
+    BaseItem *parentItem=baseItem->getParentItem();
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
     while (!(rootDrawingItem && rootDrawingItem->is_rootDrawing())) {
-        item=parentItem;
-        parentItem=item->getParentItem();
+        baseItem=parentItem;
+        parentItem=baseItem->getParentItem();
         rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
     }
-    ui->drawingWindow->hideItem(item);
-    ui->drawingWindow->showItem(item);
-    if (hideItem) ui->drawingWindow->hideItem(item);
+    ui->drawingWindow->hideItem(baseItem);
+    ui->drawingWindow->showItem(baseItem);
+    if (hideItem) ui->drawingWindow->hideItem(baseItem);
 }
 
 void OpenParEMg::finishEditObject (bool cancel)
@@ -2379,9 +2266,9 @@ void OpenParEMg::finishEditObject (bool cancel)
     } else {
         long unsigned int i=0;
         while (i < ui->drawingWindow->get_selectedItems_size()) {
-            BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-            if (item) {
-                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+            BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+            if (baseItem) {
+                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
                 if (drawingItem && drawingItem->is_drawing()) drawingItem->finishEdit();
             }
             i++;
@@ -2406,11 +2293,11 @@ bool OpenParEMg::isValidMergeSolids ()
     int solidCount=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
-                BaseItem *parent=(BaseItem *)item->QTreeWidgetItem::parent();
+                BaseItem *parent=baseItem->getParentItem();
                 if (parent) {
                     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
                     if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
@@ -2466,8 +2353,8 @@ void OpenParEMg::finishMergeSolids ()
     long unsigned int index1;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
         if (drawingItem && drawingItem->is_drawing()) {
             if (!item0) {
                 item0=drawingItem;
@@ -2591,8 +2478,8 @@ void OpenParEMg::finishSubtractSolids ()
     long unsigned int index1;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
         if (drawingItem && drawingItem->is_drawing()) {
             if (!item0) {
                 item0=drawingItem;
@@ -2696,9 +2583,9 @@ bool OpenParEMg::isValidObjectMove ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) count++;
         }
         i++;
@@ -2716,9 +2603,9 @@ void OpenParEMg::moveObject ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startMove();
         }
         i++;
@@ -2736,9 +2623,9 @@ void OpenParEMg::finishMoveObject (gp_Pnt p0, gp_Pnt p1)
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->finishMove(p0,p1);
         }
         i++;
@@ -2752,9 +2639,9 @@ bool OpenParEMg::isValidCopy ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) count++;
         }
         i++;
@@ -2776,12 +2663,12 @@ void OpenParEMg::copyDrawingItems ()
     // copy the selected items
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
-                BaseItem *newItem=drawingItem->copy(drawing);
-                selectedList.push_back(newItem);
+                BaseItem *newBaseItem=drawingItem->copy(drawing);
+                selectedList.push_back(newBaseItem);
             }
         }
         i++;
@@ -2821,9 +2708,9 @@ bool OpenParEMg::isValidObjectStretch ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) count++;
@@ -2846,14 +2733,13 @@ void OpenParEMg::stretchObject ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startStretch();
         }
         i++;
     }
-    //ui->drawingWindow->updateViewer();
 }
 
 void OpenParEMg::finishStretchObject ()
@@ -2862,9 +2748,9 @@ void OpenParEMg::finishStretchObject ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->finishStretch();
         }
         i++;
@@ -2876,11 +2762,11 @@ bool OpenParEMg::isValidDeletePoint ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
-                Polywire *polywire=static_cast<Polywire *>(item->getPolywire());
+                Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire && polywire->canDeletePoint()) count++;
             }
         }
@@ -2899,19 +2785,19 @@ void OpenParEMg::deletePoint ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startDeletePoint();
         }
         i++;
     }
 }
 
-void OpenParEMg::finishDeletePoint (BaseItem *item)
+void OpenParEMg::finishDeletePoint (BaseItem *baseItem)
 {
-    if (!item) return;
-    item->finishDeletePoint();
+    if (!baseItem) return;
+    baseItem->finishDeletePoint();
     finishOperation(false,8);
 }
 
@@ -2919,9 +2805,9 @@ void OpenParEMg::cancelDeletePoint ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->cancelDeletePoint();
         }
         i++;
@@ -2934,9 +2820,9 @@ bool OpenParEMg::isValidInsertPoint ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire && polywire->canInsertPoint()) count++;
@@ -2957,29 +2843,29 @@ void OpenParEMg::insertPoint ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startInsertPoint();
         }
         i++;
     }
 }
 
-void OpenParEMg::finishInsertPoint (BaseItem *item)
+void OpenParEMg::finishInsertPoint (BaseItem *baseItem)
 {
-    if (!item) return;
-    item->finishInsertPoint();
+    if (!baseItem) return;
+    baseItem->finishInsertPoint();
 }
 
-void OpenParEMg::finishStretchPoint (BaseItem *item)
+void OpenParEMg::finishStretchPoint (BaseItem *baseItem)
 {
     //std::cout << "OpenParEMg::finishStretchPoint" << std::endl; std::cout.flush();
 
-    if (!item) return;
-    item->finishStretchPoint();
+    if (!baseItem) return;
+    baseItem->finishStretchPoint();
 
-    findShowTopLevelItem(item,false);
+    findShowTopLevelItem(baseItem,false);
 
     finishOperation(false,7);
 }
@@ -2988,9 +2874,9 @@ void OpenParEMg::cancelInsertPoint ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->cancelInsertPoint();
         }
         i++;
@@ -3003,9 +2889,9 @@ bool OpenParEMg::isValidCloseExistingPolyline ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 BaseItem *parentItem=drawingItem->getParentItem();
                 if (parentItem) {
@@ -3027,9 +2913,9 @@ void OpenParEMg::closeExistingPolyline ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) {
@@ -3083,9 +2969,9 @@ bool OpenParEMg::isValidOpenExistingPolyline ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 BaseItem *parentItem=drawingItem->getParentItem();
                 if (parentItem) {
@@ -3107,9 +2993,9 @@ void OpenParEMg::openExistingPolyline ()
 {   
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) {
@@ -3162,9 +3048,9 @@ bool OpenParEMg::isValidConvertToPolyline ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire && polywire->canConvert()) count++;
@@ -3184,9 +3070,9 @@ void OpenParEMg::convertToPolyline ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->convertToPolyline();
         }
         i++;
@@ -3233,9 +3119,9 @@ void OpenParEMg::convertDrawingToPathN (bool startNew)
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
                 if (polywire) selectedList.push_back(drawingItem);
@@ -3260,9 +3146,9 @@ bool OpenParEMg::isValidRotateObject ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) count++;
         }
         i++;
@@ -3282,9 +3168,9 @@ void OpenParEMg::rotateObject ()
     // set up for undo/redo
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->startRotate();
         }
         i++;
@@ -3312,9 +3198,9 @@ void OpenParEMg::finishRotateObject (double angle_, gp_Pnt startPoint_, gp_Pnt e
     std::vector<DrawingItem *> selectedList;
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) selectedList.push_back(drawingItem);
         }
         i++;
@@ -3350,9 +3236,9 @@ bool OpenParEMg::isValidCreatePortFromPath ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->is_path()) {
                 // cannot have any linked items, showing that it is already in use
                 if (pathItem->linkedItems_size() == 0) {
@@ -3386,9 +3272,9 @@ void OpenParEMg::createPortFromPathN (bool startNew)
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->is_path()) {
                 if (pathItem->linkedItems_size() == 0) {
                     Path *aPath=static_cast<Path *>(pathItem->getPath());
@@ -3561,9 +3447,9 @@ void OpenParEMg::createBoundaryFromPathN (bool startNew)
 
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->is_path()) {
                 if (pathItem->linkedItems_size() == 0) {
                     Path *aPath=static_cast<Path *>(pathItem->getPath());
@@ -3637,9 +3523,9 @@ bool OpenParEMg::isValidConvertToPort ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 // must be a polywire at the top level
                 Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
@@ -3687,9 +3573,9 @@ bool OpenParEMg::isValidReversePath ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->is_path()) {
                 count++;
                 count+=pathItem->linkedItems_size();
@@ -4658,18 +4544,18 @@ void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
     }
 }
 
-void OpenParEMg::insertToMapActivateItem (BaseItem *item)
+void OpenParEMg::insertToMapActivateItem (BaseItem *baseItem)
 {
     //std::cout << "OpenParEMg::addItemWithShape" << std::endl; std::cout.flush();
 
-    if (!item) return;
+    if (!baseItem) return;
 
-    Handle(AIS_Shape) drawingShape=item->getShape();
-    ui->drawingWindow->insertItemToMap(drawingShape,item);
+    Handle(AIS_Shape) drawingShape=baseItem->getShape();
+    ui->drawingWindow->insertItemToMap(drawingShape,baseItem);
 
-    item->setForeground(0,Qt::gray);
-    ui->drawingWindow->showItem(item);
-    ui->drawingWindow->selectItem(item);
+    baseItem->setForeground(0,Qt::gray);
+    ui->drawingWindow->showItem(baseItem);
+    ui->drawingWindow->selectItem(baseItem);
 }
 
 TopoDS_Shape NormalizeCompound (const TopoDS_Shape& shape, BRep_Builder& builder)
@@ -4808,17 +4694,17 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
     return retval;
 }
 
-BaseItem* get_vertexItem (BaseItem *item)
+BaseItem* get_vertexItem (BaseItem *baseItem)
 {
-    if (!item) return nullptr;;
+    if (!baseItem) return nullptr;;
 
-    Handle(AIS_Shape) shape=item->getShape();
+    Handle(AIS_Shape) shape=baseItem->getShape();
     if (shape.IsNull()) return nullptr;
-    if (shape->Shape().ShapeType() == TopAbs_VERTEX) return item;
+    if (shape->Shape().ShapeType() == TopAbs_VERTEX) return baseItem;
 
     int i=0;
-    while (i < item->childCount()) {
-        BaseItem *child=(BaseItem *) item->child(i);
+    while (i < baseItem->childCount()) {
+        BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(i));
         if (get_vertexItem(child)) return child;
         i++;
     }
@@ -4831,9 +4717,9 @@ bool OpenParEMg::isValidSaveBrepFile ()
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
             if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
                 Handle(AIS_Shape) shape=rootDrawingItem->getShape();
                 if (!shape.IsNull()) {
@@ -4841,7 +4727,7 @@ bool OpenParEMg::isValidSaveBrepFile ()
                 }
             }
 
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 Handle(AIS_Shape) shape=drawingItem->getShape();
                 if (!shape.IsNull()) {
@@ -4864,9 +4750,9 @@ bool OpenParEMg::saveBrepFile (QString filePath)
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
             if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
                 Handle(AIS_Shape) shape=rootDrawingItem->getShape();
                 if (!shape.IsNull()) {
@@ -4874,7 +4760,7 @@ bool OpenParEMg::saveBrepFile (QString filePath)
                 }
             }
 
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 Handle(AIS_Shape) shape=drawingItem->getShape();
                 if (!shape.IsNull()) {
@@ -4901,9 +4787,9 @@ bool OpenParEMg::saveStepFile (QString filePath)
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
             if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
                 Handle(AIS_Shape) shape=rootDrawingItem->getShape();
                 if (!shape.IsNull()) {
@@ -4917,7 +4803,7 @@ bool OpenParEMg::saveStepFile (QString filePath)
                 }
             }
 
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
                 Handle(AIS_Shape) shape=drawingItem->getShape();
                 if (!shape.IsNull()) {
@@ -4979,11 +4865,11 @@ void OpenParEMg::decrease_depth (DrawingItem *item)
     }
 }
 
-void OpenParEMg::saveItem (std::ofstream *out, BaseItem *item)
+void OpenParEMg::saveItem (std::ofstream *out, BaseItem *baseItem)
 {
-    if (!item) return;
+    if (!baseItem) return;
 
-    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
     if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
         int i=0;
         while (i < rootDrawingItem->childCount()) {
@@ -4993,7 +4879,7 @@ void OpenParEMg::saveItem (std::ofstream *out, BaseItem *item)
         }
     }
 
-    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
     if (drawingItem && drawingItem->is_drawing()) {
 
         Polywire *polywire=static_cast<Polywire *>(drawingItem->getPolywire());
@@ -5561,20 +5447,20 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
                         ui->drawingItemTree->indexFromItem(previousClickedItem,0).row();
 
                 if (count > 1) {  // forward
-                    BaseItem *nextItem=(BaseItem *)ui->drawingItemTree->itemBelow(previousClickedItem);
+                    BaseItem *nextItem=dynamic_cast<BaseItem *>(ui->drawingItemTree->itemBelow(previousClickedItem));
                     while (nextItem != clickedItem) {
                         if (nextItem->QTreeWidgetItem::parent() == clickedItem->QTreeWidgetItem::parent()) {
                             ui->drawingWindow->selectItem(nextItem);
                         }
-                        nextItem=(BaseItem *)ui->drawingItemTree->itemBelow(nextItem);
+                        nextItem=dynamic_cast<BaseItem *>(ui->drawingItemTree->itemBelow(nextItem));
                     }
                 } else if (-count > 1) {  // reversed
-                    BaseItem *nextItem=(BaseItem *)ui->drawingItemTree->itemBelow(clickedItem);
+                    BaseItem *nextItem=dynamic_cast<BaseItem *>(ui->drawingItemTree->itemBelow(clickedItem));
                     while (nextItem != previousClickedItem) {
                         if (nextItem->QTreeWidgetItem::parent() == previousClickedItem->QTreeWidgetItem::parent()) {
                             ui->drawingWindow->selectItem(nextItem);
                         }
-                        nextItem=(BaseItem *)ui->drawingItemTree->itemBelow(nextItem);
+                        nextItem=dynamic_cast<BaseItem *>(ui->drawingItemTree->itemBelow(nextItem));
                     }
                 }
 
@@ -5711,9 +5597,9 @@ bool OpenParEMg::hasSelectedPaths ()
 {
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->is_path()) return true;
         }
         i++;
@@ -6825,10 +6711,10 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
 
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
 
                 // move
@@ -6909,9 +6795,9 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     bool finishMove=false;
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-        if (item) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
 
                 // move
@@ -6934,18 +6820,18 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 
     // actions for which only one selected item is allowed or needed
     if (ui->drawingWindow->get_selectedItems_size() > 0) {
-        BaseItem *item=ui->drawingWindow->get_selectedItem(0);
-        if (item) {
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(0);
+        if (baseItem) {
             // BaseItem *workItem=nullptr;
             Polywire *polywire=nullptr;
 
-            if (item->is_drawing()) {
-                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+            if (baseItem->is_drawing()) {
+                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
                 polywire=static_cast<Polywire *>(drawingItem->getPolywire());
             }
 
-            if (item->is_path()) {
-                PathItem *pathItem=dynamic_cast<PathItem *>(item);
+            if (baseItem->is_path()) {
+                PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
                 polywire=static_cast<Polywire *>(pathItem->getPolywire());
             }
 
@@ -6953,7 +6839,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
             if (polywire) {
 
                 // stretch
-                if (item->getEnableStretch()) {
+                if (baseItem->getEnableStretch()) {
 
                     Rectangle *rectangle=dynamic_cast<Rectangle *>(polywire);
                     if (rectangle) {
@@ -6964,8 +6850,8 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                         }
                     }
 
-                    if (!item->hasP0()) {
-                        item->setP0(pnt);
+                    if (!baseItem->hasP0()) {
+                        baseItem->setP0(pnt);
                         polywire->setEditIndex(pnt);
                         polywire->setCurrentMousePosition(pnt);
                         polywire->drawStretchRubberband();
@@ -6973,11 +6859,11 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                         // switch to allowing selection on midpoints
                         startOperation(true);
 
-                        ui->drawingWindow->hideItem(item);
+                        ui->drawingWindow->hideItem(baseItem);
                         ui->drawingWindow->updateViewer();
                     } else {
                         if (polywire->isPointOnPlane(pnt) && polywire->isValidInsertPoint(pnt)) {
-                            item->setP1(pnt);
+                            baseItem->setP1(pnt);
                             polywire->setCurrentMousePosition(pnt);
                             polywire->drawStretchRubberband();
                             finishStretchObject();
@@ -6986,24 +6872,24 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                 }
 
                 // delete point
-                if (item->getEnableDeletePoint()) {
+                if (baseItem->getEnableDeletePoint()) {
                     if (polywire->isPointOnPlane(pnt)) {
-                        item->setP0(pnt);
-                        finishDeletePoint(item);
+                        baseItem->setP0(pnt);
+                        finishDeletePoint(baseItem);
                     }
                 }
 
                 // insert point
-                if (item->getEnableInsertPoint()) {
+                if (baseItem->getEnableInsertPoint()) {
                     if (polywire->isPointOnPlane(pnt)) {
-                        if (!item->hasP0()) {
-                            item->setP0(pnt);
-                            finishInsertPoint(item);
+                        if (!baseItem->hasP0()) {
+                            baseItem->setP0(pnt);
+                            finishInsertPoint(baseItem);
                         } else {
-                            item->setP1(pnt);
+                            baseItem->setP1(pnt);
                             polywire->setCurrentMousePosition(pnt);
                             polywire->drawStretchRubberband();
-                            item->finishStretchPoint();
+                            baseItem->finishStretchPoint();
                         }
                     }
                 }
@@ -7034,9 +6920,9 @@ void OpenParEMg::finishOperation (bool cancel, int source)
         if (activeAction) {
             long unsigned int i=0;
             while (i < ui->drawingWindow->get_selectedItems_size()) {
-                BaseItem *item=ui->drawingWindow->get_selectedItem(i);
-                if (item) {
-                    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(item);
+                BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+                if (baseItem) {
+                    DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
                     if (drawingItem && drawingItem->is_drawing()) drawingItem->cancelOperation();
                 }
                 i++;
@@ -7098,14 +6984,14 @@ void OpenParEMg::on_actionUndo_triggered ()
     std::cout << "OpenParEMg::on_actionUndo_triggered" << std::endl; std::cout.flush();
 
     itemChangesStack.readNew();
-    BaseItem *item=itemChangesStack.getItem();
-    while (item) {
+    BaseItem *baseItem=itemChangesStack.getItem();
+    while (baseItem) {
         std::cout << "*** undo item:" << std::endl; std::cout.flush();
-        item->print_itemType();
+        baseItem->print_itemType();
 
-        item->undo();
+        baseItem->undo();
 
-        item=itemChangesStack.getItem();
+        baseItem=itemChangesStack.getItem();
     }
 
     itemChangesStack.undo();
@@ -7119,14 +7005,14 @@ void OpenParEMg::on_actionRedo_triggered ()
 
     itemChangesStack.redo();
     itemChangesStack.readNew();
-    BaseItem *item=itemChangesStack.getItem();
-    while (item) {
+    BaseItem *baseItem=itemChangesStack.getItem();
+    while (baseItem) {
         std::cout << "**** redo item:" << std::endl; std::cout.flush();
-        item->print_itemType();
+        baseItem->print_itemType();
 
-        item->redo();
+        baseItem->redo();
 
-        item=itemChangesStack.getItem();
+        baseItem=itemChangesStack.getItem();
     }
 
     ui->drawingWindow->updateViewer();
