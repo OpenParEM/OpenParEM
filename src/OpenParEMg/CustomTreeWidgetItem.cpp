@@ -55,7 +55,11 @@ void BaseItem::setForUndoRedo (bool withMidPoints, int shapeOperation)
     bool hasShape=false;
     if (!getShape().IsNull()) hasShape=true;
 
+    bool isDisplayed=false;
+
     if (hasShape) {
+        isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
+
         // remove the old version from display and tracking
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
@@ -69,10 +73,12 @@ void BaseItem::setForUndoRedo (bool withMidPoints, int shapeOperation)
 
     if (hasShape) {
         // put the new version into display and tracking
-        mw->ui->drawingWindow->displayShape(getShape());
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
-        setForeground(0,Qt::gray);
-        mw->ui->drawingWindow->showItem(this);
+        if (isDisplayed) {
+            mw->ui->drawingWindow->displayShape(getShape());
+            setForeground(0,Qt::gray);
+            mw->ui->drawingWindow->showItem(this);
+        }
     }
 
     // reset the selection filters
@@ -763,28 +769,29 @@ void DrawingItem::cancelDraw ()
     mw->finishOperation(false,1);
 }
 
-void DrawingItem::startMove ()
+void DrawingItem::startMove (bool isAnimate)
 {
-    //std::cout << "DrawingItem::startMove" << std::endl; std::cout.flush();
+    std::cout << "DrawingItem::startMove  isAnimate=" << isAnimate << std::endl; std::cout.flush();
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
         setForUndoRedo(true,0);
         resetOperation();
-        setAnimate(mw->ui->drawingWindow->get_viewerContext());
+        if (isAnimate) setAnimate(mw->ui->drawingWindow->get_viewerContext());
         setEnableMove(true);
         mw->itemChangesStack.add(this);
     }
 
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
+        if (isAnimate) setAnimate(mw->ui->drawingWindow->get_viewerContext());
         int i=0;
         while (i < childCount()) {
             DrawingItem *processChild=(DrawingItem *)child(i);
             resetOperation();
-            setAnimate(mw->ui->drawingWindow->get_viewerContext());
+            //if (isAnimate) setAnimate(mw->ui->drawingWindow->get_viewerContext());
             setEnableMove(true);
-            processChild->startMove();
+            processChild->startMove(false);
             i++;
         }
     }
@@ -792,7 +799,7 @@ void DrawingItem::startMove ()
     if (!polywire && !process) {
         setForUndoRedo(true,0);
         resetOperation();
-        setAnimate(mw->ui->drawingWindow->get_viewerContext());
+        if (isAnimate) setAnimate(mw->ui->drawingWindow->get_viewerContext());
         setEnableMove(true);
         mw->itemChangesStack.add(this);
     }
@@ -802,7 +809,11 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 {
     //std::cout << "DrawingItem::finishMove" << std::endl; std::cout.flush();
 
-    unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
+    // QString message="DrawingItem::finishMove  ";
+    // message.append(text(0));
+    // {QMessageBox mb; mb.critical(nullptr, "Debug", message);}
+
+    //unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -842,9 +853,7 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
     mw->activeAction=false;
 
     resetOperation();
-
-    findTopLevelItem(this);
-    mw->finishOperation(false,1);
+    unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
 }
 
 void DrawingItem::startRotate ()
@@ -1617,9 +1626,9 @@ TopoDS_Shape DrawingItem::moveShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_Interactiv
     aTrsf=step*aTrsf;
     shape->SetLocalTransformation(aTrsf);
 
-    viewerContext->Redisplay(shape,Standard_True);
+    viewerContext->Redisplay(shape,Standard_False);  // Standard_True
 
-    BRepBuilderAPI_Transform transformer(shape->Shape(),aTrsf,Standard_True);
+    BRepBuilderAPI_Transform transformer(shape->Shape(),aTrsf,Standard_False);  // Standard_True
     return transformer.Shape();
 }
 
@@ -1641,7 +1650,7 @@ void DrawingItem::unsetAnimate (Handle(AIS_InteractiveContext) viewerContext)
 {
     //std::cout << "unsetAnimate" << std::endl; std::cout.flush();
     if (animateShape.IsNull()) return;
-    viewerContext->Remove(animateShape,Standard_True);
+    viewerContext->Remove(animateShape,Standard_False);  //xxx Standard_True
     animateShape.Nullify();
 }
 

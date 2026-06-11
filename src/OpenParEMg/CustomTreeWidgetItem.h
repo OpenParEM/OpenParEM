@@ -849,7 +849,7 @@ public:
     void finishDraw ();
     void cancelDraw ();
 
-    void startMove ();
+    void startMove (bool isAnimate=true);
     void finishMove (gp_Pnt, gp_Pnt);
 
     void startRotate ();

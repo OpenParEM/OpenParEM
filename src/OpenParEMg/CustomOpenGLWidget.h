@@ -211,16 +211,16 @@ public:
         drawingTracker->activateSelectItem(item);
     }
 
-    void activateSelectShape (Handle(AIS_Shape) shape)
-    {
-        viewerContext->Display(shape,Standard_False);
-        viewerContext->Load(shape);
-        viewerContext->Activate(shape,0,Standard_False);
+    // void activateSelectShape (Handle(AIS_Shape) shape)
+    // {
+    //     viewerContext->Display(shape,Standard_False);
+    //     viewerContext->Load(shape);
+    //     viewerContext->Activate(shape,0,Standard_False);
 
-        if (!viewerContext->IsSelected(shape)) {
-            viewerContext->AddOrRemoveSelected(shape,Standard_True);
-        }
-    }
+    //     if (!viewerContext->IsSelected(shape)) {
+    //         viewerContext->AddOrRemoveSelected(shape,Standard_True);
+    //     }
+    // }
 
     void activateItem (BaseItem *item)
     {
@@ -334,7 +334,6 @@ public:
         if (showTracking) std::cout << "CustomOpenGLWidget::unselectAllItems" << std::endl; std::cout.flush();
         drawingTracker->unselectAllItems();  // items from the tree
         clearSelected(Standard_False);        // anything else that might be selected, such as an un-tracked edge or face
-        //clearDetected(Standard_True);
     }
 
     // for bare shapes not in the item tracker
@@ -396,17 +395,10 @@ public:
         return drawingTracker->isValidDelete();
     }
 
-    // void hideShape (Handle(AIS_Shape) shape) {
-    //     if (showTracking) std::cout << "CustomOpenGLWidget::hideShape" << std::endl; std::cout.flush();
-    //     if (!viewerContext->IsDisplayed(shape)) return;
-    //     if (viewerContext->IsSelected(shape)) viewerContext->AddOrRemoveSelected(shape,Standard_True);
-    //     viewerContext->Erase(shape,Standard_False);
-    // }
-
     void deleteShape (Handle(AIS_Shape) shape)
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::deleteShape" << std::endl; std::cout.flush();
-        viewerContext->Remove(shape,Standard_True);
+        viewerContext->Remove(shape,Standard_False);  //xxx Standard_True
         shape.Nullify();
     }
 

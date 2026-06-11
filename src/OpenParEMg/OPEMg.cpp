@@ -1917,6 +1917,10 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
 {
     //std::cout << "OpenParEMg::reprocess  item=" << item << std::endl; std::cout.flush();
 
+    // QString message="OpenparEMg::reprocess  ";
+    // message.append(baseItem->text(0));
+    // {QMessageBox mb; mb.critical(nullptr, "Debug", message);}
+
     bool stop=false;
 
     if (!baseItem) return;
@@ -1953,6 +1957,11 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
         if (polywire) {
 
             ShapeData *shapeData=drawingItem->getShapeData();
+            if (!shapeData->getShape().IsNull()) {
+                ui->drawingWindow->hideItem(drawingItem);
+                ui->drawingWindow->removeItemFromMap(drawingItem);
+                ui->drawingWindow->deleteShape(drawingItem->getShape());
+            }
             shapeData->setShape(polywire->get_AIS_Shape());
 
             ui->drawingWindow->insertItemToMap(baseItem->getShape(),drawingItem);
@@ -2605,12 +2614,24 @@ void OpenParEMg::finishMoveObject (gp_Pnt p0, gp_Pnt p1)
 {
     // std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
 
+    // move the objects
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
         if (baseItem) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) drawingItem->finishMove(p0,p1);
+        }
+        i++;
+    }
+
+    // update the top level
+    i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
+            if (drawingItem && drawingItem->is_drawing()) drawingItem->findTopLevelItem(drawingItem);
         }
         i++;
     }
