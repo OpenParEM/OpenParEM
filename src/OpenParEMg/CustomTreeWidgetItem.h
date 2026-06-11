@@ -529,6 +529,9 @@ public:
 
     virtual void del () {}
 
+    BaseItem* findTopLevelItem (BaseItem *, BaseItem *);
+    virtual BaseItem* findTopLevelItem (BaseItem *) {return nullptr;}
+
     virtual void undo ();
     virtual void redo ();
     void pop () {dataStack.pop();}
@@ -922,6 +925,8 @@ public:
 
     PathItem* createPath (bool);
 
+    BaseItem* findTopLevelItem (BaseItem *) override;
+
     void undo () override;
     void redo () override;
 
@@ -998,6 +1003,7 @@ public:
     void del () override;
     void setPath (Path *path_) {path=path_;}
     Path* getPath () {return path;}
+    BaseItem* findTopLevelItem (BaseItem *) override;
     void undo () override;
     void redo () override;
     bool hasUndo () override {return dataStack.hasUndo();}

@@ -610,8 +610,6 @@ private slots:
     void keyPressEvent (QKeyEvent *) override;
     void keyReleaseEvent (QKeyEvent *) override;
 
-    void findShowTopLevelItem (BaseItem *, bool);
-
     void editObject ();
     void moveObject ();
     void stretchObject ();

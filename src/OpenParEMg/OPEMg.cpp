@@ -694,7 +694,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    itemChangesStack.print();
+    //itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
@@ -2239,22 +2239,6 @@ void OpenParEMg::editObject ()
     }
 }
 
-void OpenParEMg::findShowTopLevelItem (BaseItem *baseItem, bool hideItem)
-{
-    if (!baseItem) return;
-
-    BaseItem *parentItem=baseItem->getParentItem();
-    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
-    while (!(rootDrawingItem && rootDrawingItem->is_rootDrawing())) {
-        baseItem=parentItem;
-        parentItem=baseItem->getParentItem();
-        rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
-    }
-    ui->drawingWindow->hideItem(baseItem);
-    ui->drawingWindow->showItem(baseItem);
-    if (hideItem) ui->drawingWindow->hideItem(baseItem);
-}
-
 void OpenParEMg::finishEditObject (bool cancel)
 {
     //std::cout << "OpenParEMg::finishEditObject  length=" << length << "  cancel=" << cancel << std::endl; std::cout.flush();
@@ -2864,8 +2848,7 @@ void OpenParEMg::finishStretchPoint (BaseItem *baseItem)
 
     if (!baseItem) return;
     baseItem->finishStretchPoint();
-
-    findShowTopLevelItem(baseItem,false);
+    baseItem->findTopLevelItem(baseItem);
 
     finishOperation(false,7);
 }

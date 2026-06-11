@@ -1,4 +1,22 @@
-
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//    OpenParEM3g - A GUI for OpenParEM3D                                     //
+//    Copyright (C) 2025 Brian Young                                          //
+//                                                                            //
+//    This program is free software: you can redistribute it and/or modify    //
+//    it under the terms of the GNU General Public License as published by    //
+//    the Free Software Foundation, either version 3 of the License, or       //
+//    (at your option) any later version.                                     //
+//                                                                            //
+//    This program is distributed in the hope that it will be useful,         //
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of          //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           //
+//    GNU General Public License for more details.                            //
+//                                                                            //
+//    You should have received a copy of the GNU General Public License       //
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.   //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 #include "CustomTreeWidgetItem.h"
 #include "CustomComboBox.h"
@@ -174,28 +192,61 @@ void BaseItem::rename (QString name)
 
 void BaseItem::expandToItem ()
 {
+    std::cout << "BaseItem::expandToItem  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
+
     BaseItem *baseItem=getParentItem();
-    for (BaseItem* p = baseItem; p; p = p->getParentItem())
+    for (BaseItem *p=baseItem; p; p=p->getParentItem())
     {
         p->setExpanded(true);
     }
 
     mw->ui->drawingWindow->unselectAllItems();
+    setForeground(0,Qt::black);
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->showItem(this);
     mw->ui->drawingWindow->selectItem(this);
     mw->ui->drawingItemTree->scrollToItem(this);
 }
 
 void BaseItem::expandToItemPlus1 ()
 {
+    std::cout << "BaseItem::expandToItem1  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
+
     BaseItem *baseItem=this;
-    for (BaseItem* p = baseItem; p; p = p->getParentItem())
+    for (BaseItem *p=baseItem; p; p=p->getParentItem())
     {
         p->setExpanded(true);
     }
 
     mw->ui->drawingWindow->unselectAllItems();
+    setForeground(0,Qt::black);
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->showItem(this);
     mw->ui->drawingWindow->selectItem(this);
     mw->ui->drawingItemTree->scrollToItem(this);
+}
+
+BaseItem* BaseItem::findTopLevelItem (BaseItem *parentItem, BaseItem *currentItem)
+{
+    if (!currentItem) {
+        return nullptr;
+    }
+
+    BaseItem *currentParentItem=currentItem->getParentItem();
+    if (!currentParentItem) {
+        return currentItem;
+    }
+
+    while (currentParentItem != parentItem) {
+        currentItem=currentParentItem;
+        currentParentItem=currentItem->getParentItem();
+    }
+
+    currentItem->setForeground(0,Qt::black);
+    mw->ui->drawingWindow->hideItem(currentItem);
+    mw->ui->drawingWindow->showItem(currentItem);
+
+    return currentItem;
 }
 
 void BaseItem::undo ()
@@ -217,10 +268,12 @@ void BaseItem::undo ()
         mw->ui->drawingWindow->deleteShape(getShape());
         getParentItem()->removeChild(this);
         dataStack.undo();
+        expandToItemPlus1();
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.undo();
         restoreWidgets(this);
+        expandToItemPlus1();
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
         dataStack.undo();
@@ -789,7 +842,8 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
     mw->activeAction=false;
 
     resetOperation();
-    mw->findShowTopLevelItem(this,false);
+
+    findTopLevelItem(this);
     mw->finishOperation(false,1);
 }
 
@@ -868,7 +922,8 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
     mw->activeAction=false;
 
     resetOperation();
-    mw->findShowTopLevelItem(this,false);
+
+    findTopLevelItem(this);
 }
 
 void DrawingItem::startStretch ()
@@ -1159,7 +1214,8 @@ void DrawingItem::finishEdit ()
     }
 
     mw->activeAction=false;
-    mw->findShowTopLevelItem(this,false);
+
+    findTopLevelItem(this);
 }
 
 void DrawingItem::startDeletePoint ()
@@ -1219,7 +1275,7 @@ void DrawingItem::finishDeletePoint ()
 
     resetOperation();
     mw->activeAction=false;
-    mw->findShowTopLevelItem(this,false);
+    findTopLevelItem(this);
     mw->finishOperation(false,1);
 }
 
@@ -1315,7 +1371,7 @@ void DrawingItem::finishStretchPoint ()
 
     resetOperation();
     mw->activeAction=false;
-    mw->findShowTopLevelItem(this,false);
+    findTopLevelItem(this);
     mw->finishOperation(false,1);
 }
 
@@ -1345,7 +1401,7 @@ void DrawingItem::convertToPolyline ()
         mw->itemChangesStack.add(this);
         mw->drawingChanged=true;
 
-        mw->findShowTopLevelItem(this,false);
+        findTopLevelItem(this);
     }
 }
 
@@ -1652,6 +1708,11 @@ PathItem* DrawingItem::createPath (bool hasArrows)
     return newPathItem;
 }
 
+BaseItem* DrawingItem::findTopLevelItem (BaseItem *baseItem)
+{
+    return baseItem->findTopLevelItem(mw->drawing,baseItem);
+}
+
 void DrawingItem::undo ()
 {
     std::cout << "DrawingItem::undo  this=" << this << std::endl; std::cout.flush();
@@ -1672,8 +1733,16 @@ void DrawingItem::undo ()
 
         promoteChildren();
 
+        int i=0;
+        while (i < getChildrenSize()) {
+            BaseItem *child=getChild(i);
+            if (child) {
+                child->expandToItem();
+            }
+            i++;
+        }
+
         dataStack.undo();
-        mw->findShowTopLevelItem(this,false);
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
 
@@ -1700,7 +1769,8 @@ void DrawingItem::undo ()
             }
         }
 
-        mw->findShowTopLevelItem(this,false);
+        BaseItem *baseItem=findTopLevelItem(this);
+        baseItem->expandToItem();
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
         DrawingItem *parentItem=dynamic_cast<DrawingItem *>(getParentItem());
@@ -1713,8 +1783,8 @@ void DrawingItem::undo ()
         dataStack.undo();
 
         mw->reprocess(this);
-        mw->ui->drawingWindow->unselectItem(this);
-        mw->findShowTopLevelItem(this,false);
+        BaseItem *baseItem=findTopLevelItem(this);
+        baseItem->expandToItem();
     } else if (shapeData->isChangeName()) {
         BaseItem::undo();
     }
@@ -1769,8 +1839,8 @@ void DrawingItem::redo ()
         }
 
         mw->reprocess(this);
-        mw->ui->drawingWindow->unselectItem(this);
-        mw->findShowTopLevelItem(this,false);
+        BaseItem *baseItem=findTopLevelItem(this);
+        baseItem->expandToItem();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         mw->ui->drawingWindow->hideItem(this);
@@ -1794,21 +1864,26 @@ void DrawingItem::redo ()
 
         mw->reprocess(this);
         mw->insertToMapActivateItem(this);
-        mw->ui->drawingWindow->unselectItem(this);
-        mw->findShowTopLevelItem(this,false);
-        expandToItemPlus1();
+        BaseItem *baseItem=findTopLevelItem(this);
+        baseItem->expandToItem();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
-        // remove this version from display and tracking
+        // remove the item
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
-
-        dataStack.redo();
+        getParentItem()->removeChild(this);
 
         promoteChildren();
-        getParentItem()->removeChild(this);
-        mw->findShowTopLevelItem(this,true);
+
+        int i=0;
+        while (i < getChildrenSize()) {
+            BaseItem *child=getChild(i);
+            if (child) {
+                child->expandToItem();
+            }
+            i++;
+        }
     } else if (next->isChangeName()) {
         BaseItem::redo();
     }
@@ -2005,6 +2080,11 @@ void PathItem::del ()
         mw->itemChangesStack.add(this);
         mw->drawingChanged=true;
     }
+}
+
+BaseItem* PathItem::findTopLevelItem (BaseItem *baseItem)
+{
+    return baseItem->findTopLevelItem(mw->path,baseItem);
 }
 
 void PathItem::undo ()
@@ -3734,7 +3814,6 @@ PathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem
         newIntegrationPathItem->setText(0,name);
         newShapeData->set_name(newIntegrationPathItem->text(0));
 
-        std::cout << "place 1" << std::endl; std::cout.flush();
         addChild(newIntegrationPathItem);
         mw->itemChangesStack.add(newIntegrationPathItem);
 
