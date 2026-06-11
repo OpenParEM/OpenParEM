@@ -28,6 +28,39 @@ BaseItem::BaseItem (OpenParEMg *mw_, BaseItem *parentItem_)
     addShapeData(newShapeData);
 }
 
+void BaseItem::setForUndoRedo (bool withMidPoints, int shapeOperation)
+{
+    // clone the item onto itself for undo/redo
+    // Do this before deleting the shape below
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+
+    bool hasShape=false;
+    if (!getShape().IsNull()) hasShape=true;
+
+    if (hasShape) {
+        // remove the old version from display and tracking
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+    }
+
+    // save the new data
+    if (shapeOperation == 0) newShapeData->setEdit();
+    else if (shapeOperation == 1) newShapeData->setChangeName();
+    addShapeData(newShapeData);
+
+    if (hasShape) {
+        // put the new version into display and tracking
+        mw->ui->drawingWindow->displayShape(getShape());
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+        setForeground(0,Qt::gray);
+        mw->ui->drawingWindow->showItem(this);
+    }
+
+    // reset the selection filters
+    mw->startOperation(withMidPoints);
+}
+
 void BaseItem::restoreWidgets (BaseItem *baseItem)
 {
     if (!baseItem) return;
@@ -129,13 +162,14 @@ void BaseItem::addItemChange () {mw->itemChangesStack.add(this);}
 
 void BaseItem::rename (QString name)
 {
-    ShapeData *newShapeData=getShapeData()->copyCreate();
-    newShapeData->setChangeName();
-    newShapeData->set_name(name);
-    addShapeData(newShapeData);
+    setForUndoRedo(false,1);
+    ShapeData *shapeData=getShapeData();
+    shapeData->set_name(name);
 
     mw->itemChangesStack.startNew();
     mw->itemChangesStack.add(this);
+
+    mw->finishOperation(false,1);
 }
 
 void BaseItem::expandToItem ()
@@ -468,31 +502,6 @@ void DrawingItem::demoteChildren ()
     }
 }
 
-void DrawingItem::setForUndoRedo (bool withMidPoints)
-{   
-    // clone the item onto itself for undo/redo
-    // Do this before deleting the shape below
-    ShapeData *newShapeData=getShapeData()->copyCreate();
-
-    // remove the old version from display and tracking
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
-
-    // save the new data
-    newShapeData->setEdit();
-    addShapeData(newShapeData);
-
-    // put the new version into display and tracking
-    mw->ui->drawingWindow->displayShape(getShape());
-    mw->ui->drawingWindow->insertItemToMap(getShape(),this);
-    setForeground(0,Qt::gray);
-    mw->ui->drawingWindow->showItem(this);
-
-    // reset the selection filters
-    mw->startOperation(withMidPoints);
-}
-
 void DrawingItem::cancelOperation ()
 {
     //std::cout << "DrawingItem::cancelOperation" << std::endl; std::cout.flush();
@@ -660,7 +669,7 @@ void DrawingItem::startMove ()
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
-        setForUndoRedo(true);
+        setForUndoRedo(true,0);
         resetOperation();
         setAnimate(mw->ui->drawingWindow->get_viewerContext());
         setEnableMove(true);
@@ -681,7 +690,7 @@ void DrawingItem::startMove ()
     }
 
     if (!polywire && !process) {
-        setForUndoRedo(true);
+        setForUndoRedo(true,0);
         resetOperation();
         setAnimate(mw->ui->drawingWindow->get_viewerContext());
         setEnableMove(true);
@@ -741,7 +750,7 @@ void DrawingItem::startRotate ()
 {
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
-        setForUndoRedo(true);
+        setForUndoRedo(true,0);
         resetOperation();
         mw->itemChangesStack.add(this);
     }
@@ -759,7 +768,7 @@ void DrawingItem::startRotate ()
     }
 
     if (!polywire && !process) {
-        setForUndoRedo(true);
+        setForUndoRedo(true,0);
         resetOperation();
         mw->itemChangesStack.add(this);
     }
@@ -817,7 +826,7 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
 
 void DrawingItem::startStretch ()
 {
-    setForUndoRedo(false);
+    setForUndoRedo(false,0);
     resetOperation();
     setEnableStretch(true);
 
@@ -985,7 +994,7 @@ DrawingItem* DrawingItem::copy (BaseItem *parent)
 
 void DrawingItem::startEdit ()
 {
-    setForUndoRedo(false);
+    setForUndoRedo(false,0);
 
     // polywire to edit
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
@@ -1108,7 +1117,7 @@ void DrawingItem::finishEdit ()
 
 void DrawingItem::startDeletePoint ()
 {
-    setForUndoRedo(false);
+    setForUndoRedo(false,0);
 
     Handle(AIS_Shape) shape=getShape();
     if (!shape.IsNull()) {
@@ -1174,7 +1183,7 @@ void DrawingItem::cancelDeletePoint ()
 
 void DrawingItem::startInsertPoint ()
 {
-    setForUndoRedo(false);
+    setForUndoRedo(false,0);
 
     Handle(AIS_Shape) shape=getShape();
     if (!shape.IsNull()) {
@@ -1270,7 +1279,7 @@ void DrawingItem::cancelInsertPoint ()
 
 void DrawingItem::convertToPolyline ()
 {
-    setForUndoRedo(false);
+    setForUndoRedo(false,0);
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -2033,10 +2042,7 @@ void PathItem::showArrows (bool show)
 
 void PathItem::rename (QString name)
 {
-    ShapeData *newShapeData=getShapeData()->copyCreate();
-    newShapeData->setChangeName();
-    newShapeData->set_name(name);
-    addShapeData(newShapeData);
+    BaseItem::rename(name);
 
     mw->itemChangesStack.startNew();
     mw->itemChangesStack.add(this);

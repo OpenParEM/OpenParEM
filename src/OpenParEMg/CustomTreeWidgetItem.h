@@ -488,6 +488,7 @@ public:
     void addItemChange ();
 
     void restoreWidgets (BaseItem *);
+    void setForUndoRedo (bool, int);
 
     virtual void rename (QString);
     void expandToItem ();
@@ -835,7 +836,6 @@ public:
     void promoteChildren ();
     void demoteChildren ();
 
-    void setForUndoRedo (bool);
     void cancelOperation () override;
 
     void startDraw ();
