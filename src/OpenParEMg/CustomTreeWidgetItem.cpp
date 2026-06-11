@@ -1422,23 +1422,23 @@ void DrawingItem::del ()
     if (parentItem) {
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
         if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
-            int insertIndex=rootDrawingItem->indexOfChild(this);
+            // int insertIndex=rootDrawingItem->indexOfChild(this);
 
-            // move children to parent
-            while (childCount() > 0) {
-                DrawingItem* drawingChild=dynamic_cast<DrawingItem *>(takeChild(0));
-                rootDrawingItem->insertChild(insertIndex++,drawingChild);
-                drawingChild->setParentItem(rootDrawingItem);
-                drawingChild->decrease_depth();
-                mw->ui->drawingWindow->showItem(drawingChild);
+            // // move children to parent
+            // while (childCount() > 0) {
+            //     DrawingItem* drawingChild=dynamic_cast<DrawingItem *>(takeChild(0));
+            //     rootDrawingItem->insertChild(insertIndex++,drawingChild);
+            //     drawingChild->setParentItem(rootDrawingItem);
+            //     drawingChild->decrease_depth();
+            //     mw->ui->drawingWindow->showItem(drawingChild);
 
-                // set the materials
-                if (!text(1).isNull()) {
-                    if (!drawingChild->getPolywire()) {
-                        drawingChild->setText(1,text(1));
-                    }
-                }
-            }
+            //     // set the materials
+            //     if (!text(1).isNull()) {
+            //         if (!drawingChild->getPolywire()) {
+            //             drawingChild->setText(1,text(1));
+            //         }
+            //     }
+            // }
 
             rootDrawingItem->removeChild(this);
         }
@@ -1772,19 +1772,20 @@ void DrawingItem::undo ()
         BaseItem *baseItem=findTopLevelItem(this);
         baseItem->expandToItem();
     } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-        DrawingItem *parentItem=dynamic_cast<DrawingItem *>(getParentItem());
-        copy_depth(parentItem);
-        increase_depth();
-        getParentItem()->addChild(this);
+        // std::cout << "   isDelete" << std::endl; std::cout.flush();
+        // DrawingItem *parentItem=dynamic_cast<DrawingItem *>(getParentItem());
+        // copy_depth(parentItem);
+        // increase_depth();
+        // getParentItem()->addChild(this);
 
-        demoteChildren();
+        // demoteChildren();
 
-        dataStack.undo();
+        // dataStack.undo();
 
-        mw->reprocess(this);
-        BaseItem *baseItem=findTopLevelItem(this);
-        baseItem->expandToItem();
+        // mw->reprocess(this);
+        // BaseItem *baseItem=findTopLevelItem(this);
+        // baseItem->expandToItem();
+        BaseItem::undo();
     } else if (shapeData->isChangeName()) {
         BaseItem::undo();
     }
@@ -1867,23 +1868,24 @@ void DrawingItem::redo ()
         BaseItem *baseItem=findTopLevelItem(this);
         baseItem->expandToItem();
     } else if (next->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
-        // remove the item
-        mw->ui->drawingWindow->hideItem(this);
-        mw->ui->drawingWindow->removeItemFromMap(this);
-        mw->ui->drawingWindow->deleteShape(getShape());
-        getParentItem()->removeChild(this);
+        // std::cout << "   isDelete" << std::endl; std::cout.flush();
+        // // remove the item
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
+        // getParentItem()->removeChild(this);
 
-        promoteChildren();
+        // promoteChildren();
 
-        int i=0;
-        while (i < getChildrenSize()) {
-            BaseItem *child=getChild(i);
-            if (child) {
-                child->expandToItem();
-            }
-            i++;
-        }
+        // int i=0;
+        // while (i < getChildrenSize()) {
+        //     BaseItem *child=getChild(i);
+        //     if (child) {
+        //         child->expandToItem();
+        //     }
+        //     i++;
+        // }
+        BaseItem::redo();
     } else if (next->isChangeName()) {
         BaseItem::redo();
     }
