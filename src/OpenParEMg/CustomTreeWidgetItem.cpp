@@ -2009,9 +2009,6 @@ void PathItem::undo ()
             // reverse the path in the path database
             path->reverseOrder();
 
-            // do not reverse the direction of the shape: already in expected order
-            //getShapeData()->getPolywire()->reverseOrder();
-
             // update the shape
             setShape(getShapeData()->getPolywire()->get_AIS_Shape());
         }
@@ -2035,7 +2032,6 @@ void PathItem::showArrows (bool show)
     ShapeData *shapeData=this->getShapeData();
     Polywire *polywire=getPolywire();
     if (polywire) {
-        //std::cout << "   recalculating arrow shape" << std::endl; std::cout.flush();
         polywire->setHasArrows(show);
         shapeData->setShape(polywire->get_AIS_Shape());
     }
@@ -2104,9 +2100,6 @@ void PathItem::redo ()
         if (path) {
             // reverse the path in the path database
             path->reverseOrder();
-
-            // do not reverse the direction of the shape: already in expected order
-            //getShapeData()->getPolywire()->reverseOrder();
 
             // update the shape
             setShape(getShapeData()->getPolywire()->get_AIS_Shape());
@@ -2241,21 +2234,14 @@ void IntegrationPathItem::undo ()
     if (!shapeData) return;
 
     if (shapeData->isCreate()) {
-        std::cout << "isCreate" << std::endl; std::cout.flush();
-
-        // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
-            pathItem->showArrows(true);
         }
     } else if (shapeData->isDelete()) {
-
-        // remove the arrows from the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
-            pathItem->showArrows(false);
         }
     }
 
@@ -2273,20 +2259,14 @@ void IntegrationPathItem::redo ()
     if (!next) return;
 
     if (next->isCreate()) {
-
-        // remove the arrows from the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
-            pathItem->showArrows(false);
         }
     } else if (next->isDelete()) {
-
-        // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
-            pathItem->showArrows(true);
         }
     }
 
@@ -2718,7 +2698,6 @@ void BoundaryItem::del ()
             rootBoundaryItem->removeChild(this);
         }
 
-        // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
@@ -2811,8 +2790,6 @@ void BoundaryItem::undo ()
     if (!shapeData) return;
 
     if (shapeData->isCreate()) {
-
-        // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
@@ -2820,8 +2797,6 @@ void BoundaryItem::undo ()
         }
 
     } else if (shapeData->isDelete()) {
-
-        // remove the arrows from the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
@@ -2843,16 +2818,12 @@ void BoundaryItem::redo ()
     if (!next) return;
 
     if (next->isCreate()) {
-
-        // remove the arrows from the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
             pathItem->showArrows(false);
         }
     } else if (next->isDelete()) {
-
-        // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
@@ -3189,7 +3160,6 @@ void PortItem::del ()
             rootPortItem->removeChild(this);
         }
 
-        // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
@@ -3209,17 +3179,12 @@ void PortItem::undo ()
     if (!shapeData) return;
 
     if (shapeData->isCreate()) {
-        std::cout << "isCreate" << std::endl; std::cout.flush();
-
-        // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
             pathItem->showArrows(true);
         }
     } else if (shapeData->isDelete()) {
-
-        // remove the arrows from the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
@@ -3241,16 +3206,12 @@ void PortItem::redo ()
     if (!next) return;
 
     if (next->isCreate()) {
-
-        // remove the arrows from the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
             pathItem->showArrows(false);
         }
     } else if (next->isDelete()) {
-
-        // restore the arrows on the path
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
