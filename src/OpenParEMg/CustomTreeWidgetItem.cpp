@@ -238,8 +238,32 @@ void BaseItem::undo ()
         expandToItemPlus1();
     } else if (shapeData->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
+
+        bool hasShape=false;
+        if (!getShape().IsNull()) hasShape=true;
+
+        if (hasShape) {
+            mw->ui->drawingWindow->hideItem(this);
+            mw->ui->drawingWindow->removeItemFromMap(this);
+            mw->ui->drawingWindow->deleteShape(getShape());
+        }
+
         dataStack.undo();
         setText(0,getShapeData()->get_name());
+
+        if (hasShape) {
+            Handle(AIS_Shape) shape=getShape();
+            if (!shape.IsNull()) {
+                mw->ui->drawingWindow->displayShape(shape);
+                mw->ui->drawingWindow->insertItemToMap(shape,this);
+            }
+
+            mw->ui->drawingWindow->showItem(this);
+            mw->ui->drawingWindow->activateItem(this);
+        }
+
+        restoreWidgets(this);
+        expandToItem();
     }
 }
 
@@ -285,8 +309,31 @@ void BaseItem::redo ()
         dataStack.redo();
     } else if (next->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
+
+        bool hasShape=false;
+        if (!getShape().IsNull()) hasShape=true;
+
+        if (hasShape) {
+            mw->ui->drawingWindow->hideItem(this);
+            mw->ui->drawingWindow->removeItemFromMap(this);
+            mw->ui->drawingWindow->deleteShape(getShape());
+        }
+
         dataStack.redo();
         setText(0,getShapeData()->get_name());
+
+        if (hasShape) {
+            Handle(AIS_Shape) shape=getShape();
+            if (!shape.IsNull()) {
+                mw->ui->drawingWindow->displayShape(shape);
+                mw->ui->drawingWindow->insertItemToMap(shape,this);
+            }
+
+            mw->ui->drawingWindow->showItem(this);
+            mw->ui->drawingWindow->activateItem(this);
+        }
+
+        restoreWidgets(this);
         expandToItem();
     }
 }
@@ -1669,9 +1716,6 @@ void DrawingItem::undo ()
         mw->ui->drawingWindow->unselectItem(this);
         mw->findShowTopLevelItem(this,false);
     } else if (shapeData->isChangeName()) {
-        // std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        // dataStack.undo();
-        // setText(0,getShapeData()->get_name());
         BaseItem::undo();
     }
 }
@@ -1766,10 +1810,6 @@ void DrawingItem::redo ()
         getParentItem()->removeChild(this);
         mw->findShowTopLevelItem(this,true);
     } else if (next->isChangeName()) {
-        // std::cout << "   isChangeName" << std::endl; std::cout.flush();
-        // dataStack.redo();
-        // setText(0,getShapeData()->get_name());
-        // expandToItem();
         BaseItem::redo();
     }
 }
@@ -2043,9 +2083,6 @@ void PathItem::showArrows (bool show)
 void PathItem::rename (QString name)
 {
     BaseItem::rename(name);
-
-    mw->itemChangesStack.startNew();
-    mw->itemChangesStack.add(this);
 
     // change the names of the linked items
     long unsigned int i=0;
