@@ -1861,11 +1861,10 @@ double OpenParEMg::getConversionFactor ()
 
 void OpenParEMg::extrudePolywire ()
 {
-    //std::cout << "OpenParEMg::extrudePolywire" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::extrudePolywire" << std::endl; std::cout.flush();
 
     startOperation(true);
-    activeAction=true;
-    itemChangesStack.startNew();
+    activeAction=false;
 
     // user input form
     if (lengthInputForm) delete lengthInputForm;
@@ -1883,7 +1882,7 @@ void OpenParEMg::extrudePolywire ()
 
 void OpenParEMg::finishExtrudePolywire ()
 {
-    //std::cout << "OpenParEMg::finishExtrudePolywire" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::finishExtrudePolywire" << std::endl; std::cout.flush();
 
     if (abs(length) > 1e-12) {
 
@@ -1897,6 +1896,8 @@ void OpenParEMg::finishExtrudePolywire ()
             }
             i++;
         }
+
+        if (selectedItems.size() > 0) itemChangesStack.startNew();
 
         i=0;
         while (i < selectedItems.size()) {
