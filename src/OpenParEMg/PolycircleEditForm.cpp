@@ -57,6 +57,7 @@ PolycircleEditForm::PolycircleEditForm (QWidget *parent)
 
     conversionFactor=1;
     isXclose=true;
+    isClosing=false;
 }
 
 PolycircleEditForm::~PolycircleEditForm ()
@@ -73,6 +74,8 @@ bool PolycircleEditForm::isValid ()
 
 void PolycircleEditForm::populate (Polycircle *polycircle_)
 {
+    if (isClosing) return;
+
     // temporarily draw the shape
     if (!tempShape.IsNull()) {
         drawingWindow->removeShape(tempShape);
@@ -272,6 +275,13 @@ void PolycircleEditForm::on_CancelButton_clicked ()
 
 void PolycircleEditForm::reject ()
 {
+    isClosing=true;
+
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
+    }
+
     ui->CancelButton->setChecked(true);
     if (isXclose) emit relay->finishOperation(true,53);
     QDialog::reject();

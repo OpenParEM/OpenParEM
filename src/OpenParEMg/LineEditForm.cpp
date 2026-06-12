@@ -55,6 +55,7 @@ LineEditForm::LineEditForm (QWidget *parent)
 
     conversionFactor=1;
     isXclose=true;
+    isClosing=false;
 }
 
 LineEditForm::~LineEditForm ()
@@ -76,6 +77,8 @@ void LineEditForm::set_polywire (Line *polywire_)
 
 void LineEditForm::populate (Line *polywire_)
 {
+    if (isClosing) return;
+
     // temporarily draw the shape
     if (!tempShape.IsNull()) {
         drawingWindow->removeShape(tempShape);
@@ -239,6 +242,13 @@ void LineEditForm::pickVertexFinished (gp_Pnt point)
 
 void LineEditForm::reject ()
 {
+    isClosing=true;
+
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
+    }
+
     ui->CancelButton->setChecked(true);
     if (isXclose) emit relay->finishOperation(true,63);
     QDialog::reject();

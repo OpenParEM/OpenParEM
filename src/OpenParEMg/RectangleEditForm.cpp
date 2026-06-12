@@ -55,8 +55,7 @@ RectangleEditForm::RectangleEditForm (QWidget *parent)
 
     conversionFactor=1;
     isXclose=true;
-
-    std::cout << "RectangleEditForm::RectangleEditForm" << std::endl; std::cout.flush();
+    isClosing=false;
 }
 
 RectangleEditForm::~RectangleEditForm ()
@@ -79,7 +78,7 @@ void RectangleEditForm::set_polywire (Rectangle *polywire_)
 
 void RectangleEditForm::populate (Rectangle *polywire_)
 {
-    //std::cout << "RectangleEditForm::populate" << std::endl; std::cout.flush();
+    if (isClosing) return;
 
     // temporarily draw the shape
     if (!tempShape.IsNull()) {
@@ -259,6 +258,13 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
 
 void RectangleEditForm::reject ()
 {
+    isClosing=true;
+
+    if (!tempShape.IsNull()) {
+        drawingWindow->removeShape(tempShape);
+        tempShape.Nullify();
+    }
+
     ui->CancelButton->setChecked(true);
     if(isXclose) emit relay->finishOperation(true,43);
     QDialog::reject();

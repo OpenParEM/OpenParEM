@@ -65,6 +65,7 @@ private:
     Handle(AIS_Shape) tempShape;
     double conversionFactor;   // converts from m to some other unit coming in, then back to m going out
     bool isXclose;             // user clicked the "X" to close
+    bool isClosing;            // flag to block re-populations during closing operations
 };
 
 #endif // POLYCIRCLEEDITFORM_H
