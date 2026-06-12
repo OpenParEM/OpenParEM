@@ -536,14 +536,22 @@ void RootDrawingItem::showMenu (QMenu *menu)
     mw->showAction=new QAction("Show",this);
     mw->hideAction=new QAction("Hide",this);
     mw->selectAllAction=new QAction("Select All");
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
 
     connect(mw->showAction, &QAction::triggered, this, &RootDrawingItem::show);
     connect(mw->hideAction, &QAction::triggered, this, &RootDrawingItem::hide);
     connect(mw->selectAllAction, &QAction::triggered, this, &RootDrawingItem::selectAll);
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
     if (isValidSelectAll()) menu->addAction(mw->selectAllAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
