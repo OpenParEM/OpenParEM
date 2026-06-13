@@ -98,6 +98,93 @@ public:
     long unsigned int portCount () {return currentPortCount;}
     long unsigned int boundaryCount () {return currentBoundaryCount;}
 
+    // report duplicates
+    void duplicateAudit () {
+        std::cout << "   duplicates:" << std::endl; std::cout.flush();
+        int limit=data.size(); limit--;
+        int i=0;
+        while (i < limit) {
+            if (data[i]) {
+                long unsigned int j=i+1;
+                while (j < data.size()) {
+                    if (data[j]) {
+                        if (data[i] == data[j]) {
+                            std::cout << "      " << data[i]->text(0).toStdString() << std::endl;
+                        }
+                    }
+                    j++;
+                }
+            }
+            i++;
+        }
+    }
+
+    // report items that do not appear in itemVector
+    void crossDuplicateAudit (ItemVector *itemVector)
+    {
+        std::cout << "   missing entries:" << std::endl; std::cout.flush();
+        long unsigned int i=0;
+        while (i < data.size()) {
+            if (data[i]) {
+                bool found;
+                long unsigned int j=0;
+                while (j < itemVector->size()) {
+                    if ((*itemVector)[j]) {
+                        if (data[i] == (*itemVector)[j]) {
+                            found=true;
+                            break;
+                        }
+                    }
+                    j++;
+                }
+                if (!found) {
+                    std::cout << "      " << data[i]->text(0).toStdString() << std::endl;
+                }
+            }
+            i++;
+        }
+    }
+
+    // report items that are not actually selected
+    void selectedItemAudit (Handle(AIS_InteractiveContext) viewerContext)
+    {
+        std::cout << "   unselected items:" << std::endl; std::cout.flush();
+        long unsigned int i=0;
+        while (i < data.size()) {
+            if (data[i]) {
+                if (!viewerContext->IsSelected(data[i]->getShape())) {
+                    std::cout << "      " << data[i]->text(0).toStdString() << std::endl;
+                }
+            }
+            i++;
+        }
+    }
+
+    // each item must be in the map
+    void itemInMapAudit (std::unordered_map<Handle(AIS_Shape), BaseItem*> *shapeToItemMap)
+    {
+        std::cout << "   missing entries:" << std::endl; std::cout.flush();
+        long unsigned int i=0;
+        while (i < data.size()) {
+            if (data[i]) {
+                bool found=false;
+                for (const auto& pair : *shapeToItemMap) {
+                    if (pair.second) {
+                        if (data[i] == pair.second) {
+                            found=true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    std::cout << "      " << data[i]->text(0).toStdString() << std::endl;
+                }
+            }
+            i++;
+        }
+    }
+
+
     BaseItem* operator[](long unsigned int index) {
         return data[index];
     }
@@ -1109,6 +1196,44 @@ public:
         BaseItem *item=shapeToItemMap[shape];
         if (item) return true;
         return false;
+    }
+
+    void audit ()
+    {
+        std::cout << "***************************************************" << std::endl;
+        std::cout << "Visible Items Audit:" << std::endl;
+        visibleItems.duplicateAudit();
+
+        std::cout << "Selected Items Audit:" << std::endl;
+        selectedItems.duplicateAudit();
+
+        std::cout << "Selected vs. Visible Items Audit" << std::endl;
+        selectedItems.crossDuplicateAudit(&visibleItems);
+
+        std::cout << "Visible Items vs. Shape-to-Item Map Audit" << std::endl;
+        visibleItems.itemInMapAudit(&shapeToItemMap);
+
+        std::cout << "Selected Items vs. Shape-to-Item Map Audit" << std::endl;
+        selectedItems.itemInMapAudit(&shapeToItemMap);
+
+        std::cout << "Selected Items vs. Drawing Items Selected Audit" << std::endl;
+        selectedItems.selectedItemAudit(viewerContext);
+
+        std::cout << "Shape-to-Item Map vs. Shape-to-Item Map Audit" << std::endl;
+        std::cout << "   duplicates" << std::endl;
+        for (const auto& pair1 : shapeToItemMap) {
+            if (pair1.second) {
+                int count=0;
+                for (const auto& pair2 : shapeToItemMap) {
+                    if (pair2.second) {
+                        if (pair1.second == pair2.second) count++;
+                    }
+                }
+                if (count > 1) std::cout << "      " << pair1.second->text(0).toStdString() << std::endl;
+            }
+        }
+
+        std::cout << "***************************************************" << std::endl;
     }
 
 private:

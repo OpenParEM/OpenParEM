@@ -52,6 +52,8 @@ class CustomOpenGLWidget : public QOpenGLWidget, public AIS_ViewController
 public:
     CustomOpenGLWidget (QWidget *parent = nullptr);
 
+    void audit () {drawingTracker->audit();}
+
     void set_wireframe (bool state)
     {
         if (state) viewerContext->SetDisplayMode(AIS_WireFrame, Standard_False);

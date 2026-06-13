@@ -698,6 +698,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
+    ui->drawingWindow->audit();
 
     // disable all menus on command
     if (disableMenus) {

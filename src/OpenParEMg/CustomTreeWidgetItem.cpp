@@ -361,6 +361,7 @@ void BaseItem::redo ()
         expandToItemPlus1();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
+        mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
@@ -766,7 +767,7 @@ void DrawingItem::cancelDraw ()
         mw->activePolywire=nullptr;
     }
 
-    cancelOperation();
+    //cancelOperation();
     mw->ui->drawingWindow->set_gridPlane(mw->currentPrivilegedPlane);
 
     // remove the current undo/redo item
@@ -1425,6 +1426,7 @@ void DrawingItem::convertToPolyline ()
 void DrawingItem::del ()
 {
     // remove from display and tracking
+    mw->ui->drawingWindow->unselectItem(this);
     mw->ui->drawingWindow->hideItem(this);
     mw->ui->drawingWindow->removeItemFromMap(this);
     mw->ui->drawingWindow->deleteShape(getShape());
@@ -1742,7 +1744,9 @@ void DrawingItem::undo ()
         // nothing to do
     } else if (shapeData->isCreate()) {
         std::cout << "   isCreate" << std::endl; std::cout.flush();
+
         // remove the item
+        mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
@@ -1763,6 +1767,7 @@ void DrawingItem::undo ()
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
 
+        mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
@@ -1789,19 +1794,6 @@ void DrawingItem::undo ()
         BaseItem *baseItem=findTopLevelItem(this);
         baseItem->expandToItem();
     } else if (shapeData->isDelete()) {
-        // std::cout << "   isDelete" << std::endl; std::cout.flush();
-        // DrawingItem *parentItem=dynamic_cast<DrawingItem *>(getParentItem());
-        // copy_depth(parentItem);
-        // increase_depth();
-        // getParentItem()->addChild(this);
-
-        // demoteChildren();
-
-        // dataStack.undo();
-
-        // mw->reprocess(this);
-        // BaseItem *baseItem=findTopLevelItem(this);
-        // baseItem->expandToItem();
         BaseItem::undo();
     } else if (shapeData->isChangeName()) {
         BaseItem::undo();
@@ -1861,6 +1853,7 @@ void DrawingItem::redo ()
         baseItem->expandToItem();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
+        mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
@@ -1885,23 +1878,6 @@ void DrawingItem::redo ()
         BaseItem *baseItem=findTopLevelItem(this);
         baseItem->expandToItem();
     } else if (next->isDelete()) {
-        // std::cout << "   isDelete" << std::endl; std::cout.flush();
-        // // remove the item
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
-        // getParentItem()->removeChild(this);
-
-        // promoteChildren();
-
-        // int i=0;
-        // while (i < getChildrenSize()) {
-        //     BaseItem *child=getChild(i);
-        //     if (child) {
-        //         child->expandToItem();
-        //     }
-        //     i++;
-        // }
         BaseItem::redo();
     } else if (next->isChangeName()) {
         BaseItem::redo();
