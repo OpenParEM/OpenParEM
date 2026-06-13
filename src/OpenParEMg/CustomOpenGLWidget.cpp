@@ -291,7 +291,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
     std::cout << "CustomOpenGLWidget::mousePressEvent   pickFirstVertex=" << pickFirstVertex << "  pickSecondVertex=" << pickSecondVertex << std::endl; std::cout.flush();
 
-    QOpenGLWidget::mousePressEvent(event);
+    //QOpenGLWidget::mousePressEvent(event);
 
     if (view.IsNull()) return;
     ignoreMouseRelease=false;
@@ -356,8 +356,10 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     // re-enable view rotation that is disabled when using a selection box
     SetAllowRotation(Standard_True);
+    SetAllowZooming(Standard_True);
+    SetAllowPanning(Standard_True);
 
-    QOpenGLWidget::mouseReleaseEvent(event);
+    //QOpenGLWidget::mouseReleaseEvent(event);
 
     if (view.IsNull()) return;
 
@@ -518,7 +520,7 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
 {
     //std::cout << "CustomOpenGLWidget::mouseMoveEvent" << std::endl; std::cout.flush();
 
-    QOpenGLWidget::mouseMoveEvent(event);
+    //QOpenGLWidget::mouseMoveEvent(event);
 
     if (view.IsNull()) return;
 
@@ -639,9 +641,10 @@ void CustomOpenGLWidget::hideGrid ()
 void CustomOpenGLWidget::selectRectangle ()
 {
     // disable view rotation while selecting
-    SetAllowRotation(Standard_False);
+    SetAllowRotation(Standard_False);  // works
+    SetAllowZooming(Standard_False);   // drawing box is not shown, but it is functional: bug in OCCT?
+    SetAllowPanning(Standard_False);   // drawing box is not shown, but it is functional: bug in OCCT?
 
-    //view->SetImmediateUpdate(Standard_True);
     if (rectSelect) delete rectSelect;
     rectSelect=new RectangleSelector(viewerContext,view,this);
 
