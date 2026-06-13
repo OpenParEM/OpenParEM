@@ -296,7 +296,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     if (view.IsNull()) return;
     ignoreMouseRelease=false;
 
-    // pass the mouse press from Qt to OCCT
+    // pass the mouse press from OCCT to Qt
     bool passClick=true;
     if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
     if (event->button() == Qt::RightButton && (pickFirstVertex || pickSecondVertex)) passClick=false;   // prevent right-click from zooming
@@ -361,7 +361,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     if (view.IsNull()) return;
 
-    // pass the mouse release from Qt to OCCT
+    // pass the mouse release from OCCT to Qt
     bool passClick=true;
     if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
     if (passClick) {
@@ -572,7 +572,7 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
         emit relay->getCurrentMousePosition(mousePosition);
     }
 
-    // pass the mouse position from Qt to OCCT
+    // pass the mouse position from OCCT to Qt
     const Graphic3d_Vec2i position(event->pos().x(),event->pos().y());
     if (UpdateMousePosition(position,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
                                      OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateViewer();
