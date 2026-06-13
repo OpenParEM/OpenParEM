@@ -14,8 +14,6 @@
 #include <TopoDS_Shape.hxx>
 #include <Graphic3d_Vec2.hxx> // for Graphic3d_Vec2i
 
-#include <vector>
-
 class RectangleSelector : public QObject
 {
     Q_OBJECT
@@ -38,8 +36,6 @@ public:
         if (m_widget) m_widget->removeEventFilter(this);
     }
 
-    const std::vector<TopoDS_Shape>& selectedShapes () const { return m_selected; }
-
 signals:
     void selectionFinished ();
 
@@ -52,7 +48,8 @@ protected:
             QMouseEvent* me = static_cast<QMouseEvent*>(ev);
             if (me && me->button() == Qt::LeftButton) {
                 beginSelection(me->pos().x(), me->pos().y(), me->modifiers());
-                return true;
+                //return true;
+                return false;
             }
             break;
         }
@@ -61,7 +58,8 @@ protected:
                 QMouseEvent* me = static_cast<QMouseEvent*>(ev);
                 if (me) {
                     updateSelection(me->pos().x(), me->pos().y());
-                    return true;
+                    //return true;
+                    return false;
                 }
             }
             break;
@@ -71,6 +69,7 @@ protected:
             if (me && me->button() == Qt::LeftButton && m_isSelecting) {
                 finishSelection(me->pos().x(), me->pos().y());
                 return true;
+                //return false;
             }
             break;
         }
@@ -86,7 +85,9 @@ private:
         m_startX=x; m_startY=y;
         m_shiftPressed=(mods & Qt::ShiftModifier);
 
-        m_rubber->SetRectangle(m_startX,m_startY,m_startX,m_startY);
+        int h = m_widget->height();
+
+        m_rubber->SetRectangle(m_startX,h-m_startY,m_startX,h-m_startY);
         m_context->Display(m_rubber,Standard_True);
         m_context->UpdateCurrentViewer();
     }
@@ -99,8 +100,10 @@ private:
         int xmax=std::max(m_startX, x);
         int ymax=std::max(m_startY, y);
 
-        m_rubber->SetRectangle(xmin,ymin,xmax,ymax);
-        m_context->Redisplay(m_rubber, Standard_True); // mark for redraw
+        int h = m_widget->height();
+
+        m_rubber->SetRectangle(xmin,h-ymin,xmax,h-ymax);
+        m_context->Redisplay(m_rubber, Standard_True);  // mark for redraw
         m_context->UpdateCurrentViewer();               // force immediate update
     }
 
@@ -115,9 +118,12 @@ private:
 
         m_context->Erase(m_rubber, Standard_True);
 
+        int h = m_widget->height();
+
         // Graphic3d_Vec2i points for OCCT rectangle selection
         Graphic3d_Vec2i pmin(xmin, ymin);
         Graphic3d_Vec2i pmax(xmax, ymax);
+
 
         AIS_SelectionScheme scheme = m_shiftPressed
                                          ? AIS_SelectionScheme_XOR
@@ -126,17 +132,6 @@ private:
         m_context->SelectRectangle(pmin, pmax, m_view, scheme);
 
         if (!m_view.IsNull()) m_view->Redraw();
-
-        // Collect selected shapes using new API (no output parameter)
-        m_selected.clear();
-        if (!m_context.IsNull()) {
-            for (m_context->InitSelected(); m_context->MoreSelected(); m_context->NextSelected()) {
-                if (m_context->HasSelectedShape()) {
-                    TopoDS_Shape sel = m_context->SelectedShape();
-                    m_selected.push_back(sel);
-                }
-            }
-        }
 
         emit selectionFinished();
     }
@@ -150,8 +145,6 @@ private:
     bool m_isSelecting{false};
     bool m_shiftPressed{false};
     int m_startX{0}, m_startY{0};
-
-    std::vector<TopoDS_Shape> m_selected;
 };
 
 

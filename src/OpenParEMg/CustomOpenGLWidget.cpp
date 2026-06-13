@@ -104,7 +104,7 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
 
     // viewer
     view=viewer->CreateView();
-    view->SetImmediateUpdate(false);
+    view->SetImmediateUpdate(Standard_False);
     view->ChangeRenderingParams().NbMsaaSamples=4;
     view->ChangeRenderingParams().ToShowStats=false;
 
@@ -292,6 +292,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     std::cout << "CustomOpenGLWidget::mousePressEvent   pickFirstVertex=" << pickFirstVertex << "  pickSecondVertex=" << pickSecondVertex << std::endl; std::cout.flush();
 
     QOpenGLWidget::mousePressEvent(event);
+
     if (view.IsNull()) return;
     ignoreMouseRelease=false;
 
@@ -353,7 +354,11 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
     std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickSecondVertex=" << pickSecondVertex << "  ignoreMouseRelease=" << ignoreMouseRelease << std::endl; std::cout.flush();
 
+    // re-enable view rotation that is disabled when using a selection box
+    SetAllowRotation(Standard_True);
+
     QOpenGLWidget::mouseReleaseEvent(event);
+
     if (view.IsNull()) return;
 
     // pass the mouse release from Qt to OCCT
@@ -633,6 +638,10 @@ void CustomOpenGLWidget::hideGrid ()
 
 void CustomOpenGLWidget::selectRectangle ()
 {
+    // disable view rotation while selecting
+    SetAllowRotation(Standard_False);
+
+    //view->SetImmediateUpdate(Standard_True);
     if (rectSelect) delete rectSelect;
     rectSelect=new RectangleSelector(viewerContext,view,this);
 
