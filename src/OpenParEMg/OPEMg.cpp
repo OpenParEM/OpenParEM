@@ -4243,7 +4243,7 @@ void OpenParEMg::on_actionNew_triggered ()
 
     projData.modified=0;
     projectFileLoaded=true;
-    projectChanged=true;
+    projectChanged=false;
     setMenusI(42);
 }
 

@@ -9762,7 +9762,6 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData,
     // paths
     long unsigned int i=0;
     while (i < pathList.size()) {
-        std::cout << "place 1" << std::endl; std::cout.flush();
         pathList[i]->create_polywire_item(mw,drawingWindow,rootPathItem);
         i++;
     }
@@ -9770,7 +9769,6 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData,
     // ports
     i=0;
     while (i < portList.size()) {
-        std::cout << "place 2" << std::endl; std::cout.flush();
         // create the AIS_Shape and the item, but the shape must be added to the drawing elsewhere
         portList[i]->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootPortItem,nullptr);
         i++;
