@@ -109,16 +109,16 @@ void BaseItem::restoreWidgets ()
         }
     }
 
-    // if (baseItem && baseItem->is_port()) {
-    //     PortItem *portItem=dynamic_cast<PortItem *>(baseItem);
-    //     if (portItem && is_port()) {
-    //         portItem->setSolidColor();
-    //     }
-    // }
+    if (is_port()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(this);
+        if (portItem && portItem->is_port()) {
+            portItem->setSolidColor();
+        }
+    }
 
     if (is_impedanceCalculation()) {
         PortItem *portItem=dynamic_cast<PortItem *>(getParentItem());
-        if (portItem && is_port()) {
+        if (portItem && portItem->is_port()) {
             ShapeData *shapeData=portItem->getShapeData();
             QString impedance_calculation=shapeData->get_impedance_calculation();
             portItem->insertImpedanceCalculationWidget(this,impedance_calculation);
@@ -127,7 +127,7 @@ void BaseItem::restoreWidgets ()
 
     if (is_impedanceDefinition()) {
         PortItem *portItem=dynamic_cast<PortItem *>(getParentItem());
-        if (portItem && is_port()) {
+        if (portItem && portItem->is_port()) {
             ShapeData *shapeData=portItem->getShapeData();
             QString impedance_definition=shapeData->get_impedance_definition();
             portItem->insertImpedanceDefinitionWidget(this,impedance_definition);
@@ -653,10 +653,8 @@ void DrawingItem::demoteChildren ()
 
     long unsigned int i=0;
     while (i < getChildrenSize()) {
-        std::cout << "place 1" << std::endl; std::cout.flush();
         DrawingItem *child=dynamic_cast<DrawingItem *>(getChild(i));
         if (child) {
-            std::cout << "place 2" << std::endl; std::cout.flush();
             int index=child->getParentItem()->indexOfChild(child);
             child->getParentItem()->takeChild(index);
             addChild(child);
@@ -2636,14 +2634,11 @@ void BoundaryItem::setSolidColor ()
 {
     PathItem *pathItem=getPathItem();
     if (pathItem) {
-        std::cout << "BoundaryItem::setSolidColor  pathItem=" << pathItem->text(0).toStdString() << std::endl; std::cout.flush();
         ShapeData *shapeData=getShapeData();
         int boundary_type=shapeData->get_boundary_type();
-        std::cout << "boundary_type=" << boundary_type << std::endl; std::cout.flush();
 
         Handle(AIS_Shape) shape=pathItem->getShape();
         if (!shape.IsNull()) {
-            std::cout <<"   setting shape" << std::endl; std::cout.flush();
             shape->SetTransparency(0);
             shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
             if (boundary_type == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
@@ -2657,7 +2652,7 @@ void BoundaryItem::setSolidColor ()
 
 void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpedance, BaseItem *itemMaterial)
 {
-    std::cout << "BoundaryItem::insertItemWidgets" << std::endl; std::cout.flush();
+    //std::cout << "BoundaryItem::insertItemWidgets" << std::endl; std::cout.flush();
 
     QDoubleValidator doubleValidator;
     doubleValidator.setBottom(0);
@@ -3141,7 +3136,7 @@ void PortItem::setSolidColor ()
     }
 }
 
-void PortItem::insertImpedanceDefinitionWidget (BaseItem *itemImpedanceDefinition, QString impedance_definition)
+void PortItem::insertImpedanceDefinitionWidget (BaseItem *impedanceDefinitionItem, QString impedance_definition)
 {
     CustomComboBox *comboZdef=new CustomComboBox();
     const QSignalBlocker blockerZdef(comboZdef);
@@ -3157,8 +3152,8 @@ void PortItem::insertImpedanceDefinitionWidget (BaseItem *itemImpedanceDefinitio
     else if (impedance_definition.compare("PV") == 0) comboZdef->setCurrentIndex(1);
     else if (impedance_definition.compare("PI") == 0) comboZdef->setCurrentIndex(2);
     else comboZdef->setCurrentIndex(3);
-    mw->ui->drawingItemTree->setItemWidget(itemImpedanceDefinition,0,comboZdef);
-    itemImpedanceDefinition->setSizeHint(0,comboZdef->sizeHint());  // size hint for scaling; do not need to do the other combobox
+    mw->ui->drawingItemTree->setItemWidget(impedanceDefinitionItem,0,comboZdef);
+    impedanceDefinitionItem->setSizeHint(0,comboZdef->sizeHint());  // size hint for scaling; do not need to do the other combobox
 
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
@@ -3169,17 +3164,18 @@ void PortItem::addImpedanceDefinitionItem ()
     ShapeData *shapeData=getShapeData();
     QString impedance_definition=shapeData->get_impedance_definition();
 
-    BaseItem *itemImpedanceDefinition=new BaseItem(mw,this);
-    itemImpedanceDefinition->set_itemType(6);
-    itemImpedanceDefinition->setFlags(itemImpedanceDefinition->flags() & ~Qt::ItemIsSelectable);
-    itemImpedanceDefinition->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
-    addChild(itemImpedanceDefinition);
+    BaseItem *impedanceDefinitionItem=new BaseItem(mw,this);
+    impedanceDefinitionItem->set_itemType(6);
+    impedanceDefinitionItem->setFlags(impedanceDefinitionItem->flags() & ~Qt::ItemIsSelectable);
+    impedanceDefinitionItem->setToolTip(0,"Impedance definition for calculating characteristic impedance.");
+    addChild(impedanceDefinitionItem);
 
-    insertImpedanceDefinitionWidget(itemImpedanceDefinition,impedance_definition);
+    insertImpedanceDefinitionWidget(impedanceDefinitionItem,impedance_definition);
 }
 
-void PortItem::insertImpedanceCalculationWidget (BaseItem *itemImpedanceCalculation, QString impedance_calculation)
+void PortItem::insertImpedanceCalculationWidget (BaseItem *impedanceCalculationItem, QString impedance_calculation)
 {
+    std::cout << "PortItem::insertImpedanceCalculationWidget" << std::endl; std::cout.flush();
     CustomComboBox *comboZcalc=new CustomComboBox();
     const QSignalBlocker blockerZcalc(comboZcalc);
     comboZcalc->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
@@ -3191,7 +3187,7 @@ void PortItem::insertImpedanceCalculationWidget (BaseItem *itemImpedanceCalculat
 
     if (impedance_calculation.compare("line") == 0) comboZcalc->setCurrentIndex(0);
     else if (impedance_calculation.compare("modal") == 0) comboZcalc->setCurrentIndex(1);
-    mw->ui->drawingItemTree->setItemWidget(itemImpedanceCalculation,0,comboZcalc);
+    mw->ui->drawingItemTree->setItemWidget(impedanceCalculationItem,0,comboZcalc);
 
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
@@ -3202,13 +3198,13 @@ void PortItem::addImpedanceCalculationItem ()
     ShapeData *shapeData=getShapeData();
     QString impedance_calculation=shapeData->get_impedance_calculation();
 
-    BaseItem *itemImpedanceCalculation=new BaseItem(mw,this);
-    itemImpedanceCalculation->set_itemType(7);
-    itemImpedanceCalculation->setFlags(itemImpedanceCalculation->flags() & ~Qt::ItemIsSelectable);
-    itemImpedanceCalculation->setToolTip(0,"Impedance calculation using modal or line integration paths.");
-    addChild(itemImpedanceCalculation);
+    BaseItem *impedanceCalculationItem=new BaseItem(mw,this);
+    impedanceCalculationItem->set_itemType(7);
+    impedanceCalculationItem->setFlags(impedanceCalculationItem->flags() & ~Qt::ItemIsSelectable);
+    impedanceCalculationItem->setToolTip(0,"Impedance calculation using modal or line integration paths.");
+    addChild(impedanceCalculationItem);
 
-    insertImpedanceCalculationWidget(itemImpedanceCalculation,impedance_calculation);
+    insertImpedanceCalculationWidget(impedanceCalculationItem,impedance_calculation);
 }
 
 bool PortItem::isValidShow ()
