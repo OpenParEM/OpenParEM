@@ -4050,7 +4050,7 @@ void VIItem::addScaleItem ()
     if (hasScale()) return;
 
     if (scaleLabelItem) {
-        addChild(scaleLabelItem);
+        insertChild(0,scaleLabelItem);
     } else {
 
         // label
@@ -4060,7 +4060,7 @@ void VIItem::addScaleItem ()
         // value
 
         ScaleValueItem *scaleValueItem=new ScaleValueItem(mw,scaleLabelItem);
-        scaleLabelItem->addChild(scaleValueItem);
+        scaleLabelItem->insertChild(0,scaleValueItem);
 
         ShapeData *shapeData=scaleValueItem->getShapeData();
         scaleValueItem->insertScaleValueWidget(shapeData->get_scale());
