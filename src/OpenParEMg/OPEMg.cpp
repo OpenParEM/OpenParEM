@@ -220,7 +220,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     absolutePath=QDir::currentPath();
     materialDatabase=new MaterialDatabase();
-    boundaryDatabase=new BoundaryDatabase();
+    //boundaryDatabase=new BoundaryDatabase();
     resetLockouts();
 
     projectFile="";
@@ -577,7 +577,7 @@ void OpenParEMg::convertPathToFace (BaseItem *baseItem)
 int OpenParEMg::check_changed ()
 {
     int retVal=0;
-    if (projectChanged || drawingChanged || meshChanged || boundaryDatabase->is_modified()) {
+    if (projectChanged || drawingChanged || meshChanged) {
         QMessageBox msgBox(this);
         msgBox.setText("The project has been modified.");
         msgBox.setInformativeText("Do you want to save your changes?");
@@ -698,7 +698,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
-    ui->drawingWindow->audit();
+    //ui->drawingWindow->audit();
 
     // disable all menus on command
     if (disableMenus) {
@@ -1157,7 +1157,6 @@ void OpenParEMg::uniqueifyPathName (QString& pathName)
         else {pathName=testName; break;}
     }
 }
-
 
 void OpenParEMg::renamePathItems ()
 {
@@ -1621,7 +1620,7 @@ void OpenParEMg::insertModeItems ()
         if (baseItem && baseItem->is_port()) {
             PortItem *portItem=dynamic_cast<PortItem *>(baseItem);
             if (portItem && portItem->is_port()) {
-                ModeItem *newModeItem=new ModeItem(this,portItem);
+                ModeItem *newModeItem=new ModeItem(this,portItem,true);
                 portItem->addChild(newModeItem);
                 itemChangesStack.add(portItem);
             }
@@ -1647,6 +1646,30 @@ void OpenParEMg::unselectPortItems()
 
     ui->drawingWindow->updateViewer();
     setMenusI(23);
+}
+
+bool OpenParEMg::portNameExists (QString name)
+{
+    int i=0;
+    while (i < port->childCount()) {
+        PathItem *pathItem=dynamic_cast<PathItem *>(port->child(i));
+        if (pathItem) {
+            if (pathItem->text(0).compare(name) == 0) return true;
+        }
+        i++;
+    }
+    return false;
+}
+
+void OpenParEMg::uniqueifyPortName (QString& pathName)
+{
+    int i=1;
+    while (portNameExists(pathName)) {
+        QString testName=pathName;
+        testName.append("_").append(std::to_string(i));
+        if (portNameExists(testName)) {i++;}
+        else {pathName=testName; break;}
+    }
 }
 
 void OpenParEMg::renamePortItems ()
@@ -1773,6 +1796,27 @@ bool OpenParEMg::isValidCreatePath ()
     return false;
 }
 
+PortItem* OpenParEMg::get_matchingPortItem (Path *testPath)
+{
+    if (!testPath) return nullptr;
+
+    int i=0;
+    while (i < port->childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
+        if (portItem && portItem->is_port()) {
+            PathItem *pathItem=portItem->getPathItem();
+            if (pathItem) {
+                Path *portPath=pathItem->getPath();
+                if (portPath) {
+                    if (portPath->is_path_inside(testPath)) return portItem;
+                }
+            }
+        }
+        i++;
+    }
+    return nullptr;
+}
+
 void OpenParEMg::createPath ()
 {
     //std::cout << "OpenParEMg::createPath  NbSelected=" << ui->drawingWindow->NbSelected() << std::endl; std::cout.flush();
@@ -1808,8 +1852,8 @@ void OpenParEMg::createPath ()
             if (baseItem) insertToMapActivateItem(baseItem);
 
             // see if the path is within an existing port
-            Port *port=boundaryDatabase->get_matchingPort(newPath);
-            if (port) newPath->set_portItem(port->get_PortItem());
+            PortItem *portItem=get_matchingPortItem(newPath);
+            if (portItem) newPath->set_portItem(portItem);
         }
         i++;
     }
@@ -3266,6 +3310,23 @@ void OpenParEMg::createPortFromPath ()
     createPortFromPathN(true);
 }
 
+
+// return the largest Sport number found
+int OpenParEMg::get_SportCount ()
+{
+    int SportCount=0;
+    int i=0;
+    while (i < port->childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
+        if (portItem) {
+            int testSportCount=portItem->get_SportCount();
+            if (testSportCount > SportCount) SportCount=testSportCount;
+        }
+        i++;
+    }
+    return SportCount;
+}
+
 void OpenParEMg::createPortFromPathN (bool startNew)
 {
     //std::cout << "OpenParEMg::createPortFromPath" << std::endl; std::cout.flush();
@@ -3306,25 +3367,23 @@ void OpenParEMg::createPortFromPathN (bool startNew)
             selectedList[i]->showArrows(false);
 
             // next available s-port number
-            int sport=boundaryDatabase->get_SportCount()+1;
+            int sport=get_SportCount()+1;
 
             // default port name
 
-            std::string portName="port";
+            QString portName="port";
             portName.append(std::to_string(sport));
-
-            int j=1;
-            while (boundaryDatabase->portNameExists(portName)) {
-                std::string testName=portName;
-                testName.append("_").append(std::to_string(j));
-                if (boundaryDatabase->portNameExists(testName)) {j++;}
-                else {portName=testName; break;}
-            }
+            uniqueifyPortName(portName);
 
             QString impedance_calculation="invalid";
             QString impedance_definition="line";
             PortItem *newPortItem=new PortItem(this,selectedList[i],impedance_calculation,impedance_definition);
             if (newPortItem) {
+
+                // add one default mode since at least one mode is required
+                ModeItem *newModeItem=new ModeItem(this,newPortItem,true);
+                newPortItem->addChild(newModeItem);
+
                 convertedItems.push_back(newPortItem);
                 itemChangesStack.add(newPortItem);
 
@@ -3373,11 +3432,11 @@ void OpenParEMg::createPathFromFaceN (bool startNew)
                 uniqueifyPathName(pathName);
 
                 // path name placed in a keywordPair
-                keywordPair *kwPathName=new keywordPair();
-                kwPathName->set_keyword("path");
-                kwPathName->set_value(pathName.toStdString());
-                kwPathName->set_lineNumber(0);
-                kwPathName->set_loaded(true);
+                // keywordPair *kwPathName=new keywordPair();
+                // kwPathName->set_keyword("path");
+                // kwPathName->set_value(pathName.toStdString());
+                // kwPathName->set_lineNumber(0);
+                // kwPathName->set_loaded(true);
 
                 // path
                 Path *newPath=new Path(0,0);
@@ -3474,6 +3533,9 @@ void OpenParEMg::createBoundaryFromPathN (bool startNew)
 
     i=0;
     while (i < selectedList.size()) {
+
+        // remove the arrows from the path
+        selectedList[i]->showArrows(false);
 
         // default to radiation
         double default_wave_impedance=sqrt(M_PI*4e-7/8.8541878176e-12);
@@ -3849,84 +3911,6 @@ void OpenParEMg::crossReferencePaths ()
 
 }
 
-void OpenParEMg::resetPathArrowheads ()
-{
-    //std::cout << "OpenParEMg::resetPathArrowheads" << std::endl; std::cout.flush();
-
-    int i=0;
-    while (i < port->childCount()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
-        if (portItem && portItem->is_port()) {
-            PathItem *pathItem=portItem->getPathItem();
-            if (pathItem) {
-                pathItem->showArrows(false);
-            }
-        }
-        i++;
-    }
-
-    i=0;
-    while (i < boundary->childCount()) {
-        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary->child(i));
-        if (boundaryItem && boundaryItem->is_boundary()) {
-            PathItem *pathItem=boundaryItem->getPathItem();
-            if (pathItem) {
-                pathItem->showArrows(false);
-            }
-        }
-        i++;
-    }
-}
-
-// void OpenParEMg::resetPathColors ()
-// {
-//     std::cout << "OpenParEMg::resetPathColors" << std::endl; std::cout.flush();
-
-//     int i=0;
-//     while (i < port.childCount()) {
-//         PortItem *portItem=dynamic_cast<PortItem *>(port.child(i));
-//         if (portItem && portItem->is_port()) {
-//             PathItem *pathItem=portItem->getPathItem();
-//             if (pathItem) {
-//                 Handle(AIS_Shape) shape=pathItem->getShape();
-//                 if (!shape.IsNull()) {
-//                     std::cout << "         shape type=" << TopAbs::ShapeTypeToString(shape->Shape().ShapeType()) << std::endl; std::cout.flush();
-//                     std::cout << "         setting shape" << std::endl; std::cout.flush();
-//                     shape->SetColor(Quantity_NOC_MINTCREAM);
-//                     shape->SetTransparency(0.25);
-//                     shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-//                 }
-//             }
-//         }
-//         i++;
-//     }
-
-//     i=0;
-//     while (i < boundary.childCount()) {
-//         BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary.child(i));
-//         if (boundaryItem && boundaryItem->is_boundary()) {
-//             Boundary *boundary=boundaryItem->getBoundary();
-//             if (boundary) {
-//                 PathItem *pathItem=boundaryItem->getPathItem();
-//                 if (pathItem) {
-//                     Handle(AIS_Shape) shape=pathItem->getShape();
-//                     if (!shape.IsNull()) {
-//                         shape->SetTransparency(0);
-//                         shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
-//                         if (boundary->is_perfect_electric_conductor()) shape->SetColor(Quantity_NOC_GREENYELLOW);
-//                         if (boundary->is_perfect_magnetic_conductor()) shape->SetColor(Quantity_NOC_CYAN);
-//                         if (boundary->is_surface_impedance()) shape->SetColor(Quantity_NOC_GOLDENROD);
-//                         if (boundary->is_radiation()) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
-//                     }
-//                 }
-//             }
-//         }
-//         i++;
-//     }
-
-//     ui->drawingWindow->updateViewer();
-// }
-
 void OpenParEMg::dumpDrawingEntities ()
 {
     long unsigned int i=0;
@@ -3961,6 +3945,24 @@ void OpenParEMg::dumpDrawingEntities ()
     }
 }
 
+void OpenParEMg::clonePathData ()
+{
+    int i=0;
+    while (i < path->childCount()) {
+        PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
+        if (pathItem && pathItem->is_path()) {
+            Path *oldPath=pathItem->getPath();
+            if (oldPath) {
+                Path *newPath=oldPath->clone();
+                if (newPath) {
+                    pathItem->setPath(newPath);
+                }
+            }
+        }
+        i++;
+    }
+}
+
 void OpenParEMg::on_actionOpen_triggered ()
 {
     QString testProjectFile=QFileDialog::getOpenFileName(this,tr("Open Project"), "", tr("Project Files (*.proj);;All Files (*)"),
@@ -3982,6 +3984,8 @@ void OpenParEMg::on_actionOpen_triggered ()
 
     QString currentPath;
     currentPath=QDir::currentPath();
+
+    BoundaryDatabase boundaryDatabase;
 
     // load the file
     if (QFile::exists(projectFile)) {
@@ -4015,21 +4019,17 @@ void OpenParEMg::on_actionOpen_triggered ()
 
         // load boundaries, if any, and draw
         if (strcmp(projData.port_definition_file,"") != 0) {
-            if (boundaryDatabase->load(projData.port_definition_file,projData.solution_check_closed_loop)) {
+            if (boundaryDatabase.load(projData.port_definition_file,projData.solution_check_closed_loop)) {
                 QMessageBox mb;
-                mb.critical(nullptr, "Error", "Paths, ports, and/or boundaries are not complete and require additional setup.");
+                mb.critical(nullptr, "Error", "Paths, ports, and/or boundaries are not complete and require correction.");
                 mb.setFixedSize(500, 200);
             }
 
-            // continue despite the errors
+            // continue despite any errors
 
-            boundaryDatabase->set_unmodified();
-            //boundaryDatabase->assignPathNormals();  // to correctly orient arrow heads
-
-            // ToDo: rename draw since this does not actually draw
-            boundaryDatabase->draw(relay,&projData,
-                                   this,ui->drawingWindow,ui->drawingItemTree,
-                                   path,port,boundary,materialDatabase);
+            boundaryDatabase.draw(relay,&projData,
+                                  this,ui->drawingWindow,ui->drawingItemTree,
+                                  path,port,boundary,materialDatabase);
 
             // add paths to the selection map and activate
             int i=0;
@@ -4044,12 +4044,6 @@ void OpenParEMg::on_actionOpen_triggered ()
 
             // cross-reference paths to port and boundary outlines
             //crossReferencePaths();
-
-            // hide arrows for ports and boundaries
-            resetPathArrowheads();
-
-            // set solid colors for ports and boundaries
-            //resetPathColors();
         }
 
         // load mesh, if any, and draw
@@ -4086,11 +4080,15 @@ void OpenParEMg::on_actionOpen_triggered ()
     }
 
     // ensure the ports and boundaries are only defined by single paths.  This is a restriction for a safer GUI.
-    if (boundaryDatabase->has_complex_path()) {
+    if (boundaryDatabase.has_complex_path()) {
         QMessageBox mb;
         mb.critical(nullptr, "Warning", "One or more ports or boundaries have a definition using more than one path.");
         mb.setFixedSize(500, 200);
     }
+
+    // boundaryDatabase is local and will be deleted on exit from this function.
+    // The Path data continues to be used, so the Path data must be made permanent.
+    clonePathData();
 
     on_actionShape_triggered();  // ToDo: see if this is still required
     clearTreeSelection();
@@ -4119,7 +4117,6 @@ void OpenParEMg::printLockouts ()
               << "   disableMenus=" << disableMenus << std::endl
               << "   projectFileLoaded=" << projectFileLoaded << std::endl
               << "   projectChanged=" << projectChanged << std::endl
-              << "   boundaryDatabaseChanged=" << boundaryDatabase->is_modified() << std::endl
               << "   meshChanged=" << meshChanged << std::endl
               << "   drawingChanged=" << drawingChanged << std::endl
               << "   drawingPlaneShown=" << drawingPlaneShown << std::endl
@@ -4192,10 +4189,6 @@ void OpenParEMg::resetProject ()
     // reset material database
     if (materialDatabase) delete materialDatabase;
     materialDatabase=new MaterialDatabase();
-
-    // reset boundary database
-    if (boundaryDatabase) delete boundaryDatabase;
-    boundaryDatabase=new BoundaryDatabase();
 
     // reset selection tree
     //drawing.reset();  // reset in resetDrawing() above
@@ -4337,7 +4330,7 @@ void OpenParEMg::saveProject ()
     // update included file names
 
     // port_definition_file
-    if (boundaryDatabase->is_modified() && strcmp(projData.port_definition_file,"") == 0) {
+    if (strcmp(projData.port_definition_file,"") == 0) {
         QString portDefinitionFile=projectName;
         portDefinitionFile.append("_ports.txt");
         cstrFromQString (&(projData.port_definition_file),portDefinitionFile);
@@ -4370,7 +4363,7 @@ void OpenParEMg::saveProject ()
     }
 
     // ports and boundaries
-    if (boundaryDatabase->is_modified()) {
+    {
         std::cout << "Saved boundary database file" << std::endl; std::cout.flush();
         if (saveBoundaryDatabase()) {
             QString message="Error in saving the boundary database.";
@@ -4836,7 +4829,41 @@ bool OpenParEMg::saveBoundaryDatabase ()
 
     std::ofstream outputFile(filename.toStdString());
     if (outputFile.is_open()) {
-        boundaryDatabase->save(&outputFile);
+
+        // header
+
+        outputFile << "#OpenParEMports 1.0" << std::endl;
+        outputFile << std::endl;
+
+        outputFile << "File" << std::endl;
+        outputFile << "   name=generated_by_OpenParEMg" << std::endl;
+        outputFile << "EndFile" << std::endl;
+        outputFile << std::endl;
+
+        // paths
+        int i=0;
+        while (i < path->childCount()) {
+            PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
+            if (pathItem) pathItem->save(&outputFile);
+            i++;
+        }
+
+        // boundaries
+        i=0;
+        while (i < boundary->childCount()) {
+            BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary->child(i));
+            if (boundaryItem) boundaryItem->save(&outputFile);
+            i++;
+        }
+
+        // ports
+        i=0;
+        while (i < port->childCount()) {
+            PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
+            if (portItem) portItem->save(&outputFile);
+            i++;
+        }
+
         outputFile.close();
         return false;
     }

@@ -1547,6 +1547,8 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
                      RootPathItem *rootPathItem, RootBoundaryItem *rootBoundaryItem, MaterialDatabase *materialDatabase,
                      BoundaryItem *boundaryItem)
 {
+    //std::cout << "Boundary::draw" << std::endl; std::cout.flush();
+
     // name
 
     QString textName=QString::fromStdString(get_name());
@@ -1581,7 +1583,10 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     else if (is_radiation()) boundary_type=3;
 
     if (pathItem) {
+        pathItem->showArrows(false);
         boundaryItem=new BoundaryItem(mw,pathItem,boundary_type,get_wave_impedance(),QString::fromStdString(get_material()));
+        rootBoundaryItem->addChild(boundaryItem);
+
         drawingWindow->showItem(boundaryItem);
     }
 }
@@ -2569,7 +2574,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
                             OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
                             RootPathItem *rootPathItem, BaseItem *itemVI)
 {
-    std::cout << "IntegrationPath::draw" << std::endl;  std::cout.flush();
+    //std::cout << "IntegrationPath::draw" << std::endl;  std::cout.flush();
 
     // scale
 
@@ -2579,9 +2584,6 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     itemScale->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
     itemScale->setToolTip(0,"Scale factor for the integration path.");
     itemVI->addChild(itemScale);
-
-    //QString enabledBackground="background: rgb(255,255,255);";
-    //QString disabledBackground="background: rgb(240,240,240);";
 
     BaseItem *itemScaleValue=new BaseItem(mw,itemScale);
     itemScaleValue->set_itemType(13);
@@ -2594,8 +2596,6 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     scaleEdit->set_itemTracker(drawingWindow->get_itemTracker());
     scaleEdit->set_baseItem(get_item());
     scaleEdit->set_boundaryDatabase(boundaryDatabase);
-    //scaleEdit->setAlignment(Qt::AlignLeft);
-    //scaleEdit->setStyleSheet(enabledBackground);
     scaleEdit->setValidator(&doubleValidator);
     drawingItemTree->setItemWidget(itemScaleValue,0,scaleEdit);
 
@@ -2609,8 +2609,31 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
         if (reverseList[i]) name="-";
         name.append(pathNameList[i]->get_value().c_str());
 
+        PathItem *pathItem=nullptr;
+
+        // attach path
+        std::vector<Path *> *pathList=boundaryDatabase->get_pathList_ptr();
+        Path *path=(*pathList)[pathIndexList[i]];
+
+        // attach item
+        int j=0;
+        while (j < rootPathItem->childCount()) {
+            PathItem *child=dynamic_cast<PathItem *>(rootPathItem->child(j));
+            if (child->getPath() == path) {
+                pathItem=child;
+                break;
+            }
+            j++;
+        }
+
+        if (!pathItem) {
+            path->create_polywire_item(mw,drawingWindow,rootPathItem);
+            pathItem=path->get_item();
+        }
+
+
         // tree item
-        PathItem *itemSegment=new PathItem(mw,itemVI);
+        IntegrationPathItem *itemSegment=new IntegrationPathItem(mw,itemVI,pathItem);
         ShapeData *newShapeData=itemSegment->getShapeData()->copyCreate();
         newShapeData->setCreate();
         itemSegment->addShapeData(newShapeData);
@@ -2621,32 +2644,8 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
         itemSegment->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
         itemSegment->setToolTip(0,"Path segment for integration.");
 
-        // attach path
-        std::vector<Path *> *pathList=boundaryDatabase->get_pathList_ptr();
-        Path *path=(*pathList)[pathIndexList[i]];
-        itemSegment->setPath(path);
+        pathItem->push_linkedItem(itemSegment);
 
-        // attach item
-        bool found=false;
-        int j=0;
-        while (j < rootPathItem->childCount()) {
-            PathItem *child=dynamic_cast<PathItem *>(rootPathItem->child(j));
-            if (child->getPath() == path) {
-                found=true;
-                itemSegment->push_linkedItem(child);
-                child->push_linkedItem(itemSegment);
-            }
-            j++;
-        }
-
-        if (!found) {
-            path->create_polywire_item(mw,drawingWindow,rootPathItem);
-            PathItem *newPathItem=path->get_item();
-            newPathItem->push_linkedItem(itemSegment);
-            itemSegment->push_linkedItem(newPathItem);
-        }
-
-        std::cout << "place 2" << std::endl; std::cout.flush();
         itemVI->addChild(itemSegment);
         drawingWindow->showItem(itemSegment);
 
@@ -4293,30 +4292,14 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
         netname.append(QString::number(get_Sport()));
     }
 
-
-    ModeItem *modeItem=new ModeItem(mw,portItem);
+    ModeItem *modeItem=new ModeItem(mw,portItem,false);
     portItem->addChild(modeItem);
 
     // S port
     SportItem *sportItem=new SportItem(mw,modeItem);
     modeItem->addChild(sportItem);
 
-    // Sport number
-
-    SportNumberItem *sportNumberItem=new SportNumberItem(mw,sportItem);
-    sportItem->addChild(sportNumberItem);
-
-    CustomSpinBox *sportNumber=new CustomSpinBox();
-    const QSignalBlocker blockerWaveImpedance(sportNumber);
-    sportNumber->set_itemTracker(drawingWindow->get_itemTracker());
-    sportNumber->set_sportNumberItem(sportNumberItem);
-    sportNumber->setMinimum(1);
-    sportNumber->setValue(get_Sport());
-    drawingItemTree->setItemWidget(sportNumberItem,0,sportNumber);
-
-    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
-    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,relay,&Relay::setMenus);
-
+    // Sport number - done as part of SportItem
 
     // voltage integration paths
 
@@ -7377,7 +7360,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
                  QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, RootPortItem *rootPortItem,
                  PortItem *portItem)
 {
-    std::cout << "Port::draw" << std::endl;  std::cout.flush();
+    //std::cout << "Port::draw" << std::endl;  std::cout.flush();
 
     // link paths -  assumes there is only one path, which is checked when loading the database
 
@@ -7401,94 +7384,27 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
         }
         j++;
     }
+    if (!pathItem) return;
+
+    pathItem->showArrows(false);
 
     QString impedance_calculation=QString::fromStdString(get_impedance_calculation());
     QString impedance_definition=QString::fromStdString(get_impedance_definition());
 
-    if (pathItem) {
-        portItem=new PortItem(mw,pathItem,impedance_calculation,impedance_definition);
-        drawingWindow->showItem(portItem);
+    // PortItem
+    portItem=new PortItem(mw,pathItem,impedance_calculation,impedance_definition);
+    portItem->setText(0,QString::fromStdString(get_name()));
+    portItem->setPathItem(pathItem);
+    rootPortItem->addChild(portItem);
+    drawingWindow->showItem(portItem);
+
+    // modes
+    long unsigned int i=0;
+    while (i < modeList.size()) {
+        modeList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,portItem);
+        i++;
     }
 }
-
-// void Port::set_comboZdef ()
-// {
-//     if (!comboZdef) return;
-
-//     bool has_voltage=true;
-//     bool has_current=true;
-
-//     long unsigned int i=0;
-//     while (i < modeList.size()) {
-//         if (!modeList[i]->has_voltage()) has_voltage=false;
-//         if (!modeList[i]->has_current()) has_current=false;
-//         i++;
-//     }
-
-//     QStandardItemModel *model = qobject_cast<QStandardItemModel *>(comboZdef->model());
-//     QStandardItem *item;
-
-//     int currentIndex=comboZdef->currentIndex();
-
-//     if (model) {
-
-//         // invalid - never selectable but might get assigned
-//         item=model->item(3);
-//         if (item) item->setEnabled(false);
-
-//         // VI
-//         item=model->item(0);
-//         if (item) {
-//             item->setEnabled(false);
-//             if (has_voltage) {
-//                 if (has_current) {
-//                     item->setEnabled(true);
-//                     if (currentIndex == 3) {comboZdef->setCurrentIndex(0); currentIndex=0;}
-//                 } else {
-//                     if (currentIndex == 0) comboZdef->setCurrentIndex(1);  // PV
-//                 }
-//             } else {
-//                 if (has_current) {
-//                     if (currentIndex == 0) comboZdef->setCurrentIndex(2);  // PI
-//                 } else {
-//                     if (currentIndex == 0) comboZdef->setCurrentIndex(3);  // invalid
-//                 }
-//             }
-//         }
-
-//         // PV
-//         item=model->item(1);
-//         if (item) {
-//             item->setEnabled(false);
-//             if (has_voltage) {
-//                 item->setEnabled(true);
-//                 if (currentIndex == 3) {comboZdef->setCurrentIndex(1); currentIndex=1;}
-//             } else {
-//                 if (has_current) {
-//                     if (currentIndex == 1) comboZdef->setCurrentIndex(2);  // PI
-//                 } else {
-//                     if (currentIndex == 1) comboZdef->setCurrentIndex(3);  // invalid
-//                 }
-//             }
-//         }
-
-//         // PI
-//         item=model->item(2);
-//         if (item) {
-//             item->setEnabled(false);
-//             if (has_current) {
-//                 item->setEnabled(true);
-//                 if (currentIndex == 3) {comboZdef->setCurrentIndex(2); currentIndex=2;}
-//             } else {
-//                 if (has_voltage) {
-//                     if (currentIndex == 2) comboZdef->setCurrentIndex(1);  // PV
-//                 } else {
-//                     if (currentIndex == 2) comboZdef->setCurrentIndex(3);  // invalid
-//                 }
-//             }
-//         }
-//     }
-// }
 
 #endif
 
@@ -9841,11 +9757,12 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData,
                              RootPathItem *rootPathItem, RootPortItem *rootPortItem, RootBoundaryItem *rootBoundaryItem,
                              MaterialDatabase *materialDatabase)
 {
-    //emit relay->triggered();
+    //std::cout << "BoundaryDatabase::draw" << std::endl; std::cout.flush();
 
     // paths
     long unsigned int i=0;
     while (i < pathList.size()) {
+        std::cout << "place 1" << std::endl; std::cout.flush();
         pathList[i]->create_polywire_item(mw,drawingWindow,rootPathItem);
         i++;
     }
@@ -9853,6 +9770,7 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData,
     // ports
     i=0;
     while (i < portList.size()) {
+        std::cout << "place 2" << std::endl; std::cout.flush();
         // create the AIS_Shape and the item, but the shape must be added to the drawing elsewhere
         portList[i]->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootPortItem,nullptr);
         i++;
@@ -9861,6 +9779,7 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData,
     // boundaries
     i=0;
     while (i < boundaryList.size()) {
+        std::cout << "place 3" << std::endl; std::cout.flush();
         boundaryList[i]->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootBoundaryItem,materialDatabase,nullptr);
         i++;
     }

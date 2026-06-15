@@ -719,6 +719,8 @@ public:
 
     }
 
+    virtual void save (std::ofstream *);
+
 private slots:
 
 protected:
@@ -756,6 +758,7 @@ public:
 
     void setVIItem (VIItem *viItem_) {viItem=viItem_;}
     VIItem* getVIItem () {return viItem;}
+    void save (std::ofstream *) override;
 
 private:
     VIItem *viItem;
@@ -775,6 +778,8 @@ public:
 
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
+
+    void save (std::ofstream *) override;
 
 private:
     ScaleLabelItem *scaleLabelItem;
@@ -977,6 +982,11 @@ class PathItem : public DrawingItem
 public:
     PathItem (OpenParEMg *, BaseItem *);
 
+    ~PathItem ()
+    {
+        if (path) delete path;
+    }
+
     long unsigned int linkedItems_size () {return linkedItems.size();}
     void push_linkedItem (BaseItem *linkedItem) {linkedItems.push_back(linkedItem);}
     BaseItem* get_linkedItem (long unsigned int i) {return linkedItems[i];}
@@ -989,6 +999,8 @@ public:
             i++;
         }
     }
+
+    void clearLinkedItems () {linkedItems.clear();}
 
     void setHasArrows (bool hasArrows_)  {hasArrows=hasArrows_;}
     bool getHasArrows () {return hasArrows;}
@@ -1010,6 +1022,7 @@ public:
     bool hasRedo () override {return dataStack.hasRedo();}
     void reverse ();
     void showArrows (bool);
+    void save (std::ofstream *) override;
 
 private:
     Path *path;                            // related path from the boundary database
@@ -1039,6 +1052,9 @@ public:
 
     void del () override;
     void flipSign ();
+
+    void save (std::ofstream *) override;
+    void saveN (std::ofstream *);
 private:
     PathItem *pathItem;                  // base path for this integration path
 };
@@ -1088,6 +1104,8 @@ public:
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
 
+    void save (std::ofstream *) override;
+
 private:
     PathItem *pathItem;   // PathItem associated with this boundary
 };
@@ -1109,7 +1127,6 @@ public:
     void show () override;
     void hide () override;
     void showMenu (QMenu *) override;
-
 
 private:
 
@@ -1141,6 +1158,9 @@ public:
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
 
+    int get_SportCount ();
+    void save (std::ofstream *) override;
+
 private:
     PathItem *pathItem;   // PathItem associated with this port
 };
@@ -1151,7 +1171,7 @@ class ModeItem : public BaseItem
 
 public:
     ModeItem () {}
-    ModeItem (OpenParEMg *, PortItem *);
+    ModeItem (OpenParEMg *, PortItem *, bool);
 
     // void startItemChange () override;
     // void addItemChange () override;
@@ -1169,6 +1189,10 @@ public:
     void showMenu (QMenu *) override;
     void setPortItem (PortItem *portItem_) {portItem=portItem_;}
     PortItem* getPortItem () {return portItem;}
+
+    int get_SportCount ();
+
+    void save (std::ofstream *) override;
 
 private:
     PortItem *portItem;   // PortItem associated with this port
@@ -1192,6 +1216,8 @@ public:
     void setPortItem (ModeItem *modeItem_) {modeItem=modeItem_;}
     ModeItem* getModeItem () {return modeItem;}
 
+    int get_SportCount ();
+
 private:
     ModeItem *modeItem;
 };
@@ -1214,6 +1240,8 @@ public:
     void showMenu (QMenu *) override;
     void setSportItem (SportItem *sportItem_) {sportItem=sportItem_;}
     SportItem* getSportItem () {return sportItem;}
+
+    int get_SportCount ();
 
 private:
     SportItem *sportItem;
@@ -1243,10 +1271,11 @@ public:
     PathItem* createIntegrationPathItemFromDrawing (DrawingItem *, bool);
     void convertItemToPath (DrawingItem *, bool);
 
+    void save (std::ofstream *) override;
+
 private:
     ModeItem *modeItem;
 };
-
 
 
 class RootMeshItem : public BaseItem

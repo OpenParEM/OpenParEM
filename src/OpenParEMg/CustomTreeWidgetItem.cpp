@@ -111,12 +111,12 @@ void BaseItem::restoreWidgets (BaseItem *baseItem)
         }
     }
 
-    if (baseItem && baseItem->is_port()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(baseItem);
-        if (portItem && is_port()) {
-            portItem->setSolidColor();
-        }
-    }
+    // if (baseItem && baseItem->is_port()) {
+    //     PortItem *portItem=dynamic_cast<PortItem *>(baseItem);
+    //     if (portItem && is_port()) {
+    //         portItem->setSolidColor();
+    //     }
+    // }
 
     if (baseItem && baseItem->is_impedanceCalculation()) {
         PortItem *portItem=dynamic_cast<PortItem *>(baseItem->getParentItem());
@@ -151,23 +151,6 @@ void BaseItem::restoreWidgets (BaseItem *baseItem)
             ShapeData *shapeData=baseItem->getShapeData();
             double scale=shapeData->get_scale();
             scaleValueItem->insertScaleValueWidget(scale);
-
-            // // make sure the scale is on top of the paths
-            // std::cout << "place 1" << std::endl; std::cout.flush();
-            // ScaleLabelItem *scaleLabelItem=scaleValueItem->getScaleLabelItem();
-            // if (scaleLabelItem && scaleLabelItem->is_scaleLabel()) {
-            //     std::cout << "place 2" << std::endl; std::cout.flush();
-            //     VIItem *viItem=scaleLabelItem->getVIItem();
-            //     if (viItem) {
-            //         std::cout << "place 3" << std::endl; std::cout.flush();
-            //         if (viItem->is_voltage() || viItem->is_current()) {
-            //             std::cout << "place 4" << std::endl; std::cout.flush();
-            //             int index=viItem->indexOfChild(scaleValueItem);
-            //             viItem->takeChild(index);
-            //             viItem->insertChild(0,scaleValueItem);
-            //         }
-            //     }
-            // }
         }
     }
 
@@ -398,6 +381,46 @@ void BaseItem::redo ()
     }
 }
 
+void BaseItem::save (std::ofstream *out)
+{
+    if (is_impedanceDefinition()) {
+        CustomComboBox *comboZdef=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
+        if (comboZdef) {
+            *out << "   impedance_definition=" << comboZdef->currentText().toStdString() << std::endl;
+        }
+    } else if (is_impedanceCalculation()) {
+        CustomComboBox *comboZcalc=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
+        if (comboZcalc) {
+            *out << "   impedance_calculation=" << comboZcalc->currentText().toStdString() << std::endl;
+        }
+    } else if (is_boundaryType()) {
+        CustomComboBox *comboType=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
+        if (comboType) {
+            std::string boundaryType;
+            if (comboType->currentText().compare("PEC") == 0) boundaryType="perfect_electric_conductor";
+            else if (comboType->currentText().compare("PMC") == 0) boundaryType="perfect_magnetic_conductor";
+            else if (comboType->currentText().compare("Zs") == 0) boundaryType="surface_impedance";
+            else if (comboType->currentText().compare("Radiation") == 0) boundaryType="radiation";
+            else boundaryType="invalid";
+            *out << "   type=" << boundaryType << std::endl;
+        }
+    } else if (is_boundaryMaterial()) {
+        CustomComboBox *itemMaterial=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
+        if (itemMaterial) {
+            if (itemMaterial->count() > 0) {
+                if (itemMaterial->currentText().compare("none") != 0) {
+                    *out << "   material=" << itemMaterial->currentText().toStdString() << std::endl;
+                }
+            }
+        }
+    } else if (is_boundaryWaveImpedance()) {
+        CustomLineEdit *textWaveImpedance=dynamic_cast<CustomLineEdit *>(mw->ui->drawingItemTree->itemWidget(this,0));
+        if (textWaveImpedance) {
+            *out << "   wave_impedance=" << textWaveImpedance->text().toStdString() << std::endl;
+        }
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // ScaleLabelItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -453,6 +476,14 @@ void ScaleValueItem::insertScaleValueWidget (double scale)
     mw->ui->drawingItemTree->setItemWidget(this,0,scaleEdit);
 
     QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,&textValueChanged);
+}
+
+void ScaleValueItem::save (std::ofstream *out)
+{
+    CustomLineEdit *scaleValue=dynamic_cast<CustomLineEdit *>(mw->ui->drawingItemTree->itemWidget(this,0));
+    if (scaleValue) {
+        std::cout << "         scale=" << scaleValue->text().toStdString() << std::endl;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2255,6 +2286,11 @@ void PathItem::reverse ()
     }
 }
 
+void PathItem::save (std::ofstream *out)
+{
+    if (path) path->save(out);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // IntegrationPathItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -2461,6 +2497,18 @@ void IntegrationPathItem::flipSign ()
     setText(0,newName);
 }
 
+void IntegrationPathItem::save (std::ofstream *out)
+{
+    *out << "         path=" << text(0).toStdString() << std::endl;
+}
+
+void IntegrationPathItem::saveN (std::ofstream *out)
+{
+    QChar direction=text(0).front();
+    QString name=text(0).slice(1);
+    *out << "         path" << direction.toLatin1() << "=" << name.toStdString() << std::endl;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // RootBoundaryItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -2568,8 +2616,6 @@ BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_t
     newShapeData->set_name(text(0));
     setForeground(0,Qt::black);
 
-    setSolidColor();
-
     // type
 
     BaseItem *itemType=new BaseItem(mw,this);
@@ -2594,17 +2640,23 @@ BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_t
 
     // insert the widgets
     insertItemWidgets(itemType,itemWaveImpedance,itemMaterial);
+
+    // cross link
+    if (pathItem) pathItem->push_linkedItem(this);
 }
 
 void BoundaryItem::setSolidColor ()
 {
     PathItem *pathItem=getPathItem();
     if (pathItem) {
+        std::cout << "BoundaryItem::setSolidColor  pathItem=" << pathItem->text(0).toStdString() << std::endl; std::cout.flush();
         ShapeData *shapeData=getShapeData();
         int boundary_type=shapeData->get_boundary_type();
+        std::cout << "boundary_type=" << boundary_type << std::endl; std::cout.flush();
 
         Handle(AIS_Shape) shape=pathItem->getShape();
         if (!shape.IsNull()) {
+            std::cout <<"   setting shape" << std::endl; std::cout.flush();
             shape->SetTransparency(0);
             shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
             if (boundary_type == 0) shape->SetColor(Quantity_NOC_GREENYELLOW);
@@ -2939,6 +2991,31 @@ void BoundaryItem::redo ()
     BaseItem::redo();
 }
 
+void BoundaryItem::save (std::ofstream *out)
+{
+    *out << "Boundary" << std::endl;
+    *out << "   name=" << text(0).toStdString() << std::endl;
+
+
+
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->save(out);
+        i++;
+    }
+
+    if (pathItem) {
+        Path *boundaryPath=pathItem->getPath();
+        if (boundaryPath) {
+            *out << "   path=" << boundaryPath->get_name() << std::endl;
+        }
+    }
+
+    *out << "EndBoundary" << std::endl;
+    *out << std::endl;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // RootPortItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -3061,10 +3138,6 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
 
     // impedance calculation
     addImpedanceCalculationItem();
-
-    // add one default mode since at least one mode is required
-    ModeItem *newModeItem=new ModeItem(mw,this);
-    addChild(newModeItem);
 }
 
 void PortItem::setSolidColor ()
@@ -3327,11 +3400,49 @@ void PortItem::redo ()
     BaseItem::redo();
 }
 
+int PortItem::get_SportCount ()
+{
+    int SportCount=0;
+    int i=0;
+    while (i < childCount()) {
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+        if (modeItem && modeItem->is_sport()) {
+            int testSportCount=modeItem->get_SportCount();
+            if (testSportCount > SportCount) SportCount=testSportCount;
+        }
+        i++;
+    }
+    return SportCount;
+}
+
+void PortItem::save (std::ofstream *out)
+{
+    *out << "Port" << std::endl;
+    *out << "   name=" << text(0).toStdString() << std::endl;
+
+    if (pathItem) {
+        Path *portPath=pathItem->getPath();
+        if (portPath) {
+            *out << "   path=" << portPath->get_name() << std::endl;
+        }
+    }
+
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->save(out);
+        i++;
+    }
+
+    *out << "EndPort" << std::endl;
+    *out << std::endl;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // ModeItem
 ////////////////////////////////////////////////////////////////////////////////
 
-ModeItem::ModeItem (OpenParEMg *mw_, PortItem *portItem_)
+ModeItem::ModeItem (OpenParEMg *mw_, PortItem *portItem_, bool dummyFill)
 {
     mw=mw_;
     parentItem=portItem_;
@@ -3357,14 +3468,16 @@ ModeItem::ModeItem (OpenParEMg *mw_, PortItem *portItem_)
     setToolTip(0,"Mode and its net name.");
     setFlags(flags() & ~Qt::ItemIsEditable);
 
-    SportItem *newSportItem=new SportItem(mw,this);
-    addChild(newSportItem);
+    if (dummyFill) {
+        SportItem *newSportItem=new SportItem(mw,this);
+        addChild(newSportItem);
 
-    VIItem *newVoltageItem=new VIItem(mw,this,10);
-    addChild(newVoltageItem);
+        VIItem *newVoltageItem=new VIItem(mw,this,10);
+        addChild(newVoltageItem);
 
-    VIItem *newCurrentItem=new VIItem(mw,this,11);
-    addChild(newCurrentItem);
+        VIItem *newCurrentItem=new VIItem(mw,this,11);
+        addChild(newCurrentItem);
+    }
 }
 
 bool ModeItem::isValidShow ()
@@ -3509,6 +3622,47 @@ void ModeItem::showMenu (QMenu *menu)
     }
 }
 
+int ModeItem::get_SportCount ()
+{
+    int SportCount=0;
+    int i=0;
+    while (i < childCount()) {
+        SportItem *sportItem=dynamic_cast<SportItem *>(child(i));
+        if (sportItem && sportItem->is_sportLabel()) {
+            int testSportCount=sportItem->get_SportCount();
+            if (testSportCount > SportCount) SportCount=testSportCount;
+        }
+        i++;
+    }
+    return SportCount;
+}
+
+void ModeItem::save (std::ofstream *out)
+{
+    QString calculation="Mode";
+    PortItem *portItem=dynamic_cast<PortItem *>(parentItem);
+    if (portItem && portItem->is_port()) {
+        ShapeData *shapeData=portItem->getShapeData();
+        calculation=shapeData->get_impedance_calculation();
+        if (calculation.compare("line") == 0) calculation="Line";
+        else if (calculation.compare("mode") == 0) calculation="Mode";
+    }
+
+    ShapeData *shapeData=getShapeData();
+    *out << "   " << calculation.toStdString() << std::endl;
+    *out << "      net=" << text(0).toStdString() << std::endl;
+    *out << "      Sport=" << shapeData->get_Sport() << std::endl;
+
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->save(out);
+        i++;
+    }
+
+    *out << "   End" << calculation.toStdString() << std::endl;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // SportItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -3581,6 +3735,21 @@ void SportItem::showMenu (QMenu *menu)
     }
 }
 
+int SportItem::get_SportCount ()
+{
+    int SportCount=0;
+    int i=0;
+    while (i < childCount()) {
+        SportNumberItem *sportNumberItem=dynamic_cast<SportNumberItem *>(child(i));
+        if (sportNumberItem && sportNumberItem->is_sportNumber()) {
+            int testSportCount=sportNumberItem->get_SportCount();
+            if (testSportCount > SportCount) SportCount=testSportCount;
+        }
+        i++;
+    }
+    return SportCount;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // SportNumberItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -3610,6 +3779,24 @@ void SportNumberItem::hide () {}
 
 void SportNumberItem::showMenu (QMenu *menu)
 {
+}
+
+int SportNumberItem::get_SportCount ()
+{
+    int SportCount=0;
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) {
+            CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(baseItem,0));
+            if (sportNumber) {
+                SportCount=sportNumber->value();
+                break;
+            }
+            i++;
+        }
+    }
+    return SportCount;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3867,6 +4054,44 @@ ScaleLabelItem* VIItem::addScaleItem ()
     scaleValueItem->insertScaleValueWidget(shapeData->get_scale());
 
     return scaleLabelItem;
+}
+
+void VIItem::save (std::ofstream *out)
+{
+    if (childCount() == 0) return;
+
+    *out << "      IntegrationPath" << std::endl;
+
+    if (is_voltage()) *out << "         type=voltage" << std::endl;
+    if (is_current()) *out << "         type=current" << std::endl;
+
+    int count=0;
+    int i=0;
+    while (i < childCount()) {
+        IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(child(i));
+        if (integrationPathItem) {
+            if (count == 0) integrationPathItem->save(out);
+            else integrationPathItem->saveN(out);
+            count++;
+        }
+        i++;
+    }
+
+    *out << "      EndIntegrationPath" << std::endl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ScaleLabelItem
+////////////////////////////////////////////////////////////////////////////////
+
+void ScaleLabelItem::save (std::ofstream *out)
+{
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->save(out);
+        i++;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

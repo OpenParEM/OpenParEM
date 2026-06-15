@@ -2284,7 +2284,7 @@ void Path::create_polywire_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWind
         item->addShapeData(newShapeData);
     }
 
-    // cross reference
+    // save the path to the item for cross referencing
     item->setPath(this);
 
     // name

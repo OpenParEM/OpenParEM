@@ -415,6 +415,7 @@ public:
     void setPlaneToFaceAxis ();
 
     bool isValidCreatePath ();
+    PortItem* get_matchingPortItem (Path *);
     bool isValidCreatePathFromFace ();
     bool isValidCreatePortFromFace ();
     bool isValidCreatePortFromPath ();
@@ -478,6 +479,8 @@ public:
     void debugPrintStats (int);
 
     void setScale ();
+
+    void clonePathData ();
 
 private slots:
 
@@ -584,14 +587,14 @@ private slots:
     void unselectPortItems ();
     void renamePortItems ();
     void deleteRootPortItems ();
+    bool portNameExists (QString);
+    void uniqueifyPortName (QString& pathName);
     void deletePortItems ();
     void deleteModeItems ();
     void deleteIntegrationPathItems ();
 
     void assignMaterial ();
     void crossReferencePaths ();
-    void resetPathArrowheads ();
-    //void resetPathColors ();
 
     void cancelMenu ();
     void buildFaceMenu (QMenu &menu);
@@ -621,6 +624,7 @@ private slots:
     void createPathFromFaceN (bool);
     void createPortFromFace ();
     void createPortFromPath ();
+    int get_SportCount ();
     void createPortFromPathN (bool);
     void createBoundaryFromFace ();
     void createBoundaryFromPath ();
@@ -689,7 +693,6 @@ private:
 
     MaterialDatabase *materialDatabase;
     QString selectedMaterial;
-    BoundaryDatabase *boundaryDatabase;
 
     RootDrawingItem *drawing;
     RootPathItem *path;
