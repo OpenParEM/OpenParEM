@@ -85,12 +85,10 @@ void BaseItem::setForUndoRedo (bool withMidPoints, int shapeOperation)
     mw->startOperation(withMidPoints);
 }
 
-void BaseItem::restoreWidgets (BaseItem *baseItem)
+void BaseItem::restoreWidgets ()
 {
-    if (!baseItem) return;
-
-    if (baseItem && baseItem->is_boundary()) {
-        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(baseItem);
+    if (is_boundary()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(this);
         if (boundaryItem && boundaryItem->is_boundary()) {
             BaseItem *boundaryType=nullptr;
             BaseItem *boundaryWaveImpedance=nullptr;
@@ -118,49 +116,48 @@ void BaseItem::restoreWidgets (BaseItem *baseItem)
     //     }
     // }
 
-    if (baseItem && baseItem->is_impedanceCalculation()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(baseItem->getParentItem());
+    if (is_impedanceCalculation()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(getParentItem());
         if (portItem && is_port()) {
             ShapeData *shapeData=portItem->getShapeData();
             QString impedance_calculation=shapeData->get_impedance_calculation();
-            portItem->insertImpedanceCalculationWidget(baseItem,impedance_calculation);
+            portItem->insertImpedanceCalculationWidget(this,impedance_calculation);
         }
     }
 
-    if (baseItem && baseItem->is_impedanceDefinition()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(baseItem->getParentItem());
+    if (is_impedanceDefinition()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(getParentItem());
         if (portItem && is_port()) {
             ShapeData *shapeData=portItem->getShapeData();
             QString impedance_definition=shapeData->get_impedance_definition();
-            portItem->insertImpedanceDefinitionWidget(baseItem,impedance_definition);
+            portItem->insertImpedanceDefinitionWidget(this,impedance_definition);
         }
     }
 
-    if (baseItem && baseItem->is_sportNumber()) {
-        SportItem *sportItem=dynamic_cast<SportItem *>(baseItem->getParentItem());
+    if (is_sportNumber()) {
+        SportItem *sportItem=dynamic_cast<SportItem *>(getParentItem());
         if (sportItem && sportItem->is_sportLabel()) {
-            ShapeData *shapeData=baseItem->getShapeData();
+            ShapeData *shapeData=getShapeData();
             int Sport=shapeData->get_Sport();
-            sportItem->insertSportNumberWidget(baseItem,Sport);
+            sportItem->insertSportNumberWidget(this,Sport);
         }
     }
 
-    if (baseItem && baseItem->is_scaleValue()) {
-        ScaleValueItem *scaleValueItem=dynamic_cast<ScaleValueItem *>(baseItem);
+    if (is_scaleValue()) {
+        ScaleValueItem *scaleValueItem=dynamic_cast<ScaleValueItem *>(this);
         if (scaleValueItem && scaleValueItem->is_scaleValue()) {
-            ShapeData *shapeData=baseItem->getShapeData();
+            ShapeData *shapeData=getShapeData();
             double scale=shapeData->get_scale();
             scaleValueItem->insertScaleValueWidget(scale);
         }
     }
 
-    if (baseItem) {
-        int i=0;
-        while (i < baseItem->childCount()) {
-            BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(i));
-            if (child) restoreWidgets(child);
-            i++;
-        }
+    // process children
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->restoreWidgets();
+        i++;
     }
 }
 
@@ -260,7 +257,7 @@ void BaseItem::undo ()
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.undo();
-        restoreWidgets(this);
+        restoreWidgets();
         expandToItemPlus1();
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
@@ -277,7 +274,7 @@ void BaseItem::undo ()
 
         mw->ui->drawingWindow->showItem(this);
         mw->ui->drawingWindow->activateItem(this);
-        restoreWidgets(this);
+        restoreWidgets();
         expandToItemPlus1();
     } else if (shapeData->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
@@ -305,8 +302,15 @@ void BaseItem::undo ()
             mw->ui->drawingWindow->activateItem(this);
         }
 
-        restoreWidgets(this);
+        restoreWidgets();
         expandToItem();
+    }
+
+    // add or remove integration path scales as needed
+    IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(this);
+    if (integrationPathItem) {
+        VIItem *viItem=dynamic_cast<VIItem *>(integrationPathItem->getParentItem());
+        if (viItem) viItem->addRemoveScale();
     }
 }
 
@@ -337,12 +341,12 @@ void BaseItem::redo ()
         demoteChildren();
         mw->ui->drawingWindow->showItem(this);
         mw->ui->drawingWindow->activateItem(this);
-        restoreWidgets(this);
+        restoreWidgets();
         expandToItemPlus1();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.redo();
-        restoreWidgets(this);
+        restoreWidgets();
         expandToItemPlus1();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
@@ -381,8 +385,15 @@ void BaseItem::redo ()
             mw->ui->drawingWindow->activateItem(this);
         }
 
-        restoreWidgets(this);
+        restoreWidgets();
         expandToItem();
+    }
+
+    // add or remove integration path scales as needed
+    IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(this);
+    if (integrationPathItem) {
+        VIItem *viItem=dynamic_cast<VIItem *>(integrationPathItem->getParentItem());
+        if (viItem) viItem->addRemoveScale();
     }
 }
 
@@ -3785,6 +3796,7 @@ VIItem::VIItem (OpenParEMg *mw_, ModeItem *modeItem_, int itemType_)
     parentItem=modeItem_;
     itemType=itemType_;
     modeItem=modeItem_;
+    scaleLabelItem=nullptr;
     parentItem=modeItem_;
 
     if (itemType_ == 10) {
@@ -3999,7 +4011,7 @@ void VIItem::insertSelectedPath ()
 
     mw->itemChangesStack.startNew();
 
-    if (childCount() == 0) addScaleItem();
+    addScaleItem();
 
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
@@ -4015,28 +4027,67 @@ bool VIItem::hasScale ()
 {
     int i=0;
     while (i < childCount()) {
-        BaseItem *scaleLabelItem=dynamic_cast<BaseItem *>(child(i));
-        if (scaleLabelItem && scaleLabelItem->is_scaleLabel()) return true;
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem && baseItem->is_scaleLabel()) return true;
         i++;
     }
     return false;
 }
 
-ScaleLabelItem* VIItem::addScaleItem ()
+bool VIItem::hasIntegrationPathItem ()
 {
-    // label
-    ScaleLabelItem *scaleLabelItem=new ScaleLabelItem(mw,this);
-    insertChild(0,scaleLabelItem);
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *integrationPathItem=dynamic_cast<BaseItem *>(child(i));
+        if (integrationPathItem && integrationPathItem->is_integrationPathSegment()) return true;
+        i++;
+    }
+    return false;
+}
 
-    // value
+void VIItem::addScaleItem ()
+{
+    if (hasScale()) return;
 
-    ScaleValueItem *scaleValueItem=new ScaleValueItem(mw,scaleLabelItem);
-    scaleLabelItem->addChild(scaleValueItem);
+    if (scaleLabelItem) {
+        addChild(scaleLabelItem);
+    } else {
 
-    ShapeData *shapeData=scaleValueItem->getShapeData();
-    scaleValueItem->insertScaleValueWidget(shapeData->get_scale());
+        // label
+        scaleLabelItem=new ScaleLabelItem(mw,this);
+        insertChild(0,scaleLabelItem);
 
-    return scaleLabelItem;
+        // value
+
+        ScaleValueItem *scaleValueItem=new ScaleValueItem(mw,scaleLabelItem);
+        scaleLabelItem->addChild(scaleValueItem);
+
+        ShapeData *shapeData=scaleValueItem->getShapeData();
+        scaleValueItem->insertScaleValueWidget(shapeData->get_scale());
+    }
+}
+
+void VIItem::removeScaleItem ()
+{
+    if (!hasScale()) return;
+    removeChild(scaleLabelItem);
+}
+
+void VIItem::addRemoveScale ()
+{
+    if (hasScale()) {
+        if (hasIntegrationPathItem()) {
+            // nothing to do
+        } else {
+            removeScaleItem();
+        }
+    } else {
+        if (hasIntegrationPathItem()) {
+            addScaleItem();
+        } else {
+            // nothing to do
+        }
+    }
 }
 
 void VIItem::save (std::ofstream *out)

@@ -487,7 +487,7 @@ public:
     void startItemChange ();
     void addItemChange ();
 
-    void restoreWidgets (BaseItem *);
+    void restoreWidgets ();
     void setForUndoRedo (bool, int);
 
     virtual void rename (QString);
@@ -1265,12 +1265,17 @@ public:
     void showMenu (QMenu *) override;
     void setModeItem (ModeItem *modeItem_) {modeItem=modeItem_;}
     ModeItem* getModeItem () {return modeItem;}
+    void setScaleLabelItem (ScaleLabelItem *scaleLabelItem_) {scaleLabelItem=scaleLabelItem_;}
+    ScaleLabelItem* getScaleLabelItem (){return scaleLabelItem;}
     void drawLinePath ();
     void drawPolylinePath ();
     bool isValidInsertSelectedPath ();
     void insertSelectedPath ();
     bool hasScale ();
-    ScaleLabelItem* addScaleItem ();
+    bool hasIntegrationPathItem ();
+    void addScaleItem ();
+    void removeScaleItem ();
+    void addRemoveScale ();
     void createIntegrationPathItemFromPath (PathItem *);
     PathItem* createIntegrationPathItemFromDrawing (DrawingItem *, bool);
     void convertItemToPath (DrawingItem *, bool);
@@ -1279,6 +1284,7 @@ public:
 
 private:
     ModeItem *modeItem;
+    ScaleLabelItem *scaleLabelItem;
 };
 
 

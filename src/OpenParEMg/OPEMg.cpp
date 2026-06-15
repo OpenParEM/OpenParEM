@@ -6689,12 +6689,7 @@ void OpenParEMg::finishDraw ()
                 // itemChangesStack.add(newPathItem);
 
                 // add scale, if needed
-                if (!viItem->hasScale()) {
-                    ScaleLabelItem *scaleLabelItem=viItem->addScaleItem();
-                    if (scaleLabelItem && scaleLabelItem->is_scaleLabel()) {
-                        itemChangesStack.add(scaleLabelItem);
-                    }
-                }
+                viItem->addScaleItem();
 
                 isIntegrationPath=false;
                 currentDrawingItem=nullptr;
