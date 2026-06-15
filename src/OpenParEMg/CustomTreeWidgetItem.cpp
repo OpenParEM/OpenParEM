@@ -242,6 +242,8 @@ void BaseItem::undo ()
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
+    mw->ui->drawingWindow->unselectAllItems();
+
     if (shapeData->isNoop()) {
         std::cout << "   isNoop" << std::endl; std::cout.flush();
         // nothing to do
@@ -320,6 +322,8 @@ void BaseItem::redo ()
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
+
+    mw->ui->drawingWindow->unselectAllItems();
 
     ShapeData *next=shapeData->getNext();
     if (!next) return;
@@ -1793,6 +1797,8 @@ void DrawingItem::undo ()
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
+    mw->ui->drawingWindow->unselectAllItems();
+
     if (shapeData->isNoop()) {
         std::cout << "   isNoop" << std::endl; std::cout.flush();
         // nothing to do
@@ -1841,12 +1847,13 @@ void DrawingItem::undo ()
                 }
             } else {
                 mw->reprocess(this);
-                mw->ui->drawingWindow->unselectItem(this);
+                //mw->ui->drawingWindow->unselectItem(this);
             }
         }
 
-        BaseItem *baseItem=findTopLevelItem(this);
-        baseItem->expandToItem();
+        //BaseItem *baseItem=findTopLevelItem(this);
+        //baseItem->expandToItem();
+        expandToItem();
     } else if (shapeData->isDelete()) {
         BaseItem::undo();
     } else if (shapeData->isChangeName()) {
@@ -1864,6 +1871,8 @@ void DrawingItem::redo ()
     ShapeData *next=shapeData->getNext();
     if (!next) return;
 
+    mw->ui->drawingWindow->unselectAllItems();
+
     if (next->isNoop()) {
         std::cout << "   isNoop" << std::endl; std::cout.flush();
         // should not occur
@@ -1879,8 +1888,9 @@ void DrawingItem::redo ()
         demoteChildren();
 
         mw->reprocess(this);
-        BaseItem *baseItem=findTopLevelItem(this);
-        baseItem->expandToItem();
+        //BaseItem *baseItem=findTopLevelItem(this);
+        //baseItem->expandToItem();
+        expandToItem();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         mw->ui->drawingWindow->unselectItem(this);
@@ -1905,8 +1915,9 @@ void DrawingItem::redo ()
 
         mw->reprocess(this);
         mw->insertToMapActivateItem(this);
-        BaseItem *baseItem=findTopLevelItem(this);
-        baseItem->expandToItem();
+        //BaseItem *baseItem=findTopLevelItem(this);
+        //baseItem->expandToItem();
+        expandToItem();
     } else if (next->isDelete()) {
         BaseItem::redo();
     } else if (next->isChangeName()) {
