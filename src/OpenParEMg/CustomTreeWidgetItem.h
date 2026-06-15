@@ -712,6 +712,9 @@ public:
     long unsigned int getChildrenSize () {return children.size();}
     BaseItem* getChild (long unsigned int i) {return children[i];}
 
+    virtual void promoteChildren () {}
+    virtual void demoteChildren () {}
+
     void convertPathToFace ()
     {
         Handle(AIS_Shape) shape=getShape();
@@ -841,8 +844,8 @@ public:
 
     DrawingItem* copyCreate ();
 
-    void promoteChildren ();
-    void demoteChildren ();
+    void promoteChildren () override;
+    void demoteChildren () override;
 
     void cancelOperation () override;
 

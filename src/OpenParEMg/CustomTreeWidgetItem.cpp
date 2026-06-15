@@ -181,7 +181,7 @@ void BaseItem::rename (QString name)
 
 void BaseItem::expandToItem ()
 {
-    std::cout << "BaseItem::expandToItem  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "BaseItem::expandToItem  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     BaseItem *baseItem=getParentItem();
     for (BaseItem *p=baseItem; p; p=p->getParentItem())
@@ -199,7 +199,7 @@ void BaseItem::expandToItem ()
 
 void BaseItem::expandToItemPlus1 ()
 {
-    std::cout << "BaseItem::expandToItem1  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "BaseItem::expandToItem1  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     BaseItem *baseItem=this;
     for (BaseItem *p=baseItem; p; p=p->getParentItem())
@@ -245,8 +245,6 @@ void BaseItem::undo ()
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
-    shapeData->print();
-
     if (shapeData->isNoop()) {
         std::cout << "   isNoop" << std::endl; std::cout.flush();
         // nothing to do
@@ -255,6 +253,7 @@ void BaseItem::undo ()
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
+        promoteChildren();
         getParentItem()->removeChild(this);
         dataStack.undo();
         expandToItemPlus1();
@@ -274,6 +273,8 @@ void BaseItem::undo ()
         }
 
         getParentItem()->addChild(this);
+        demoteChildren();
+
         mw->ui->drawingWindow->showItem(this);
         mw->ui->drawingWindow->activateItem(this);
         restoreWidgets(this);
@@ -333,6 +334,7 @@ void BaseItem::redo ()
         }
 
         getParentItem()->addChild(this);
+        demoteChildren();
         mw->ui->drawingWindow->showItem(this);
         mw->ui->drawingWindow->activateItem(this);
         restoreWidgets(this);
@@ -348,7 +350,10 @@ void BaseItem::redo ()
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
+
+        promoteChildren();
         getParentItem()->removeChild(this);
+
         dataStack.redo();
     } else if (next->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
@@ -633,16 +638,24 @@ void DrawingItem::promoteChildren ()
 
 void DrawingItem::demoteChildren ()
 {
+    std::cout << "DrawingItem::demoteChildren" << std::endl; std::cout.flush();
+
     long unsigned int i=0;
     while (i < getChildrenSize()) {
+        std::cout << "place 1" << std::endl; std::cout.flush();
         DrawingItem *child=dynamic_cast<DrawingItem *>(getChild(i));
         if (child) {
-            int index=getParentItem()->indexOfChild(child);
-            getParentItem()->takeChild(index);
+            std::cout << "place 2" << std::endl; std::cout.flush();
+            int index=child->getParentItem()->indexOfChild(child);
+            child->getParentItem()->takeChild(index);
             addChild(child);
             child->setParentItem(this);
             child->copy_depth(this);
             child->increase_depth();
+
+            child->setText(1,QString());
+
+            mw->ui->drawingWindow->hideItem(child);
         }
         i++;
     }
@@ -1472,23 +1485,24 @@ void DrawingItem::del ()
     if (parentItem) {
         RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
         if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
-            // int insertIndex=rootDrawingItem->indexOfChild(this);
 
-            // // move children to parent
-            // while (childCount() > 0) {
-            //     DrawingItem* drawingChild=dynamic_cast<DrawingItem *>(takeChild(0));
-            //     rootDrawingItem->insertChild(insertIndex++,drawingChild);
-            //     drawingChild->setParentItem(rootDrawingItem);
-            //     drawingChild->decrease_depth();
-            //     mw->ui->drawingWindow->showItem(drawingChild);
+            int insertIndex=rootDrawingItem->indexOfChild(this);
 
-            //     // set the materials
-            //     if (!text(1).isNull()) {
-            //         if (!drawingChild->getPolywire()) {
-            //             drawingChild->setText(1,text(1));
-            //         }
-            //     }
-            // }
+            // move children to parent
+            while (childCount() > 0) {
+                DrawingItem* drawingChild=dynamic_cast<DrawingItem *>(takeChild(0));
+                rootDrawingItem->insertChild(insertIndex++,drawingChild);
+                drawingChild->setParentItem(rootDrawingItem);
+                drawingChild->decrease_depth();
+                mw->ui->drawingWindow->showItem(drawingChild);
+
+                // set the materials
+                if (!text(1).isNull()) {
+                    if (!drawingChild->getPolywire()) {
+                        drawingChild->setText(1,text(1));
+                    }
+                }
+            }
 
             rootDrawingItem->removeChild(this);
         }
@@ -1781,8 +1795,8 @@ void DrawingItem::undo ()
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
-        getParentItem()->removeChild(this);
 
+        getParentItem()->removeChild(this);
         promoteChildren();
 
         int i=0;
@@ -1853,31 +1867,7 @@ void DrawingItem::redo ()
 
         increase_depth();
         getParentItem()->addChild(this);
-
-        long unsigned int i=0;
-        while (i < getChildrenSize()) {
-            DrawingItem *childItem=dynamic_cast<DrawingItem *>(getChild(i));
-            if (childItem) {
-                int index=getParentItem()->indexOfChild(childItem);
-                if (index >= 0) {
-                    getParentItem()->takeChild(index);
-                    addChild(childItem);
-                    childItem->setParentItem(this);
-                    childItem->copy_depth(this);
-                    childItem->increase_depth();
-                } else {
-                    mw->ui->drawingWindow->insertItemToMap(childItem->getShape(),childItem);
-                    mw->ui->drawingWindow->displayShape(childItem->getShape());
-                    mw->ui->drawingWindow->activateItem(childItem);
-                    addChild(childItem);
-                    childItem->setParentItem(this);
-                    childItem->copy_depth(this);
-                    childItem->increase_depth();
-                    mw->reprocess(childItem);
-                }
-            }
-            i++;
-        }
+        demoteChildren();
 
         mw->reprocess(this);
         BaseItem *baseItem=findTopLevelItem(this);

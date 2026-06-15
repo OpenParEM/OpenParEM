@@ -2444,26 +2444,17 @@ void OpenParEMg::finishMergeSolids ()
     // save the objects for undo/redo
     newItem->push_child(item0);
     newItem->push_child(item1);
-
-    // move the objects in the selection tree
-
-    int index=drawing->indexOfChild(item0);
-    drawing->takeChild(index);
-    newItem->addChild(item0);
-    item0->setParentItem(newItem);
-
-    index=drawing->indexOfChild(item1);
-    drawing->takeChild(index);
-    newItem->addChild(item1);
-    item1->setParentItem(newItem);
+    newItem->demoteChildren();
 
     // reset materials
-    QString nullMaterial;
     if (!item0->text(1).isNull()) {
         newItem->setText(1,item0->text(1));
-        item0->setText(1,nullMaterial);
+        item0->setText(1,QString());
     }
-    if (!item1->text(1).isNull()) item1->setText(1,nullMaterial);
+    if (!item1->text(1).isNull()) {
+        newItem->setText(1,item1->text(1));
+        item1->setText(1,QString());
+    }
 
     // reset dimTags
     item0->set_dimTag(-1,-1);
@@ -2569,26 +2560,17 @@ void OpenParEMg::finishSubtractSolids ()
     // save the objects for undo/redo
     newItem->push_child(item0);
     newItem->push_child(item1);
-
-    // move the object in the selection tree
-
-    int index=drawing->indexOfChild(item0);
-    drawing->takeChild(index);
-    newItem->addChild(item0);
-    item0->setParentItem(newItem);
-
-    index=drawing->indexOfChild(item1);
-    drawing->takeChild(index);
-    newItem->addChild(item1);
-    item1->setParentItem(newItem);
+    newItem->demoteChildren();
 
     // reset materials
-    QString nullMaterial;
     if (!item0->text(1).isNull()) {
         newItem->setText(1,item0->text(1));
-        item0->setText(1,nullMaterial);
+        item0->setText(1,QString());
     }
-    if (!item1->text(1).isNull()) item1->setText(1,nullMaterial);
+    if (!item1->text(1).isNull()) {
+        newItem->setText(1,item1->text(1));
+        item1->setText(1,QString());
+    }
 
     // reset dimTags
     item0->set_dimTag(-1,-1);
@@ -5085,6 +5067,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
 
         if (increaseDepth) newItem->increase_depth();
         baseParent->addChild(newItem);
+        baseParent->push_child(newItem);
         reprocess(newItem);
         drawingChanged=true;
         ui->drawingWindow->showItem(newItem);
@@ -5103,6 +5086,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
         ShapeData *shapeData=newItem->getShapeData();
         shapeData->setProcess(process);
         baseParent->addChild(newItem);
+        baseParent->push_child(newItem);
 
         // extrude
         if (typeStart == 5) {
@@ -5213,6 +5197,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
 
 
             baseParent->addChild(newItem);
+            baseParent->push_child(newItem);
 
             ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
             ui->drawingWindow->activateItem(newItem);
