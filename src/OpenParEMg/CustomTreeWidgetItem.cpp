@@ -2110,24 +2110,7 @@ void PathItem::undo ()
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
-    if (shapeData->isCreate()) {
-
-        Path *path=static_cast<Path *>(getPath());
-        if (path) path->setIsUsed(false);
-
-        // remove linked items
-        long unsigned int i=0;
-        while (i < linkedItems_size()) {
-            BaseItem *linkedItem=get_linkedItem(i);
-            if (linkedItem) {
-                BaseItem *parentItem=linkedItem->getParentItem();
-                if (parentItem) {
-                    parentItem->removeChild(linkedItem);
-                }
-            }
-            i++;
-        }
-    } else if (shapeData->isReversePath()) {
+    if (shapeData->isReversePath()) {
         std::cout << "   isReversePath" << std::endl; std::cout.flush();
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
@@ -2148,9 +2131,10 @@ void PathItem::undo ()
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
         mw->ui->drawingWindow->displayShape(getShape());
         mw->ui->drawingWindow->activateItem(this);
+        mw->ui->drawingWindow->showItem(this);
+    } else {
+        BaseItem::undo();
     }
-
-    BaseItem::undo();
 }
 
 void PathItem::showArrows (bool show)
@@ -2234,23 +2218,25 @@ void PathItem::redo ()
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
         mw->ui->drawingWindow->displayShape(getShape());
         mw->ui->drawingWindow->activateItem(this);
+        mw->ui->drawingWindow->showItem(this);
         expandToItem();
+    } else {
+        BaseItem::redo();
     }
-
-    BaseItem::redo();
 }
 
 void PathItem::reverse ()
 {
-    // mark
-    ShapeData *newShapeData=getShapeData()->copyCreate();
-    newShapeData->setReversePath();
-    addShapeData(newShapeData);
 
     // remove the old version from display and tracking
     mw->ui->drawingWindow->hideItem(this);
     mw->ui->drawingWindow->removeItemFromMap(this);
     mw->ui->drawingWindow->deleteShape(getShape());
+
+    // mark
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setReversePath();
+    addShapeData(newShapeData);
 
     // reverse the path
     Path *path=static_cast<Path *>(getPath());
