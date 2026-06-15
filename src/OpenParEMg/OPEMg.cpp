@@ -779,6 +779,14 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionMeshGenerate->setEnabled(true);
         }
 
+        if (path->childCount() > 0) {
+            ui->actionFitSelected->setEnabled(true);
+            ui->actionFitAll->setEnabled(true);
+            ui->actionSelectWithBox2->setEnabled(true);
+            ui->actionUnselectAll->setEnabled(true);
+            ui->actionHideAll->setEnabled(true);
+        }
+
         if (mesh->childCount() > 0) {
             ui->actionFitAll->setEnabled(true);
             ui->actionMenuSelection->setEnabled(true);
