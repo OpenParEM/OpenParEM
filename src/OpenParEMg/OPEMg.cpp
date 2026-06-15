@@ -1407,9 +1407,14 @@ bool OpenParEMg::hasCurrent ()
     return false;
 }
 
-void OpenParEMg::insertIntegrationPath (BaseItem *VIitem)
+void OpenParEMg::insertIntegrationPath (BaseItem *baseItem)
 {
     std::cout << "OpenParEMg::insertIntegrationPath" << std::endl; std::cout.flush();
+
+    if (!baseItem) return;
+
+    VIItem *viItem=dynamic_cast<VIItem *>(baseItem);
+    if (!viItem) return;
 
     QDoubleValidator doubleValidator;
     doubleValidator.setBottom(0);
@@ -1432,7 +1437,7 @@ void OpenParEMg::insertIntegrationPath (BaseItem *VIitem)
 
     // check that the selected paths can be used on the port
 
-    ModeItem *modeItem=dynamic_cast<ModeItem *>(VIitem->getParentItem());
+    ModeItem *modeItem=dynamic_cast<ModeItem *>(viItem->getParentItem());
     PortItem *portItem=dynamic_cast<PortItem *>(modeItem->getParentItem());
 
     // port outline
@@ -1445,7 +1450,9 @@ void OpenParEMg::insertIntegrationPath (BaseItem *VIitem)
     while (i < pathItemList.size()) {
         Path *itemPath=pathItemList[i]->getPath();
         if (itemPath) {
-            if (!portPath->is_path_inside(itemPath)) {
+            if (portPath->is_path_inside(itemPath)) {
+                viItem->createIntegrationPathItemFromPath (pathItemList[i]);
+            } else {
                 QString message="Path \"";
                 message.append(itemPath->get_name());
                 message.append("\" cannot be assigned to the selected port.");
@@ -5430,15 +5437,26 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
 
     // exception: allow path + (voltage or current) for assigning paths
     if (previousClickedItem) {
-        PathItem *pathItem=dynamic_cast<PathItem *>(clickedItem);
-        PathItem *previousPathItem=dynamic_cast<PathItem *>(previousClickedItem);
-        if (pathItem && previousPathItem) {
-            std::cout << "pathItem->get_itemType()=" << pathItem->get_itemType() << std::endl; std::cout.flush();
-            std::cout << "previousPathItem->get_itemType()=" << previousPathItem->get_itemType() << std::endl; std::cout.flush();
-            if (previousPathItem->is_path() &&
-                (pathItem->is_voltage() || pathItem->is_current())) {
-                matchedType=true;  // not really
-                matchedLevel=true; // not really
+        { // PathItem then VIItem
+            PathItem *pathItem=dynamic_cast<PathItem *>(previousClickedItem);
+            VIItem *viiItem=dynamic_cast<VIItem *>(clickedItem);
+            if (pathItem && viiItem) {
+                if (pathItem->is_path() &&
+                        (viiItem->is_voltage() || viiItem->is_current())) {
+                    matchedType=true;  // not really
+                    matchedLevel=true; // not really
+                }
+            }
+        }
+        { // VIItem then PathItem
+            PathItem *pathItem=dynamic_cast<PathItem *>(clickedItem);
+            VIItem *viiItem=dynamic_cast<VIItem *>(previousClickedItem);
+            if (pathItem && viiItem) {
+                if (pathItem->is_path() &&
+                        (viiItem->is_voltage() || viiItem->is_current())) {
+                    matchedType=true;  // not really
+                    matchedLevel=true; // not really
+                }
             }
         }
     }

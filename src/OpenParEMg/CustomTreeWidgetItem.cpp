@@ -3914,9 +3914,7 @@ bool VIItem::isValidInsertSelectedPath ()
         BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
         if (baseItem) {
             if (baseItem->is_voltage() || baseItem->is_current()) {VIitem=baseItem; VIcount++;}
-
-            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
-            if (pathItem && pathItem->is_path()) pathCount++;
+            if (baseItem->is_path()) pathCount++;
         }
         i++;
     }
@@ -3931,14 +3929,14 @@ bool VIItem::isValidInsertSelectedPath ()
 
     // port outline
     PathItem *pathItem=portItem->getPathItem();
-    if (pathItem) return false;
+    if (!pathItem) return false;
     Path *portPath=pathItem->getPath();
     if (!portPath) return false;
 
     i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) {
+        if (baseItem && baseItem->is_path()) {
             PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
             if (pathItem && pathItem->is_path()) {
                 Path *path=pathItem->getPath();
@@ -3953,30 +3951,35 @@ bool VIItem::isValidInsertSelectedPath ()
     return true;
 }
 
-PathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem, bool hasArrows)
+void VIItem::createIntegrationPathItemFromPath (PathItem *pathItem)
 {
-    std::cout << "VIItem::createIntegrationPathItemFromDrawing" << std::endl; std::cout.flush();
-
-    // create a path item
-    PathItem *newPathItem=drawingItem->createPath(hasArrows);
+    std::cout << "VIItem::createIntegrationPathItemFromPath" << std::endl; std::cout.flush();
 
     // create an integration path item
-    IntegrationPathItem *newIntegrationPathItem=new IntegrationPathItem(mw,this,newPathItem);
+    IntegrationPathItem *newIntegrationPathItem=new IntegrationPathItem(mw,this,pathItem);
     if (newIntegrationPathItem) {
-        ShapeData *newShapeData=newIntegrationPathItem->getShapeData()->copyCreate();
-        newShapeData->setCreate();
-        newIntegrationPathItem->addShapeData(newShapeData);
+        ShapeData *shapeData=newIntegrationPathItem->getShapeData();
 
         QString name="+";
-        name.append(newPathItem->text(0));
+        name.append(pathItem->text(0));
         newIntegrationPathItem->setText(0,name);
-        newShapeData->set_name(newIntegrationPathItem->text(0));
+        shapeData->set_name(newIntegrationPathItem->text(0));
 
         addChild(newIntegrationPathItem);
         mw->itemChangesStack.add(newIntegrationPathItem);
 
-        newPathItem->push_linkedItem(newIntegrationPathItem);
+        pathItem->push_linkedItem(newIntegrationPathItem);
+        newIntegrationPathItem->setPathItem(pathItem);
     }
+    return ;
+}
+
+PathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem, bool hasArrows)
+{
+    std::cout << "VIItem::createIntegrationPathItemFromDrawing" << std::endl; std::cout.flush();
+
+    PathItem *newPathItem=drawingItem->createPath(hasArrows);
+    createIntegrationPathItemFromPath(newPathItem);
     return newPathItem;
 }
 
@@ -3993,6 +3996,10 @@ void VIItem::convertItemToPath (DrawingItem *drawingItem, bool useArrows)
 void VIItem::insertSelectedPath ()
 {
     std::cout << "VIItem::insertSelectedPath" << std::endl; std::cout.flush();
+
+    mw->itemChangesStack.startNew();
+
+    if (childCount() == 0) addScaleItem();
 
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {

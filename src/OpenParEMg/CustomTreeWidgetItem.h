@@ -1271,6 +1271,7 @@ public:
     void insertSelectedPath ();
     bool hasScale ();
     ScaleLabelItem* addScaleItem ();
+    void createIntegrationPathItemFromPath (PathItem *);
     PathItem* createIntegrationPathItemFromDrawing (DrawingItem *, bool);
     void convertItemToPath (DrawingItem *, bool);
 
