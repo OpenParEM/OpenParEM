@@ -336,7 +336,7 @@ class IntegrationPath
 #ifdef HAS_GUI
       void set_item (BaseItem *item_) {item=item_;}
       BaseItem* get_item () {return item;}
-      void draw (Relay *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, BaseItem *);
+      void draw (Relay *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, VIItem *);
 #endif
 };
 

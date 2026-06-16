@@ -784,6 +784,8 @@ public:
     void setScaleLabelItem (ScaleLabelItem *scaleLabelItem_) {scaleLabelItem=scaleLabelItem_;}
     ScaleLabelItem* getScaleLabelItem () {return scaleLabelItem;}
 
+    void undo () override;
+    void redo () override;
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
 

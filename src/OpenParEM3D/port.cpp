@@ -2572,23 +2572,23 @@ void IntegrationPath::removePath (Path *path)
 
 void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
                             OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
-                            RootPathItem *rootPathItem, BaseItem *itemVI)
+                            RootPathItem *rootPathItem, VIItem *viItem)
 {
     //std::cout << "IntegrationPath::draw" << std::endl;  std::cout.flush();
 
     // scale
 
-    BaseItem *itemScale=new BaseItem(mw,itemVI);
-    itemScale->setText(0,"scale");
-    itemScale->set_itemType(12);
-    itemScale->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
-    itemScale->setToolTip(0,"Scale factor for the integration path.");
-    itemVI->addChild(itemScale);
+    ScaleLabelItem *scaleLabelItem=new ScaleLabelItem(mw,viItem);
+    scaleLabelItem->setText(0,"scale");
+    scaleLabelItem->set_itemType(12);
+    scaleLabelItem->setFlags(scaleLabelItem->flags() & ~Qt::ItemIsEditable);
+    scaleLabelItem->setToolTip(0,"Scale factor for the integration path.");
+    viItem->addChild(scaleLabelItem);
 
-    BaseItem *itemScaleValue=new BaseItem(mw,itemScale);
-    itemScaleValue->set_itemType(13);
-    itemScaleValue->setFlags(itemScale->flags() & ~Qt::ItemIsSelectable);
-    itemScale->addChild(itemScaleValue);
+    ScaleValueItem *scaleValueItem=new ScaleValueItem(mw,scaleLabelItem);
+    scaleValueItem->set_itemType(13);
+    scaleValueItem->setFlags(scaleValueItem->flags() & ~Qt::ItemIsSelectable);
+    scaleLabelItem->addChild(scaleValueItem);
 
     CustomLineEdit *scaleEdit=new CustomLineEdit();
     const QSignalBlocker blockerWaveImpedance(scaleEdit);
@@ -2597,7 +2597,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     scaleEdit->set_baseItem(get_item());
     scaleEdit->set_boundaryDatabase(boundaryDatabase);
     scaleEdit->setValidator(&doubleValidator);
-    drawingItemTree->setItemWidget(itemScaleValue,0,scaleEdit);
+    drawingItemTree->setItemWidget(scaleValueItem,0,scaleEdit);
 
     // paths
 
@@ -2633,7 +2633,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
 
         // tree item
-        IntegrationPathItem *itemSegment=new IntegrationPathItem(mw,itemVI,pathItem);
+        IntegrationPathItem *itemSegment=new IntegrationPathItem(mw,viItem,pathItem);
         ShapeData *newShapeData=itemSegment->getShapeData()->copyCreate();
         newShapeData->setCreate();
         itemSegment->addShapeData(newShapeData);
@@ -2641,12 +2641,12 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
         newShapeData->set_name(itemSegment->text(0));
         itemSegment->set_itemType(14);
         itemSegment->setForeground(0,Qt::gray);
-        itemSegment->setFlags(itemVI->flags() & ~Qt::ItemIsEditable);
+        itemSegment->setFlags(viItem->flags() & ~Qt::ItemIsEditable);
         itemSegment->setToolTip(0,"Path segment for integration.");
 
         pathItem->push_linkedItem(itemSegment);
 
-        itemVI->addChild(itemSegment);
+        viItem->addChild(itemSegment);
         drawingWindow->showItem(itemSegment);
 
         i++;
@@ -4283,8 +4283,7 @@ ModeItem* Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
                  OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
                  RootPathItem *rootPathItem, PortItem *portItem)
 {
-    std::cout << "Mode::draw  net=" << get_net() << std::endl; std::cout.flush();
-    std::cout << "   portItem->text(0)=" << portItem->text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "Mode::draw  net=" << get_net() << std::endl; std::cout.flush();
 
     // net
 
@@ -4300,7 +4299,6 @@ ModeItem* Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
 
     ModeItem *modeItem=new ModeItem(mw,portItem,false);
     ShapeData *shapeData=modeItem->getShapeData();
-    shapeData->set_Sport(get_Sport());
     modeItem->setText(0,netname);
     portItem->addChild(modeItem);
 

@@ -498,6 +498,39 @@ void ScaleValueItem::insertScaleValueWidget (double scale)
     QObject::connect(scaleEdit,&CustomLineEdit::CustomEditFinished,&textValueChanged);
 }
 
+void ScaleValueItem::undo ()
+{
+    std::cout << "ScaleValueItem::undo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    if (shapeData->isEdit()) {
+        dataStack.undo();
+        restoreWidgets();
+    } else {
+        BaseItem::undo();
+    }
+}
+
+void ScaleValueItem::redo ()
+{
+    std::cout << "ScaleValueItem::redo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    ShapeData *next=shapeData->getNext();
+    if (!next) return;
+
+    if (next->isEdit()) {
+        dataStack.redo();
+        restoreWidgets();
+    } else {
+        BaseItem::redo();
+    }
+}
+
 void ScaleValueItem::save (std::ofstream *out)
 {
     CustomLineEdit *scaleValue=dynamic_cast<CustomLineEdit *>(mw->ui->drawingItemTree->itemWidget(this,0));
