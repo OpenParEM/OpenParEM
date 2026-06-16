@@ -4279,24 +4279,33 @@ void Mode::set_unmodified ()
 
 #ifdef HAS_GUI
 
-void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
+ModeItem* Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
                  OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
                  RootPathItem *rootPathItem, PortItem *portItem)
 {
+    std::cout << "Mode::draw  net=" << get_net() << std::endl; std::cout.flush();
+    std::cout << "   portItem->text(0)=" << portItem->text(0).toStdString() << std::endl; std::cout.flush();
+
     // net
 
     QString netname;
-    if (net_is_loaded()) netname=QString::fromStdString(get_net());
-    else {
+    if (net_is_loaded()) {
+        netname=QString::fromStdString(get_net());
+        std::cout << "1 netname=" << netname.toStdString() << std::endl; std::cout.flush();
+    } else {
         netname="net";
         netname.append(QString::number(get_Sport()));
+        std::cout << "2 netname=" << netname.toStdString() << std::endl; std::cout.flush();
     }
 
     ModeItem *modeItem=new ModeItem(mw,portItem,false);
+    ShapeData *shapeData=modeItem->getShapeData();
+    shapeData->set_Sport(get_Sport());
+    modeItem->setText(0,netname);
     portItem->addChild(modeItem);
 
     // S port
-    SportItem *sportItem=new SportItem(mw,modeItem);
+    SportItem *sportItem=new SportItem(mw,modeItem,get_Sport());
     modeItem->addChild(sportItem);
 
     // Sport number - done as part of SportItem
@@ -4326,6 +4335,8 @@ void Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
         }
         i++;
     }
+
+    return modeItem;
 }
 
 #endif
@@ -7360,7 +7371,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
                  QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, RootPortItem *rootPortItem,
                  PortItem *portItem)
 {
-    //std::cout << "Port::draw" << std::endl;  std::cout.flush();
+    std::cout << "Port::draw" << std::endl;  std::cout.flush();
 
     // link paths -  assumes there is only one path, which is checked when loading the database
 
@@ -7398,10 +7409,52 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     rootPortItem->addChild(portItem);
     drawingWindow->showItem(portItem);
 
-    // modes
+    // keep track of modes that have been drawn
+    std::vector<bool> drawnModes;
     long unsigned int i=0;
     while (i < modeList.size()) {
-        modeList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,portItem);
+        drawnModes.push_back(false);
+        i++;
+    }
+
+    // differential pairs
+    i=0;
+    while (i < differentialPairList.size()) {
+        std::cout << "   differential pair" << std::endl; std::cout.flush();
+        DifferentialPair *pair=differentialPairList[i];
+        if (pair) {
+            Mode *mode_P=nullptr;
+            Mode *mode_N=nullptr;
+
+            long unsigned int j=0;
+            while (j < modeList.size()) {
+                if (modeList[j]->get_Sport() == pair->get_Sport_P()) {mode_P=modeList[j]; drawnModes[j]=true;}
+                if (modeList[j]->get_Sport() == pair->get_Sport_N()) {mode_N=modeList[j]; drawnModes[j]=true;}
+                j++;
+            }
+
+            if (mode_P && mode_N) {
+                ModeItem *modeItem_P=mode_P->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,portItem);
+                ModeItem *modeItem_N=mode_N->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,portItem);
+                if (modeItem_P && modeItem_N) {
+                    DiffPairItem *newDiffPairItem=new DiffPairItem(mw,portItem,modeItem_P,modeItem_N);
+                    if (newDiffPairItem) {
+                        portItem->addChild(newDiffPairItem);
+                        newDiffPairItem->demoteChildren();
+                        newDiffPairItem->enableZcalcControl(false);
+                    }
+                }
+            }
+        }
+        i++;
+    }
+
+    // remaining modes
+    i=0;
+    while (i < modeList.size()) {
+        if (!drawnModes[i]) {
+            modeList[i]->draw(relay,boundaryDatabase,mw,drawingWindow,drawingItemTree,rootPathItem,portItem);
+        }
         i++;
     }
 }

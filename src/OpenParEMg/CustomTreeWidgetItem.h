@@ -1214,7 +1214,7 @@ class SportItem : public BaseItem
 
 public:
     SportItem () {}
-    SportItem (OpenParEMg *, ModeItem *);
+    SportItem (OpenParEMg *, ModeItem *, int);
 
     void insertSportNumberWidget (BaseItem *, int);
 

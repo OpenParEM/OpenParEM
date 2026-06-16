@@ -3458,16 +3458,13 @@ ModeItem::ModeItem (OpenParEMg *mw_, BaseItem *parentItem_, bool dummyFill)
     newShapeData->setCreate();
     addShapeData(newShapeData);
 
-    // transfer the Sport number from the port to the mode
-
-    PortItem *portItem=dynamic_cast<PortItem *>(parentItem);
-    if (portItem) {
-        ShapeData *shapeData=portItem->getShapeData();
-        newShapeData->set_Sport(shapeData->get_Sport());
-    }
+    // get the current largest Sport number
+    int Sport=0;
+    mw->largestSportNumber (mw->port,&Sport);
+    Sport++;
 
     QString name="net";
-    name.append(QString::number(newShapeData->get_Sport()));
+    name.append(QString::number(Sport));
     setText(0,name);
     newShapeData->set_name(text(0));
     setForeground(0,Qt::black);
@@ -3476,7 +3473,7 @@ ModeItem::ModeItem (OpenParEMg *mw_, BaseItem *parentItem_, bool dummyFill)
     setFlags(flags() & ~Qt::ItemIsEditable);
 
     if (dummyFill) {
-        SportItem *newSportItem=new SportItem(mw,this);
+        SportItem *newSportItem=new SportItem(mw,this,Sport);
         addChild(newSportItem);
 
         VIItem *newVoltageItem=new VIItem(mw,this,10);
@@ -3688,7 +3685,7 @@ void ModeItem::save (std::ofstream *out)
 // SportItem
 ////////////////////////////////////////////////////////////////////////////////
 
-SportItem::SportItem (OpenParEMg *mw_, ModeItem *modeItem_)
+SportItem::SportItem (OpenParEMg *mw_, ModeItem *modeItem_, int Sport)
 {
     mw=mw_;
     parentItem=modeItem_;
@@ -3704,18 +3701,9 @@ SportItem::SportItem (OpenParEMg *mw_, ModeItem *modeItem_)
     addShapeData(newShapeData);
 
     SportNumberItem *sportNumberItem=new SportNumberItem(mw,this);
+    ShapeData *shapeData=sportNumberItem->getShapeData();
+    shapeData->set_Sport(Sport);
     addChild(sportNumberItem);
-
-    // get the next S-parameter port number
-    int Sport=0;
-    ModeItem *modeItem=getModeItem();
-    if (modeItem) {
-        PortItem *portItem=dynamic_cast<PortItem *>(modeItem->getParentItem());
-        if (portItem) {
-            ShapeData *shapeData=portItem->getShapeData();
-            Sport=shapeData->get_Sport();
-        }
-    }
 
     // spin box for changing the port number
     insertSportNumberWidget(sportNumberItem,Sport);

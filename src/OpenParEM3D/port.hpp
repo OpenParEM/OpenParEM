@@ -545,9 +545,9 @@ class Mode
       void recalculatePathIndexList (std::vector<Path *> *);
       void removeIntegrationPath (std::string, Path *);
 #ifdef HAS_GUI
-      void set_ModeItem (ModeItem *item_) {modeItem=item_;}
-      ModeItem* get_ModeItem () {return modeItem;}
-      void draw (Relay *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, PortItem *);
+      //void set_ModeItem (ModeItem *item_) {modeItem=item_;}
+      //ModeItem* get_ModeItem () {return modeItem;}
+      ModeItem* draw (Relay *, BoundaryDatabase *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, PortItem *);
 #endif
 };
 
