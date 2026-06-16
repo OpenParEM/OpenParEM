@@ -39,6 +39,7 @@ class Boundary;
 class CustomLineEdit;
 class VIItem;
 class SportNumberItem;
+class DiffPairItem;
 
 // shape data with history for undo/redo
 
@@ -555,6 +556,7 @@ public:
     bool is_scaleLabel () {if (itemType == 12) return true; return false;}
     bool is_scaleValue () {if (itemType == 13) return true; return false;}
     bool is_integrationPathSegment () {if (itemType == 14) return true; return false;}
+    bool is_diffpair () {if (itemType == 15) return true; return false;}
     bool is_boundaryType () {if (itemType == 20) return true; return false;}
     bool is_boundaryWaveImpedance () {if (itemType == 21) return true; return false;}
     bool is_boundaryMaterial () {if (itemType == 22) return true; return false;}
@@ -648,6 +650,7 @@ public:
         if (is_scaleLabel()) std::cout << "scale label" << std::endl;
         if (is_scaleValue()) std::cout << "scale value" << std::endl;
         if (is_integrationPathSegment()) std::cout << "integration path segment" << std::endl;
+        if (is_diffpair()) std::cout << "differential pair" << std::endl;
         if (is_boundaryType()) std::cout << "boundary type" << std::endl;
         if (is_boundaryWaveImpedance()) std::cout << "boundary wave impedance" << std::endl;
         if (is_boundaryMaterial()) std::cout << "boundary wave material" << std::endl;
@@ -679,6 +682,7 @@ public:
         if (is_scaleLabel()) std::cout << "   itemType=scale" << std::endl;
         if (is_scaleValue()) std::cout << "   itemType=scaleValue" << std::endl;
         if (is_integrationPathSegment()) std::cout << "   itemType=integrationPathSegment" << std::endl;
+        if (is_diffpair()) std::cout << "   itemType=diffpair" << std::endl;
         if (is_boundaryType()) std::cout << "   itemType=boundary type" << std::endl;
         if (is_boundaryWaveImpedance()) std::cout << "   itemType=boundary wave impedance" << std::endl;
         if (is_boundaryMaterial()) std::cout << "   itemType=boundary wave material" << std::endl;
@@ -737,6 +741,7 @@ protected:
                                                        // 10 - voltage, 11 - current
                                                        // 12 - scale label, 13 - scale value
                                                        // 14 - integration path segment
+                                                       // 15 - differential pair
                                                        // 20 - boundary type
                                                        // 21 - boundary wave impedance
                                                        // 22 - boundary material
@@ -1174,7 +1179,7 @@ class ModeItem : public BaseItem
 
 public:
     ModeItem () {}
-    ModeItem (OpenParEMg *, PortItem *, bool);
+    ModeItem (OpenParEMg *, BaseItem *, bool);
 
     // void startItemChange () override;
     // void addItemChange () override;
@@ -1190,15 +1195,17 @@ public:
     void unlinkPaths (BaseItem *);
     void del () override;
     void showMenu (QMenu *) override;
-    void setPortItem (PortItem *portItem_) {portItem=portItem_;}
-    PortItem* getPortItem () {return portItem;}
+    //void setPortItem (PortItem *portItem_) {portItem=portItem_;}
+    //PortItem* getPortItem () {return portItem;}
+
+    void setParentItem (BaseItem *baseItem) {parentItem=baseItem;}
 
     int get_SportCount ();
 
     void save (std::ofstream *) override;
 
 private:
-    PortItem *portItem;   // PortItem associated with this port
+    //PortItem *portItem;   // PortItem associated with this port
 };
 
 class SportItem : public BaseItem
@@ -1285,6 +1292,36 @@ public:
 private:
     ModeItem *modeItem;
     ScaleLabelItem *scaleLabelItem;
+};
+
+class DiffPairItem : public BaseItem
+{
+    Q_OBJECT
+
+public:
+    DiffPairItem (OpenParEMg *, PortItem *, ModeItem *, ModeItem *);
+    bool isValidShow () override;
+    bool isValidHide () override;
+    void show () override;
+    void hide () override;
+    void undo () override;
+    void redo () override;
+    bool hasUndo () override {return dataStack.hasUndo();}
+    bool hasRedo () override {return dataStack.hasRedo();}
+    void showMenu (QMenu *) override;
+    void setPortItem (PortItem *portItem_) {portItem=portItem_;}
+    PortItem* getPortItem () {return portItem;}
+
+    bool isValidDelete ();
+    void del () override;
+
+    void promoteChildren () override;
+    void demoteChildren () override;
+
+    void save (std::ofstream *) override;
+
+private:
+    PortItem *portItem;
 };
 
 

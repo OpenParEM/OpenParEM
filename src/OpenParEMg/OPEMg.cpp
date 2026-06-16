@@ -298,6 +298,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(mergeAction);
     QActionList.push_back(subtractAction);
     QActionList.push_back(assignMaterialAction);
+    QActionList.push_back(createDiffpairAction);
     initQActionList();
 
     // signals to show the drawing tab when drawing actions are clicked
@@ -1633,12 +1634,9 @@ void OpenParEMg::insertModeItems ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
         if (baseItem && baseItem->is_port()) {
-            PortItem *portItem=dynamic_cast<PortItem *>(baseItem);
-            if (portItem && portItem->is_port()) {
-                ModeItem *newModeItem=new ModeItem(this,portItem,true);
-                portItem->addChild(newModeItem);
-                itemChangesStack.add(portItem);
-            }
+            ModeItem *newModeItem=new ModeItem(this,baseItem,true);
+            baseItem->addChild(newModeItem);
+            itemChangesStack.add(newModeItem);
         }
         i++;
     }
@@ -1745,6 +1743,30 @@ void OpenParEMg::deletePortItems ()
             PortItem *portItem=dynamic_cast<PortItem *>(baseItem);
             if (portItem && portItem->is_port()) {
                 portItem->del();
+            }
+        }
+        i++;
+    }
+
+    clickedItem=nullptr;
+    previousClickedItem=nullptr;
+
+    finishOperation(false,1);
+}
+
+void OpenParEMg::deleteDiffPairItems ()
+{
+    //std::cout << "OpenParEMg::deleteDiffPairItems" << std::endl; std::cout.flush();
+
+    itemChangesStack.startNew();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+        if (baseItem && baseItem->is_diffpair()) {
+            DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(baseItem);
+            if (diffPairItem && diffPairItem->is_diffpair()) {
+                diffPairItem->del();
             }
         }
         i++;
@@ -3688,6 +3710,65 @@ void OpenParEMg::reversePathItems ()
     }
 
     finishOperation(false,1);
+}
+
+void OpenParEMg::createDiffPairItem ()
+{
+    std::cout << "OpenParEMg::createDiffPairIte" << std::endl; std::cout.flush();
+
+    itemChangesStack.startNew();
+
+    // make a list of mode items to process
+    std::vector<ModeItem *> modeList;
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (modeItem) modeList.push_back(modeItem);
+        i++;
+    }
+
+    std::cout << "   modeList.size()=" << modeList.size() << std::endl; std::cout.flush();
+
+    // should only be 2
+    if (modeList.size() != 2) return;
+
+    PortItem *parentPortItem=dynamic_cast<PortItem *>(modeList[0]->getParentItem());
+
+    // create the diffpair
+    DiffPairItem *newDiffPairItem=new DiffPairItem(this,parentPortItem,modeList[0],modeList[1]);
+    parentPortItem->addChild(newDiffPairItem);
+    newDiffPairItem->demoteChildren();
+
+    itemChangesStack.add(newDiffPairItem);
+
+    finishOperation(false,1);
+}
+
+bool OpenParEMg::isValidCreateDiffPair ()
+{
+    QList<QTreeWidgetItem *> items=ui->drawingItemTree->selectedItems();
+
+    // must only have 2 selected items
+    if (items.count() != 2) return false;
+
+    std::vector<ModeItem *> modeList;
+    int i=0;
+    while (i < items.count()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(items[i]);
+        if (baseItem) {
+            ModeItem *modeItem=dynamic_cast<ModeItem *>(baseItem);
+            if (modeItem && modeItem->is_sport()) modeList.push_back(modeItem);
+        }
+        i++;
+    }
+
+    // must have only two
+    if (modeList.size() != 2) return false;
+
+    // must have the same PortItem parent
+    if (modeList[0]->getParentItem() != modeList[1]->getParentItem()) return false;
+
+    return true;
 }
 
 void OpenParEMg::renumberDimTag ()

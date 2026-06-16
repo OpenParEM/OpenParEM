@@ -3286,7 +3286,7 @@ void PortItem::showMenu (QMenu *menu)
     mw->hideAction=new QAction("Hide",this);
     mw->unselectAction=new QAction("Unselect",this);
     mw->renameAction=new QAction("Rename",this);
-    mw->insertAction=new QAction("Insert Mode",this);
+    mw->insertAction=new QAction("Insert S-port",this);
     mw->deleteAction=new QAction("Delete",this);
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
@@ -3436,20 +3436,21 @@ void PortItem::save (std::ofstream *out)
 // ModeItem
 ////////////////////////////////////////////////////////////////////////////////
 
-ModeItem::ModeItem (OpenParEMg *mw_, PortItem *portItem_, bool dummyFill)
+ModeItem::ModeItem (OpenParEMg *mw_, BaseItem *parentItem_, bool dummyFill)
 {
     mw=mw_;
-    parentItem=portItem_;
+    parentItem=parentItem_;
     itemType=5;
-    portItem=portItem_;
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
     addShapeData(newShapeData);
 
     // transfer the Sport number from the port to the mode
-    if (portItem_) {
-        ShapeData *shapeData=portItem_->getShapeData();
+
+    PortItem *portItem=dynamic_cast<PortItem *>(parentItem);
+    if (portItem) {
+        ShapeData *shapeData=portItem->getShapeData();
         newShapeData->set_Sport(shapeData->get_Sport());
     }
 
@@ -3548,7 +3549,11 @@ void ModeItem::hide ()
     mw->setMenusI(33);
 }
 
-bool ModeItem::isValidDelete () {return true;}
+bool ModeItem::isValidDelete ()
+{
+    if (parentItem->is_diffpair()) return false;
+    return true;
+}
 
 void ModeItem::unlinkPaths (BaseItem *baseItem)
 {
@@ -3571,15 +3576,14 @@ void ModeItem::unlinkPaths (BaseItem *baseItem)
 
 void ModeItem::del ()
 {
+    if (parentItem->is_diffpair()) return;
+
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setDelete();
     addShapeData(newShapeData);
 
     unlinkPaths(this);
-    PortItem *portItem=getPortItem();
-    if (portItem) {
-        portItem->removeChild(this);
-    }
+    parentItem->removeChild(this);
 
     mw->itemChangesStack.add(this);
 
@@ -3595,6 +3599,7 @@ void ModeItem::showMenu (QMenu *menu)
     mw->showAction=new QAction("Show",this);
     mw->hideAction=new QAction("Hide",this);
     mw->renameAction=new QAction("Rename",this);
+    mw->createDiffpairAction=new QAction("Create Differential Pair",this);
     mw->deleteAction=new QAction("Delete",this);
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
@@ -3602,6 +3607,7 @@ void ModeItem::showMenu (QMenu *menu)
     connect(mw->showAction, &QAction::triggered, this, &ModeItem::show);
     connect(mw->hideAction, &QAction::triggered, this, &ModeItem::hide);
     connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renameSportNet);
+    connect(mw->createDiffpairAction, &QAction::triggered, mw, &OpenParEMg::createDiffPairItem);
     connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deleteModeItems);
     connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
     connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
@@ -3609,6 +3615,7 @@ void ModeItem::showMenu (QMenu *menu)
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
     if (mw->ui->drawingWindow->get_selectedItems_count() == 1) menu->addAction(mw->renameAction);
+    if (mw->isValidCreateDiffPair()) menu->addAction(mw->createDiffpairAction);
     if (isValidDelete()) menu->addAction(mw->deleteAction);
     if (mw->clickedItem) {
         if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
@@ -3633,8 +3640,16 @@ int ModeItem::get_SportCount ()
 
 void ModeItem::save (std::ofstream *out)
 {
+    PortItem *portItem=nullptr;
+    if (parentItem->is_port()) {
+        portItem=dynamic_cast<PortItem *>(parentItem);
+    } else if (parentItem->is_diffpair()) {
+        portItem=dynamic_cast<PortItem *>(parentItem->getParentItem());
+    }
+
+    if (!portItem) return;
+
     QString calculation="Mode";
-    PortItem *portItem=dynamic_cast<PortItem *>(parentItem);
     if (portItem && portItem->is_port()) {
         ShapeData *shapeData=portItem->getShapeData();
         calculation=shapeData->get_impedance_calculation();
@@ -3683,7 +3698,7 @@ SportItem::SportItem (OpenParEMg *mw_, ModeItem *modeItem_)
     int Sport=0;
     ModeItem *modeItem=getModeItem();
     if (modeItem) {
-        PortItem *portItem=modeItem->getPortItem();
+        PortItem *portItem=dynamic_cast<PortItem *>(modeItem->getParentItem());
         if (portItem) {
             ShapeData *shapeData=portItem->getShapeData();
             Sport=shapeData->get_Sport();
@@ -3804,7 +3819,6 @@ VIItem::VIItem (OpenParEMg *mw_, ModeItem *modeItem_, int itemType_)
     itemType=itemType_;
     modeItem=modeItem_;
     scaleLabelItem=nullptr;
-    parentItem=modeItem_;
 
     if (itemType_ == 10) {
         setText(0,"voltage");
@@ -4134,6 +4148,255 @@ void ScaleLabelItem::save (std::ofstream *out)
         i++;
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// DiffPairItem
+////////////////////////////////////////////////////////////////////////////////
+
+DiffPairItem::DiffPairItem (OpenParEMg *mw_, PortItem *portItem_, ModeItem *pModeItem_, ModeItem *nModeItem_)
+{
+    mw=mw_;
+    parentItem=portItem_;
+    itemType=15;
+    portItem=portItem_;
+
+    setFlags(flags() & ~Qt::ItemIsEditable);
+    setForeground(0,Qt::black);
+    setText(0,"Differential Pair");
+
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    newShapeData->set_name(text(0));
+    addShapeData(newShapeData);
+
+    children.push_back(pModeItem_);
+    children.push_back(nModeItem_);
+}
+
+bool DiffPairItem::isValidShow ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (diffPairItem && diffPairItem->is_diffpair()) {
+            int j=0;
+            while (j < childCount()) {
+                if (child(j)) {
+                    if (child(j)->foreground(0) == Qt::gray) return true;
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+    return false;
+}
+
+bool DiffPairItem::isValidHide ()
+{
+    long unsigned int i=0;
+    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(mw->ui->drawingWindow->get_selectedItem(i));
+        if (diffPairItem && diffPairItem->is_diffpair()) {
+            int j=0;
+            while (j < childCount()) {
+                if (child(j)) {
+                    if (child(j)->foreground(0) == Qt::black) return true;
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+    return false;
+}
+
+void DiffPairItem::show ()
+{
+    setForeground(0,Qt::gray);
+    mw->ui->drawingWindow->showItem(this);
+
+    int i=0;
+    while (i < childCount()) {
+        if (child(i)) {
+            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+            baseItem->setForeground(0,Qt::gray);
+            mw->ui->drawingWindow->showItem(baseItem);
+        }
+        i++;
+    }
+}
+
+void DiffPairItem::hide ()
+{
+    setForeground(0,Qt::black);
+    mw->ui->drawingWindow->hideItem(this);
+
+    int i=0;
+    while (i < childCount()) {
+        if (child(i)) {
+            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+            baseItem->setForeground(0,Qt::black);
+            mw->ui->drawingWindow->hideItem(baseItem);
+        }
+        i++;
+    }
+}
+
+void DiffPairItem::showMenu (QMenu *menu)
+{
+
+    mw->showAction=new QAction("Show",this);
+    mw->hideAction=new QAction("Hide",this);
+    mw->deleteAction=new QAction("Delete",this);
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
+
+    connect(mw->showAction, &QAction::triggered, this, &DiffPairItem::show);
+    connect(mw->hideAction, &QAction::triggered, this, &DiffPairItem::hide);
+    connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deleteDiffPairItems);
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
+
+    if (isValidShow()) menu->addAction(mw->showAction);
+    if (isValidHide()) menu->addAction(mw->hideAction);
+    if (isValidDelete()) menu->addAction(mw->deleteAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
+}
+
+bool DiffPairItem::isValidDelete ()
+{
+    return true;
+}
+
+void DiffPairItem::del ()
+{
+    // remove from display and tracking
+    mw->ui->drawingWindow->unselectItem(this);
+    mw->ui->drawingWindow->hideItem(this);
+    mw->ui->drawingWindow->removeItemFromMap(this);
+    mw->ui->drawingWindow->deleteShape(getShape());
+
+    // mark as delete
+    ShapeData *newShapeData=getShapeData()->copyCreate();
+    newShapeData->setDelete();
+    addShapeData(newShapeData);
+
+    // parentItem
+    BaseItem *parentItem=getParentItem();
+    if (parentItem) {
+        PortItem *portItem=dynamic_cast<PortItem *>(parentItem);
+        if (portItem && portItem->is_port()) {
+            promoteChildren();
+            portItem->removeChild(this);
+        }
+
+        mw->itemChangesStack.add(this);
+        mw->projectChanged=true;
+    }
+
+    mw->itemChangesStack.add(this);
+}
+
+void DiffPairItem::promoteChildren ()
+{
+    long unsigned int i=0;
+    while (i < getChildrenSize()) {
+        ModeItem *child=dynamic_cast<ModeItem *>(getChild(i));
+        if (child) {
+            int index=indexOfChild(child);
+            takeChild(index);
+            getParentItem()->addChild(child);
+            child->setParentItem(getParentItem());
+            child->restoreWidgets();
+            mw->ui->drawingWindow->showItem(child);
+        }
+        i++;
+    }
+}
+
+void DiffPairItem::demoteChildren ()
+{
+    long unsigned int i=0;
+    while (i < getChildrenSize()) {
+        ModeItem *child=dynamic_cast<ModeItem *>(getChild(i));
+        if (child) {
+            int index=child->getParentItem()->indexOfChild(child);
+            child->getParentItem()->takeChild(index);
+            addChild(child);
+            child->setParentItem(this);
+            child->restoreWidgets();
+            mw->ui->drawingWindow->hideItem(child);
+        }
+        i++;
+    }
+}
+
+void DiffPairItem::undo ()
+{
+    std::cout << "DiffPairItem::undo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    if (shapeData->isCreate()) {
+        promoteChildren();
+        parentItem->removeChild(this);
+    } else if (shapeData->isDelete()) {
+        parentItem->addChild(this);
+        demoteChildren();
+    }
+
+    BaseItem::undo();
+}
+
+void DiffPairItem::redo ()
+{
+    std::cout << "DiffPairItem::redo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    ShapeData *next=shapeData->getNext();
+    if (!next) return;
+
+    if (next->isCreate()) {
+        parentItem->addChild(this);
+        demoteChildren();
+    } else if (next->isDelete()) {
+        promoteChildren();
+        parentItem->removeChild(this);
+    }
+
+    BaseItem::redo();
+}
+
+void DiffPairItem::save (std::ofstream *out)
+{
+    std::vector<int> Sport;
+    int i=0;
+    while (i < childCount()) {
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+        if (modeItem && modeItem->is_sport()) {
+            ShapeData *shapeData=modeItem->getShapeData();
+            Sport.push_back(shapeData->get_Sport());
+
+            modeItem->save(out);
+        }
+        i++;
+    }
+
+    if (Sport.size() != 2) return;
+
+    *out << "   DifferentialPair" << std::endl;
+    *out << "      Sport_P=" << Sport[0] << std::endl;
+    *out << "      Sport_N=" << Sport[1] << std::endl;
+    *out << "   EndDifferentialPair" << std::endl;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // RootMeshItem

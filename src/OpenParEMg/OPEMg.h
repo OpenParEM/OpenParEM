@@ -347,6 +347,8 @@ class OpenParEMg : public QMainWindow
     friend class RootBoundaryItem;
     friend class BoundaryItem;
 
+    friend class DiffPairItem;
+
     friend class RootMeshItem;
     friend class MeshItem;
 
@@ -420,6 +422,7 @@ public:
     bool isValidCreatePortFromFace ();
     bool isValidCreatePortFromPath ();
     bool isValidReversePath ();
+    bool isValidCreateDiffPair ();
 
     bool isValidCreateBoundaryFromFace ();
     bool isValidCreateBoundaryFromPath ();
@@ -592,6 +595,7 @@ private slots:
     void deletePortItems ();
     void deleteModeItems ();
     void deleteIntegrationPathItems ();
+    void deleteDiffPairItems ();
 
     void assignMaterial ();
     void crossReferencePaths ();
@@ -632,6 +636,7 @@ private slots:
     void convertDrawingToPort ();
     void convertDrawingToBoundary ();
     void reversePathItems ();
+    void createDiffPairItem ();
     double getConversionFactor ();
     void extrudePolywire ();
     void mergeSolids ();
@@ -753,6 +758,7 @@ private:
     QAction *setPlaneAction;
     QAction *setPlaneAxisAction;
     QAction *assignMaterialAction;
+    QAction *createDiffpairAction;
     std::vector<QAction *> QActionList;
 
     // gmsh
