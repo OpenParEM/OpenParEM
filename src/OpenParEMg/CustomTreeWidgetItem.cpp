@@ -3200,6 +3200,18 @@ void PortItem::insertImpedanceCalculationWidget (BaseItem *impedanceCalculationI
     else if (impedance_calculation.compare("modal") == 0) comboZcalc->setCurrentIndex(1);
     mw->ui->drawingItemTree->setItemWidget(impedanceCalculationItem,0,comboZcalc);
 
+    // check for differential pairs
+    int i=0;
+    while (i < childCount()) {
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+        if (diffPairItem) {
+            //diffPairItem->enableZcalcControl(false);  // reminder that this exists
+            comboZcalc->setEnabled(false);
+            break;
+        }
+        i++;
+    }
+
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
 }
@@ -4274,29 +4286,19 @@ bool DiffPairItem::isValidDelete ()
 
 void DiffPairItem::del ()
 {
-    // remove from display and tracking
-    mw->ui->drawingWindow->unselectItem(this);
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
-
     // mark as delete
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setDelete();
     addShapeData(newShapeData);
 
-    // parentItem
-    BaseItem *parentItem=getParentItem();
-    if (parentItem) {
-        PortItem *portItem=dynamic_cast<PortItem *>(parentItem);
-        if (portItem && portItem->is_port()) {
-            promoteChildren();
-            portItem->removeChild(this);
-        }
-
-        mw->itemChangesStack.add(this);
+    PortItem *portItem=dynamic_cast<PortItem *>(parentItem);
+    if (portItem) {
+        promoteChildren();
+        portItem->removeChild(this);
         mw->projectChanged=true;
     }
+
+    enableZcalcControl(true);
 
     mw->itemChangesStack.add(this);
 }
@@ -4343,14 +4345,18 @@ void DiffPairItem::undo ()
     if (!shapeData) return;
 
     if (shapeData->isCreate()) {
+        dataStack.undo();
         promoteChildren();
         parentItem->removeChild(this);
+        enableZcalcControl(true);
     } else if (shapeData->isDelete()) {
+        dataStack.undo();
         parentItem->addChild(this);
         demoteChildren();
+        enableZcalcControl(false);
+    } else {
+        BaseItem::undo();
     }
-
-    BaseItem::undo();
 }
 
 void DiffPairItem::redo ()
@@ -4364,14 +4370,37 @@ void DiffPairItem::redo ()
     if (!next) return;
 
     if (next->isCreate()) {
+        dataStack.redo();
         parentItem->addChild(this);
         demoteChildren();
+        enableZcalcControl(false);
     } else if (next->isDelete()) {
+        dataStack.redo();
         promoteChildren();
         parentItem->removeChild(this);
+        enableZcalcControl(true);
+    } else {
+        BaseItem::redo();
     }
+}
 
-    BaseItem::redo();
+void DiffPairItem::enableZcalcControl (bool state)
+{
+    PortItem *portItem=dynamic_cast<PortItem *>(parentItem);
+    if (!portItem) return;
+
+    int i=0;
+    while (i < portItem->childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(portItem->child(i));
+        if (baseItem && baseItem->is_impedanceCalculation()) {
+            CustomComboBox *comboZcalc=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(baseItem,0));
+            if (comboZcalc) {
+                comboZcalc->setEnabled(state);
+                break;
+            }
+        }
+        i++;
+    }
 }
 
 void DiffPairItem::save (std::ofstream *out)

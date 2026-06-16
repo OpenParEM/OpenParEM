@@ -3394,8 +3394,8 @@ void OpenParEMg::createPortFromPathN (bool startNew)
             portName.append(std::to_string(sport));
             uniqueifyPortName(portName);
 
-            QString impedance_calculation="invalid";
-            QString impedance_definition="line";
+            QString impedance_calculation="line";
+            QString impedance_definition="invalid";
             PortItem *newPortItem=new PortItem(this,selectedList[i],impedance_calculation,impedance_definition);
             if (newPortItem) {
 
@@ -3739,6 +3739,9 @@ void OpenParEMg::createDiffPairItem ()
     parentPortItem->addChild(newDiffPairItem);
     newDiffPairItem->demoteChildren();
 
+    // disable the impedance calculation selection
+    newDiffPairItem->enableZcalcControl(false);
+
     itemChangesStack.add(newDiffPairItem);
 
     finishOperation(false,1);
@@ -3767,6 +3770,14 @@ bool OpenParEMg::isValidCreateDiffPair ()
 
     // must have the same PortItem parent
     if (modeList[0]->getParentItem() != modeList[1]->getParentItem()) return false;
+
+    // parent must be port
+    PortItem *portItem=dynamic_cast<PortItem *>(modeList[0]->getParentItem());
+    if (!portItem) return false;
+
+    // port must use line calculation
+    ShapeData *shapeData=portItem->getShapeData();
+    if (shapeData->get_impedance_calculation().compare("line") != 0) return false;
 
     return true;
 }

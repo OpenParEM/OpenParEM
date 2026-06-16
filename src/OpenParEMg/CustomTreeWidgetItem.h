@@ -1318,6 +1318,7 @@ public:
     void promoteChildren () override;
     void demoteChildren () override;
 
+    void enableZcalcControl (bool);
     void save (std::ofstream *) override;
 
 private:
