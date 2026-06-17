@@ -46,6 +46,27 @@ BaseItem::BaseItem (OpenParEMg *mw_, BaseItem *parentItem_)
     addShapeData(newShapeData);
 }
 
+void BaseItem::showDisplayStatus ()
+{
+    std::cout << "Item " << text(0).toStdString();
+    if (foreground(0) == Qt::gray) std::cout << "  hidden";
+    else if (foreground(0) == Qt::black) std::cout << "  shown";
+    else std::cout << "  invalid";
+    if (mw->ui->drawingWindow->isDisplayed(getShape())) {
+        std::cout << "  displayed";
+    } else std::cout << "  not displayed";
+    std::cout << std::endl; std::cout.flush();
+}
+
+void BaseItem::alignForegroundColor ()
+{
+    if (mw->ui->drawingWindow->isDisplayed(getShape())) {
+        setForeground(0,Qt::black);
+    } else {
+        setForeground(0,Qt::gray);
+    }
+}
+
 void BaseItem::setForUndoRedo (bool withMidPoints, int shapeOperation)
 {
     // clone the item onto itself for undo/redo
@@ -543,8 +564,8 @@ bool RootDrawingItem::isValidShow ()
 {
     int i=0;
     while (i < mw->drawing->childCount()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
-        if (child->isValidShow()) return true;
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
+        if (drawingItem && drawingItem->isValidShow()) return true;
         i++;
     }
     return false;
@@ -554,8 +575,8 @@ bool RootDrawingItem::isValidHide ()
 {
     int i=0;
     while (i < mw->drawing->childCount()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
-        if (child->isValidHide()) return true;
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
+        if (drawingItem && drawingItem->isValidHide()) return true;
         i++;
     }
     return false;
@@ -565,8 +586,10 @@ bool RootDrawingItem::isValidSelectAll ()
 {
     int i=0;
     while (i < mw->drawing->childCount()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
-        if (!child->isSelected()) return true;
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
+        if (drawingItem) {
+            if (!drawingItem->isSelected()) return true;
+        }
         i++;
     }
     return true;
@@ -574,14 +597,12 @@ bool RootDrawingItem::isValidSelectAll ()
 
 void RootDrawingItem::show (bool update)
 {
-    mw->ui->drawingWindow->hideItem(mw->drawing);
-    mw->drawing->setForeground(0,Qt::black);
-
     int i=0;
     while (i < mw->drawing->childCount()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
-        child->setForeground(0,Qt::gray);
-        mw->ui->drawingWindow->showItem(child);
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
+        if (drawingItem) {
+            mw->ui->drawingWindow->showItem(drawingItem);
+        }
         i++;
     }
 
@@ -590,8 +611,14 @@ void RootDrawingItem::show (bool update)
 
 void RootDrawingItem::hide (bool update)
 {
-    mw->ui->drawingWindow->hideItem(mw->drawing);
-    mw->drawing->setForeground(0,Qt::black);
+    int i=0;
+    while (i < mw->drawing->childCount()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
+        if (drawingItem) {
+            mw->ui->drawingWindow->hideItem(drawingItem);
+        }
+        i++;
+    }
 
     mw->ui->drawingWindow->updateViewer();
 }
@@ -604,9 +631,11 @@ void RootDrawingItem::selectAll ()
 
     int i=0;
     while (i < mw->drawing->childCount()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
-        mw->ui->drawingWindow->showItem(child);
-        mw->ui->drawingWindow->selectItem(child);
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
+        if (drawingItem) {
+            mw->ui->drawingWindow->showItem(drawingItem);
+            mw->ui->drawingWindow->selectItem(drawingItem);
+        }
         i++;
     }
 }
@@ -666,14 +695,14 @@ void DrawingItem::promoteChildren ()
 {
     long unsigned int i=0;
     while (i < getChildrenSize()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(getChild(i));
-        if (child) {
-            int index=indexOfChild(child);
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(getChild(i));
+        if (drawingItem) {
+            int index=indexOfChild(drawingItem);
             takeChild(index);
-            getParentItem()->addChild(child);
-            child->setParentItem(getParentItem());
-            child->decrease_depth();
-            mw->ui->drawingWindow->showItem(child);
+            getParentItem()->addChild(drawingItem);
+            drawingItem->setParentItem(getParentItem());
+            drawingItem->decrease_depth();
+            mw->ui->drawingWindow->showItem(drawingItem);
         }
         i++;
     }
@@ -685,18 +714,18 @@ void DrawingItem::demoteChildren ()
 
     long unsigned int i=0;
     while (i < getChildrenSize()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(getChild(i));
-        if (child) {
-            int index=child->getParentItem()->indexOfChild(child);
-            child->getParentItem()->takeChild(index);
-            addChild(child);
-            child->setParentItem(this);
-            child->copy_depth(this);
-            child->increase_depth();
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(getChild(i));
+        if (drawingItem) {
+            int index=drawingItem->getParentItem()->indexOfChild(drawingItem);
+            drawingItem->getParentItem()->takeChild(index);
+            addChild(drawingItem);
+            drawingItem->setParentItem(this);
+            drawingItem->copy_depth(this);
+            drawingItem->increase_depth();
 
-            child->setText(1,QString());
+            drawingItem->setText(1,QString());
 
-            mw->ui->drawingWindow->hideItem(child);
+            mw->ui->drawingWindow->hideItem(drawingItem);
         }
         i++;
     }
@@ -744,7 +773,6 @@ void DrawingItem::cancelOperation ()
         mw->reprocess(this);
     }
 
-    setForeground(0,Qt::gray);
     mw->ui->drawingWindow->showItem(this);
     mw->ui->drawingWindow->activateItem(this);
 }
@@ -881,11 +909,12 @@ void DrawingItem::startMove (bool isAnimate)
         if (isAnimate) setAnimate(mw->ui->drawingWindow->get_viewerContext());
         int i=0;
         while (i < childCount()) {
-            DrawingItem *processChild=(DrawingItem *)child(i);
-            resetOperation();
-            //if (isAnimate) setAnimate(mw->ui->drawingWindow->get_viewerContext());
-            setEnableMove(true);
-            processChild->startMove(false);
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
+            if (drawingItem) {
+                resetOperation();
+                setEnableMove(true);
+                drawingItem->startMove(false);
+            }
             i++;
         }
     }
@@ -903,12 +932,6 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 {
     //std::cout << "DrawingItem::finishMove" << std::endl; std::cout.flush();
 
-    // QString message="DrawingItem::finishMove  ";
-    // message.append(text(0));
-    // {QMessageBox mb; mb.critical(nullptr, "Debug", message);}
-
-    //unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
-
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
         polywire->shift(p1_,p0_);
@@ -920,8 +943,8 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
     if (process) {
         int i=0;
         while (i < childCount()) {
-            DrawingItem *processChild=(DrawingItem *)child(i);
-            processChild->finishMove(p0_,p1_);
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
+            if (drawingItem) drawingItem->finishMove(p0_,p1_);
             mw->drawingChanged=true;
             i++;
         }
@@ -963,10 +986,11 @@ void DrawingItem::startRotate ()
     if (process) {
         int i=0;
         while (i < childCount()) {
-            DrawingItem *processChild=(DrawingItem *)child(i);
-            resetOperation();
-            processChild->startRotate();
-            //mw->ui->drawingWindow->hideItem(processChild);
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
+            if (drawingItem) {
+                resetOperation();
+                drawingItem->startRotate();
+            }
             i++;
         }
     }
@@ -998,8 +1022,8 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
     if (process) {
         int i=0;
         while (i < childCount()) {
-            DrawingItem *processChild=(DrawingItem *)child(i);
-            processChild->finishRotate(angle,startPoint,endPoint);
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
+            if (drawingItem) drawingItem->finishRotate(angle,startPoint,endPoint);
             mw->drawingChanged=true;
             i++;
         }
@@ -1184,9 +1208,9 @@ DrawingItem* DrawingItem::copy (BaseItem *parent)
     if (process) {
         int i=0;
         while (i < childCount()) {
-            DrawingItem *processChild=(DrawingItem *)child(i);
-            if (processChild) {
-                DrawingItem *newChild=processChild->copy(newItem);
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
+            if (drawingItem) {
+                DrawingItem *newChild=drawingItem->copy(newItem);
                 newChild->setParentItem(newItem);
                 newItem->push_child(newChild);
             }
@@ -1261,9 +1285,11 @@ void DrawingItem::startEdit ()
             Polywire *polywire=nullptr;
             int i=0;
             while (i < childCount()) {
-                DrawingItem *processChild=(DrawingItem *)child(i);
-                polywire=static_cast<Polywire *>(processChild->getPolywire());
-                if (polywire) break;
+                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
+                if (drawingItem) {
+                    polywire=static_cast<Polywire *>(drawingItem->getPolywire());
+                    if (polywire) break;
+                }
                 i++;
             }
 
@@ -1306,8 +1332,8 @@ void DrawingItem::finishEdit ()
 
         int i=0;
         while (i < getChildrenSize()) {
-            DrawingItem *processChild=(DrawingItem *)getChild(i);
-            processChild->finishEdit();
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(getChild(i));
+            if (drawingItem) drawingItem->finishEdit();
             i++;
         }
     }
@@ -1365,8 +1391,8 @@ void DrawingItem::finishDeletePoint ()
     if (process) {
         int i=0;
         while (i < getChildrenSize()) {
-            DrawingItem *processChild=(DrawingItem *)getChild(i);
-            processChild->finishDeletePoint();
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(getChild(i));
+            if (drawingItem) drawingItem->finishDeletePoint();
             i++;
         }
     }
@@ -1461,8 +1487,8 @@ void DrawingItem::finishStretchPoint ()
     if (process) {
         int i=0;
         while (i < getChildrenSize()) {
-            DrawingItem *processChild=(DrawingItem *)getChild(i);
-            processChild->finishStretchPoint();
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(getChild(i));
+            if (drawingItem) drawingItem->finishStretchPoint();
             i++;
         }
     }
@@ -1528,16 +1554,18 @@ void DrawingItem::del ()
 
         // move children to parent
         while (childCount() > 0) {
-            DrawingItem* drawingChild=dynamic_cast<DrawingItem *>(takeChild(0));
-            rootDrawingItem->insertChild(insertIndex++,drawingChild);
-            drawingChild->setParentItem(rootDrawingItem);
-            drawingChild->decrease_depth();
-            mw->ui->drawingWindow->showItem(drawingChild);
+            DrawingItem* drawingItem=dynamic_cast<DrawingItem *>(takeChild(0));
+            if (drawingItem) {
+                rootDrawingItem->insertChild(insertIndex++,drawingItem);
+                drawingItem->setParentItem(rootDrawingItem);
+                drawingItem->decrease_depth();
+                mw->ui->drawingWindow->showItem(drawingItem);
 
-            // set the materials
-            if (!text(1).isNull()) {
-                if (!drawingChild->getPolywire()) {
-                    drawingChild->setText(1,text(1));
+                // set the materials
+                if (!text(1).isNull()) {
+                    if (!drawingItem->getPolywire()) {
+                        drawingItem->setText(1,text(1));
+                    }
                 }
             }
         }
@@ -1588,12 +1616,7 @@ bool DrawingItem::isValidHide ()
 
 void DrawingItem::show (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) mw->ui->drawingWindow->showItem(baseItem);
-        i++;
-    }
+    mw->ui->drawingWindow->showItem(this);
 
     if (update) {
         mw->ui->drawingWindow->updateViewer();
@@ -1602,10 +1625,12 @@ void DrawingItem::show (bool update)
 
 void DrawingItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) mw->ui->drawingWindow->hideItem(baseItem);
+    mw->ui->drawingWindow->hideItem(this);
+
+    int i=0;
+    while (i < childCount()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
+        if (drawingItem) drawingItem->hide(update);
         i++;
     }
 
@@ -1654,8 +1679,8 @@ void DrawingItem::showMenu (QMenu *menu)
     mw->cancelAction=new QAction("Cancel");
 
     connect(mw->assignMaterialAction, &QAction::triggered, mw, &OpenParEMg::assignMaterial);
-    connect(mw->showAction, &QAction::triggered, this, &DrawingItem::show);
-    connect(mw->hideAction, &QAction::triggered, this, &DrawingItem::hide);
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showDrawingItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideDrawingItems);
     connect(mw->editAction, &QAction::triggered, mw, &OpenParEMg::editObject);
     connect(mw->moveAction, &QAction::triggered, mw, &OpenParEMg::moveObject);
     connect(mw->stretchAction, &QAction::triggered, mw, &OpenParEMg::stretchObject);
@@ -2133,7 +2158,6 @@ void PathItem::del ()
     // parentItem
     RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(parentItem);
     if (rootPathItem) {
-        int insertIndex=rootPathItem->indexOfChild(this);
         rootPathItem->removeChild(this);
     }
 
@@ -3690,14 +3714,10 @@ bool VIItem::isValidDrawPath ()
 
 void VIItem::show (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) {
-            if (baseItem->is_voltage() || baseItem->is_current()) {
-                mw->ui->drawingWindow->showItem(baseItem);
-            }
-        }
+    int i=0;
+    while (i < childCount()) {
+        IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(child(i));
+        if (integrationPathItem) integrationPathItem->show(false);
         i++;
     }
 
@@ -3708,14 +3728,10 @@ void VIItem::show (bool update)
 
 void VIItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) {
-            if (baseItem->is_voltage() || baseItem->is_current()) {
-                mw->ui->drawingWindow->hideItem(baseItem);
-            }
-        }
+    int i=0;
+    while (i < childCount()) {
+        IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(child(i));
+        if (integrationPathItem) integrationPathItem->hide(false);
         i++;
     }
 
@@ -3734,8 +3750,8 @@ void VIItem::showMenu (QMenu *menu)
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
-    connect(mw->showAction, &QAction::triggered, this, &VIItem::show);
-    connect(mw->hideAction, &QAction::triggered, this, &VIItem::hide);
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showVIItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideVIItems);
     connect(mw->drawPathAction, &QAction::triggered, this, &VIItem::drawLinePath);
     connect(mw->drawPolylineAction, &QAction::triggered, this, &VIItem::drawPolylinePath);
     connect(mw->insertAction, &QAction::triggered, this, &VIItem::insertSelectedPath);

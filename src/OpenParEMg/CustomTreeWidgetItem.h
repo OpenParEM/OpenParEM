@@ -485,6 +485,9 @@ public:
     BaseItem ();
     BaseItem (OpenParEMg *, BaseItem *);
 
+    void showDisplayStatus ();
+    void alignForegroundColor ();
+
     void startItemChange ();
     void addItemChange ();
 
@@ -806,6 +809,7 @@ public:
         mw=mw_;
         itemType=100;
         parentItem=nullptr;
+        setForeground(0,Qt::black);
     }
 
     bool isValidShow () override;
@@ -973,6 +977,7 @@ public:
         mw=mw_;
         itemType=104;
         parentItem=nullptr;
+        setForeground(0,Qt::black);
     }
 
     bool isValidShow () override;
@@ -1079,6 +1084,7 @@ public:
         mw=mw_;
         itemType=102;
         parentItem=nullptr;
+        setForeground(0,Qt::black);
     }
 
     bool isValidShow () override;
@@ -1130,6 +1136,7 @@ public:
         mw=mw_;
         itemType=101;
         parentItem=nullptr;
+        setForeground(0,Qt::black);
     }
 
     bool isValidShow () override;
@@ -1337,6 +1344,7 @@ public:
         mw=mw_;
         itemType=103;
         parentItem=nullptr;
+        setForeground(0,Qt::black);
     }
     bool isValidShow () override;
     bool isValidHide () override;

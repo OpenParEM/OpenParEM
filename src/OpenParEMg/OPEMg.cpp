@@ -330,19 +330,15 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     path->setText(0,"Path");
     ui->drawingItemTree->addTopLevelItem(path);
-    path->setForeground(0,Qt::black);
 
     port->setText(0,"Port");
     ui->drawingItemTree->addTopLevelItem(port);
-    port->setForeground(0,Qt::black);
 
     boundary->setText(0,"Boundary");
     ui->drawingItemTree->addTopLevelItem(boundary);
-    boundary->setForeground(0,Qt::black);
 
     mesh->setText(0,"Mesh");
     ui->drawingItemTree->addTopLevelItem(mesh);
-    mesh->setForeground(0,Qt::black);
 
     // context menu
     ui->drawingItemTree->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -359,12 +355,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     workingItem=nullptr;
 
     ui->menuRun->setToolTipsVisible(true);
-
-    drawing->setForeground(0,Qt::black);
-    path->setForeground(0,Qt::black);
-    port->setForeground(0,Qt::black);
-    boundary->setForeground(0,Qt::black);
-    mesh->setForeground(0,Qt::black);
 
     // drawing is always a COMPOUND
     BRep_Builder builder;
@@ -1229,6 +1219,36 @@ bool OpenParEMg::isValidDeletePath ()
     return true;
 }
 
+void OpenParEMg::showDrawingItems ()
+{
+    //std::cout << "OpenParEMg::showDrawingItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (drawingItem) drawingItem->show(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
+void OpenParEMg::hideDrawingItems ()
+{
+    //std::cout << "OpenParEMg::hideDrawingItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (drawingItem) drawingItem->hide(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
 void OpenParEMg::showPathItems ()
 {
     //std::cout << "OpenParEMg::showPathItems" << std::endl; std::cout.flush();
@@ -1312,6 +1332,36 @@ void OpenParEMg::hideModeItems ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         ModeItem *modeItem=dynamic_cast<ModeItem *>(ui->drawingWindow->get_selectedItem(i));
         if (modeItem) modeItem->hide(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
+void OpenParEMg::showVIItems ()
+{
+    //std::cout << "OpenParEMg::showVIItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        VIItem *viItem=dynamic_cast<VIItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (viItem) viItem->show(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
+void OpenParEMg::hideVIItems ()
+{
+    //std::cout << "OpenParEMg::hideVIItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        VIItem *viItem=dynamic_cast<VIItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (viItem) viItem->hide(false);
         i++;
     }
 
@@ -2135,9 +2185,9 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
         // cycle through the top-level children and add to the compound
         int i=0;
         while (i < drawing->childCount()) {
-            DrawingItem *child=dynamic_cast<DrawingItem *>(drawing->child(i));
-            if (child && !child->getShape().IsNull()) {
-                builder.Add(compound,child->getShape()->Shape());
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
+            if (drawingItem && !drawingItem->getShape().IsNull()) {
+                builder.Add(compound,drawingItem->getShape()->Shape());
             }
             i++;
         }
@@ -5231,21 +5281,23 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     if (polywire) {
         polywire->load(inputData,startBlockIndex,endBlockIndex,name,&objectCounts);
         polywire->set_viewerContext(ui->drawingWindow->get_viewerContext());
-        DrawingItem *newItem=new DrawingItem(this,baseParent);
-        ShapeData *shapeData=newItem->getShapeData();
+        DrawingItem *newDrawingItem=new DrawingItem(this,baseParent);
+        ShapeData *shapeData=newDrawingItem->getShapeData();
         shapeData->setPolywire(polywire);
-        newItem->setText(0,QString::fromStdString(name));
-        shapeData->set_name(newItem->text(0));
+        newDrawingItem->setText(0,QString::fromStdString(name));
+        shapeData->set_name(newDrawingItem->text(0));
 
         DrawingItem *parentItem=dynamic_cast<DrawingItem *>(baseParent);
-        if (parentItem && parentItem->is_drawing()) newItem->copy_depth(parentItem);
+        if (parentItem && parentItem->is_drawing()) newDrawingItem->copy_depth(parentItem);
 
-        if (increaseDepth) newItem->increase_depth();
-        baseParent->addChild(newItem);
-        baseParent->push_child(newItem);
-        reprocess(newItem);
+        if (increaseDepth) newDrawingItem->increase_depth();
+        baseParent->addChild(newDrawingItem);
+        baseParent->push_child(newDrawingItem);
+        reprocess(newDrawingItem);
         drawingChanged=true;
-        ui->drawingWindow->showItem(newItem);
+        newDrawingItem->alignForegroundColor();
+        ui->drawingWindow->hideItem(newDrawingItem);
+        if (baseParent->is_rootDrawing()) ui->drawingWindow->showItem(newDrawingItem);
         startBlockIndex=endBlockIndex;
     }
 
@@ -5257,11 +5309,11 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
     if (typeStart == 8) loadBrep=true;
 
     if (process) {
-        DrawingItem *newItem=new DrawingItem(this,baseParent);
-        ShapeData *shapeData=newItem->getShapeData();
+        DrawingItem *newDrawingItem=new DrawingItem(this,baseParent);
+        ShapeData *shapeData=newDrawingItem->getShapeData();
         shapeData->setProcess(process);
-        baseParent->addChild(newItem);
-        baseParent->push_child(newItem);
+        baseParent->addChild(newDrawingItem);
+        baseParent->push_child(newDrawingItem);
 
         // extrude
         if (typeStart == 5) {
@@ -5272,11 +5324,11 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             std::string keyword="name";
             std::string name;
             if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
-                newItem->setText(0,QString::fromStdString(name));
-                shapeData->set_name(newItem->text(0));
+                newDrawingItem->setText(0,QString::fromStdString(name));
+                shapeData->set_name(newDrawingItem->text(0));
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseParent);
-                if (drawingItem && drawingItem->is_drawing()) newItem->copy_depth(drawingItem);
-                if (increaseDepth) newItem->increase_depth();
+                if (drawingItem && drawingItem->is_drawing()) newDrawingItem->copy_depth(drawingItem);
+                if (increaseDepth) newDrawingItem->increase_depth();
                 objectCounts.extrude++;
             }
 
@@ -5295,11 +5347,13 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             // get one child
             localStartBlockIndex=startBlockIndex+1;
             localEndBlockIndex=startBlockIndex+1;
-            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem,true);
+            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newDrawingItem,true);
 
-            reprocess(newItem);
+            reprocess(newDrawingItem);
             drawingChanged=true;
-            ui->drawingWindow->showItem(newItem);
+            newDrawingItem->alignForegroundColor();
+            ui->drawingWindow->hideItem(newDrawingItem);
+            if (baseParent->is_rootDrawing()) ui->drawingWindow->showItem(newDrawingItem);
         }
 
         // merge and subtract
@@ -5311,10 +5365,10 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             std::string keyword="name";
             std::string name;
             if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,name)) {
-                newItem->setText(0,QString::fromStdString(name));
+                newDrawingItem->setText(0,QString::fromStdString(name));
                 DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseParent);
-                if (drawingItem && drawingItem->is_drawing()) newItem->copy_depth(drawingItem);
-                if (increaseDepth) newItem->increase_depth();
+                if (drawingItem && drawingItem->is_drawing()) newDrawingItem->copy_depth(drawingItem);
+                if (increaseDepth) newDrawingItem->increase_depth();
                 if (typeStart == 6) objectCounts.merge++;
                 if (typeStart == 7) objectCounts.subtract++;
             }
@@ -5323,14 +5377,16 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
 
             localStartBlockIndex=startBlockIndex+1;
             localEndBlockIndex=startBlockIndex+1;
-            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem,true);
+            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newDrawingItem,true);
 
             localStartBlockIndex=localEndBlockIndex+1;
-            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newItem,true);
+            loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newDrawingItem,true);
 
-            reprocess(newItem);
+            reprocess(newDrawingItem);
             drawingChanged=true;
-            ui->drawingWindow->showItem(newItem);
+            newDrawingItem->alignForegroundColor();
+            ui->drawingWindow->hideItem(newDrawingItem);
+            if (baseParent->is_rootDrawing()) ui->drawingWindow->showItem(newDrawingItem);
         }
 
         startBlockIndex=endBlockIndex;
@@ -5379,7 +5435,9 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
 
             reprocess(newItem);
             drawingChanged=true;
-            ui->drawingWindow->showItem(newItem);
+            newItem->alignForegroundColor();
+            ui->drawingWindow->hideItem(newItem);
+            if (baseParent->is_rootDrawing()) ui->drawingWindow->showItem(newItem);
         }
 
         startBlockIndex=endBlockIndex;

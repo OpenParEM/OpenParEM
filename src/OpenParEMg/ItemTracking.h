@@ -252,6 +252,7 @@ public:
         if (showTracking) {std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();}
 
         if (!item) return;
+        if (item->foreground(0) == Qt::black) return;
         DisplayShape(item->getShape());
         item->setForeground(0,Qt::black);
         visibleItems.push_back(item);
@@ -356,6 +357,7 @@ public:
         if (hideTracking) {std::cout << "ItemTracker::hideItem  item=" << item << std::endl; std::cout.flush();}
 
         if (!item) return;
+        if (item->foreground(0) == Qt::gray) return;
         EraseShape(item->getShape());
         item->setForeground(0,Qt::gray);
         nullifyVisibleItem(item);

@@ -569,12 +569,16 @@ private slots:
     void renamePathItems ();
     void deletePathItems ();
     bool isValidDeletePath ();
+    void showDrawingItems ();
+    void hideDrawingItems ();
     void showPathItems ();
     void hidePathItems ();
     void showPortItems ();
     void hidePortItems ();
     void showModeItems ();
     void hideModeItems ();
+    void showVIItems ();
+    void hideVIItems ();
     void showBoundaryItems ();
     void hideBoundaryItems ();
     void showIntegrationPathItems ();
