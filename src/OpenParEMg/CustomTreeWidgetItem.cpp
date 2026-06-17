@@ -87,38 +87,34 @@ void BaseItem::setForUndoRedo (bool withMidPoints, int shapeOperation)
 
 void BaseItem::restoreWidgets ()
 {
-    if (is_boundary()) {
-        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(this);
-        if (boundaryItem && boundaryItem->is_boundary()) {
-            BaseItem *boundaryType=nullptr;
-            BaseItem *boundaryWaveImpedance=nullptr;
-            BaseItem *boundaryMaterial=nullptr;
+    BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(this);
+    if (boundaryItem) {
+        BaseItem *boundaryType=nullptr;
+        BaseItem *boundaryWaveImpedance=nullptr;
+        BaseItem *boundaryMaterial=nullptr;
 
-            int i=0;
-            while (i < boundaryItem->childCount()) {
-                BaseItem *baseItem=dynamic_cast<BaseItem *>(boundaryItem->child(i));
-                if (baseItem) {
-                    if (baseItem->is_boundaryType()) boundaryType=baseItem;
-                    else if (baseItem->is_boundaryWaveImpedance()) boundaryWaveImpedance=baseItem;
-                    else if (baseItem->is_boundaryMaterial()) boundaryMaterial=baseItem;
-                }
-                i++;
+        int i=0;
+        while (i < boundaryItem->childCount()) {
+            BaseItem *baseItem=dynamic_cast<BaseItem *>(boundaryItem->child(i));
+            if (baseItem) {
+                if (baseItem->is_boundaryType()) boundaryType=baseItem;
+                else if (baseItem->is_boundaryWaveImpedance()) boundaryWaveImpedance=baseItem;
+                else if (baseItem->is_boundaryMaterial()) boundaryMaterial=baseItem;
             }
-
-            boundaryItem->insertItemWidgets(boundaryType,boundaryWaveImpedance,boundaryMaterial);
+            i++;
         }
+
+        boundaryItem->insertItemWidgets(boundaryType,boundaryWaveImpedance,boundaryMaterial);
     }
 
-    if (is_port()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(this);
-        if (portItem && portItem->is_port()) {
-            portItem->setSolidColor();
-        }
+    PortItem *portItem=dynamic_cast<PortItem *>(this);
+    if (portItem) {
+        portItem->setSolidColor();
     }
 
     if (is_impedanceCalculation()) {
         PortItem *portItem=dynamic_cast<PortItem *>(getParentItem());
-        if (portItem && portItem->is_port()) {
+        if (portItem) {
             ShapeData *shapeData=portItem->getShapeData();
             QString impedance_calculation=shapeData->get_impedance_calculation();
             portItem->insertImpedanceCalculationWidget(this,impedance_calculation);
@@ -127,7 +123,7 @@ void BaseItem::restoreWidgets ()
 
     if (is_impedanceDefinition()) {
         PortItem *portItem=dynamic_cast<PortItem *>(getParentItem());
-        if (portItem && portItem->is_port()) {
+        if (portItem) {
             ShapeData *shapeData=portItem->getShapeData();
             QString impedance_definition=shapeData->get_impedance_definition();
             portItem->insertImpedanceDefinitionWidget(this,impedance_definition);
@@ -135,17 +131,17 @@ void BaseItem::restoreWidgets ()
     }
 
     if (is_sportNumber()) {
-        SportItem *sportItem=dynamic_cast<SportItem *>(getParentItem());
-        if (sportItem && sportItem->is_sportLabel()) {
+        SportNumberItem *sportNumberItem=dynamic_cast<SportNumberItem *>(this);
+        if (sportNumberItem) {
             ShapeData *shapeData=getShapeData();
             int Sport=shapeData->get_Sport();
-            sportItem->insertSportNumberWidget(this,Sport);
+            sportNumberItem->insertSportNumberWidget(Sport);
         }
     }
 
     if (is_scaleValue()) {
         ScaleValueItem *scaleValueItem=dynamic_cast<ScaleValueItem *>(this);
-        if (scaleValueItem && scaleValueItem->is_scaleValue()) {
+        if (scaleValueItem) {
             ShapeData *shapeData=getShapeData();
             double scale=shapeData->get_scale();
             scaleValueItem->insertScaleValueWidget(scale);
@@ -1169,14 +1165,14 @@ DrawingItem* DrawingItem::copy (BaseItem *parent)
     // set parent
 
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parent);
-    if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
+    if (rootDrawingItem) {
         rootDrawingItem->addChild(newItem);
         newItem->setParentItem(rootDrawingItem);
         newItem->set_depth(0);
     }
 
     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(parent);
-    if (drawingItem && drawingItem->is_drawing()) {
+    if (drawingItem) {
         drawingItem->addChild(newItem);
         newItem->setParentItem(drawingItem);
         newItem->copy_depth(drawingItem);
@@ -1526,39 +1522,35 @@ void DrawingItem::del ()
     addShapeData(newShapeData);
 
     // parentItem
-    BaseItem *parentItem=getParentItem();
-    if (parentItem) {
-        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
-        if (rootDrawingItem && rootDrawingItem->is_rootDrawing()) {
+    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(parentItem);
+    if (rootDrawingItem) {
+        int insertIndex=rootDrawingItem->indexOfChild(this);
 
-            int insertIndex=rootDrawingItem->indexOfChild(this);
+        // move children to parent
+        while (childCount() > 0) {
+            DrawingItem* drawingChild=dynamic_cast<DrawingItem *>(takeChild(0));
+            rootDrawingItem->insertChild(insertIndex++,drawingChild);
+            drawingChild->setParentItem(rootDrawingItem);
+            drawingChild->decrease_depth();
+            mw->ui->drawingWindow->showItem(drawingChild);
 
-            // move children to parent
-            while (childCount() > 0) {
-                DrawingItem* drawingChild=dynamic_cast<DrawingItem *>(takeChild(0));
-                rootDrawingItem->insertChild(insertIndex++,drawingChild);
-                drawingChild->setParentItem(rootDrawingItem);
-                drawingChild->decrease_depth();
-                mw->ui->drawingWindow->showItem(drawingChild);
-
-                // set the materials
-                if (!text(1).isNull()) {
-                    if (!drawingChild->getPolywire()) {
-                        drawingChild->setText(1,text(1));
-                    }
+            // set the materials
+            if (!text(1).isNull()) {
+                if (!drawingChild->getPolywire()) {
+                    drawingChild->setText(1,text(1));
                 }
             }
-
-            rootDrawingItem->removeChild(this);
         }
 
-        mw->itemChangesStack.add(this);
-
-        // reset the top-level compound
-        mw->reprocess(mw->drawing);
-
-        mw->drawingChanged=true;
+        rootDrawingItem->removeChild(this);
     }
+
+    mw->itemChangesStack.add(this);
+
+    // reset the top-level compound
+    mw->reprocess(mw->drawing);
+
+    mw->drawingChanged=true;
 }
 
 DrawingItem* DrawingItem::copyCreate ()
@@ -2139,17 +2131,14 @@ void PathItem::del ()
     addShapeData(newShapeData);
 
     // parentItem
-    BaseItem *parentItem=getParentItem();
-    if (parentItem) {
-        RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(parentItem);
-        if (rootPathItem && rootPathItem->is_rootPath()) {
-            int insertIndex=rootPathItem->indexOfChild(this);
-            rootPathItem->removeChild(this);
-        }
-
-        mw->itemChangesStack.add(this);
-        mw->drawingChanged=true;
+    RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(parentItem);
+    if (rootPathItem) {
+        int insertIndex=rootPathItem->indexOfChild(this);
+        rootPathItem->removeChild(this);
     }
+
+    mw->itemChangesStack.add(this);
+    mw->drawingChanged=true;
 }
 
 BaseItem* PathItem::findTopLevelItem (BaseItem *baseItem)
@@ -3205,7 +3194,7 @@ void PortItem::del ()
     BaseItem *parentItem=getParentItem();
     if (parentItem) {
         RootPortItem *rootPortItem=dynamic_cast<RootPortItem *>(parentItem);
-        if (rootPortItem && rootPortItem->is_rootPort()) {
+        if (rootPortItem) {
             rootPortItem->removeChild(this);
         }
 
@@ -3277,7 +3266,7 @@ int PortItem::get_SportCount ()
     int i=0;
     while (i < childCount()) {
         ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
-        if (modeItem && modeItem->is_sport()) {
+        if (modeItem) {
             int testSportCount=modeItem->get_SportCount();
             if (testSportCount > SportCount) SportCount=testSportCount;
         }
@@ -3361,27 +3350,16 @@ bool ModeItem::isValidHide ()
 
 void ModeItem::show (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem && baseItem->is_sport()) {
-            mw->ui->drawingWindow->showItem(baseItem);
+    setForeground(0,Qt::black);
 
+    int i=0;
+    while (i < childCount()) {
+        VIItem *viItem=dynamic_cast<VIItem *>(child(i));
+        if (viItem) {
             int j=0;
-            while (j < baseItem->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(j));
-                if (child->is_voltage() || child->is_current()) {
-                    //child->setForeground(0,Qt::black);
-                    int k=0;
-                    while (k < child->childCount()) {
-                        BaseItem *grandChild=dynamic_cast<BaseItem *>(child->child(k));
-                        if (grandChild->is_integrationPathSegment()) {
-                            mw->ui->drawingWindow->showItem(grandChild);
-                            grandChild->setForeground(0,Qt::black);
-                        }
-                        k++;
-                    }
-                }
+            while (j < viItem->childCount()) {
+                IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(viItem->child(j));
+                if (integrationPathItem) integrationPathItem->show(update);
                 j++;
             }
         }
@@ -3395,25 +3373,16 @@ void ModeItem::show (bool update)
 
 void ModeItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem && baseItem->is_sport()) {
+    setForeground(0,Qt::gray);
+
+    int i=0;
+    while (i < childCount()) {
+        VIItem *viItem=dynamic_cast<VIItem *>(child(i));
+        if (viItem) {
             int j=0;
-            while (j < baseItem->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(j));
-                if (child->is_voltage() || child->is_current()) {
-                    //child->setForeground(0,Qt::gray);
-                    int k=0;
-                    while (k < child->childCount()) {
-                        BaseItem *grandChild=dynamic_cast<BaseItem *>(child->child(k));
-                        if (grandChild->is_integrationPathSegment()) {
-                            mw->ui->drawingWindow->hideItem(grandChild);
-                            grandChild->setForeground(0,Qt::gray);
-                        }
-                        k++;
-                    }
-                }
+            while (j < viItem->childCount()) {
+                IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(viItem->child(j));
+                if (integrationPathItem) integrationPathItem->hide(update);
                 j++;
             }
         }
@@ -3479,8 +3448,8 @@ void ModeItem::showMenu (QMenu *menu)
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
-    connect(mw->showAction, &QAction::triggered, this, &ModeItem::show);
-    connect(mw->hideAction, &QAction::triggered, this, &ModeItem::hide);
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showModeItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideModeItems);
     connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renameSportNet);
     connect(mw->createDiffpairAction, &QAction::triggered, mw, &OpenParEMg::createDiffPairItem);
     connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deleteModeItems);
@@ -3572,23 +3541,7 @@ SportItem::SportItem (OpenParEMg *mw_, ModeItem *modeItem_, int Sport)
     addChild(sportNumberItem);
 
     // spin box for changing the port number
-    insertSportNumberWidget(sportNumberItem,Sport);
-}
-
-void SportItem::insertSportNumberWidget (BaseItem *baseItem, int Sport)
-{
-    SportNumberItem *sportNumberItem=dynamic_cast<SportNumberItem *>(baseItem);
-
-    CustomSpinBox *sportNumber=new CustomSpinBox();
-    const QSignalBlocker blocker(sportNumber);
-    sportNumber->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
-    sportNumber->set_sportNumberItem(sportNumberItem);
-    sportNumber->setMinimum(1);
-    sportNumber->setValue(Sport);
-    mw->ui->drawingItemTree->setItemWidget(baseItem,0,sportNumber);
-
-    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
-    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::setMenus);
+    sportNumberItem->insertSportNumberWidget(Sport);
 }
 
 bool SportItem::isValidShow () {return false;}
@@ -3654,6 +3607,20 @@ void SportNumberItem::hide (bool) {}
 
 void SportNumberItem::showMenu (QMenu *menu)
 {
+}
+
+void SportNumberItem::insertSportNumberWidget (int Sport)
+{
+    CustomSpinBox *sportNumber=new CustomSpinBox();
+    const QSignalBlocker blocker(sportNumber);
+    sportNumber->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
+    //sportNumber->set_sportNumberItem(sportNumberItem);
+    sportNumber->setMinimum(1);
+    sportNumber->setValue(Sport);
+    mw->ui->drawingItemTree->setItemWidget(this,0,sportNumber);
+
+    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
+    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::setMenus);
 }
 
 int SportNumberItem::get_SportCount ()

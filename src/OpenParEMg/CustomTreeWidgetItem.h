@@ -1218,8 +1218,6 @@ public:
     SportItem () {}
     SportItem (OpenParEMg *, ModeItem *, int);
 
-    void insertSportNumberWidget (BaseItem *, int);
-
     bool isValidShow () override;
     bool isValidHide () override;
     void show (bool) override;
@@ -1253,6 +1251,7 @@ public:
     //void setSportItem (SportItem *sportItem_) {sportItem=sportItem_;}
     //SportItem* getSportItem () {return sportItem;}
 
+    void insertSportNumberWidget (int);
     int get_SportCount ();
 
 private:

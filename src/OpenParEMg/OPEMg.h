@@ -573,6 +573,8 @@ private slots:
     void hidePathItems ();
     void showPortItems ();
     void hidePortItems ();
+    void showModeItems ();
+    void hideModeItems ();
     void showBoundaryItems ();
     void hideBoundaryItems ();
     void showIntegrationPathItems ();
