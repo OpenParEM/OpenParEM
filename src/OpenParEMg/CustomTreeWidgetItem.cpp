@@ -1701,6 +1701,8 @@ void DrawingItem::showMenu (QMenu *menu)
     mw->convertToBoundaryAction=new QAction("Convert to Boundary");
     mw->convertToBoundaryAction->setToolTip("Convert the selected polywires to boundaries with matching paths.");
     mw->cancelAction=new QAction("Cancel");
+    mw->expandAllAction=new QAction("Expand All",this);
+    mw->collapseAllAction=new QAction("Collapse All",this);
 
     connect(mw->assignMaterialAction, &QAction::triggered, mw, &OpenParEMg::assignMaterial);
     connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showDrawingItems);
@@ -1730,6 +1732,8 @@ void DrawingItem::showMenu (QMenu *menu)
     connect(mw->convertToPortAction, &QAction::triggered, mw, &OpenParEMg::convertDrawingToPort);
     connect(mw->convertToBoundaryAction, &QAction::triggered, mw, &OpenParEMg::convertDrawingToBoundary);
     connect(mw->cancelAction, &QAction::triggered, mw, &OpenParEMg::cancelMenu);
+    connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
+    connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
     if (mw->isValidAssignMaterial()) menu->addAction(mw->assignMaterialAction);
     if (isValidShow()) menu->addAction(mw->showAction);
@@ -1758,6 +1762,10 @@ void DrawingItem::showMenu (QMenu *menu)
     if (mw->isValidConvertToPort()) menu->addAction(mw->convertToPortAction);
     if (mw->isValidConvertToBoundary()) menu->addAction(mw->convertToBoundaryAction);
     menu->addAction(mw->cancelAction);
+    if (mw->clickedItem) {
+        if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
+        if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
+    }
 }
 
 TopoDS_Shape DrawingItem::moveShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_InteractiveContext) viewerContext)
