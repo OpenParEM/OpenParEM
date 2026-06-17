@@ -2175,6 +2175,8 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
 
     if (!baseItem) return;
 
+    bool isDisplayed=ui->drawingWindow->isDisplayed(baseItem->getShape());
+
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
     if (rootDrawingItem) {
 
@@ -2399,6 +2401,10 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
         if (!polywire && !process) {
             ui->drawingWindow->activateItem(drawingItem);
         }
+
+        baseItem->alignForegroundColor();
+        if (isDisplayed && baseItem->foreground(0) == Qt::gray) ui->drawingWindow->showItem(baseItem);
+        if (!isDisplayed && baseItem->foreground(0) == Qt::black) ui->drawingWindow->hideItem(baseItem);
 
         // necessary?
         drawingItem->reset_transformation();

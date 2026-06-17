@@ -245,8 +245,12 @@ BaseItem* BaseItem::findTopLevelItem (BaseItem *parentItem, BaseItem *currentIte
         currentParentItem=currentItem->getParentItem();
     }
 
-    currentItem->setForeground(0,Qt::black);
-    mw->ui->drawingWindow->hideItem(currentItem);
+    currentItem->alignForegroundColor();
+    if (currentItem->foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(currentItem);
+    if (currentItem->foreground(0) == Qt::gray) {
+        mw->ui->drawingWindow->showItem(currentItem);
+        mw->ui->drawingWindow->hideItem(currentItem);
+    }
     mw->ui->drawingWindow->showItem(currentItem);
 
     return currentItem;
@@ -932,6 +936,8 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 {
     //std::cout << "DrawingItem::finishMove" << std::endl; std::cout.flush();
 
+    bool isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
+
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
         polywire->shift(p1_,p0_);
@@ -969,8 +975,14 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 
     mw->activeAction=false;
 
+    alignForegroundColor();
+    if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
+    if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
+
     resetOperation();
     unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
+
+    //findTopLevelItem(this);
 }
 
 void DrawingItem::startRotate ()
@@ -1004,7 +1016,9 @@ void DrawingItem::startRotate ()
 
 void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint)
 {
-    // // remove the old version from display and tracking
+    bool isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
+
+    // remove the old version from display and tracking
     mw->ui->drawingWindow->hideItem(this);
     mw->ui->drawingWindow->removeItemFromMap(this);
     mw->ui->drawingWindow->deleteShape(getShape());
@@ -1048,9 +1062,13 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
 
     mw->activeAction=false;
 
+    alignForegroundColor();
+    if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
+    if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
+
     resetOperation();
 
-    findTopLevelItem(this);
+    //findTopLevelItem(this);
 }
 
 void DrawingItem::startStretch ()
@@ -1313,6 +1331,8 @@ void DrawingItem::startEdit ()
 
 void DrawingItem::finishEdit ()
 {
+    bool isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
+
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
         Line *line=dynamic_cast<Line *>(polywire);
@@ -1342,9 +1362,13 @@ void DrawingItem::finishEdit ()
         mw->reprocess(this);
     }
 
+    alignForegroundColor();
+    if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
+    if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
+
     mw->activeAction=false;
 
-    findTopLevelItem(this);
+    //findTopLevelItem(this);
 }
 
 void DrawingItem::startDeletePoint ()
