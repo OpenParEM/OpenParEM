@@ -120,12 +120,12 @@ public:
         return newShapeData;
     }
 
-    void setType (int type_)
-    {
-        type=type_;
-    }
+    // void setType (int type_)
+    // {
+    //     type=type_;
+    // }
 
-    int getType () {return type;}
+    //int getType () {return type;}
 
     void setShape (Handle(AIS_Shape) shape_)
     {
@@ -144,24 +144,24 @@ public:
         process=process_;
     }
 
-    void set (int type_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
-    {
-        type=type_;
-        setPolywire(polywire_);
-        setProcess(process_);
-        setShape(shape_);
-    }
+    // void set (int type_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    // {
+    //     type=type_;
+    //     setPolywire(polywire_);
+    //     setProcess(process_);
+    //     setShape(shape_);
+    // }
 
-    void set (ShapeData *shapeData)
-    {
-        if (!shapeData) return;
-        type=shapeData->type;
-        prior=shapeData->prior;
-        next=shapeData->next;
-        setPolywire(shapeData->getPolywire());
-        setProcess(shapeData->getProcess());
-        setShape(shapeData->getShape());
-    }
+    // void set (ShapeData *shapeData)
+    // {
+    //     if (!shapeData) return;
+    //     type=shapeData->type;
+    //     prior=shapeData->prior;
+    //     next=shapeData->next;
+    //     setPolywire(shapeData->getPolywire());
+    //     setProcess(shapeData->getProcess());
+    //     setShape(shapeData->getShape());
+    // }
 
     void set (Handle(AIS_Shape) shape_)
     {
@@ -183,19 +183,19 @@ public:
     bool isReversePath () {if (type == 7) return true; return false;}
     bool isChangeName () {if (type == 8) return true; return false;}
 
-    void setNoop () {type=0;}
+    //void setNoop () {type=0;}
     void setCreate () {type=1;}
     void setEdit () {type=2;}
     void setDelete () {type=3;}
-    void setConvertToPath () {type=4;}
-    void setConvertToPort () {type=5;}
-    void setConvertToBoundary () {type=6;}
+    //void setConvertToPath () {type=4;}
+    //void setConvertToPort () {type=5;}
+    //void setConvertToBoundary () {type=6;}
     void setReversePath () {type=7;}
     void setChangeName () {type=8;}
 
     void set_name (QString name_) {name=name_;}
-    void set_impedance_definition (std::string impedance_definition_) {impedance_definition=QString::fromStdString(impedance_definition_);}
-    void set_impedance_calculation (std::string impedance_calculation_) {impedance_calculation=QString::fromStdString(impedance_calculation_);}
+    //void set_impedance_definition (std::string impedance_definition_) {impedance_definition=QString::fromStdString(impedance_definition_);}
+    //void set_impedance_calculation (std::string impedance_calculation_) {impedance_calculation=QString::fromStdString(impedance_calculation_);}
     void set_impedance_definition (QString impedance_definition_) {impedance_definition=impedance_definition_;}
     void set_impedance_calculation (QString impedance_calculation_) {impedance_calculation=impedance_calculation_;}
     QString get_impedance_definition () {return impedance_definition;}
@@ -304,7 +304,7 @@ public:
         shapeDataList.clear();
     }
 
-    long unsigned int getSize () {return shapeDataList.size();}
+    //long unsigned int getSize () {return shapeDataList.size();}
 
     // void add (int action_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
     // {
@@ -326,21 +326,21 @@ public:
 
     // at current location
 
-    void set (int action_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
-    {
-        current->set(action_,polywire_,process_,shape_);
-    }
+    // void set (int action_, Polywire *polywire_, Process *process_, Handle(AIS_Shape) shape_)
+    // {
+    //     current->set(action_,polywire_,process_,shape_);
+    // }
 
-    void set (ShapeData *shapeData_)
-    {
-        if (!shapeData_) return;
-        current->set(shapeData_);
-    }
+    // void set (ShapeData *shapeData_)
+    // {
+    //     if (!shapeData_) return;
+    //     current->set(shapeData_);
+    // }
 
-    void setType (int type_)
-    {
-        current->setType(type_);
-    }
+    // void setType (int type_)
+    // {
+    //     current->setType(type_);
+    // }
 
     void setShape (Handle(AIS_Shape) shape_)
     {
@@ -354,16 +354,16 @@ public:
         current->setPolywire(polywire_);
     }
 
-    void setProcess (Process *process_)
-    {
-        if (!process_) return;
-        current->setProcess(process_);
-    }
+    // void setProcess (Process *process_)
+    // {
+    //     if (!process_) return;
+    //     current->setProcess(process_);
+    // }
 
-    void setName (QString name)
-    {
-        current->set_name(name);
-    }
+    // void setName (QString name)
+    // {
+    //     current->set_name(name);
+    // }
 
     // from current location
 
@@ -438,28 +438,28 @@ public:
         shapeDataList.push_back(noop);
     }
 
-    void pop ()
-    {
-        if (current == shapeDataList[shapeDataList.size()-1]) {
-            long unsigned int i=0;
-            while (i < shapeDataList.size()) {
-                if (shapeDataList[i]->getNext() == current) {
-                    shapeDataList[i]->setNext(nullptr);
-                }
-                if (shapeDataList[i]->getPrior() == current) {
-                    shapeDataList[i]->setPrior(nullptr);
-                }
-                i++;
-            }
+    // void pop ()
+    // {
+    //     if (current == shapeDataList[shapeDataList.size()-1]) {
+    //         long unsigned int i=0;
+    //         while (i < shapeDataList.size()) {
+    //             if (shapeDataList[i]->getNext() == current) {
+    //                 shapeDataList[i]->setNext(nullptr);
+    //             }
+    //             if (shapeDataList[i]->getPrior() == current) {
+    //                 shapeDataList[i]->setPrior(nullptr);
+    //             }
+    //             i++;
+    //         }
 
-            if (shapeDataList[shapeDataList.size()-1]) {
-                delete shapeDataList[shapeDataList.size()-1];
-                shapeDataList[shapeDataList.size()-1]=nullptr;
-            }
-            shapeDataList.pop_back();
-            current=shapeDataList[shapeDataList.size()-1];
-        }
-    }
+    //         if (shapeDataList[shapeDataList.size()-1]) {
+    //             delete shapeDataList[shapeDataList.size()-1];
+    //             shapeDataList[shapeDataList.size()-1]=nullptr;
+    //         }
+    //         shapeDataList.pop_back();
+    //         current=shapeDataList[shapeDataList.size()-1];
+    //     }
+    // }
 
     void print ()
     {
@@ -497,14 +497,14 @@ public:
 
     virtual bool isValidShow () {return false;}
     virtual bool isValidHide () {return false;}
-    virtual void show () {}
-    virtual void hide () {}
+    virtual void show (bool) {}
+    virtual void hide (bool) {}
     virtual void showMenu (QMenu *) {}
 
     void addShapeData (ShapeData *shapeData_) {dataStack.add(shapeData_);}
     void setShape (Handle(AIS_Shape) shape_) {dataStack.setShape(shape_);}
     void setPolywire (Polywire *polywire_) {dataStack.setPolywire(polywire_);}
-    void setProcess (Process *process_) {dataStack.setProcess(process_);}
+    //void setProcess (Process *process_) {dataStack.setProcess(process_);}
 
     virtual bool hasP0 () {return false;}
     virtual bool hasP1 () {return false;}
@@ -535,7 +535,7 @@ public:
 
     virtual void undo ();
     virtual void redo ();
-    void pop () {dataStack.pop();}
+    //void pop () {dataStack.pop();}
 
     void set_itemType (int itemType_) {itemType=itemType_;}
     int get_itemType () {return itemType;}
@@ -565,15 +565,15 @@ public:
     bool is_rootBoundary () {if (itemType == 102) return true; return false;}
     bool is_rootMesh () {if (itemType == 103) return true; return false;}
     bool is_rootPath () {if (itemType == 104) return true; return false;}
-    bool is_root ()
-    {
-        if (is_rootDrawing()) return true;
-        if (is_rootPort()) return true;
-        if (is_rootBoundary()) return true;
-        if (is_rootMesh()) return true;
-        if (is_rootPath()) return true;
-        return false;
-    }
+    // bool is_root ()
+    // {
+    //     if (is_rootDrawing()) return true;
+    //     if (is_rootPort()) return true;
+    //     if (is_rootBoundary()) return true;
+    //     if (is_rootMesh()) return true;
+    //     if (is_rootPath()) return true;
+    //     return false;
+    // }
 
     void deleteChildren (QTreeWidgetItem *item)
     {
@@ -614,18 +614,18 @@ public:
         return transformer.Shape();
     }
 
-    BaseItem* copyCreate ()
-    {
-        BaseItem *newItem=new BaseItem();
+    // BaseItem* copyCreate ()
+    // {
+    //     BaseItem *newItem=new BaseItem();
 
-        // copy just the current data
+    //     // copy just the current data
 
-        ShapeData *copyShapeData=dataStack.getShapeData()->copyCreate();
-        newItem->dataStack.add(copyShapeData);
-        newItem->setText(0,this->text(0).append("_copy"));
-        newItem->itemType=itemType;
-        return newItem;
-    }
+    //     ShapeData *copyShapeData=dataStack.getShapeData()->copyCreate();
+    //     newItem->dataStack.add(copyShapeData);
+    //     newItem->setText(0,this->text(0).append("_copy"));
+    //     newItem->itemType=itemType;
+    //     return newItem;
+    // }
 
     void print_itemType ()
     {
@@ -711,7 +711,7 @@ public:
 
     BaseItem* getParentItem () {return parentItem;}
 
-    void clearChildren () {children.clear();}
+    //void clearChildren () {children.clear();}
     void push_child (BaseItem *child) {children.push_back(child);}
     long unsigned int getChildrenSize () {return children.size();}
     BaseItem* getChild (long unsigned int i) {return children[i];}
@@ -719,12 +719,12 @@ public:
     virtual void promoteChildren () {}
     virtual void demoteChildren () {}
 
-    void convertPathToFace ()
-    {
-        Handle(AIS_Shape) shape=getShape();
-        if (shape.IsNull()) return;
+    // void convertPathToFace ()
+    // {
+    //     Handle(AIS_Shape) shape=getShape();
+    //     if (shape.IsNull()) return;
 
-    }
+    // }
 
     virtual void save (std::ofstream *);
 
@@ -764,8 +764,8 @@ class ScaleLabelItem : public BaseItem
 public:
     ScaleLabelItem (OpenParEMg *mw_, VIItem *parentItem_);
 
-    void setVIItem (VIItem *viItem_) {viItem=viItem_;}
-    VIItem* getVIItem () {return viItem;}
+    //void setVIItem (VIItem *viItem_) {viItem=viItem_;}
+    //VIItem* getVIItem () {return viItem;}
     void save (std::ofstream *) override;
 
 private:
@@ -781,8 +781,8 @@ public:
 
     void insertScaleValueWidget (double);
 
-    void setScaleLabelItem (ScaleLabelItem *scaleLabelItem_) {scaleLabelItem=scaleLabelItem_;}
-    ScaleLabelItem* getScaleLabelItem () {return scaleLabelItem;}
+    //void setScaleLabelItem (ScaleLabelItem *scaleLabelItem_) {scaleLabelItem=scaleLabelItem_;}
+    //ScaleLabelItem* getScaleLabelItem () {return scaleLabelItem;}
 
     void undo () override;
     void redo () override;
@@ -811,8 +811,8 @@ public:
     bool isValidShow () override;
     bool isValidHide () override;
     bool isValidSelectAll ();
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void selectAll ();
     void showMenu (QMenu *) override;
 
@@ -833,12 +833,12 @@ public:
 
     QString get_material () {return text(1);}
     void set_Material (QString material_) {material=material_;}
-    QString get_Material () {return material;}
+    //QString get_Material () {return material;}
 
     void set_dimTag (int dim, int tag) {dimTag.first=dim; dimTag.second=tag;}
-    void set_dimTag (std::pair<int,int> dimTag_) {dimTag=dimTag_;}
+    //void set_dimTag (std::pair<int,int> dimTag_) {dimTag=dimTag_;}
     std::pair<int,int> get_dimTag () {return dimTag;}
-    bool is_solid () {if (dimTag.first == 3) return true; return false;}
+    //bool is_solid () {if (dimTag.first == 3) return true; return false;}
 
     void copy_depth (DrawingItem *item) {
         if (item) depth=item->depth;
@@ -894,8 +894,8 @@ public:
 
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
 
     void setEnableMove (bool enableMove_) {enableMove=enableMove_;}
@@ -916,10 +916,10 @@ public:
     bool hasP1 () override {return p1set;}
     gp_Pnt getP0 () {return p0;}
     gp_Pnt getP1 () {return p1;}
-    void resetP0P1 () {p0set=false; p1set=false;}
+    //void resetP0P1 () {p0set=false; p1set=false;}
 
-    gp_Trsf getTrsf () {return aTrsf;}
-    void setTrsf (gp_Trsf aTrsf_) {aTrsf=aTrsf_;}
+    //gp_Trsf getTrsf () {return aTrsf;}
+    //void setTrsf (gp_Trsf aTrsf_) {aTrsf=aTrsf_;}
     void reset_transformation () {aTrsf=gp_Trsf();}
 
     TopoDS_Shape moveShape (gp_Pnt, gp_Pnt, Handle(AIS_InteractiveContext));
@@ -977,8 +977,8 @@ public:
 
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
 
 private:
@@ -1010,17 +1010,17 @@ public:
         }
     }
 
-    void clearLinkedItems () {linkedItems.clear();}
+    //void clearLinkedItems () {linkedItems.clear();}
 
-    void setHasArrows (bool hasArrows_)  {hasArrows=hasArrows_;}
-    bool getHasArrows () {return hasArrows;}
+    //void setHasArrows (bool hasArrows_)  {hasArrows=hasArrows_;}
+    //bool getHasArrows () {return hasArrows;}
 
     void rename (QString) override;
 
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
     void del () override;
     void setPath (Path *path_) {path=path_;}
@@ -1052,8 +1052,8 @@ public:
 
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
     void undo () override;
     void redo () override;
@@ -1083,8 +1083,8 @@ public:
 
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
 
 private:
@@ -1103,11 +1103,11 @@ public:
     void resetWidgets ();
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
     void del () override;
-    void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
+    //void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
     PathItem* getPathItem () {return pathItem;}
     void undo () override;
     void redo () override;
@@ -1134,8 +1134,8 @@ public:
 
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
 
 private:
@@ -1157,8 +1157,8 @@ public:
 
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
     void del () override;
     void setPathItem (PathItem *pathItem_) {pathItem=pathItem_;}
@@ -1188,8 +1188,8 @@ public:
 
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
 
@@ -1222,11 +1222,11 @@ public:
 
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
-    void setPortItem (ModeItem *modeItem_) {modeItem=modeItem_;}
-    ModeItem* getModeItem () {return modeItem;}
+    //void setPortItem (ModeItem *modeItem_) {modeItem=modeItem_;}
+    //ModeItem* getModeItem () {return modeItem;}
 
     int get_SportCount ();
 
@@ -1247,11 +1247,11 @@ public:
 
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
-    void setSportItem (SportItem *sportItem_) {sportItem=sportItem_;}
-    SportItem* getSportItem () {return sportItem;}
+    //void setSportItem (SportItem *sportItem_) {sportItem=sportItem_;}
+    //SportItem* getSportItem () {return sportItem;}
 
     int get_SportCount ();
 
@@ -1269,13 +1269,13 @@ public:
     bool isValidShow () override;
     bool isValidHide () override;
     bool isValidDrawPath ();
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
-    void setModeItem (ModeItem *modeItem_) {modeItem=modeItem_;}
-    ModeItem* getModeItem () {return modeItem;}
-    void setScaleLabelItem (ScaleLabelItem *scaleLabelItem_) {scaleLabelItem=scaleLabelItem_;}
-    ScaleLabelItem* getScaleLabelItem (){return scaleLabelItem;}
+    //void setModeItem (ModeItem *modeItem_) {modeItem=modeItem_;}
+    //ModeItem* getModeItem () {return modeItem;}
+    //void setScaleLabelItem (ScaleLabelItem *scaleLabelItem_) {scaleLabelItem=scaleLabelItem_;}
+    //ScaleLabelItem* getScaleLabelItem (){return scaleLabelItem;}
     void drawLinePath ();
     void drawPolylinePath ();
     bool isValidInsertSelectedPath ();
@@ -1287,7 +1287,7 @@ public:
     void addRemoveScale ();
     void createIntegrationPathItemFromPath (PathItem *);
     PathItem* createIntegrationPathItemFromDrawing (DrawingItem *, bool);
-    void convertItemToPath (DrawingItem *, bool);
+    //void convertItemToPath (DrawingItem *, bool);
 
     void save (std::ofstream *) override;
 
@@ -1304,15 +1304,15 @@ public:
     DiffPairItem (OpenParEMg *, PortItem *, ModeItem *, ModeItem *);
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void undo () override;
     void redo () override;
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
     void showMenu (QMenu *) override;
-    void setPortItem (PortItem *portItem_) {portItem=portItem_;}
-    PortItem* getPortItem () {return portItem;}
+    //void setPortItem (PortItem *portItem_) {portItem=portItem_;}
+    //PortItem* getPortItem () {return portItem;}
 
     bool isValidDelete ();
     void del () override;
@@ -1341,8 +1341,8 @@ public:
     }
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
 
 private:
@@ -1358,12 +1358,12 @@ public:
 
     bool isValidShow () override;
     bool isValidHide () override;
-    void show () override;
-    void hide () override;
+    void show (bool) override;
+    void hide (bool) override;
     void showMenu (QMenu *) override;
     std::vector<Handle(AIS_Shape)>* get_meshEntities () {return &meshEntities;}
-    long unsigned int get_meshEntitiesSize () {return meshEntities.size();}
-    Handle(AIS_Shape) get_meshEntity (long unsigned int i) {return meshEntities[i];}
+    //long unsigned int get_meshEntitiesSize () {return meshEntities.size();}
+    //Handle(AIS_Shape) get_meshEntity (long unsigned int i) {return meshEntities[i];}
 
 private:
     std::vector<Handle(AIS_Shape)> meshEntities;

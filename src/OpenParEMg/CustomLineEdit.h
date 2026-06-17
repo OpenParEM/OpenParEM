@@ -50,7 +50,7 @@ public:
     void set_baseItem (BaseItem *baseItem_) {baseItem=baseItem_;}
     void set_boundaryDatabase (BoundaryDatabase *boundaryDatabase_) {boundaryDatabase=boundaryDatabase_;}
 
-    BaseItem* get_baseItem () {return baseItem;}
+    //BaseItem* get_baseItem () {return baseItem;}
 
 protected:
     void focusInEvent(QFocusEvent *event) override

@@ -576,7 +576,7 @@ bool RootDrawingItem::isValidSelectAll ()
     return true;
 }
 
-void RootDrawingItem::show ()
+void RootDrawingItem::show (bool update)
 {
     mw->ui->drawingWindow->hideItem(mw->drawing);
     mw->drawing->setForeground(0,Qt::black);
@@ -592,13 +592,12 @@ void RootDrawingItem::show ()
     mw->ui->drawingWindow->updateViewer();
 }
 
-void RootDrawingItem::hide ()
+void RootDrawingItem::hide (bool update)
 {
     mw->ui->drawingWindow->hideItem(mw->drawing);
     mw->drawing->setForeground(0,Qt::black);
 
     mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(2);
 }
 
 void RootDrawingItem::selectAll ()
@@ -618,8 +617,8 @@ void RootDrawingItem::selectAll ()
 
 void RootDrawingItem::showMenu (QMenu *menu)
 {
-    mw->showAction=new QAction("Show",this);
-    mw->hideAction=new QAction("Hide",this);
+    mw->showAction=new QAction("Show All",this);
+    mw->hideAction=new QAction("Hide All",this);
     mw->selectAllAction=new QAction("Select All");
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
@@ -1595,7 +1594,7 @@ bool DrawingItem::isValidHide ()
     return false;
 }
 
-void DrawingItem::show ()
+void DrawingItem::show (bool update)
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
@@ -1604,11 +1603,12 @@ void DrawingItem::show ()
         i++;
     }
 
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(30);
+    if (update) {
+        mw->ui->drawingWindow->updateViewer();
+    }
 }
 
-void DrawingItem::hide ()
+void DrawingItem::hide (bool update)
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
@@ -1617,8 +1617,9 @@ void DrawingItem::hide ()
         i++;
     }
 
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(34);
+    if (update) {
+        mw->ui->drawingWindow->updateViewer();
+    }
 }
 
 void DrawingItem::showMenu (QMenu *menu)
@@ -1966,8 +1967,8 @@ bool RootPathItem::isValidShow ()
 {
     int i=0;
     while (i < mw->path->childCount()) {
-        PathItem *child=dynamic_cast<PathItem *>(mw->path->child(i));
-        if (child && child->foreground(0) == Qt::gray) return true;
+        PathItem *pathItem=dynamic_cast<PathItem *>(mw->path->child(i));
+        if (pathItem && pathItem->foreground(0) == Qt::gray) return true;
         i++;
     }
     return false;
@@ -1977,47 +1978,41 @@ bool RootPathItem::isValidHide ()
 {
     int i=0;
     while (i < mw->path->childCount()) {
-        PathItem *child=dynamic_cast<PathItem *>(mw->path->child(i));
-        if (child && child->foreground(0) == Qt::black) return true;
+        PathItem *pathItem=dynamic_cast<PathItem *>(mw->path->child(i));
+        if (pathItem && pathItem->foreground(0) == Qt::black) return true;
         i++;
     }
     return false;
 }
 
-void RootPathItem::show ()
+void RootPathItem::show (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (rootPathItem && is_rootPath()) {
-            mw->ui->drawingWindow->showItem(rootPathItem);
-        }
+    int i=0;
+    while (i < mw->path->childCount()) {
+        PathItem *pathItem=dynamic_cast<PathItem *>(mw->path->child(i));
+        if (pathItem) pathItem->show(false);
         i++;
     }
 
     mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(5);
 }
 
-void RootPathItem::hide ()
+void RootPathItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        RootPathItem *rootPathItem=dynamic_cast<RootPathItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (rootPathItem && rootPathItem->is_rootPath()) {
-            mw->ui->drawingWindow->hideItem(rootPathItem);
-        }
+    int i=0;
+    while (i < mw->path->childCount()) {
+        PathItem *pathItem=dynamic_cast<PathItem *>(mw->path->child(i));
+        if (pathItem) pathItem->hide(false);
         i++;
     }
 
     mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(6);
 }
 
 void RootPathItem::showMenu (QMenu *menu)
 {
-    mw->showAction=new QAction("Show",this);
-    mw->hideAction=new QAction("Hide",this);
+    mw->showAction=new QAction("Show All",this);
+    mw->hideAction=new QAction("Hide All",this);
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
@@ -2066,30 +2061,36 @@ bool PathItem::isValidHide ()
     return false;
 }
 
-void PathItem::show ()
+void PathItem::show (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) mw->ui->drawingWindow->showItem(baseItem);
+    mw->ui->drawingWindow->showItem(this);
+
+    int i=0;
+    while (i < linkedItems_size()) {
+        BaseItem *baseItem=get_linkedItem(i);
+        if (baseItem) baseItem->setForeground(0,Qt::black);
         i++;
     }
 
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(30);
+    if (update) {
+        mw->ui->drawingWindow->updateViewer();
+    }
 }
 
-void PathItem::hide ()
+void PathItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) mw->ui->drawingWindow->hideItem(baseItem);
+    mw->ui->drawingWindow->hideItem(this);
+
+    int i=0;
+    while (i < linkedItems_size()) {
+        BaseItem *baseItem=get_linkedItem(i);
+        if (baseItem) baseItem->setForeground(0,Qt::gray);
         i++;
     }
 
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(34);
+    if (update) {
+        mw->ui->drawingWindow->updateViewer();
+    }
 }
 
 void PathItem::showMenu (QMenu *menu)
@@ -2111,8 +2112,8 @@ void PathItem::showMenu (QMenu *menu)
     connect(mw->reversePathAction, &QAction::triggered, mw, &OpenParEMg::reversePathItems);
     connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renamePathItems);
     connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deletePathItems);
-    connect(mw->showAction, &QAction::triggered, this, &PathItem::show);
-    connect(mw->hideAction, &QAction::triggered, this, &PathItem::hide);
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showPathItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hidePathItems);
     connect(mw->cancelAction, &QAction::triggered, mw, &OpenParEMg::cancelMenu);
 
     if (isValidShow()) menu->addAction(mw->showAction);
@@ -2352,30 +2353,16 @@ bool IntegrationPathItem::isValidHide ()
     return false;
 }
 
-void IntegrationPathItem::show ()
+void IntegrationPathItem::show (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) mw->ui->drawingWindow->showItem(baseItem);
-        i++;
-    }
-
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(30);
+    pathItem->show(update);
+    setForeground(0,Qt::black);
 }
 
-void IntegrationPathItem::hide ()
+void IntegrationPathItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) mw->ui->drawingWindow->hideItem(baseItem);
-        i++;
-    }
-
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(34);
+    pathItem->hide(update);
+    setForeground(0,Qt::gray);
 }
 
 void IntegrationPathItem::showMenu (QMenu *menu)
@@ -2385,10 +2372,10 @@ void IntegrationPathItem::showMenu (QMenu *menu)
     mw->showAction=new QAction("Show",this);
     mw->hideAction=new QAction("Hide",this);
 
-    connect(mw->renameAction, &QAction::triggered, this, &IntegrationPathItem::flipSign);
+    connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::flipSignIntegrationPathItems);
     connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deleteIntegrationPathItems);
-    connect(mw->showAction, &QAction::triggered, this, &IntegrationPathItem::show);
-    connect(mw->hideAction, &QAction::triggered, this, &IntegrationPathItem::hide);
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showIntegrationPathItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideIntegrationPathItems);
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
@@ -2445,66 +2432,23 @@ void IntegrationPathItem::redo ()
 
 void IntegrationPathItem::del ()
 {
-    std::cout << "IntegrationPathItem::del" << std::endl; std::cout.flush();
-
-    // remove from display and tracking
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
-
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setDelete();
     addShapeData(newShapeData);
 
-    mw->itemChangesStack.add(this);
+    VIItem *viItem=dynamic_cast<VIItem *>(parentItem);
+    if (viItem) {
+        viItem->removeChild(this);
+        viItem->addRemoveScale();
 
-    if (pathItem) {
-        pathItem->removeLinkedItem(this);
-
-        if (pathItem->linkedItems_size() == 0) {
-            pathItem->del();
+        PathItem *pathItem=getPathItem();
+        if (pathItem) {
+            pathItem->removeLinkedItem(this);
         }
+
+        mw->itemChangesStack.add(this);
+        mw->projectChanged=true;
     }
-
-    if (parentItem) {
-        parentItem->removeChild(this);
-
-        // look for other integration paths
-        bool found=false;
-        int i=0;
-        while (i < parentItem->childCount()) {
-            IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(parentItem->child(i));
-            if (integrationPathItem && integrationPathItem->is_integrationPathSegment()) {
-                found=true;
-                break;
-            }
-            i++;
-        }
-
-        // remove the scale
-        if (!found) {
-            int i=0;
-            while (i < parentItem->childCount()) {
-                ScaleLabelItem *scaleLabelItem=dynamic_cast<ScaleLabelItem *>(parentItem->child(i));
-                if (scaleLabelItem && scaleLabelItem->is_scaleLabel()) {
-                    ShapeData *newShapeData=scaleLabelItem->getShapeData()->copyCreate();
-                    newShapeData->setDelete();
-                    scaleLabelItem->addShapeData(newShapeData);
-                    mw->itemChangesStack.add(scaleLabelItem);
-
-                    BaseItem *scaleLabelParentItem=scaleLabelItem->getParentItem();
-                    if (scaleLabelParentItem) {
-                        scaleLabelParentItem->removeChild(scaleLabelItem);
-                    }
-                }
-                i++;
-            }
-        }
-    }
-
-    mw->finishOperation(true,1);
-
-    std::cout << "exit IntegrationPathItem::del" << std::endl; std::cout.flush();
 }
 
 void IntegrationPathItem::flipSign ()
@@ -2512,9 +2456,6 @@ void IntegrationPathItem::flipSign ()
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setChangeName();
     addShapeData(newShapeData);
-
-    startItemChange();
-    addItemChange();
 
     QChar direction=newShapeData->get_name().front();
     QString newName;
@@ -2524,6 +2465,8 @@ void IntegrationPathItem::flipSign ()
 
     newShapeData->set_name(newName);
     setText(0,newName);
+
+    mw->itemChangesStack.add(this);
 }
 
 void IntegrationPathItem::save (std::ofstream *out)
@@ -2546,10 +2489,8 @@ bool RootBoundaryItem::isValidShow ()
 {
     int i=0;
     while (i < mw->boundary->childCount()) {
-        RootBoundaryItem *child=dynamic_cast<RootBoundaryItem *>(mw->boundary->child(i));
-        if (child && child->is_rootBoundary()) {
-            if (child->foreground(0) == Qt::gray) return true;
-        }
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(mw->boundary->child(i));
+        if (boundaryItem && boundaryItem->foreground(0) == Qt::gray) return true;
         i++;
     }
     return false;
@@ -2559,49 +2500,41 @@ bool RootBoundaryItem::isValidHide ()
 {
     int i=0;
     while (i < mw->boundary->childCount()) {
-        RootBoundaryItem *child=dynamic_cast<RootBoundaryItem *>(mw->boundary->child(i));
-        if (child && child->is_rootBoundary()) {
-            if (child->foreground(0) == Qt::black) return true;
-        }
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(mw->boundary->child(i));
+        if (boundaryItem && boundaryItem->foreground(0) == Qt::black) return true;
         i++;
     }
     return false;
 }
 
-void RootBoundaryItem::show ()
+void RootBoundaryItem::show (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) {
-            mw->ui->drawingWindow->showItem(rootBoundaryItem);
-        }
+    int i=0;
+    while (i < mw->boundary->childCount()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(mw->boundary->child(i));
+        if (boundaryItem) boundaryItem->show(false);
         i++;
     }
 
     mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(9);
 }
 
-void RootBoundaryItem::hide ()
+void RootBoundaryItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) {
-            mw->ui->drawingWindow->hideItem(rootBoundaryItem);
-        }
+    int i=0;
+    while (i < mw->boundary->childCount()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(mw->boundary->child(i));
+        if (boundaryItem) boundaryItem->hide(false);
         i++;
     }
 
     mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(11);
 }
 
 void RootBoundaryItem::showMenu (QMenu *menu)
 {
-    mw->showAction=new QAction("Show",this);
-    mw->hideAction=new QAction("Hide",this);
+    mw->showAction=new QAction("Show All",this);
+    mw->hideAction=new QAction("Hide All",this);
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
@@ -2772,64 +2705,26 @@ void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpe
 
 bool BoundaryItem::isValidShow ()
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BoundaryItem *portItem=dynamic_cast<BoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (portItem && portItem->is_port()) {
-            PathItem *pathItem=portItem->getPathItem();
-            if (pathItem && pathItem->is_path()) {
-                if (pathItem->isValidShow()) return true;
-            }
-        }
-        i++;
-    }
+    if (foreground(0) == Qt::gray) return true;
     return false;
 }
 
 bool BoundaryItem::isValidHide ()
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (boundaryItem && boundaryItem->is_boundary()) {
-            PathItem *pathItem=boundaryItem->getPathItem();
-            if (pathItem && pathItem->is_path()) {
-                if (pathItem->isValidHide()) return true;
-            }
-        }
-        i++;
-    }
+    if (foreground(0) == Qt::black) return true;
     return false;
 }
 
-void BoundaryItem::show ()
+void BoundaryItem::show (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (boundaryItem && boundaryItem->is_boundary()) {
-            mw->ui->drawingWindow->showItem(boundaryItem);
-        }
-        i++;
-    }
-
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(10);
+    pathItem->show(update);
+    setForeground(0,Qt::black);
 }
 
-void BoundaryItem::hide ()
+void BoundaryItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (boundaryItem && boundaryItem->is_boundary()) {
-            mw->ui->drawingWindow->hideItem(boundaryItem);
-        }
-        i++;
-    }
-
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(10);
+    pathItem->hide(update);
+    setForeground(0,Qt::gray);
 }
 
 void BoundaryItem::showMenu (QMenu *menu)
@@ -2842,8 +2737,8 @@ void BoundaryItem::showMenu (QMenu *menu)
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
-    connect(mw->showAction, &QAction::triggered, this, &BoundaryItem::show);
-    connect(mw->hideAction, &QAction::triggered, this, &BoundaryItem::hide);
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showBoundaryItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideBoundaryItems);
     connect(mw->unselectAction, &QAction::triggered, mw, &OpenParEMg::unselectBoundaryItems);
     connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renameBoundaryItems);
     connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deleteBoundaryItems);
@@ -2863,23 +2758,13 @@ void BoundaryItem::showMenu (QMenu *menu)
 
 void BoundaryItem::del ()
 {
-    // remove from display and tracking
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
-
-    // mark
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setDelete();
     addShapeData(newShapeData);
 
-    // parentItem
-    BaseItem *parentItem=getParentItem();
-    if (parentItem) {
-        RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(parentItem);
-        if (rootBoundaryItem && rootBoundaryItem->is_rootBoundary()) {
-            rootBoundaryItem->removeChild(this);
-        }
+    RootBoundaryItem *rootBoundaryItem=dynamic_cast<RootBoundaryItem *>(parentItem);
+    if (rootBoundaryItem) {
+        rootBoundaryItem->removeChild(this);
 
         PathItem *pathItem=getPathItem();
         if (pathItem) {
@@ -3050,10 +2935,8 @@ bool RootPortItem::isValidShow ()
 {
     int i=0;
     while (i < mw->port->childCount()) {
-        PortItem *child=dynamic_cast<PortItem *>(mw->port->child(i));
-        if (child && child->is_port()) {
-            if (child->foreground(0) == Qt::gray) return true;
-        }
+        PortItem *portItem=dynamic_cast<PortItem *>(mw->port->child(i));
+        if (portItem && portItem->foreground(0) == Qt::gray) return true;
         i++;
     }
     return false;
@@ -3063,49 +2946,41 @@ bool RootPortItem::isValidHide ()
 {
     int i=0;
     while (i < mw->port->childCount()) {
-        PortItem *child=dynamic_cast<PortItem *>(mw->port->child(i));
-        if (child && child->is_port()) {
-            if (child->foreground(0) == Qt::black) return true;
-        }
+        PortItem *portItem=dynamic_cast<PortItem *>(mw->port->child(i));
+        if (portItem && portItem->foreground(0) == Qt::black) return true;
         i++;
     }
     return false;
 }
 
-void RootPortItem::show ()
+void RootPortItem::show (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        RootPortItem *rootPortItem=dynamic_cast<RootPortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (rootPortItem && rootPortItem->is_rootPort()) {
-            mw->ui->drawingWindow->showItem(rootPortItem);
-        }
+    int i=0;
+    while (i < mw->port->childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(mw->port->child(i));
+        if (portItem) portItem->show(false);
         i++;
     }
 
     mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(9);
 }
 
-void RootPortItem::hide ()
+void RootPortItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        RootPortItem *rootPortItem=dynamic_cast<RootPortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (rootPortItem && rootPortItem->is_rootPort()) {
-            mw->ui->drawingWindow->hideItem(rootPortItem);
-        }
+    int i=0;
+    while (i < mw->port->childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(mw->port->child(i));
+        if (portItem) portItem->hide(false);
         i++;
     }
 
     mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(11);
 }
 
 void RootPortItem::showMenu (QMenu *menu)
 {
-    mw->showAction=new QAction("Show",this);
-    mw->hideAction=new QAction("Hide",this);
+    mw->showAction=new QAction("Show All",this);
+    mw->hideAction=new QAction("Hide All",this);
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
@@ -3265,64 +3140,26 @@ void PortItem::addImpedanceCalculationItem ()
 
 bool PortItem::isValidShow ()
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (portItem && portItem->is_port()) {
-            PathItem *pathItem=portItem->getPathItem();
-            if (pathItem && pathItem->is_path()) {
-                if (pathItem->isValidShow()) return true;
-            }
-        }
-        i++;
-    }
+    if (foreground(0) == Qt::gray) return true;
     return false;
 }
 
 bool PortItem::isValidHide ()
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (portItem && portItem->is_port()) {
-            PathItem *pathItem=portItem->getPathItem();
-            if (pathItem && pathItem->is_path()) {
-                if (pathItem->isValidHide()) return true;
-            }
-        }
-        i++;
-    }
+    if (foreground(0) == Qt::black) return true;
     return false;
 }
 
-void PortItem::show ()
+void PortItem::show (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (portItem && portItem->is_port()) {
-            mw->ui->drawingWindow->showItem(portItem);
-        }
-        i++;
-    }
-
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(10);
+    pathItem->show(update);
+    setForeground(0,Qt::black);
 }
 
-void PortItem::hide ()
+void PortItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(mw->ui->drawingWindow->get_selectedItem(i));
-        if (portItem && portItem->is_port()) {
-            mw->ui->drawingWindow->hideItem(portItem);
-        }
-        i++;
-    }
-
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(10);
+    pathItem->hide(update);
+    setForeground(0,Qt::gray);
 }
 
 void PortItem::showMenu (QMenu *menu)
@@ -3336,8 +3173,8 @@ void PortItem::showMenu (QMenu *menu)
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
-    connect(mw->showAction, &QAction::triggered, this, &PortItem::show);
-    connect(mw->hideAction, &QAction::triggered, this, &PortItem::hide);
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showPortItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hidePortItems);
     connect(mw->unselectAction, &QAction::triggered, mw, &OpenParEMg::unselectPortItems);
     connect(mw->insertAction, &QAction::triggered, mw, &OpenParEMg::insertModeItems);
     connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renamePortItems);
@@ -3359,11 +3196,6 @@ void PortItem::showMenu (QMenu *menu)
 
 void PortItem::del ()
 {
-    // remove from display and tracking
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
-
     // mark
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setDelete();
@@ -3527,7 +3359,7 @@ bool ModeItem::isValidHide ()
     return mw->ui->drawingWindow->isNetValidHide();
 }
 
-void ModeItem::show ()
+void ModeItem::show (bool update)
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
@@ -3556,11 +3388,12 @@ void ModeItem::show ()
         i++;
     }
 
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(29);
+    if (update) {
+        mw->ui->drawingWindow->updateViewer();
+    }
 }
 
-void ModeItem::hide ()
+void ModeItem::hide (bool update)
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
@@ -3587,8 +3420,9 @@ void ModeItem::hide ()
         i++;
     }
 
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(33);
+    if (update) {
+        mw->ui->drawingWindow->updateViewer();
+    }
 }
 
 bool ModeItem::isValidDelete ()
@@ -3633,7 +3467,6 @@ void ModeItem::del ()
     mw->previousClickedItem=nullptr;
 
     mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(28);
 }
 
 void ModeItem::showMenu (QMenu *menu)
@@ -3760,8 +3593,8 @@ void SportItem::insertSportNumberWidget (BaseItem *baseItem, int Sport)
 
 bool SportItem::isValidShow () {return false;}
 bool SportItem::isValidHide () {return false;}
-void SportItem::show () {}
-void SportItem::hide () {}
+void SportItem::show (bool) {}
+void SportItem::hide (bool) {}
 
 void SportItem::showMenu (QMenu *menu)
 {
@@ -3816,8 +3649,8 @@ SportNumberItem::SportNumberItem (OpenParEMg *mw_, SportItem *sportItem_)
 
 bool SportNumberItem::isValidShow () {return false;}
 bool SportNumberItem::isValidHide () {return false;}
-void SportNumberItem::show () {}
-void SportNumberItem::hide () {}
+void SportNumberItem::show (bool) {}
+void SportNumberItem::hide (bool) {}
 
 void SportNumberItem::showMenu (QMenu *menu)
 {
@@ -3888,7 +3721,7 @@ bool VIItem::isValidDrawPath ()
     return false;
 }
 
-void VIItem::show ()
+void VIItem::show (bool update)
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
@@ -3901,11 +3734,12 @@ void VIItem::show ()
         i++;
     }
 
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(30);
+    if (update) {
+        mw->ui->drawingWindow->updateViewer();
+    }
 }
 
-void VIItem::hide ()
+void VIItem::hide (bool update)
 {
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
@@ -3918,8 +3752,9 @@ void VIItem::hide ()
         i++;
     }
 
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(34);
+    if (update) {
+        mw->ui->drawingWindow->updateViewer();
+    }
 }
 
 void VIItem::showMenu (QMenu *menu)
@@ -4049,15 +3884,15 @@ PathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem
     return newPathItem;
 }
 
-void VIItem::convertItemToPath (DrawingItem *drawingItem, bool useArrows)
-{
-    std::cout << "VIItem::convertItemToPath" << std::endl; std::cout.flush();
+// void VIItem::convertItemToPath (DrawingItem *drawingItem, bool useArrows)
+// {
+//     std::cout << "VIItem::convertItemToPath" << std::endl; std::cout.flush();
 
-    PathItem *pathItem=createIntegrationPathItemFromDrawing(drawingItem,useArrows);
-    if (pathItem) {
-        drawingItem->del();
-    }
-}
+//     PathItem *pathItem=createIntegrationPathItemFromDrawing(drawingItem,useArrows);
+//     if (pathItem) {
+//         drawingItem->del();
+//     }
+// }
 
 void VIItem::insertSelectedPath ()
 {
@@ -4244,34 +4079,26 @@ bool DiffPairItem::isValidHide ()
     return false;
 }
 
-void DiffPairItem::show ()
+void DiffPairItem::show (bool update)
 {
-    setForeground(0,Qt::gray);
-    mw->ui->drawingWindow->showItem(this);
+    setForeground(0,Qt::black);
 
     int i=0;
     while (i < childCount()) {
-        if (child(i)) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-            baseItem->setForeground(0,Qt::gray);
-            mw->ui->drawingWindow->showItem(baseItem);
-        }
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+        if (modeItem) modeItem->show(update);
         i++;
     }
 }
 
-void DiffPairItem::hide ()
+void DiffPairItem::hide (bool update)
 {
-    setForeground(0,Qt::black);
-    mw->ui->drawingWindow->hideItem(this);
+    setForeground(0,Qt::gray);
 
     int i=0;
     while (i < childCount()) {
-        if (child(i)) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-            baseItem->setForeground(0,Qt::black);
-            mw->ui->drawingWindow->hideItem(baseItem);
-        }
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+        if (modeItem) modeItem->show(update);
         i++;
     }
 }
@@ -4328,14 +4155,14 @@ void DiffPairItem::promoteChildren ()
 {
     long unsigned int i=0;
     while (i < getChildrenSize()) {
-        ModeItem *child=dynamic_cast<ModeItem *>(getChild(i));
-        if (child) {
-            int index=indexOfChild(child);
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(getChild(i));
+        if (modeItem) {
+            int index=indexOfChild(modeItem);
             takeChild(index);
-            getParentItem()->addChild(child);
-            child->setParentItem(getParentItem());
-            child->restoreWidgets();
-            mw->ui->drawingWindow->showItem(child);
+            getParentItem()->addChild(modeItem);
+            modeItem->setParentItem(getParentItem());
+            modeItem->restoreWidgets();
+            modeItem->show(true);
         }
         i++;
     }
@@ -4345,14 +4172,14 @@ void DiffPairItem::demoteChildren ()
 {
     long unsigned int i=0;
     while (i < getChildrenSize()) {
-        ModeItem *child=dynamic_cast<ModeItem *>(getChild(i));
-        if (child) {
-            int index=child->getParentItem()->indexOfChild(child);
-            child->getParentItem()->takeChild(index);
-            addChild(child);
-            child->setParentItem(this);
-            child->restoreWidgets();
-            mw->ui->drawingWindow->hideItem(child);
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(getChild(i));
+        if (modeItem) {
+            int index=modeItem->getParentItem()->indexOfChild(modeItem);
+            modeItem->getParentItem()->takeChild(index);
+            addChild(modeItem);
+            modeItem->setParentItem(this);
+            modeItem->restoreWidgets();
+            modeItem->show(true);
         }
         i++;
     }
@@ -4456,8 +4283,8 @@ bool RootMeshItem::isValidShow ()
 {
     int i=0;
     while (i < mw->mesh->childCount()) {
-        BaseItem *child=dynamic_cast<BaseItem *>(mw->mesh->child(i));
-        if (child->foreground(0) == Qt::gray) return true;
+        MeshItem *meshItem=dynamic_cast<MeshItem *>(mw->mesh->child(i));
+        if (meshItem && meshItem->foreground(0) == Qt::gray) return true;
         i++;
     }
     return false;
@@ -4467,59 +4294,43 @@ bool RootMeshItem::isValidHide ()
 {
     int i=0;
     while (i < mw->mesh->childCount()) {
-        BaseItem *child=dynamic_cast<BaseItem *>(mw->mesh->child(i));
-        if (child->foreground(0) == Qt::black) return true;
+        MeshItem *meshItem=dynamic_cast<MeshItem *>(mw->mesh->child(i));
+        if (meshItem && meshItem->foreground(0) == Qt::black) return true;
         i++;
     }
     return false;
 }
 
-void RootMeshItem::show ()
+void RootMeshItem::show (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem && baseItem->is_rootMesh()) {
-            int j=0;
-            while (j < baseItem->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(j));
-                mw->ui->drawingWindow->showItem(child);
-                child->setForeground(0,Qt::black);
-                j++;
-            }
-        }
+    int i=0;
+    while (i < childCount()) {
+        MeshItem *meshItem=dynamic_cast<MeshItem *>(child(i));
+        if (meshItem) meshItem->show(false);
+
         i++;
     }
 
     mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(13);
 }
 
-void RootMeshItem::hide ()
+void RootMeshItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem && baseItem->is_rootMesh()) {
-            int j=0;
-            while (j < baseItem->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(j));
-                mw->ui->drawingWindow->hideItem(child);
-                child->setForeground(0,Qt::gray);
-                j++;
-            }
-        }
+    int i=0;
+    while (i < childCount()) {
+        MeshItem *meshItem=dynamic_cast<MeshItem *>(child(i));
+        if (meshItem) meshItem->hide(false);
+
         i++;
     }
 
     mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(14);
 }
 
 void RootMeshItem::showMenu (QMenu *menu)
 {
-    mw->showAction=new QAction("Show",this);
-    mw->hideAction=new QAction("Hide",this);
+    mw->showAction=new QAction("Show All",this);
+    mw->hideAction=new QAction("Hide All",this);
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
@@ -4561,34 +4372,34 @@ bool MeshItem::isValidHide ()
     return false;
 }
 
-void MeshItem::show ()
+void MeshItem::show (bool update)
 {
     long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem && baseItem->is_mesh()) {
-            mw->ui->drawingWindow->showItem(baseItem);
-        }
+    while (i < meshEntities.size()) {
+        mw->ui->drawingWindow->displayShape(meshEntities[i]);
         i++;
     }
 
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(15);
+    setForeground(0,Qt::black);
+
+    if (update) {
+        mw->ui->drawingWindow->updateViewer();
+    }
 }
 
-void MeshItem::hide ()
+void MeshItem::hide (bool update)
 {
     long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem && baseItem->is_mesh()) {
-            mw->ui->drawingWindow->hideItem(baseItem);
-        }
+    while (i < meshEntities.size()) {
+        mw->ui->drawingWindow->removeShape(meshEntities[i]);
         i++;
     }
 
-    mw->ui->drawingWindow->updateViewer();
-    mw->setMenusI(16);
+    setForeground(0,Qt::gray);
+
+    if (update) {
+        mw->ui->drawingWindow->updateViewer();
+    }
 }
 
 void MeshItem::showMenu (QMenu *menu)

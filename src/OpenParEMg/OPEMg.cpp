@@ -662,18 +662,18 @@ void OpenParEMg::clearSelection ()
     ui->actionSolid->setCheckable(false);
 }
 
-void OpenParEMg::restoreSelection ()
-{
-    //std::cout << "OpenParEMg::restoreSelection  previousSelectionIndex=" << previousSelectionIndex << std::endl; std::cout.flush();
+// void OpenParEMg::restoreSelection ()
+// {
+//     //std::cout << "OpenParEMg::restoreSelection  previousSelectionIndex=" << previousSelectionIndex << std::endl; std::cout.flush();
 
-    if (previousSelectionIndex == 0) on_actionShape_triggered();
-    else if (previousSelectionIndex == 1) on_actionVertex_triggered();
-    else if (previousSelectionIndex == 2) on_actionEdge_triggered();
-    else if (previousSelectionIndex == 3) on_actionWire_triggered();
-    else if (previousSelectionIndex == 4) on_actionFace_triggered();
-    else if (previousSelectionIndex == 5) on_actionShell_triggered();
-    else if (previousSelectionIndex == 6) on_actionSolid_triggered();
-}
+//     if (previousSelectionIndex == 0) on_actionShape_triggered();
+//     else if (previousSelectionIndex == 1) on_actionVertex_triggered();
+//     else if (previousSelectionIndex == 2) on_actionEdge_triggered();
+//     else if (previousSelectionIndex == 3) on_actionWire_triggered();
+//     else if (previousSelectionIndex == 4) on_actionFace_triggered();
+//     else if (previousSelectionIndex == 5) on_actionShell_triggered();
+//     else if (previousSelectionIndex == 6) on_actionSolid_triggered();
+// }
 
 void OpenParEMg::debugPrintStats (int i)
 {
@@ -1235,16 +1235,13 @@ void OpenParEMg::showPathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
-            if (pathItem && pathItem->is_path()) ui->drawingWindow->showItem(baseItem);
-        }
+        PathItem *pathItem=dynamic_cast<PathItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (pathItem) pathItem->show(false);
         i++;
     }
 
     ui->drawingWindow->updateViewer();
-    setMenusI(7);
+    setMenusI(30);
 }
 
 void OpenParEMg::hidePathItems ()
@@ -1253,16 +1250,133 @@ void OpenParEMg::hidePathItems ()
 
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
-            if (pathItem && pathItem->is_path()) ui->drawingWindow->hideItem(pathItem);
-        }
+        PathItem *pathItem=dynamic_cast<PathItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (pathItem) pathItem->hide(false);
         i++;
     }
 
     ui->drawingWindow->updateViewer();
-    setMenusI(8);
+    setMenusI(30);
+}
+
+void OpenParEMg::showPortItems ()
+{
+    //std::cout << "OpenParEMg::showPortItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (portItem) portItem->show(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
+void OpenParEMg::hidePortItems ()
+{
+    //std::cout << "OpenParEMg::hidePortItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (portItem) portItem->hide(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
+void OpenParEMg::showBoundaryItems ()
+{
+    //std::cout << "OpenParEMg::showBoundaryItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (boundaryItem) boundaryItem->show(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
+void OpenParEMg::hideBoundaryItems ()
+{
+    //std::cout << "OpenParEMg::hideBoundaryItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (boundaryItem) boundaryItem->hide(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
+void OpenParEMg::showIntegrationPathItems ()
+{
+    //std::cout << "OpenParEMg::showIntegrationPathItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (integrationPathItem) integrationPathItem->show(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
+void OpenParEMg::hideIntegrationPathItems ()
+{
+    //std::cout << "OpenParEMg::hideIntegrationPathItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (integrationPathItem) integrationPathItem->hide(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
+void OpenParEMg::showMeshItems ()
+{
+    //std::cout << "OpenParEMg::showMeshItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        MeshItem *meshItem=dynamic_cast<MeshItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (meshItem) meshItem->show(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
+void OpenParEMg::hideMeshItems ()
+{
+    //std::cout << "OpenParEMg::hideMeshItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        MeshItem *meshItem=dynamic_cast<MeshItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (meshItem) meshItem->hide(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
 }
 
 void OpenParEMg::unselectBoundaryItems()
@@ -1347,15 +1461,15 @@ void OpenParEMg::renameSportNet ()
     }
 }
 
-bool is_uniqueItem (std::vector<PortItem *> *portItemList, BaseItem *baseItem)
-{
-    long unsigned int i=0;
-    while (i < portItemList->size()) {
-        if ((*portItemList)[i] == baseItem) return false;
-        i++;
-    }
-    return true;
-}
+// bool is_uniqueItem (std::vector<PortItem *> *portItemList, BaseItem *baseItem)
+// {
+//     long unsigned int i=0;
+//     while (i < portItemList->size()) {
+//         if ((*portItemList)[i] == baseItem) return false;
+//         i++;
+//     }
+//     return true;
+// }
 
 bool OpenParEMg::hasOneSelectedSport ()
 {
@@ -1793,6 +1907,25 @@ void OpenParEMg::deleteModeItems ()
                 modeItem->del();
             }
         }
+        i++;
+    }
+
+    clickedItem=nullptr;
+    previousClickedItem=nullptr;
+
+    finishOperation(false,1);
+}
+
+void OpenParEMg::flipSignIntegrationPathItems ()
+{
+    //std::cout << "OpenParEMg::flipSignIntegrationPathItems" << std::endl; std::cout.flush();
+
+    itemChangesStack.startNew();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (integrationPathItem) integrationPathItem->flipSign();
         i++;
     }
 
@@ -2928,16 +3061,16 @@ void OpenParEMg::finishInsertPoint (BaseItem *baseItem)
     baseItem->finishInsertPoint();
 }
 
-void OpenParEMg::finishStretchPoint (BaseItem *baseItem)
-{
-    //std::cout << "OpenParEMg::finishStretchPoint" << std::endl; std::cout.flush();
+// void OpenParEMg::finishStretchPoint (BaseItem *baseItem)
+// {
+//     //std::cout << "OpenParEMg::finishStretchPoint" << std::endl; std::cout.flush();
 
-    if (!baseItem) return;
-    baseItem->finishStretchPoint();
-    baseItem->findTopLevelItem(baseItem);
+//     if (!baseItem) return;
+//     baseItem->finishStretchPoint();
+//     baseItem->findTopLevelItem(baseItem);
 
-    finishOperation(false,7);
-}
+//     finishOperation(false,7);
+// }
 
 void OpenParEMg::cancelInsertPoint ()
 {
@@ -4536,101 +4669,101 @@ void OpenParEMg::on_actionMaterialsEditor_triggered ()
 }
 
 
-int CountSubShapes(const TopoDS_Shape& shape, TopAbs_ShapeEnum type)
-{
-    int count = 0;
+// int CountSubShapes(const TopoDS_Shape& shape, TopAbs_ShapeEnum type)
+// {
+//     int count = 0;
 
-    for (TopExp_Explorer exp(shape, type); exp.More(); exp.Next()) {
-        ++count;
-    }
+//     for (TopExp_Explorer exp(shape, type); exp.More(); exp.Next()) {
+//         ++count;
+//     }
 
-    return count;
-}
+//     return count;
+// }
 
-void ListChildren (const TopoDS_Shape& theShape)
-{
-    std::cout << TopAbs::ShapeTypeToString(theShape.ShapeType()) << std::endl;
+// void ListChildren (const TopoDS_Shape& theShape)
+// {
+//     std::cout << TopAbs::ShapeTypeToString(theShape.ShapeType()) << std::endl;
 
-    // 3 levels of children
-    TopoDS_Iterator anIterator(theShape);
-    for (; anIterator.More(); anIterator.Next()) {
-        const TopoDS_Shape& aChildShape = anIterator.Value();
-        std::cout << "   " << TopAbs::ShapeTypeToString(aChildShape.ShapeType()) << std::endl;
+//     // 3 levels of children
+//     TopoDS_Iterator anIterator(theShape);
+//     for (; anIterator.More(); anIterator.Next()) {
+//         const TopoDS_Shape& aChildShape = anIterator.Value();
+//         std::cout << "   " << TopAbs::ShapeTypeToString(aChildShape.ShapeType()) << std::endl;
 
-        TopoDS_Iterator anIterator2(aChildShape);
-        for (; anIterator2.More(); anIterator2.Next()) {
-            const TopoDS_Shape& aChildShape2 = anIterator2.Value();
-            std::cout << "      " << TopAbs::ShapeTypeToString(aChildShape2.ShapeType()) << std::endl;
+//         TopoDS_Iterator anIterator2(aChildShape);
+//         for (; anIterator2.More(); anIterator2.Next()) {
+//             const TopoDS_Shape& aChildShape2 = anIterator2.Value();
+//             std::cout << "      " << TopAbs::ShapeTypeToString(aChildShape2.ShapeType()) << std::endl;
 
-            TopoDS_Iterator anIterator3(aChildShape2);
-            for (; anIterator3.More(); anIterator3.Next()) {
-                const TopoDS_Shape& aChildShape3 = anIterator3.Value();
-                std::cout << "         " << TopAbs::ShapeTypeToString(aChildShape3.ShapeType()) << std::endl;
-            }
-        }
-    }
-    // std::cout << std::endl;
+//             TopoDS_Iterator anIterator3(aChildShape2);
+//             for (; anIterator3.More(); anIterator3.Next()) {
+//                 const TopoDS_Shape& aChildShape3 = anIterator3.Value();
+//                 std::cout << "         " << TopAbs::ShapeTypeToString(aChildShape3.ShapeType()) << std::endl;
+//             }
+//         }
+//     }
+//     // std::cout << std::endl;
 
-    // std::cout << "Faces using TopExp_Explorer:" << std::endl;
-    // for (TopExp_Explorer anExplorer(theShape, TopAbs_FACE); anExplorer.More(); anExplorer.Next()) {
-    //     const TopoDS_Face& aFace = TopoDS::Face(anExplorer.Current());
-    //     std::cout << "  Found a Face" << std::endl;
-    // }
+//     // std::cout << "Faces using TopExp_Explorer:" << std::endl;
+//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_FACE); anExplorer.More(); anExplorer.Next()) {
+//     //     const TopoDS_Face& aFace = TopoDS::Face(anExplorer.Current());
+//     //     std::cout << "  Found a Face" << std::endl;
+//     // }
 
-    // std::cout << "Solid using TopExp_Explorer:" << std::endl;
-    // for (TopExp_Explorer anExplorer(theShape, TopAbs_SOLID); anExplorer.More(); anExplorer.Next()) {
-    //     const TopoDS_Solid& aSolid = TopoDS::Solid(anExplorer.Current());
-    //     std::cout << "  Found a Solid" << std::endl;
-    // }
+//     // std::cout << "Solid using TopExp_Explorer:" << std::endl;
+//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_SOLID); anExplorer.More(); anExplorer.Next()) {
+//     //     const TopoDS_Solid& aSolid = TopoDS::Solid(anExplorer.Current());
+//     //     std::cout << "  Found a Solid" << std::endl;
+//     // }
 
-    // std::cout << "Wire using TopExp_Explorer:" << std::endl;
-    // for (TopExp_Explorer anExplorer(theShape, TopAbs_WIRE); anExplorer.More(); anExplorer.Next()) {
-    //     const TopoDS_Wire& aWire = TopoDS::Wire(anExplorer.Current());
-    //     std::cout << "  Found a Wire" << std::endl;
-    // }
+//     // std::cout << "Wire using TopExp_Explorer:" << std::endl;
+//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_WIRE); anExplorer.More(); anExplorer.Next()) {
+//     //     const TopoDS_Wire& aWire = TopoDS::Wire(anExplorer.Current());
+//     //     std::cout << "  Found a Wire" << std::endl;
+//     // }
 
-    // std::cout << "CompSolid using TopExp_Explorer:" << std::endl;
-    // for (TopExp_Explorer anExplorer(theShape, TopAbs_COMPSOLID); anExplorer.More(); anExplorer.Next()) {
-    //     const TopoDS_CompSolid& aCompSolid = TopoDS::CompSolid(anExplorer.Current());
-    //     std::cout << "  Found a CompSolid" << std::endl;
-    // }
+//     // std::cout << "CompSolid using TopExp_Explorer:" << std::endl;
+//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_COMPSOLID); anExplorer.More(); anExplorer.Next()) {
+//     //     const TopoDS_CompSolid& aCompSolid = TopoDS::CompSolid(anExplorer.Current());
+//     //     std::cout << "  Found a CompSolid" << std::endl;
+//     // }
 
-    // std::cout << "Compound using TopExp_Explorer:" << std::endl;
-    // for (TopExp_Explorer anExplorer(theShape, TopAbs_COMPOUND); anExplorer.More(); anExplorer.Next()) {
-    //     const TopoDS_Compound& aCompound = TopoDS::Compound(anExplorer.Current());
-    //     std::cout << "  Found a Compound" << std::endl;
-    // }
+//     // std::cout << "Compound using TopExp_Explorer:" << std::endl;
+//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_COMPOUND); anExplorer.More(); anExplorer.Next()) {
+//     //     const TopoDS_Compound& aCompound = TopoDS::Compound(anExplorer.Current());
+//     //     std::cout << "  Found a Compound" << std::endl;
+//     // }
 
-    // std::cout << "Edge using TopExp_Explorer:" << std::endl;
-    // for (TopExp_Explorer anExplorer(theShape, TopAbs_EDGE); anExplorer.More(); anExplorer.Next()) {
-    //     const TopoDS_Edge& aEdge = TopoDS::Edge(anExplorer.Current());
-    //     std::cout << "  Found a Edge" << std::endl;
-    // }
+//     // std::cout << "Edge using TopExp_Explorer:" << std::endl;
+//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_EDGE); anExplorer.More(); anExplorer.Next()) {
+//     //     const TopoDS_Edge& aEdge = TopoDS::Edge(anExplorer.Current());
+//     //     std::cout << "  Found a Edge" << std::endl;
+//     // }
 
-    // std::cout << "Shell using TopExp_Explorer:" << std::endl;
-    // for (TopExp_Explorer anExplorer(theShape, TopAbs_SHELL); anExplorer.More(); anExplorer.Next()) {
-    //     const TopoDS_Shell& aShell = TopoDS::Shell(anExplorer.Current());
-    //     std::cout << "  Found a Shell" << std::endl;
-    // }
+//     // std::cout << "Shell using TopExp_Explorer:" << std::endl;
+//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_SHELL); anExplorer.More(); anExplorer.Next()) {
+//     //     const TopoDS_Shell& aShell = TopoDS::Shell(anExplorer.Current());
+//     //     std::cout << "  Found a Shell" << std::endl;
+//     // }
 
-    // std::cout << "Vertex using TopExp_Explorer:" << std::endl;
-    // for (TopExp_Explorer anExplorer(theShape, TopAbs_VERTEX); anExplorer.More(); anExplorer.Next()) {
-    //     const TopoDS_Vertex& aVertex = TopoDS::Vertex(anExplorer.Current());
-    //     std::cout << "  Found a Vertex" << std::endl;
-    // }
-}
+//     // std::cout << "Vertex using TopExp_Explorer:" << std::endl;
+//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_VERTEX); anExplorer.More(); anExplorer.Next()) {
+//     //     const TopoDS_Vertex& aVertex = TopoDS::Vertex(anExplorer.Current());
+//     //     std::cout << "  Found a Vertex" << std::endl;
+//     // }
+// }
 
-void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
-{
-    TopoDS_Iterator topoIterator(shape);
+// void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
+// {
+//     TopoDS_Iterator topoIterator(shape);
 
-    while (topoIterator.More()) {
-        const TopoDS_Shape& child=topoIterator.Value();
-        (*count)++;
-        shapeCount(child,count);
-        topoIterator.Next();
-    }
-}
+//     while (topoIterator.More()) {
+//         const TopoDS_Shape& child=topoIterator.Value();
+//         (*count)++;
+//         shapeCount(child,count);
+//         topoIterator.Next();
+//     }
+// }
 
 void OpenParEMg::insertToMapActivateItem (BaseItem *baseItem)
 {
@@ -4782,23 +4915,23 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
     return retval;
 }
 
-BaseItem* get_vertexItem (BaseItem *baseItem)
-{
-    if (!baseItem) return nullptr;;
+// BaseItem* get_vertexItem (BaseItem *baseItem)
+// {
+//     if (!baseItem) return nullptr;;
 
-    Handle(AIS_Shape) shape=baseItem->getShape();
-    if (shape.IsNull()) return nullptr;
-    if (shape->Shape().ShapeType() == TopAbs_VERTEX) return baseItem;
+//     Handle(AIS_Shape) shape=baseItem->getShape();
+//     if (shape.IsNull()) return nullptr;
+//     if (shape->Shape().ShapeType() == TopAbs_VERTEX) return baseItem;
 
-    int i=0;
-    while (i < baseItem->childCount()) {
-        BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(i));
-        if (get_vertexItem(child)) return child;
-        i++;
-    }
+//     int i=0;
+//     while (i < baseItem->childCount()) {
+//         BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(i));
+//         if (get_vertexItem(child)) return child;
+//         i++;
+//     }
 
-    return nullptr;
-}
+//     return nullptr;
+// }
 
 bool OpenParEMg::isValidSaveBrepFile ()
 {
@@ -4973,19 +5106,19 @@ void OpenParEMg::increase_depth (DrawingItem *item)
     }
 }
 
-void OpenParEMg::decrease_depth (DrawingItem *item)
-{
-    if (!item) return;
+// void OpenParEMg::decrease_depth (DrawingItem *item)
+// {
+//     if (!item) return;
 
-    item->decrease_depth();
+//     item->decrease_depth();
 
-    int i=0;
-    while (i < item->childCount()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(item->child(i));
-        if (child) decrease_depth(child);
-        i++;
-    }
-}
+//     int i=0;
+//     while (i < item->childCount()) {
+//         DrawingItem *child=dynamic_cast<DrawingItem *>(item->child(i));
+//         if (child) decrease_depth(child);
+//         i++;
+//     }
+// }
 
 void OpenParEMg::saveItem (std::ofstream *out, BaseItem *baseItem)
 {
@@ -5729,19 +5862,19 @@ void OpenParEMg::on_actionSolid_triggered ()
     ui->drawingWindow->updateViewer();
 }
 
-bool OpenParEMg::hasSelectedPaths ()
-{
-    long unsigned int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) {
-            PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
-            if (pathItem && pathItem->is_path()) return true;
-        }
-        i++;
-    }
-    return false;
-}
+// bool OpenParEMg::hasSelectedPaths ()
+// {
+//     long unsigned int i=0;
+//     while (i < ui->drawingWindow->get_selectedItems_size()) {
+//         BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+//         if (baseItem) {
+//             PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
+//             if (pathItem && pathItem->is_path()) return true;
+//         }
+//         i++;
+//     }
+//     return false;
+// }
 
 void OpenParEMg::clearTreeSelection ()
 {
@@ -5850,7 +5983,7 @@ void OpenParEMg::keyReleaseEvent (QKeyEvent *event)
 void OpenParEMg::on_actionShowAll_triggered()
 {
     ui->drawingWindow->unselectAllItems();
-    drawing->show();
+    drawing->show(true);
     ui->drawingWindow->showItem(path);
     ui->drawingWindow->showItem(port);
     ui->drawingWindow->showItem(boundary);

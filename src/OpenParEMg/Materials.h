@@ -93,7 +93,7 @@ public:
     bool hasOne (KeywordValueItem *);
     QVariant hasDuplicateKeyword ();
     QVariant hasDuplicateValue (int);
-    void set_parent (KeywordValueItem *m_parentItem_) {m_parentItem=m_parentItem_;}
+    //void set_parent (KeywordValueItem *m_parentItem_) {m_parentItem=m_parentItem_;}
 
 private:
     QList<QVariant> m_itemData;

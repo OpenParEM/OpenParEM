@@ -70,80 +70,80 @@ bool IsPointInsideOrOnPolygon2d (const gp_Pnt2d& p, const std::vector<gp_Pnt2d>&
     return inside;
 }
 
-bool FindNonCollinearTriplet (const std::vector<gp_Pnt>& pts, gp_Pnt& p1, gp_Pnt& p2, gp_Pnt& p3, Standard_Real tol = Precision::Confusion())
-{
-    const int n = static_cast<int>(pts.size());
-    if (n < 3)
-        return false;
+// bool FindNonCollinearTriplet (const std::vector<gp_Pnt>& pts, gp_Pnt& p1, gp_Pnt& p2, gp_Pnt& p3, Standard_Real tol = Precision::Confusion())
+// {
+//     const int n = static_cast<int>(pts.size());
+//     if (n < 3)
+//         return false;
 
-    p1 = pts[0];
+//     p1 = pts[0];
 
-    int i = 1;
-    while (i < n - 1)
-    {
-        int j = i + 1;
-        while (j < n)
-        {
-            gp_Vec v1(p1, pts[i]);
-            gp_Vec v2(p1, pts[j]);
+//     int i = 1;
+//     while (i < n - 1)
+//     {
+//         int j = i + 1;
+//         while (j < n)
+//         {
+//             gp_Vec v1(p1, pts[i]);
+//             gp_Vec v2(p1, pts[j]);
 
-            if (v1.Crossed(v2).Magnitude() > tol)
-            {
-                p2 = pts[i];
-                p3 = pts[j];
-                return true;
-            }
-            ++j;
-        }
-        ++i;
-    }
+//             if (v1.Crossed(v2).Magnitude() > tol)
+//             {
+//                 p2 = pts[i];
+//                 p3 = pts[j];
+//                 return true;
+//             }
+//             ++j;
+//         }
+//         ++i;
+//     }
 
-    return false;
-}
+//     return false;
+// }
 
-bool ComputePlaneFromPolygon (const std::vector<gp_Pnt>& poly, gp_Pln& plane, Standard_Real tol=Precision::Confusion())
-{
-    gp_Pnt p1, p2, p3;
-    if (!FindNonCollinearTriplet(poly, p1, p2, p3, tol)) return true;
-    plane=gce_MakePln(p1, p2, p3).Value();
-    return false;
-}
+// bool ComputePlaneFromPolygon (const std::vector<gp_Pnt>& poly, gp_Pln& plane, Standard_Real tol=Precision::Confusion())
+// {
+//     gp_Pnt p1, p2, p3;
+//     if (!FindNonCollinearTriplet(poly, p1, p2, p3, tol)) return true;
+//     plane=gce_MakePln(p1, p2, p3).Value();
+//     return false;
+// }
 
-bool IsPolygonPlanar (const std::vector<gp_Pnt>& poly, const gp_Pln& plane, Standard_Real tol=Precision::Confusion())
-{
-    const int n = static_cast<int>(poly.size());
-    if (n < 3) return true;
+// bool IsPolygonPlanar (const std::vector<gp_Pnt>& poly, const gp_Pln& plane, Standard_Real tol=Precision::Confusion())
+// {
+//     const int n = static_cast<int>(poly.size());
+//     if (n < 3) return true;
 
-    int i = 0;
-    while (i < n) {
-        if (plane.Distance(poly[i]) > tol) return true;
-        i++;
-    }
+//     int i = 0;
+//     while (i < n) {
+//         if (plane.Distance(poly[i]) > tol) return true;
+//         i++;
+//     }
 
-    return false;
-}
+//     return false;
+// }
 
-bool VertexFilter::get_midPoint (TopoDS_Edge& edge, gp_Pnt *midPoint)
-{
-    // first point must be on the plane
-    TopoDS_Vertex v1=TopExp::FirstVertex(edge);
-    const gp_Pnt pnt1=BRep_Tool::Pnt(v1);
-    if (!IsPointOnPlane(plane,pnt1)) return Standard_False;
+// bool VertexFilter::get_midPoint (TopoDS_Edge& edge, gp_Pnt *midPoint)
+// {
+//     // first point must be on the plane
+//     TopoDS_Vertex v1=TopExp::FirstVertex(edge);
+//     const gp_Pnt pnt1=BRep_Tool::Pnt(v1);
+//     if (!IsPointOnPlane(plane,pnt1)) return Standard_False;
 
-    // second point must be on the plane
-    TopoDS_Vertex v2=TopExp::LastVertex(edge);
-    const gp_Pnt pnt2=BRep_Tool::Pnt(v2);
-    if (!IsPointOnPlane(plane,pnt2)) return Standard_False;
+//     // second point must be on the plane
+//     TopoDS_Vertex v2=TopExp::LastVertex(edge);
+//     const gp_Pnt pnt2=BRep_Tool::Pnt(v2);
+//     if (!IsPointOnPlane(plane,pnt2)) return Standard_False;
 
-    // mid point
-    midPoint->SetCoord((pnt1.X()+pnt2.X())/2.0,(pnt1.Y()+pnt2.Y())/2.0,(pnt1.Z()+pnt2.Z())/2.0);
-    gp_Pnt2d pntmid2D=ProjectToPlane2d(plane,*midPoint);
+//     // mid point
+//     midPoint->SetCoord((pnt1.X()+pnt2.X())/2.0,(pnt1.Y()+pnt2.Y())/2.0,(pnt1.Z()+pnt2.Z())/2.0);
+//     gp_Pnt2d pntmid2D=ProjectToPlane2d(plane,*midPoint);
 
-    // point must be on or in the outline
-    if (IsPointInsideOrOnPolygon2d(pntmid2D,outline2D)) return Standard_True;
+//     // point must be on or in the outline
+//     if (IsPointInsideOrOnPolygon2d(pntmid2D,outline2D)) return Standard_True;
 
-    return Standard_False;
-}
+//     return Standard_False;
+// }
 
 Standard_Boolean VertexFilter::IsOk (const Handle(SelectMgr_EntityOwner)& theOwner) const
 {
@@ -195,45 +195,45 @@ Standard_Boolean VertexFilter::IsOk (const Handle(SelectMgr_EntityOwner)& theOwn
     return Standard_False;
 }
 
-bool VertexFilter::set_outline (Path *path_outline)
-{
-    if (!path_outline) return Standard_True;
-    outline.clear();
+// bool VertexFilter::set_outline (Path *path_outline)
+// {
+//     if (!path_outline) return Standard_True;
+//     outline.clear();
 
-    // convert from Path to gp_Pnt vector
+//     // convert from Path to gp_Pnt vector
 
-    long unsigned int i=0;
-    while (i < path_outline->get_points_size()) {
-        double x=path_outline->get_point(i)->get_point_value().x;
-        double y=path_outline->get_point(i)->get_point_value().y;
-        double z=path_outline->get_point(i)->get_point_value().z;
-        gp_Pnt p(x,y,z);
-        outline.push_back(p);
-        i++;
-    }
+//     long unsigned int i=0;
+//     while (i < path_outline->get_points_size()) {
+//         double x=path_outline->get_point(i)->get_point_value().x;
+//         double y=path_outline->get_point(i)->get_point_value().y;
+//         double z=path_outline->get_point(i)->get_point_value().z;
+//         gp_Pnt p(x,y,z);
+//         outline.push_back(p);
+//         i++;
+//     }
 
-    if (path_outline->is_closed()) {
-        double x=path_outline->get_point(0)->get_point_value().x;
-        double y=path_outline->get_point(0)->get_point_value().y;
-        double z=path_outline->get_point(0)->get_point_value().z;
-        gp_Pnt p(x,y,z);
-        outline.push_back(p);
-    }
+//     if (path_outline->is_closed()) {
+//         double x=path_outline->get_point(0)->get_point_value().x;
+//         double y=path_outline->get_point(0)->get_point_value().y;
+//         double z=path_outline->get_point(0)->get_point_value().z;
+//         gp_Pnt p(x,y,z);
+//         outline.push_back(p);
+//     }
 
-    // convert to a gp_Pln
-    if (ComputePlaneFromPolygon(outline,plane)) return Standard_True;
+//     // convert to a gp_Pln
+//     if (ComputePlaneFromPolygon(outline,plane)) return Standard_True;
 
-    // make sure it is planar
-    if (IsPolygonPlanar(outline,plane)) return Standard_True;
+//     // make sure it is planar
+//     if (IsPolygonPlanar(outline,plane)) return Standard_True;
 
-    // get points in 2D
-    outline2D.clear();
-    i=0;
-    while (i < outline.size()) {
-        gp_Pnt2d pnt2D=ProjectToPlane2d (plane,outline[i]);
-        outline2D.push_back(pnt2D);
-        i++;
-    }
+//     // get points in 2D
+//     outline2D.clear();
+//     i=0;
+//     while (i < outline.size()) {
+//         gp_Pnt2d pnt2D=ProjectToPlane2d (plane,outline[i]);
+//         outline2D.push_back(pnt2D);
+//         i++;
+//     }
 
-    return Standard_False;
-}
+//     return Standard_False;
+// }

@@ -1059,20 +1059,20 @@ void Polyline::insertPoint (gp_Pnt &pnt)
     }
 }
 
-void Polyline::buildFromFace (TopoDS_Face &face)
-{
-    // use the outer wire
-    TopoDS_Wire wire=BRepTools::OuterWire(face);
+// void Polyline::buildFromFace (TopoDS_Face &face)
+// {
+//     // use the outer wire
+//     TopoDS_Wire wire=BRepTools::OuterWire(face);
 
-    // transfer vertices
-    BRepTools_WireExplorer wireExp(wire,face);
-    while (wireExp.More())
-    {
-        gp_Pnt point=BRep_Tool::Pnt(wireExp.CurrentVertex());
-        shapePoints.push_back(point);
-        wireExp.Next();
-    }
-}
+//     // transfer vertices
+//     BRepTools_WireExplorer wireExp(wire,face);
+//     while (wireExp.More())
+//     {
+//         gp_Pnt point=BRep_Tool::Pnt(wireExp.CurrentVertex());
+//         shapePoints.push_back(point);
+//         wireExp.Next();
+//     }
+// }
 
 QString Polyline::getName (ObjectCounts *objectCounts) {
     objectCounts->polyline++;
@@ -1582,15 +1582,15 @@ void Rectangle::recalculate ()
 }
 
 // for change in origin
-void Rectangle::recalculate (gp_Pnt p0)
-{
-    shapePoints[0]=p0;
+// void Rectangle::recalculate (gp_Pnt p0)
+// {
+//     shapePoints[0]=p0;
 
-    shapePoints[1]=shapePoints[0].Translated(u*width);
-    shapePoints[2]=shapePoints[0].Translated(u*width).Translated(v*height);
-    shapePoints[3]=shapePoints[0].Translated(v*height);
-    shapePoints[4]=shapePoints[0];
-}
+//     shapePoints[1]=shapePoints[0].Translated(u*width);
+//     shapePoints[2]=shapePoints[0].Translated(u*width).Translated(v*height);
+//     shapePoints[3]=shapePoints[0].Translated(v*height);
+//     shapePoints[4]=shapePoints[0];
+// }
 
 // for change in corner points
 void Rectangle::recalculate (gp_Pnt p0, gp_Pnt p1)

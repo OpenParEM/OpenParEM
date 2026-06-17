@@ -68,7 +68,7 @@ public:
 
     virtual bool isPointOnPlane (gp_Pnt &pnt);
 
-    void setNormal (gp_Vec normal_) {normal=normal_;}
+    //void setNormal (gp_Vec normal_) {normal=normal_;}
     void setNormal (struct point normal_) {normal.SetCoord(normal_.x,normal_.y,normal_.z);}
     void setNormal (double x, double y, double z) {normal.SetCoord(x,y,z);}
     void setNormal (gp_Pnt pnt) {normal.SetCoord(pnt.X(),pnt.Y(),pnt.Z());}
@@ -81,7 +81,7 @@ public:
     virtual gp_Pln getPlane ();
 
     void set_viewerContext (Handle(AIS_InteractiveContext) viewerContext_) {viewerContext=viewerContext_;}
-    Handle(AIS_InteractiveContext) get_viewerContext () {return viewerContext;}
+    //Handle(AIS_InteractiveContext) get_viewerContext () {return viewerContext;}
 
     void setEditIndex (gp_Pnt &pnt);
     virtual void setEditPoint (gp_Pnt &pnt);
@@ -91,8 +91,8 @@ public:
     virtual void shift (gp_Pnt &pnt1, gp_Pnt &pnt2) = 0;
     virtual void rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2);
 
-    bool isModified () {return modified;}
-    void setModified (bool modified_) {modified=modified_;}
+    //bool isModified () {return modified;}
+    //void setModified (bool modified_) {modified=modified_;}
 
     bool isClosed () {return closed;}
 
@@ -104,7 +104,7 @@ public:
     virtual QString getName (ObjectCounts *objectCounts) = 0;
 
     void setHasArrows (bool hasArrows_) {hasArrows=hasArrows_;}
-    bool getHasArrows () {return hasArrows;}
+    //bool getHasArrows () {return hasArrows;}
     void addArrows (BRep_Builder &builder, TopoDS_Compound &compound);
 
     void setReverseExtrusionDirection (bool reverseExtrusionDirection_) {reverseExtrusionDirection=reverseExtrusionDirection_;}
@@ -196,7 +196,7 @@ public:
         }
         return false;
     }
-    void buildFromFace (TopoDS_Face &face);
+    //void buildFromFace (TopoDS_Face &face);
     TopoDS_Face buildFace (TopoDS_Wire &wire) override;
     void setEditPoint (gp_Pnt &pnt) override;
     bool canDeletePoint () override;
@@ -252,14 +252,14 @@ public:
     double getHeight () {return height;}
 
     void setU (gp_Vec u_) override {u=u_;}
-    void setWidth (double width_) {width=width_;}
-    void setHeight (double height_) {height=height_;}
+    //void setWidth (double width_) {width=width_;}
+    //void setHeight (double height_) {height=height_;}
     void reverseOrder () override;
 
     void setIsSquare (bool isSquare_) {isSquare=isSquare_;}
 
     void recalculate ();
-    void recalculate (gp_Pnt);
+    //void recalculate (gp_Pnt);
     void recalculate (gp_Pnt, gp_Pnt);
     void recalculate (gp_Pnt, double, double);
 

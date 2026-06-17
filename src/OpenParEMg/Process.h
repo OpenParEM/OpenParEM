@@ -34,7 +34,7 @@ class Process : public QWidget
 public:
     explicit Process (QWidget *parent = nullptr);
     //~Process ();
-    bool isModified () {return modified;}
+    //bool isModified () {return modified;}
     virtual Process* copyCreate () = 0;
     virtual bool canEdit () = 0;
     virtual QString getName (ObjectCounts *objectCounts) = 0;

@@ -72,7 +72,7 @@ public:
 
     void fitAll () {view->FitAll(); view->Redraw();}
     void fitSelected () {viewerContext->FitSelected(view); view->Redraw();}
-    void setScale (double scale) {view->SetScale(scale); view->Redraw();}
+    //void setScale (double scale) {view->SetScale(scale); view->Redraw();}
 
     // void cancelDraw ();
     //void drawRubberBand (gp_Pnt);
@@ -106,31 +106,31 @@ public:
         pickFirstVertex=false;
     }
 
-    void set_activeShape (Handle(AIS_Shape) shape) {
-        viewerContext->Deactivate();
-        viewerContext->Activate(shape,1,Standard_False);
-        updateViewer();
-    }
+    // void set_activeShape (Handle(AIS_Shape) shape) {
+    //     viewerContext->Deactivate();
+    //     viewerContext->Activate(shape,1,Standard_False);
+    //     updateViewer();
+    // }
 
-    void reset_activeShape (Handle(AIS_Shape) shape) {
-        viewerContext->Deactivate();
-        viewerContext->Activate(shape,1,Standard_False);
-        viewerContext->Activate(shape,2,Standard_False);
-        updateViewer();
-    }
+    // void reset_activeShape (Handle(AIS_Shape) shape) {
+    //     viewerContext->Deactivate();
+    //     viewerContext->Activate(shape,1,Standard_False);
+    //     viewerContext->Activate(shape,2,Standard_False);
+    //     updateViewer();
+    // }
 
-    void set_allActiveShapes () {
-        viewerContext->Deactivate();
-        viewerContext->Activate(1);
-        viewerContext->Activate(2);
-        updateViewer();
-    }
+    // void set_allActiveShapes () {
+    //     viewerContext->Deactivate();
+    //     viewerContext->Activate(1);
+    //     viewerContext->Activate(2);
+    //     updateViewer();
+    // }
 
-    void reshowItems ()
-    {
-        if (showTracking) std::cout << "CustomOpenGLWidget::reshowItems" << std::endl; std::cout.flush();
-        drawingTracker->reshowVisibleItems();
-    }
+    // void reshowItems ()
+    // {
+    //     if (showTracking) std::cout << "CustomOpenGLWidget::reshowItems" << std::endl; std::cout.flush();
+    //     drawingTracker->reshowVisibleItems();
+    // }
 
     void showItem (BaseItem *item)
     {
@@ -151,11 +151,11 @@ public:
         return drawingTracker->isNetValidShow();
     }
 
-    bool isVIValidShow ()
-    {
-        if (showTracking) std::cout << "CustomOpenGLWidget::isVIValidShow" << std::endl; std::cout.flush();
-        return drawingTracker->isVIValidShow();
-    }
+    // bool isVIValidShow ()
+    // {
+    //     if (showTracking) std::cout << "CustomOpenGLWidget::isVIValidShow" << std::endl; std::cout.flush();
+    //     return drawingTracker->isVIValidShow();
+    // }
 
     bool isValidHide ()
     {
@@ -163,11 +163,11 @@ public:
         return drawingTracker->isValidHide();
     }
 
-    bool isVIValidHide ()
-    {
-        if (showTracking) std::cout << "CustomOpenGLWidget::isVIValidHide" << std::endl; std::cout.flush();
-        return drawingTracker->isVIValidHide();
-    }
+    // bool isVIValidHide ()
+    // {
+    //     if (showTracking) std::cout << "CustomOpenGLWidget::isVIValidHide" << std::endl; std::cout.flush();
+    //     return drawingTracker->isVIValidHide();
+    // }
 
     bool isNetValidHide ()
     {
@@ -187,15 +187,10 @@ public:
         drawingTracker->hideAllItems();
     }
 
-    // void hideItems () {
-    //     if (showTracking) std::cout << "CustomOpenGLWidget::hideItems" << std::endl; std::cout.flush();
-    //     drawingTracker->hideItems();
+    // void refreshSelectedItem (BaseItem *item)
+    // {
+    //     drawingTracker->refreshSelectedItem(item);
     // }
-
-    void refreshSelectedItem (BaseItem *item)
-    {
-        drawingTracker->refreshSelectedItem(item);
-    }
 
     void refreshSelectedItems ()
     {
@@ -233,14 +228,14 @@ public:
         viewerContext->Activate(item->getShape(),0,Standard_False);
     }
 
-    bool isSelectedItem (BaseItem *item)
-    {
-        if (item->getShape().IsNull()) return false;
-        if (viewerContext->IsSelected(item->getShape())) {
-            return true;
-        }
-        return false;
-    }
+    // bool isSelectedItem (BaseItem *item)
+    // {
+    //     if (item->getShape().IsNull()) return false;
+    //     if (viewerContext->IsSelected(item->getShape())) {
+    //         return true;
+    //     }
+    //     return false;
+    // }
 
     // bool hasSelectedItems (int type)
     // {
@@ -344,16 +339,16 @@ public:
         viewerContext->ClearSelected(Standard_False);
     }
 
-    void deleteItem (BaseItem *item)
-    {
-        if (showTracking) std::cout << "CustomOpenGLWidget::deleteItem  item=" << item << std::endl; std::cout.flush();
-        drawingTracker->deleteItem(item);
-    }
+    // void deleteItem (BaseItem *item)
+    // {
+    //     if (showTracking) std::cout << "CustomOpenGLWidget::deleteItem  item=" << item << std::endl; std::cout.flush();
+    //     drawingTracker->deleteItem(item);
+    // }
 
-    bool isVisibleItem (BaseItem *item)
-    {
-        return drawingTracker->isVisibleItem(item);
-    }
+    // bool isVisibleItem (BaseItem *item)
+    // {
+    //     return drawingTracker->isVisibleItem(item);
+    // }
 
     void insertItemToMap (Handle(AIS_Shape) shape, BaseItem *item)
     {
@@ -385,11 +380,11 @@ public:
         viewerContext->Remove(shape,Standard_False);
     }
 
-    void hideShape (Handle(AIS_Shape) shape)
-    {
-        if (showTracking) std::cout << "CustomOpenGLWidget::hideShape" << std::endl; std::cout.flush();
-        viewerContext->Erase(shape,Standard_False);
-    }
+    // void hideShape (Handle(AIS_Shape) shape)
+    // {
+    //     if (showTracking) std::cout << "CustomOpenGLWidget::hideShape" << std::endl; std::cout.flush();
+    //     viewerContext->Erase(shape,Standard_False);
+    // }
 
     bool isValidDelete ()
     {
@@ -437,17 +432,17 @@ public:
     }
 
     // assumes one selected shape that has been verified elsewhere
-    TopoDS_Shape get_selectedFace ()
-    {
-        TopoDS_Shape pickedShape;
-        for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
-            pickedShape=viewerContext->SelectedShape();
-            if (pickedShape.ShapeType() == TopAbs_FACE) {
-                break;
-            }
-        }
-        return pickedShape;
-    }
+    // TopoDS_Shape get_selectedFace ()
+    // {
+    //     TopoDS_Shape pickedShape;
+    //     for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
+    //         pickedShape=viewerContext->SelectedShape();
+    //         if (pickedShape.ShapeType() == TopAbs_FACE) {
+    //             break;
+    //         }
+    //     }
+    //     return pickedShape;
+    // }
 
     // get the selected subshape by index; max available verified elsewhere
     TopoDS_Shape get_selectedSubshape (int index)
@@ -468,19 +463,19 @@ public:
         drawingTracker->reset();
     }
 
-    void selectOnVertex (Path *outline)
-    {
-        if (!outline) return;
+    // void selectOnVertex (Path *outline)
+    // {
+    //     if (!outline) return;
 
-        if (vertexFilter.IsNull()) {
-            viewerContext->RemoveFilter(vertexFilter);
-            vertexFilter.Nullify();
-        }
+    //     if (vertexFilter.IsNull()) {
+    //         viewerContext->RemoveFilter(vertexFilter);
+    //         vertexFilter.Nullify();
+    //     }
 
-        vertexFilter=new VertexFilter();
-        vertexFilter->set_outline(outline);
-        viewerContext->AddFilter(vertexFilter);
-    }
+    //     vertexFilter=new VertexFilter();
+    //     vertexFilter->set_outline(outline);
+    //     viewerContext->AddFilter(vertexFilter);
+    // }
 
     void removeSelectOnVertex ()
     {
@@ -491,12 +486,12 @@ public:
     }
 
     void clearSelected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearSelected(theToUpdateViewer);}
-    void clearDetected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearDetected(theToUpdateViewer);}
+    // void clearDetected (const Standard_Boolean theToUpdateViewer) {viewerContext->ClearDetected(theToUpdateViewer);}
 
     void finishPickVertex (bool);
 
     Handle(AIS_InteractiveContext) get_viewerContext () {return viewerContext;}
-    Handle(V3d_View) get_view () {return view;}
+    // Handle(V3d_View) get_view () {return view;}
 
     gp_Dir get_normal () {return view->Viewer()->PrivilegedPlane().Direction();}
 
@@ -506,42 +501,42 @@ public:
     BaseItem* get_selectedItem (long unsigned int i) {return drawingTracker->getSelectedItem(i);}
     long unsigned int get_selectedItems_count () {return drawingTracker->getSelectedItemsCount();}
 
-    long unsigned int get_visibleItems_size () {return drawingTracker->getVisibleItemsSize();}
-    BaseItem* get_visibleItem (long unsigned int i) {return drawingTracker->getVisibleItem(i);}
-    long unsigned int get_visibleItems_count () {return drawingTracker->getVisibleItemsCount();}
+    // long unsigned int get_visibleItems_size () {return drawingTracker->getVisibleItemsSize();}
+    // BaseItem* get_visibleItem (long unsigned int i) {return drawingTracker->getVisibleItem(i);}
+    // long unsigned int get_visibleItems_count () {return drawingTracker->getVisibleItemsCount();}
 
     void setSubshapeSelection (bool isSubshapeSelection_) {isSubshapeSelection=isSubshapeSelection_;}
-    void setSingleSelection () {isSingleSelection=true;}
+    // void setSingleSelection () {isSingleSelection=true;}
     void setSetToPlane (bool isSetToPlane_) {isSetToPlane=isSetToPlane_;}
 
-    std::vector<BaseItem *> getVisibleDrawingItems ()
-    {
-        return drawingTracker->getVisibleDrawingItems();
-    }
+    // std::vector<BaseItem *> getVisibleDrawingItems ()
+    // {
+    //     return drawingTracker->getVisibleDrawingItems();
+    // }
 
     void setShaded (Handle(AIS_Shape) shape)
     {
         viewerContext->SetDisplayMode(shape,AIS_Shaded,Standard_True);
     }
 
-    void PrintAllActiveModes () {
-        std::cout << "CustomOpenGLWidget:: PrintAllActiveModes" << std::endl; std::cout.flush();
+    // void PrintAllActiveModes () {
+    //     std::cout << "CustomOpenGLWidget:: PrintAllActiveModes" << std::endl; std::cout.flush();
 
-        AIS_ListOfInteractive aDisplayedObjects;
-        viewerContext->DisplayedObjects(aDisplayedObjects);
+    //     AIS_ListOfInteractive aDisplayedObjects;
+    //     viewerContext->DisplayedObjects(aDisplayedObjects);
 
-        for (AIS_ListIteratorOfListOfInteractive anObjIt(aDisplayedObjects); anObjIt.More(); anObjIt.Next()) {
-            Handle(AIS_InteractiveObject) anObj = anObjIt.Value();
-            TColStd_ListOfInteger aModes;
+    //     for (AIS_ListIteratorOfListOfInteractive anObjIt(aDisplayedObjects); anObjIt.More(); anObjIt.Next()) {
+    //         Handle(AIS_InteractiveObject) anObj = anObjIt.Value();
+    //         TColStd_ListOfInteger aModes;
 
-            viewerContext->ActivatedModes(anObj, aModes);
+    //         viewerContext->ActivatedModes(anObj, aModes);
 
-            for (TColStd_ListIteratorOfListOfInteger aModeIt(aModes); aModeIt.More(); aModeIt.Next()) {
-                Standard_Integer aMode = aModeIt.Value();
-                std::cout << "   aMode=" << aMode << std::endl; std::cout.flush();
-            }
-        }
-    }
+    //         for (TColStd_ListIteratorOfListOfInteger aModeIt(aModes); aModeIt.More(); aModeIt.Next()) {
+    //             Standard_Integer aMode = aModeIt.Value();
+    //             std::cout << "   aMode=" << aMode << std::endl; std::cout.flush();
+    //         }
+    //     }
+    // }
 
     void compactSelectedItems () {drawingTracker->compactSelectedItems();}
     void compactVisibleItems () {drawingTracker->compactVisibleItems();}
@@ -550,7 +545,7 @@ public:
         std::cout << "      drawing selected count = " << viewerContext->NbSelected() << std::endl; std::cout.flush();
     }
 
-    bool isInMap (Handle(AIS_Shape) shape) {return drawingTracker->isInMap(shape);}
+    // bool isInMap (Handle(AIS_Shape) shape) {return drawingTracker->isInMap(shape);}
 
     void shutdown()
     {

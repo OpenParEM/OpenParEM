@@ -214,29 +214,29 @@ public:
 
     // show
 
-    void reshowVisibleItems () {
-        if (showTracking) {std::cout << "ItemTracker::reshowVisibleItems" << std::endl; std::cout.flush();}
+    // void reshowVisibleItems () {
+    //     if (showTracking) {std::cout << "ItemTracker::reshowVisibleItems" << std::endl; std::cout.flush();}
 
-        long unsigned int i=0;
-        while (i < visibleItems.size()) {
-            BaseItem *item=visibleItems[i];
-            if (item) {
-                if (item->is_mesh()) {
-                    MeshItem *meshItem=dynamic_cast<MeshItem *>(item);
+    //     long unsigned int i=0;
+    //     while (i < visibleItems.size()) {
+    //         BaseItem *item=visibleItems[i];
+    //         if (item) {
+    //             if (item->is_mesh()) {
+    //                 MeshItem *meshItem=dynamic_cast<MeshItem *>(item);
 
-                    long unsigned int j=0;
-                    while (j < meshItem->get_meshEntitiesSize()) {
-                        DisplayShape(meshItem->get_meshEntity(j));
-                        j++;
-                    }
-                } else {
-                    EraseShape(item->getShape());
-                    DisplayShape(item->getShape());
-                }
-            }
-            i++;
-        }
-    }
+    //                 long unsigned int j=0;
+    //                 while (j < meshItem->get_meshEntitiesSize()) {
+    //                     DisplayShape(meshItem->get_meshEntity(j));
+    //                     j++;
+    //                 }
+    //             } else {
+    //                 EraseShape(item->getShape());
+    //                 DisplayShape(item->getShape());
+    //             }
+    //         }
+    //         i++;
+    //     }
+    // }
 
     // void showShape (Handle(AIS_Shape) shape)
     // {
@@ -252,154 +252,9 @@ public:
         if (showTracking) {std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();}
 
         if (!item) return;
-
-        // show item
-
-        if (item->is_rootDrawing()) {
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-                showItem(child);
-                i++;
-            }
-        } else if (item->is_drawing()) {
-
-            if (item->foreground(0) == Qt::gray) {
-                DisplayShape(item->getShape());
-                item->setForeground(0,Qt::black);
-                visibleItems.push_back(item);
-            }
-        } else if (item->is_rootPath()) {
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=(BaseItem *) item->child(i);
-                showItem(child);
-                i++;
-            }
-        } else if (item->is_path()) {
-            if (item->foreground(0) == Qt::black) return;
-
-            DisplayShape(item->getShape());
-            item->setForeground(0,Qt::black);
-            visibleItems.push_back(item);
-
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
-            if (pathItem && pathItem->is_path()) {
-                long unsigned int i=0;
-                while (i < pathItem->linkedItems_size()) {
-                    showItem(pathItem->get_linkedItem(i));
-                    i++;
-                }
-            }
-        } else if (item->is_integrationPathSegment()) {
-            if (item->foreground(0) == Qt::black) return;  // avoid infinite loop due to crosslinking of paths
-
-            item->setForeground(0,Qt::black);
-            IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(item);
-            if (integrationPathItem && integrationPathItem->is_integrationPathSegment()) {
-                showItem(integrationPathItem->getPathItem());
-            }
-        } else if (item->is_rootPort()) {
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *childItem=dynamic_cast<BaseItem *>(item->child(i));
-                showItem(childItem);
-                i++;
-            }
-        } else if (item->is_port()) {
-            if (item->foreground(0) == Qt::black) return;
-
-            item->setForeground(0,Qt::black);
-
-            PortItem *portItem=dynamic_cast<PortItem *>(item);
-            showItem(portItem->getPathItem());
-
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *childItem=dynamic_cast<BaseItem *>(item->child(i));
-                showItem(childItem);
-                i++;
-            }
-        } else if (item->is_rootBoundary()) {
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *childItem=dynamic_cast<BaseItem *>(item->child(i));
-                showItem(childItem);
-                i++;
-            }
-        } else if (item->is_boundary()) {
-            if (item->foreground(0) == Qt::black) return;
-
-            item->setForeground(0,Qt::black);
-
-            BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
-            showItem(boundaryItem->getPathItem());
-
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *childItem=dynamic_cast<BaseItem *>(item->child(i));
-                showItem(childItem);
-                i++;
-            }
-        } else if (item->is_rootMesh()) {
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *childItem=dynamic_cast<BaseItem *>(item->child(i));
-                showItem(childItem);
-                i++;
-            }
-        } else if (item->is_mesh()) {
-            if (item->foreground(0) == Qt::black) return;
-            item->setForeground(0,Qt::black);
-            visibleItems.push_back(item);
-
-            MeshItem *meshItem=dynamic_cast<MeshItem *>(item);
-            long unsigned int i=0;
-            while (i < meshItem->get_meshEntitiesSize()){
-                DisplayShape(meshItem->get_meshEntity(i));
-                i++;
-            }
-        } else if (item->is_sport()) {
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *childItem=dynamic_cast<BaseItem *>(item->child(i));
-                showItem(childItem);
-                i++;
-            }
-        } else if (item->is_sportLabel()) {
-            // nothing to do
-        } else if (item->is_voltage() || item->is_current()) {
-            if (item->foreground(0) == Qt::black) return;
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *childItem=dynamic_cast<BaseItem *>(item->child(i));
-                showItem(childItem);
-                i++;
-            }
-        } else if (item->is_integrationPathSegment()) {
-            if (item->foreground(0) == Qt::black) return;
-
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
-            long unsigned int i=0;
-            while (i < pathItem->linkedItems_size()) {
-                PathItem *linkedItem=dynamic_cast<PathItem *>(pathItem->get_linkedItem(i));
-                showItem(linkedItem);
-                i++;
-            }
-            item->setForeground(0,Qt::black);
-        } else if (item->is_scaleLabel()) {
-            // nothing to do
-        } else if (item->is_impedanceDefinition()) {
-            // nothing to do
-        } else if (item->is_impedanceCalculation ()) {
-            // nothing to do
-        } else if (item->is_sportNumber()) {
-            // nothing to do
-        } else {
-            //xxx
-            //std::cout << "ASSERT: Invalid option in ItemTracking::showItem" << std::endl; std::cout.flush();
-            //item->print();
-        }
+        DisplayShape(item->getShape());
+        item->setForeground(0,Qt::black);
+        visibleItems.push_back(item);
     }
 
     bool isValidShow ()
@@ -428,28 +283,28 @@ public:
         return false;
     }
 
-    bool isVIValidShow ()
-    {
-        if (showTracking) {std::cout << "ItemTracker::isVIValidShow" << std::endl; std::cout.flush();}
+    // bool isVIValidShow ()
+    // {
+    //     if (showTracking) {std::cout << "ItemTracker::isVIValidShow" << std::endl; std::cout.flush();}
 
-        long unsigned int i=0;
-        while (i < selectedItems.size()) {
-            BaseItem *item=selectedItems[i];
-            if (item) {
-                int j=0;
-                while (j < item->childCount()) {
-                    BaseItem *child=dynamic_cast<BaseItem *>(item->child(j));
-                    if (child->is_integrationPathSegment()) {
-                        if (child->isValidShow()) return true;
-                    }
-                    j++;
-                }
-            }
-            i++;
-        }
+    //     long unsigned int i=0;
+    //     while (i < selectedItems.size()) {
+    //         BaseItem *item=selectedItems[i];
+    //         if (item) {
+    //             int j=0;
+    //             while (j < item->childCount()) {
+    //                 BaseItem *child=dynamic_cast<BaseItem *>(item->child(j));
+    //                 if (child->is_integrationPathSegment()) {
+    //                     if (child->isValidShow()) return true;
+    //                 }
+    //                 j++;
+    //             }
+    //         }
+    //         i++;
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
     bool isNetValidShow ()
     {
@@ -501,166 +356,9 @@ public:
         if (hideTracking) {std::cout << "ItemTracker::hideItem  item=" << item << std::endl; std::cout.flush();}
 
         if (!item) return;
-
-        // custom hide
-
-        if (item->is_rootDrawing()) {
-            EraseShape(item->getShape());
-            nullifyVisibleItem(item);
-
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-                hideItem(child);
-                i++;
-            }
-        } else if (item->is_drawing()) {
-
-            // hide item
-            EraseShape(item->getShape());
-            item->setForeground(0,Qt::gray);
-            nullifyVisibleItem(item);
-
-            // hide children
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-                hideItem(child);
-                i++;
-            }
-        } else if (item->is_rootPath()) {
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-                hideItem(child);
-                i++;
-            }
-        } else if (item->is_path()) {
-            if (item->foreground(0) == Qt::gray) return;  // avoid infinite loop due to crosslinking of paths
-
-            EraseShape(item->getShape());
-            item->setForeground(0,Qt::gray);
-            nullifyVisibleItem(item);
-
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
-            long unsigned int i=0;
-            while (i < pathItem->linkedItems_size()) {
-                hideItem(pathItem->get_linkedItem(i));
-                i++;
-            }
-        } else if (item->is_integrationPathSegment()) {
-            if (item->foreground(0) == Qt::gray) return;  // avoid infinite loop due to crosslinking of paths
-
-            item->setForeground(0,Qt::gray);
-            IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(item);
-            if (integrationPathItem && integrationPathItem->is_integrationPathSegment()) {
-                showItem(integrationPathItem->getPathItem());
-            }
-        } else if (item->is_rootPort()) {
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-                hideItem(child);
-                i++;
-            }
-        } else if (item->is_port()) {
-            if (item->foreground(0) == Qt::gray) return;  // avoid infinite loop due to crosslinking of paths
-
-            item->setForeground(0,Qt::gray);
-            nullifyVisibleItem(item);
-
-            // PortItem *portItem=dynamic_cast<PortItem *>(item);
-            // hideItem(portItem->getPathItem());
-        } else if (item->is_rootBoundary()) {
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-                hideItem(child);
-                i++;
-            }
-        } else if (item->is_boundary()) {
-            if (item->foreground(0) == Qt::gray) return;  // avoid infinite loop due to crosslinking of paths
-
-            item->setForeground(0,Qt::gray);
-            nullifyVisibleItem(item);
-
-            // BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
-            // hideItem(boundaryItem->getPathItem());
-        } else if (item->is_rootMesh()) {
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=dynamic_cast<BoundaryItem *>(item->child(i));
-                hideItem(child);
-                i++;
-            }
-        } else if (item->is_mesh()) {
-            if (item->foreground(0) == Qt::gray) return;   // avoid infinite loop due to crosslinking of paths
-
-            item->setForeground(0,Qt::gray);
-            nullifyVisibleItem(item);
-
-            MeshItem *meshItem=dynamic_cast<MeshItem *>(item);
-            long unsigned int i=0;
-            while (i < meshItem->get_meshEntitiesSize()){
-                EraseShape(meshItem->get_meshEntity(i));
-                i++;
-            }
-        } else if (item->is_sport()) {
-            if (item->foreground(0) == Qt::gray) return;
-
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-                hideItem(child);
-                i++;
-            }
-        } else if (item->is_sportLabel()) {
-            // nothing to do
-        } else if (item->is_voltage() || item->is_current()) {
-            if (item->foreground(0) == Qt::gray) return;
-
-            int i=0;
-            while (i < item->childCount()) {
-                BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-                hideItem(child);
-                i++;
-            }
-        } else if (item->is_integrationPathSegment()) {
-            if (item->foreground(0) == Qt::gray) return;
-
-            PathItem *pathItem=dynamic_cast<PathItem *>(item);
-            long unsigned int i=0;
-            while (i < pathItem->linkedItems_size()) {
-                hideItem(pathItem->get_linkedItem(i));
-                i++;
-            }
-            item->setForeground(0,Qt::gray);
-            nullifyVisibleItem(item);
-        } else if (item->is_scaleLabel()) {
-            // nothing to do
-        } else if (item->is_scaleValue()) {
-            // nothing to do
-        } else if (item->is_impedanceDefinition()) {
-            // nothing to do
-        } else if (item->is_impedanceCalculation ()) {
-            // nothing to do
-        } else if (item->is_sportNumber()) {
-            // nothing to do
-        } else {
-            std::cout << "ASSERT: Invalid option in ItemTracking::hideItem  itemType=" << item->get_itemType() << std::endl; std::cout.flush();
-        }
-    }
-
-    // hide only selected items
-    void hideItems ()
-    {
-        if (hideTracking) {std::cout << "ItemTracker::hideItems" << std::endl; std::cout.flush();}
-
-        long unsigned int i=0;
-        while (i < selectedItems.size()) {
-            hideItem(selectedItems[i]);
-            i++;
-        }
+        EraseShape(item->getShape());
+        item->setForeground(0,Qt::gray);
+        nullifyVisibleItem(item);
     }
 
     // hide all items whether selected or not
@@ -675,18 +373,18 @@ public:
         }
     }
 
-    bool isVisibleItem (BaseItem *item)
-    {
-        if (!item) return false;
+    // bool isVisibleItem (BaseItem *item)
+    // {
+    //     if (!item) return false;
 
-        long unsigned int i;
-        while (i < visibleItems.size()) {
-            if (visibleItems[i] == item) return true;
-            i++;
-        }
+    //     long unsigned int i;
+    //     while (i < visibleItems.size()) {
+    //         if (visibleItems[i] == item) return true;
+    //         i++;
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
     bool isValidHide ()
     {
@@ -714,27 +412,27 @@ public:
         return false;
     }
 
-    bool isVIValidHide ()
-    {
-        if (hideTracking) {std::cout << "ItemTracker::isVIValidHide" << std::endl; std::cout.flush();}
+    // bool isVIValidHide ()
+    // {
+    //     if (hideTracking) {std::cout << "ItemTracker::isVIValidHide" << std::endl; std::cout.flush();}
 
-        long unsigned int i=0;
-        while (i < selectedItems.size()) {
-            BaseItem *item=selectedItems[i];
-            if (item) {
-                int j=0;
-                while (j < item->childCount()) {
-                    BaseItem *child=dynamic_cast<BaseItem *>(item->child(j));
-                    if (child->is_integrationPathSegment()) {
-                        if (child->isValidHide()) return true;
-                    }
-                    j++;
-                }
-            }
-            i++;
-        }
-        return false;
-    }
+    //     long unsigned int i=0;
+    //     while (i < selectedItems.size()) {
+    //         BaseItem *item=selectedItems[i];
+    //         if (item) {
+    //             int j=0;
+    //             while (j < item->childCount()) {
+    //                 BaseItem *child=dynamic_cast<BaseItem *>(item->child(j));
+    //                 if (child->is_integrationPathSegment()) {
+    //                     if (child->isValidHide()) return true;
+    //                 }
+    //                 j++;
+    //             }
+    //         }
+    //         i++;
+    //     }
+    //     return false;
+    // }
 
     bool isNetValidHide ()
     {
@@ -796,10 +494,10 @@ public:
     }
 
     // assumes it is already in the tracker
-    void refreshSelectedItem (BaseItem *item) {
-        if (!item) return;
-        SelectShape(item->getShape());
-    }
+    // void refreshSelectedItem (BaseItem *item) {
+    //     if (!item) return;
+    //     SelectShape(item->getShape());
+    // }
 
     void refreshSelectedItems ()
     {
@@ -882,52 +580,52 @@ public:
         return false;
     }
 
-    bool hasOneSelectedItem ()
-    {
-        if (selectTracking) {std::cout << "ItemTracker::hasOneSelectedItem" << std::endl; std::cout.flush();}
+    // bool hasOneSelectedItem ()
+    // {
+    //     if (selectTracking) {std::cout << "ItemTracker::hasOneSelectedItem" << std::endl; std::cout.flush();}
 
-        if (selectedItems.count() == 1) return true;
-        return false;
-    }
+    //     if (selectedItems.count() == 1) return true;
+    //     return false;
+    // }
 
-    bool hasAnySelectedItems ()
-    {
-        if (selectTracking) {std::cout << "ItemTracker::hasAnySelectedItems" << std::endl; std::cout.flush();}
+    // bool hasAnySelectedItems ()
+    // {
+    //     if (selectTracking) {std::cout << "ItemTracker::hasAnySelectedItems" << std::endl; std::cout.flush();}
 
-        if (selectedItems.count() > 0) return true;
-        return false;
-    }
+    //     if (selectedItems.count() > 0) return true;
+    //     return false;
+    // }
 
-    bool hasOneFaceSelected ()
-    {
-        if (selectTracking) {std::cout << "ItemTracker::hasOneFaceSelected" << std::endl; std::cout.flush();}
+    // bool hasOneFaceSelected ()
+    // {
+    //     if (selectTracking) {std::cout << "ItemTracker::hasOneFaceSelected" << std::endl; std::cout.flush();}
 
-        int count=0;
-        long unsigned int index;
-        long unsigned int i=0;
-        while (i < selectedItems.size()) {
-            if (selectedItems[i]) {
-                Handle(AIS_Shape) shape=selectedItems[i]->getShape();
-                if (!shape.IsNull()) {
-                    TopAbs_ShapeEnum shapeType=shape->Shape().ShapeType();
-                    if (shapeType == TopAbs_FACE) {
-                        count++;
-                        index=i;
-                    }
-                }
-            }
-            i++;
-        }
+    //     int count=0;
+    //     long unsigned int index;
+    //     long unsigned int i=0;
+    //     while (i < selectedItems.size()) {
+    //         if (selectedItems[i]) {
+    //             Handle(AIS_Shape) shape=selectedItems[i]->getShape();
+    //             if (!shape.IsNull()) {
+    //                 TopAbs_ShapeEnum shapeType=shape->Shape().ShapeType();
+    //                 if (shapeType == TopAbs_FACE) {
+    //                     count++;
+    //                     index=i;
+    //                 }
+    //             }
+    //         }
+    //         i++;
+    //     }
 
-        if (count == 1) {
-            Handle(AIS_Shape) shape=selectedItems[index]->getShape();
-            if (!shape.IsNull()) {
-                TopAbs_ShapeEnum shapeType=shape->Shape().ShapeType();
-                if (shapeType == TopAbs_FACE) return true;
-            }
-        }
-        return false;
-    }
+    //     if (count == 1) {
+    //         Handle(AIS_Shape) shape=selectedItems[index]->getShape();
+    //         if (!shape.IsNull()) {
+    //             TopAbs_ShapeEnum shapeType=shape->Shape().ShapeType();
+    //             if (shapeType == TopAbs_FACE) return true;
+    //         }
+    //     }
+    //     return false;
+    // }
 
     int get_pathSelectedCount () {return selectedItems.pathCount();}
     int get_portSelectedCount () {return selectedItems.portCount();}
@@ -935,16 +633,16 @@ public:
 
     // unselect
 
-    void unselectItemShape (Handle(AIS_Shape) shape)
-    {
-        if (selectTracking) {std::cout << "ItemTracker::unselectShape" << std::endl; std::cout.flush();}
+    // void unselectItemShape (Handle(AIS_Shape) shape)
+    // {
+    //     if (selectTracking) {std::cout << "ItemTracker::unselectShape" << std::endl; std::cout.flush();}
 
-        BaseItem *item=shapeToItemMap[shape];
-        if (item) {
-            //showItem(item);
-            unselectItem(item);  // mesh shapes are not in the map, so need to check for valid item
-        }
-    }
+    //     BaseItem *item=shapeToItemMap[shape];
+    //     if (item) {
+    //         //showItem(item);
+    //         unselectItem(item);  // mesh shapes are not in the map, so need to check for valid item
+    //     }
+    // }
 
     void unselectAllItems ()
     {
@@ -1021,24 +719,24 @@ public:
 
     // delete
 
-    void deleteItem (BaseItem *item)
-    {
-        if (deleteTracking) {std::cout << "ItemTracker::deleteItem  item=" << item << std::endl; std::cout.flush();}
+    // void deleteItem (BaseItem *item)
+    // {
+    //     if (deleteTracking) {std::cout << "ItemTracker::deleteItem  item=" << item << std::endl; std::cout.flush();}
 
-        if (!item) return;
-        // if (item->is_mesh()) return;
-        // if (item->is_sport()) return;
+    //     if (!item) return;
+    //     // if (item->is_mesh()) return;
+    //     // if (item->is_sport()) return;
 
-        // if (item->is_root()) return;
+    //     // if (item->is_root()) return;
 
-        DeleteItem(item);
+    //     DeleteItem(item);
 
-        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
-        if (!(rootDrawingItem && rootDrawingItem->is_rootDrawing())) {
-            delete item;
-            item=nullptr;
-        }
-    }
+    //     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
+    //     if (!(rootDrawingItem && rootDrawingItem->is_rootDrawing())) {
+    //         delete item;
+    //         item=nullptr;
+    //     }
+    // }
 
     bool isValidDelete ()
     {
@@ -1155,33 +853,33 @@ public:
         shapeToItemMap.clear();
     }
 
-    std::vector<BaseItem *> getVisibleDrawingItems ()
-    {
-        //std::cout << "ItemTracking::getVisibleDrawingItems" << std::endl; std::cout.flush();
+    // std::vector<BaseItem *> getVisibleDrawingItems ()
+    // {
+    //     //std::cout << "ItemTracking::getVisibleDrawingItems" << std::endl; std::cout.flush();
 
-        std::vector<BaseItem *> copyVisibleItems;
-        long unsigned int i=0;
-        while (i < visibleItems.size()) {
-            if (visibleItems[i]) {
-                DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(visibleItems[i]);
-                if (drawingItem && drawingItem->is_drawing()) {
-                    copyVisibleItems.push_back(drawingItem);
-                }
-            }
-            i++;
-        }
+    //     std::vector<BaseItem *> copyVisibleItems;
+    //     long unsigned int i=0;
+    //     while (i < visibleItems.size()) {
+    //         if (visibleItems[i]) {
+    //             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(visibleItems[i]);
+    //             if (drawingItem && drawingItem->is_drawing()) {
+    //                 copyVisibleItems.push_back(drawingItem);
+    //             }
+    //         }
+    //         i++;
+    //     }
 
-        return copyVisibleItems;
-    }
+    //     return copyVisibleItems;
+    // }
 
     long unsigned int getSelectedItemsSize () {return selectedItems.size();}
     BaseItem* getSelectedItem (long unsigned int i) {return selectedItems[i];}
     long unsigned int getSelectedItemsCount () {return selectedItems.count();}
     void compactSelectedItems () {selectedItems.compact();}
 
-    long unsigned int getVisibleItemsSize () {return visibleItems.size();}
-    BaseItem* getVisibleItem (long unsigned int i) {return visibleItems[i];}
-    long unsigned int getVisibleItemsCount () {return visibleItems.count();}
+    //long unsigned int getVisibleItemsSize () {return visibleItems.size();}
+    //BaseItem* getVisibleItem (long unsigned int i) {return visibleItems[i];}
+    //long unsigned int getVisibleItemsCount () {return visibleItems.count();}
     void compactVisibleItems () {visibleItems.compact();}
 
     void printStats () {
@@ -1192,11 +890,11 @@ public:
         std::cout << "      selected count = " << selectedItems.count() << std::endl; std::cout.flush();
     }
 
-    bool isInMap (Handle(AIS_Shape) shape) {
-        BaseItem *item=shapeToItemMap[shape];
-        if (item) return true;
-        return false;
-    }
+    // bool isInMap (Handle(AIS_Shape) shape) {
+    //     BaseItem *item=shapeToItemMap[shape];
+    //     if (item) return true;
+    //     return false;
+    // }
 
     void audit ()
     {
@@ -1263,19 +961,19 @@ private:
         viewerContext->AddOrRemoveSelected(shape,Standard_True);
     }
 
-    void ActivateSelectShape (Handle(AIS_Shape) shape)
-    {
-        //std::cout << "ItemTracking::SelectShape" << std::endl; std::cout.flush();
-        if (shape.IsNull()) {
-            return;
-        }
+    // void ActivateSelectShape (Handle(AIS_Shape) shape)
+    // {
+    //     //std::cout << "ItemTracking::SelectShape" << std::endl; std::cout.flush();
+    //     if (shape.IsNull()) {
+    //         return;
+    //     }
 
-        if (viewerContext->IsSelected(shape)) {
-            return;
-        }
-        viewerContext->Activate(shape);
-        viewerContext->AddOrRemoveSelected(shape,Standard_True);
-    }
+    //     if (viewerContext->IsSelected(shape)) {
+    //         return;
+    //     }
+    //     viewerContext->Activate(shape);
+    //     viewerContext->AddOrRemoveSelected(shape,Standard_True);
+    // }
 
     void UnselectShape (Handle(AIS_Shape) shape)
     {
@@ -1284,28 +982,28 @@ private:
         viewerContext->AddOrRemoveSelected(shape,Standard_False);
     }
 
-    void DeleteItem (BaseItem *item)
-    {
-        //std::cout << "ItemTrackign::DeleteItem  item=" << item << std::endl; std::cout.flush();
+    // void DeleteItem (BaseItem *item)
+    // {
+    //     //std::cout << "ItemTrackign::DeleteItem  item=" << item << std::endl; std::cout.flush();
 
-        if (!item) return;
+    //     if (!item) return;
 
-        unselectItem(item);
-        hideItem(item);
+    //     unselectItem(item);
+    //     hideItem(item);
 
-        // remove the AIS_Shape from the viewer
-        viewerContext->Remove(item->getShape(),Standard_False);
-        shapeToItemMap.erase(item->getShape());
-        item->getShape().Nullify();
+    //     // remove the AIS_Shape from the viewer
+    //     viewerContext->Remove(item->getShape(),Standard_False);
+    //     shapeToItemMap.erase(item->getShape());
+    //     item->getShape().Nullify();
 
-        // process children
-        int i=0;
-        while (i < item->childCount()) {
-            BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-            DeleteItem(child);
-            i++;
-        }
-    }
+    //     // process children
+    //     int i=0;
+    //     while (i < item->childCount()) {
+    //         BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
+    //         DeleteItem(child);
+    //         i++;
+    //     }
+    // }
 
     void nullifyVisibleItem (BaseItem *item)
     {

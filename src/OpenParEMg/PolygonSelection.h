@@ -31,8 +31,8 @@ class VertexFilter : public SelectMgr_Filter
 public:
     DEFINE_STANDARD_RTTI_INLINE(VertexFilter, SelectMgr_Filter)
 
-    bool set_outline (Path *);
-    bool get_midPoint (TopoDS_Edge& edge, gp_Pnt *);
+    //bool set_outline (Path *);
+    //bool get_midPoint (TopoDS_Edge& edge, gp_Pnt *);
     virtual Standard_Boolean IsOk (const Handle(SelectMgr_EntityOwner)& theOwner) const override;
 
 private:

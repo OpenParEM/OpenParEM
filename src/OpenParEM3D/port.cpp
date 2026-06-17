@@ -1587,6 +1587,7 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
         boundaryItem=new BoundaryItem(mw,pathItem,boundary_type,get_wave_impedance(),QString::fromStdString(get_material()));
         rootBoundaryItem->addChild(boundaryItem);
 
+        boundaryItem->setText(0,textName);
         drawingWindow->showItem(boundaryItem);
     }
 }

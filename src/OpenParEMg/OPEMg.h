@@ -240,16 +240,16 @@ public:
         readIndex=0;
     }
 
-    ItemChanges* getCurrentNext ()
-    {
-        if (current) return current->getNext();
-        return nullptr;
-    }
+    // ItemChanges* getCurrentNext ()
+    // {
+    //     if (current) return current->getNext();
+    //     return nullptr;
+    // }
 
-    void setCurrentNext (ItemChanges *next)
-    {
-        if (current) current->setNext(next);
-    }
+    // void setCurrentNext (ItemChanges *next)
+    // {
+    //     if (current) current->setNext(next);
+    // }
 
     void pop_back ()
     {
@@ -376,7 +376,7 @@ public:
     bool saveStepFile (QString);
     bool saveBoundaryDatabase ();
     void increase_depth (DrawingItem *);
-    void decrease_depth (DrawingItem *);
+    //void decrease_depth (DrawingItem *);
     void saveItem (std::ofstream *, BaseItem *);
 
     int isStartBlock (std::vector<std::string> &inputData, long unsigned int);
@@ -393,17 +393,17 @@ public:
     void drawMesh ();
     void deleteMesh (bool);
 
-    bool hasSelectedPaths ();
+    //bool hasSelectedPaths ();
     void clearTreeSelection ();
 
     void dumpDrawingEntities ();
-    void shapeCount (TopoDS_Shape, int *);
+    //void shapeCount (TopoDS_Shape, int *);
     void renumberDimTag ();
     void setPhysicalGroups ();
     void setMaterials ();
 
     void clearSelection ();
-    void restoreSelection ();
+    //void restoreSelection ();
 
     void reprocess (BaseItem *);
 
@@ -446,7 +446,7 @@ public:
 
     bool isValidInsertPoint ();
     void finishInsertPoint (BaseItem *);
-    void finishStretchPoint (BaseItem *);
+    //void finishStretchPoint (BaseItem *);
     void cancelInsertPoint ();
 
     bool isValidCloseExistingPolyline ();
@@ -571,6 +571,14 @@ private slots:
     bool isValidDeletePath ();
     void showPathItems ();
     void hidePathItems ();
+    void showPortItems ();
+    void hidePortItems ();
+    void showBoundaryItems ();
+    void hideBoundaryItems ();
+    void showIntegrationPathItems ();
+    void hideIntegrationPathItems ();
+    void showMeshItems ();
+    void hideMeshItems ();
     void unselectBoundaryItems ();
     void renameBoundaryItems ();
     void deleteBoundaryItems ();
@@ -594,6 +602,7 @@ private slots:
     void uniqueifyPortName (QString& pathName);
     void deletePortItems ();
     void deleteModeItems ();
+    void flipSignIntegrationPathItems ();
     void deleteIntegrationPathItems ();
     void deleteDiffPairItems ();
 
