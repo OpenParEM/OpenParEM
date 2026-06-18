@@ -3234,12 +3234,26 @@ void PortItem::show (bool update)
 {
     pathItem->show(update);
     setForeground(0,Qt::black);
+
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->hide(update);
+        i++;
+    }
 }
 
 void PortItem::hide (bool update)
 {
     pathItem->hide(update);
     setForeground(0,Qt::gray);
+
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->hide(update);
+        i++;
+    }
 }
 
 void PortItem::showMenu (QMenu *menu)
@@ -3445,15 +3459,8 @@ void ModeItem::show (bool update)
 
     int i=0;
     while (i < childCount()) {
-        VIItem *viItem=dynamic_cast<VIItem *>(child(i));
-        if (viItem) {
-            int j=0;
-            while (j < viItem->childCount()) {
-                IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(viItem->child(j));
-                if (integrationPathItem) integrationPathItem->show(update);
-                j++;
-            }
-        }
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->show(update);
         i++;
     }
 
@@ -3468,15 +3475,8 @@ void ModeItem::hide (bool update)
 
     int i=0;
     while (i < childCount()) {
-        VIItem *viItem=dynamic_cast<VIItem *>(child(i));
-        if (viItem) {
-            int j=0;
-            while (j < viItem->childCount()) {
-                IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(viItem->child(j));
-                if (integrationPathItem) integrationPathItem->hide(update);
-                j++;
-            }
-        }
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->hide(update);
         i++;
     }
 
@@ -3637,8 +3637,16 @@ SportItem::SportItem (OpenParEMg *mw_, ModeItem *modeItem_, int Sport)
 
 bool SportItem::isValidShow () {return false;}
 bool SportItem::isValidHide () {return false;}
-void SportItem::show (bool) {}
-void SportItem::hide (bool) {}
+
+void SportItem::show (bool update)
+{
+    setForeground(0,Qt::black);
+}
+
+void SportItem::hide (bool update)
+{
+    setForeground(0,Qt::gray);
+}
 
 void SportItem::showMenu (QMenu *menu)
 {
@@ -3781,10 +3789,12 @@ bool VIItem::isValidDrawPath ()
 
 void VIItem::show (bool update)
 {
+    setForeground(0,Qt::black);
+
     int i=0;
     while (i < childCount()) {
-        IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(child(i));
-        if (integrationPathItem) integrationPathItem->show(false);
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->show(update);
         i++;
     }
 
@@ -3795,10 +3805,12 @@ void VIItem::show (bool update)
 
 void VIItem::hide (bool update)
 {
+    setForeground(0,Qt::gray);
+
     int i=0;
     while (i < childCount()) {
-        IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(child(i));
-        if (integrationPathItem) integrationPathItem->hide(false);
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->hide(update);
         i++;
     }
 
@@ -4057,6 +4069,16 @@ void VIItem::save (std::ofstream *out)
 // ScaleLabelItem
 ////////////////////////////////////////////////////////////////////////////////
 
+void ScaleLabelItem::show (bool update)
+{
+    setForeground(0,Qt::black);
+}
+
+void ScaleLabelItem::hide (bool update)
+{
+    setForeground(0,Qt::gray);
+}
+
 void ScaleLabelItem::save (std::ofstream *out)
 {
     int i=0;
@@ -4135,8 +4157,8 @@ void DiffPairItem::show (bool update)
 
     int i=0;
     while (i < childCount()) {
-        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
-        if (modeItem) modeItem->show(update);
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->show(update);
         i++;
     }
 }
@@ -4147,8 +4169,8 @@ void DiffPairItem::hide (bool update)
 
     int i=0;
     while (i < childCount()) {
-        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
-        if (modeItem) modeItem->show(update);
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) baseItem->hide(update);
         i++;
     }
 }

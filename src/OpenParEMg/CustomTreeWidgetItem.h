@@ -769,6 +769,10 @@ public:
 
     //void setVIItem (VIItem *viItem_) {viItem=viItem_;}
     //VIItem* getVIItem () {return viItem;}
+
+    void hide (bool) override;
+    void show (bool) override;
+
     void save (std::ofstream *) override;
 
 private:
