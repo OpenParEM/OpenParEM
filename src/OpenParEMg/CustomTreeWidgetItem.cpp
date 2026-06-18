@@ -3833,7 +3833,7 @@ void VIItem::showMenu (QMenu *menu)
     connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideVIItems);
     connect(mw->drawPathAction, &QAction::triggered, this, &VIItem::drawLinePath);
     connect(mw->drawPolylineAction, &QAction::triggered, this, &VIItem::drawPolylinePath);
-    connect(mw->insertAction, &QAction::triggered, this, &VIItem::insertSelectedPath);
+    connect(mw->insertAction, &QAction::triggered, mw, &OpenParEMg::insertSelectedPaths);
     connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
     connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
@@ -3955,24 +3955,6 @@ PathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem
 //         drawingItem->del();
 //     }
 // }
-
-void VIItem::insertSelectedPath ()
-{
-    std::cout << "VIItem::insertSelectedPath" << std::endl; std::cout.flush();
-
-    mw->itemChangesStack.startNew();
-
-    addScaleItem();
-
-    long unsigned int i=0;
-    while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) {
-            if (baseItem->is_voltage() || baseItem->is_current()) mw->insertIntegrationPath(baseItem);
-        }
-        i++;
-    }
-}
 
 bool VIItem::hasScale ()
 {
@@ -4184,8 +4166,8 @@ void DiffPairItem::showMenu (QMenu *menu)
     mw->expandAllAction=new QAction("Expand All",this);
     mw->collapseAllAction=new QAction("Collapse All",this);
 
-    connect(mw->showAction, &QAction::triggered, this, &DiffPairItem::show);
-    connect(mw->hideAction, &QAction::triggered, this, &DiffPairItem::hide);
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showDiffPairItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideDiffPairItems);
     connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deleteDiffPairItems);
     connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
     connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
@@ -4383,7 +4365,6 @@ void RootMeshItem::show (bool update)
     while (i < childCount()) {
         MeshItem *meshItem=dynamic_cast<MeshItem *>(child(i));
         if (meshItem) meshItem->show(false);
-
         i++;
     }
 
@@ -4483,8 +4464,8 @@ void MeshItem::showMenu (QMenu *menu)
     mw->showAction=new QAction("Show",this);
     mw->hideAction=new QAction("Hide",this);
 
-    connect(mw->showAction, &QAction::triggered, this, &MeshItem::show);
-    connect(mw->hideAction, &QAction::triggered, this, &MeshItem::hide);
+    connect(mw->showAction, &QAction::triggered, mw, &OpenParEMg::showMeshItems);
+    connect(mw->hideAction, &QAction::triggered, mw, &OpenParEMg::hideMeshItems);
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);

@@ -1337,6 +1337,36 @@ void OpenParEMg::hideModeItems ()
     setMenusI(30);
 }
 
+void OpenParEMg::showDiffPairItems ()
+{
+    //std::cout << "OpenParEMg::showDiffPairItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (diffPairItem) diffPairItem->show(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
+void OpenParEMg::hideDiffPairItems ()
+{
+    //std::cout << "OpenParEMg::hideDiffPairItems" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (diffPairItem) diffPairItem->hide(false);
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(30);
+}
+
 void OpenParEMg::showVIItems ()
 {
     //std::cout << "OpenParEMg::showVIItems" << std::endl; std::cout.flush();
@@ -1455,6 +1485,22 @@ void OpenParEMg::hideMeshItems ()
 
     ui->drawingWindow->updateViewer();
     setMenusI(30);
+}
+
+void OpenParEMg::insertSelectedPaths ()
+{
+    std::cout << "OpenParEMg::insertSelectedPaths" << std::endl; std::cout.flush();
+
+    itemChangesStack.startNew();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        VIItem *viItem=dynamic_cast<VIItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (viItem) {
+            if (viItem) insertIntegrationPath(viItem);
+        }
+        i++;
+    }
 }
 
 void OpenParEMg::unselectBoundaryItems()
@@ -1598,14 +1644,13 @@ bool OpenParEMg::hasCurrent ()
     return false;
 }
 
-void OpenParEMg::insertIntegrationPath (BaseItem *baseItem)
+void OpenParEMg::insertIntegrationPath (VIItem *viItem)
 {
     std::cout << "OpenParEMg::insertIntegrationPath" << std::endl; std::cout.flush();
 
-    if (!baseItem) return;
-
-    VIItem *viItem=dynamic_cast<VIItem *>(baseItem);
     if (!viItem) return;
+
+    viItem->addScaleItem();
 
     QDoubleValidator doubleValidator;
     doubleValidator.setBottom(0);

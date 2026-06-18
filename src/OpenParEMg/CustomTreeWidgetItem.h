@@ -1289,7 +1289,7 @@ public:
     void drawLinePath ();
     void drawPolylinePath ();
     bool isValidInsertSelectedPath ();
-    void insertSelectedPath ();
+    //void insertSelectedPath ();
     bool hasScale ();
     bool hasIntegrationPathItem ();
     void addScaleItem ();

@@ -577,6 +577,8 @@ private slots:
     void hidePortItems ();
     void showModeItems ();
     void hideModeItems ();
+    void showDiffPairItems ();
+    void hideDiffPairItems ();
     void showVIItems ();
     void hideVIItems ();
     void showBoundaryItems ();
@@ -585,6 +587,7 @@ private slots:
     void hideIntegrationPathItems ();
     void showMeshItems ();
     void hideMeshItems ();
+    void insertSelectedPaths ();
     void unselectBoundaryItems ();
     void renameBoundaryItems ();
     void deleteBoundaryItems ();
@@ -593,7 +596,7 @@ private slots:
     bool hasOneSelectedSport ();
     bool hasVoltage ();
     bool hasCurrent ();
-    void insertIntegrationPath (BaseItem *);
+    void insertIntegrationPath (VIItem *);
     bool isValidRenameDrawingItems ();
     void renameDrawingItems ();
     void unselectRootDrawingItems ();
