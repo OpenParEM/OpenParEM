@@ -148,7 +148,6 @@ class Boundary
 
 #if HAS_GUI
     BoundaryItem *item;
-    QDoubleValidator doubleValidator;
     std::unordered_map<Handle(AIS_Shape), BaseItem*> *drawingToItemMap=nullptr;
 #endif
 
@@ -294,7 +293,6 @@ class IntegrationPath
 
 #if HAS_GUI
       BaseItem *item;
-      QDoubleValidator doubleValidator;
 #endif
    public:
       IntegrationPath (int, int);

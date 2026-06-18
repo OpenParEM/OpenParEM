@@ -46,22 +46,6 @@ BaseItem::BaseItem (OpenParEMg *mw_, BaseItem *parentItem_)
     addShapeData(newShapeData);
 }
 
-// BaseItem* BaseItem::getRootParent (BaseItem *baseItem, int *watchDog)
-// {
-//     std::cout << "BaseItem::getRootParent  baseItem=" << baseItem->text(0).toStdString() << std::endl; std::cout.flush();
-
-//     if (baseItem->is_rootDrawing()) return baseItem;
-//     else if (baseItem->is_rootPath()) return baseItem;
-//     else if (baseItem->is_rootPort()) return baseItem;
-//     else if (baseItem->is_rootBoundary()) return baseItem;
-//     else if (baseItem->is_rootMesh()) return baseItem;
-//     if (*watchDog < 100000) {
-//         (*watchDog)++;
-//         baseItem=getRootParent(parentItem,watchDog);
-//     } else baseItem=nullptr;
-//     return baseItem;
-// }
-
 BaseItem* BaseItem::getRootParent ()
 {
     int watchDog=0;
@@ -149,6 +133,8 @@ void BaseItem::setForUndoRedo (bool withMidPoints, int shapeOperation)
 
 void BaseItem::restoreWidgets ()
 {
+    std::cout << "BaseItem::restoreWidgets" << std::endl; std::cout.flush();
+
     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(this);
     if (boundaryItem) {
         BaseItem *boundaryType=nullptr;
@@ -201,9 +187,12 @@ void BaseItem::restoreWidgets ()
         }
     }
 
+    std::cout << "place 1" << std::endl; std::cout.flush();
     if (is_scaleValue()) {
+        std::cout << "place 2" << std::endl; std::cout.flush();
         ScaleValueItem *scaleValueItem=dynamic_cast<ScaleValueItem *>(this);
         if (scaleValueItem) {
+            std::cout << "place 3" << std::endl; std::cout.flush();
             ShapeData *shapeData=getShapeData();
             double scale=shapeData->get_scale();
             scaleValueItem->insertScaleValueWidget(scale);
@@ -502,17 +491,15 @@ ScaleValueItem::ScaleValueItem (OpenParEMg *mw_, ScaleLabelItem *parentItem_)
     addShapeData(newShapeData);
 }
 
-
 void ScaleValueItem::insertScaleValueWidget (double scale)
 {
-    QDoubleValidator doubleValidator;
-    doubleValidator.setBottom(0);
+    std::cout << "ScaleValueItem::insertScaleValueWidget  scale=" << scale << std::endl; std::cout.flush();
 
     CustomLineEdit *scaleEdit=new CustomLineEdit();
     const QSignalBlocker blocker(scaleEdit);
-    scaleEdit->setValidator(&doubleValidator);
     scaleEdit->setText(QString::number(scale,'g'));
     scaleEdit->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
+    scaleEdit->set_doubleValidator();
     scaleEdit->set_baseItem(this);
     mw->ui->drawingItemTree->setItemWidget(this,0,scaleEdit);
 
@@ -878,7 +865,7 @@ void DrawingItem::finishDraw ()
 
 void DrawingItem::cancelDraw ()
 {
-    std::cout << "DrawingItem::cancelDraw" << std::endl; std::cout.flush();
+    //std::cout << "DrawingItem::cancelDraw" << std::endl; std::cout.flush();
 
     // take care of shapes
     if (!animateShape.IsNull()) animateShape.Nullify();
@@ -900,11 +887,7 @@ void DrawingItem::cancelDraw ()
 
 void DrawingItem::startMove (bool isAnimate)
 {
-    std::cout << "DrawingItem::startMove  drawingItem=" << text(0).toStdString() << "  isAnimate=" << isAnimate << std::endl; std::cout.flush();
-
-    bool isDisplayed=false;
-    if (foreground(0) == Qt::black) isDisplayed=true;
-    std::cout << "place a isDisplayed=" << isDisplayed << std::endl; std::cout.flush();
+    //std::cout << "DrawingItem::startMove  drawingItem=" << text(0).toStdString() << "  isAnimate=" << isAnimate << std::endl; std::cout.flush();
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -937,19 +920,14 @@ void DrawingItem::startMove (bool isAnimate)
         setEnableMove(true);
         mw->itemChangesStack.add(this);
     }
-
-    isDisplayed=false;
-    if (foreground(0) == Qt::black) isDisplayed=true;
-    std::cout << "place b isDisplayed=" << isDisplayed << std::endl; std::cout.flush();
 }
 
 void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 {
-    std::cout << "DrawingItem::finishMove  drawingItem=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "DrawingItem::finishMove  drawingItem=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     bool isDisplayed=false;
     if (foreground(0) == Qt::black) isDisplayed=true;
-    std::cout << "place 1 isDisplayed=" << isDisplayed << std::endl; std::cout.flush();
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -967,8 +945,6 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
             mw->drawingChanged=true;
             i++;
         }
-
-        //mw->ui->drawingWindow->activateItem(this);
     }
 
     if (!polywire && !process) {
@@ -988,18 +964,12 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 
     mw->activeAction=false;
 
-    // alignForegroundColor();
-    // if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
-    // if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
 
-     std::cout << "place 2 isDisplayed=" << isDisplayed << std::endl; std::cout.flush();
     if (isDisplayed) mw->ui->drawingWindow->showItem(this);
     else mw->ui->drawingWindow->hideItem(this);
 
     resetOperation();
     unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
-
-    //findTopLevelItem(this);
 }
 
 void DrawingItem::startRotate ()
@@ -1855,7 +1825,7 @@ void DrawingItem::moveAnimateShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_Interactive
 
 PathItem* DrawingItem::createPath (bool hasArrows)
 {
-    std::cout << "DrawingItem::createPath" << std::endl; std::cout.flush();
+    //std::cout << "DrawingItem::createPath" << std::endl; std::cout.flush();
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (!polywire) return nullptr;
@@ -2754,9 +2724,6 @@ void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpe
 {
     //std::cout << "BoundaryItem::insertItemWidgets" << std::endl; std::cout.flush();
 
-    QDoubleValidator doubleValidator;
-    doubleValidator.setBottom(0);
-
     ShapeData *shapeData=getShapeData();
     double wave_impedance=shapeData->get_wave_impedance();
     int boundary_type=shapeData->get_boundary_type();
@@ -2793,7 +2760,7 @@ void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpe
         CustomLineEdit *textWaveImpedance=new CustomLineEdit();
         const QSignalBlocker blockerWaveImpedance(textWaveImpedance);
         textWaveImpedance->setText(QString::number(wave_impedance));
-        textWaveImpedance->setValidator(&doubleValidator);
+        textWaveImpedance->set_doubleValidator();
         textWaveImpedance->set_baseItem(this);
         mw->ui->drawingItemTree->setItemWidget(itemWaveImpedance,0,textWaveImpedance);
 
@@ -3215,7 +3182,8 @@ void PortItem::addImpedanceDefinitionItem ()
 
 void PortItem::insertImpedanceCalculationWidget (BaseItem *impedanceCalculationItem, QString impedance_calculation)
 {
-    std::cout << "PortItem::insertImpedanceCalculationWidget" << std::endl; std::cout.flush();
+    //std::cout << "PortItem::insertImpedanceCalculationWidget" << std::endl; std::cout.flush();
+
     CustomComboBox *comboZcalc=new CustomComboBox();
     const QSignalBlocker blockerZcalc(comboZcalc);
     comboZcalc->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
@@ -3754,7 +3722,7 @@ void SportNumberItem::insertSportNumberWidget (int Sport)
     CustomSpinBox *sportNumber=new CustomSpinBox();
     const QSignalBlocker blocker(sportNumber);
     sportNumber->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
-    //sportNumber->set_sportNumberItem(sportNumberItem);
+    sportNumber->set_sportNumberItem(this);
     sportNumber->setMinimum(1);
     sportNumber->setValue(Sport);
     mw->ui->drawingItemTree->setItemWidget(this,0,sportNumber);
@@ -3957,7 +3925,7 @@ bool VIItem::isValidInsertSelectedPath ()
 
 void VIItem::createIntegrationPathItemFromPath (PathItem *pathItem)
 {
-    std::cout << "VIItem::createIntegrationPathItemFromPath" << std::endl; std::cout.flush();
+    //std::cout << "VIItem::createIntegrationPathItemFromPath" << std::endl; std::cout.flush();
 
     // create an integration path item
     IntegrationPathItem *newIntegrationPathItem=new IntegrationPathItem(mw,this,pathItem);
@@ -3980,22 +3948,12 @@ void VIItem::createIntegrationPathItemFromPath (PathItem *pathItem)
 
 PathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem, bool hasArrows)
 {
-    std::cout << "VIItem::createIntegrationPathItemFromDrawing" << std::endl; std::cout.flush();
+    //std::cout << "VIItem::createIntegrationPathItemFromDrawing" << std::endl; std::cout.flush();
 
     PathItem *newPathItem=drawingItem->createPath(hasArrows);
     createIntegrationPathItemFromPath(newPathItem);
     return newPathItem;
 }
-
-// void VIItem::convertItemToPath (DrawingItem *drawingItem, bool useArrows)
-// {
-//     std::cout << "VIItem::convertItemToPath" << std::endl; std::cout.flush();
-
-//     PathItem *pathItem=createIntegrationPathItemFromDrawing(drawingItem,useArrows);
-//     if (pathItem) {
-//         drawingItem->del();
-//     }
-// }
 
 bool VIItem::hasScale ()
 {
@@ -4021,6 +3979,8 @@ bool VIItem::hasIntegrationPathItem ()
 
 void VIItem::addScaleItem ()
 {
+    std::cout << "VIItem::addScaleItem" << std::endl; std::cout.flush();
+
     if (hasScale()) return;
 
     if (scaleLabelItem) {

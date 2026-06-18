@@ -40,14 +40,20 @@ public:
         connect(this,&QLineEdit::editingFinished,this,&CustomLineEdit::handleFinishEdit);
         rx.setPattern("^[A-Za-z0-9_\\[\\]]*$");  // alphanumeric plus _,[, and ]
         rxValidator.setRegularExpression(rx);
+        doubleValidator.setNotation(QDoubleValidator::ScientificNotation);
+        doubleValidator.setBottom(0);
         drawingTracker=nullptr;
         baseItem=nullptr;
         boundaryDatabase=nullptr;
     }
 
-    void set_rxValidator() {setValidator(&rxValidator);}
+    void set_rxValidator () {setValidator(&rxValidator);}
+    void set_doubleValidator () {setValidator(&doubleValidator);}
     void set_itemTracker (ItemTracker *drawingTracker_) {drawingTracker=drawingTracker_;}
-    void set_baseItem (BaseItem *baseItem_) {baseItem=baseItem_;}
+    void set_baseItem (BaseItem *baseItem_) {
+        baseItem=baseItem_;
+        std::cout << "CustomLineEdit::set_baseItem  baseItem=" << baseItem << std::endl; std::cout.flush();
+    }
     void set_boundaryDatabase (BoundaryDatabase *boundaryDatabase_) {boundaryDatabase=boundaryDatabase_;}
 
     //BaseItem* get_baseItem () {return baseItem;}
@@ -76,6 +82,7 @@ private slots:
 private:
     QRegularExpression rx;
     QRegularExpressionValidator rxValidator;
+    QDoubleValidator doubleValidator;
     ItemTracker *drawingTracker;
     BaseItem *baseItem;
     BoundaryDatabase *boundaryDatabase;

@@ -580,7 +580,7 @@ Boundary::Boundary(int startLine_, int endLine_)
    modified=true;
 
 #if HAS_GUI
-   doubleValidator.setBottom(0);
+
 #endif
 }
 
@@ -1524,7 +1524,7 @@ bool Boundary::snapToMeshBoundary (vector<Path *> *pathList, Mesh *mesh, string 
 
 void Boundary::recalculatePathIndexList (std::vector<Path *> *pathList)
 {
-    std::cout << "Boundary::recalculatePathIndexList" << std::endl; std::cout.flush();
+    //std::cout << "Boundary::recalculatePathIndexList" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < pathNameList.size()) {
@@ -1631,7 +1631,6 @@ IntegrationPath::IntegrationPath (int startLine_, int endLine_)
 
 #if HAS_GUI
    item=nullptr;
-   doubleValidator.setBottom(0);
 #endif
 }
 
@@ -1670,7 +1669,6 @@ IntegrationPath::IntegrationPath (vector<Path *> *pathList, vector<Path *> *path
        // path name
        keywordPair *path=new keywordPair();
        path->push_alias("path");
-       std::cout << "(*pathsToAdd)[i]=" << (*pathsToAdd)[i] << std::endl; std::cout.flush();
        path->set_value((*pathsToAdd)[i]->get_name());
        path->set_positive_required(false);
        path->set_non_negative_required(false);
@@ -1699,7 +1697,6 @@ IntegrationPath::IntegrationPath (vector<Path *> *pathList, vector<Path *> *path
 
 #if HAS_GUI
    item=nullptr;
-   doubleValidator.setBottom(0);
 #endif
 }
 
@@ -2522,7 +2519,7 @@ void IntegrationPath::assignPathNormals (struct point normal, std::vector<Path *
 
 void IntegrationPath::renamePath(std::string from, std::string to)
 {
-     std::cout << "IntegrationPath::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
+    //std::cout << "IntegrationPath::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < pathNameList.size()) {
@@ -2536,7 +2533,7 @@ void IntegrationPath::renamePath(std::string from, std::string to)
 
 void IntegrationPath::recalculatePathIndexList (std::vector<Path *> *pathList)
 {
-    std::cout << "IntegrationPath::recalculatePathIndexList" << std::endl; std::cout.flush();
+    //std::cout << "IntegrationPath::recalculatePathIndexList" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < pathNameList.size()) {
@@ -2554,7 +2551,7 @@ void IntegrationPath::recalculatePathIndexList (std::vector<Path *> *pathList)
 
 void IntegrationPath::removePath (Path *path)
 {
-    std::cout << "IntegrationPath::removePath" << std::endl; std::cout.flush();
+    //std::cout << "IntegrationPath::removePath" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < pathNameList.size()) {
@@ -2562,7 +2559,6 @@ void IntegrationPath::removePath (Path *path)
             pathNameList.erase(pathNameList.begin()+i);
             pathIndexList.erase(pathIndexList.begin()+i);
             reverseList.erase(reverseList.begin()+i);
-            std::cout << "****************************** modified=true" << std::endl; std::cout.flush();
             modified=true;
         }
         i++;
@@ -2575,7 +2571,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
                             OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
                             RootPathItem *rootPathItem, VIItem *viItem)
 {
-    //std::cout << "IntegrationPath::draw" << std::endl;  std::cout.flush();
+    std::cout << "IntegrationPath::draw" << std::endl;  std::cout.flush();
 
     // scale
 
@@ -2595,9 +2591,9 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     const QSignalBlocker blockerWaveImpedance(scaleEdit);
     scaleEdit->setText(QString::number(get_scale(),'g'));
     scaleEdit->set_itemTracker(drawingWindow->get_itemTracker());
-    scaleEdit->set_baseItem(get_item());
+    scaleEdit->set_baseItem(scaleValueItem);
     scaleEdit->set_boundaryDatabase(boundaryDatabase);
-    scaleEdit->setValidator(&doubleValidator);
+    scaleEdit->set_doubleValidator();
     drawingItemTree->setItemWidget(scaleValueItem,0,scaleEdit);
 
     // paths
@@ -3482,7 +3478,7 @@ bool Mode::findIntegrationPathBlocks(inputFile *inputs)
 
 IntegrationPath* Mode::addIntegrationPath (vector<Path *> *pathList, vector<Path *> *pathsToAdd, string type)
 {
-    std::cout << "Mode::addIntegrationPath" << std::endl; std::cout.flush();
+    //std::cout << "Mode::addIntegrationPath" << std::endl; std::cout.flush();
 
     IntegrationPath *integrationPath=new IntegrationPath(pathList,pathsToAdd,type);
     integrationPathList.push_back(integrationPath);
@@ -4223,7 +4219,7 @@ void Mode::assignPathNormals (struct point normal, std::vector<Path *> *pathList
 
 void Mode::renamePath (std::string from, std::string to)
 {
-     std::cout << "Mode::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
+     //std::cout << "Mode::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < integrationPathList.size()) {
@@ -4235,7 +4231,7 @@ void Mode::renamePath (std::string from, std::string to)
 
 void Mode::recalculatePathIndexList (std::vector<Path *> *pathList)
 {
-    std::cout << "Mode::recalculatePathIndexList" << std::endl; std::cout.flush();
+    //std::cout << "Mode::recalculatePathIndexList" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < integrationPathList.size()) {
@@ -4291,11 +4287,9 @@ ModeItem* Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     QString netname;
     if (net_is_loaded()) {
         netname=QString::fromStdString(get_net());
-        std::cout << "1 netname=" << netname.toStdString() << std::endl; std::cout.flush();
     } else {
         netname="net";
         netname.append(QString::number(get_Sport()));
-        std::cout << "2 netname=" << netname.toStdString() << std::endl; std::cout.flush();
     }
 
     ModeItem *modeItem=new ModeItem(mw,portItem,false);
@@ -7102,7 +7096,7 @@ bool Port::isPathInside (Path *path)
 
 void Port::renamePath (std::string from, std::string to)
 {
-     std::cout << "Port::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
+    //std::cout << "Port::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < pathNameList.size()) {
@@ -7123,7 +7117,7 @@ void Port::renamePath (std::string from, std::string to)
 
 void Port::recalculatePathIndexList (std::vector<Path *> *pathList)
 {
-    std::cout << "Port::recalculatePathIndexList" << std::endl; std::cout.flush();
+    //std::cout << "Port::recalculatePathIndexList" << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < pathNameList.size()) {
@@ -7150,9 +7144,6 @@ void Port::recalculatePathIndexList (std::vector<Path *> *pathList)
 void comboRefresh (int index, PortItem *portItem, BoundaryItem *boundaryItem, int type,
                         BaseItem *itemMaterial, BaseItem *itemWaveImpedance)
 {
-    std::cout << "comboRefresh  PortItem=" << portItem << "  BoundaryItem=" << boundaryItem
-              << "  index=" << index << "  type=" << type << std::endl; std::cout.flush();
-
     ShapeData *shapeData;
     if (portItem) {
         shapeData=portItem->getShapeData();
@@ -7216,9 +7207,6 @@ void comboRefresh (int index, PortItem *portItem, BoundaryItem *boundaryItem, in
 void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryItem, int type,
                         BaseItem *itemMaterial, BaseItem *itemWaveImpedance)
 {
-    std::cout << "comboIndexChanged  PortItem=" << portItem << "  BoundaryItem=" << boundaryItem
-              << "  index=" << index << "  type=" << type << std::endl; std::cout.flush();
-
     ShapeData *newShapeData;
     if (portItem) {
         newShapeData=portItem->getShapeData()->copyCreate();
@@ -7301,50 +7289,29 @@ void comboTextChanged (QString text, BoundaryItem *boundaryItem)
 
 void spinValueChanged (int value, SportNumberItem *sportNumberItem)
 {
-    if (sportNumberItem && sportNumberItem->is_sportNumber()) {
+    //std::cout << "spinValueChanged  value=" << value << std::endl; std::cout.flush();
 
-        // see if the user has changed the net name
-        // ShapeData *shapeData=sportNumberItem->getShapeData();
-        // QString defaultNet="net";
-        // defaultNet.append(QString::number(shapeData->get_Sport()));
-        // if (sportNumberItem->text(0).compare(defaultNet) == 0) {
+    if (!sportNumberItem) return;
 
-        //     // default is being used, so ok to change
-        //     ShapeData *newShapeData=shapeData->copyCreate();
-        //     newShapeData->setEdit();
-        //     newShapeData->set_Sport(value);
-        //     sportNumberItem->addShapeData(newShapeData);
-        //     sportNumberItem->startItemChange();
-        //     sportNumberItem->addItemChange();
-
-        //     QString newNet="net";
-        //     newNet.append(QString::number(value));
-        //     sportNumberItem->setText(0,newNet);
-        // }
-
-
-
-        ShapeData *newShapeData=sportNumberItem->getShapeData()->copyCreate();
-        newShapeData->setEdit();
-        newShapeData->set_Sport(value);
-        sportNumberItem->addShapeData(newShapeData);
-        sportNumberItem->startItemChange();
-        sportNumberItem->addItemChange();
-    }
+    ShapeData *newShapeData=sportNumberItem->getShapeData()->copyCreate();
+    newShapeData->setEdit();
+    newShapeData->set_Sport(value);
+    sportNumberItem->addShapeData(newShapeData);
+    sportNumberItem->startItemChange();
+    sportNumberItem->addItemChange();
 }
 
 void textValueChanged (QString text, BaseItem *baseItem, BoundaryDatabase *boundaryDatabase)
 {
-    std::cout << "textValueChanged" << std::endl; std::cout.flush();
-
-    // ToDo:
-    //if (integrationPath) integrationPath->set_scale(text.toDouble());
+    std::cout << "textValueChanged  baseItem=" << baseItem << std::endl; std::cout.flush();
 
     if (!baseItem) return;
 
+    std::cout << "                  baseItem->get_itemType()=" << baseItem->get_itemType() << std::endl; std::cout.flush();
+
     // boundaryItem changes are for wave impedances
     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(baseItem);
-    if (boundaryItem && boundaryItem->is_boundary()) {
+    if (boundaryItem) {
         ShapeData *newShapeData=boundaryItem->getShapeData()->copyCreate();
         newShapeData->setEdit();
         newShapeData->set_wave_impedance(text.toDouble());
@@ -7354,14 +7321,16 @@ void textValueChanged (QString text, BaseItem *baseItem, BoundaryDatabase *bound
     }
 
     // scaleItem for integration path scaling
-    ScaleValueItem *scaleItem=dynamic_cast<ScaleValueItem *>(baseItem);
-    if (scaleItem && scaleItem->is_scaleValue()) {
-        ShapeData *newShapeData=scaleItem->getShapeData()->copyCreate();
+    std::cout << "   testing for ScaleValueItem" << std::endl; std::cout.flush();
+    ScaleValueItem *scaleValueItem=dynamic_cast<ScaleValueItem *>(baseItem);
+    if (scaleValueItem) {
+        std::cout << "   changing data" << std::endl; std::cout.flush();
+        ShapeData *newShapeData=scaleValueItem->getShapeData()->copyCreate();
         newShapeData->setEdit();
         newShapeData->set_scale(text.toDouble());
-        scaleItem->addShapeData(newShapeData);
-        scaleItem->startItemChange();
-        scaleItem->addItemChange();
+        scaleValueItem->addShapeData(newShapeData);
+        scaleValueItem->startItemChange();
+        scaleValueItem->addItemChange();
     }
 }
 
@@ -7370,7 +7339,7 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
                  QTreeWidget *drawingItemTree, RootPathItem *rootPathItem, RootPortItem *rootPortItem,
                  PortItem *portItem)
 {
-    std::cout << "Port::draw" << std::endl;  std::cout.flush();
+    //std::cout << "Port::draw" << std::endl;  std::cout.flush();
 
     // link paths -  assumes there is only one path, which is checked when loading the database
 
@@ -7403,6 +7372,8 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
 
     // PortItem
     portItem=new PortItem(mw,pathItem,impedance_calculation,impedance_definition);
+    ShapeData *shapeData=portItem->getShapeData();
+    shapeData->set_name(QString::fromStdString(get_name()));
     portItem->setText(0,QString::fromStdString(get_name()));
     portItem->setPathItem(pathItem);
     rootPortItem->addChild(portItem);
@@ -7419,7 +7390,6 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
     // differential pairs
     i=0;
     while (i < differentialPairList.size()) {
-        std::cout << "   differential pair" << std::endl; std::cout.flush();
         DifferentialPair *pair=differentialPairList[i];
         if (pair) {
             Mode *mode_P=nullptr;
@@ -9735,7 +9705,7 @@ Port* BoundaryDatabase::get_matchingPort (Path *path)
 
 void BoundaryDatabase::renamePath (std::string from, std::string to)
 {
-    std::cout << "BoundaryDatabase::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
+    //std::cout << "BoundaryDatabase::renamePath  from=" << from << " to=" << to << std::endl; std::cout.flush();
 
     long unsigned int i=0;
     while (i < pathList.size()) {
@@ -9829,7 +9799,6 @@ void BoundaryDatabase::draw (Relay *relay, struct projectData *projData,
     // boundaries
     i=0;
     while (i < boundaryList.size()) {
-        std::cout << "place 3" << std::endl; std::cout.flush();
         boundaryList[i]->draw(relay,projData,this,mw,drawingWindow,drawingItemTree,rootPathItem,rootBoundaryItem,materialDatabase,nullptr);
         i++;
     }
