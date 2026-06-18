@@ -5699,16 +5699,26 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
     // allow multiple selection on matched types only
     bool matchedType=false;
     if (previousClickedItem) {
-        if (clickedItem->get_itemType() == previousClickedItem->get_itemType()) {
+        int clickedItemType=clickedItem->get_itemType();
+        if (clickedItemType == 11) clickedItemType=10;  // voltage and current treated the same
+
+        int previousClickedType=previousClickedItem->get_itemType();
+        if (previousClickedType == 11) previousClickedType=10;  // voltage and current treated the same
+
+        if (clickedItemType == previousClickedType) {
             matchedType=true;
         }
     }
 
-    // allow multiple selection only at the same level
-    bool matchedLevel=false;
+    // allow multiple selection only within the same root group
+    bool matchedGroup=false;
     if (previousClickedItem) {
-        if (clickedItem->QTreeWidgetItem::parent() == previousClickedItem->QTreeWidgetItem::parent()) {
-            matchedLevel=true;
+        BaseItem *previousRootParent=previousClickedItem->getRootParent();
+        BaseItem *currentRootParent=clickedItem->getRootParent();
+        if (previousRootParent && currentRootParent) {
+            if (previousRootParent == currentRootParent) {
+                matchedGroup=true;
+            }
         }
     }
 
@@ -5719,7 +5729,7 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
             VIItem *viiItem=dynamic_cast<VIItem *>(clickedItem);
             if (pathItem && viiItem) {
                 matchedType=true;  // not really
-                matchedLevel=true; // not really
+                matchedGroup=true; // not really
             }
         }
         { // VIItem then PathItem
@@ -5727,7 +5737,7 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
             VIItem *viiItem=dynamic_cast<VIItem *>(previousClickedItem);
             if (pathItem && viiItem) {
                 matchedType=true;  // not really
-                matchedLevel=true; // not really
+                matchedGroup=true; // not really
             }
         }
     }
@@ -5735,7 +5745,7 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
     if (CTRLpressed) {
         if (SHIFTpressed) {
         } else {
-            if (matchedType && matchedLevel) {
+            if (matchedType && matchedGroup) {
                 ui->drawingItemTree->setCurrentItem(clickedItem);
                 ui->drawingWindow->selectItem(clickedItem);
                 previousClickedItem=clickedItem;
@@ -5747,7 +5757,7 @@ void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int colu
     } else if (SHIFTpressed) {
         if (CTRLpressed) {
         } else {
-            if (matchedType && matchedLevel) {
+            if (matchedType && matchedGroup) {
 
                 ui->drawingItemTree->setCurrentItem(clickedItem);
 

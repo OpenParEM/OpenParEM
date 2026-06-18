@@ -46,6 +46,47 @@ BaseItem::BaseItem (OpenParEMg *mw_, BaseItem *parentItem_)
     addShapeData(newShapeData);
 }
 
+// BaseItem* BaseItem::getRootParent (BaseItem *baseItem, int *watchDog)
+// {
+//     std::cout << "BaseItem::getRootParent  baseItem=" << baseItem->text(0).toStdString() << std::endl; std::cout.flush();
+
+//     if (baseItem->is_rootDrawing()) return baseItem;
+//     else if (baseItem->is_rootPath()) return baseItem;
+//     else if (baseItem->is_rootPort()) return baseItem;
+//     else if (baseItem->is_rootBoundary()) return baseItem;
+//     else if (baseItem->is_rootMesh()) return baseItem;
+//     if (*watchDog < 100000) {
+//         (*watchDog)++;
+//         baseItem=getRootParent(parentItem,watchDog);
+//     } else baseItem=nullptr;
+//     return baseItem;
+// }
+
+BaseItem* BaseItem::getRootParent ()
+{
+    int watchDog=0;
+    BaseItem *baseItem=this;
+
+    bool loop=true;
+    while (loop) {
+        if (baseItem->is_rootDrawing()) break;
+        else if (baseItem->is_rootPath()) break;
+        else if (baseItem->is_rootPort()) break;
+        else if (baseItem->is_rootBoundary()) break;
+        else if (baseItem->is_rootMesh()) break;
+
+        baseItem=baseItem->parentItem;
+
+        watchDog++;
+        if (watchDog == 100000) {
+            break;
+            baseItem=nullptr;
+        }
+    }
+
+    return baseItem;
+}
+
 void BaseItem::showDisplayStatus ()
 {
     std::cout << "Item " << text(0).toStdString();

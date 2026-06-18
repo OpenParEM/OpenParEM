@@ -485,6 +485,8 @@ public:
     BaseItem ();
     BaseItem (OpenParEMg *, BaseItem *);
 
+    BaseItem* getRootParent ();
+
     void showDisplayStatus ();
     void alignForegroundColor ();
 
