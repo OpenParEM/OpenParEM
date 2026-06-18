@@ -252,10 +252,10 @@ public:
         if (showTracking) {std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();}
 
         if (!item) return;
-        if (item->foreground(0) == Qt::black) return;
+        //if (item->foreground(0) == Qt::black) return;
         DisplayShape(item->getShape());
         item->setForeground(0,Qt::black);
-        visibleItems.push_back(item);
+        //visibleItems.push_back(item);
     }
 
     bool isValidShow ()
@@ -357,23 +357,23 @@ public:
         if (hideTracking) {std::cout << "ItemTracker::hideItem  item=" << item << std::endl; std::cout.flush();}
 
         if (!item) return;
-        if (item->foreground(0) == Qt::gray) return;
+        //if (item->foreground(0) == Qt::gray) return;
         EraseShape(item->getShape());
         item->setForeground(0,Qt::gray);
-        nullifyVisibleItem(item);
+        //nullifyVisibleItem(item);
     }
 
     // hide all items whether selected or not
-    void hideAllItems ()
-    {
-        if (hideTracking) {std::cout << "ItemTracker::hideAllItems" << std::endl; std::cout.flush();}
+    // void hideAllItems ()
+    // {
+    //     if (hideTracking) {std::cout << "ItemTracker::hideAllItems" << std::endl; std::cout.flush();}
 
-        long unsigned int i=0;
-        while (i < visibleItems.size()) {
-            hideItem(visibleItems[i]);
-            i++;
-        }
-    }
+    //     long unsigned int i=0;
+    //     while (i < visibleItems.size()) {
+    //         hideItem(visibleItems[i]);
+    //         i++;
+    //     }
+    // }
 
     // bool isVisibleItem (BaseItem *item)
     // {
@@ -850,7 +850,7 @@ public:
     {
         //std::cout << "ItemTracker::reset" << std::endl; std::cout.flush();
 
-        visibleItems.clear();
+        //visibleItems.clear();
         selectedItems.clear();
         shapeToItemMap.clear();
     }
@@ -882,13 +882,13 @@ public:
     //long unsigned int getVisibleItemsSize () {return visibleItems.size();}
     //BaseItem* getVisibleItem (long unsigned int i) {return visibleItems[i];}
     //long unsigned int getVisibleItemsCount () {return visibleItems.count();}
-    void compactVisibleItems () {visibleItems.compact();}
+    //void compactVisibleItems () {visibleItems.compact();}
 
     void printStats () {
         std::cout << "   Tracker Stats:" << std::endl;
-        std::cout << "      visible size = " << visibleItems.size() << std::endl;
+        //std::cout << "      visible size = " << visibleItems.size() << std::endl;
         std::cout << "      selected size = " << selectedItems.size() << std::endl; std::cout.flush();
-        std::cout << "      visible count = " << visibleItems.count() << std::endl;
+        //std::cout << "      visible count = " << visibleItems.count() << std::endl;
         std::cout << "      selected count = " << selectedItems.count() << std::endl; std::cout.flush();
     }
 
@@ -901,17 +901,17 @@ public:
     void audit ()
     {
         std::cout << "***************************************************" << std::endl;
-        std::cout << "Visible Items Audit:" << std::endl;
-        visibleItems.duplicateAudit();
+        // std::cout << "Visible Items Audit:" << std::endl;
+        // visibleItems.duplicateAudit();
 
         std::cout << "Selected Items Audit:" << std::endl;
         selectedItems.duplicateAudit();
 
-        std::cout << "Selected vs. Visible Items Audit" << std::endl;
-        selectedItems.crossDuplicateAudit(&visibleItems);
+        // std::cout << "Selected vs. Visible Items Audit" << std::endl;
+        // selectedItems.crossDuplicateAudit(&visibleItems);
 
-        std::cout << "Visible Items vs. Shape-to-Item Map Audit" << std::endl;
-        visibleItems.itemInMapAudit(&shapeToItemMap);
+        // std::cout << "Visible Items vs. Shape-to-Item Map Audit" << std::endl;
+        // visibleItems.itemInMapAudit(&shapeToItemMap);
 
         std::cout << "Selected Items vs. Shape-to-Item Map Audit" << std::endl;
         selectedItems.itemInMapAudit(&shapeToItemMap);
@@ -1007,13 +1007,13 @@ private:
     //     }
     // }
 
-    void nullifyVisibleItem (BaseItem *item)
-    {
-        visibleItems.nullify(item);
-    }
+    // void nullifyVisibleItem (BaseItem *item)
+    // {
+    //     visibleItems.nullify(item);
+    // }
 
     Handle(AIS_InteractiveContext) viewerContext;
-    ItemVector visibleItems;
+    //ItemVector visibleItems;
     ItemVector selectedItems;
     std::unordered_map<Handle(AIS_Shape), BaseItem*> shapeToItemMap;
 

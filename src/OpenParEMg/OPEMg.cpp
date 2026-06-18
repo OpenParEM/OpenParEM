@@ -556,10 +556,8 @@ void OpenParEMg::convertPathToFace (BaseItem *baseItem)
                 ShapeData *shapeData=convertPathItem->getShapeData();
                 shapeData->setShape(newShape);
 
-                ui->drawingWindow->showItem(baseItem);
                 ui->drawingWindow->insertItemToMap(newShape,baseItem);
-                ui->drawingWindow->displayShape(newShape);
-                ui->drawingWindow->activateItem(baseItem);
+                ui->drawingWindow->showItem(baseItem);
             }
         }
     }
@@ -682,7 +680,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     //std::cout << "OpenParEMg::setMenusI  place=" << placeIndex << std::endl; std::cout.flush();
 
     ui->drawingWindow->compactSelectedItems();
-    ui->drawingWindow->compactVisibleItems();
+    //ui->drawingWindow->compactVisibleItems();
 
     // debug options
     //itemChangesStack.print();
@@ -1742,7 +1740,7 @@ void OpenParEMg::renameDrawingItems ()
     while (i < items.count()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(items[i]);
         if (drawingItem) {
-            drawingItem->expandToItem();
+            //drawingItem->expandToItem();
             CustomLineEdit *name=new CustomLineEdit();
             name->setText(drawingItem->text(0));
             originalText=drawingItem->text(0);
@@ -2052,8 +2050,12 @@ void OpenParEMg::createPath ()
             newPath->create_wire_item(this,ui->drawingWindow,path);  // create item and add as child to path; creates AIS_Shape
 
             // save the items for later
-            BaseItem *baseItem=newPath->get_item();
-            if (baseItem) insertToMapActivateItem(baseItem);
+            PathItem *pathItem=newPath->get_item();
+            if (pathItem) {
+                ui->drawingWindow->insertItemToMap(pathItem->getShape(),pathItem);
+                ui->drawingWindow->showItem(pathItem);
+                ui->drawingWindow->selectItem(pathItem);
+            }
 
             // see if the path is within an existing port
             PortItem *portItem=get_matchingPortItem(newPath);
@@ -2175,7 +2177,9 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
 
     if (!baseItem) return;
 
-    bool isDisplayed=ui->drawingWindow->isDisplayed(baseItem->getShape());
+    //bool isDisplayed=ui->drawingWindow->isDisplayed(baseItem->getShape());
+    bool isDisplayed=false;
+    if (baseItem->foreground(0) == Qt::black) isDisplayed=true;
 
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
     if (rootDrawingItem) {
@@ -2402,9 +2406,12 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
             ui->drawingWindow->activateItem(drawingItem);
         }
 
-        baseItem->alignForegroundColor();
-        if (isDisplayed && baseItem->foreground(0) == Qt::gray) ui->drawingWindow->showItem(baseItem);
-        if (!isDisplayed && baseItem->foreground(0) == Qt::black) ui->drawingWindow->hideItem(baseItem);
+        // baseItem->alignForegroundColor();
+        // if (isDisplayed && baseItem->foreground(0) == Qt::gray) ui->drawingWindow->showItem(baseItem);
+        // if (!isDisplayed && baseItem->foreground(0) == Qt::black) ui->drawingWindow->hideItem(baseItem);
+
+        if (isDisplayed) ui->drawingWindow->showItem(baseItem);
+        else ui->drawingWindow->hideItem(baseItem);
 
         // necessary?
         drawingItem->reset_transformation();
@@ -2864,15 +2871,15 @@ void OpenParEMg::finishMoveObject (gp_Pnt p0, gp_Pnt p1)
     }
 
     // update the top level
-    i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
-        if (baseItem) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
-            if (drawingItem && drawingItem->is_drawing()) drawingItem->findTopLevelItem(drawingItem);
-        }
-        i++;
-    }
+    // i=0;
+    // while (i < ui->drawingWindow->get_selectedItems_size()) {
+    //     BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
+    //     if (baseItem) {
+    //         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
+    //         if (drawingItem && drawingItem->is_drawing()) drawingItem->findTopLevelItem(drawingItem);
+    //     }
+    //     i++;
+    // }
 
     finishOperation(false,250);
 }
@@ -2901,7 +2908,7 @@ void OpenParEMg::copyDrawingItems ()
     //activeAction=true;  // no need since there is not a cancel option
     itemChangesStack.startNew();
 
-    std::vector<BaseItem *> selectedList;
+    std::vector<DrawingItem *> selectedList;
 
     // copy the selected items
     long unsigned int i=0;
@@ -2910,8 +2917,8 @@ void OpenParEMg::copyDrawingItems ()
         if (baseItem) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
             if (drawingItem && drawingItem->is_drawing()) {
-                BaseItem *newBaseItem=drawingItem->copy(drawing);
-                selectedList.push_back(newBaseItem);
+                DrawingItem *newDrawingItem=drawingItem->copy(drawing);
+                selectedList.push_back(newDrawingItem);
             }
         }
         i++;
@@ -2921,7 +2928,7 @@ void OpenParEMg::copyDrawingItems ()
     ui->drawingWindow->unselectAllItems();
     i=0;
     while (i < selectedList.size()) {
-        ui->drawingWindow->hideItem(selectedList[i]);
+        //ui->drawingWindow->hideItem(selectedList[i]);
         ui->drawingWindow->showItem(selectedList[i]);
         ui->drawingWindow->selectItem(selectedList[i]);
         i++;
@@ -3612,8 +3619,9 @@ void OpenParEMg::createPathFromFaceN (bool startNew)
     // add the new items
     i=0;
     while (i < createdItemsList.size()) {
-        insertToMapActivateItem(createdItemsList[i]);
-        ui->drawingWindow->activateItem(createdItemsList[i]);
+        ui->drawingWindow->insertItemToMap(createdItemsList[i]->getShape(),createdItemsList[i]);
+        ui->drawingWindow->showItem(createdItemsList[i]);
+        ui->drawingWindow->selectItem(createdItemsList[i]);
         i++;
     }
 
@@ -4756,19 +4764,19 @@ void OpenParEMg::on_actionMaterialsEditor_triggered ()
 //     }
 // }
 
-void OpenParEMg::insertToMapActivateItem (BaseItem *baseItem)
-{
-    //std::cout << "OpenParEMg::addItemWithShape" << std::endl; std::cout.flush();
+// void OpenParEMg::insertToMapActivateItem (BaseItem *baseItem)
+// {
+//     //std::cout << "OpenParEMg::addItemWithShape" << std::endl; std::cout.flush();
 
-    if (!baseItem) return;
+//     if (!baseItem) return;
 
-    Handle(AIS_Shape) drawingShape=baseItem->getShape();
-    ui->drawingWindow->insertItemToMap(drawingShape,baseItem);
+//     Handle(AIS_Shape) drawingShape=baseItem->getShape();
+//     ui->drawingWindow->insertItemToMap(drawingShape,baseItem);
 
-    baseItem->setForeground(0,Qt::gray);
-    ui->drawingWindow->showItem(baseItem);
-    ui->drawingWindow->selectItem(baseItem);
-}
+//     baseItem->setForeground(0,Qt::gray);
+//     ui->drawingWindow->showItem(baseItem);
+//     ui->drawingWindow->selectItem(baseItem);
+// }
 
 TopoDS_Shape NormalizeCompound (const TopoDS_Shape& shape, BRep_Builder& builder)
 {
@@ -5989,7 +5997,14 @@ void OpenParEMg::on_actionShowAll_triggered()
 
 void OpenParEMg::on_actionHideAll_triggered ()
 {
-    ui->drawingWindow->hideAllItems();
+    //ui->drawingWindow->hideAllItems();
+
+    drawing->hide(false);
+    path->hide(false);
+    port->hide(false);
+    boundary->hide(false);
+    mesh->hide(false);
+
     clearTreeSelection();
     setMenusI(60);
 }
@@ -7050,7 +7065,8 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                     if (!drawingItem->hasP0()) {
                         drawingItem->setP0(pnt);  // just to use the set flag
                         startPoint=pnt;
-                        ui->drawingWindow->hideItem(drawingItem);
+                        //ui->drawingWindow->hideItem(drawingItem);
+                        ui->drawingWindow->removeShape(drawingItem->getShape());
                     } else {
                         //drawingItem->setP1(pnt);
                         endPoint=pnt;
@@ -7104,7 +7120,8 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                         // switch to allowing selection on midpoints
                         startOperation(true);
 
-                        ui->drawingWindow->hideItem(baseItem);
+                        //ui->drawingWindow->hideItem(baseItem);
+                        ui->drawingWindow->removeShape(baseItem->getShape());
                         ui->drawingWindow->updateViewer();
                     } else {
                         if (polywire->isPointOnPlane(pnt) && polywire->isValidInsertPoint(pnt)) {

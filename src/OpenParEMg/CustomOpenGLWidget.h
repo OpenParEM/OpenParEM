@@ -181,11 +181,11 @@ public:
         drawingTracker->hideItem(item);
     }
 
-    void hideAllItems ()
-    {
-        if (showTracking) std::cout << "CustomOpenGLWidget::hideAllItems" << std::endl; std::cout.flush();
-        drawingTracker->hideAllItems();
-    }
+    // void hideAllItems ()
+    // {
+    //     if (showTracking) std::cout << "CustomOpenGLWidget::hideAllItems" << std::endl; std::cout.flush();
+    //     drawingTracker->hideAllItems();
+    // }
 
     // void refreshSelectedItem (BaseItem *item)
     // {
@@ -539,7 +539,7 @@ public:
     // }
 
     void compactSelectedItems () {drawingTracker->compactSelectedItems();}
-    void compactVisibleItems () {drawingTracker->compactVisibleItems();}
+    //void compactVisibleItems () {drawingTracker->compactVisibleItems();}
     void printTrackerStats () {drawingTracker->printStats();}
     void printDrawingSelectedCount () {
         std::cout << "      drawing selected count = " << viewerContext->NbSelected() << std::endl; std::cout.flush();

@@ -582,7 +582,7 @@ public:
     {
         if (!item) return;
         QList<QTreeWidgetItem*> children=item->takeChildren();
-        for (QTreeWidgetItem* child : children) {
+        for (QTreeWidgetItem* child : std::as_const(children)) {
             if (child) {
                 deleteChildren(child);
                 delete child;

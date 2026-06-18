@@ -61,7 +61,7 @@ protected:
 
     void focusOutEvent(QFocusEvent *event) override
     {
-        if (QLineEdit::isModified()) QLineEdit::returnPressed();
+        if (QLineEdit::isModified()) emit QLineEdit::returnPressed();
         QLineEdit::focusOutEvent(event);
     }
 

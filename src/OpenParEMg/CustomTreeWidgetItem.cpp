@@ -245,12 +245,12 @@ BaseItem* BaseItem::findTopLevelItem (BaseItem *parentItem, BaseItem *currentIte
         currentParentItem=currentItem->getParentItem();
     }
 
-    currentItem->alignForegroundColor();
-    if (currentItem->foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(currentItem);
-    if (currentItem->foreground(0) == Qt::gray) {
-        mw->ui->drawingWindow->showItem(currentItem);
-        mw->ui->drawingWindow->hideItem(currentItem);
-    }
+    // currentItem->alignForegroundColor();
+    // if (currentItem->foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(currentItem);
+    // if (currentItem->foreground(0) == Qt::gray) {
+    //     mw->ui->drawingWindow->showItem(currentItem);
+    //     mw->ui->drawingWindow->hideItem(currentItem);
+    // }
     mw->ui->drawingWindow->showItem(currentItem);
 
     return currentItem;
@@ -275,13 +275,14 @@ void BaseItem::undo ()
         mw->ui->drawingWindow->deleteShape(getShape());
         promoteChildren();
         getParentItem()->removeChild(this);
+        mw->ui->drawingWindow->showItem(this);
         dataStack.undo();
-        expandToItemPlus1();
+        //expandToItemPlus1();
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.undo();
         restoreWidgets();
-        expandToItemPlus1();
+        //expandToItemPlus1();
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
         dataStack.undo();
@@ -298,35 +299,14 @@ void BaseItem::undo ()
         mw->ui->drawingWindow->showItem(this);
         mw->ui->drawingWindow->activateItem(this);
         restoreWidgets();
-        expandToItemPlus1();
+        //expandToItemPlus1();
     } else if (shapeData->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
-
-        bool hasShape=false;
-        if (!getShape().IsNull()) hasShape=true;
-
-        if (hasShape) {
-            mw->ui->drawingWindow->hideItem(this);
-            mw->ui->drawingWindow->removeItemFromMap(this);
-            mw->ui->drawingWindow->deleteShape(getShape());
-        }
 
         dataStack.undo();
         setText(0,getShapeData()->get_name());
 
-        if (hasShape) {
-            Handle(AIS_Shape) shape=getShape();
-            if (!shape.IsNull()) {
-                mw->ui->drawingWindow->displayShape(shape);
-                mw->ui->drawingWindow->insertItemToMap(shape,this);
-            }
-
-            mw->ui->drawingWindow->showItem(this);
-            mw->ui->drawingWindow->activateItem(this);
-        }
-
-        restoreWidgets();
-        expandToItem();
+        //expandToItem();
     }
 
     // add or remove integration path scales as needed
@@ -365,14 +345,13 @@ void BaseItem::redo ()
         getParentItem()->addChild(this);
         demoteChildren();
         mw->ui->drawingWindow->showItem(this);
-        mw->ui->drawingWindow->activateItem(this);
         restoreWidgets();
-        expandToItemPlus1();
+        //expandToItemPlus1();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.redo();
         restoreWidgets();
-        expandToItemPlus1();
+        //expandToItemPlus1();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
         mw->ui->drawingWindow->unselectItem(this);
@@ -382,36 +361,16 @@ void BaseItem::redo ()
 
         promoteChildren();
         getParentItem()->removeChild(this);
+        mw->ui->drawingWindow->showItem(this);
 
         dataStack.redo();
     } else if (next->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
 
-        bool hasShape=false;
-        if (!getShape().IsNull()) hasShape=true;
-
-        if (hasShape) {
-            mw->ui->drawingWindow->hideItem(this);
-            mw->ui->drawingWindow->removeItemFromMap(this);
-            mw->ui->drawingWindow->deleteShape(getShape());
-        }
-
         dataStack.redo();
         setText(0,getShapeData()->get_name());
 
-        if (hasShape) {
-            Handle(AIS_Shape) shape=getShape();
-            if (!shape.IsNull()) {
-                mw->ui->drawingWindow->displayShape(shape);
-                mw->ui->drawingWindow->insertItemToMap(shape,this);
-            }
-
-            mw->ui->drawingWindow->showItem(this);
-            mw->ui->drawingWindow->activateItem(this);
-        }
-
-        restoreWidgets();
-        expandToItem();
+        //expandToItem();
     }
 
     // add or remove integration path scales as needed
@@ -739,6 +698,9 @@ void DrawingItem::cancelOperation ()
 {
     //std::cout << "DrawingItem::cancelOperation" << std::endl; std::cout.flush();
 
+    bool isDisplayed=false;
+    if (foreground(0) == Qt::black) isDisplayed=true;
+
     resetOperation();
 
     // remove animate shape
@@ -777,8 +739,8 @@ void DrawingItem::cancelOperation ()
         mw->reprocess(this);
     }
 
-    mw->ui->drawingWindow->showItem(this);
-    mw->ui->drawingWindow->activateItem(this);
+    if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+    else mw->ui->drawingWindow->hideItem(this);
 }
 
 void DrawingItem::startDraw ()
@@ -897,7 +859,11 @@ void DrawingItem::cancelDraw ()
 
 void DrawingItem::startMove (bool isAnimate)
 {
-    std::cout << "DrawingItem::startMove  isAnimate=" << isAnimate << std::endl; std::cout.flush();
+    std::cout << "DrawingItem::startMove  drawingItem=" << text(0).toStdString() << "  isAnimate=" << isAnimate << std::endl; std::cout.flush();
+
+    bool isDisplayed=false;
+    if (foreground(0) == Qt::black) isDisplayed=true;
+    std::cout << "place a isDisplayed=" << isDisplayed << std::endl; std::cout.flush();
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -930,13 +896,19 @@ void DrawingItem::startMove (bool isAnimate)
         setEnableMove(true);
         mw->itemChangesStack.add(this);
     }
+
+    isDisplayed=false;
+    if (foreground(0) == Qt::black) isDisplayed=true;
+    std::cout << "place b isDisplayed=" << isDisplayed << std::endl; std::cout.flush();
 }
 
 void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 {
-    //std::cout << "DrawingItem::finishMove" << std::endl; std::cout.flush();
+    std::cout << "DrawingItem::finishMove  drawingItem=" << text(0).toStdString() << std::endl; std::cout.flush();
 
-    bool isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
+    bool isDisplayed=false;
+    if (foreground(0) == Qt::black) isDisplayed=true;
+    std::cout << "place 1 isDisplayed=" << isDisplayed << std::endl; std::cout.flush();
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -955,7 +927,7 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
             i++;
         }
 
-        mw->ui->drawingWindow->activateItem(this);
+        //mw->ui->drawingWindow->activateItem(this);
     }
 
     if (!polywire && !process) {
@@ -975,9 +947,13 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 
     mw->activeAction=false;
 
-    alignForegroundColor();
-    if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
-    if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
+    // alignForegroundColor();
+    // if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
+    // if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
+
+     std::cout << "place 2 isDisplayed=" << isDisplayed << std::endl; std::cout.flush();
+    if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+    else mw->ui->drawingWindow->hideItem(this);
 
     resetOperation();
     unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
@@ -1016,7 +992,10 @@ void DrawingItem::startRotate ()
 
 void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint)
 {
-    bool isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
+    //bool isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
+
+    bool isDisplayed=false;
+    if (foreground(0) == Qt::black) isDisplayed=true;
 
     // remove the old version from display and tracking
     mw->ui->drawingWindow->hideItem(this);
@@ -1062,9 +1041,12 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
 
     mw->activeAction=false;
 
-    alignForegroundColor();
-    if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
-    if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
+    if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+    else mw->ui->drawingWindow->hideItem(this);
+
+    // alignForegroundColor();
+    // if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
+    // if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
 
     resetOperation();
 
@@ -1091,6 +1073,9 @@ void DrawingItem::startStretch ()
 
 void DrawingItem::finishStretch ()
 {
+    bool isDisplayed=false;
+    if (foreground(0) == Qt::black) isDisplayed=true;
+
     // remove the old version from display and tracking
     mw->ui->drawingWindow->hideItem(this);
     mw->ui->drawingWindow->removeItemFromMap(this);
@@ -1100,6 +1085,9 @@ void DrawingItem::finishStretch ()
     if (!polywire) return;
 
     finishStretchPoint();
+
+    if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+    else mw->ui->drawingWindow->hideItem(this);
 }
 
 void DrawingItem::extrude ()
@@ -1200,7 +1188,6 @@ DrawingItem* DrawingItem::copy (BaseItem *parent)
     }
 
     // set for display
-    newItem->setForeground(0,Qt::black);
     mw->ui->drawingWindow->activateItem(newItem);
     mw->ui->drawingWindow->insertItemToMap(newItem->getShape(),newItem);
 
@@ -1235,6 +1222,8 @@ DrawingItem* DrawingItem::copy (BaseItem *parent)
             i++;
         }
     }
+
+    mw->ui->drawingWindow->hideItem(newItem);
 
     return newItem;
 }
@@ -1331,7 +1320,7 @@ void DrawingItem::startEdit ()
 
 void DrawingItem::finishEdit ()
 {
-    bool isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
+    //bool isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -1362,9 +1351,11 @@ void DrawingItem::finishEdit ()
         mw->reprocess(this);
     }
 
-    alignForegroundColor();
-    if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
-    if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
+    // alignForegroundColor();
+    // if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
+    // if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
+
+    mw->ui->drawingWindow->showItem(this);
 
     mw->activeAction=false;
 
@@ -1428,7 +1419,8 @@ void DrawingItem::finishDeletePoint ()
 
     resetOperation();
     mw->activeAction=false;
-    findTopLevelItem(this);
+    //findTopLevelItem(this);
+    mw->ui->drawingWindow->showItem(this);
     mw->finishOperation(false,1);
 }
 
@@ -1524,7 +1516,9 @@ void DrawingItem::finishStretchPoint ()
 
     resetOperation();
     mw->activeAction=false;
-    findTopLevelItem(this);
+    //findTopLevelItem(this);
+
+    mw->ui->drawingWindow->showItem(this);
     mw->finishOperation(false,1);
 }
 
@@ -1554,7 +1548,8 @@ void DrawingItem::convertToPolyline ()
         mw->itemChangesStack.add(this);
         mw->drawingChanged=true;
 
-        findTopLevelItem(this);
+        //findTopLevelItem(this);
+        mw->ui->drawingWindow->showItem(this);
     }
 }
 
@@ -1882,6 +1877,9 @@ void DrawingItem::undo ()
 
     mw->ui->drawingWindow->unselectAllItems();
 
+    bool isDisplayed=false;
+    if (foreground(0) == Qt::black) isDisplayed=true;
+
     if (shapeData->isNoop()) {
         std::cout << "   isNoop" << std::endl; std::cout.flush();
         // nothing to do
@@ -1897,14 +1895,14 @@ void DrawingItem::undo ()
         getParentItem()->removeChild(this);
         promoteChildren();
 
-        int i=0;
-        while (i < getChildrenSize()) {
-            BaseItem *child=getChild(i);
-            if (child) {
-                child->expandToItem();
-            }
-            i++;
-        }
+        // int i=0;
+        // while (i < getChildrenSize()) {
+        //     BaseItem *child=getChild(i);
+        //     if (child) {
+        //         child->expandToItem();
+        //     }
+        //     i++;
+        // }
 
         dataStack.undo();
     } else if (shapeData->isEdit()) {
@@ -1923,9 +1921,11 @@ void DrawingItem::undo ()
             if (process) {
                 int i=0;
                 while (i < childCount()) {
-                    BaseItem *childItem=dynamic_cast<BaseItem *>(child(i));
-                    childItem->undo();
-                    mw->ui->drawingWindow->hideItem(childItem);
+                    DrawingItem *childItem=dynamic_cast<DrawingItem *>(child(i));
+                    if (childItem) {
+                        childItem->undo();
+                        mw->ui->drawingWindow->hideItem(childItem);
+                    }
                     i++;
                 }
             } else {
@@ -1934,11 +1934,31 @@ void DrawingItem::undo ()
             }
         }
 
+        if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+        else mw->ui->drawingWindow->hideItem(this);
+
+        //mw->ui->drawingWindow->showItem(this);
+
         //BaseItem *baseItem=findTopLevelItem(this);
         //baseItem->expandToItem();
-        expandToItem();
+        //expandToItem();
     } else if (shapeData->isDelete()) {
-        BaseItem::undo();
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+
+        dataStack.undo();
+
+        DrawingItem *parentItem=dynamic_cast<DrawingItem *>(getParentItem());
+        copy_depth(parentItem);
+
+        increase_depth();
+        getParentItem()->addChild(this);
+        demoteChildren();
+
+        mw->reprocess(this);
+
+        mw->ui->drawingWindow->hideItem(this);
+        RootDrawingItem *rootParentItem=dynamic_cast<RootDrawingItem *>(getParentItem());
+        if (rootParentItem) mw->ui->drawingWindow->showItem(this);
     } else if (shapeData->isChangeName()) {
         BaseItem::undo();
     }
@@ -1956,6 +1976,9 @@ void DrawingItem::redo ()
 
     mw->ui->drawingWindow->unselectAllItems();
 
+    bool isDisplayed=false;
+    if (foreground(0) == Qt::black) isDisplayed=true;
+
     if (next->isNoop()) {
         std::cout << "   isNoop" << std::endl; std::cout.flush();
         // should not occur
@@ -1971,11 +1994,17 @@ void DrawingItem::redo ()
         demoteChildren();
 
         mw->reprocess(this);
+
+        mw->ui->drawingWindow->hideItem(this);
+        RootDrawingItem *rootParentItem=dynamic_cast<RootDrawingItem *>(getParentItem());
+        if (rootParentItem) mw->ui->drawingWindow->showItem(this);
+
         //BaseItem *baseItem=findTopLevelItem(this);
         //baseItem->expandToItem();
-        expandToItem();
+        //expandToItem();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
+
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
@@ -1989,18 +2018,27 @@ void DrawingItem::redo ()
             if (process) {
                 int i=0;
                 while (i < childCount()) {
-                    BaseItem *childItem=dynamic_cast<BaseItem *>(child(i));
-                    childItem->redo();
+                    DrawingItem *childItem=dynamic_cast<DrawingItem *>(child(i));
+                    if (childItem) {
+                        childItem->redo();
+                    }
                     i++;
                 }
             }
         }
 
         mw->reprocess(this);
-        mw->insertToMapActivateItem(this);
+        //mw->insertToMapActivateItem(this);
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+        mw->ui->drawingWindow->activateItem(this);
+
+        if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+        else mw->ui->drawingWindow->hideItem(this);
+        //mw->ui->drawingWindow->showItem(this);
+
         //BaseItem *baseItem=findTopLevelItem(this);
         //baseItem->expandToItem();
-        expandToItem();
+        //expandToItem();
     } else if (next->isDelete()) {
         BaseItem::redo();
     } else if (next->isChangeName()) {
@@ -2318,7 +2356,7 @@ void PathItem::redo ()
         mw->ui->drawingWindow->displayShape(getShape());
         mw->ui->drawingWindow->activateItem(this);
         mw->ui->drawingWindow->showItem(this);
-        expandToItem();
+        //expandToItem();
     } else {
         BaseItem::redo();
     }
@@ -2326,7 +2364,6 @@ void PathItem::redo ()
 
 void PathItem::reverse ()
 {
-
     // remove the old version from display and tracking
     mw->ui->drawingWindow->hideItem(this);
     mw->ui->drawingWindow->removeItemFromMap(this);
@@ -2351,7 +2388,7 @@ void PathItem::reverse ()
         setShape(getShapeData()->getPolywire()->get_AIS_Shape());
 
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
-        mw->ui->drawingWindow->displayShape(getShape());
+        mw->ui->drawingWindow->showItem(this);
         mw->ui->drawingWindow->activateItem(this);
 
         mw->projectChanged=true;
@@ -2951,8 +2988,6 @@ void BoundaryItem::save (std::ofstream *out)
 {
     *out << "Boundary" << std::endl;
     *out << "   name=" << text(0).toStdString() << std::endl;
-
-
 
     int i=0;
     while (i < childCount()) {
@@ -4210,6 +4245,7 @@ void DiffPairItem::undo ()
     if (shapeData->isCreate()) {
         dataStack.undo();
         promoteChildren();
+        mw->ui->drawingWindow->hideItem(this);
         parentItem->removeChild(this);
         enableZcalcControl(true);
     } else if (shapeData->isDelete()) {
@@ -4217,6 +4253,7 @@ void DiffPairItem::undo ()
         parentItem->addChild(this);
         demoteChildren();
         enableZcalcControl(false);
+        mw->ui->drawingWindow->showItem(this);
     } else {
         BaseItem::undo();
     }
@@ -4237,9 +4274,11 @@ void DiffPairItem::redo ()
         parentItem->addChild(this);
         demoteChildren();
         enableZcalcControl(false);
+        mw->ui->drawingWindow->showItem(this);
     } else if (next->isDelete()) {
         dataStack.redo();
         promoteChildren();
+        mw->ui->drawingWindow->hideItem(this);
         parentItem->removeChild(this);
         enableZcalcControl(true);
     } else {

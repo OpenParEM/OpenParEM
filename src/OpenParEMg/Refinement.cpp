@@ -125,7 +125,7 @@ void OPEMg_Refinement::on_refineOk_clicked()
         projData->modified=1;
     }
 
-    if (projData->refinement_required_passes |= ui->requiredPasses->value()) {
+    if (projData->refinement_required_passes != ui->requiredPasses->value()) {
         projData->refinement_required_passes=ui->requiredPasses->value();
         projData->modified=1;
     }
