@@ -101,7 +101,8 @@ private:
     QVector<KeywordValueItem*> m_childItems;
     KeywordValueItem *m_parentItem;
 
-    int level;        // 0=>root item, 1=>Material, 2=>Temperature, 3=>Source, 4=>Frequency, 5=>Debye, 6=>data keyword pairs, 7=>source text
+    int level;        // 0=>root item, 1=>local/global, 2=>Material, 3=>Temperature,
+                      // 4=>Source, 5=>Frequency, 6=>Debye, 7=>data keyword pairs, 8=>source text
     bool copyAllowed;
 };
 
@@ -110,7 +111,7 @@ class MaterialsModel : public QAbstractItemModel
     Q_OBJECT
 
 public:
-    explicit MaterialsModel (const QString &data, QObject *parent = nullptr);
+    //explicit MaterialsModel (const QString &data, QObject *parent = nullptr);
     explicit MaterialsModel (QObject *parent = nullptr);
     ~MaterialsModel();
 
@@ -141,7 +142,7 @@ public:
 
     KeywordValueItem* get_rootItem () {return rootItem;}
     bool setData (const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
-    void populate (MaterialDatabase *, KeywordValueItem *, bool);
+    void populate (MaterialDatabase *);
     bool hasChanged () {return dataHasChanged;}
     void setChanged () {dataHasChanged=true;}
     void setUnchanged () {dataHasChanged=false;}
@@ -157,6 +158,8 @@ public slots:
 private:
     //void setupModelData(const QStringList &lines, KeywordValueItem *parent);
     KeywordValueItem *rootItem;
+    KeywordValueItem *globalItem;
+    KeywordValueItem *localItem;
     bool dataHasChanged;
     Materials *materials;
 };
@@ -184,6 +187,9 @@ public:
         close_event=event;
         closeWindow_triggered();
     }
+
+public slots:
+    void expandFirstLevel ();
 
 private slots:
 

@@ -376,21 +376,25 @@ QVariant KeywordValueItem::hasDuplicateValue (int testLevel)
 // MaterialsModel
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-MaterialsModel::MaterialsModel(const QString &data, QObject *parent)
-    : QAbstractItemModel(parent)
-{
-    rootItem=new KeywordValueItem({tr("RootItem"), tr(""), tr("")});
-    rootItem->set_level(0);
-    rootItem->set_copyAllowed(false);
-    dataHasChanged=false;
-}
-
 MaterialsModel::MaterialsModel(QObject *parent)
     : QAbstractItemModel(parent)
 {
+    std::cout << "MaterialsModel::MaterialsModel" << std::endl; std::cout.flush();
+
     rootItem=new KeywordValueItem({tr("RootItem"), tr(""), tr("")});
     rootItem->set_level(0);
     rootItem->set_copyAllowed(false);
+
+    localItem=new KeywordValueItem({tr("local"), tr(""), tr("")},rootItem);
+    localItem->set_level(1);
+    localItem->set_copyAllowed(false);
+    rootItem->appendChild(localItem);
+
+    globalItem=new KeywordValueItem({tr("global"), tr(""), tr("")},rootItem);
+    globalItem->set_level(1);
+    globalItem->set_copyAllowed(false);
+    rootItem->appendChild(globalItem);
+
     dataHasChanged=false;
 }
 
@@ -489,22 +493,19 @@ QVariant MaterialsModel::data(const QModelIndex &index, int role) const
 
 Qt::ItemFlags MaterialsModel::flags(const QModelIndex &index) const
 {
-    QModelIndex parentIndex=parent(index);
     Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(index);
 
-    if (parentIndex.isValid()) {
-        if (index.isValid() && index.column() == 1) {
-           return defaultFlags | Qt::ItemIsEditable;
-        }
-    } else {
-        if (index.isValid() && index.column() == 0) {
+    if (index.isValid()) {
+        if (index.column() == 0) {
+            // material names are editable
+            if (getItem(index)->get_level() == 2) return defaultFlags | Qt::ItemIsEditable;
+        } else if (index.column() == 1) {
+            // property values are editable
             return defaultFlags | Qt::ItemIsEditable;
         }
-    }
 
-    // make an exception for Source text
-    if (index.isValid()) {
-        if (getItem(index)->get_level() == 7) {
+        // source text is editable
+        if (getItem(index)->get_level() == 8) {
             return defaultFlags | Qt::ItemIsEditable;
         }
     }
@@ -535,6 +536,8 @@ QVariant MaterialsModel::headerData (int section, Qt::Orientation orientation, i
 
 bool MaterialsModel::setData (const QModelIndex &index, const QVariant &value, int role)
 {
+    //std::cout << "MaterialsModel::setData" << std::endl; std::cout.flush();
+
     if (role != Qt::EditRole) return false;
 
     KeywordValueItem *item=getItem(index);
@@ -546,293 +549,300 @@ bool MaterialsModel::setData (const QModelIndex &index, const QVariant &value, i
     return result;
 }
 
-void MaterialsModel::populate (MaterialDatabase *materialDatabase, KeywordValueItem *parent, bool isLocal)
+void MaterialsModel::populate (MaterialDatabase *materialDatabase)
 {
+    std::cout << "MaterialsModel::populate" << std::endl; std::cout.flush();
+
+    beginResetModel();
+
     long unsigned int i=0;
     while (i < materialDatabase->get_size()) {
         Material *material=materialDatabase->get_material(i);
-        if (material->get_isLocal() == isLocal) {
+
+        QList<QVariant> data;
+        QVariant name=QString::fromStdString(material->get_name()->get_value());
+        data.append(name);
+
+        name="";
+        data.append(name);  // to force a second column
+        data.append(name);  // to force a third column
+
+        KeywordValueItem *materialItem=nullptr;
+        if (material->get_isLocal()) materialItem=new KeywordValueItem(data,localItem);
+        else materialItem=new KeywordValueItem(data,globalItem);
+        materialItem->set_level(2);
+        materialItem->set_copyAllowed(true);
+
+        if (material->get_isLocal()) localItem->appendChild(materialItem);
+        else globalItem->appendChild(materialItem);
+
+        long unsigned int j=0;
+        while (j < material->get_temperatureList_size()) {
+            Temperature *temperature=material->get_temperature(j);
 
             QList<QVariant> data;
-            QVariant name=QString::fromStdString(material->get_name()->get_value());
+            QVariant name="Temperature";
+
+            QVariant value;
+            QVariant unit="";
+            if (temperature->get_temperature()->get_value().compare("any") == 0) {
+                value="any";
+            } else {
+                value=temperature->get_temperature()->get_dbl_value();
+                unit="C";
+            }
             data.append(name);
+            data.append(value);
+            data.append(unit);
 
-            name="";
-            data.append(name);  // to force a second column
-            data.append(name);  // to force a third column
+            KeywordValueItem *temperatureItem=new KeywordValueItem(data,materialItem);
+            temperatureItem->set_level(3);
+            temperatureItem->set_copyAllowed(true);
+            materialItem->appendChild(temperatureItem);
 
-            KeywordValueItem *materialItem=new KeywordValueItem(data,parent);
-            materialItem->set_level(1);
-            materialItem->set_copyAllowed(true);
 
-            parent->appendChild(materialItem);
+            if (temperature->get_frequencyList_size() == 0) {
 
-            long unsigned int j=0;
-            while (j < material->get_temperatureList_size()) {
-                Temperature *temperature=material->get_temperature(j);
+                // Debye model
 
                 QList<QVariant> data;
-                QVariant name="Temperature";
-
-                QVariant value;
-                QVariant unit="";
-                if (temperature->get_temperature()->get_value().compare("any") == 0) {
-                    value="any";
-                } else {
-                    value=temperature->get_temperature()->get_dbl_value();
-                    unit="C";
-                }
+                QVariant name="Debye Model";
                 data.append(name);
+
+                name="";
+                data.append(name);  // to force a second column
+                data.append(name);  // to force a third column
+
+                KeywordValueItem *debyeItem=new KeywordValueItem(data,temperatureItem);
+                debyeItem->set_level(6);
+                debyeItem->set_copyAllowed(false);
+                temperatureItem->appendChild(debyeItem);
+
+                // er_infinity
+
+                data.clear();
+
+                QVariant keyword=QString::fromStdString(temperature->get_er_infinity().get_keyword());
+                value=temperature->get_er_infinity().get_dbl_value();
+                unit="";
+                data.append(keyword);
                 data.append(value);
                 data.append(unit);
 
-                KeywordValueItem *temperatureItem=new KeywordValueItem(data,materialItem);
-                temperatureItem->set_level(2);
-                temperatureItem->set_copyAllowed(true);
-                materialItem->appendChild(temperatureItem);
+                KeywordValueItem *pairItem=new KeywordValueItem(data,debyeItem);
+                pairItem->set_noCopy();
+                debyeItem->appendChild(pairItem);
 
+                // delta_er
 
-                if (temperature->get_frequencyList_size() == 0) {
+                data.clear();
 
-                    // Debye model
+                keyword=QString::fromStdString(temperature->get_delta_er().get_keyword());
+                value=temperature->get_delta_er().get_dbl_value();
+                unit="";
+                data.append(keyword);
+                data.append(value);
+                data.append(unit);
+
+                pairItem=new KeywordValueItem(data,debyeItem);
+                pairItem->set_noCopy();
+                debyeItem->appendChild(pairItem);
+
+                // m1
+
+                data.clear();
+
+                keyword=QString::fromStdString(temperature->get_m1().get_keyword());
+                value=temperature->get_m1().get_dbl_value();
+                unit="";
+                data.append(keyword);
+                data.append(value);
+                data.append(unit);
+
+                pairItem=new KeywordValueItem(data,debyeItem);
+                pairItem->set_noCopy();
+                debyeItem->appendChild(pairItem);
+
+                // m2
+
+                data.clear();
+
+                keyword=QString::fromStdString(temperature->get_m2().get_keyword());
+                value=temperature->get_m2().get_dbl_value();
+                unit="";
+                data.append(keyword);
+                data.append(value);
+                data.append(unit);
+
+                pairItem=new KeywordValueItem(data,debyeItem);
+                pairItem->set_noCopy();
+                debyeItem->appendChild(pairItem);
+
+                // relative_permeability
+
+                data.clear();
+
+                keyword=QString::fromStdString(temperature->get_relative_permeability().get_keyword());
+                value=temperature->get_relative_permeability().get_dbl_value();
+                unit="";
+                data.append(keyword);
+                data.append(value);
+                data.append(unit);
+
+                pairItem=new KeywordValueItem(data,debyeItem);
+                pairItem->set_noCopy();
+                debyeItem->appendChild(pairItem);
+
+                // loss
+
+                data.clear();
+
+                keyword=QString::fromStdString(temperature->get_loss().get_keyword());
+                value=temperature->get_loss().get_dbl_value();
+                unit="S/m";
+                data.append(keyword);
+                data.append(value);
+                data.append(unit);
+
+                pairItem=new KeywordValueItem(data,debyeItem);
+                pairItem->set_noCopy();
+                debyeItem->appendChild(pairItem);
+
+            } else {
+                long unsigned int k=0;
+                while (k < temperature->get_frequencyList_size()) {
+                    Frequency *frequency=temperature->get_frequency(k);
 
                     QList<QVariant> data;
-                    QVariant name="Debye Model";
+                    QVariant name="Frequency";
+
+                    QVariant value;
+                    QVariant unit="";
+                    if (frequency->get_frequency()->get_value().compare("any") == 0) {
+                        value="any";
+                    } else {
+                        value=frequency->get_frequency()->get_dbl_value();
+                        unit="Hz";
+                    }
                     data.append(name);
+                    data.append(value);
+                    data.append(unit);
 
-                    name="";
-                    data.append(name);  // to force a second column
-                    data.append(name);  // to force a third column
+                    KeywordValueItem *frequencyItem=new KeywordValueItem(data,temperatureItem);
+                    frequencyItem->set_level(5);
+                    frequencyItem->set_copyAllowed(true);
+                    temperatureItem->appendChild(frequencyItem);
 
-                    KeywordValueItem *debyeItem=new KeywordValueItem(data,temperatureItem);
-                    debyeItem->set_level(5);
-                    debyeItem->set_copyAllowed(false);
-                    temperatureItem->appendChild(debyeItem);
-
-                    // er_infinity
+                    // relative_permittivity
 
                     data.clear();
 
-                    QVariant keyword=QString::fromStdString(temperature->get_er_infinity().get_keyword());
-                    value=temperature->get_er_infinity().get_dbl_value();
+                    QVariant keyword=QString::fromStdString(frequency->get_relative_permittivity()->get_keyword());
+                    value=frequency->get_relative_permittivity()->get_dbl_value();
                     unit="";
                     data.append(keyword);
                     data.append(value);
                     data.append(unit);
 
-                    KeywordValueItem *pairItem=new KeywordValueItem(data,debyeItem);
+                    KeywordValueItem *pairItem=new KeywordValueItem(data,frequencyItem);
                     pairItem->set_noCopy();
-                    debyeItem->appendChild(pairItem);
-
-                    // delta_er
-
-                    data.clear();
-
-                    keyword=QString::fromStdString(temperature->get_delta_er().get_keyword());
-                    value=temperature->get_delta_er().get_dbl_value();
-                    unit="";
-                    data.append(keyword);
-                    data.append(value);
-                    data.append(unit);
-
-                    pairItem=new KeywordValueItem(data,debyeItem);
-                    pairItem->set_noCopy();
-                    debyeItem->appendChild(pairItem);
-
-                    // m1
-
-                    data.clear();
-
-                    keyword=QString::fromStdString(temperature->get_m1().get_keyword());
-                    value=temperature->get_m1().get_dbl_value();
-                    unit="";
-                    data.append(keyword);
-                    data.append(value);
-                    data.append(unit);
-
-                    pairItem=new KeywordValueItem(data,debyeItem);
-                    pairItem->set_noCopy();
-                    debyeItem->appendChild(pairItem);
-
-                    // m2
-
-                    data.clear();
-
-                    keyword=QString::fromStdString(temperature->get_m2().get_keyword());
-                    value=temperature->get_m2().get_dbl_value();
-                    unit="";
-                    data.append(keyword);
-                    data.append(value);
-                    data.append(unit);
-
-                    pairItem=new KeywordValueItem(data,debyeItem);
-                    pairItem->set_noCopy();
-                    debyeItem->appendChild(pairItem);
+                    frequencyItem->appendChild(pairItem);
 
                     // relative_permeability
 
                     data.clear();
 
-                    keyword=QString::fromStdString(temperature->get_relative_permeability().get_keyword());
-                    value=temperature->get_relative_permeability().get_dbl_value();
+                    keyword=QString::fromStdString(frequency->get_relative_permeability()->get_keyword());
+                    value=frequency->get_relative_permeability()->get_dbl_value();
                     unit="";
                     data.append(keyword);
                     data.append(value);
                     data.append(unit);
 
-                    pairItem=new KeywordValueItem(data,debyeItem);
+                    pairItem=new KeywordValueItem(data,frequencyItem);
                     pairItem->set_noCopy();
-                    debyeItem->appendChild(pairItem);
+                    frequencyItem->appendChild(pairItem);
 
                     // loss
 
                     data.clear();
 
-                    keyword=QString::fromStdString(temperature->get_loss().get_keyword());
-                    value=temperature->get_loss().get_dbl_value();
+                    keyword=QString::fromStdString(frequency->get_loss()->get_keyword());
+                    value=frequency->get_loss()->get_dbl_value();
                     unit="S/m";
                     data.append(keyword);
                     data.append(value);
                     data.append(unit);
 
-                    pairItem=new KeywordValueItem(data,debyeItem);
+                    pairItem=new KeywordValueItem(data,frequencyItem);
                     pairItem->set_noCopy();
-                    debyeItem->appendChild(pairItem);
+                    frequencyItem->appendChild(pairItem);
 
-                } else {
-                    long unsigned int k=0;
-                    while (k < temperature->get_frequencyList_size()) {
-                        Frequency *frequency=temperature->get_frequency(k);
+                    // Rz
 
-                        QList<QVariant> data;
-                        QVariant name="Frequency";
+                    data.clear();
 
-                        QVariant value;
-                        QVariant unit="";
-                        if (frequency->get_frequency()->get_value().compare("any") == 0) {
-                            value="any";
-                        } else {
-                            value=frequency->get_frequency()->get_dbl_value();
-                            unit="Hz";
-                        }
-                        data.append(name);
-                        data.append(value);
-                        data.append(unit);
+                    keyword=QString::fromStdString(frequency->get_Rz()->get_keyword());
+                    value=frequency->get_Rz()->get_dbl_value();
+                    unit="m";
+                    data.append(keyword);
+                    data.append(value);
+                    data.append(unit);
 
-                        KeywordValueItem *frequencyItem=new KeywordValueItem(data,temperatureItem);
-                        frequencyItem->set_level(4);
-                        frequencyItem->set_copyAllowed(true);
-                        temperatureItem->appendChild(frequencyItem);
-
-                        // relative_permittivity
-
-                        data.clear();
-
-                        QVariant keyword=QString::fromStdString(frequency->get_relative_permittivity()->get_keyword());
-                        value=frequency->get_relative_permittivity()->get_dbl_value();
-                        unit="";
-                        data.append(keyword);
-                        data.append(value);
-                        data.append(unit);
-
-                        KeywordValueItem *pairItem=new KeywordValueItem(data,frequencyItem);
-                        pairItem->set_noCopy();
-                        frequencyItem->appendChild(pairItem);
-
-                        // relative_permeability
-
-                        data.clear();
-
-                        keyword=QString::fromStdString(frequency->get_relative_permeability()->get_keyword());
-                        value=frequency->get_relative_permeability()->get_dbl_value();
-                        unit="";
-                        data.append(keyword);
-                        data.append(value);
-                        data.append(unit);
-
-                        pairItem=new KeywordValueItem(data,frequencyItem);
-                        pairItem->set_noCopy();
-                        frequencyItem->appendChild(pairItem);
-
-                        // loss
-
-                        data.clear();
-
-                        keyword=QString::fromStdString(frequency->get_loss()->get_keyword());
-                        value=frequency->get_loss()->get_dbl_value();
-                        unit="S/m";
-                        data.append(keyword);
-                        data.append(value);
-                        data.append(unit);
-
-                        pairItem=new KeywordValueItem(data,frequencyItem);
-                        pairItem->set_noCopy();
-                        frequencyItem->appendChild(pairItem);
-
-                        // Rz
-
-                        data.clear();
-
-                        keyword=QString::fromStdString(frequency->get_Rz()->get_keyword());
-                        value=frequency->get_Rz()->get_dbl_value();
-                        unit="m";
-                        data.append(keyword);
-                        data.append(value);
-                        data.append(unit);
-
-                        pairItem=new KeywordValueItem(data,frequencyItem);
-                        pairItem->set_noCopy();
-                        frequencyItem->appendChild(pairItem);
-
-                        k++;
-                    }
-
-                }
-
-                j++;
-            }
-
-            // sources
-
-            data.clear();
-            name="Source";
-            data.append(name);
-
-            KeywordValueItem *sourceItem=new KeywordValueItem(data,materialItem);
-            sourceItem->set_level(3);
-            sourceItem->set_copyAllowed(true);
-            materialItem->appendChild(sourceItem);
-
-            j=0;
-            while (j < material->get_sourceList_size()) {
-
-                std::vector<std::string> lineList=material->get_source_lineList(j);
-
-                long unsigned int k=0;
-                while (k < lineList.size()) {
-
-                    QList<QVariant> data;
-                    QVariant text=QString::fromStdString(lineList[k]);
-                    data.append(text);
-                    text="";
-                    data.append(text);
-                    data.append(text);
-
-                    KeywordValueItem *pairItem=new KeywordValueItem(data,sourceItem);
-                    pairItem->set_level(7);
-                    pairItem->set_copyAllowed(true);
-                    sourceItem->appendChild(pairItem);
+                    pairItem=new KeywordValueItem(data,frequencyItem);
+                    pairItem->set_noCopy();
+                    frequencyItem->appendChild(pairItem);
 
                     k++;
                 }
-                j++;
+
             }
+
+            j++;
+        }
+
+        // sources
+
+        data.clear();
+        name="Source";
+        data.append(name);
+
+        KeywordValueItem *sourceItem=new KeywordValueItem(data,materialItem);
+        sourceItem->set_level(5);
+        sourceItem->set_copyAllowed(true);
+        materialItem->appendChild(sourceItem);
+
+        j=0;
+        while (j < material->get_sourceList_size()) {
+
+            std::vector<std::string> lineList=material->get_source_lineList(j);
+
+            long unsigned int k=0;
+            while (k < lineList.size()) {
+
+                QList<QVariant> data;
+                QVariant text=QString::fromStdString(lineList[k]);
+                data.append(text);
+                text="";
+                data.append(text);
+                data.append(text);
+
+                KeywordValueItem *pairItem=new KeywordValueItem(data,sourceItem);
+                pairItem->set_level(8);
+                pairItem->set_copyAllowed(true);
+                sourceItem->appendChild(pairItem);
+
+                k++;
+            }
+            j++;
         }
         i++;
     }
+
+    endResetModel();
 }
 
-void MaterialsModel::materialsModel_dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles)
+void MaterialsModel::materialsModel_dataChanged (const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles)
 {
     dataHasChanged=true;
     materials->materials_edited();
@@ -1072,10 +1082,10 @@ void Materials::appendData ()
 void Materials::insertNewData ()
 {
     // location to put the new material
-    QModelIndexList selectedIndices=ui->materialsTreeView->selectionModel()->selectedIndexes();
-    if (selectedIndices.size() == 0) return;
-    QModelIndex index=selectedIndices[0];
-    if (!index.isValid()) return;
+    // QModelIndexList selectedIndices=ui->materialsTreeView->selectionModel()->selectedIndexes();
+    // if (selectedIndices.size() == 0) return;
+    // QModelIndex index=selectedIndices[0];
+    // if (!index.isValid()) return;
 
     // three new materials: dielectric frequency list, dielectric Debye, and metal
 
@@ -1097,28 +1107,29 @@ void Materials::insertNewData ()
     tempMaterialDatabase.push(material);
 
     // convert to MaterialsModel
-    QModelIndex parentIndex=QModelIndex();
-    MaterialsModel tempMaterialsModel;
-    tempMaterialsModel.setMaterials(this);
-    //xxx
-    tempMaterialsModel.populate(&tempMaterialDatabase,tempMaterialsModel.get_rootItem(),true);
+    // QModelIndex parentIndex=QModelIndex();
+    // MaterialsModel tempMaterialsModel;
+    // tempMaterialsModel.setMaterials(this);
+    // //xxx
+    // tempMaterialsModel.populate(&tempMaterialDatabase);
+    materialsModel->populate(&tempMaterialDatabase);
 
     // get the KeywordValueItems and save to the model
 
-    QModelIndex newIndex=tempMaterialsModel.index(0,0,parentIndex);
-    KeywordValueItem *item=tempMaterialsModel.getItem(newIndex);
-    QModelIndex parent=index.parent();
-    item->insertChild(parent,index.row()+1,materialsModel);
+    // QModelIndex newIndex=tempMaterialsModel.index(0,0,parentIndex);
+    // KeywordValueItem *item=tempMaterialsModel.getItem(newIndex);
+    // QModelIndex parent=index.parent();
+    // item->insertChild(parent,index.row()+1,materialsModel);
 
-    newIndex=tempMaterialsModel.index(1,0,parentIndex);
-    item=tempMaterialsModel.getItem(newIndex);
-    parent=index.parent();
-    item->insertChild(parent,index.row()+2,materialsModel);
+    // newIndex=tempMaterialsModel.index(1,0,parentIndex);
+    // item=tempMaterialsModel.getItem(newIndex);
+    // parent=index.parent();
+    // item->insertChild(parent,index.row()+2,materialsModel);
 
-    newIndex=tempMaterialsModel.index(2,0,parentIndex);
-    item=tempMaterialsModel.getItem(newIndex);
-    parent=index.parent();
-    item->insertChild(parent,index.row()+3,materialsModel);
+    // newIndex=tempMaterialsModel.index(2,0,parentIndex);
+    // item=tempMaterialsModel.getItem(newIndex);
+    // parent=index.parent();
+    // item->insertChild(parent,index.row()+3,materialsModel);
 
     // file options
     fileSave->setEnabled(true);
@@ -1211,40 +1222,10 @@ void Materials::newAction_triggered ()
 
     // put them in a MaterialsModel
     //xxx
-    QModelIndex parentIndex=QModelIndex();
-    materialsModel=new MaterialsModel();
-    materialsModel->setMaterials(this);
-
-    // global materials data
-
-    QList<QVariant> data;
-    QVariant name="global";
-    data.append(name);
-
-    name="";
-    data.append(name);  // to force a second column
-    data.append(name);  // to force a third column
-
-    KeywordValueItem *materialItem=new KeywordValueItem(data,materialsModel->get_rootItem());
-    materialItem->set_level(1);
-    materialItem->set_copyAllowed(false);
-    materialsModel->get_rootItem()->appendChild(materialItem);
-
-    // local materials data
-
-    data.clear();
-    name="local";
-    data.append(name);
-
-    name="";
-    data.append(name);  // to force a second column
-    data.append(name);  // to force a third column
-
-    materialItem=new KeywordValueItem(data,materialsModel->get_rootItem());
-    materialItem->set_level(1);
-    materialItem->set_copyAllowed(false);
-    materialsModel->get_rootItem()->appendChild(materialItem);
-    materialsModel->populate(materialDatabase,materialItem,true);
+    // QModelIndex parentIndex=QModelIndex();
+    // materialsModel=new MaterialsModel();
+    // materialsModel->setMaterials(this);
+    materialsModel->populate(materialDatabase);
 
     connect(materialsModel, &QAbstractItemModel::dataChanged, materialsModel, &MaterialsModel::materialsModel_dataChanged);
 
@@ -1260,53 +1241,33 @@ void Materials::newAction_triggered ()
     materialsModel->setChanged();
 }
 
+void Materials::expandFirstLevel ()
+{
+    //std::cout << "Materials::expandFirstLevel" << std::endl; std::cout.flush();
+
+    QTimer::singleShot(0, this, [this]() {
+        ui->materialsTreeView->blockSignals(true);
+        ui->materialsTreeView->expandToDepth(0);
+        ui->materialsTreeView->blockSignals(false);
+    });
+}
+
 void Materials::populate ()
 {
+    std::cout << "Materials::populate" << std::endl; std::cout.flush();
+
     if (materialsModel) delete materialsModel;
     materialsModel=new MaterialsModel();
     materialsModel->setMaterials(this);
-
-    // global materials data
-
-    QList<QVariant> data;
-    QVariant name="global";
-    data.append(name);
-
-    name="";
-    data.append(name);  // to force a second column
-    data.append(name);  // to force a third column
-
-    KeywordValueItem *materialItem=new KeywordValueItem(data,materialsModel->get_rootItem());
-    materialItem->set_level(1);
-    materialItem->set_copyAllowed(false);
-    materialsModel->get_rootItem()->appendChild(materialItem);
-    materialsModel->populate(materialDatabase,materialItem,false);
-
-    // local materials data
-
-    data.clear();
-    name="local";
-    data.append(name);
-
-    name="";
-    data.append(name);  // to force a second column
-    data.append(name);  // to force a third column
-
-    materialItem=new KeywordValueItem(data,materialsModel->get_rootItem());
-    materialItem->set_level(1);
-    materialItem->set_copyAllowed(false);
-    materialsModel->get_rootItem()->appendChild(materialItem);
-    materialsModel->populate(materialDatabase,materialItem,true);
-
+    materialsModel->populate(materialDatabase);
     connect(materialsModel, &QAbstractItemModel::dataChanged, materialsModel, &MaterialsModel::materialsModel_dataChanged);
+    connect(materialsModel, &QAbstractItemModel::modelReset, this, &Materials::expandFirstLevel);
 
     ui->materialsTreeView->setModel(materialsModel);
     connect(ui->materialsTreeView->selectionModel(),&QItemSelectionModel::selectionChanged,this,&Materials::selection_changed);
     ui->materialsTreeView->resizeColumnToContents(0);
 
-    ui->materialsTreeView->blockSignals(true);
-    ui->materialsTreeView->expandToDepth(0);
-    ui->materialsTreeView->blockSignals(false);
+    expandFirstLevel();
 
     ui->materialsTreeView->show();
 
