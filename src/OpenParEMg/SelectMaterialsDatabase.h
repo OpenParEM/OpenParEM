@@ -26,6 +26,9 @@
 #include "project.h"
 #include "OpenParEMmaterials.hpp"
 
+
+extern "C" char* allocCopyString (char *);
+
 namespace Ui {
 class SelectMaterialsDatabase;
 }

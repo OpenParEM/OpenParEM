@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "OpenParEMmaterials.hpp"
+#include <cstring>
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1093,6 +1094,14 @@ Material::Material (int startLine_, int endLine_)
    name.set_lowerLimit(0);
    name.set_upperLimit(0);
    name.set_checkLimits(false);
+
+   type.push_alias("type");
+   type.set_loaded(false);
+   type.set_positive_required(false);
+   type.set_non_negative_required(false);
+   type.set_lowerLimit(0);
+   type.set_upperLimit(0);
+   type.set_checkLimits(false);
 }
 
 void Material::print(std::string indent)
@@ -1101,8 +1110,15 @@ void Material::print(std::string indent)
    if (merged) PetscPrintf(PETSC_COMM_WORLD,"(merged)");
    PetscPrintf(PETSC_COMM_WORLD,"\n");
 
+   if (isLocal) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: isLocal=true\n",name.get_lineNumber());}
+   else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: isLocal=false\n",name.get_lineNumber());}
+
    if (name.is_loaded()) {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s\n",name.get_lineNumber(),indent.c_str(),name.get_value().c_str());
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s\n",name.get_lineNumber(),indent.c_str(),name.get_value().c_str());
+   }
+
+   if (type.is_loaded()) {
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s\n",type.get_lineNumber(),indent.c_str(),type.get_value().c_str());
    }
 
    long unsigned int i=0;
@@ -1118,6 +1134,18 @@ void Material::print(std::string indent)
    }
 
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: EndMaterial\n",endLine);
+}
+
+bool Material::is_conductor ()
+{
+    if (type.get_value().compare("conductor") == 0) return true;
+    return false;
+}
+
+bool Material::is_dielectric ()
+{
+    if (type.get_value().compare("dielectric") == 0) return true;
+    return false;
 }
 
 bool Material::findTemperatureBlocks(inputFile *inputs, bool checkLimits)
@@ -1184,9 +1212,10 @@ bool Material::inSourceBlocks(int lineNumber)
    return false;
 }
 
-bool Material::load(std::string *indent, inputFile *inputs, bool checkInputs)
+bool Material::load(std::string *indent, inputFile *inputs, bool checkInputs, bool isLocal_)
 {
    bool fail=false;
+   isLocal=isLocal_;
 
    // Temperature blocks
    if (findTemperatureBlocks(inputs, checkInputs)) fail=true;
@@ -1232,6 +1261,20 @@ bool Material::load(std::string *indent, inputFile *inputs, bool checkInputs)
             recognized++;
          }
 
+         if (type.match_alias(&token)) {
+             if (type.is_loaded()) {
+                 prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1074: Duplicate entry at line %d for previous entry at line %d.\n",
+                             indent->c_str(),lineNumber,type.get_lineNumber());
+                 fail=true;
+             } else {
+                 type.set_keyword(token);
+                 type.set_value(value);
+                 type.set_lineNumber(lineNumber);
+                 type.set_loaded(true);
+             }
+             recognized++;
+         }
+
          // should recognize one keyword
          if (recognized != 1) {
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1075: Unrecognized keyword at line %d.\n",indent->c_str(),lineNumber);
@@ -1256,6 +1299,16 @@ bool Material::check(std::string indent)
    } else {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1081: Material block at line %d must specify a name.\n",indent.c_str(),startLine);
       fail=true;
+   }
+
+   if (type.is_loaded()) {
+       if (type.get_value().compare("conductor") != 0 && type.get_value().compare("dielectric") != 0) {
+           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1080: type must be \"conductor\" or \"dielectric\" at line %d.\n",indent.c_str(),type.get_lineNumber());
+           fail=true;
+       }
+   } else {
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1081: Material block at line %d must specify a type.\n",indent.c_str(),startLine);
+       fail=true;
    }
 
    // no Temperature blocks
@@ -1392,6 +1445,11 @@ void Material::set_freespace ()
     name.set_loaded(true);
     name.set_lineNumber(0);
 
+    type.set_keyword("type");
+    type.set_value("dielectric");
+    type.set_loaded(true);
+    type.set_lineNumber(0);
+
     Temperature* newTemperature=new Temperature(0,0,false);
     newTemperature->set_freespace();
     temperatureList.push_back(newTemperature);
@@ -1408,6 +1466,11 @@ void Material::set_FR4 ()
     name.set_loaded(true);
     name.set_lineNumber(0);
 
+    type.set_keyword("type");
+    type.set_value("dielectric");
+    type.set_loaded(true);
+    type.set_lineNumber(0);
+
     Temperature* newTemperature=new Temperature(0,0,false);
     newTemperature->set_FR4();
     temperatureList.push_back(newTemperature);
@@ -1423,6 +1486,11 @@ void Material::set_copper ()
     name.set_value("copper");
     name.set_loaded(true);
     name.set_lineNumber(0);
+
+    type.set_keyword("type");
+    type.set_value("conductor");
+    type.set_loaded(true);
+    type.set_lineNumber(0);
 
     Temperature* newTemperature=new Temperature(0,0,false);
     newTemperature->set_copper();
@@ -1463,7 +1531,7 @@ bool MaterialDatabase::findMaterialBlocks()
 }
 
 // return true on fail
-bool MaterialDatabase::load (const char *path, const char *filename, bool checkInputs)
+bool MaterialDatabase::load (const char *path, const char *filename, bool checkInputs, bool isLocal)
 {
    // assemble the full path name
    char *fullPathName=(char *)malloc((strlen(path)+strlen(filename)+1)*sizeof(char));
@@ -1488,7 +1556,7 @@ bool MaterialDatabase::load (const char *path, const char *filename, bool checkI
 
    long unsigned int i=0;
    while (i < materialList.size()) {
-      if (materialList[i]->load(&indent, &inputs, checkInputs)) fail=true;
+      if (materialList[i]->load(&indent, &inputs, checkInputs,isLocal)) fail=true;
       i++;
    }
 
@@ -1561,13 +1629,13 @@ bool MaterialDatabase::load_materials (char *global_path, char *global_name, cha
 {
    bool global=true;
    if (strlen(global_name) != 0) {
-      global=load(global_path,global_name,check_limits);
+      global=load(global_path,global_name,check_limits,false);
    }
 
    bool local=true;
    MaterialDatabase localMaterialDatabase;
    if (strlen(local_name) != 0) {
-      local=localMaterialDatabase.load(local_path,local_name,check_limits);
+      local=localMaterialDatabase.load(local_path,local_name,check_limits,true);
    }
 
    if (!local) {
@@ -1633,7 +1701,7 @@ void MaterialDatabase::clear ()
 {
     long unsigned int i=0;
     while (i < materialList.size()) {
-        delete materialList[i];
+        if (materialList[i]) {delete materialList[i]; materialList[i]=nullptr;}
         i++;
     }
     materialList.clear();

@@ -50,7 +50,8 @@ private slots:
     void commitModelData ();
 };
 
-class KeywordValueItem {
+class KeywordValueItem
+{
 public:
     explicit KeywordValueItem (const QList<QVariant>& data, KeywordValueItem* parent = nullptr);
     ~KeywordValueItem ();
@@ -140,7 +141,7 @@ public:
 
     KeywordValueItem* get_rootItem () {return rootItem;}
     bool setData (const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
-    void populate (MaterialDatabase *, KeywordValueItem *);
+    void populate (MaterialDatabase *, KeywordValueItem *, bool);
     bool hasChanged () {return dataHasChanged;}
     void setChanged () {dataHasChanged=true;}
     void setUnchanged () {dataHasChanged=false;}
@@ -171,6 +172,8 @@ class Materials : public QDialog
 public:
     explicit Materials (QWidget *parent = nullptr);
     ~Materials ();
+    void setMaterialDatabase (MaterialDatabase *materialDatabase_) {materialDatabase=materialDatabase_;}
+    void populate ();
     void reset (bool);
     void keyPressEvent (QKeyEvent *) override;
     int check_changed ();
@@ -200,11 +203,12 @@ private slots:
     void closeWindow_triggered ();
     void contextMenu_triggered (const QPoint& pnt);
     void selection_changed (const QItemSelection &selected, const QItemSelection &deselected);
+    void onExpanded (const QModelIndex& index);
 
 private:
     Ui::Materials *ui;
     QString materialsFile;
-    MaterialDatabase materialDatabase;
+    MaterialDatabase *materialDatabase;
     MaterialsModel *materialsModel;
     KeywordValueItem *itemCopy;
 

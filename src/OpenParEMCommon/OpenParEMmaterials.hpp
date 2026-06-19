@@ -125,17 +125,23 @@ class Source
 class Material
 {
    private:
-      int startLine;  // inclusive of "Material"
-      int endLine;    // inclusive of "EndMaterial"
+      int startLine;           // inclusive of "Material"
+      int endLine;             // inclusive of "EndMaterial"
       std::vector<Temperature *> temperatureList;
       std::vector<Source *> sourceList;
       keywordPair name;
+      keywordPair type;        // dielectric or conductor
       bool merged=false;
+      bool isLocal=false;      // material item is either from the local or global database
    public:
-      Material (int,int);  // startLine,endLine
+      Material (int,int);      // startLine,endLine
       Material () {}
       ~Material ();
-      bool load (std::string *, inputFile *, bool);
+      bool load (std::string *, inputFile *, bool, bool);
+      bool get_isLocal () {return isLocal;}
+      void set_isLocal (bool isLocal_) {isLocal=isLocal_;}
+      bool is_conductor ();
+      bool is_dielectric ();
       bool get_merged () {return merged;}
       void set_merged (bool a) {merged=a;}
       bool findTemperatureBlocks (inputFile *, bool);
@@ -173,7 +179,7 @@ class MaterialDatabase
    public:
       ~MaterialDatabase();
       bool load_materials (char *, char *, char *, char *, bool);
-      bool load (const char *, const char *, bool);
+      bool load (const char *, const char *, bool, bool);
       bool merge (MaterialDatabase *, std::string);
       void clear ();
       void push (Material *a) {materialList.push_back(a);}

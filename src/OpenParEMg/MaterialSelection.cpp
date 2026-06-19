@@ -33,17 +33,26 @@ MaterialSelection::~MaterialSelection ()
     delete ui;
 }
 
-void MaterialSelection::populate ()
+// materialType is conductor, dielectric, or any
+void MaterialSelection::populate (std::string materialType)
 {
+    //std::cout << "MaterialSelection::populate  materialDatabase=" << materialDatabase << std::endl;  std::cout.flush();
+
     if (!materialDatabase) return;
 
     long unsigned int i=0;
     while (i < materialDatabase->get_size()) {
         Material *material=materialDatabase->get_material(i);
-        QListWidgetItem *item=new QListWidgetItem();
-        std::string name=material->get_name()->get_value();
-        item->setText(QString::fromStdString(name));
-        ui->materialList->addItem(item);
+
+        if ((material->is_conductor() && materialType.compare("conductor") == 0) ||
+            (material->is_dielectric() && materialType.compare("dielectric") == 0) ||
+            (materialType.compare("any") == 0)) {
+
+            QListWidgetItem *item=new QListWidgetItem();
+            std::string name=material->get_name()->get_value();
+            item->setText(QString::fromStdString(name));
+            ui->materialList->addItem(item);
+        }
         i++;
     }
     ui->materialList->setCurrentRow(0);

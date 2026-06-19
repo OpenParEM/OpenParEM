@@ -2,6 +2,7 @@
 
 Material
    name=alumina
+   type=dielectric
    Temperature
       temperature=any
       Frequency
@@ -19,6 +20,7 @@ EndMaterial
 
 Material
    name=alumina-lossless
+   type=dielectric
    Temperature
       temperature=any
       Frequency

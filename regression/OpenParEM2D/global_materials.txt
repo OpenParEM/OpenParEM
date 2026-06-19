@@ -2,6 +2,7 @@
 
 Material
    name=freespace
+   type=dielectric
    Temperature
       temperature=any
       Frequency
@@ -19,6 +20,7 @@ EndMaterial
 
 Material
    name=air
+   type=dielectric
    Temperature
       temperature=any
       Frequency
@@ -37,6 +39,7 @@ EndMaterial
 
 Material
    name=FR4_simple
+   type=dielectric
    Temperature
       temperature=any
       Frequency
@@ -54,6 +57,7 @@ EndMaterial
 
 Material
    name=FR4
+   type=dielectric
    Temperature
       temperature=any
       er_infinity=4.27
@@ -72,6 +76,7 @@ EndMaterial
 
 Material
    name=Lee_semiconductor
+   type=dielectric
    Temperature
       temperature=any
       Frequency
@@ -90,6 +95,7 @@ EndMaterial
 
 Material
    name=aluminum
+   type=conductor
    Temperature
       temperature=20
       Frequency
@@ -107,6 +113,7 @@ EndMaterial
 
 Material
    name=brass
+   type=conductor
    Temperature
       temperature=20
       Frequency
@@ -124,6 +131,7 @@ EndMaterial
 
 Material
    name=bronze
+   type=conductor
    Temperature
       temperature=20
       Frequency
@@ -141,6 +149,7 @@ EndMaterial
 
 Material
    name=copper
+   type=conductor
    Temperature
       temperature=20
       Frequency
@@ -158,6 +167,7 @@ EndMaterial
 
 Material
    name=gold
+   type=conductor
    Temperature
       temperature=20
       Frequency
@@ -175,6 +185,7 @@ EndMaterial
 
 Material
    name=lead
+   type=conductor
    Temperature
       temperature=20
       Frequency
@@ -192,6 +203,7 @@ EndMaterial
 
 Material
    name=silver
+   type=conductor
    Temperature
       temperature=20
       Frequency
@@ -209,6 +221,7 @@ EndMaterial
 
 Material
    name=Teflon
+   type=dielectric
    Temperature
       temperature=25
       Frequency

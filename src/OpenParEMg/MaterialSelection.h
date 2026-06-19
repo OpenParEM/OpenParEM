@@ -39,7 +39,7 @@ public:
     void set_materialDatabase (MaterialDatabase *materialDatabase_) {materialDatabase=materialDatabase_;}
     void set_selectedMaterial (QString *selectedMaterial_) {selectedMaterial=selectedMaterial_;}
 
-    void populate ();
+    void populate (std::string);
 private slots:
     void on_materialSelectOk_clicked ();
     void on_materialSelectCancel_clicked ();

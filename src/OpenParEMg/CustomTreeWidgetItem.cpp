@@ -2773,15 +2773,14 @@ void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpe
         CustomComboBox *comboMaterial=new CustomComboBox();
         const QSignalBlocker blockerMaterial(comboMaterial);
         if (mw->materialDatabase) {
-            // ToDo:: re-implement
-            // long unsigned int i=0;
-            // while (i < mw->materialDatabase->get_size()) {
-            //     Material *material=mw->materialDatabase->get_material(i);
-            //     // Todo: add only conductors
-            //     comboMaterial->addItem(QString::fromStdString(material->get_name()->get_value()));
-            //     i++;
-            // }
-            comboMaterial->addItem("none");
+            long unsigned int i=0;
+            while (i < mw->materialDatabase->get_size()) {
+                Material *material=mw->materialDatabase->get_material(i);
+                if (material->is_conductor()) {
+                    comboMaterial->addItem(QString::fromStdString(material->get_name()->get_value()));
+                }
+                i++;
+            }
         }
         mw->ui->drawingItemTree->setItemWidget(itemMaterial,0,comboMaterial);
         comboMaterial->setCurrentText(boundary_material);

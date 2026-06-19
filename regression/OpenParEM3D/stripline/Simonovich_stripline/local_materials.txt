@@ -2,6 +2,7 @@
 
 Material
    name=prepreg
+   type=dielectric
    Temperature
       temperature=any
       Frequency
@@ -19,6 +20,7 @@ EndMaterial
 
 Material
    name=core
+   type=dielectric
    Temperature
       temperature=any
       Frequency
@@ -36,6 +38,7 @@ EndMaterial
 
 Material
    name=copper_prepreg
+   type=conductor
    Temperature
       temperature=any
       Frequency
@@ -54,6 +57,7 @@ EndMaterial
 
 Material
    name=copper_core
+   type=conductor
    Temperature
       temperature=any
       Frequency

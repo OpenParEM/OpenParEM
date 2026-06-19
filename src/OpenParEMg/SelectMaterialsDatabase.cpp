@@ -97,6 +97,19 @@ void SelectMaterialsDatabase::set_projData (struct projectData *a)
         ui->selectLocal->setEnabled(false);
     }
 
+    if (globalPath) {free(globalPath); globalPath=nullptr;}
+    globalPath=allocCopyString(projData->materials_global_path);
+
+    if (globalFilename) {free(globalFilename); globalFilename=nullptr;}
+    globalFilename=allocCopyString(projData->materials_global_name);
+
+    if (localPath) {free(localPath); localPath=nullptr;}
+    localPath=allocCopyString(projData->materials_local_path);
+
+    if (localFilename) {free(localFilename); localFilename=nullptr;}
+    localFilename=allocCopyString(projData->materials_local_name);
+
+
     ui->globalMaterialFile->blockSignals(false);
     ui->localMaterialFile->blockSignals(false);
 }

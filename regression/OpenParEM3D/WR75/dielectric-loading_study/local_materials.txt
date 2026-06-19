@@ -2,6 +2,7 @@
 
 Material
    name=dielectric-loading
+   type=dielectric
    Temperature
       temperature=any
       Frequency

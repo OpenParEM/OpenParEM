@@ -256,6 +256,8 @@ While OpenParEM3D provides great flexibility in specifying AMR refinement freque
 
 Materials are specified in one or more materials files following the specification in Appendix~\ref{sec:materials_file_spec}.  At least one materials file is required to run OpenParEM3D, using either \texttt{materials.global.path} plus \newline \texttt{materials.global.name} or \texttt{materials.local.path} plus \texttt{materials.local.name}.  Typical simulation environments will have the bulk of the materials specified in a global file for general use across all projects, then a local materials file for materials specialized for the current project.
 
+The material type is either \"dielectric\" or \"conductor\" and is only used in GUIs to reduce the material selection to appropriate types.  The material type never plays a role in a calculation.
+
 Note that material properties and information contained in copyrighted simulators are covered by the copyright of the simulator.  It is a violation of the copyright to copy material parameters from these sources.  Valid sources for material parameters are datasheets, books, and papers with appropriate citations in the Source/EndSource block.
 
 A simple materials file consisting of just air is
@@ -264,6 +266,7 @@ A simple materials file consisting of just air is
 
   Material
      name=air
+     type=dielectric
      Temperature
         temperature=any
         Frequency
@@ -1768,7 +1771,7 @@ OpenParEM3D is controlled by a text file consisting of keyword/value pairs.  The
 
 Materials are specified in text files with the format given below.  Two material files can be specified in the project control file: global and local.  The global file can be a general materials library, and the local file can contain a specialized set of materials just for the project.  When both global and local material files are specified, the local materials file takes precedence over the global file when the same material name is used in both.
 
-Dielectrics can be specified with a Debye model or by properties at a single frequency or a list of frequencies.  Conductors are specified by properties at a single frequency or a list of frequencies.
+Dielectrics can be specified with a Debye model or by properties at a single frequency or a list of frequencies.  Conductors are specified by properties at a single frequency or a list of frequencies.  The material type is specified as either a dielectric or conductor to enable GUIs to customize the material selection to appropriate material types.  The material type is never used for calculations.
 
 Note that material properties files and information contained in copyrighted simulators are covered by the copyright of the simulator.  It is a violation of the copyright to copy material parameters from these sources.  Valid sources for material parameters are datasheets, books, and papers with appropriate citations in the Source/EndSource block.
 \newline
@@ -1788,6 +1791,7 @@ Note that material properties files and information contained in copyrighted sim
 // dielectric only
 Material
    name=text
+   type=dielectric||conductor
    Temperature
       {temperature||temp||t}={double||any}
       {epsr_infinity||er_infinity}=double

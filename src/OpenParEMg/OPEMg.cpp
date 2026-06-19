@@ -4092,7 +4092,7 @@ void OpenParEMg::assignMaterial ()
     MaterialSelection *materialSelection=new MaterialSelection();
     materialSelection->set_materialDatabase(materialDatabase);
     materialSelection->set_selectedMaterial(&selectedMaterial);
-    materialSelection->populate();
+    materialSelection->populate("dielectric");
     materialSelection->exec();
     delete materialSelection;
 
@@ -4702,7 +4702,11 @@ void OpenParEMg::on_actionRefinement_triggered ()
 
 void OpenParEMg::on_actionMaterialsEditor_triggered ()
 {
+    std::cout << "OpenParEMg::on_actionMaterialsEditor_triggered" << std::endl; std::cout.flush();
+
     Materials *localMaterials=new Materials();
+    localMaterials->setMaterialDatabase(materialDatabase);
+    localMaterials->populate();
     localMaterials->exec();
     delete localMaterials;
 

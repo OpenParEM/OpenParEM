@@ -2,6 +2,7 @@
 
 Material
    name=air
+   type=dielectric
    Temperature
       temperature=any
       Frequency
