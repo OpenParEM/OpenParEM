@@ -4708,7 +4708,6 @@ void OpenParEMg::on_actionMaterialsEditor_triggered ()
     localMaterials->set_projData(&projData);
     localMaterials->setMaterialDatabase(materialDatabase);
     localMaterials->setAbsolutePath(absolutePath);
-    localMaterials->populate();
     localMaterials->exec();
     delete localMaterials;
 

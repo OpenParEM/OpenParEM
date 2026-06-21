@@ -164,6 +164,9 @@ public:
     void set_globalItem_filename (QString filename) {globalItem->data(1)=filename;}
     void set_localItem_filename (QString filename) {globalItem->data(1)=filename;}
 
+    void clear_localItem () {localItem->removeChildren(0,localItem->childCount());}
+    void clear_globalItem () {globalItem->removeChildren(0,globalItem->childCount());}
+
 public slots:
 
     void materialsModel_dataChanged (const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles = QList<int>());

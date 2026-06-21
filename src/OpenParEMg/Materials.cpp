@@ -1257,33 +1257,43 @@ void Materials::deleteData ()
 }
 
 int Materials::check_changed ()
-{    
+{
+    std::cout << "Materials::check_changed" << std::endl; std::cout.flush();
+
+    if (!materialsModel) return QMessageBox::Discard;
+    if (!contextMenuItem) return QMessageBox::Discard;
+
     int retVal=0;
-    if (materialsModel) {
-        bool isLocal;
-        if (contextMenuItem->data(0) == "local") isLocal=true;
-        else if (contextMenuItem->data(0) == "global") isLocal=false;
+    bool isLocal=false;
+    if (contextMenuItem->data(0) == "local") isLocal=true;
+    else if (contextMenuItem->data(0) == "global") isLocal=false;
 
-        bool test=false;
-        if (isLocal && materialsModel->get_isLocalModified()) test=true;
-        if (!isLocal && materialsModel->get_isGlobalModified()) test=true;
+    bool isChanged=false;
+    if (isLocal) {
+        if (materialsModel->get_isLocalModified()) isChanged=true;
+    } else {
+        if (materialsModel->get_isGlobalModified()) isChanged=true;
+    }
 
-        if (test) {
-            QMessageBox msgBox;
-            msgBox.setText("The materials have been modified.");
-            msgBox.setInformativeText("Do you want to save your changes?");
-            msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-            msgBox.setDefaultButton(QMessageBox::Save);
-            retVal = msgBox.exec();
-        }
+    std::cout << "materialsModel->get_isLocalModified()=" << materialsModel->get_isLocalModified() << std::endl; std::cout.flush();
+    std::cout << "materialsModel->get_isGlobalModified()=" << materialsModel->get_isGlobalModified() << std::endl; std::cout.flush();
+
+    if (isChanged) {
+        QMessageBox msgBox;
+        msgBox.setText("The materials have been modified.");
+        msgBox.setInformativeText("Do you want to save your changes?");
+        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Save);
+        retVal = msgBox.exec();
     }
     return retVal;
 }
 
 void Materials::defaultMaterial_triggered ()
 {
+    if (materials_default_boundary) {free(materials_default_boundary); materials_default_boundary=nullptr;}
+    materials_default_boundary=allocCopyConstString(contextMenuItem->data(0).toString().toUtf8().constData());
     ui->defaultBoundaryMaterial->setText(contextMenuItem->data(0).toString());
-    contextMenuItem->set_isModified(true);
     ui->OkButton->setEnabled(true);
 }
 
@@ -1381,6 +1391,8 @@ void Materials::openAction_triggered ()
         // load as local or global
         if (contextMenuItem->data(0) == "local") {
 
+            materialsModel->clear_localItem();
+
             // break up the returned filename
 
             QFileInfo fileInfo(testMaterialsFile);
@@ -1403,6 +1415,8 @@ void Materials::openAction_triggered ()
                 materialsModel->set_localItem_filename(testMaterialsFile);
             }
         } else if (contextMenuItem->data(0) == "global") {
+
+            materialsModel->clear_globalItem();
 
             // break up the returned filename
 
@@ -1650,7 +1664,8 @@ void Materials::contextMenu_triggered(const QPoint& pnt)
             menu.addAction(editPaste);
             menu.addAction(editAppend);
             menu.addAction(editConvert);
-            menu.addAction(editDelete);;
+            menu.addAction(editDelete);
+            if (contextMenuItem->getType().compare("conductor") == 0) menu.addAction(defaultMaterial);
         }
 
         menu.exec(ui->materialsTreeView->mapToGlobal(pnt));
@@ -1784,11 +1799,13 @@ void Materials::on_OkButton_clicked ()
 
     projData->materials_check_limits=materials_check_limits;
 
-    if (materialDatabase) {delete materialDatabase; materialDatabase=nullptr;}
-    materialDatabase=new MaterialDatabase();
-    materialDatabase->load_materials(materials_global_path,materials_global_name,
-                                     materials_local_path,materials_local_name,
-                                     materials_check_limits);
+    if (materialsModel->get_isLocalModified() || materialsModel->get_isGlobalModified()) {
+        if (materialDatabase) {delete materialDatabase; materialDatabase=nullptr;}
+        materialDatabase=new MaterialDatabase();
+        materialDatabase->load_materials(materials_global_path,materials_global_name,
+                                         materials_local_path,materials_local_name,
+                                         materials_check_limits);
+    }
 
     isXclose=false;
     QDialog::close();
@@ -1809,6 +1826,7 @@ void Materials::reject ()
 
 void Materials::on_checkLimits_stateChanged (int arg1)
 {
+    materials_check_limits=arg1;
     ui->OkButton->setEnabled(true);
 }
 
