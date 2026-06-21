@@ -38,6 +38,18 @@ char* allocCopyString (char *a) {
    return b;
 }
 
+char* allocCopyConstString (const char *a) {
+    char *b=NULL;
+
+    if (a == NULL) return NULL;
+
+    b=(char *)malloc((strlen(a)+1)*sizeof(char));
+    if (b == NULL) return NULL;
+    strcpy(b,a);
+
+    return b;
+}
+
 char* trimSpace (char *a) {
    int i,j;
 

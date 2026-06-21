@@ -4705,7 +4705,9 @@ void OpenParEMg::on_actionMaterialsEditor_triggered ()
     std::cout << "OpenParEMg::on_actionMaterialsEditor_triggered" << std::endl; std::cout.flush();
 
     Materials *localMaterials=new Materials();
+    localMaterials->set_projData(&projData);
     localMaterials->setMaterialDatabase(materialDatabase);
+    localMaterials->setAbsolutePath(absolutePath);
     localMaterials->populate();
     localMaterials->exec();
     delete localMaterials;

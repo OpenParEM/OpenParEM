@@ -142,6 +142,7 @@ class Material
       void set_isLocal (bool isLocal_) {isLocal=isLocal_;}
       bool is_conductor ();
       bool is_dielectric ();
+      std::string get_type () {return type.get_value();}
       bool get_merged () {return merged;}
       void set_merged (bool a) {merged=a;}
       bool findTemperatureBlocks (inputFile *, bool);

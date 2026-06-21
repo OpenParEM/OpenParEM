@@ -33,6 +33,9 @@
 #include <QStyledItemDelegate>
 #include "OpenParEMmaterials.hpp"
 
+extern "C" char* allocCopyString (char *);
+extern "C" char* allocCopyConstString (const char *);
+
 class Materials;
 class MaterialsModel;
 
@@ -69,6 +72,8 @@ public:
 
     QVector<KeywordValueItem*>* get_m_childItems () {return &m_childItems;}
     bool setData (int, const QVariant &value);
+    void setType (QString type_) {type=type_;}
+    QString getType () {return type;}
     KeywordValueItem* copy ();
     void print ();
     void print (QTextStream *, KeywordValueItem *);
@@ -94,16 +99,19 @@ public:
     bool hasOne (KeywordValueItem *);
     QVariant hasDuplicateKeyword ();
     QVariant hasDuplicateValue (int);
-    //void set_parent (KeywordValueItem *m_parentItem_) {m_parentItem=m_parentItem_;}
+    void set_isModified (bool);
+    bool get_isModified ();
 
 private:
     QList<QVariant> m_itemData;
     QVector<KeywordValueItem*> m_childItems;
     KeywordValueItem *m_parentItem;
+    QString type;     // dielectric or conductor
 
     int level;        // 0=>root item, 1=>local/global, 2=>Material, 3=>Temperature,
                       // 4=>Source, 5=>Frequency, 6=>Debye, 7=>data keyword pairs, 8=>source text
     bool copyAllowed;
+    bool isModified;  // either changed or new
 };
 
 class MaterialsModel : public QAbstractItemModel
@@ -143,12 +151,18 @@ public:
     KeywordValueItem* get_rootItem () {return rootItem;}
     bool setData (const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
     void populate (MaterialDatabase *);
-    bool hasChanged () {return dataHasChanged;}
-    void setChanged () {dataHasChanged=true;}
-    void setUnchanged () {dataHasChanged=false;}
     void setMaterials (Materials *materials_) {materials=materials_;}
     void print () {rootItem->print();}
     void signalSelection ();
+
+    bool get_isLocalModified () {return localItem->get_isModified();}
+    bool get_isGlobalModified () {return globalItem->get_isModified();}
+
+    void set_isLocalModified (bool isModified_) {localItem->set_isModified(isModified_);}
+    void set_isGlobalModified (bool isModified_) {globalItem->set_isModified(isModified_);}
+
+    void set_globalItem_filename (QString filename) {globalItem->data(1)=filename;}
+    void set_localItem_filename (QString filename) {globalItem->data(1)=filename;}
 
 public slots:
 
@@ -160,7 +174,6 @@ private:
     KeywordValueItem *rootItem;
     KeywordValueItem *globalItem;
     KeywordValueItem *localItem;
-    bool dataHasChanged;
     Materials *materials;
 };
 
@@ -175,18 +188,21 @@ class Materials : public QDialog
 public:
     explicit Materials (QWidget *parent = nullptr);
     ~Materials ();
+    void set_projData (struct projectData *);
     void setMaterialDatabase (MaterialDatabase *materialDatabase_) {materialDatabase=materialDatabase_;}
     void populate ();
-    void reset (bool);
     void keyPressEvent (QKeyEvent *) override;
     int check_changed ();
     void materials_edited ();
     void signalSelection ();
+    void setAbsolutePath (QString absolutePath_) {absolutePath=absolutePath_;}
 
     void closeEvent (QCloseEvent *event) override {
         close_event=event;
         closeWindow_triggered();
     }
+
+    bool check_duplicates ();
 
 public slots:
     void expandFirstLevel ();
@@ -200,29 +216,41 @@ private slots:
     void convertData ();
     void deleteData ();
 
-    bool check_duplicates ();
+    void defaultMaterial_triggered ();
     void newAction_triggered ();
     void openAction_triggered ();
     void saveAction_triggered ();
     void saveAsAction_triggered ();
     void closeAction_triggered ();
+    void exitAction_triggered ();
     void closeWindow_triggered ();
     void contextMenu_triggered (const QPoint& pnt);
     void selection_changed (const QItemSelection &selected, const QItemSelection &deselected);
     void onExpanded (const QModelIndex& index);
+    void on_OkButton_clicked ();
+    void on_CancelButton_clicked ();
+    void reject () override;
+
+
+    void on_checkLimits_stateChanged(int arg1);
 
 private:
     Ui::Materials *ui;
-    QString materialsFile;
+
+    struct projectData *projData;
+    QString absolutePath;  // to the project
     MaterialDatabase *materialDatabase;
     MaterialsModel *materialsModel;
-    KeywordValueItem *itemCopy;
+    KeywordValueItem *copyItem;
+    KeywordValueItem *contextMenuItem;
 
-    QAction *fileNew;
+    QAction *defaultMaterial;
+    QAction *filePrototypes;
     QAction *fileOpen;
     QAction *fileSave;
     QAction *fileSaveAs;
     QAction *fileClose;
+    QAction *fileExit;
 
     QAction *editCopy;
     QAction *editPaste;
@@ -232,6 +260,17 @@ private:
     QAction *editDelete;
 
     QCloseEvent *close_event;
+
+    // local variables for cancel
+    MaterialDatabase *localMaterialDatabase;
+    char *materials_global_path;
+    char *materials_global_name;
+    char *materials_local_path;
+    char *materials_local_name;
+    char *materials_default_boundary;
+    int materials_check_limits;
+
+    bool isXclose;            // user clicked the "X" to close
 };
 
 #endif // MATERIALSg_H
