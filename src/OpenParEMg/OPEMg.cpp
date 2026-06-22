@@ -81,13 +81,9 @@
 #include "Materials.h"
 #include "CustomOpenGLWidget.h"
 #include "CustomLineEdit.h"
-#include "SelectMaterialsDatabase.h"
-#include "MaterialsOptions.h"
 #include "CustomTreeWidgetItem.h"
 #include "MaterialSelection.h"
 #include "mpi.h"
-//#include "RectangleSelector.h"
-//#include "Polywire.h"
 
 
 #include <AIS_Shape.hxx>
@@ -724,6 +720,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionMeshSave->setEnabled(false);
         ui->actionMeshSaveAs->setEnabled(false);
         ui->actionMeshDelete->setEnabled(false);
+        ui->actionMaterials->setEnabled(true);
         ui->actionFrequencyPlan->setEnabled(true);
         //ui->actionRefinement->setEnabled(true);
         if (strcmp(projData.refinement_frequency,"none") == 0) ui->actionRefinement->setEnabled(false);
@@ -891,6 +888,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionMeshSaveAs->setEnabled(false);
         ui->actionMeshDelete->setEnabled(false);
 
+        ui->actionMaterials->setEnabled(false);
         ui->actionFrequencyPlan->setEnabled(false);
         ui->actionRefinement->setEnabled(false);
         ui->actionSimulateOptions->setEnabled(false);
@@ -4700,7 +4698,7 @@ void OpenParEMg::on_actionRefinement_triggered ()
     setMenusI(48);
 }
 
-void OpenParEMg::on_actionMaterialsEditor_triggered ()
+void OpenParEMg::on_actionMaterials_triggered  ()
 {
     std::cout << "OpenParEMg::on_actionMaterialsEditor_triggered" << std::endl; std::cout.flush();
 
@@ -5642,38 +5640,6 @@ void OpenParEMg::on_actionExportStep_triggered()
 void OpenParEMg::on_actionExit_triggered ()
 {
     QApplication::quit();
-}
-
-void OpenParEMg::on_actionSelectMaterialsDatabase_triggered ()
-{
-    SelectMaterialsDatabase *selectMaterialsDatabase=new SelectMaterialsDatabase();
-    selectMaterialsDatabase->set_simulationRunning(simulationRunning);
-    selectMaterialsDatabase->set_projData(&projData);
-    selectMaterialsDatabase->set_absolutePath(&absolutePath);
-    selectMaterialsDatabase->set_materialDatabase(materialDatabase);
-    selectMaterialsDatabase->exec();
-    delete selectMaterialsDatabase;
-
-    if (projData.modified) {
-        projectChanged=true;
-    }
-    setMenusI(55);
-}
-
-void OpenParEMg::on_actionMaterialsOptions_triggered()
-{
-    MaterialsOptions *materialsOptions=new MaterialsOptions();
-    materialsOptions->set_simulationRunning(simulationRunning);
-    materialsOptions->set_projData(&projData);
-    materialsOptions->set_materialDatabase(materialDatabase);
-    materialsOptions->fillMaterialSelector();
-    materialsOptions->exec();
-    delete materialsOptions;
-
-    if (projData.modified) {
-        projectChanged=true;
-    }
-    setMenusI(56);
 }
 
 void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int column)

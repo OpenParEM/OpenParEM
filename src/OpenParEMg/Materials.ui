@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Materials Editor</string>
+   <string>Materials Selection and Editor</string>
   </property>
   <widget class="QWidget" name="horizontalLayoutWidget">
    <property name="geometry">
@@ -150,6 +150,9 @@
     </item>
     <item>
      <widget class="QLabel" name="defaultBoundaryMaterial">
+      <property name="frameShape">
+       <enum>QFrame::Shape::Box</enum>
+      </property>
       <property name="text">
        <string/>
       </property>

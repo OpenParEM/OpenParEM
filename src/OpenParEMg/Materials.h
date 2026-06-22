@@ -102,10 +102,14 @@ public:
     void set_isModified (bool);
     bool get_isModified ();
 
+    QString getToolTip () const {return m_toolTip;}
+    void setToolTip (const QString& text) {m_toolTip=text;}
+
 private:
     QList<QVariant> m_itemData;
     QVector<KeywordValueItem*> m_childItems;
     KeywordValueItem *m_parentItem;
+    QString m_toolTip;
     QString type;     // dielectric or conductor
 
     int level;        // 0=>root item, 1=>local/global, 2=>Material, 3=>Temperature,
@@ -147,6 +151,7 @@ public:
     bool insertRows (int, int, const QModelIndex &parent = {}) override;
     bool removeRows (int, int, const QModelIndex &parent) override;
     int columnCount (const QModelIndex &parent = QModelIndex()) const override;
+    QModelIndex indexFromItem(KeywordValueItem* item) const;
 
     KeywordValueItem* get_rootItem () {return rootItem;}
     bool setData (const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
@@ -161,11 +166,22 @@ public:
     void set_isLocalModified (bool isModified_) {localItem->set_isModified(isModified_);}
     void set_isGlobalModified (bool isModified_) {globalItem->set_isModified(isModified_);}
 
-    void set_globalItem_filename (QString filename) {globalItem->data(1)=filename;}
-    void set_localItem_filename (QString filename) {globalItem->data(1)=filename;}
-
     void clear_localItem () {localItem->removeChildren(0,localItem->childCount());}
     void clear_globalItem () {globalItem->removeChildren(0,globalItem->childCount());}
+
+    void set_globalItem_tip (QString text)
+    {
+        globalItem->setToolTip(text);
+        QModelIndex idx=indexFromItem(globalItem);
+        emit dataChanged(idx,idx,{Qt::ToolTipRole});
+    }
+
+    void set_localItem_tip (QString text)
+    {
+        localItem->setToolTip(text);
+        QModelIndex idx=indexFromItem(localItem);
+        emit dataChanged(idx,idx,{Qt::ToolTipRole});
+    }
 
 public slots:
 
@@ -215,7 +231,7 @@ private slots:
     void copyData ();
     void pasteData ();
     void appendData ();
-    void insertNewData ();
+    //void insertNewData ();
     void convertData ();
     void deleteData ();
 
@@ -258,7 +274,7 @@ private:
     QAction *editCopy;
     QAction *editPaste;
     QAction *editAppend;
-    QAction *editNew;
+    //QAction *editNew;
     QAction *editConvert;
     QAction *editDelete;
 
@@ -272,6 +288,7 @@ private:
     char *materials_local_name;
     char *materials_default_boundary;
     int materials_check_limits;
+    bool projectDataModified;
 
     bool isXclose;            // user clicked the "X" to close
 };

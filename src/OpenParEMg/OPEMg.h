@@ -528,9 +528,6 @@ private slots:
     // Drawing preferences
     void on_actionPreferences_triggered ();
 
-    // Materials
-    void on_actionSelectMaterialsDatabase_triggered ();
-
     // Mesh
     void on_actionMeshOptions_triggered ();
     void on_actionMeshGenerate_triggered ();
@@ -540,6 +537,7 @@ private slots:
     void on_actionMeshDelete_triggered ();
 
     // Simulation Setup
+    void on_actionMaterials_triggered();
     void on_actionFrequencyPlan_triggered ();
     void on_actionRefinement_triggered ();
     void on_actionSimulateOptions_triggered ();
@@ -549,9 +547,6 @@ private slots:
     void on_actionStop_triggered();
     void on_actionAbort_triggered();
     void on_actionAbortAndExit_triggered();
-
-    // Tools
-    void on_actionMaterialsEditor_triggered ();
 
     // Help
     void on_actionAbout_triggered ();
@@ -678,8 +673,6 @@ private slots:
 
     void initQActionList();
     void freeQActionList();
-
-    void on_actionMaterialsOptions_triggered();
 
     void getCurrentMousePosition (gp_Pnt);
     void finishOperation (bool, int);

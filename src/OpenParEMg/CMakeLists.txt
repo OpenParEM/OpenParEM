@@ -70,7 +70,7 @@ qt_add_executable(OpenParEMg
     ../OpenParEMCommon/mesh.cpp ../OpenParEMCommon/mesh.hpp
 
     CustomComboBox.h
-    SelectMaterialsDatabase.h SelectMaterialsDatabase.cpp SelectMaterialsDatabase.ui
+
     OcctQtTools.h
     CustomTreeWidgetItem.h
     MaterialSelection.h MaterialSelection.cpp MaterialSelection.ui
@@ -81,7 +81,7 @@ qt_add_executable(OpenParEMg
     logo.qrc
     Relay.h Relay.cpp
     PolygonSelection.h PolygonSelection.cpp
-    MaterialsOptions.h MaterialsOptions.cpp MaterialsOptions.ui
+
     LengthInputForm.h LengthInputForm.cpp LengthInputForm.ui
     Polywire.h Polywire.cpp
     RectangleEditForm.h RectangleEditForm.cpp RectangleEditForm.ui

@@ -1533,10 +1533,38 @@ bool MaterialDatabase::findMaterialBlocks()
 // return true on fail
 bool MaterialDatabase::load (const char *path, const char *filename, bool checkInputs, bool isLocal)
 {
+   if (!path) return true;
+   if (!filename) return true;
+   if (strlen(path) == 0) return true;
+   if (strlen(filename) == 0) return true;
+
+   // check for path/filename separator
+
+   bool pathHasSeparator=false;
+   if (path[strlen(path)-1] == '/') pathHasSeparator=true;
+
+   bool filenameHasSeparator=false;
+   if (filename[0] == '/') filenameHasSeparator=true;
+
    // assemble the full path name
-   char *fullPathName=(char *)malloc((strlen(path)+strlen(filename)+1)*sizeof(char));
-   if (!fullPathName) return 1;
-   sprintf (fullPathName,"%s%s",path,filename);
+
+   char *fullPathName=nullptr;
+   fullPathName=(char *)malloc((strlen(path)+strlen(filename)+1)*sizeof(char));
+   if (!fullPathName) return true;
+
+   if (pathHasSeparator) {
+      if (filenameHasSeparator) {
+         sprintf (fullPathName,"%s%s",path,filename+1);
+      } else {
+         sprintf (fullPathName,"%s%s",path,filename);
+      }
+   } else {
+      if (filenameHasSeparator) {
+         sprintf (fullPathName,"%s%s",path,filename);
+      } else {
+         sprintf (fullPathName,"%s/%s",path,filename);
+      }
+   }
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sloading materials file \"%s\"\n",indent.c_str(),fullPathName);
  
    bool fail=false;

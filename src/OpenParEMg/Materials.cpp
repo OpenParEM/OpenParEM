@@ -426,7 +426,7 @@ bool KeywordValueItem::get_isModified () {return isModified;}
 MaterialsModel::MaterialsModel(QObject *parent)
     : QAbstractItemModel(parent)
 {
-    std::cout << "MaterialsModel::MaterialsModel" << std::endl; std::cout.flush();
+    // std::cout << "MaterialsModel::MaterialsModel" << std::endl; std::cout.flush();
 
     rootItem=new KeywordValueItem({tr("RootItem"), tr(""), tr("")});
     rootItem->set_level(0);
@@ -534,6 +534,11 @@ QVariant MaterialsModel::data(const QModelIndex &index, int role) const
         return item->data(index.column());
     }
 
+    if (role == Qt::ToolTipRole) {
+        KeywordValueItem *item=getItem(index);
+        return item->getToolTip();
+    }
+
     return QVariant();
 }
 
@@ -565,6 +570,14 @@ KeywordValueItem* MaterialsModel::getItem (const QModelIndex &index) const
         if (auto *item = static_cast<KeywordValueItem*>(index.internalPointer())) return item;
     }
     return rootItem;
+}
+
+QModelIndex MaterialsModel::indexFromItem(KeywordValueItem* item) const
+{
+    if (!item || item == rootItem)
+        return QModelIndex();
+
+    return createIndex(item->row(),0,item);
 }
 
 QVariant MaterialsModel::headerData (int section, Qt::Orientation orientation, int role) const
@@ -918,6 +931,7 @@ Materials::Materials (QWidget *parent)
     materials_local_name=nullptr;
     materials_default_boundary=nullptr;
     materials_check_limits=1;
+    projectDataModified=false;
 
     // MaterialsModel
 
@@ -962,29 +976,21 @@ Materials::Materials (QWidget *parent)
 
     filePrototypes=new QAction("Insert Prototypes",this);
     filePrototypes->setShortcut(QKeySequence::New);
-    //fileMenu->addAction(filePrototypes);
     connect(filePrototypes, &QAction::triggered, this, &Materials::newAction_triggered);
 
     fileOpen=new QAction("Open ...",this);
     fileOpen->setShortcut(QKeySequence::Open);
-    // fileMenu->addAction(fileOpen);
     connect(fileOpen, &QAction::triggered, this, &Materials::openAction_triggered);
 
     fileSave=new QAction("Save",this);
     fileSave->setShortcut(QKeySequence::Save);
-    // fileSave->setEnabled(false);
-    // fileMenu->addAction(fileSave);
     connect(fileSave, &QAction::triggered, this, &Materials::saveAction_triggered);
 
     fileSaveAs=new QAction("Save As ...",this);
     fileSaveAs->setShortcut(QKeySequence::SaveAs);
-    // fileSaveAs->setEnabled(false);
-    // fileMenu->addAction(fileSaveAs);
     connect(fileSaveAs, &QAction::triggered, this, &Materials::saveAsAction_triggered);
 
-    fileClose=new QAction("Close",this);
-    fileClose->setShortcut(QKeySequence::Close);
-    // fileMenu->addAction(fileClose);
+    fileClose=new QAction("Clear",this);
     connect(fileClose, &QAction::triggered, this, &Materials::closeAction_triggered);
 
     fileExit=new QAction("Exit",fileMenu);
@@ -992,7 +998,7 @@ Materials::Materials (QWidget *parent)
     connect(fileExit, &QAction::triggered, this, &Materials::exitAction_triggered);
 
 
-    menuBar->addMenu(fileMenu);
+    //menuBar->addMenu(fileMenu);
 
     // // Edit
 
@@ -1024,12 +1030,12 @@ Materials::Materials (QWidget *parent)
     // editMenu->addAction(editConvert);
     connect(editConvert, &QAction::triggered, this, &Materials::convertData);
 
-    QKeySequence InsertNew(Qt::CTRL | Qt::Key_M);
-    editNew=new QAction("Insert New",this);
-    editNew->setShortcut(InsertNew);
+    // QKeySequence InsertNew(Qt::CTRL | Qt::Key_M);
+    // editNew=new QAction("Insert New",this);
+    // editNew->setShortcut(InsertNew);
     // editNew->setEnabled(false);
     // editMenu->addAction(editNew);
-    connect(editNew, &QAction::triggered, this, &Materials::insertNewData);
+    // connect(editNew, &QAction::triggered, this, &Materials::insertNewData);
 
     editDelete=new QAction("Delete",this);
     editDelete->setShortcut(QKeySequence::Delete);
@@ -1103,13 +1109,15 @@ void Materials::set_projData (struct projectData *a)
         ui->checkLimits->setChecked(materials_check_limits);
         ui->defaultBoundaryMaterial->setText(materials_default_boundary);
 
-        QString globalFilename=materials_global_path;
-        globalFilename.append(materials_global_name);
-        materialsModel->set_globalItem_filename(globalFilename);
+        // global
+        QDir directory=QString::fromStdString(materials_global_path);
+        QString fullPath=directory.filePath(materials_global_name);
+        materialsModel->set_globalItem_tip(fullPath);
 
-        QString localFilename=materials_local_path;
-        localFilename.append(materials_local_name);
-        materialsModel->set_localItem_filename(localFilename);
+        // local
+        directory=QString::fromStdString(materials_local_path);
+        fullPath=directory.filePath(materials_local_name);
+        materialsModel->set_localItem_tip(fullPath);
     }
 
     ui->OkButton->setEnabled(false);
@@ -1192,37 +1200,37 @@ void Materials::appendData ()
     signalSelection();
 }
 
-void Materials::insertNewData ()
-{
-    // location to put the new material
-    // QModelIndexList selectedIndices=ui->materialsTreeView->selectionModel()->selectedIndexes();
-    // if (selectedIndices.size() == 0) return;
-    // QModelIndex index=selectedIndices[0];
-    // if (!index.isValid()) return;
+// void Materials::insertNewData ()
+// {
+//     // location to put the new material
+//     // QModelIndexList selectedIndices=ui->materialsTreeView->selectionModel()->selectedIndexes();
+//     // if (selectedIndices.size() == 0) return;
+//     // QModelIndex index=selectedIndices[0];
+//     // if (!index.isValid()) return;
 
-    // three new materials: dielectric frequency list, dielectric Debye, and metal
+//     // three new materials: dielectric frequency list, dielectric Debye, and metal
 
-    localMaterialDatabase->clear();
+//     localMaterialDatabase->clear();
 
-    Material *material=new Material(0,0);
-    material->set_freespace();
-    material->set_isLocal(true);
-    localMaterialDatabase->push(material);
+//     Material *material=new Material(0,0);
+//     material->set_freespace();
+//     material->set_isLocal(true);
+//     localMaterialDatabase->push(material);
 
-    material=new Material(0,0);
-    material->set_FR4();
-    material->set_isLocal(true);
-    localMaterialDatabase->push(material);
+//     material=new Material(0,0);
+//     material->set_FR4();
+//     material->set_isLocal(true);
+//     localMaterialDatabase->push(material);
 
-    material=new Material(0,0);
-    material->set_copper();
-    material->set_isLocal(true);
-    localMaterialDatabase->push(material);
+//     material=new Material(0,0);
+//     material->set_copper();
+//     material->set_isLocal(true);
+//     localMaterialDatabase->push(material);
 
-    populate();
+//     populate();
 
-    signalSelection();
-}
+//     signalSelection();
+// }
 
 void Materials::convertData ()
 {
@@ -1294,6 +1302,7 @@ void Materials::defaultMaterial_triggered ()
     if (materials_default_boundary) {free(materials_default_boundary); materials_default_boundary=nullptr;}
     materials_default_boundary=allocCopyConstString(contextMenuItem->data(0).toString().toUtf8().constData());
     ui->defaultBoundaryMaterial->setText(contextMenuItem->data(0).toString());
+    projectDataModified=true;
     ui->OkButton->setEnabled(true);
 }
 
@@ -1406,13 +1415,15 @@ void Materials::openAction_triggered ()
             // load
             if (localMaterialDatabase) {delete localMaterialDatabase; localMaterialDatabase=nullptr;}
             localMaterialDatabase=new MaterialDatabase();
-            if (localMaterialDatabase->load_materials(nullstring,nullstring,materials_local_path,materials_local_path,materials_check_limits)) {
+            if (localMaterialDatabase->load_materials(nullstring,nullstring,materials_local_path,materials_local_name,materials_check_limits)) {
                 QMessageBox mb;
                 mb.critical(nullptr, "Error", "Failed to load materials file.");
                 mb.setFixedSize(500, 200);
                 return;
             } else {
-                materialsModel->set_localItem_filename(testMaterialsFile);
+                QDir directory=QString::fromStdString(materials_local_path);
+                QString fullPath=directory.filePath(materials_local_name);
+                materialsModel->set_localItem_tip(fullPath);
             }
         } else if (contextMenuItem->data(0) == "global") {
 
@@ -1431,17 +1442,22 @@ void Materials::openAction_triggered ()
             // load
             if (localMaterialDatabase) {delete localMaterialDatabase; localMaterialDatabase=nullptr;}
             localMaterialDatabase=new MaterialDatabase();
-            if (localMaterialDatabase->load_materials(nullstring,nullstring,materials_global_path,materials_global_path,materials_check_limits)) {
+            if (localMaterialDatabase->load_materials(materials_global_path,materials_global_name,nullstring,nullstring,materials_check_limits)) {
                 QMessageBox mb;
                 mb.critical(nullptr, "Error", "Failed to load materials file.");
                 mb.setFixedSize(500, 200);
                 return;
             } else {
-                materialsModel->set_globalItem_filename(testMaterialsFile);
+                QDir directory=QString::fromStdString(materials_global_path);
+                QString fullPath=directory.filePath(materials_global_name);
+                materialsModel->set_globalItem_tip(fullPath);
             }
         }
 
         populate();
+
+        projectDataModified=true;
+        ui->OkButton->setEnabled(true);
 
     } else {
         QMessageBox mb;
@@ -1520,13 +1536,15 @@ void Materials::saveAction_triggered ()
     if (!contextMenuItem) return;
 
     // file name for the database type
+    bool isLocal=false;
     QString materialsFile;
     if (contextMenuItem->data(0) == "local") {
-        materialsFile=materials_local_path;
-        materialsFile.append(materials_local_name);
+        isLocal=true;
+        QDir directory=QString::fromStdString(materials_local_path);
+        materialsFile=directory.filePath(materials_local_name);
     } else if (contextMenuItem->data(0) == "global") {
-        materialsFile=materials_global_path;
-        materialsFile.append(materials_global_name);
+        QDir directory=QString::fromStdString(materials_global_path);
+        materialsFile=directory.filePath(materials_global_name);
     }
 
     // save
@@ -1540,6 +1558,9 @@ void Materials::saveAction_triggered ()
         *fileOut << "\n";
 
         contextMenuItem->print(fileOut,contextMenuItem);
+
+        if (isLocal) materialsModel->set_isLocalModified(false);
+        else materialsModel->set_isGlobalModified(false);
     } else {
         saveAsAction_triggered();
     }
@@ -1575,6 +1596,7 @@ void Materials::saveAsAction_triggered ()
         materials_global_name=allocCopyConstString(fileInfo.fileName().toUtf8().constData());
     }
 
+    projectDataModified=true;
 
     QFile file(testMaterialsFile);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -1659,7 +1681,7 @@ void Materials::contextMenu_triggered(const QPoint& pnt)
             if (contextMenuItem->childCount() > 0) menu.addAction(fileSaveAs);
             menu.addAction(fileClose);
         } else {
-            menu.addAction(editNew);
+            //menu.addAction(editNew);
             menu.addAction(editCopy);
             menu.addAction(editPaste);
             menu.addAction(editAppend);
@@ -1764,8 +1786,8 @@ void Materials::selection_changed (const QItemSelection &selected, const QItemSe
         }
     }
 
-    editNew->setEnabled(false);
-    if (item->get_level() == 1) editNew->setEnabled(true);
+    //editNew->setEnabled(false);
+    //if (item->get_level() == 1) editNew->setEnabled(true);
 }
 
 void Materials::materials_edited ()
@@ -1798,6 +1820,8 @@ void Materials::on_OkButton_clicked ()
     projData->materials_default_boundary=allocCopyString(materials_default_boundary);
 
     projData->materials_check_limits=materials_check_limits;
+
+    if (projectDataModified) projData->modified=1;
 
     if (materialsModel->get_isLocalModified() || materialsModel->get_isGlobalModified()) {
         if (materialDatabase) {delete materialDatabase; materialDatabase=nullptr;}

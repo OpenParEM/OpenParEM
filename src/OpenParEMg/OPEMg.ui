@@ -205,6 +205,7 @@
      <string>Simulation Setup</string>
     </property>
     <addaction name="actionSimulateOptions"/>
+    <addaction name="actionMaterials"/>
     <addaction name="actionFrequencyPlan"/>
     <addaction name="actionRefinement"/>
    </widget>
@@ -214,20 +215,6 @@
     </property>
     <addaction name="actionAbout"/>
     <addaction name="actionLicense"/>
-   </widget>
-   <widget class="QMenu" name="menuTools">
-    <property name="title">
-     <string>Tools</string>
-    </property>
-    <addaction name="separator"/>
-    <addaction name="actionMaterialsEditor"/>
-   </widget>
-   <widget class="QMenu" name="menuMaterials">
-    <property name="title">
-     <string>Materials</string>
-    </property>
-    <addaction name="actionMaterialsOptions"/>
-    <addaction name="actionSelectMaterialsDatabase"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -301,11 +288,9 @@
    <addaction name="menuView"/>
    <addaction name="menuSelect"/>
    <addaction name="menuDraw"/>
-   <addaction name="menuMaterials"/>
    <addaction name="menuMesh"/>
    <addaction name="menuSimulate"/>
    <addaction name="menuRun"/>
-   <addaction name="menuTools"/>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -704,6 +689,11 @@
   <action name="actionExportBrep">
    <property name="text">
     <string>BRep ...</string>
+   </property>
+  </action>
+  <action name="actionMaterials">
+   <property name="text">
+    <string>Materials ...</string>
    </property>
   </action>
  </widget>
