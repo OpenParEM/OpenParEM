@@ -26,6 +26,8 @@ MaterialSelection::MaterialSelection (QWidget *parent)
     , ui(new Ui::MaterialSelection)
 {
     ui->setupUi(this);
+    setFixedSize(QDialog::width(),QDialog::height());
+    ui->materialSelectOk->setEnabled(false);
 }
 
 MaterialSelection::~MaterialSelection ()
@@ -36,22 +38,22 @@ MaterialSelection::~MaterialSelection ()
 // materialType is conductor, dielectric, or any
 void MaterialSelection::populate (std::string materialType)
 {
-    //std::cout << "MaterialSelection::populate  materialDatabase=" << materialDatabase << std::endl;  std::cout.flush();
-
     if (!materialDatabase) return;
 
     long unsigned int i=0;
     while (i < materialDatabase->get_size()) {
         Material *material=materialDatabase->get_material(i);
+        if (material) {
+            if ((material->is_conductor() && materialType.compare("conductor") == 0) ||
+                (material->is_dielectric() && materialType.compare("dielectric") == 0)) {
 
-        if ((material->is_conductor() && materialType.compare("conductor") == 0) ||
-            (material->is_dielectric() && materialType.compare("dielectric") == 0) ||
-            (materialType.compare("any") == 0)) {
+                QListWidgetItem *item=new QListWidgetItem();
+                std::string name=material->get_name()->get_value();
+                item->setText(QString::fromStdString(name));
+                ui->materialList->addItem(item);
 
-            QListWidgetItem *item=new QListWidgetItem();
-            std::string name=material->get_name()->get_value();
-            item->setText(QString::fromStdString(name));
-            ui->materialList->addItem(item);
+                ui->materialSelectOk->setEnabled(true);
+            }
         }
         i++;
     }
@@ -64,7 +66,6 @@ void MaterialSelection::on_materialSelectOk_clicked ()
     *selectedMaterial=material->text();
     close();
 }
-
 
 void MaterialSelection::on_materialSelectCancel_clicked ()
 {

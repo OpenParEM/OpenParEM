@@ -1007,7 +1007,7 @@ Temperature::~Temperature()
 {
    long unsigned int i=0;
    while (i < frequencyList.size()) {
-      delete frequencyList[i];
+      if (frequencyList[i]) {delete frequencyList[i]; frequencyList[i]=nullptr;}
       i++;
    }
 }
@@ -1427,13 +1427,13 @@ Material::~Material ()
 {
    long unsigned int i=0;
    while (i < temperatureList.size()) {
-      delete temperatureList[i];
+       if (temperatureList[i]) {delete temperatureList[i]; temperatureList[i]=nullptr;}
       i++;
    }
 
    i=0;
    while (i < sourceList.size()) {
-      delete sourceList[i];
+       if (sourceList[i]) {delete sourceList[i]; sourceList[i]=nullptr;}
       i++;
    }
 }

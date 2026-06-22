@@ -164,6 +164,9 @@ public:
     void print () {rootItem->print();}
     void signalSelection ();
 
+    KeywordValueItem* get_localItem () {return localItem;}
+    KeywordValueItem* get_globalItem () {return globalItem;}
+
     bool is_localItem (KeywordValueItem *item) {if (item == localItem) return true; return false;}
     bool is_globalItem (KeywordValueItem *item) {if (item == globalItem) return true; return false;}
 
@@ -215,7 +218,7 @@ public:
     explicit Materials (QWidget *parent = nullptr);
     ~Materials ();
     void set_projData (struct projectData *);
-    void setMaterialDatabase (MaterialDatabase *materialDatabase_) {materialDatabase=materialDatabase_;}
+    void setMaterialDatabase (MaterialDatabase **materialDatabase_) {materialDatabase=materialDatabase_;}
     void populate ();
     void keyPressEvent (QKeyEvent *) override;
     int check_changed ();
@@ -265,7 +268,7 @@ private:
 
     struct projectData *projData;
     QString absolutePath;  // to the project
-    MaterialDatabase *materialDatabase;
+    MaterialDatabase **materialDatabase;
     MaterialsModel *materialsModel;
     KeywordValueItem *copyItem;
     KeywordValueItem *contextMenuItem;

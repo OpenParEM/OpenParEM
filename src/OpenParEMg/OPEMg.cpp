@@ -4704,7 +4704,7 @@ void OpenParEMg::on_actionMaterials_triggered  ()
 
     Materials *localMaterials=new Materials();
     localMaterials->set_projData(&projData);
-    localMaterials->setMaterialDatabase(materialDatabase);
+    localMaterials->setMaterialDatabase(&materialDatabase);
     localMaterials->setAbsolutePath(absolutePath);
     localMaterials->exec();
     delete localMaterials;
@@ -5394,6 +5394,16 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
                 objectCounts.extrude++;
             }
 
+            // material
+            localStartBlockIndex=startBlockIndex+1;
+            localEndBlockIndex=endBlockIndex-1;
+            keyword="material";
+            std::string material;
+            if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,material)) {
+                newDrawingItem->set_Material(QString::fromStdString(material));
+                newDrawingItem->setText(1,QString::fromStdString(material));
+            }
+
             // length
             localStartBlockIndex=startBlockIndex+1;
             localEndBlockIndex=endBlockIndex-1;
@@ -5433,6 +5443,16 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
                 if (increaseDepth) newDrawingItem->increase_depth();
                 if (typeStart == 6) objectCounts.merge++;
                 if (typeStart == 7) objectCounts.subtract++;
+            }
+
+            // material
+            localStartBlockIndex=startBlockIndex+1;
+            localEndBlockIndex=endBlockIndex-1;
+            keyword="material";
+            std::string material;
+            if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,material)) {
+                newDrawingItem->set_Material(QString::fromStdString(material));
+                newDrawingItem->setText(1,QString::fromStdString(material));
             }
 
             // get two children
@@ -5488,6 +5508,15 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
                 objectCounts.solid++;
             }
 
+            // material
+            localStartBlockIndex=startBlockIndex+1;
+            localEndBlockIndex=endBlockIndex-1;
+            keyword="material";
+            std::string material;
+            if (getBlockKeywordValue(inputData,typeStart,localStartBlockIndex,localEndBlockIndex,keyword,material)) {
+                newItem->set_Material(QString::fromStdString(material));
+                newItem->setText(1,QString::fromStdString(material));
+            }
 
             baseParent->addChild(newItem);
             baseParent->push_child(newItem);
@@ -6279,7 +6308,8 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
     drawMesh();
     setPhysicalGroups();
-    ui->drawingWindow->showItem(mesh);
+    //ui->drawingWindow->showItem(mesh);
+    mesh->show(true);
 
     ui->drawingWindow->updateViewer();
     setMenusI(63);
