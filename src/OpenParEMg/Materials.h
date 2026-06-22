@@ -88,6 +88,10 @@ public:
     void set_noCopy () {level=6; copyAllowed=false;}
 
     bool canCopy () {return copyAllowed;}
+    bool is_parentLevelMatch (KeywordValueItem *item) {
+        if (m_parentItem->level == item->level) return true;
+        return false;
+    }
     bool is_sameLevel (KeywordValueItem *item) {
         if (level == item->level) return true;
         return false;
@@ -159,6 +163,9 @@ public:
     void setMaterials (Materials *materials_) {materials=materials_;}
     void print () {rootItem->print();}
     void signalSelection ();
+
+    bool is_localItem (KeywordValueItem *item) {if (item == localItem) return true; return false;}
+    bool is_globalItem (KeywordValueItem *item) {if (item == globalItem) return true; return false;}
 
     bool get_isLocalModified () {return localItem->get_isModified();}
     bool get_isGlobalModified () {return globalItem->get_isModified();}

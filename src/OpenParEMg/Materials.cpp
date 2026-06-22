@@ -90,7 +90,7 @@ int KeywordValueItem::childCount () const
     return m_childItems.count();
 }
 
-void KeywordValueItem::insertChild(QModelIndex index, int row, MaterialsModel *materialsModel)
+void KeywordValueItem::insertChild (QModelIndex index, int row, MaterialsModel *materialsModel)
 {
     if (materialsModel->columnCount(index) == 0) {
         if (!materialsModel->insertColumn(0,index)) return;
@@ -186,24 +186,25 @@ bool KeywordValueItem::setData (int column, const QVariant &value)
 
 KeywordValueItem* KeywordValueItem::copy()
 {
-    QList<QVariant> copy_m_itemData;
+    // QList<QVariant> copy_m_itemData;
 
     // data
-    int i=0;
-    while (i < m_itemData.size()) {
-        copy_m_itemData.append(m_itemData[i]);
-        i++;
-    }
+    // int i=0;
+    // while (i < m_itemData.size()) {
+    //     copy_m_itemData.append(m_itemData[i]);
+    //     i++;
+    // }
 
     // create
-    KeywordValueItem *item=new KeywordValueItem(copy_m_itemData,parentItem());
+    //KeywordValueItem *item=new KeywordValueItem(copy_m_itemData,parentItem());
+    KeywordValueItem *item=new KeywordValueItem(m_itemData,parentItem());
     item->level=level;
     item->copyAllowed=copyAllowed;
     item->type=type;
     item->set_isModified(true);  // copied item is new data
 
     // children
-    i=0;
+    int i=0;
     while (i < m_childItems.size()) {
         KeywordValueItem *child=m_childItems[i]->copy();
         item->appendChild(child);
@@ -435,11 +436,13 @@ MaterialsModel::MaterialsModel(QObject *parent)
     localItem=new KeywordValueItem({tr("local"), tr(""), tr("")},rootItem);
     localItem->set_level(1);
     localItem->set_copyAllowed(false);
+    set_localItem_tip("Right click for options.");
     rootItem->appendChild(localItem);
 
     globalItem=new KeywordValueItem({tr("global"), tr(""), tr("")},rootItem);
     globalItem->set_level(1);
     globalItem->set_copyAllowed(false);
+    set_globalItem_tip("Right click for options.");
     rootItem->appendChild(globalItem);
 
 }
@@ -1110,14 +1113,28 @@ void Materials::set_projData (struct projectData *a)
         ui->defaultBoundaryMaterial->setText(materials_default_boundary);
 
         // global
+
         QDir directory=QString::fromStdString(materials_global_path);
         QString fullPath=directory.filePath(materials_global_name);
-        materialsModel->set_globalItem_tip(fullPath);
+
+        QFileInfo checkGlobalFile(fullPath);
+        if (checkGlobalFile.exists() && checkGlobalFile.isFile()) {
+            materialsModel->set_globalItem_tip(fullPath);
+        } else {
+            materialsModel->set_globalItem_tip("Right click for options.");
+        }
 
         // local
+
         directory=QString::fromStdString(materials_local_path);
         fullPath=directory.filePath(materials_local_name);
-        materialsModel->set_localItem_tip(fullPath);
+
+        QFileInfo checkLocalFile(fullPath);
+        if (checkLocalFile.exists() && checkLocalFile.isFile()) {
+            materialsModel->set_localItem_tip(fullPath);
+        } else {
+            materialsModel->set_localItem_tip("Right click for options.");
+        }
     }
 
     ui->OkButton->setEnabled(false);
@@ -1170,23 +1187,74 @@ void Materials::copyData()
     if (!index.isValid()) return;
     if (!materialsModel->getItem(index)->canCopy()) return;
 
-    KeywordValueItem *item=materialsModel->getItem(index)->copy();
-
     if (copyItem) delete copyItem;
-    copyItem=item;
+    copyItem=materialsModel->getItem(index)->copy();
 
     signalSelection();
 }
 
 void Materials::pasteData ()
 {
+    //std::cout << "Materials::pasteData" << std::endl; std::cout.flush();
     if (!copyItem) return;
 
     const QModelIndex index = ui->materialsTreeView->selectionModel()->currentIndex();
-    QModelIndex parent=index.parent();
-    copyItem->insertChild(parent,index.row()+1,materialsModel);
+    KeywordValueItem *item=materialsModel->getItem(index);
 
-    signalSelection();
+    // insert
+    if (copyItem->get_level() == item->get_level()) {
+        std::cout << "*** insert" << std::endl; std::cout.flush();
+        QModelIndex parent=index.parent();
+        copyItem->insertChild(parent,index.row()+1,materialsModel);
+    }
+
+    // append
+    if (copyItem->get_level() == 2 && item->get_level() == 1) {
+        std::cout << "*** append" << std::endl; std::cout.flush();
+        //item->insertChild(index,index.row()+1,materialsModel);
+        copyItem->insertChild(index,0,materialsModel);
+        //item->appendChild(copyItem);
+    }
+
+
+
+    copyItem=nullptr;
+
+    expandFirstLevel();
+
+    //signalSelection();
+
+
+
+
+    // //std::cout << "Materials::pasteData" << std::endl; std::cout.flush();
+    // if (!copyItem) return;
+
+    // const QModelIndex index = ui->materialsTreeView->selectionModel()->currentIndex();
+    // KeywordValueItem *item=materialsModel->getItem(index);
+    // if (item) {
+    //     if (materialsModel->is_localItem(item) || materialsModel->is_globalItem(item)) {
+
+    //     }
+
+    // }
+
+    // QModelIndex parent=index.parent();
+    // copyItem->insertChild(parent,index.row()+1,materialsModel);
+
+    // // std::cout << "place 1" << std::endl; std::cout.flush();
+    // // KeywordValueItem *item=materialsModel->getItem(index);
+    // // if (item) {
+    // //     std::cout << "place 2" << std::endl; std::cout.flush();
+    // //     item->appendChild(copyItem);
+    // // }
+
+    // //delete copyItem;
+    // copyItem=nullptr;
+
+    // expandFirstLevel();
+
+    // //signalSelection();
 }
 
 void Materials::appendData ()
@@ -1622,14 +1690,14 @@ void Materials::closeAction_triggered ()
         QMessageBox msgBox;
         msgBox.setText("The materials have been modified.");
         msgBox.setInformativeText("Do you want to save your changes?");
-        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Close);
         msgBox.setDefaultButton(QMessageBox::Save);
         retVal = msgBox.exec();
     }
 
     if (retVal == QMessageBox::Save) {
         saveAction_triggered();
-    } else if (retVal == QMessageBox::Cancel) return;
+    } else if (retVal == QMessageBox::Close) return;
 
     contextMenuItem->removeChildren(0,contextMenuItem->childCount());
     expandFirstLevel();
@@ -1670,18 +1738,19 @@ void Materials::contextMenu_triggered(const QPoint& pnt)
 
         if (contextMenuItem->data(0) == "local") {
             menu.addAction(filePrototypes);
+            menu.addAction(editPaste);
             if (contextMenuItem->childCount() == 0) menu.addAction(fileOpen);
             if (contextMenuItem->childCount() > 0 && materialsModel->get_isLocalModified()) menu.addAction(fileSave);
             if (contextMenuItem->childCount() > 0) menu.addAction(fileSaveAs);
             menu.addAction(fileClose);
         } else if (contextMenuItem->data(0) == "global") {
             menu.addAction(filePrototypes);
+            menu.addAction(editPaste);
             if (contextMenuItem->childCount() == 0) menu.addAction(fileOpen);
             if (contextMenuItem->childCount() > 0 && materialsModel->get_isGlobalModified()) menu.addAction(fileSave);
             if (contextMenuItem->childCount() > 0) menu.addAction(fileSaveAs);
             menu.addAction(fileClose);
         } else {
-            //menu.addAction(editNew);
             menu.addAction(editCopy);
             menu.addAction(editPaste);
             menu.addAction(editAppend);
@@ -1711,19 +1780,31 @@ void Materials::selection_changed (const QItemSelection &selected, const QItemSe
     if (item->canCopy()) editCopy->setEnabled(true);
 
     editPaste->setEnabled(false);
-    if (copyItem && copyItem->is_sameLevel(item)) {
-        KeywordValueItem *parent=item->parentItem();
+    if (copyItem /*&& copyItem->is_parentLevelMatch(item)*/) {
+
+        // insert at the same level
+        if (copyItem->get_level() == item->get_level()) {
+            editPaste->setEnabled(true);
+        }
+
+        // append material at local/global level
+        if (copyItem->get_level() == 2 && item->get_level() == 1) {
+            editPaste->setEnabled(true);
+        }
+
+        // KeywordValueItem *parent=item->parentItem();
+        // editPaste->setEnabled(true);
 
         // check for disallowed "any" combinations
-        if (!parent->hasAny(item)) {     // looking for "any"
-            if (parent->hasItem(item)) { // match level
-                if (!item->isAny()) {
-                    editPaste->setEnabled(true);
-                }
-            } else {
-                editPaste->setEnabled(true);
-            }
-        }
+        // if (!parent->hasAny(item)) {     // looking for "any"
+        //     if (parent->hasItem(item)) { // match level
+        //         if (!item->isAny()) {
+        //             editPaste->setEnabled(true);
+        //         }
+        //     } else {
+        //         editPaste->setEnabled(true);
+        //     }
+        // }
     }
 
     editAppend->setEnabled(false);
