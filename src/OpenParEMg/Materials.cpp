@@ -112,6 +112,7 @@ void KeywordValueItem::insertChild (QModelIndex index, int row, MaterialsModel *
     // set markers
     KeywordValueItem *item=materialsModel->getItem(child);
     item->level=level;
+    item->type=type;
     item->copyAllowed=copyAllowed;
 
     // recursively insert children
@@ -186,22 +187,12 @@ bool KeywordValueItem::setData (int column, const QVariant &value)
 
 KeywordValueItem* KeywordValueItem::copy()
 {
-    // QList<QVariant> copy_m_itemData;
-
-    // data
-    // int i=0;
-    // while (i < m_itemData.size()) {
-    //     copy_m_itemData.append(m_itemData[i]);
-    //     i++;
-    // }
-
     // create
-    //KeywordValueItem *item=new KeywordValueItem(copy_m_itemData,parentItem());
     KeywordValueItem *item=new KeywordValueItem(m_itemData,parentItem());
     item->level=level;
     item->copyAllowed=copyAllowed;
     item->type=type;
-    item->set_isModified(true);  // copied item is new data
+    item->isModified=true;  // copied item is new data
 
     // children
     int i=0;
@@ -224,6 +215,7 @@ void KeywordValueItem::print ()
     std::cout << std::endl;
     std::cout << "   level=" << level << std::endl;
     std::cout << "   copyAllowed=" << copyAllowed << std::endl;
+    std::cout << "   type=" << type.toStdString() << std::endl;
     std::cout << "   isModified=" << isModified << std::endl;
 
     i=0;
@@ -233,7 +225,7 @@ void KeywordValueItem::print ()
     }
 }
 
-void KeywordValueItem::print (QTextStream *fileOut, KeywordValueItem *rootItem)
+void KeywordValueItem::print (QTextStream *fileOut, KeywordValueItem *printItem)
 {
     if (data(0) == "Temperature") {
         *fileOut << "   Temperature" << "\n";
@@ -247,7 +239,7 @@ void KeywordValueItem::print (QTextStream *fileOut, KeywordValueItem *rootItem)
         // root item
     } else {
         if (data(0) != "local" && data(0) != "global") {
-            if (m_parentItem != rootItem) {
+            if (m_parentItem != printItem) {
                 if (data(0) != "Debye Model") {
                     *fileOut << "         " << data(0).toString();
                     if (data(1) != "") *fileOut << "=" << data(1).toString();
@@ -261,15 +253,15 @@ void KeywordValueItem::print (QTextStream *fileOut, KeywordValueItem *rootItem)
     while (i < m_childItems.size()) {
         KeywordValueItem *child=m_childItems[i];
 
-        if (child->m_parentItem == rootItem) {
+        if (child->m_parentItem->get_level() == 1) {
             *fileOut << "Material" << "\n";
             *fileOut << "   name=" << child->data(0).toString() << "\n";
             *fileOut << "   type=" << child->getType() << "\n";
         }
 
-        child->print(fileOut,rootItem);
+        child->print(fileOut,printItem);
 
-        if (child->m_parentItem == rootItem) {
+        if (child->m_parentItem->get_level() == 1) {
             *fileOut << "EndMaterial" << "\n";
             *fileOut << "\n";
         }
@@ -462,14 +454,17 @@ QModelIndex MaterialsModel::index (int row, int column, const QModelIndex &paren
 
     KeywordValueItem *parentItem;
 
-    if (!parent.isValid())
-        parentItem = rootItem;
-    else
-        parentItem = static_cast<KeywordValueItem*>(parent.internalPointer());
+    if (!parent.isValid()) {
+        parentItem=rootItem;
+    } else {
+        parentItem=static_cast<KeywordValueItem*>(parent.internalPointer());
+    }
 
-    KeywordValueItem *childItem = parentItem->child(row);
-    if (childItem)
+    KeywordValueItem *childItem=parentItem->child(row);
+    if (childItem) {
         return createIndex(row, column, childItem);
+    }
+
     return QModelIndex();
 }
 
@@ -477,12 +472,12 @@ QModelIndex MaterialsModel::parent (const QModelIndex &index) const
 {
     if (!index.isValid()) return QModelIndex();
 
-    KeywordValueItem *childItem = static_cast<KeywordValueItem*>(index.internalPointer());
-    KeywordValueItem *parentItem = childItem->parentItem();
+    KeywordValueItem *childItem=static_cast<KeywordValueItem*>(index.internalPointer());
+    KeywordValueItem *parentItem=childItem->parentItem();
 
     if (parentItem == rootItem) return QModelIndex();
 
-    return createIndex(parentItem->row(), 0, parentItem);
+    return createIndex(parentItem->row(),0,parentItem);
 }
 
 int MaterialsModel::rowCount (const QModelIndex &parent) const
@@ -490,44 +485,45 @@ int MaterialsModel::rowCount (const QModelIndex &parent) const
     KeywordValueItem *parentItem;
     if (parent.column() > 0) return 0;
 
-    if (!parent.isValid()) parentItem = rootItem;
-    else parentItem = static_cast<KeywordValueItem*>(parent.internalPointer());
+    if (!parent.isValid()) parentItem=rootItem;
+    else parentItem=static_cast<KeywordValueItem*>(parent.internalPointer());
 
     return parentItem->childCount();
 }
 
 bool MaterialsModel::insertRows (int position, int rows, const QModelIndex &parent)
 {
-    KeywordValueItem *parentItem = getItem(parent);
+    KeywordValueItem *parentItem=getItem(parent);
     if (!parentItem) return false;
 
-    beginInsertRows(parent, position, position + rows - 1);
-        const bool success = parentItem->insertChildren(position,rows,rootItem->columnCount());
+    beginInsertRows(parent,position,position+rows-1);
+        const bool success=parentItem->insertChildren(position,rows,rootItem->columnCount());
     endInsertRows();
 
     return success;
 }
 
-bool MaterialsModel::removeRows(int position, int rows, const QModelIndex &parent)
+bool MaterialsModel::removeRows (int position, int rows, const QModelIndex &parent)
 {
-    KeywordValueItem *parentItem = getItem(parent);
+    KeywordValueItem *parentItem=getItem(parent);
     if (!parentItem) return false;
 
-    beginRemoveRows(parent, position, position + rows - 1);
-    const bool success = parentItem->removeChildren(position, rows);
+    beginRemoveRows(parent,position,position+rows-1);
+        const bool success=parentItem->removeChildren(position,rows);
     endRemoveRows();
 
     return success;
 }
 
-int MaterialsModel::columnCount(const QModelIndex &parent) const
+int MaterialsModel::columnCount (const QModelIndex &parent) const
 {
-    if (parent.isValid())
+    if (parent.isValid()) {
         return static_cast<KeywordValueItem*>(parent.internalPointer())->columnCount();
+    }
     return rootItem->columnCount();
 }
 
-QVariant MaterialsModel::data(const QModelIndex &index, int role) const
+QVariant MaterialsModel::data (const QModelIndex &index, int role) const
 {
     if (!index.isValid()) return QVariant();
 
@@ -544,7 +540,7 @@ QVariant MaterialsModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-Qt::ItemFlags MaterialsModel::flags(const QModelIndex &index) const
+Qt::ItemFlags MaterialsModel::flags (const QModelIndex &index) const
 {
     Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(index);
 
@@ -574,7 +570,7 @@ KeywordValueItem* MaterialsModel::getItem (const QModelIndex &index) const
     return rootItem;
 }
 
-QModelIndex MaterialsModel::indexFromItem(KeywordValueItem* item) const
+QModelIndex MaterialsModel::indexFromItem (KeywordValueItem* item) const
 {
     if (!item || item == rootItem)
         return QModelIndex();
@@ -993,7 +989,7 @@ Materials::Materials (QWidget *parent)
     connect(fileSaveAs, &QAction::triggered, this, &Materials::saveAsAction_triggered);
 
     fileClose=new QAction("Clear",this);
-    connect(fileClose, &QAction::triggered, this, &Materials::closeAction_triggered);
+    connect(fileClose, &QAction::triggered, this, &Materials::clearAction_triggered);
 
     fileExit=new QAction("Exit",fileMenu);
     fileMenu->addAction(fileExit);
@@ -1261,15 +1257,17 @@ int Materials::check_changed ()
 {
     // check for changes
     bool isLocal=false;
-    contextMenuItem=nullptr;
+    KeywordValueItem *item=nullptr;
     if (materialsModel->get_isGlobalModified()) {
-        contextMenuItem=materialsModel->get_globalItem();
+        item=materialsModel->get_globalItem();
         isLocal=false;
     } else if (materialsModel->get_isLocalModified()) {
-        contextMenuItem=materialsModel->get_localItem();
+        item=materialsModel->get_localItem();
         isLocal=true;
     }
-    if (!contextMenuItem) return 0;
+    if (!item) return 0;
+
+    contextMenuItem=item;
 
     // select a changed item
     QModelIndex index=materialsModel->indexFromItem(contextMenuItem);
@@ -1605,7 +1603,7 @@ void Materials::saveAsAction_triggered ()
     }
 }
 
-void Materials::closeAction_triggered ()
+void Materials::clearAction_triggered ()
 {
     bool closeItem=true;
     if (materialsModel->is_localItem(contextMenuItem) && materialsModel->get_isLocalModified()) closeItem=false;
@@ -1622,7 +1620,7 @@ void Materials::closeAction_triggered ()
         QPushButton* discardButton=qobject_cast<QPushButton*>(msgBox.button(QMessageBox::Discard));
         if (discardButton) discardButton->setText("Clear without Saving");
 
-        retVal = msgBox.exec();
+        retVal=msgBox.exec();
     }
 
     if (retVal == QMessageBox::Save) {
@@ -1633,6 +1631,29 @@ void Materials::closeAction_triggered ()
     expandFirstLevel();
 
     contextMenuItem->set_isModified(false);
+
+    if (materialsModel->get_globalItem()->childCount() == 0) {
+        if (materials_global_path) {free(materials_global_path); materials_global_path=nullptr;}
+        materials_global_path=(char *)malloc(3*sizeof(char));
+        sprintf(materials_global_path,"%s","./");  // align with default for OpenParEM2D and OpenParEM3D
+
+        if (materials_global_name) {free(materials_global_name); materials_global_name=nullptr;}
+        materials_global_name=(char *)malloc(1*sizeof(char));
+        materials_global_name[0]='\0';  // align with default for OpenParEM2D and OpenParEM3D
+    }
+
+    if (materialsModel->get_localItem()->childCount() == 0) {
+        if (materials_local_path) {free(materials_local_path); materials_local_path=nullptr;}
+        materials_local_path=(char *)malloc(3*sizeof(char));
+        sprintf(materials_local_path,"%s","./");  // align with default for OpenParEM2D and OpenParEM3D
+
+        if (materials_local_name) {free(materials_local_name); materials_local_name=nullptr;}
+        materials_local_name=(char *)malloc(1*sizeof(char));
+        materials_local_name[0]='\0';  // align with default for OpenParEM2D and OpenParEM3D
+    }
+
+    projData->modified=1;
+    ui->OkButton->setEnabled(true);
 }
 
 void Materials::closeWindow_triggered ()

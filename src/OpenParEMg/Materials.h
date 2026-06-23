@@ -250,7 +250,7 @@ private slots:
     void openAction_triggered ();
     void saveAction_triggered ();
     void saveAsAction_triggered ();
-    void closeAction_triggered ();
+    void clearAction_triggered ();
     void exitAction_triggered ();
     void closeWindow_triggered ();
     void contextMenu_triggered (const QPoint& pnt);
@@ -259,7 +259,6 @@ private slots:
     void on_OkButton_clicked ();
     void on_CancelButton_clicked ();
     void reject () override;
-
 
     void on_checkLimits_stateChanged(int arg1);
 
