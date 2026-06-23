@@ -1,6 +1,24 @@
 #OpenParEMmaterials 1.0
 
 Material
+   name=FR4_simple
+   type=dielectric
+   Temperature
+      temperature=any
+      Frequency
+         frequency=any
+         er=4.2
+         mur=1
+         tand=0.02
+         Rz=0
+      EndFrequency
+   EndTemperature
+   Source
+         generic approximatation
+   EndSource
+EndMaterial
+
+Material
    name=air
    type=dielectric
    Temperature
@@ -16,24 +34,6 @@ Material
    Source
          Constantine A. Balanis, "Advanced Engineering Electromagnetics",
          John Wiley and Sons, 1989, p.79.
-   EndSource
-EndMaterial
-
-Material
-   name=FR4_simple
-   type=dielectric
-   Temperature
-      temperature=any
-      Frequency
-         frequency=any
-         er=4.2
-         mur=1
-         tand=0.02
-         Rz=0
-      EndFrequency
-   EndTemperature
-   Source
-         generic approximatation
    EndSource
 EndMaterial
 
@@ -102,24 +102,6 @@ Material
          er=1
          mur=1
          conductivity=1e+07
-         Rz=0
-      EndFrequency
-   EndTemperature
-   Source
-         David M. Pozar, "Microwave Engineering," Addison-Wesley Publishing Company, 1990, p.714.
-   EndSource
-EndMaterial
-
-Material
-   name=copper
-   type=conductor
-   Temperature
-      temperature=20
-      Frequency
-         frequency=any
-         er=1
-         mur=1
-         conductivity=58130000
          Rz=0
       EndFrequency
    EndTemperature

@@ -4229,7 +4229,7 @@ void OpenParEMg::clonePathData ()
 
 void OpenParEMg::on_actionOpen_triggered ()
 {
-    QString testProjectFile=QFileDialog::getOpenFileName(this,tr("Open Project"), "", tr("Project Files (*.proj);;All Files (*)"),
+    QString testProjectFile=QFileDialog::getOpenFileName(this,tr("Open Project"),absolutePath,tr("Project Files (*.proj);;All Files (*)"),
                                                          nullptr,QFileDialog::DontUseNativeDialog);
 
     // return if user cancels
@@ -4669,7 +4669,7 @@ void OpenParEMg::on_actionSave_triggered ()
 
 void OpenParEMg::on_actionSaveAs_triggered ()
 {
-    QString filePath=QFileDialog::getSaveFileName(this, tr("Save Project"), absolutePath, tr("Project Files (*.proj)","All Files (*)"),
+    QString filePath=QFileDialog::getSaveFileName(this,tr("Save Project"),absolutePath,tr("Project Files (*.proj)","All Files (*)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isEmpty()) return;
 
@@ -5594,7 +5594,7 @@ bool OpenParEMg::loadDrawingFile ()
 
 void OpenParEMg::on_actionImportBrep_triggered ()
 {
-    QString filePath=QFileDialog::getOpenFileName(this, tr("Open BREP File"), "", tr("BREP Files (*.brep)"),
+    QString filePath=QFileDialog::getOpenFileName(this,tr("Open BREP File"),absolutePath,tr("BREP Files (*.brep)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isEmpty()) return;
 
@@ -5614,7 +5614,7 @@ void OpenParEMg::on_actionImportBrep_triggered ()
 
 void OpenParEMg::on_actionImportStep_triggered()
 {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Open STEP File"), "", tr("STEP Files (*.step *.stp)"),
+    QString filePath = QFileDialog::getOpenFileName(this,tr("Open STEP File"),absolutePath,tr("STEP Files (*.step *.stp)"),
                                                     nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isEmpty()) return;
     if (loadStepFile(filePath,true)) {
@@ -5634,7 +5634,7 @@ void OpenParEMg::on_actionImportStep_triggered()
 
 void OpenParEMg::on_actionExportBrep_triggered ()
 {
-    QString filePath=QFileDialog::getSaveFileName(this,tr("Save BRep File"), absolutePath, tr("BRep Files (*.brep)"),
+    QString filePath=QFileDialog::getSaveFileName(this,tr("Save BRep File"),absolutePath,tr("BRep Files (*.brep)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isNull()) return;
 
@@ -5651,7 +5651,7 @@ void OpenParEMg::on_actionExportBrep_triggered ()
 
 void OpenParEMg::on_actionExportStep_triggered()
 {
-    QString filePath=QFileDialog::getSaveFileName(this,tr("Save STEP File"), absolutePath, tr("STEP Files (*.step *.stp)"),
+    QString filePath=QFileDialog::getSaveFileName(this,tr("Save STEP File"),absolutePath,tr("STEP Files (*.step *.stp)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isNull()) return;
 
@@ -6348,7 +6348,7 @@ void OpenParEMg::loadMeshFile (QString meshfile)
 
 void OpenParEMg::on_actionMeshLoad_triggered ()
 {
-    QString meshfile=QFileDialog::getOpenFileName(this,tr("Open Mesh"), "", tr("Mesh Files (*.msh);;All Files (*)"),
+    QString meshfile=QFileDialog::getOpenFileName(this,tr("Open Mesh"),absolutePath,tr("Mesh Files (*.msh);;All Files (*)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
 
     // return if user cancels
@@ -6378,7 +6378,7 @@ void OpenParEMg::on_actionMeshSaveAs_triggered ()
     while (testAbsolutePath != absolutePath) {
 
         // get file name
-        QString testMeshFile=QFileDialog::getSaveFileName(this,tr("Save Mesh File"), absolutePath, tr("Data Files (*.msh);;All Files (*)"),
+        QString testMeshFile=QFileDialog::getSaveFileName(this,tr("Save Mesh File"),absolutePath,tr("Data Files (*.msh);;All Files (*)"),
                                                           nullptr,QFileDialog::DontUseNativeDialog);
         if (testMeshFile.isNull()) return;
 

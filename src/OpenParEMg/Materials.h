@@ -32,6 +32,7 @@
 #include <QFileDialog>
 #include <QStyledItemDelegate>
 #include "OpenParEMmaterials.hpp"
+#include "ui_Materials.h"
 
 extern "C" char* allocCopyString (char *);
 extern "C" char* allocCopyConstString (const char *);
@@ -170,6 +171,9 @@ public:
     bool is_localItem (KeywordValueItem *item) {if (item == localItem) return true; return false;}
     bool is_globalItem (KeywordValueItem *item) {if (item == globalItem) return true; return false;}
 
+    bool is_aLocalItem (KeywordValueItem *item);
+    bool is_aGlobalItem (KeywordValueItem *item);
+
     bool get_isLocalModified () {return localItem->get_isModified();}
     bool get_isGlobalModified () {return globalItem->get_isModified();}
 
@@ -178,6 +182,8 @@ public:
 
     void clear_localItem () {localItem->removeChildren(0,localItem->childCount());}
     void clear_globalItem () {globalItem->removeChildren(0,globalItem->childCount());}
+
+    void set_unmodified ();
 
     void set_globalItem_tip (QString text)
     {
@@ -221,14 +227,17 @@ public:
     void setMaterialDatabase (MaterialDatabase **materialDatabase_) {materialDatabase=materialDatabase_;}
     void populate ();
     void keyPressEvent (QKeyEvent *) override;
-    int check_changed ();
+    int check_changed (bool);
     void materials_edited ();
     void signalSelection ();
     void setAbsolutePath (QString absolutePath_) {absolutePath=absolutePath_;}
 
     void closeEvent (QCloseEvent *event) override {
+        std::cout << "closeEvent" << std::endl; std::cout.flush();
         close_event=event;
-        closeWindow_triggered();
+        //closeWindow_triggered();
+        ui->OkButton->setChecked(true);
+        on_OkButton_clicked();
     }
 
     bool check_duplicates ();
@@ -257,7 +266,6 @@ private slots:
     void selection_changed (const QItemSelection &selected, const QItemSelection &deselected);
     void onExpanded (const QModelIndex& index);
     void on_OkButton_clicked ();
-    void on_CancelButton_clicked ();
     void reject () override;
 
     void on_checkLimits_stateChanged(int arg1);

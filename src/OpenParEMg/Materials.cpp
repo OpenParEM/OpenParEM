@@ -121,9 +121,11 @@ void KeywordValueItem::insertChild (QModelIndex index, int row, MaterialsModel *
         m_childItems[i]->insertChild(child,i,materialsModel);
         i++;
     }
+
+    set_isModified(true);
 }
 
-bool KeywordValueItem::insertChildren(int position, int count, int columns)
+bool KeywordValueItem::insertChildren (int position, int count, int columns)
 {
     if (position < 0 || position > qsizetype(m_childItems.size()))
         return false;
@@ -136,16 +138,20 @@ bool KeywordValueItem::insertChildren(int position, int count, int columns)
         m_childItems.insert(position, item);
     }
 
+    set_isModified(true);
+
     return true;
 }
 
-bool KeywordValueItem::removeChildren(int position, int count)
+bool KeywordValueItem::removeChildren (int position, int count)
 {
     if (position < 0 || position + count > qsizetype(m_childItems.size()))
         return false;
 
     for (int row = 0; row < count; ++row)
-        m_childItems.erase(m_childItems.cbegin() + position);
+        m_childItems.erase(m_childItems.cbegin()+position);
+
+    set_isModified(true);
 
     return true;
 }
@@ -441,6 +447,24 @@ MaterialsModel::MaterialsModel(QObject *parent)
 MaterialsModel::~MaterialsModel()
 {
     if (rootItem) {delete rootItem; rootItem=nullptr;}
+}
+
+bool MaterialsModel::is_aLocalItem (KeywordValueItem *item)
+{
+    while (item) {
+        if (item == localItem) return true;
+        item=item->parentItem();
+    }
+    return false;
+}
+
+bool MaterialsModel::is_aGlobalItem (KeywordValueItem *item)
+{
+    while (item) {
+        if (item == globalItem) return true;
+        item=item->parentItem();
+    }
+    return false;
 }
 
 void MaterialsModel::signalSelection()
@@ -902,9 +926,18 @@ void MaterialsModel::populate (MaterialDatabase *md)
     }
 }
 
+void MaterialsModel::set_unmodified ()
+{
+    if (localItem) localItem->set_isModified(false);
+    if (globalItem) globalItem->set_isModified(false);
+}
+
 void MaterialsModel::materialsModel_dataChanged (const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles)
 {
-    materials->materials_edited();
+    //materials->materials_edited();
+
+    KeywordValueItem *item=getItem(topLeft);
+    if (item) item->set_isModified(true);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1048,9 +1081,8 @@ Materials::Materials (QWidget *parent)
 
     ui->defaultBoundaryMaterial->setAlignment(Qt::AlignVCenter);
     ui->OkButton->setCheckable(true);
-    ui->CancelButton->setCheckable(true);
 
-    ui->OkButton->setEnabled(false);
+    ui->OkButton->setEnabled(true);
 
     bool isXclose;            // user clicked the "X" to close
 
@@ -1132,7 +1164,7 @@ void Materials::set_projData (struct projectData *a)
         }
     }
 
-    ui->OkButton->setEnabled(false);
+    materialsModel->set_unmodified();
 }
 
 // courtesy of ChatGPT with the depth == 0 break added and required variable name edits
@@ -1248,22 +1280,20 @@ void Materials::deleteData ()
     materialsModel->removeRows(index.row(),1,index.parent());
 
     // clear copy
-    if (copyItem) {delete copyItem; copyItem=nullptr;}
+    if (copyItem) copyItem=nullptr;
 
     signalSelection();
 }
 
-int Materials::check_changed ()
+int Materials::check_changed (bool isLocal)
 {
     // check for changes
-    bool isLocal=false;
+
     KeywordValueItem *item=nullptr;
-    if (materialsModel->get_isGlobalModified()) {
+    if (!isLocal && materialsModel->get_isGlobalModified()) {
         item=materialsModel->get_globalItem();
-        isLocal=false;
-    } else if (materialsModel->get_isLocalModified()) {
+    } else if (isLocal && materialsModel->get_isLocalModified()) {
         item=materialsModel->get_localItem();
-        isLocal=true;
     }
     if (!item) return 0;
 
@@ -1292,7 +1322,6 @@ void Materials::defaultMaterial_triggered ()
     materials_default_boundary=allocCopyConstString(contextMenuItem->data(0).toString().toUtf8().constData());
     ui->defaultBoundaryMaterial->setText(contextMenuItem->data(0).toString());
     projectDataModified=true;
-    ui->OkButton->setEnabled(true);
 }
 
 void Materials::newAction_triggered ()
@@ -1301,9 +1330,9 @@ void Materials::newAction_triggered ()
 
     localMaterialDatabase->clear();
 
-    bool isLocal;
-    if (materialsModel->is_localItem(contextMenuItem)) isLocal=true;
-    else if (materialsModel->is_globalItem(contextMenuItem)) isLocal=false;
+    bool isLocal=false;
+    if (materialsModel->is_aLocalItem(contextMenuItem)) isLocal=true;
+    else if (materialsModel->is_aGlobalItem(contextMenuItem)) isLocal=false;
 
     Material *material=new Material(0,0);
     material->set_freespace();
@@ -1324,8 +1353,6 @@ void Materials::newAction_triggered ()
 
     if (isLocal) materialsModel->set_isLocalModified(true);
     else materialsModel->set_isGlobalModified(true);
-
-    ui->OkButton->setEnabled(true);
 }
 
 void Materials::expandFirstLevel ()
@@ -1346,11 +1373,11 @@ void Materials::populate ()
 
 void Materials::openAction_triggered ()
 {
-    // two passes in case both local and global are modified
-
-    int retVal=check_changed();
+    // local
+    int retVal=check_changed(true);
     if (retVal) {
         if (retVal == QMessageBox::Save) {
+            contextMenuItem=materialsModel->get_localItem();
             saveAction_triggered();
         } else if (retVal == QMessageBox::Discard) {
             // do nothing
@@ -1359,9 +1386,11 @@ void Materials::openAction_triggered ()
         }
     }
 
-    retVal=check_changed();
+    // global
+    retVal=check_changed(false);
     if (retVal) {
         if (retVal == QMessageBox::Save) {
+            contextMenuItem=materialsModel->get_globalItem();
             saveAction_triggered();
         } else if (retVal == QMessageBox::Discard) {
             // do nothing
@@ -1370,7 +1399,8 @@ void Materials::openAction_triggered ()
         }
     }
 
-    QString testMaterialsFile=QFileDialog::getOpenFileName(this,tr("Open Materials File"), absolutePath,
+    QString tempAbsolutePath=absolutePath;
+    QString testMaterialsFile=QFileDialog::getOpenFileName(this,tr("Open Materials File"), tempAbsolutePath,
                                 tr("Data Files (*.txt);;All Files (*)"),nullptr,QFileDialog::DontUseNativeDialog);
 
     // return if user cancels
@@ -1382,7 +1412,7 @@ void Materials::openAction_triggered ()
         localMaterialDatabase->clear();
 
         // load as local or global
-        if (materialsModel->is_localItem(contextMenuItem)) {
+        if (materialsModel->is_aLocalItem(contextMenuItem)) {
 
             materialsModel->clear_localItem();
 
@@ -1409,7 +1439,7 @@ void Materials::openAction_triggered ()
                 QString fullPath=directory.filePath(materials_local_name);
                 materialsModel->set_localItem_tip(fullPath);
             }
-        } else if (materialsModel->is_globalItem(contextMenuItem)) {
+        } else if (materialsModel->is_aGlobalItem(contextMenuItem)) {
 
             materialsModel->clear_globalItem();
 
@@ -1441,8 +1471,6 @@ void Materials::openAction_triggered ()
         populate();
 
         projectDataModified=true;
-        ui->OkButton->setEnabled(true);
-
     } else {
         QMessageBox mb;
         mb.critical(nullptr,"Error","File not found.");
@@ -1515,6 +1543,8 @@ bool Materials::check_duplicates ()
 
 void Materials::saveAction_triggered ()
 {
+    std::cout << "Materials::saveAction_triggered  contextMenuItem=" << contextMenuItem << std::endl; std::cout.flush();
+
     if (check_duplicates()) return;
 
     if (!contextMenuItem) return;
@@ -1522,18 +1552,21 @@ void Materials::saveAction_triggered ()
     // file name for the database type
     bool isLocal=false;
     QString materialsFile;
-    if (materialsModel->is_localItem(contextMenuItem)) {
+    if (materialsModel->is_aLocalItem(contextMenuItem)) {
         isLocal=true;
         QDir directory=QString::fromStdString(materials_local_path);
         materialsFile=directory.filePath(materials_local_name);
-    } else if (materialsModel->is_globalItem(contextMenuItem)) {
+    } else if (materialsModel->is_aGlobalItem(contextMenuItem)) {
         QDir directory=QString::fromStdString(materials_global_path);
         materialsFile=directory.filePath(materials_global_name);
     }
 
+    std::cout << "   materialsFile=" << materialsFile.toStdString() << std::endl; std::cout.flush();
+
     // save
     QFile file(materialsFile);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        std::cout << "   saving" << std::endl; std::cout.flush();
         QTextStream *fileOut=new QTextStream(&file);
 
         QString version=QString::fromStdString(localMaterialDatabase->get_version_name()+" "+localMaterialDatabase->get_version_value());
@@ -1542,6 +1575,8 @@ void Materials::saveAction_triggered ()
         *fileOut << "\n";
 
         contextMenuItem->print(fileOut,contextMenuItem);
+
+        file.close();
 
         if (isLocal) materialsModel->set_isLocalModified(false);
         else materialsModel->set_isGlobalModified(false);
@@ -1552,9 +1587,11 @@ void Materials::saveAction_triggered ()
 
 void Materials::saveAsAction_triggered ()
 {
-    if (check_duplicates()) return;
+    std::cout << "Materials::saveAsAction_triggered  contextMenuItem=" << contextMenuItem << std::endl; std::cout.flush();
 
-    QString testMaterialsFile=QFileDialog::getSaveFileName(this,tr("Save Materials File"), absolutePath,
+    if (check_duplicates()) return;
+    QString tempAbsolutePath=absolutePath;
+    QString testMaterialsFile=QFileDialog::getSaveFileName(this,tr("Save Materials File"),tempAbsolutePath,
                                 tr("Data Files (*.txt);;All Files (*)"),nullptr,QFileDialog::DontUseNativeDialog);
 
     // return if user cancels
@@ -1563,7 +1600,7 @@ void Materials::saveAsAction_triggered ()
     // break up the file name
 
     bool isLocal=false;
-    if (materialsModel->is_localItem(contextMenuItem)) {
+    if (materialsModel->is_aLocalItem(contextMenuItem)) {
         isLocal=true;
 
         QFileInfo fileInfo(testMaterialsFile);
@@ -1573,7 +1610,7 @@ void Materials::saveAsAction_triggered ()
 
         if (materials_local_name) {free(materials_local_name); materials_local_name=nullptr;}
         materials_local_name=allocCopyConstString(fileInfo.fileName().toUtf8().constData());
-    } else if (materialsModel->is_globalItem(contextMenuItem)) {
+    } else if (materialsModel->is_aGlobalItem(contextMenuItem)) {
         isLocal=false;
 
         QFileInfo fileInfo(testMaterialsFile);
@@ -1587,8 +1624,11 @@ void Materials::saveAsAction_triggered ()
 
     projectDataModified=true;
 
+    std::cout << "   testMaterialsFile=" << testMaterialsFile.toStdString() << std::endl; std::cout.flush();
+
     QFile file(testMaterialsFile);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        std::cout << "   saving" << std::endl; std::cout.flush();
         QTextStream *fileOut=new QTextStream(&file);
 
         QString version=QString::fromStdString(localMaterialDatabase->get_version_name()+" "+localMaterialDatabase->get_version_value());
@@ -1598,6 +1638,8 @@ void Materials::saveAsAction_triggered ()
 
         contextMenuItem->print(fileOut,contextMenuItem);
 
+        file.close();
+
         if (isLocal) materialsModel->set_isLocalModified(false);
         else materialsModel->set_isGlobalModified(false);
     }
@@ -1606,8 +1648,8 @@ void Materials::saveAsAction_triggered ()
 void Materials::clearAction_triggered ()
 {
     bool closeItem=true;
-    if (materialsModel->is_localItem(contextMenuItem) && materialsModel->get_isLocalModified()) closeItem=false;
-    else if (materialsModel->is_globalItem(contextMenuItem) && materialsModel->get_isGlobalModified()) closeItem=false;
+    if (materialsModel->is_aLocalItem(contextMenuItem) && materialsModel->get_isLocalModified()) closeItem=false;
+    else if (materialsModel->is_aGlobalItem(contextMenuItem) && materialsModel->get_isGlobalModified()) closeItem=false;
 
     int retVal=0;
     if (!closeItem) {
@@ -1640,6 +1682,9 @@ void Materials::clearAction_triggered ()
         if (materials_global_name) {free(materials_global_name); materials_global_name=nullptr;}
         materials_global_name=(char *)malloc(1*sizeof(char));
         materials_global_name[0]='\0';  // align with default for OpenParEM2D and OpenParEM3D
+
+        materialsModel->set_globalItem_tip("Right click for options.");
+        materialsModel->set_isGlobalModified(false);
     }
 
     if (materialsModel->get_localItem()->childCount() == 0) {
@@ -1650,36 +1695,38 @@ void Materials::clearAction_triggered ()
         if (materials_local_name) {free(materials_local_name); materials_local_name=nullptr;}
         materials_local_name=(char *)malloc(1*sizeof(char));
         materials_local_name[0]='\0';  // align with default for OpenParEM2D and OpenParEM3D
+
+        materialsModel->set_localItem_tip("Right click for options.");
+        materialsModel->set_isLocalModified(false);
     }
 
     projData->modified=1;
-    ui->OkButton->setEnabled(true);
 }
 
 void Materials::closeWindow_triggered ()
 {
-    // two passes in case both local and global are modified
-
-    int retVal=check_changed();
+    // local
+    int retVal=check_changed(true);
     if (retVal) {
         if (retVal == QMessageBox::Save) {
+            contextMenuItem=materialsModel->get_localItem();
             saveAction_triggered();
         } else if (retVal == QMessageBox::Discard) {
             // do nothing
         } else if (retVal == QMessageBox::Cancel) {
-            if (close_event) close_event->ignore();
             return;
         }
     }
 
-    retVal=check_changed();
+    // global
+    retVal=check_changed(false);
     if (retVal) {
         if (retVal == QMessageBox::Save) {
+            contextMenuItem=materialsModel->get_globalItem();
             saveAction_triggered();
         } else if (retVal == QMessageBox::Discard) {
             // do nothing
         } else if (retVal == QMessageBox::Cancel) {
-            if (close_event) close_event->ignore();
             return;
         }
     }
@@ -1747,6 +1794,8 @@ void Materials::selection_changed (const QItemSelection &selected, const QItemSe
 
     editPaste->setEnabled(false);
     if (copyItem) {
+
+        std::cout << "copyItem->get_level()=" << copyItem->get_level() << "  item->get_level()=" << item->get_level() << std::endl; std::cout.flush();
 
         // insert at the same level
         if (copyItem->get_level() == item->get_level()) {
@@ -1841,31 +1890,40 @@ void Materials::materials_edited ()
 {
     // if (globalMaterialsFile != "") fileSave->setEnabled(true);
     // fileSaveAs->setEnabled(true);
-    ui->OkButton->setEnabled(true);
 }
 
 void Materials::on_OkButton_clicked ()
 {
-    // two passes in case both local and global are modified
+    std::cout << "Materials::on_OkButton_clicked" << std::endl; std::cout.flush();
 
-    int retVal=check_changed();
+    // local
+    int retVal=check_changed(true);
     if (retVal) {
         if (retVal == QMessageBox::Save) {
+            contextMenuItem=materialsModel->get_localItem();
             saveAction_triggered();
+            ui->OkButton->setChecked(false);
+            return;
         } else if (retVal == QMessageBox::Discard) {
             // do nothing
         } else if (retVal == QMessageBox::Cancel) {
+            ui->OkButton->setChecked(false);
             return;
         }
     }
 
-    retVal=check_changed();
+    // global
+    retVal=check_changed(false);
     if (retVal) {
         if (retVal == QMessageBox::Save) {
+            contextMenuItem=materialsModel->get_globalItem();
             saveAction_triggered();
+            ui->OkButton->setChecked(false);
+            return;
         } else if (retVal == QMessageBox::Discard) {
             // do nothing
         } else if (retVal == QMessageBox::Cancel) {
+            ui->OkButton->setChecked(false);
             return;
         }
     }
@@ -1902,25 +1960,17 @@ void Materials::on_OkButton_clicked ()
                                      materials_check_limits);
 
     isXclose=false;
-    QDialog::close();
-}
-
-void Materials::on_CancelButton_clicked ()
-{
-    ui->CancelButton->setChecked(true);
-    isXclose=false;
-    QDialog::close();
+    //QDialog::close();
+    reject();
 }
 
 void Materials::reject ()
 {
-    ui->CancelButton->setChecked(true);
     QDialog::reject();
 }
 
 void Materials::on_checkLimits_stateChanged (int arg1)
 {
     materials_check_limits=arg1;
-    ui->OkButton->setEnabled(true);
 }
 
