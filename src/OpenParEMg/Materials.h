@@ -228,14 +228,11 @@ public:
     void populate ();
     void keyPressEvent (QKeyEvent *) override;
     int check_changed (bool);
-    void materials_edited ();
     void signalSelection ();
     void setAbsolutePath (QString absolutePath_) {absolutePath=absolutePath_;}
 
     void closeEvent (QCloseEvent *event) override {
-        std::cout << "closeEvent" << std::endl; std::cout.flush();
         close_event=event;
-        //closeWindow_triggered();
         ui->OkButton->setChecked(true);
         on_OkButton_clicked();
     }
@@ -250,7 +247,6 @@ private slots:
     void copyData ();
     void pasteData ();
     void appendData ();
-    //void insertNewData ();
     void convertData ();
     void deleteData ();
 
@@ -286,7 +282,6 @@ private:
     QAction *fileSave;
     QAction *fileSaveAs;
     QAction *fileClose;
-    QAction *fileExit;
 
     QAction *editCopy;
     QAction *editPaste;
@@ -306,8 +301,6 @@ private:
     char *materials_default_boundary;
     int materials_check_limits;
     bool projectDataModified;
-
-    bool isXclose;            // user clicked the "X" to close
 };
 
 #endif // MATERIALSg_H

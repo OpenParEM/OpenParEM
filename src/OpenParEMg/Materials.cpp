@@ -617,8 +617,6 @@ QVariant MaterialsModel::headerData (int section, Qt::Orientation orientation, i
 
 bool MaterialsModel::setData (const QModelIndex &index, const QVariant &value, int role)
 {
-    //std::cout << "MaterialsModel::setData" << std::endl; std::cout.flush();
-
     if (role != Qt::EditRole) return false;
 
     KeywordValueItem *item=getItem(index);
@@ -632,8 +630,6 @@ bool MaterialsModel::setData (const QModelIndex &index, const QVariant &value, i
 
 void MaterialsModel::populate (MaterialDatabase *md)
 {
-    std::cout << "MaterialsModel::populate" << std::endl; std::cout.flush();
-
     if (!md) return;
 
     long unsigned int i=0;
@@ -934,8 +930,6 @@ void MaterialsModel::set_unmodified ()
 
 void MaterialsModel::materialsModel_dataChanged (const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles)
 {
-    //materials->materials_edited();
-
     KeywordValueItem *item=getItem(topLeft);
     if (item) item->set_isModified(true);
 }
@@ -994,13 +988,7 @@ Materials::Materials (QWidget *parent)
     connect(ui->materialsTreeView, &QTreeView::customContextMenuRequested, this, &Materials::contextMenu_triggered);
     connect(ui->materialsTreeView, &QTreeView::expanded, this, &Materials::onExpanded);
 
-    // menu bar
-
-    QMenuBar *menuBar = new QMenuBar(nullptr);
-
-    // File
-
-    QMenu *fileMenu = new QMenu("File", menuBar);
+    // file
 
     defaultMaterial=new QAction("Assign Default",this);
     connect(defaultMaterial, &QAction::triggered, this, &Materials::defaultMaterial_triggered);
@@ -1024,58 +1012,31 @@ Materials::Materials (QWidget *parent)
     fileClose=new QAction("Clear",this);
     connect(fileClose, &QAction::triggered, this, &Materials::clearAction_triggered);
 
-    fileExit=new QAction("Exit",fileMenu);
-    fileMenu->addAction(fileExit);
-    connect(fileExit, &QAction::triggered, this, &Materials::exitAction_triggered);
-
-
-    //menuBar->addMenu(fileMenu);
-
-    // // Edit
-
-    // QMenu *editMenu = new QMenu("Edit", menuBar);
+    // edit
 
     editCopy=new QAction("Copy",this);
     editCopy->setShortcut(QKeySequence::Copy);
-    // editCopy->setEnabled(false);
-    // editMenu->addAction(editCopy);
     connect(editCopy, &QAction::triggered, this, &Materials::copyData);
 
     editPaste=new QAction("Paste",this);
     editPaste->setShortcut(QKeySequence::Paste);
-    // editPaste->setEnabled(false);
-    // editMenu->addAction(editPaste);
     connect(editPaste, &QAction::triggered, this, &Materials::pasteData);
 
     QKeySequence Append(Qt::CTRL | Qt::Key_A);
     editAppend=new QAction("Append",this);
     editAppend->setShortcut(Append);
-    // editAppend->setEnabled(false);
-    // editMenu->addAction(editAppend);
     connect(editAppend, &QAction::triggered, this, &Materials::appendData);
 
     QKeySequence Convert(Qt::CTRL | Qt::Key_R);
     editConvert=new QAction("Set to \"any\"",this);
     editConvert->setShortcut(Convert);
-    // editConvert->setEnabled(false);
-    // editMenu->addAction(editConvert);
     connect(editConvert, &QAction::triggered, this, &Materials::convertData);
-
-    // QKeySequence InsertNew(Qt::CTRL | Qt::Key_M);
-    // editNew=new QAction("Insert New",this);
-    // editNew->setShortcut(InsertNew);
-    // editNew->setEnabled(false);
-    // editMenu->addAction(editNew);
-    // connect(editNew, &QAction::triggered, this, &Materials::insertNewData);
 
     editDelete=new QAction("Delete",this);
     editDelete->setShortcut(QKeySequence::Delete);
     editDelete->setEnabled(false);
-    // editMenu->addAction(editDelete);
     connect(editDelete, &QAction::triggered, this, &Materials::deleteData);
 
-   //menuBar->addMenu(editMenu);
-    //ui->materialsMenuBar->addWidget(menuBar);
 
     ui->materialsTreeView->show();
 
@@ -1083,9 +1044,6 @@ Materials::Materials (QWidget *parent)
     ui->OkButton->setCheckable(true);
 
     ui->OkButton->setEnabled(true);
-
-    bool isXclose;            // user clicked the "X" to close
-
 }
 
 Materials::~Materials ()
@@ -1101,7 +1059,7 @@ Materials::~Materials ()
 }
 
 // courtesy of ChatGPT
-static int treeDepth(QModelIndex index)
+static int treeDepth (QModelIndex index)
 {
     int depth = 0;
 
@@ -1183,9 +1141,7 @@ void Materials::onExpanded(const QModelIndex& index)
         if (depth == 0) break;
     }
 
-    ui->materialsTreeView->scrollTo(
-        last,
-        QAbstractItemView::PositionAtBottom);
+    ui->materialsTreeView->scrollTo(last,QAbstractItemView::PositionAtBottom);
 }
 
 void Materials::keyPressEvent (QKeyEvent *event)
@@ -1475,8 +1431,6 @@ void Materials::openAction_triggered ()
         QMessageBox mb;
         mb.critical(nullptr,"Error","File not found.");
         mb.setFixedSize(500,200);
-
-        // fileOpen->setEnabled(false);
         return;
     }
 }
@@ -1543,8 +1497,6 @@ bool Materials::check_duplicates ()
 
 void Materials::saveAction_triggered ()
 {
-    std::cout << "Materials::saveAction_triggered  contextMenuItem=" << contextMenuItem << std::endl; std::cout.flush();
-
     if (check_duplicates()) return;
 
     if (!contextMenuItem) return;
@@ -1561,12 +1513,9 @@ void Materials::saveAction_triggered ()
         materialsFile=directory.filePath(materials_global_name);
     }
 
-    std::cout << "   materialsFile=" << materialsFile.toStdString() << std::endl; std::cout.flush();
-
     // save
     QFile file(materialsFile);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        std::cout << "   saving" << std::endl; std::cout.flush();
         QTextStream *fileOut=new QTextStream(&file);
 
         QString version=QString::fromStdString(localMaterialDatabase->get_version_name()+" "+localMaterialDatabase->get_version_value());
@@ -1587,8 +1536,6 @@ void Materials::saveAction_triggered ()
 
 void Materials::saveAsAction_triggered ()
 {
-    std::cout << "Materials::saveAsAction_triggered  contextMenuItem=" << contextMenuItem << std::endl; std::cout.flush();
-
     if (check_duplicates()) return;
     QString tempAbsolutePath=absolutePath;
     QString testMaterialsFile=QFileDialog::getSaveFileName(this,tr("Save Materials File"),tempAbsolutePath,
@@ -1624,11 +1571,9 @@ void Materials::saveAsAction_triggered ()
 
     projectDataModified=true;
 
-    std::cout << "   testMaterialsFile=" << testMaterialsFile.toStdString() << std::endl; std::cout.flush();
 
     QFile file(testMaterialsFile);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        std::cout << "   saving" << std::endl; std::cout.flush();
         QTextStream *fileOut=new QTextStream(&file);
 
         QString version=QString::fromStdString(localMaterialDatabase->get_version_name()+" "+localMaterialDatabase->get_version_value());
@@ -1795,8 +1740,6 @@ void Materials::selection_changed (const QItemSelection &selected, const QItemSe
     editPaste->setEnabled(false);
     if (copyItem) {
 
-        std::cout << "copyItem->get_level()=" << copyItem->get_level() << "  item->get_level()=" << item->get_level() << std::endl; std::cout.flush();
-
         // insert at the same level
         if (copyItem->get_level() == item->get_level()) {
             editPaste->setEnabled(true);
@@ -1806,20 +1749,6 @@ void Materials::selection_changed (const QItemSelection &selected, const QItemSe
         if (copyItem->get_level() == 2 && item->get_level() == 1) {
             editPaste->setEnabled(true);
         }
-
-        // KeywordValueItem *parent=item->parentItem();
-        // editPaste->setEnabled(true);
-
-        // check for disallowed "any" combinations
-        // if (!parent->hasAny(item)) {     // looking for "any"
-        //     if (parent->hasItem(item)) { // match level
-        //         if (!item->isAny()) {
-        //             editPaste->setEnabled(true);
-        //         }
-        //     } else {
-        //         editPaste->setEnabled(true);
-        //     }
-        // }
     }
 
     editAppend->setEnabled(false);
@@ -1881,21 +1810,10 @@ void Materials::selection_changed (const QItemSelection &selected, const QItemSe
             editConvert->setEnabled(true);
         }
     }
-
-    //editNew->setEnabled(false);
-    //if (item->get_level() == 1) editNew->setEnabled(true);
-}
-
-void Materials::materials_edited ()
-{
-    // if (globalMaterialsFile != "") fileSave->setEnabled(true);
-    // fileSaveAs->setEnabled(true);
 }
 
 void Materials::on_OkButton_clicked ()
 {
-    std::cout << "Materials::on_OkButton_clicked" << std::endl; std::cout.flush();
-
     // local
     int retVal=check_changed(true);
     if (retVal) {
@@ -1959,8 +1877,6 @@ void Materials::on_OkButton_clicked ()
                                      materials_local_path,materials_local_name,
                                      materials_check_limits);
 
-    isXclose=false;
-    //QDialog::close();
     reject();
 }
 
