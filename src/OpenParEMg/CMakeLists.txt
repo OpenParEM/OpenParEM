@@ -93,6 +93,7 @@ qt_add_executable(OpenParEMg
     ObjectCounts.h
     DrawingPreferences.h DrawingPreferences.cpp DrawingPreferences.ui
     CustomTreeWidgetItem.cpp
+    AntennaForm.h AntennaForm.cpp AntennaForm.ui
 
 )
 

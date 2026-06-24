@@ -375,6 +375,7 @@ public:
     bool isValidSaveStepFile ();
     bool saveStepFile (QString);
     bool saveBoundaryDatabase ();
+    bool hasRadiationBoundary ();
     void increase_depth (DrawingItem *);
     //void decrease_depth (DrawingItem *);
     void saveItem (std::ofstream *, BaseItem *);
@@ -541,6 +542,7 @@ private slots:
     void on_actionFrequencyPlan_triggered ();
     void on_actionRefinement_triggered ();
     void on_actionSimulateOptions_triggered ();
+    void on_actionAntennaPatterns_triggered ();
 
     // Run
     void on_actionRun_triggered ();
@@ -779,6 +781,7 @@ private:
     bool projectFileLoaded;  // project setup variable including paths
     bool projectChanged;
     bool drawingChanged;
+    bool boundaryChanged;    // also covers paths since they are both in the boundary database
     bool meshChanged;
     bool drawingPlaneShown;
     bool simulationRunning;

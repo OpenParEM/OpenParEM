@@ -208,6 +208,7 @@
     <addaction name="actionMaterials"/>
     <addaction name="actionFrequencyPlan"/>
     <addaction name="actionRefinement"/>
+    <addaction name="actionAntennaPatterns"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -694,6 +695,11 @@
   <action name="actionMaterials">
    <property name="text">
     <string>Materials ...</string>
+   </property>
+  </action>
+  <action name="actionAntennaPatterns">
+   <property name="text">
+    <string>Antenna Patterns ...</string>
    </property>
   </action>
  </widget>

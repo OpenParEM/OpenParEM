@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "OPEMg.h"
+#include "AntennaForm.h"
 #include "CustomComboBox.h"
 #include "DrawingPreferences.h"
 #include "Process.h"
@@ -216,7 +217,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     absolutePath=QDir::currentPath();
     materialDatabase=new MaterialDatabase();
-    //boundaryDatabase=new BoundaryDatabase();
     resetLockouts();
 
     projectFile="";
@@ -461,6 +461,15 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     renameItem=nullptr;
 
     /////////////////////////////////////////////////////////////////////////////
+    // change flags
+    /////////////////////////////////////////////////////////////////////////////
+
+    projectChanged=false;
+    drawingChanged=false;
+    boundaryChanged=false;
+    meshChanged=false;
+
+    /////////////////////////////////////////////////////////////////////////////
 
     ui->drawingItemTree->show();
     ui->drawingWindow->show();
@@ -562,7 +571,7 @@ void OpenParEMg::convertPathToFace (BaseItem *baseItem)
 int OpenParEMg::check_changed ()
 {
     int retVal=0;
-    if (projectChanged || drawingChanged || meshChanged) {
+    if (projectChanged || drawingChanged || boundaryChanged || meshChanged) {
         QMessageBox msgBox(this);
         msgBox.setText("The project has been modified.");
         msgBox.setInformativeText("Do you want to save your changes?");
@@ -697,7 +706,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionNew->setEnabled(false);
         ui->actionOpen->setEnabled(false);
         ui->actionSave->setEnabled(false);
-        if (projectChanged || drawingChanged || meshChanged) {
+        if (projectChanged || drawingChanged || boundaryChanged || meshChanged) {
             if (strcmp(projData.project_name,"") != 0) ui->actionSave->setEnabled(true);
         }
         ui->actionSaveAs->setEnabled(true);
@@ -722,6 +731,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionMeshDelete->setEnabled(false);
         ui->actionMaterials->setEnabled(true);
         ui->actionFrequencyPlan->setEnabled(true);
+        ui->actionAntennaPatterns->setEnabled(hasRadiationBoundary());
         //ui->actionRefinement->setEnabled(true);
         if (strcmp(projData.refinement_frequency,"none") == 0) ui->actionRefinement->setEnabled(false);
         else ui->actionRefinement->setEnabled(true);
@@ -890,6 +900,7 @@ void OpenParEMg::setMenusI (int placeIndex)
 
         ui->actionMaterials->setEnabled(false);
         ui->actionFrequencyPlan->setEnabled(false);
+        ui->actionAntennaPatterns->setEnabled(false);
         ui->actionRefinement->setEnabled(false);
         ui->actionSimulateOptions->setEnabled(false);
 
@@ -935,6 +946,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionMeshDelete->setEnabled(false);
         ui->actionSimulateOptions->setEnabled(true);
         ui->actionFrequencyPlan->setEnabled(true);
+        ui->actionAntennaPatterns->setEnabled(true);
     }
 
     ui->actionUndo->setEnabled(itemChangesStack.hasUndo());
@@ -2091,6 +2103,7 @@ void OpenParEMg::createPath ()
             newPath->is_modified();
             newPath->addFacePoints(TopoDS::Face(selectedShape));
             newPath->create_wire_item(this,ui->drawingWindow,path);  // create item and add as child to path; creates AIS_Shape
+            boundaryChanged=true;
 
             // save the items for later
             PathItem *pathItem=newPath->get_item();
@@ -3644,6 +3657,7 @@ void OpenParEMg::createPathFromFaceN (bool startNew)
                 newPath->is_modified();
                 newPath->addFacePoints(TopoDS::Face(selectedShape));
                 newPath->create_face_item(this,ui->drawingWindow,path);  // create item and add as child to path; creates AIS_Shape
+                boundaryChanged=true;
 
                 // add new path to the drawing
                 PathItem *pathItem=newPath->get_item();
@@ -3743,6 +3757,7 @@ void OpenParEMg::createBoundaryFromPathN (bool startNew)
         boundary->addChild(newBoundaryItem);
         boundary->setExpanded(true);
         newBoundaryItem->setExpanded(true);
+        boundaryChanged=true;
 
         // hack: cycle through the comboBox to get it to show properly
         // otherwise, the material item will not hide
@@ -4364,10 +4379,9 @@ void OpenParEMg::resetLockouts ()
     disableMenus=false;
     projectFileLoaded=false;
     projectChanged=false;
-    meshChanged=false;
     drawingChanged=false;
-    // brepFileLoaded=false;
-    // brepChanged=false;
+    boundaryChanged=false;
+    meshChanged=false;
     drawingPlaneShown=false;
     simulationRunning=false;
     simulationStopping=false;
@@ -4381,8 +4395,9 @@ void OpenParEMg::printLockouts ()
               << "   disableMenus=" << disableMenus << std::endl
               << "   projectFileLoaded=" << projectFileLoaded << std::endl
               << "   projectChanged=" << projectChanged << std::endl
-              << "   meshChanged=" << meshChanged << std::endl
               << "   drawingChanged=" << drawingChanged << std::endl
+              << "   boundaryChanged=" << boundaryChanged << std::endl
+              << "   meshChanged=" << meshChanged << std::endl
               << "   drawingPlaneShown=" << drawingPlaneShown << std::endl
               << "   simulationRunning=" << simulationRunning << std::endl
               << "   simulationStopping=" << simulationStopping << std::endl
@@ -4582,6 +4597,20 @@ void OpenParEMg::on_actionFrequencyPlan_triggered ()
 
     if (strcmp(projData.refinement_frequency,"none") == 0) ui->actionRefinement->setEnabled(false);
     else ui->actionRefinement->setEnabled(true);
+
+    if (projData.modified) {
+        projectChanged=true;
+    }
+    setMenusI(46);
+}
+
+void OpenParEMg::on_actionAntennaPatterns_triggered ()
+{
+    AntennaForm *antennaForm=new AntennaForm();
+    antennaForm->set_simulationRunning(simulationRunning);
+    antennaForm->set_projData(&projData);
+    antennaForm->exec();
+    delete antennaForm;
 
     if (projData.modified) {
         projectChanged=true;
@@ -5137,6 +5166,20 @@ bool OpenParEMg::saveBoundaryDatabase ()
         return false;
     }
     return true;
+}
+
+bool OpenParEMg::hasRadiationBoundary ()
+{
+    int i=0;
+    while (i < boundary->childCount()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary->child(i));
+        if (boundaryItem) {
+            ShapeData *shapeData=boundaryItem->getShapeData();
+            if (shapeData->get_boundary_type() == 3) return true;
+        }
+        i++;
+    }
+    return false;
 }
 
 void OpenParEMg::increase_depth (DrawingItem *item)
@@ -7459,5 +7502,7 @@ void OpenParEMg::updateDataTab (bool force)
         ui->dataText->setTextCursor(oldCursor);
     }
 }
+
+
 
 // end of file
