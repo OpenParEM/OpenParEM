@@ -388,6 +388,9 @@ ment.</string>
          <property name="text">
           <string>Add</string>
          </property>
+         <property name="autoDefault">
+          <bool>false</bool>
+         </property>
         </widget>
        </item>
        <item>
@@ -407,6 +410,9 @@ ment.</string>
         <widget class="QPushButton" name="delete2Dslice">
          <property name="text">
           <string>Delete</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -555,6 +561,9 @@ ment.</string>
       <property name="text">
        <string>Ok</string>
       </property>
+      <property name="autoDefault">
+       <bool>false</bool>
+      </property>
      </widget>
     </item>
     <item>
@@ -574,6 +583,9 @@ ment.</string>
      <widget class="QPushButton" name="CancelButton">
       <property name="text">
        <string>Cancel</string>
+      </property>
+      <property name="autoDefault">
+       <bool>false</bool>
       </property>
      </widget>
     </item>

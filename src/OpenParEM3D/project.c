@@ -1291,20 +1291,20 @@ int save_project (const char *filename, struct projectData *data, struct project
         if (data->inputAntennaPatterns[i].dim == 2) {
             prefix();
             if (data->inputAntennaPatterns[i].quantity1 == NULL) {
-                fprintf(fptr,"%santenna.plot.2D.pattern NULL",indent);
+                fprintf(fptr,"%santenna.plot.2D.pattern q1=NULL",indent);
             } else {
-                fprintf(fptr,"%santenna.plot.2D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
+                fprintf(fptr,"%santenna.plot.2D.pattern q1=%s",indent,data->inputAntennaPatterns[i].quantity1);
             }
             if (data->inputAntennaPatterns[i].quantity2 != NULL) {
-                fprintf(fptr,",%s",data->inputAntennaPatterns[i].quantity2);
+                fprintf(fptr,", q2=%s",data->inputAntennaPatterns[i].quantity2);
             }
             if (data->inputAntennaPatterns[i].plane != NULL) {
-                fprintf(fptr,",%s",data->inputAntennaPatterns[i].plane);
+                fprintf(fptr,", plane=%s",data->inputAntennaPatterns[i].plane);
             } else {
-                fprintf(fptr,",%.15g,%.15g",data->inputAntennaPatterns[i].theta,data->inputAntennaPatterns[i].phi);
+                fprintf(fptr,", theta=%.15g, phi=%.15g",data->inputAntennaPatterns[i].theta,data->inputAntennaPatterns[i].phi);
             }
-            fprintf(fptr,",%.15g",data->inputAntennaPatterns[i].latitude);
-            fprintf(fptr,",%.15g",data->inputAntennaPatterns[i].rotation);
+            fprintf(fptr,", latitude=%.15g",data->inputAntennaPatterns[i].latitude);
+            fprintf(fptr,", rotation=%.15g",data->inputAntennaPatterns[i].rotation);
             fprintf(fptr,"\n");
         } else {
             prefix();

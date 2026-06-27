@@ -2,6 +2,9 @@
 
 #ToDo: unset PETSC_DIR, PETSC_ARCH, and SLEPC_DIR
 
+#ToDo: may need to set the environment variable QT_QPA_PLATFORM=xcb to force X11 and avoid issues with Wayland
+
+
 #----------------------------------------------------
 # downloaded packages included with this distribution
 #----------------------------------------------------

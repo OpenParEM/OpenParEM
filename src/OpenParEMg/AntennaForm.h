@@ -21,8 +21,15 @@
 #ifndef ANTENNAFORM_H
 #define ANTENNAFORM_H
 
+#include "project.h"
 #include <QDialog>
 #include <qvalidator.h>
+
+extern "C" void add_antennaPattern (struct projectData *, int, int, char *, char *,
+                                    char *, double, double, double, double);
+extern "C" char* allocCopyString (char *);
+
+bool cstrFromQString (char **aCstr, QString& aQString);
 
 namespace Ui {
 class AntennaForm;
@@ -40,6 +47,9 @@ public:
     void set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
 
 private:
+    void appendPattern (struct inputAntennaPattern *);
+    void extractPatterns ();
+    bool hasPatternChanges ();
     void check3Dpatterns ();
     void reject () override;
 
@@ -65,6 +75,14 @@ private slots:
     void on_OkButton_clicked ();
     void on_CancelButton_clicked ();
 
+    void quantity1Box_changed (int);
+    void quantity2Box_changed (int);
+    void planeBox_changed (int);
+    void thetaBox_changed (double);
+    void phiBox_changed (double);
+    void latitudeBox_changed (double);
+    void rotationBox_changed (double);
+
 private:
     Ui::AntennaForm *ui;
 
@@ -86,8 +104,22 @@ private:
     bool savePlots2D;
     double currentResolution;
     bool saveRawData;
+    std::vector<inputAntennaPattern *> patterns;
 
     bool simulationRunning;
+
+    int quantity1Width;
+    int quantity2Width;
+    int planeWidth;
+    int thetaWidth;
+    int phiWidth;
+    int latitudeWidth;
+    int rotationWidth;
+
+    int patternBoxWidth;
+    int scrollBarWidth;
+    int scrollBarOffset;
+    int verticalHeaderWidth;
 };
 
 #endif // ANTENNAFORM_H
