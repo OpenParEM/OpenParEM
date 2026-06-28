@@ -25,6 +25,8 @@ RotateInputForm::RotateInputForm(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::RotateInputForm)
 {
+    this->setWindowIcon(QApplication::windowIcon());
+
     ui->setupUi(this);
 
     setFixedSize(width(),height());

@@ -5,6 +5,8 @@ VectorInputForm::VectorInputForm (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::VectorInputForm)
 {
+    this->setWindowIcon(QApplication::windowIcon());
+
     ui->setupUi(this);
 
     setFixedSize(width(),height());

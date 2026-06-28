@@ -25,6 +25,7 @@ DrawingPreferences::DrawingPreferences (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::DrawingPreferences)
 {
+    this->setWindowIcon(QApplication::windowIcon());
     ui->setupUi(this);
     setFixedSize(width(),height());
 }

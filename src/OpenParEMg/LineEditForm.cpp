@@ -26,6 +26,8 @@ LineEditForm::LineEditForm (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::LineEditForm)
 {
+    this->setWindowIcon(QApplication::windowIcon());
+
     ui->setupUi(this);
 
     setFixedSize(QDialog::width(),QDialog::height());

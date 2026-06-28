@@ -25,6 +25,7 @@ About::About(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::About)
 {
+    this->setWindowIcon(QApplication::windowIcon());
     ui->setupUi(this);
 }
 

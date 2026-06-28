@@ -26,6 +26,7 @@ FrequencyView::FrequencyView (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::FrequencyView)
 {
+    this->setWindowIcon(QApplication::windowIcon());
     ui->setupUi(this);
     this->setFixedWidth(439);
 

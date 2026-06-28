@@ -25,6 +25,8 @@ RectangleEditForm::RectangleEditForm (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::RectangleEditForm)
 {
+    this->setWindowIcon(QApplication::windowIcon());
+
     ui->setupUi(this);
 
     setFixedSize(QDialog::width(),QDialog::height());

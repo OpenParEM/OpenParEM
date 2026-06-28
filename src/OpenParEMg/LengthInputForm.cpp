@@ -26,6 +26,8 @@ LengthInputForm::LengthInputForm (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::LengthInputForm)
 {
+    this->setWindowIcon(QApplication::windowIcon());
+
     ui->setupUi(this);
 
     setFixedSize(width(),height());

@@ -613,7 +613,6 @@ private slots:
     void deleteDiffPairItems ();
 
     void assignMaterial ();
-    void crossReferencePaths ();
 
     void cancelMenu ();
     void buildFaceMenu (QMenu &menu);

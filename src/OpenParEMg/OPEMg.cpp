@@ -3974,7 +3974,7 @@ bool OpenParEMg::isValidCreateDiffPair ()
 
 void OpenParEMg::renumberDimTag ()
 {
-    //std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
 
     int count=1;
     int i=0;
@@ -4002,7 +4002,7 @@ void OpenParEMg::renumberDimTag ()
 
 void OpenParEMg::setPhysicalGroups ()
 {
-    //std::cout << "OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
 
     // re-build the physical groups list
 
@@ -4061,6 +4061,8 @@ void OpenParEMg::setPhysicalGroups ()
 
 void OpenParEMg::setMaterials ()
 {
+    std::cout << "OpenParEMg::setMaterials" << std::endl; std::cout.flush();
+
     int i=0;
     while (i < drawing->childCount()) {
         DrawingItem *child=dynamic_cast<DrawingItem *>(drawing->child(i));
@@ -4093,6 +4095,8 @@ void OpenParEMg::setMaterials ()
 
 void OpenParEMg::assignMaterial ()
 {
+    std::cout << "OpenParEMg::assignMaterial" << std::endl; std::cout.flush();
+
     // Cannot assign material to existing mesh
     if (mesh->childCount() > 0) {
         QMessageBox::StandardButton reply;
@@ -4118,76 +4122,6 @@ void OpenParEMg::assignMaterial ()
         }
         setMenusI(38);
     }
-}
-
-void OpenParEMg::crossReferencePaths ()
-{
-    //std::cout << "OpenParEMg::crossReferencePaths" << std::endl; std::cout.flush();
-
-    // ToDo: finish?
-    // int i=0;
-    // while (i < port.childCount()) {
-    //     PortItem *portItem=dynamic_cast<PortItem *>(port.child(i));
-    //     if (portItem && portItem->is_port()) {
-    //         Port *port=portItem->getPort();
-    //         if (port) {
-    //             Path *outline=port->get_outline();
-    //             if (outline) {
-    //                 int j=0;
-    //                 while (j < path.childCount()) {
-    //                     PathItem *pathItem=dynamic_cast<PathItem *>(path.child(j));
-    //                     if (pathItem && pathItem->is_path()) {
-    //                         if (pathItem->getPath() == outline) {
-    //                             portItem->setPathItem(pathItem);
-    //                             break;
-    //                         }
-    //                     }
-    //                     j++;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     i++;
-    // }
-
-    // ToDo: finish?
-    // {
-    //     int i=0;
-    //     while (i < boundary.childCount()) {
-    //         BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary.child(i));
-    //         if (boundaryItem && boundaryItem->is_boundary()) {
-    //             PathItem *boundaryPathItem=boundaryItem->getPathItem();
-    //             if (boundaryPathItem && boundaryPathItem->is_path()) {
-    //                 int j=0;
-    //                 while (j < path.childCount()) {
-    //                     PathItem *pathItem=dynamic_cast<PathItem *>(path.child(j));
-    //                     if (pathItem && pathItem->is_path()) {
-
-    //                     }
-    //                     j++;
-    //                 }
-
-
-    //                 Path *outline=boundary->get_outline();
-    //                 if (outline) {
-    //                     int j=0;
-    //                     while (j < path.childCount()) {
-    //                         PathItem *pathItem=dynamic_cast<PathItem *>(path.child(j));
-    //                         if (pathItem && pathItem->is_path()) {
-    //                             if (pathItem->getPath() == outline) {
-    //                                 boundaryItem->setPathItem(pathItem);
-    //                                 break;
-    //                             }
-    //                         }
-    //                         j++;
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         i++;
-    //     }
-    // }
-
 }
 
 void OpenParEMg::dumpDrawingEntities ()
@@ -6321,6 +6255,8 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
 
 void OpenParEMg::on_actionMeshGenerate_triggered ()
 {
+    std::cout << "OpenParEMg::on_actionMeshGenerate_triggered" << std::endl; std::cout.flush();
+
     if (mesh->childCount() > 0) {
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this,"OpenParEMg","Delete the existing mesh?",QMessageBox::Yes|QMessageBox::No);

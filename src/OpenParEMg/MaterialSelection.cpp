@@ -25,6 +25,7 @@ MaterialSelection::MaterialSelection (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::MaterialSelection)
 {
+    this->setWindowIcon(QApplication::windowIcon());
     ui->setupUi(this);
     setFixedSize(QDialog::width(),QDialog::height());
     ui->materialSelectOk->setEnabled(false);

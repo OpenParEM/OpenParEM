@@ -28,6 +28,8 @@ AntennaForm::AntennaForm(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::AntennaForm)
 {
+    this->setWindowIcon(QApplication::windowIcon());
+
     ui->setupUi(this);
 
     this->setFixedWidth(757);

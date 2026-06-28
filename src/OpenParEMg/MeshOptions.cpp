@@ -25,6 +25,7 @@ MeshDialog::MeshDialog (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::MeshDialog)
 {
+    this->setWindowIcon(QApplication::windowIcon());
     ui->setupUi(this);
     setFixedSize(width(),height());
     ui->meshFileLineEdit->setReadOnly(true);

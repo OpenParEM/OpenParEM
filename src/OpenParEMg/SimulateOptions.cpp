@@ -28,6 +28,7 @@ SimOptions::SimOptions (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::SimOptions)
 {
+    this->setWindowIcon(QApplication::windowIcon());
     ui->setupUi(this);
     this->setFixedSize(width(),height());
 }

@@ -591,6 +591,8 @@ int check_antennaPatterns (struct projectData *projData, const char* indent)
 
 void clear_physicalGroupMaterials (struct projectData *data)
 {
+    printf ("clear_physicalGroupMaterials\n");
+
     int i=0;
     while (i < data->physicalGroupMaterialCount) {
         if (data->physicalGroupMaterials[i].materialName) {
@@ -604,6 +606,8 @@ void clear_physicalGroupMaterials (struct projectData *data)
 
 void add_physicalGroupMaterial (struct projectData *data, int lineNumber, int dim, int tag, char *materialName)
 {
+    printf ("add_physicalGroupMaterials\n");
+
     int i;
 
     // see if this is a renaming of an existing group
@@ -1099,16 +1103,6 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
 
-   // no default material groups, so print all
-   i=0;
-   while (i < data->physicalGroupMaterialCount) {
-       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.physical.group %d,%d,%s\n",indent,indent,
-                             data->physicalGroupMaterials[i].dim,
-                             data->physicalGroupMaterials[i].tag,
-                             data->physicalGroupMaterials[i].materialName);
-       i++;
-   }
-
    // no default field points, so print all
    i=0;
    while (i < data->field_points_count) {
@@ -1407,16 +1401,6 @@ int save_project (const char *filename, struct projectData *data, struct project
 
     matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
     fprintf(fptr,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
-
-    // no default material groups, so print all
-    i=0;
-    while (i < data->physicalGroupMaterialCount) {
-        fprintf(fptr,"%s%sgui.physical.group %d,%d,%s\n",indent,indent,
-                data->physicalGroupMaterials[i].dim,
-                data->physicalGroupMaterials[i].tag,
-                data->physicalGroupMaterials[i].materialName);
-        i++;
-    }
 
     // no default field points, so print all
     i=0;
@@ -2920,24 +2904,6 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                         prefix(); printf("%s%sERROR3246: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
-               }
-
-               else if (strcmp(keyword,"gui.physical.group") == 0) {
-                   if (commaCount == 2) {
-                       value=strtok(NULL," ,");
-                       if (is_int(value)) {
-                           dim=atoi(value);
-                           value=strtok(NULL," ,");
-                           if (is_int(value)) {
-                               tag=atoi(value);
-                               value=strtok(NULL," ,");
-                               if (materialName) free(materialName);
-                               materialName=allocCopyString(value);
-                               removeQuotes(materialName);
-                               add_physicalGroupMaterial(data,lineCount,dim,tag,materialName);
-                           } else print_invalid_entry (&ierr,lineCount,indent);
-                       } else print_invalid_entry (&ierr,lineCount,indent);
-                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
                else if (strcmp(keyword,"field.point") == 0) {

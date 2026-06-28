@@ -25,6 +25,8 @@ PolycircleEditForm::PolycircleEditForm (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::PolycircleEditForm)
 {
+    this->setWindowIcon(QApplication::windowIcon());
+
     ui->setupUi(this);
 
     setFixedSize(width(),height());

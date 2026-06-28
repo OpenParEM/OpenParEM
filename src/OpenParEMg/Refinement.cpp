@@ -25,6 +25,7 @@ OPEMg_Refinement::OPEMg_Refinement(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::OPEMg_Refinement)
 {
+    this->setWindowIcon(QApplication::windowIcon());
     ui->setupUi(this);
     this->setFixedSize(width(),height());
 

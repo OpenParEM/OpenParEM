@@ -27,6 +27,8 @@ FrequencyPlanG::FrequencyPlanG (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::FrequencyPlanG)
 {
+    this->setWindowIcon(QApplication::windowIcon());
+
     ui->setupUi(this);
     this->setFixedWidth(695);
 

@@ -160,7 +160,6 @@ struct projectData {
    double gui_grid_size;
 
    // keyword and format:
-   // gui_physical_group dim,tag,material
    int physicalGroupMaterialCount;
    int physicalGroupMaterialAllocated;
    struct physicalGroupMaterial *physicalGroupMaterials;

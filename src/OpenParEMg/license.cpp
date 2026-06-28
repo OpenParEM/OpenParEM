@@ -25,6 +25,7 @@ License::License (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::License)
 {
+    this->setWindowIcon(QApplication::windowIcon());
     ui->setupUi(this);
 }
 
