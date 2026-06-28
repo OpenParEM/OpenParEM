@@ -110,6 +110,21 @@ AntennaForm::AntennaForm(QWidget *parent)
     ui->patternTable->setColumnWidth(4,phiWidth);
     ui->patternTable->setColumnWidth(5,latitudeWidth);
     ui->patternTable->setColumnWidth(6,rotationWidth);
+
+//     ui->patternTable->setStyleSheet(R"(
+//     /* 1. Reset standard combo box styling inside the table */
+//     QTableWidget QComboBox {
+//         border: 1px solid #CCCCCC;
+//         border-radius: 3px;
+//         background-color: white;
+//     }
+
+//     /* 2. Apply red border ONLY when the parent row cell is selected */
+//     QTableWidget::item:selected QComboBox {
+//         border: 2px solid red;
+//         border-radius: 3px;
+//     }
+// )");
 }
 
 AntennaForm::~AntennaForm()
@@ -357,51 +372,149 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     ui->patternTable->setCellWidget(currentRow,2,planeBox);
     connect(planeBox,&QComboBox::currentIndexChanged,this,&AntennaForm::planeBox_changed);
 
-    QDoubleSpinBox *thetaBox=new QDoubleSpinBox();
+    // QDoubleSpinBox *thetaBox=new QDoubleSpinBox();
+    // thetaBox->setMinimum(-180);
+    // thetaBox->setMaximum(180);
+    // thetaBox->setValue(pattern->theta);
+    // thetaBox->setDecimals(0);
+    // thetaBox->setSingleStep(5);
+    // ui->patternTable->setCellWidget(currentRow,3,thetaBox);
+    // connect(thetaBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::thetaBox_changed);
+
+
+    QDoubleSpinBox *thetaBox = new QDoubleSpinBox();
     thetaBox->setMinimum(-180);
     thetaBox->setMaximum(180);
     thetaBox->setValue(pattern->theta);
     thetaBox->setDecimals(0);
     thetaBox->setSingleStep(5);
-    ui->patternTable->setCellWidget(currentRow,3,thetaBox);
+
+    // use a container to keep the background selection from the table from
+    // bleeding around the edges of the widget and making it look like box highlighting
+    // during row or column selection
+    QWidget *container=new QWidget(ui->patternTable);
+    QHBoxLayout *layout=new QHBoxLayout(container);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(0);
+    thetaBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    container->setAutoFillBackground(true);
+    container->setPalette(thetaBox->palette());
+    layout->addWidget(thetaBox);
+    // layout->setAlignment(thetaBox,Qt::AlignCenter);
+
+    ui->patternTable->setCellWidget(currentRow, 3, container);
     connect(thetaBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::thetaBox_changed);
 
-    QDoubleSpinBox *phiBox=new QDoubleSpinBox();
+    // QDoubleSpinBox *phiBox=new QDoubleSpinBox();
+    // phiBox->setMinimum(-180);
+    // phiBox->setMaximum(180);
+    // phiBox->setValue(pattern->phi);
+    // phiBox->setDecimals(0);
+    // phiBox->setSingleStep(5);
+    // ui->patternTable->setCellWidget(currentRow,4,phiBox);
+    // connect(phiBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::phiBox_changed);
+
+    QDoubleSpinBox *phiBox = new QDoubleSpinBox();
     phiBox->setMinimum(-180);
     phiBox->setMaximum(180);
     phiBox->setValue(pattern->phi);
     phiBox->setDecimals(0);
     phiBox->setSingleStep(5);
-    ui->patternTable->setCellWidget(currentRow,4,phiBox);
+
+    container=new QWidget(ui->patternTable);
+    layout=new QHBoxLayout(container);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(0);
+    phiBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    container->setAutoFillBackground(true);
+    container->setPalette(phiBox->palette());
+    layout->addWidget(phiBox);
+    // layout->setAlignment(phiBox,Qt::AlignCenter);
+
+    ui->patternTable->setCellWidget(currentRow,4,container);
     connect(phiBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::phiBox_changed);
+
 
     if (pattern->plane) {
 
         // disable theta and phi
 
-        QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(currentRow,3));
-        thetaBox->setEnabled(false);
+        // QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(currentRow,3));
+        // thetaBox->setEnabled(false);
 
-        QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(currentRow,4));
-        phiBox->setEnabled(false);
+        QWidget *container=ui->patternTable->cellWidget(currentRow,3);
+        if (container) {
+            QDoubleSpinBox *thetaBox=container->findChild<QDoubleSpinBox*>();
+            if (thetaBox) thetaBox->setEnabled(false);
+        }
+
+        // QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(currentRow,4));
+        // phiBox->setEnabled(false);
+
+        container=ui->patternTable->cellWidget(currentRow,4);
+        if (container) {
+            QDoubleSpinBox *phiBox=container->findChild<QDoubleSpinBox*>();
+            if (phiBox) phiBox->setEnabled(false);
+        }
     }
 
-    QDoubleSpinBox *latitudeBox=new QDoubleSpinBox();
+    // QDoubleSpinBox *latitudeBox=new QDoubleSpinBox();
+    // latitudeBox->setMinimum(-90);
+    // latitudeBox->setMaximum(90);
+    // latitudeBox->setValue(pattern->latitude);
+    // latitudeBox->setDecimals(0);
+    // latitudeBox->setSingleStep(5);
+    // ui->patternTable->setCellWidget(currentRow,5,latitudeBox);
+    // connect(latitudeBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::latitudeBox_changed);
+
+    QDoubleSpinBox *latitudeBox = new QDoubleSpinBox();
     latitudeBox->setMinimum(-90);
     latitudeBox->setMaximum(90);
     latitudeBox->setValue(pattern->latitude);
     latitudeBox->setDecimals(0);
     latitudeBox->setSingleStep(5);
-    ui->patternTable->setCellWidget(currentRow,5,latitudeBox);
+
+    container=new QWidget(ui->patternTable);
+    layout=new QHBoxLayout(container);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(0);
+    latitudeBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    container->setAutoFillBackground(true);
+    container->setPalette(latitudeBox->palette());
+    layout->addWidget(latitudeBox);
+    // layout->setAlignment(latitudeBox,Qt::AlignCenter);
+
+    ui->patternTable->setCellWidget(currentRow,5,container);
     connect(latitudeBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::latitudeBox_changed);
 
-    QDoubleSpinBox *rotationBox=new QDoubleSpinBox();
+
+    // QDoubleSpinBox *rotationBox=new QDoubleSpinBox();
+    // rotationBox->setMinimum(-360);
+    // rotationBox->setMaximum(360);
+    // rotationBox->setValue(pattern->rotation);
+    // rotationBox->setDecimals(0);
+    // rotationBox->setSingleStep(5);
+    // ui->patternTable->setCellWidget(currentRow,6,rotationBox);
+    // connect(rotationBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::rotationBox_changed);
+
+    QDoubleSpinBox *rotationBox = new QDoubleSpinBox();
     rotationBox->setMinimum(-360);
     rotationBox->setMaximum(360);
     rotationBox->setValue(pattern->rotation);
     rotationBox->setDecimals(0);
     rotationBox->setSingleStep(5);
-    ui->patternTable->setCellWidget(currentRow,6,rotationBox);
+
+    container=new QWidget(ui->patternTable);
+    layout=new QHBoxLayout(container);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(0);
+    rotationBox->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    container->setAutoFillBackground(true);
+    container->setPalette(rotationBox->palette());
+    layout->addWidget(rotationBox);
+    // layout->setAlignment(rotationBox,Qt::AlignCenter);
+
+    ui->patternTable->setCellWidget(currentRow,6,container);
     connect(rotationBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::rotationBox_changed);
 }
 
@@ -528,17 +641,41 @@ void AntennaForm::extractPatterns ()
         if (currentText.compare("specify") == 0) pattern->plane=nullptr;
         else cstrFromQString (&(pattern->plane),currentText);
 
-        QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,3));
-        pattern->theta=thetaBox->value();
+        // QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,3));
+        // pattern->theta=thetaBox->value();
 
-        QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,4));
-        pattern->phi=phiBox->value();
+        // QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,4));
+        // pattern->phi=phiBox->value();
 
-        QDoubleSpinBox* latitudeBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,5));
-        pattern->latitude=latitudeBox->value();
+        // QDoubleSpinBox* latitudeBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,5));
+        // pattern->latitude=latitudeBox->value();
 
-        QDoubleSpinBox* rotationBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,6));
-        pattern->rotation=rotationBox->value();
+        // QDoubleSpinBox* rotationBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,6));
+        // pattern->rotation=rotationBox->value();
+
+        QWidget *container=ui->patternTable->cellWidget(i,3);
+        QDoubleSpinBox *thetaBox = container ? container->findChild<QDoubleSpinBox*>() : nullptr;
+        if (thetaBox) {
+            pattern->theta=thetaBox->value();
+        }
+
+        container=ui->patternTable->cellWidget(i,4);
+        QDoubleSpinBox *phiBox = container ? container->findChild<QDoubleSpinBox*>() : nullptr;
+        if (phiBox) {
+            pattern->phi=phiBox->value();
+        }
+
+        container=ui->patternTable->cellWidget(i,5);
+        QDoubleSpinBox *latitudeBox = container ? container->findChild<QDoubleSpinBox*>() : nullptr;
+        if (latitudeBox) {
+            pattern->latitude=latitudeBox->value();
+        }
+
+        container=ui->patternTable->cellWidget(i,6);
+        QDoubleSpinBox *rotationBox = container ? container->findChild<QDoubleSpinBox*>() : nullptr;
+        if (rotationBox) {
+            pattern->rotation=rotationBox->value();
+        }
 
         patterns.push_back(pattern);
         i++;
@@ -738,23 +875,47 @@ void AntennaForm::quantity2Box_changed (int newIndex)
 void AntennaForm::planeBox_changed (int newIndex)
 {
     if (newIndex == 3) {
-        QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),3));
-        thetaBox->setEnabled(true);
+        // QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),3));
+        // thetaBox->setEnabled(true);
 
-        QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),4));
-        phiBox->setEnabled(true);
+        // QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),4));
+        // phiBox->setEnabled(true);
+
+        QWidget *container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),3);
+        if (container) {
+            QDoubleSpinBox *thetaBox=container->findChild<QDoubleSpinBox*>();
+            if (thetaBox) thetaBox->setEnabled(true);
+        }
+
+        container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),4);
+        if (container) {
+            QDoubleSpinBox *phiBox=container->findChild<QDoubleSpinBox*>();
+            if (phiBox) phiBox->setEnabled(true);
+        }
     } else {
-        QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),3));
-        thetaBox->setEnabled(false);
+        // QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),3));
+        // thetaBox->setEnabled(false);
 
-        QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),4));
-        phiBox->setEnabled(false);
+        // QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),4));
+        // phiBox->setEnabled(false);
+
+        QWidget *container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),3);
+        if (container) {
+            QDoubleSpinBox *thetaBox=container->findChild<QDoubleSpinBox*>();
+            if (thetaBox) thetaBox->setEnabled(false);
+        }
+
+        container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),4);
+        if (container) {
+            QDoubleSpinBox *phiBox=container->findChild<QDoubleSpinBox*>();
+            if (phiBox) phiBox->setEnabled(false);
+        }
     }
 
     ui->OkButton->setEnabled(true);
 }
 
-void AntennaForm::thetaBox_changed (double newValue)
+void AntennaForm::thetaBox_changed (int newValue)
 {
     ui->OkButton->setEnabled(true);
 }

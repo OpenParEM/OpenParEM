@@ -78,7 +78,7 @@ private slots:
     void quantity1Box_changed (int);
     void quantity2Box_changed (int);
     void planeBox_changed (int);
-    void thetaBox_changed (double);
+    void thetaBox_changed (int);
     void phiBox_changed (double);
     void latitudeBox_changed (double);
     void rotationBox_changed (double);
