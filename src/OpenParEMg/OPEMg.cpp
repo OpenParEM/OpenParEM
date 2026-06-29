@@ -6912,8 +6912,18 @@ void OpenParEMg::finishDraw ()
         VIItem *viItem=dynamic_cast<VIItem *>(workingItem);
         if (viItem) {
 
-            // convert the drawn line to a path
             currentDrawingItem->finishDraw();
+
+            // set to a name reasonable for an integration path
+            int Sport=viItem->getModeItem()->get_Sport();
+            QString name;
+            if (viItem->is_voltage()) name="v";
+            if (viItem->is_current()) name="i";
+            name.append(QString::number(Sport));
+            currentDrawingItem->rename(name);
+            currentDrawingItem->setText(0,name);
+
+            // create path
             PathItem *pathItem=viItem->createIntegrationPathItemFromDrawing(currentDrawingItem,true);
             currentDrawingItem->del();
 
@@ -6924,6 +6934,27 @@ void OpenParEMg::finishDraw ()
             //     // ToDo: fix
             //     //if (port) pathItem->set_portItem(port->get_item());
             // }
+
+
+            //xxx
+            // set the impedance definition to a reasonable value
+            PortItem *portItem=viItem->getPortItem();
+            if (portItem) {
+                int i=0;
+                while (i < portItem->childCount()) {
+                    BaseItem *baseItem=dynamic_cast<BaseItem *>(portItem->child(i));
+                    if (baseItem && baseItem->is_impedanceDefinition()) {
+                        CustomComboBox *comboZdef=dynamic_cast<CustomComboBox *>(ui->drawingItemTree->itemWidget(baseItem,0));
+                        if (comboZdef) {
+                            if (comboZdef->currentIndex() == 3) {  // invalid
+                                if (viItem->is_voltage()) comboZdef->setCurrentIndex(1);
+                                if (viItem->is_current()) comboZdef->setCurrentIndex(2);
+                            }
+                        }
+                    }
+                    i++;
+                }
+            }
 
             // assume a positive direction for the new integration path
             QString newPathText="+";

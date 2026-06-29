@@ -1222,6 +1222,7 @@ public:
     void setParentItem (BaseItem *baseItem) {parentItem=baseItem;}
 
     int get_SportCount ();
+    int get_Sport ();
 
     void save (std::ofstream *) override;
 
@@ -1271,7 +1272,7 @@ public:
     //SportItem* getSportItem () {return sportItem;}
 
     void insertSportNumberWidget (int);
-    int get_SportCount ();
+    int get_Sport ();
 
 private:
     SportItem *sportItem;
@@ -1301,6 +1302,8 @@ public:
     void createIntegrationPathItemFromPath (PathItem *);
     PathItem* createIntegrationPathItemFromDrawing (DrawingItem *, bool);
     //void convertItemToPath (DrawingItem *, bool);
+    ModeItem* getModeItem () {return modeItem;}
+    PortItem* getPortItem ();
 
     void save (std::ofstream *) override;
 

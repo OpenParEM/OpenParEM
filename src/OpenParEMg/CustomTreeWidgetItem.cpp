@@ -1812,7 +1812,7 @@ void DrawingItem::unsetAnimate (Handle(AIS_InteractiveContext) viewerContext)
 {
     //std::cout << "unsetAnimate" << std::endl; std::cout.flush();
     if (animateShape.IsNull()) return;
-    viewerContext->Remove(animateShape,Standard_False);  //xxx Standard_True
+    viewerContext->Remove(animateShape,Standard_False);  // Standard_True
     animateShape.Nullify();
 }
 
@@ -1854,7 +1854,6 @@ PathItem* DrawingItem::createPath (bool hasArrows)
     newPath->addWirePoints(polywire->buildWire());
 
     // create a path item
-    //xxx
     PathItem *newPathItem=new PathItem(mw,mw->path);
     if (newPathItem) {
         ShapeData *shapeData=newPathItem->getShapeData();
@@ -3614,6 +3613,26 @@ int ModeItem::get_SportCount ()
     return SportCount;
 }
 
+int ModeItem::get_Sport ()
+{
+    int i=0;
+    while (i < childCount()) {
+        SportItem *sportItem=dynamic_cast<SportItem *>(child(i));
+        if (sportItem && sportItem->is_sportLabel()) {
+            int j=0;
+            while (j < sportItem->childCount()) {
+                SportNumberItem *sportNumberItem=dynamic_cast<SportNumberItem *>(sportItem->child(j));
+                if (sportNumberItem) {
+                    return sportNumberItem->get_Sport();
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+    return 0;
+}
+
 void ModeItem::save (std::ofstream *out)
 {
     PortItem *portItem=nullptr;
@@ -3713,7 +3732,7 @@ int SportItem::get_SportCount ()
     while (i < childCount()) {
         SportNumberItem *sportNumberItem=dynamic_cast<SportNumberItem *>(child(i));
         if (sportNumberItem && sportNumberItem->is_sportNumber()) {
-            int testSportCount=sportNumberItem->get_SportCount();
+            int testSportCount=sportNumberItem->get_Sport();
             if (testSportCount > SportCount) SportCount=testSportCount;
         }
         i++;
@@ -3767,22 +3786,26 @@ void SportNumberItem::insertSportNumberWidget (int Sport)
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::clearTreeSelection);
 }
 
-int SportNumberItem::get_SportCount ()
+int SportNumberItem::get_Sport ()
 {
-    int SportCount=0;
-    int i=0;
-    while (i < childCount()) {
-        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-        if (baseItem) {
-            CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(baseItem,0));
-            if (sportNumber) {
-                SportCount=sportNumber->value();
-                break;
-            }
-            i++;
-        }
+    // int i=0;
+    // while (i < childCount()) {
+    //     BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+    //     if (baseItem) {
+    //         CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(baseItem,0));
+    //         if (sportNumber) {
+    //             return sportNumber->value();
+    //         }
+    //         i++;
+    //     }
+    // }
+
+    CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
+    if (sportNumber) {
+        return sportNumber->value();
     }
-    return SportCount;
+
+    return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3934,7 +3957,7 @@ bool VIItem::isValidInsertSelectedPath ()
     // check that the paths are within the port
 
     ModeItem *modeItem=dynamic_cast<ModeItem *>(VIitem->getParentItem());
-    PortItem *portItem=dynamic_cast<PortItem *>(modeItem->getParentItem());
+    PortItem *portItem=getPortItem();
 
     // port outline
     PathItem *pathItem=portItem->getPathItem();
@@ -4059,6 +4082,20 @@ void VIItem::addRemoveScale ()
             // nothing to do
         }
     }
+}
+
+PortItem* VIItem::getPortItem ()
+{
+    PortItem *portItem=dynamic_cast<PortItem *>(modeItem->getParentItem());
+    if (portItem) return portItem;
+
+    DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(modeItem->getParentItem());
+    if (diffPairItem) {
+        PortItem *portItem=dynamic_cast<PortItem *>(diffPairItem->getParentItem());
+        if (portItem) return portItem;
+    }
+
+    return nullptr;
 }
 
 void VIItem::save (std::ofstream *out)
