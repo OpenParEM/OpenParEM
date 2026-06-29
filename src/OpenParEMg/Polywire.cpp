@@ -1688,7 +1688,6 @@ Rectangle* Rectangle::copyCreate ()
     newRectangle->tempHeight=tempHeight;
     newRectangle->reverseExtrusionDirection=reverseExtrusionDirection;
     return newRectangle;
-
 }
 
 Handle(AIS_Shape) Rectangle::get_AIS_Shape ()

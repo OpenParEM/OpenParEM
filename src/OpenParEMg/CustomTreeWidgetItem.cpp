@@ -77,16 +77,17 @@ void BaseItem::setModified (bool modified_)
     modified=modified_;
 
     if (modified_) {
-        // pass up for true
+        // pass up for true so that the root item can be checked for changes
         if (parentItem) parentItem->setModified(modified_);
     } else {
-        // trickle down for false
-        int i=0;
-        while (i < childCount()) {
-            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-            if (baseItem) baseItem->setModified(modified_);
-            i++;
-        }
+        // // trickle down for false
+        // int i=0;
+        // while (i < childCount()) {
+        //     BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        //     if (baseItem) baseItem->setModified(modified_);
+        //     i++;
+        // }
+        modified=modified_;
     }
 }
 
@@ -322,7 +323,6 @@ void BaseItem::undo ()
         mw->ui->drawingWindow->deleteShape(getShape());
         promoteChildren();
         getParentItem()->removeChild(this);
-        mw->ui->drawingWindow->showItem(this);
         dataStack.undo();
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
@@ -1849,21 +1849,21 @@ PathItem* DrawingItem::createPath (bool hasArrows)
     // new path for the path database
     Path *newPath=new Path(0,0);
     newPath->set_name(pathName.toStdString());
-    newPath->is_modified();
+    newPath->set_modified();
     newPath->set_normal(polywire->getNormal());
     newPath->addWirePoints(polywire->buildWire());
 
     // create a path item
+    //xxx
     PathItem *newPathItem=new PathItem(mw,mw->path);
     if (newPathItem) {
-        ShapeData *newShapeData=newPathItem->getShapeData()->copyCreate();
-        newShapeData->setPolywire(polywire->copyCreate());
-        newShapeData->getPolywire()->setHasArrows(hasArrows);
-        newShapeData->setShape(newShapeData->getPolywire()->get_AIS_Shape());
+        ShapeData *shapeData=newPathItem->getShapeData();
+        shapeData->setPolywire(polywire->copyCreate());
+        shapeData->getPolywire()->setHasArrows(hasArrows);
+        shapeData->setShape(shapeData->getPolywire()->get_AIS_Shape());
         newPathItem->setText(0,pathName);
-        newShapeData->set_name(newPathItem->text(0));
+        shapeData->set_name(newPathItem->text(0));
         newPathItem->setPath(newPath);
-        newPathItem->addShapeData(newShapeData);
 
         mw->path->addChild(newPathItem);
         mw->itemChangesStack.add(newPathItem);

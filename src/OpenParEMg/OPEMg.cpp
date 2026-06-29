@@ -5067,6 +5067,7 @@ bool OpenParEMg::saveBoundaryDatabase ()
             if (pathItem) pathItem->save(&outputFile);
             i++;
         }
+        path->setModified(false);
 
         // boundaries
         i=0;
@@ -5075,6 +5076,7 @@ bool OpenParEMg::saveBoundaryDatabase ()
             if (boundaryItem) boundaryItem->save(&outputFile);
             i++;
         }
+        boundary->setModified(false);
 
         // ports
         i=0;
@@ -5083,6 +5085,7 @@ bool OpenParEMg::saveBoundaryDatabase ()
             if (portItem) portItem->save(&outputFile);
             i++;
         }
+        port->setModified(false);
 
         outputFile.close();
 
@@ -5145,6 +5148,7 @@ void OpenParEMg::saveItem (std::ofstream *out, BaseItem *baseItem)
             saveItem(out,child);
             i++;
         }
+        rootDrawingItem->setModified(false);
     }
 
     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
