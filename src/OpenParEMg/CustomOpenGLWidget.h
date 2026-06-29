@@ -74,9 +74,6 @@ public:
     void fitSelected () {viewerContext->FitSelected(view); view->Redraw();}
     //void setScale (double scale) {view->SetScale(scale); view->Redraw();}
 
-    // void cancelDraw ();
-    //void drawRubberBand (gp_Pnt);
-
     void wheelEvent (QWheelEvent*) override;
     void keyPressEvent (QKeyEvent*) override;
     void mousePressEvent (QMouseEvent*) override;

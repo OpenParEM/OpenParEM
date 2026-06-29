@@ -37,6 +37,7 @@ BaseItem::BaseItem (OpenParEMg *mw_, BaseItem *parentItem_)
     mw=mw_;
     parentItem=parentItem_;
     itemType=-1;
+    setModified(true);
     setText(0,"BaseItem");
     setForeground(0,Qt::black);
 
@@ -70,6 +71,28 @@ BaseItem* BaseItem::getRootParent ()
 
     return baseItem;
 }
+
+void BaseItem::setModified (bool modified_)
+{
+    modified=modified_;
+
+    if (modified_) {
+        // pass up for true
+        if (parentItem) parentItem->setModified(modified_);
+    } else {
+        // trickle down for false
+        int i=0;
+        while (i < childCount()) {
+            BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+            if (baseItem) baseItem->setModified(modified_);
+            i++;
+        }
+    }
+}
+
+// void BaseItem::setMenus () {mw->setMenusI(1);}
+// void BaseItem::clearTreeSelection () {mw->clearTreeSelection();}
+// void BaseItem::updateViewer () {mw->ui->drawingWindow->updateViewer();}
 
 void BaseItem::showDisplayStatus ()
 {
@@ -133,7 +156,7 @@ void BaseItem::setForUndoRedo (bool withMidPoints, int shapeOperation)
 
 void BaseItem::restoreWidgets ()
 {
-    std::cout << "BaseItem::restoreWidgets" << std::endl; std::cout.flush();
+    //std::cout << "BaseItem::restoreWidgets" << std::endl; std::cout.flush();
 
     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(this);
     if (boundaryItem) {
@@ -187,12 +210,9 @@ void BaseItem::restoreWidgets ()
         }
     }
 
-    std::cout << "place 1" << std::endl; std::cout.flush();
     if (is_scaleValue()) {
-        std::cout << "place 2" << std::endl; std::cout.flush();
         ScaleValueItem *scaleValueItem=dynamic_cast<ScaleValueItem *>(this);
         if (scaleValueItem) {
-            std::cout << "place 3" << std::endl; std::cout.flush();
             ShapeData *shapeData=getShapeData();
             double scale=shapeData->get_scale();
             scaleValueItem->insertScaleValueWidget(scale);
@@ -206,6 +226,9 @@ void BaseItem::restoreWidgets ()
         if (baseItem) baseItem->restoreWidgets();
         i++;
     }
+
+    //clearTreeSelection();
+    //updateViewer();
 }
 
 void BaseItem::startItemChange () {mw->itemChangesStack.startNew();}
@@ -223,41 +246,41 @@ void BaseItem::rename (QString name)
     mw->finishOperation(false,1);
 }
 
-void BaseItem::expandToItem ()
-{
-    //std::cout << "BaseItem::expandToItem  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
+// void BaseItem::expandToItem ()
+// {
+//     //std::cout << "BaseItem::expandToItem  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
 
-    BaseItem *baseItem=getParentItem();
-    for (BaseItem *p=baseItem; p; p=p->getParentItem())
-    {
-        p->setExpanded(true);
-    }
+//     BaseItem *baseItem=getParentItem();
+//     for (BaseItem *p=baseItem; p; p=p->getParentItem())
+//     {
+//         p->setExpanded(true);
+//     }
 
-    mw->ui->drawingWindow->unselectAllItems();
-    setForeground(0,Qt::black);
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->showItem(this);
-    mw->ui->drawingWindow->selectItem(this);
-    mw->ui->drawingItemTree->scrollToItem(this);
-}
+//     mw->ui->drawingWindow->unselectAllItems();
+//     setForeground(0,Qt::black);
+//     mw->ui->drawingWindow->hideItem(this);
+//     mw->ui->drawingWindow->showItem(this);
+//     mw->ui->drawingWindow->selectItem(this);
+//     mw->ui->drawingItemTree->scrollToItem(this);
+// }
 
-void BaseItem::expandToItemPlus1 ()
-{
-    //std::cout << "BaseItem::expandToItem1  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
+// void BaseItem::expandToItemPlus1 ()
+// {
+//     //std::cout << "BaseItem::expandToItem1  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
 
-    BaseItem *baseItem=this;
-    for (BaseItem *p=baseItem; p; p=p->getParentItem())
-    {
-        p->setExpanded(true);
-    }
+//     BaseItem *baseItem=this;
+//     for (BaseItem *p=baseItem; p; p=p->getParentItem())
+//     {
+//         p->setExpanded(true);
+//     }
 
-    mw->ui->drawingWindow->unselectAllItems();
-    setForeground(0,Qt::black);
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->showItem(this);
-    mw->ui->drawingWindow->selectItem(this);
-    mw->ui->drawingItemTree->scrollToItem(this);
-}
+//     mw->ui->drawingWindow->unselectAllItems();
+//     setForeground(0,Qt::black);
+//     mw->ui->drawingWindow->hideItem(this);
+//     mw->ui->drawingWindow->showItem(this);
+//     mw->ui->drawingWindow->selectItem(this);
+//     mw->ui->drawingItemTree->scrollToItem(this);
+// }
 
 BaseItem* BaseItem::findTopLevelItem (BaseItem *parentItem, BaseItem *currentItem)
 {
@@ -275,12 +298,6 @@ BaseItem* BaseItem::findTopLevelItem (BaseItem *parentItem, BaseItem *currentIte
         currentParentItem=currentItem->getParentItem();
     }
 
-    // currentItem->alignForegroundColor();
-    // if (currentItem->foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(currentItem);
-    // if (currentItem->foreground(0) == Qt::gray) {
-    //     mw->ui->drawingWindow->showItem(currentItem);
-    //     mw->ui->drawingWindow->hideItem(currentItem);
-    // }
     mw->ui->drawingWindow->showItem(currentItem);
 
     return currentItem;
@@ -307,12 +324,10 @@ void BaseItem::undo ()
         getParentItem()->removeChild(this);
         mw->ui->drawingWindow->showItem(this);
         dataStack.undo();
-        //expandToItemPlus1();
     } else if (shapeData->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.undo();
         restoreWidgets();
-        //expandToItemPlus1();
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
         dataStack.undo();
@@ -329,14 +344,10 @@ void BaseItem::undo ()
         mw->ui->drawingWindow->showItem(this);
         mw->ui->drawingWindow->activateItem(this);
         restoreWidgets();
-        //expandToItemPlus1();
     } else if (shapeData->isChangeName()) {
         std::cout << "   isChangeName" << std::endl; std::cout.flush();
-
         dataStack.undo();
         setText(0,getShapeData()->get_name());
-
-        //expandToItem();
     }
 
     // add or remove integration path scales as needed
@@ -376,12 +387,10 @@ void BaseItem::redo ()
         demoteChildren();
         mw->ui->drawingWindow->showItem(this);
         restoreWidgets();
-        //expandToItemPlus1();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.redo();
         restoreWidgets();
-        //expandToItemPlus1();
     } else if (next->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
         mw->ui->drawingWindow->unselectItem(this);
@@ -399,8 +408,6 @@ void BaseItem::redo ()
 
         dataStack.redo();
         setText(0,getShapeData()->get_name());
-
-        //expandToItem();
     }
 
     // add or remove integration path scales as needed
@@ -449,6 +456,8 @@ void BaseItem::save (std::ofstream *out)
             *out << "   wave_impedance=" << textWaveImpedance->text().toStdString() << std::endl;
         }
     }
+
+    setModified(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -461,6 +470,7 @@ ScaleLabelItem::ScaleLabelItem (OpenParEMg *mw_, VIItem *parentItem_)
     parentItem=parentItem_;
     itemType=12;
     viItem=parentItem_;
+    setModified(true);
     setForeground(0,Qt::black);
     setText(0,"Scale");
     setFlags(flags() & ~Qt::ItemIsEditable);
@@ -482,6 +492,7 @@ ScaleValueItem::ScaleValueItem (OpenParEMg *mw_, ScaleLabelItem *parentItem_)
     parentItem=parentItem_;
     itemType=13;
     scaleLabelItem=parentItem_;
+    setModified(true);
     setForeground(0,Qt::black);
     setFlags(flags() & ~Qt::ItemIsSelectable);
 
@@ -545,6 +556,7 @@ void ScaleValueItem::save (std::ofstream *out)
     if (scaleValue) {
         std::cout << "         scale=" << scaleValue->text().toStdString() << std::endl;
     }
+    setModified(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -663,6 +675,7 @@ DrawingItem::DrawingItem (OpenParEMg *mw_, BaseItem *parentItem_)
     mw=mw_;
     parentItem=parentItem_;
     itemType=0;
+    setModified(true);
     setText(0,"DrawingItem");
     setForeground(0,Qt::black);
 
@@ -694,9 +707,12 @@ void DrawingItem::promoteChildren ()
             drawingItem->setParentItem(getParentItem());
             drawingItem->decrease_depth();
             mw->ui->drawingWindow->showItem(drawingItem);
+            drawingItem->setModified(true);
         }
         i++;
     }
+
+    setModified(true);
 }
 
 void DrawingItem::demoteChildren ()
@@ -717,9 +733,12 @@ void DrawingItem::demoteChildren ()
             drawingItem->setText(1,QString());
 
             mw->ui->drawingWindow->hideItem(drawingItem);
+            drawingItem->setModified(true);
         }
         i++;
     }
+
+    setModified(true);
 }
 
 void DrawingItem::cancelOperation ()
@@ -860,7 +879,7 @@ void DrawingItem::finishDraw ()
     mw->activePolywire=nullptr;
 
     // mark as changed
-    mw->drawingChanged=true;
+    setModified(true);
 }
 
 void DrawingItem::cancelDraw ()
@@ -933,7 +952,6 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
     if (polywire) {
         polywire->shift(p1_,p0_);
         mw->reprocess(this);
-        mw->drawingChanged=true;
     }
 
     Process *process=static_cast<Process *>(getProcess());
@@ -942,7 +960,6 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
         while (i < childCount()) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
             if (drawingItem) drawingItem->finishMove(p0_,p1_);
-            mw->drawingChanged=true;
             i++;
         }
     }
@@ -959,11 +976,10 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
 
         mw->reprocess(this);
-        mw->drawingChanged=true;
     }
 
     mw->activeAction=false;
-
+    setModified(true);
 
     if (isDisplayed) mw->ui->drawingWindow->showItem(this);
     else mw->ui->drawingWindow->hideItem(this);
@@ -1019,7 +1035,6 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
     if (polywire) {
         polywire->rotate(angle,startPoint,endPoint);
         mw->reprocess(this);
-        mw->drawingChanged=true;
     }
 
     Process *process=static_cast<Process *>(getProcess());
@@ -1028,7 +1043,6 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
         while (i < childCount()) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
             if (drawingItem) drawingItem->finishRotate(angle,startPoint,endPoint);
-            mw->drawingChanged=true;
             i++;
         }
 
@@ -1047,17 +1061,13 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
 
         mw->reprocess(this);
-        mw->drawingChanged=true;
     }
 
     mw->activeAction=false;
+    setModified(true);
 
     if (isDisplayed) mw->ui->drawingWindow->showItem(this);
     else mw->ui->drawingWindow->hideItem(this);
-
-    // alignForegroundColor();
-    // if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
-    // if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
 
     resetOperation();
 
@@ -1176,8 +1186,6 @@ void DrawingItem::extrude ()
 
             mw->previousClickedItem=mw->clickedItem;
             mw->clickedItem=newItem;
-
-            mw->drawingChanged=true;
         }
     }
     resetOperation();
@@ -1331,7 +1339,6 @@ void DrawingItem::startEdit ()
 
 void DrawingItem::finishEdit ()
 {
-    //bool isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -1362,13 +1369,11 @@ void DrawingItem::finishEdit ()
         mw->reprocess(this);
     }
 
-    // alignForegroundColor();
-    // if (isDisplayed && foreground(0) == Qt::gray) mw->ui->drawingWindow->showItem(this);
-    // if (!isDisplayed && foreground(0) == Qt::black) mw->ui->drawingWindow->hideItem(this);
-
     mw->ui->drawingWindow->showItem(this);
 
     mw->activeAction=false;
+
+    setModified(true);
 
     //findTopLevelItem(this);
 }
@@ -1410,7 +1415,6 @@ void DrawingItem::finishDeletePoint ()
         gp_Pnt p0=getP0();
         polywire->deletePoint(p0);
         mw->reprocess(this);
-        mw->drawingChanged=true;
     }
 
     Process *process=static_cast<Process *>(getProcess());
@@ -1425,11 +1429,11 @@ void DrawingItem::finishDeletePoint ()
 
     if (!polywire && !process) {
         mw->reprocess(this);
-        mw->drawingChanged=true;
     }
 
     resetOperation();
     mw->activeAction=false;
+    setModified(true);
     //findTopLevelItem(this);
     mw->ui->drawingWindow->showItem(this);
     mw->finishOperation(false,1);
@@ -1485,6 +1489,8 @@ void DrawingItem::finishInsertPoint ()
         polywire->setCurrentMousePosition(p0);
         mw->ui->drawingWindow->set_pickSecondVertex(true);
 
+        setModified(true);
+
         // finishStretchPoint completes the operation
     }
 }
@@ -1507,7 +1513,6 @@ void DrawingItem::finishStretchPoint ()
         }
 
         mw->reprocess(this);
-        mw->drawingChanged=true;
     }
 
     Process *process=static_cast<Process *>(getProcess());
@@ -1522,11 +1527,11 @@ void DrawingItem::finishStretchPoint ()
 
     if (!polywire && !process) {
         mw->reprocess(this);
-        mw->drawingChanged=true;
     }
 
     resetOperation();
     mw->activeAction=false;
+    setModified(true);
     //findTopLevelItem(this);
 
     mw->ui->drawingWindow->showItem(this);
@@ -1557,7 +1562,7 @@ void DrawingItem::convertToPolyline ()
         getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
         mw->ui->drawingWindow->activateSelectItem(this);
         mw->itemChangesStack.add(this);
-        mw->drawingChanged=true;
+        setModified(true);
 
         //findTopLevelItem(this);
         mw->ui->drawingWindow->showItem(this);
@@ -1608,7 +1613,7 @@ void DrawingItem::del ()
     // reset the top-level compound
     mw->reprocess(mw->drawing);
 
-    mw->drawingChanged=true;
+   setModified(true);
 }
 
 DrawingItem* DrawingItem::copyCreate ()
@@ -2136,6 +2141,7 @@ PathItem::PathItem (OpenParEMg *mw_, BaseItem *parentItem_)
     mw=mw_;
     parentItem=parentItem_;
     itemType=4;
+    setModified(true);
     setText(0,"PathItem");
     setForeground(0,Qt::black);
     path=nullptr;
@@ -2243,7 +2249,7 @@ void PathItem::del ()
     }
 
     mw->itemChangesStack.add(this);
-    mw->drawingChanged=true;
+    setModified(true);
 }
 
 BaseItem* PathItem::findTopLevelItem (BaseItem *baseItem)
@@ -2412,6 +2418,7 @@ void PathItem::reverse ()
 void PathItem::save (std::ofstream *out)
 {
     if (path) path->save(out);
+    setModified(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2423,6 +2430,7 @@ IntegrationPathItem::IntegrationPathItem (OpenParEMg *mw_, BaseItem *parentItem_
     mw=mw_;
     parentItem=parentItem_;
     itemType=14;
+    setModified(true);
     setText(0,"IntegrationPathItem");
     setForeground(0,Qt::black);
 
@@ -2565,6 +2573,7 @@ void IntegrationPathItem::flipSign ()
 void IntegrationPathItem::save (std::ofstream *out)
 {
     *out << "         path=" << text(0).toStdString() << std::endl;
+    setModified(false);
 }
 
 void IntegrationPathItem::saveN (std::ofstream *out)
@@ -2572,6 +2581,7 @@ void IntegrationPathItem::saveN (std::ofstream *out)
     QChar direction=text(0).front();
     QString name=text(0).slice(1);
     *out << "         path" << direction.toLatin1() << "=" << name.toStdString() << std::endl;
+    setModified(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2650,11 +2660,13 @@ void RootBoundaryItem::showMenu (QMenu *menu)
 
 BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_type_, double wave_impedance_, QString boundary_material_)
 {
+    //std::cout << "BoundaryItem::BoundaryItem" << std::endl; std::cout.flush();
+
     mw=mw_;
     parentItem=mw->boundary;
     itemType=2;
     pathItem=pathItem_;
-
+    setModified(true);
     setFlags(flags() | Qt::ItemIsEditable);
     setToolTip(0,"Boundary type.");
 
@@ -2747,6 +2759,7 @@ void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpe
 
         QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
         QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+        QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::clearTreeSelection);
         QObject::connect(comboType,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::updateViewer);
 
         // set the CustomTreeWidget items so they can be hidden as needed depending on type
@@ -2783,10 +2796,12 @@ void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpe
             }
         }
         mw->ui->drawingItemTree->setItemWidget(itemMaterial,0,comboMaterial);
+        comboMaterial->set_boundaryItem(this);
         comboMaterial->setCurrentText(boundary_material);
 
-        QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentTextChanged, &comboTextChanged);
+        QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentTextChanged,&comboTextChanged);
         QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+        QObject::connect(comboMaterial,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::clearTreeSelection);
     }
 
     resetWidgets();
@@ -2913,8 +2928,7 @@ void BoundaryItem::resetWidgets ()
         itemMaterial=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(boundaryMaterial,0));
         if (itemMaterial) {
             const QSignalBlocker blockerMaterial(itemMaterial);
-            //itemMaterial->setCurrentText(boundary_material);
-            itemMaterial->setCurrentText("none");
+            itemMaterial->setCurrentText(boundary_material);
         }
     }
 
@@ -2937,6 +2951,9 @@ void BoundaryItem::resetWidgets ()
 
     // set the shape color
     setSolidColor();
+
+    //clearTreeSelection();
+    //updateViewer();
 }
 
 void BoundaryItem::undo ()
@@ -2996,11 +3013,19 @@ void BoundaryItem::save (std::ofstream *out)
     *out << "Boundary" << std::endl;
     *out << "   name=" << text(0).toStdString() << std::endl;
 
-    int i=0;
-    while (i < childCount()) {
-        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-        if (baseItem) baseItem->save(out);
-        i++;
+    ShapeData *shapeData=getShapeData();
+    int boundaryType=shapeData->get_boundary_type();
+
+    if (boundaryType == 0) {
+        *out << "   type=perfect_electric_conductor" << std::endl;
+    } else if (boundaryType == 1) {
+        *out << "   type=perfect_magnetic_conductor" << std::endl;
+    } else if (boundaryType == 2) {
+        *out << "   type=surface_impedance" << std::endl;
+        *out << "   material=" << shapeData->get_boundary_material().toStdString() << std::endl;
+    } else if (boundaryType == 3) {
+        *out << "   type=radiation" << std::endl;
+        *out << "   wave_impedance=" << shapeData->get_wave_impedance() << std::endl;
     }
 
     if (pathItem) {
@@ -3012,6 +3037,8 @@ void BoundaryItem::save (std::ofstream *out)
 
     *out << "EndBoundary" << std::endl;
     *out << std::endl;
+
+    setModified(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3094,6 +3121,7 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
     parentItem=mw->port;
     itemType=1;
     pathItem=pathItem_;
+    setModified(true);
 
     int Sport=mw->port->childCount()+1;
 
@@ -3163,6 +3191,7 @@ void PortItem::insertImpedanceDefinitionWidget (BaseItem *impedanceDefinitionIte
 
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+    QObject::connect(comboZdef,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::clearTreeSelection);
 }
 
 void PortItem::addImpedanceDefinitionItem ()
@@ -3210,6 +3239,7 @@ void PortItem::insertImpedanceCalculationWidget (BaseItem *impedanceCalculationI
 
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,&comboIndexChanged);
     QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::setMenus);
+    QObject::connect(comboZcalc,&CustomComboBox::CustomCurrentIndexChanged,mw->relay,&Relay::clearTreeSelection);
 }
 
 void PortItem::addImpedanceCalculationItem ()
@@ -3409,6 +3439,8 @@ void PortItem::save (std::ofstream *out)
 
     *out << "EndPort" << std::endl;
     *out << std::endl;
+
+    setModified(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3420,6 +3452,7 @@ ModeItem::ModeItem (OpenParEMg *mw_, BaseItem *parentItem_, bool dummyFill)
     mw=mw_;
     parentItem=parentItem_;
     itemType=5;
+    setModified(true);
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
@@ -3613,6 +3646,8 @@ void ModeItem::save (std::ofstream *out)
     }
 
     *out << "   End" << calculation.toStdString() << std::endl;
+
+    setModified(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3625,6 +3660,7 @@ SportItem::SportItem (OpenParEMg *mw_, ModeItem *modeItem_, int Sport)
     parentItem=modeItem_;
     itemType=8;
     modeItem=modeItem_;
+    setModified(true);
     setText(0,"S Port");
     setForeground(0,Qt::black);
     setFlags(flags() & ~Qt::ItemIsEditable);
@@ -3695,7 +3731,7 @@ SportNumberItem::SportNumberItem (OpenParEMg *mw_, SportItem *sportItem_)
     parentItem=sportItem_;
     itemType=9;
     sportItem=sportItem_;
-
+    setModified(true);
     setForeground(0,Qt::black);
     setFlags(flags() & ~Qt::ItemIsSelectable);
     setToolTip(0,"S-parameter port number.");
@@ -3728,6 +3764,7 @@ void SportNumberItem::insertSportNumberWidget (int Sport)
 
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,&spinValueChanged);
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::setMenus);
+    QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::clearTreeSelection);
 }
 
 int SportNumberItem::get_SportCount ()
@@ -3758,6 +3795,7 @@ VIItem::VIItem (OpenParEMg *mw_, ModeItem *modeItem_, int itemType_)
     parentItem=modeItem_;
     itemType=itemType_;
     modeItem=modeItem_;
+    setModified(true);
     scaleLabelItem=nullptr;
 
     if (itemType_ == 10) {
@@ -4045,6 +4083,8 @@ void VIItem::save (std::ofstream *out)
     }
 
     *out << "      EndIntegrationPath" << std::endl;
+
+    setModified(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4069,6 +4109,8 @@ void ScaleLabelItem::save (std::ofstream *out)
         if (baseItem) baseItem->save(out);
         i++;
     }
+
+    setModified(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4080,6 +4122,7 @@ DiffPairItem::DiffPairItem (OpenParEMg *mw_, PortItem *portItem_, ModeItem *pMod
     mw=mw_;
     parentItem=portItem_;
     itemType=15;
+    setModified(true);
     portItem=portItem_;
 
     setFlags(flags() & ~Qt::ItemIsEditable);
@@ -4330,6 +4373,8 @@ void DiffPairItem::save (std::ofstream *out)
     *out << "      Sport_P=" << Sport[0] << std::endl;
     *out << "      Sport_N=" << Sport[1] << std::endl;
     *out << "   EndDifferentialPair" << std::endl;
+
+    setModified(false);
 }
 
 
@@ -4413,6 +4458,7 @@ MeshItem::MeshItem (OpenParEMg *mw_)
     mw=mw_;
     parentItem=mw->mesh;
     itemType=3;
+    setModified(true);
     setText(0,"MeshItem");
     setForeground(0,Qt::black);
 }

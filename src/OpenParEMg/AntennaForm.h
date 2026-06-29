@@ -75,8 +75,7 @@ private slots:
     void on_OkButton_clicked ();
     void on_CancelButton_clicked ();
 
-    void quantity1Box_changed (int);
-    void quantity2Box_changed (int);
+    void quantityBox_changed (int);
     void planeBox_changed (int);
     void thetaBox_changed (int);
     void phiBox_changed (double);
@@ -108,8 +107,7 @@ private:
 
     bool simulationRunning;
 
-    int quantity1Width;
-    int quantity2Width;
+    int quantityWidth;
     int planeWidth;
     int thetaWidth;
     int phiWidth;

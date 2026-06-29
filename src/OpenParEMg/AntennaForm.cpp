@@ -77,16 +77,15 @@ AntennaForm::AntennaForm(QWidget *parent)
 
     // 2D pattern table
 
-    ui->patternTable->insertColumn(0);       // pattern type for the first pattern
-    ui->patternTable->insertColumn(1);       // pattern type for the second pattern
-    ui->patternTable->insertColumn(2);       // plane
-    ui->patternTable->insertColumn(3);       // theta
-    ui->patternTable->insertColumn(4);       // phi
-    ui->patternTable->insertColumn(5);       // latitude
-    ui->patternTable->insertColumn(6);       // rotation
+    ui->patternTable->insertColumn(0);       // pattern
+    ui->patternTable->insertColumn(1);       // plane
+    ui->patternTable->insertColumn(2);       // theta
+    ui->patternTable->insertColumn(3);       // phi
+    ui->patternTable->insertColumn(4);       // latitude
+    ui->patternTable->insertColumn(5);       // rotation
 
     QStringList headers;
-    headers << "Quantity 1" << "Quantity 2" << "Plane" << "Theta\ndeg" << "Phi\ndeg" << "Latitude\ndeg" << "Rotation\ndeg";
+    headers << "Quantity" << "Plane" << "Theta\ndeg" << "Phi\ndeg" << "Latitude\ndeg" << "Rotation\ndeg";
     ui->patternTable->setHorizontalHeaderLabels(headers);
 
 
@@ -95,38 +94,21 @@ AntennaForm::AntennaForm(QWidget *parent)
     scrollBarOffset=0;
     verticalHeaderWidth=ui->patternTable->verticalHeader()->width();
 
-    quantity1Width=85;
-    quantity2Width=85;
-    thetaWidth=85;
-    phiWidth=85;
-    latitudeWidth=85;
-    rotationWidth=85;
+    quantityWidth=125;
+    thetaWidth=90;
+    phiWidth=90;
+    latitudeWidth=90;
+    rotationWidth=90;
 
     planeWidth=patternBoxWidth-scrollBarOffset-verticalHeaderWidth-
-               quantity1Width-quantity2Width-thetaWidth-phiWidth-latitudeWidth-rotationWidth;
+               quantityWidth-thetaWidth-phiWidth-latitudeWidth-rotationWidth;
 
-    ui->patternTable->setColumnWidth(0,quantity1Width);
-    ui->patternTable->setColumnWidth(1,quantity2Width);
-    ui->patternTable->setColumnWidth(2,planeWidth);
-    ui->patternTable->setColumnWidth(3,thetaWidth);
-    ui->patternTable->setColumnWidth(4,phiWidth);
-    ui->patternTable->setColumnWidth(5,latitudeWidth);
-    ui->patternTable->setColumnWidth(6,rotationWidth);
-
-//     ui->patternTable->setStyleSheet(R"(
-//     /* 1. Reset standard combo box styling inside the table */
-//     QTableWidget QComboBox {
-//         border: 1px solid #CCCCCC;
-//         border-radius: 3px;
-//         background-color: white;
-//     }
-
-//     /* 2. Apply red border ONLY when the parent row cell is selected */
-//     QTableWidget::item:selected QComboBox {
-//         border: 2px solid red;
-//         border-radius: 3px;
-//     }
-// )");
+    ui->patternTable->setColumnWidth(0,quantityWidth);
+    ui->patternTable->setColumnWidth(1,planeWidth);
+    ui->patternTable->setColumnWidth(2,thetaWidth);
+    ui->patternTable->setColumnWidth(3,phiWidth);
+    ui->patternTable->setColumnWidth(4,latitudeWidth);
+    ui->patternTable->setColumnWidth(5,rotationWidth);
 }
 
 AntennaForm::~AntennaForm()
@@ -193,9 +175,6 @@ void AntennaForm::set_projData (struct projectData *a)
     saveRawData=projData->antenna_plot_raw_save;
     ui->saveRawData->setChecked(saveRawData);
 
-    // make sure at least one 3D pattern is enabled
-    check3Dpatterns();
-
     // disable while a simulation is running
     if (simulationRunning) {
 
@@ -222,11 +201,18 @@ void AntennaForm::set_projData (struct projectData *a)
         ui->delete2Dslice->setEnabled(false);
     }
 
+    // set here - appendPattern may set to true
+    ui->OkButton->setEnabled(false);
+
+    // 2D
+
     ui->delete2Dslice->setEnabled(false);
     long unsigned int i=0;
     while (i < projData->inputAntennaPatternsCount) {
-        appendPattern(&(projData->inputAntennaPatterns[i]));
-        ui->delete2Dslice->setEnabled(true);
+        if (projData->inputAntennaPatterns[i].dim == 2) {
+            appendPattern(&(projData->inputAntennaPatterns[i]));
+            ui->delete2Dslice->setEnabled(true);
+        }
         i++;
     }
 
@@ -236,10 +222,27 @@ void AntennaForm::set_projData (struct projectData *a)
     scrollBarOffset=0;
     if (ui->patternTable->rowCount() > 4) scrollBarOffset=scrollBarWidth;
     planeWidth=patternBoxWidth-scrollBarOffset-verticalHeaderWidth-
-                 quantity1Width-quantity2Width-thetaWidth-phiWidth-latitudeWidth-rotationWidth;
-    ui->patternTable->setColumnWidth(2,planeWidth);
+                 quantityWidth-thetaWidth-phiWidth-latitudeWidth-rotationWidth;
+    ui->patternTable->setColumnWidth(1,planeWidth);
 
-    ui->OkButton->setEnabled(false);
+    // 3D
+    i=0;
+    while (i < projData->inputAntennaPatternsCount) {
+        if (projData->inputAntennaPatterns[i].dim == 3) {
+            if (projData->inputAntennaPatterns[i].quantity1) {
+                if (strcmp(projData->inputAntennaPatterns[i].quantity1,"G") == 0) ui->patternG3D->setChecked(true);
+                else if (strcmp(projData->inputAntennaPatterns[i].quantity1,"D") == 0) ui->patternD3D->setChecked(true);
+                else if (strcmp(projData->inputAntennaPatterns[i].quantity1,"Etheta") == 0) ui->patternEtheta3D->setChecked(true);
+                else if (strcmp(projData->inputAntennaPatterns[i].quantity1,"Ephi") == 0) ui->patternEphi3D->setChecked(true);
+                else if (strcmp(projData->inputAntennaPatterns[i].quantity1,"Htheta") == 0) ui->patternHtheta3D->setChecked(true);
+                else if (strcmp(projData->inputAntennaPatterns[i].quantity1,"Hphi") == 0) ui->patternHphi3D->setChecked(true);
+            }
+        }
+        i++;
+    }
+
+    // make sure at least one 3D pattern is enabled
+    check3Dpatterns();
 }
 
 void AntennaForm::on_patternG3D_stateChanged (int arg1)
@@ -320,44 +323,45 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     ui->patternTable->setCurrentCell(rowPosition,0);
     int currentRow=ui->patternTable->currentRow();
 
-    QComboBox *quantity1Box=new QComboBox();
-    quantity1Box->addItem("G");
-    quantity1Box->addItem("D");
-    quantity1Box->addItem("Etheta");
-    quantity1Box->addItem("Ephi");
-    quantity1Box->addItem("Htheta");
-    quantity1Box->addItem("Hphi");
-    if (pattern->quantity1) {
-        if (strcmp(pattern->quantity1,"G") == 0) quantity1Box->setCurrentIndex(0);
-        else if (strcmp(pattern->quantity1,"D") == 0) quantity1Box->setCurrentIndex(1);
-        else if (strcmp(pattern->quantity1,"Etheta") == 0) quantity1Box->setCurrentIndex(2);
-        else if (strcmp(pattern->quantity1,"Ephi") == 0) quantity1Box->setCurrentIndex(3);
-        else if (strcmp(pattern->quantity1,"Htheta") == 0) quantity1Box->setCurrentIndex(4);
-        else if (strcmp(pattern->quantity1,"Hphi") == 0) quantity1Box->setCurrentIndex(5);
-    }
-    ui->patternTable->setCellWidget(currentRow,0,quantity1Box);
-    connect(quantity1Box,&QComboBox::currentIndexChanged,this,&AntennaForm::quantity1Box_changed);
+    QComboBox *quantityBox=new QComboBox();
+    quantityBox->addItem("G");
+    quantityBox->addItem("D");
+    quantityBox->addItem("Etheta");
+    quantityBox->addItem("Ephi");
+    quantityBox->addItem("Htheta");
+    quantityBox->addItem("Hphi");
+    quantityBox->addItem("Etheta+Ephi");
+    quantityBox->addItem("Ephi+Etheta");
+    quantityBox->addItem("Htheta+Hphi");
+    quantityBox->addItem("Hphi+Htheta");
 
-    QComboBox *quantity2Box=new QComboBox();
-    quantity2Box->addItem("none");
-    quantity2Box->addItem("G");
-    quantity2Box->addItem("D");
-    quantity2Box->addItem("Etheta");
-    quantity2Box->addItem("Ephi");
-    quantity2Box->addItem("Htheta");
-    quantity2Box->addItem("Hphi");
-    if (pattern->quantity2) {
-        if (strcmp(pattern->quantity2,"G") == 0) quantity2Box->setCurrentIndex(1);
-        else if (strcmp(pattern->quantity2,"D") == 0) quantity2Box->setCurrentIndex(2);
-        else if (strcmp(pattern->quantity2,"Etheta") == 0) quantity2Box->setCurrentIndex(3);
-        else if (strcmp(pattern->quantity2,"Ephi") == 0) quantity2Box->setCurrentIndex(4);
-        else if (strcmp(pattern->quantity2,"Htheta") == 0) quantity2Box->setCurrentIndex(5);
-        else if (strcmp(pattern->quantity2,"Hphi") == 0) quantity2Box->setCurrentIndex(6);
-    } else {
-        quantity2Box->setCurrentIndex(0);
+    if (pattern->quantity1) {
+        if (strcmp(pattern->quantity1,"G") == 0) quantityBox->setCurrentIndex(0);
+        else if (strcmp(pattern->quantity1,"D") == 0) quantityBox->setCurrentIndex(1);
+        else if (strcmp(pattern->quantity1,"Etheta") == 0) {
+            quantityBox->setCurrentIndex(2);
+            if (pattern->quantity2 && strcmp(pattern->quantity2,"Ephi") == 0) {
+                quantityBox->setCurrentIndex(6);
+            }
+        } else if (strcmp(pattern->quantity1,"Ephi") == 0) {
+            quantityBox->setCurrentIndex(3);
+            if (pattern->quantity2 && strcmp(pattern->quantity2,"Etheta") == 0) {
+                quantityBox->setCurrentIndex(7);
+            }
+        } else if (strcmp(pattern->quantity1,"Htheta") == 0) {
+            quantityBox->setCurrentIndex(4);
+            if (pattern->quantity2 && strcmp(pattern->quantity2,"Hphi") == 0) {
+                quantityBox->setCurrentIndex(8);
+            }
+        } else if (strcmp(pattern->quantity1,"Hphi") == 0) {
+            quantityBox->setCurrentIndex(5);
+            if (pattern->quantity2 && strcmp(pattern->quantity2,"Htheta") == 0) {
+                quantityBox->setCurrentIndex(9);
+            }
+        }
     }
-    ui->patternTable->setCellWidget(currentRow,1,quantity2Box);
-    connect(quantity2Box,&QComboBox::currentIndexChanged,this,&AntennaForm::quantity2Box_changed);
+    ui->patternTable->setCellWidget(currentRow,0,quantityBox);
+    connect(quantityBox,&QComboBox::currentIndexChanged,this,&AntennaForm::quantityBox_changed);
 
     QComboBox *planeBox=new QComboBox();
     planeBox->addItem("xy");
@@ -371,18 +375,8 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     } else {
         planeBox->setCurrentIndex(3);
     }
-    ui->patternTable->setCellWidget(currentRow,2,planeBox);
+    ui->patternTable->setCellWidget(currentRow,1,planeBox);
     connect(planeBox,&QComboBox::currentIndexChanged,this,&AntennaForm::planeBox_changed);
-
-    // QDoubleSpinBox *thetaBox=new QDoubleSpinBox();
-    // thetaBox->setMinimum(-180);
-    // thetaBox->setMaximum(180);
-    // thetaBox->setValue(pattern->theta);
-    // thetaBox->setDecimals(0);
-    // thetaBox->setSingleStep(5);
-    // ui->patternTable->setCellWidget(currentRow,3,thetaBox);
-    // connect(thetaBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::thetaBox_changed);
-
 
     QDoubleSpinBox *thetaBox = new QDoubleSpinBox();
     thetaBox->setMinimum(-180);
@@ -404,17 +398,8 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     layout->addWidget(thetaBox);
     // layout->setAlignment(thetaBox,Qt::AlignCenter);
 
-    ui->patternTable->setCellWidget(currentRow, 3, container);
+    ui->patternTable->setCellWidget(currentRow,2,container);
     connect(thetaBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::thetaBox_changed);
-
-    // QDoubleSpinBox *phiBox=new QDoubleSpinBox();
-    // phiBox->setMinimum(-180);
-    // phiBox->setMaximum(180);
-    // phiBox->setValue(pattern->phi);
-    // phiBox->setDecimals(0);
-    // phiBox->setSingleStep(5);
-    // ui->patternTable->setCellWidget(currentRow,4,phiBox);
-    // connect(phiBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::phiBox_changed);
 
     QDoubleSpinBox *phiBox = new QDoubleSpinBox();
     phiBox->setMinimum(-180);
@@ -433,7 +418,7 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     layout->addWidget(phiBox);
     // layout->setAlignment(phiBox,Qt::AlignCenter);
 
-    ui->patternTable->setCellWidget(currentRow,4,container);
+    ui->patternTable->setCellWidget(currentRow,3,container);
     connect(phiBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::phiBox_changed);
 
 
@@ -441,33 +426,18 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
 
         // disable theta and phi
 
-        // QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(currentRow,3));
-        // thetaBox->setEnabled(false);
-
-        QWidget *container=ui->patternTable->cellWidget(currentRow,3);
+        QWidget *container=ui->patternTable->cellWidget(currentRow,2);
         if (container) {
             QDoubleSpinBox *thetaBox=container->findChild<QDoubleSpinBox*>();
             if (thetaBox) thetaBox->setEnabled(false);
         }
 
-        // QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(currentRow,4));
-        // phiBox->setEnabled(false);
-
-        container=ui->patternTable->cellWidget(currentRow,4);
+        container=ui->patternTable->cellWidget(currentRow,3);
         if (container) {
             QDoubleSpinBox *phiBox=container->findChild<QDoubleSpinBox*>();
             if (phiBox) phiBox->setEnabled(false);
         }
     }
-
-    // QDoubleSpinBox *latitudeBox=new QDoubleSpinBox();
-    // latitudeBox->setMinimum(-90);
-    // latitudeBox->setMaximum(90);
-    // latitudeBox->setValue(pattern->latitude);
-    // latitudeBox->setDecimals(0);
-    // latitudeBox->setSingleStep(5);
-    // ui->patternTable->setCellWidget(currentRow,5,latitudeBox);
-    // connect(latitudeBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::latitudeBox_changed);
 
     QDoubleSpinBox *latitudeBox = new QDoubleSpinBox();
     latitudeBox->setMinimum(-90);
@@ -486,18 +456,9 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     layout->addWidget(latitudeBox);
     // layout->setAlignment(latitudeBox,Qt::AlignCenter);
 
-    ui->patternTable->setCellWidget(currentRow,5,container);
+    ui->patternTable->setCellWidget(currentRow,4,container);
     connect(latitudeBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::latitudeBox_changed);
 
-
-    // QDoubleSpinBox *rotationBox=new QDoubleSpinBox();
-    // rotationBox->setMinimum(-360);
-    // rotationBox->setMaximum(360);
-    // rotationBox->setValue(pattern->rotation);
-    // rotationBox->setDecimals(0);
-    // rotationBox->setSingleStep(5);
-    // ui->patternTable->setCellWidget(currentRow,6,rotationBox);
-    // connect(rotationBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::rotationBox_changed);
 
     QDoubleSpinBox *rotationBox = new QDoubleSpinBox();
     rotationBox->setMinimum(-360);
@@ -516,7 +477,7 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     layout->addWidget(rotationBox);
     // layout->setAlignment(rotationBox,Qt::AlignCenter);
 
-    ui->patternTable->setCellWidget(currentRow,6,container);
+    ui->patternTable->setCellWidget(currentRow,5,container);
     connect(rotationBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::rotationBox_changed);
 }
 
@@ -551,8 +512,8 @@ void AntennaForm::on_add2Dslice_clicked ()
     scrollBarOffset=0;
     if (ui->patternTable->rowCount() > 4) scrollBarOffset=scrollBarWidth;
     planeWidth=patternBoxWidth-scrollBarOffset-verticalHeaderWidth-
-                 quantity1Width-quantity2Width-thetaWidth-phiWidth-latitudeWidth-rotationWidth;
-    ui->patternTable->setColumnWidth(2,planeWidth);
+                 quantityWidth-thetaWidth-phiWidth-latitudeWidth-rotationWidth;
+    ui->patternTable->setColumnWidth(1,planeWidth);
 
     ui->delete2Dslice->setEnabled(true);
 
@@ -569,8 +530,8 @@ void AntennaForm::on_delete2Dslice_clicked ()
     scrollBarOffset=0;
     if (ui->patternTable->rowCount() > 4) scrollBarOffset=scrollBarWidth;
     planeWidth=patternBoxWidth-scrollBarOffset-verticalHeaderWidth-
-                 quantity1Width-quantity2Width-thetaWidth-phiWidth-latitudeWidth-rotationWidth;
-    ui->patternTable->setColumnWidth(2,planeWidth);
+                 quantityWidth-thetaWidth-phiWidth-latitudeWidth-rotationWidth;
+    ui->patternTable->setColumnWidth(1,planeWidth);
 
     if (ui->patternTable->rowCount() == 0) ui->delete2Dslice->setEnabled(false);
 
@@ -621,6 +582,77 @@ void AntennaForm::on_saveRawData_stateChanged (int arg1)
 
 void AntennaForm::extractPatterns ()
 {
+
+    // 3D
+
+    if (ui->patternG3D->isChecked()) {
+        inputAntennaPattern *pattern=new inputAntennaPattern;
+        pattern->lineNumber=0;
+        pattern->dim=3;
+        pattern->quantity1=nullptr;
+        pattern->quantity2=nullptr;
+        pattern->plane=nullptr;
+        QString text="G"; cstrFromQString(&(pattern->quantity1),text);
+        patterns.push_back(pattern);
+    }
+
+    if (ui->patternD3D->isChecked()) {
+        inputAntennaPattern *pattern=new inputAntennaPattern;
+        pattern->lineNumber=0;
+        pattern->dim=3;
+        pattern->quantity1=nullptr;
+        pattern->quantity2=nullptr;
+        pattern->plane=nullptr;
+        QString text="D"; cstrFromQString(&(pattern->quantity1),text);
+        patterns.push_back(pattern);
+    }
+
+    if (ui->patternEtheta3D->isChecked()) {
+        inputAntennaPattern *pattern=new inputAntennaPattern;
+        pattern->lineNumber=0;
+        pattern->dim=3;
+        pattern->quantity1=nullptr;
+        pattern->quantity2=nullptr;
+        pattern->plane=nullptr;
+        QString text="Etheta"; cstrFromQString(&(pattern->quantity1),text);
+        patterns.push_back(pattern);
+    }
+
+    if (ui->patternEphi3D->isChecked()) {
+        inputAntennaPattern *pattern=new inputAntennaPattern;
+        pattern->lineNumber=0;
+        pattern->dim=3;
+        pattern->quantity1=nullptr;
+        pattern->quantity2=nullptr;
+        pattern->plane=nullptr;
+        QString text="Ephi"; cstrFromQString(&(pattern->quantity1),text);
+        patterns.push_back(pattern);
+    }
+
+    if (ui->patternHtheta3D->isChecked()) {
+        inputAntennaPattern *pattern=new inputAntennaPattern;
+        pattern->lineNumber=0;
+        pattern->dim=3;
+        pattern->quantity1=nullptr;
+        pattern->quantity2=nullptr;
+        pattern->plane=nullptr;
+        QString text="Htheta"; cstrFromQString(&(pattern->quantity1),text);
+        patterns.push_back(pattern);
+    }
+
+    if (ui->patternHphi3D->isChecked()) {
+        inputAntennaPattern *pattern=new inputAntennaPattern;
+        pattern->lineNumber=0;
+        pattern->dim=3;
+        pattern->quantity1=nullptr;
+        pattern->quantity2=nullptr;
+        pattern->plane=nullptr;
+        QString text="Hphi"; cstrFromQString(&(pattern->quantity1),text);
+        patterns.push_back(pattern);
+    }
+
+    // 2D
+
     int i=0;
     while (i < ui->patternTable->rowCount()) {
 
@@ -628,52 +660,64 @@ void AntennaForm::extractPatterns ()
 
         pattern->lineNumber=0;
         pattern->dim=2;
+        pattern->quantity1=nullptr;
+        pattern->quantity2=nullptr;
+        pattern->plane=nullptr;
 
         QComboBox* quantity1Box=qobject_cast<QComboBox*>(ui->patternTable->cellWidget(i,0));
         QString currentText=quantity1Box->currentText();
-        cstrFromQString (&(pattern->quantity1),currentText);
+        if (currentText.compare("G") == 0) cstrFromQString (&(pattern->quantity1),currentText);
+        else if (currentText.compare("D") == 0) cstrFromQString (&(pattern->quantity1),currentText);
+        else if (currentText.compare("Etheta") == 0) cstrFromQString (&(pattern->quantity1),currentText);
+        else if (currentText.compare("Ephi") == 0) cstrFromQString (&(pattern->quantity1),currentText);
+        else if (currentText.compare("Htheta") == 0) cstrFromQString (&(pattern->quantity1),currentText);
+        else if (currentText.compare("Hphi") == 0) cstrFromQString (&(pattern->quantity1),currentText);
+        else if (currentText.compare("Etheta+Ephi") == 0) {
+            QString text="Etheta";
+            cstrFromQString (&(pattern->quantity1),text);
+            text="Ephi";
+            cstrFromQString (&(pattern->quantity2),text);
+        } else if (currentText.compare("Ephi+Etheta") == 0) {
+            QString text="Ephi";
+            cstrFromQString (&(pattern->quantity1),text);
+            text="Etheta";
+            cstrFromQString (&(pattern->quantity2),text);
+        } else if (currentText.compare("Htheta+Hphi") == 0) {
+            QString text="Htheta";
+            cstrFromQString (&(pattern->quantity1),text);
+            text="Hphi";
+            cstrFromQString (&(pattern->quantity2),text);
+        } else if (currentText.compare("Hphi+Htheta") == 0) {
+            QString text="Hphi";
+            cstrFromQString (&(pattern->quantity1),text);
+            text="Htheta";
+            cstrFromQString (&(pattern->quantity2),text);
+        }
 
-        QComboBox* quantity2Box=qobject_cast<QComboBox*>(ui->patternTable->cellWidget(i,1));
-        currentText=quantity2Box->currentText();
-        if (currentText.compare("none") == 0) pattern->quantity2=nullptr;
-        else cstrFromQString (&(pattern->quantity2),currentText);
-
-        QComboBox* planeBox=qobject_cast<QComboBox*>(ui->patternTable->cellWidget(i,2));
+        QComboBox* planeBox=qobject_cast<QComboBox*>(ui->patternTable->cellWidget(i,1));
         currentText=planeBox->currentText();
         if (currentText.compare("specify") == 0) pattern->plane=nullptr;
         else cstrFromQString (&(pattern->plane),currentText);
 
-        // QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,3));
-        // pattern->theta=thetaBox->value();
-
-        // QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,4));
-        // pattern->phi=phiBox->value();
-
-        // QDoubleSpinBox* latitudeBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,5));
-        // pattern->latitude=latitudeBox->value();
-
-        // QDoubleSpinBox* rotationBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(i,6));
-        // pattern->rotation=rotationBox->value();
-
-        QWidget *container=ui->patternTable->cellWidget(i,3);
+        QWidget *container=ui->patternTable->cellWidget(i,2);
         QDoubleSpinBox *thetaBox = container ? container->findChild<QDoubleSpinBox*>() : nullptr;
         if (thetaBox) {
             pattern->theta=thetaBox->value();
         }
 
-        container=ui->patternTable->cellWidget(i,4);
+        container=ui->patternTable->cellWidget(i,3);
         QDoubleSpinBox *phiBox = container ? container->findChild<QDoubleSpinBox*>() : nullptr;
         if (phiBox) {
             pattern->phi=phiBox->value();
         }
 
-        container=ui->patternTable->cellWidget(i,5);
+        container=ui->patternTable->cellWidget(i,4);
         QDoubleSpinBox *latitudeBox = container ? container->findChild<QDoubleSpinBox*>() : nullptr;
         if (latitudeBox) {
             pattern->latitude=latitudeBox->value();
         }
 
-        container=ui->patternTable->cellWidget(i,6);
+        container=ui->patternTable->cellWidget(i,5);
         QDoubleSpinBox *rotationBox = container ? container->findChild<QDoubleSpinBox*>() : nullptr;
         if (rotationBox) {
             pattern->rotation=rotationBox->value();
@@ -686,58 +730,94 @@ void AntennaForm::extractPatterns ()
 
 bool AntennaForm::hasPatternChanges ()
 {
-    if (patterns.size() != projData->inputAntennaPatternsCount) return true;
+    std::cout << "AntennaForm::hasPatternChanges" << std::endl; std::cout.flush();
 
+    std::cout << "patterns.size()=" << patterns.size() << "  projData->inputAntennaPatternsCount=" << projData->inputAntennaPatternsCount << std::endl; std::cout.flush();
+    if (patterns.size() != projData->inputAntennaPatternsCount) return true;
+    std::cout << "place 1" << std::endl; std::cout.flush();
+
+    // 3D
     long unsigned int i=0;
     while (i < patterns.size()) {
-        bool foundMatch=false;
-        int j=0;
-        while (j < projData->inputAntennaPatternsCount) {
+        if (patterns[i]->dim == 3) {
+            bool foundMatch=false;
+            int j=0;
+            while (j < projData->inputAntennaPatternsCount) {
+                if (projData->inputAntennaPatterns[j].dim == 3) {
 
-            if (patterns[i]->quantity1) {
-                if (projData->inputAntennaPatterns[j].quantity1) {
-                    if (strcmp(patterns[i]->quantity1,projData->inputAntennaPatterns[j].quantity1) != 0) {j++; continue;}
-                } else {j++; continue;};
-            } else {
-                if (projData->inputAntennaPatterns[j].quantity1) {j++; continue;};
+                    if (patterns[i]->quantity1) {
+                        if (projData->inputAntennaPatterns[j].quantity1) {
+                            if (strcmp(patterns[i]->quantity1,projData->inputAntennaPatterns[j].quantity1) != 0) {j++; continue;}
+                        } else {j++; continue;};
+                    } else {
+                        if (projData->inputAntennaPatterns[j].quantity1) {j++; continue;};
+                    }
+
+                    foundMatch=true;
+                    break;
+                }
+                j++;
             }
-
-            if (patterns[i]->quantity2) {
-                if (projData->inputAntennaPatterns[j].quantity2) {
-                    if (strcmp(patterns[i]->quantity2,projData->inputAntennaPatterns[j].quantity2) != 0) {j++; continue;};
-                } else {j++; continue;};
-            } else {
-                if (projData->inputAntennaPatterns[j].quantity2) {j++; continue;};
-            }
-
-
-            if (patterns[i]->plane) {
-                if (projData->inputAntennaPatterns[j].plane) {
-                    if (strcmp(patterns[i]->plane,projData->inputAntennaPatterns[j].plane) != 0) {j++; continue;};
-                } else {j++; continue;};
-            } else {
-                if (projData->inputAntennaPatterns[j].plane) {j++; continue;};
-            }
-
-            if (!double_compare(patterns[i]->theta,projData->inputAntennaPatterns[j].theta,1e-12)) {j++; continue;};
-            if (!double_compare(patterns[i]->phi,projData->inputAntennaPatterns[j].phi,1e-12)) {j++; continue;};
-            if (!double_compare(patterns[i]->latitude,projData->inputAntennaPatterns[j].latitude,1e-12)) {j++; continue;};
-            if (!double_compare(patterns[i]->rotation,projData->inputAntennaPatterns[j].rotation,1e-12)) {j++; continue;};
-
-            foundMatch=true;
-            break;
-
-            j++;
+            if (!foundMatch) return true;
         }
-        if (!foundMatch) return true;
         i++;
     }
+
+    std::cout << "place 2" << std::endl; std::cout.flush();
+    // 2D
+    i=0;
+    while (i < patterns.size()) {
+        if (patterns[i]->dim == 2) {
+            bool foundMatch=false;
+            int j=0;
+            while (j < projData->inputAntennaPatternsCount) {
+                if (projData->inputAntennaPatterns[j].dim == 2) {
+
+                    if (patterns[i]->quantity1) {
+                        if (projData->inputAntennaPatterns[j].quantity1) {
+                            if (strcmp(patterns[i]->quantity1,projData->inputAntennaPatterns[j].quantity1) != 0) {j++; continue;}
+                        } else {j++; continue;};
+                    } else {
+                        if (projData->inputAntennaPatterns[j].quantity1) {j++; continue;};
+                    }
+
+                    if (patterns[i]->quantity2) {
+                        if (projData->inputAntennaPatterns[j].quantity2) {
+                            if (strcmp(patterns[i]->quantity2,projData->inputAntennaPatterns[j].quantity2) != 0) {j++; continue;};
+                        } else {j++; continue;};
+                    } else {
+                        if (projData->inputAntennaPatterns[j].quantity2) {j++; continue;};
+                    }
+
+
+                    if (patterns[i]->plane) {
+                        if (projData->inputAntennaPatterns[j].plane) {
+                            if (strcmp(patterns[i]->plane,projData->inputAntennaPatterns[j].plane) != 0) {j++; continue;};
+                        } else {j++; continue;};
+                    } else {
+                        if (projData->inputAntennaPatterns[j].plane) {j++; continue;};
+                    }
+
+                    if (!double_compare(patterns[i]->theta,projData->inputAntennaPatterns[j].theta,1e-12)) {j++; continue;};
+                    if (!double_compare(patterns[i]->phi,projData->inputAntennaPatterns[j].phi,1e-12)) {j++; continue;};
+                    if (!double_compare(patterns[i]->latitude,projData->inputAntennaPatterns[j].latitude,1e-12)) {j++; continue;};
+                    if (!double_compare(patterns[i]->rotation,projData->inputAntennaPatterns[j].rotation,1e-12)) {j++; continue;};
+
+                    foundMatch=true;
+                    break;
+                }
+                j++;
+            }
+            if (!foundMatch) return true;
+        }
+        i++;
+    }
+    std::cout << "place 3" << std::endl; std::cout.flush();
     return false;
 }
 
 void AntennaForm::on_OkButton_clicked ()
 {
-
     if (!double_compare(projData->antenna_plot_current_resolution,currentResolution,1e-12)){
         projData->antenna_plot_current_resolution=currentResolution;
         projData->modified=1;
@@ -816,12 +896,11 @@ void AntennaForm::on_OkButton_clicked ()
     projData->inputAntennaPatternsCount=0;
 
     // reserve space
-    if (projData->inputAntennaPatternsAllocated < ui->patternTable->rowCount()) {
+    if (projData->inputAntennaPatternsAllocated < patterns.size()) {
         projData->inputAntennaPatterns=(struct inputAntennaPattern *)
-            realloc(projData->inputAntennaPatterns,ui->patternTable->rowCount()*sizeof(struct inputAntennaPattern));
+            realloc(projData->inputAntennaPatterns,patterns.size()*sizeof(struct inputAntennaPattern));
+        projData->inputAntennaPatternsAllocated=patterns.size();
     }
-
-    // save new patterns
 
     int j=0;
     while (j < patterns.size()) {
@@ -864,12 +943,7 @@ void AntennaForm::reject ()
     QDialog::reject();
 }
 
-void AntennaForm::quantity1Box_changed (int newIndex)
-{
-    ui->OkButton->setEnabled(true);
-}
-
-void AntennaForm::quantity2Box_changed (int newIndex)
+void AntennaForm::quantityBox_changed (int newIndex)
 {
     ui->OkButton->setEnabled(true);
 }
@@ -877,37 +951,25 @@ void AntennaForm::quantity2Box_changed (int newIndex)
 void AntennaForm::planeBox_changed (int newIndex)
 {
     if (newIndex == 3) {
-        // QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),3));
-        // thetaBox->setEnabled(true);
-
-        // QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),4));
-        // phiBox->setEnabled(true);
-
-        QWidget *container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),3);
+        QWidget *container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),2);
         if (container) {
             QDoubleSpinBox *thetaBox=container->findChild<QDoubleSpinBox*>();
             if (thetaBox) thetaBox->setEnabled(true);
         }
 
-        container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),4);
+        container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),3);
         if (container) {
             QDoubleSpinBox *phiBox=container->findChild<QDoubleSpinBox*>();
             if (phiBox) phiBox->setEnabled(true);
         }
     } else {
-        // QDoubleSpinBox* thetaBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),3));
-        // thetaBox->setEnabled(false);
-
-        // QDoubleSpinBox* phiBox=qobject_cast<QDoubleSpinBox*>(ui->patternTable->cellWidget(ui->patternTable->currentRow(),4));
-        // phiBox->setEnabled(false);
-
-        QWidget *container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),3);
+        QWidget *container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),2);
         if (container) {
             QDoubleSpinBox *thetaBox=container->findChild<QDoubleSpinBox*>();
             if (thetaBox) thetaBox->setEnabled(false);
         }
 
-        container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),4);
+        container=ui->patternTable->cellWidget(ui->patternTable->currentRow(),3);
         if (container) {
             QDoubleSpinBox *phiBox=container->findChild<QDoubleSpinBox*>();
             if (phiBox) phiBox->setEnabled(false);

@@ -24,6 +24,7 @@ signals:
     void updateViewer ();
     void convertPathToFace (PathItem *);
     void setShaded (Handle(AIS_Shape));
+    void setBoundaryChanged ();
 };
 
 #endif // RELAY_H

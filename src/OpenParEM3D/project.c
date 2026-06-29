@@ -1006,7 +1006,7 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
          if (data->inputAntennaPatterns[i].quantity1 == NULL) {
             PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.3D.pattern NULL",indent);
          } else {
-            PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.3D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
+            PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.3D.pattern q=%s",indent,data->inputAntennaPatterns[i].quantity1);
          }
          PetscPrintf(PETSC_COMM_WORLD,"\n");
       }
@@ -1305,7 +1305,7 @@ int save_project (const char *filename, struct projectData *data, struct project
             if (data->inputAntennaPatterns[i].quantity1 == NULL) {
                 fprintf(fptr,"%santenna.plot.3D.pattern NULL",indent);
             } else {
-                fprintf(fptr,"%santenna.plot.3D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
+                fprintf(fptr,"%santenna.plot.3D.pattern q=%s",indent,data->inputAntennaPatterns[i].quantity1);
             }
             fprintf(fptr,"\n");
         }

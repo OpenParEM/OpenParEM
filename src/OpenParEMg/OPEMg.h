@@ -356,6 +356,9 @@ public:
     OpenParEMg (QWidget *parent = nullptr);
     ~OpenParEMg ();
 
+    bool isModified ();
+    void setUnmodified ();
+
     void closeEvent (QCloseEvent *event) override {
         close_event=event;
         closeWindow_triggered();
@@ -779,9 +782,9 @@ private:
     // lockouts
     bool projectFileLoaded;  // project setup variable including paths
     bool projectChanged;
-    bool drawingChanged;
-    bool boundaryChanged;    // also covers paths since they are both in the boundary database
-    bool meshChanged;
+    //bool drawingChanged;
+    //bool boundaryChanged;    // also covers paths since they are both in the boundary database
+    //bool meshChanged;
     bool drawingPlaneShown;
     bool simulationRunning;
     bool simulationStopping;

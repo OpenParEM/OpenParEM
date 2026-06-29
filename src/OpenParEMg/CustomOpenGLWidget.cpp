@@ -199,27 +199,6 @@ void CustomOpenGLWidget::clearDrawing ()
     viewerContext->UpdateCurrentViewer();
 }
 
-// void CustomOpenGLWidget::cancelDraw ()
-// {
-//     //std::cout << "CustomOpenGLWidget::cancelDraw" << std::endl; std::cout.flush();
-
-//     // invalidate flags
-//     pickFirstVertex=false;
-//     pickSecondVertex=false;
-
-//     // remove temporaryVertex, if needed
-//     if (!temporaryVertex.IsNull()) {
-//         viewerContext->Remove(temporaryVertex,Standard_True);
-//         temporaryVertex.Nullify();
-//     }
-
-//     // reset point selection symbol
-//     //viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
-
-//     // clear detection
-//     viewerContext->ClearDetected(Standard_True);
-// }
-
 void CustomOpenGLWidget::wheelEvent (QWheelEvent* event)
 {
     QOpenGLWidget::wheelEvent(event);

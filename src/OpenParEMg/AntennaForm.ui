@@ -43,7 +43,7 @@
      </font>
     </property>
     <property name="toolTip">
-     <string>At least one must be checked.
+     <string>Far field calculations with file outputs for viewing with ParaView.  At least one must be checked.
 </string>
     </property>
     <property name="text">
@@ -256,7 +256,7 @@ ment.</string>
      </font>
     </property>
     <property name="toolTip">
-     <string>Specifies 2D slices through the 3D radiation pattern.</string>
+     <string>Specifies 2D slices through the 3D radiation pattern with pdf file outputs viewable with a pdf viewer.</string>
     </property>
     <property name="text">
      <string>2D Far-Field Plots</string>

@@ -217,7 +217,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     absolutePath=QDir::currentPath();
     materialDatabase=new MaterialDatabase();
-    resetLockouts();
 
     projectFile="";
     init_project (&defaultData);
@@ -239,6 +238,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     connect(relay,&Relay::getCurrentMousePosition,this,&OpenParEMg::getCurrentMousePosition);
     connect(relay,&Relay::getPickedVertex,this,&OpenParEMg::getPickedVertex);
     connect(relay,&Relay::setMenus,this,&OpenParEMg::setMenus);
+    connect(relay,&Relay::clearTreeSelection,this,&OpenParEMg::clearTreeSelection);
     connect(relay,&Relay::updateViewer,this,&OpenParEMg::updateViewer);
     connect(relay,&Relay::convertPathToFace,this,&OpenParEMg::convertPathToFace);
     connect(relay,&Relay::setShaded,this,&OpenParEMg::setShaded);
@@ -313,6 +313,8 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     boundary=new RootBoundaryItem(this);
     mesh=new RootMeshItem(this);
 
+    resetLockouts();
+
     ui->drawingItemTree->setHeaderHidden(true);
     ui->drawingItemTree->setColumnCount(2);
     ui->drawingItemTree->header()->setStretchLastSection(false);
@@ -371,10 +373,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->logText->setReadOnly(true);
     ui->iterationsText->setReadOnly(true);
     ui->dataText->setReadOnly(true);
-
-    // ui->logText->setCursor(Qt::BlankCursor);
-    // ui->iterationsText->setCursor(Qt::BlankCursor);
-    // ui->dataText->setCursor(Qt::BlankCursor);
 
     QFont monoFont=QFontDatabase::systemFont(QFontDatabase::FixedFont);
     monoFont.setPointSize(10);
@@ -465,9 +463,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     /////////////////////////////////////////////////////////////////////////////
 
     projectChanged=false;
-    drawingChanged=false;
-    boundaryChanged=false;
-    meshChanged=false;
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -568,10 +563,31 @@ void OpenParEMg::convertPathToFace (BaseItem *baseItem)
     }
 }
 
+bool OpenParEMg::isModified ()
+{
+    if (projectChanged) return true;
+    if (drawing->isModified()) return true;
+    if (path->isModified()) return true;
+    if (port->isModified()) return true;
+    if (boundary->isModified()) return true;
+    if (mesh->isModified()) return true;
+    return false;
+}
+
+void OpenParEMg::setUnmodified ()
+{
+    projectChanged=false;
+    drawing->setModified(false);
+    path->setModified(false);
+    port->setModified(false);
+    boundary->setModified(false);
+    mesh->setModified(false);
+}
+
 int OpenParEMg::check_changed ()
 {
     int retVal=0;
-    if (projectChanged || drawingChanged || boundaryChanged || meshChanged) {
+    if (isModified()) {
         QMessageBox msgBox(this);
         msgBox.setText("The project has been modified.");
         msgBox.setInformativeText("Do you want to save your changes?");
@@ -706,7 +722,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionNew->setEnabled(false);
         ui->actionOpen->setEnabled(false);
         ui->actionSave->setEnabled(false);
-        if (projectChanged || drawingChanged || boundaryChanged || meshChanged) {
+        if (isModified()) {
             if (strcmp(projData.project_name,"") != 0) ui->actionSave->setEnabled(true);
         }
         ui->actionSaveAs->setEnabled(true);
@@ -790,7 +806,7 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionMeshGenerate->setEnabled(false);
             ui->actionMeshLoad->setEnabled(false);
             ui->actionMeshSave->setEnabled(false);
-            if (meshChanged) ui->actionMeshSave->setEnabled(true);
+            if (mesh->isModified()) ui->actionMeshSave->setEnabled(true);
             ui->actionMeshSaveAs->setEnabled(true);
             ui->actionMeshDelete->setEnabled(true);
 
@@ -818,7 +834,7 @@ void OpenParEMg::setMenusI (int placeIndex)
                 ui->actionAbort->setEnabled(false);
                 ui->actionAbortAndExit->setEnabled(true);
             }
-            if (meshChanged) {
+            if (mesh->isModified()) {
                 ui->actionRun->setEnabled(false);
                 ui->actionRun->setToolTip("Run OpenParEM3D.");
                 ui->actionStop->setEnabled(false);
@@ -828,7 +844,7 @@ void OpenParEMg::setMenusI (int placeIndex)
             // end run block
         }
 
-        if (projectChanged || meshChanged) {
+        if (projectChanged || mesh->isModified()) {
             ui->actionRun->setEnabled(false);
             ui->actionRun->setToolTip("OpenParEM3D is running.");
             ui->actionStop->setEnabled(false);
@@ -2103,7 +2119,6 @@ void OpenParEMg::createPath ()
             newPath->is_modified();
             newPath->addFacePoints(TopoDS::Face(selectedShape));
             newPath->create_wire_item(this,ui->drawingWindow,path);  // create item and add as child to path; creates AIS_Shape
-            boundaryChanged=true;
 
             // save the items for later
             PathItem *pathItem=newPath->get_item();
@@ -2328,7 +2343,6 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
                                     ui->drawingWindow->insertItemToMap(drawingItem->getShape(),drawingItem);
                                     ui->drawingWindow->activateItem(drawingItem);
 
-                                    drawingChanged=true;
                                 } else {
                                     stop=true;
                                 }
@@ -2388,7 +2402,6 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
                             ui->drawingWindow->insertItemToMap(drawingItem->getShape(),drawingItem);
                             ui->drawingWindow->activateItem(drawingItem);
 
-                            drawingChanged=true;
                         } else {
                             stop=true;
                         }
@@ -2445,7 +2458,6 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
                             ui->drawingWindow->insertItemToMap(drawingItem->getShape(),drawingItem);
                             ui->drawingWindow->activateItem(drawingItem);
 
-                            drawingChanged=true;
                         } else {
                             stop=true;
                         }
@@ -2462,10 +2474,6 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
             ui->drawingWindow->activateItem(drawingItem);
         }
 
-        // baseItem->alignForegroundColor();
-        // if (isDisplayed && baseItem->foreground(0) == Qt::gray) ui->drawingWindow->showItem(baseItem);
-        // if (!isDisplayed && baseItem->foreground(0) == Qt::black) ui->drawingWindow->hideItem(baseItem);
-
         if (isDisplayed) ui->drawingWindow->showItem(baseItem);
         else ui->drawingWindow->hideItem(baseItem);
 
@@ -2477,7 +2485,6 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
     if (!stop) {
         reprocess(baseItem->getParentItem());
     }
-    //std::cout << "exit OpenParEMg::reprocess  item=" << item << std::endl; std::cout.flush();
 }
 
 bool OpenParEMg::isValidSetPlane ()
@@ -2585,8 +2592,6 @@ void OpenParEMg::finishEditObject (bool cancel)
             }
             i++;
         }
-
-        drawingChanged=true;
     }
 
     if (lengthEditForm) {lengthEditForm=nullptr;}
@@ -2751,8 +2756,6 @@ void OpenParEMg::finishMergeSolids ()
     ui->drawingWindow->showItem(newItem);
     ui->drawingWindow->selectItem(newItem);
 
-    drawingChanged=true;
-
     finishOperation(false,3);
 }
 
@@ -2866,8 +2869,6 @@ void OpenParEMg::finishSubtractSolids ()
 
     ui->drawingWindow->showItem(newItem);
     ui->drawingWindow->selectItem(newItem);
-
-    drawingChanged=true;
 
     finishOperation(false,4);
 }
@@ -3251,7 +3252,7 @@ void OpenParEMg::closeExistingPolyline ()
                 ui->drawingWindow->showItem(drawingItem);
                 ui->drawingWindow->selectItem(drawingItem);
                 ui->drawingWindow->updateViewer();
-                drawingChanged=true;
+                drawingItem->setModified(true);
 
                 finishOperation(false,10);
             }
@@ -3320,7 +3321,7 @@ void OpenParEMg::openExistingPolyline ()
                     ui->drawingWindow->showItem(drawingItem);
                     ui->drawingWindow->selectItem(drawingItem);
                     ui->drawingWindow->updateViewer();
-                    drawingChanged=true;
+                    drawingItem->setModified(true);
 
                     finishOperation(false,11);
                 }
@@ -3657,7 +3658,6 @@ void OpenParEMg::createPathFromFaceN (bool startNew)
                 newPath->is_modified();
                 newPath->addFacePoints(TopoDS::Face(selectedShape));
                 newPath->create_face_item(this,ui->drawingWindow,path);  // create item and add as child to path; creates AIS_Shape
-                boundaryChanged=true;
 
                 // add new path to the drawing
                 PathItem *pathItem=newPath->get_item();
@@ -3757,7 +3757,6 @@ void OpenParEMg::createBoundaryFromPathN (bool startNew)
         boundary->addChild(newBoundaryItem);
         boundary->setExpanded(true);
         newBoundaryItem->setExpanded(true);
-        boundaryChanged=true;
 
         // hack: cycle through the comboBox to get it to show properly
         // otherwise, the material item will not hide
@@ -3974,7 +3973,7 @@ bool OpenParEMg::isValidCreateDiffPair ()
 
 void OpenParEMg::renumberDimTag ()
 {
-    std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
 
     int count=1;
     int i=0;
@@ -4061,7 +4060,7 @@ void OpenParEMg::setPhysicalGroups ()
 
 void OpenParEMg::setMaterials ()
 {
-    std::cout << "OpenParEMg::setMaterials" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::setMaterials" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < drawing->childCount()) {
@@ -4103,7 +4102,6 @@ void OpenParEMg::assignMaterial ()
         reply = QMessageBox::question(this,"OpenParEMg","Materials cannot be assigned to an existing mesh.  Do you want to delete the mesh?",QMessageBox::Yes|QMessageBox::No);
         if (reply != QMessageBox::Yes) return;
         deleteMesh(true);
-        meshChanged=false;
     }
 
     MaterialSelection *materialSelection=new MaterialSelection();
@@ -4118,7 +4116,7 @@ void OpenParEMg::assignMaterial ()
         if (drawingItem && drawingItem->is_drawing()) {
             drawingItem->set_Material(selectedMaterial);
             drawingItem->setText(1,selectedMaterial);
-            projectChanged=true;
+            drawingItem->setModified(true);
         }
         setMenusI(38);
     }
@@ -4283,8 +4281,7 @@ void OpenParEMg::on_actionOpen_triggered ()
 
         projData.modified=0;
         projectFileLoaded=true;
-        drawingChanged=false;
-        projectChanged=false;
+        setUnmodified();
     } else {
         // should not occur
         QMessageBox mb;
@@ -4312,10 +4309,7 @@ void OpenParEMg::resetLockouts ()
 {
     disableMenus=false;
     projectFileLoaded=false;
-    projectChanged=false;
-    drawingChanged=false;
-    boundaryChanged=false;
-    meshChanged=false;
+    setUnmodified();
     drawingPlaneShown=false;
     simulationRunning=false;
     simulationStopping=false;
@@ -4329,9 +4323,11 @@ void OpenParEMg::printLockouts ()
               << "   disableMenus=" << disableMenus << std::endl
               << "   projectFileLoaded=" << projectFileLoaded << std::endl
               << "   projectChanged=" << projectChanged << std::endl
-              << "   drawingChanged=" << drawingChanged << std::endl
-              << "   boundaryChanged=" << boundaryChanged << std::endl
-              << "   meshChanged=" << meshChanged << std::endl
+              << "   drawingChanged=" << drawing->isModified() << std::endl
+              << "   pathChanged=" << path->isModified() << std::endl
+              << "   portChanged=" << port->isModified() << std::endl
+              << "   boundaryChanged=" << boundary->isModified() << std::endl
+              << "   meshChanged=" << mesh->isModified() << std::endl
               << "   drawingPlaneShown=" << drawingPlaneShown << std::endl
               << "   simulationRunning=" << simulationRunning << std::endl
               << "   simulationStopping=" << simulationStopping << std::endl
@@ -4362,6 +4358,7 @@ void OpenParEMg::resetDrawing ()
     newShapeData->setCreate();
     newShapeData->setShape(newShape);
     drawing->addShapeData(newShapeData);
+    drawing->setModified(true);
 
     //reset the tracking
     ui->drawingWindow->reset();
@@ -4376,8 +4373,6 @@ void OpenParEMg::resetDrawing ()
     clickedItem=nullptr;
     previousClickedItem=nullptr;
     workingItem=nullptr;
-
-    drawingChanged=true;
 
     on_actionShape_triggered();
 }
@@ -4572,8 +4567,6 @@ void OpenParEMg::saveProject ()
         projectChanged=true;
     }
 
-    // ToDo: remove gui brep file from projData
-
     // save files
 
     // project
@@ -4601,14 +4594,13 @@ void OpenParEMg::saveProject ()
     }
 
     // mesh
-    if (mesh->childCount() > 0 && meshChanged) {
+    if (mesh->childCount() > 0 && mesh->isModified()) {
         std::cout << "Saved mesh file" << std::endl; std::cout.flush();
         on_actionMeshSave_triggered();
-        meshChanged=false;
     }
 
     // drawing
-    if (drawingChanged) {
+    if (drawing->isModified()) {
         std::cout << "Saved drawing file" << std::endl; std::cout.flush();
         QString drawingFile=projectName;
         drawingFile.append(".opd");
@@ -4866,8 +4858,6 @@ bool OpenParEMg::loadBrepFile (QString filePath, bool createName)
 
                     // put it on the Z-layer to get it higher selection priority
                     newItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
-
-                    drawingChanged=true;
                 }
             }
 
@@ -4911,8 +4901,6 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
 
                     // put it on the Z-layer to get it higher selection priority
                     newItem->getShape()->SetZLayer(Graphic3d_ZLayerId_Top);
-
-                    drawingChanged=true;
                 }
             }
 
@@ -5097,6 +5085,7 @@ bool OpenParEMg::saveBoundaryDatabase ()
         }
 
         outputFile.close();
+
         return false;
     }
     return true;
@@ -5333,7 +5322,6 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
         baseParent->addChild(newDrawingItem);
         baseParent->push_child(newDrawingItem);
         reprocess(newDrawingItem);
-        drawingChanged=true;
         newDrawingItem->alignForegroundColor();
         ui->drawingWindow->hideItem(newDrawingItem);
         if (baseParent->is_rootDrawing()) ui->drawingWindow->showItem(newDrawingItem);
@@ -5399,7 +5387,6 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newDrawingItem,true);
 
             reprocess(newDrawingItem);
-            drawingChanged=true;
             newDrawingItem->alignForegroundColor();
             ui->drawingWindow->hideItem(newDrawingItem);
             if (baseParent->is_rootDrawing()) ui->drawingWindow->showItem(newDrawingItem);
@@ -5442,7 +5429,6 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             loadItem(inputData,localStartBlockIndex,localEndBlockIndex,newDrawingItem,true);
 
             reprocess(newDrawingItem);
-            drawingChanged=true;
             newDrawingItem->alignForegroundColor();
             ui->drawingWindow->hideItem(newDrawingItem);
             if (baseParent->is_rootDrawing()) ui->drawingWindow->showItem(newDrawingItem);
@@ -5502,7 +5488,6 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             ui->drawingWindow->activateItem(newItem);
 
             reprocess(newItem);
-            drawingChanged=true;
             newItem->alignForegroundColor();
             ui->drawingWindow->hideItem(newItem);
             if (baseParent->is_rootDrawing()) ui->drawingWindow->showItem(newItem);
@@ -5523,7 +5508,6 @@ bool OpenParEMg::saveDrawingFile (QString filename)
         outputFile << std::endl;
         saveItem(&outputFile,drawing);
         outputFile.close();
-        drawingChanged=false;
         itemChangesStack.clear();
         return false;
     }
@@ -6216,7 +6200,7 @@ void OpenParEMg::drawMesh()
 
 void OpenParEMg::deleteMesh (bool deleteMeshFile)
 {
-    std::cout << "OpenParEMg::deleteMesh" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::deleteMesh" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < mesh->childCount()) {
@@ -6249,6 +6233,7 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
 
     ui->drawingWindow->updateViewer();
     mesh->deleteChildren(mesh);
+    mesh->setModified(false);
     drawingEntities.clear();
     gmsh::clear();
 }
@@ -6283,8 +6268,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         projectChanged=true;
     }
 
-    meshChanged=true;
-
     drawMesh();
     setPhysicalGroups();
     //ui->drawingWindow->showItem(mesh);
@@ -6309,8 +6292,6 @@ void OpenParEMg::loadMeshFile (QString meshfile)
         // load and display
         //gmsh::model::remove();
         gmsh::open(meshfile.toStdString());
-
-        meshChanged=false;
 
         drawMesh();
 
@@ -6342,7 +6323,7 @@ void OpenParEMg::on_actionMeshSave_triggered ()
 {
     if (strcmp(projData.mesh_file,"") != 0) {
         gmsh::write(projData.mesh_file);
-        meshChanged=false;
+        mesh->setModified(false);
     } else {
         on_actionMeshSaveAs_triggered();
     }
@@ -6376,7 +6357,7 @@ void OpenParEMg::on_actionMeshSaveAs_triggered ()
     }
 
     gmsh::write(meshfile.toStdString());
-    meshChanged=false;
+    mesh->setModified(false);
 
     // save the filename in projData
     if (meshfile.compare(projData.mesh_file) != 0) {
@@ -6391,7 +6372,6 @@ void OpenParEMg::on_actionMeshDelete_triggered ()
 {
     deleteMesh(true);
 
-    meshChanged=false;
     projectChanged=true;
     setMenusI(68);
 }

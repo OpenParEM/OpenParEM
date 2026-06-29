@@ -41,6 +41,7 @@
 #include "CustomComboBox.h"
 #include <QStandardItemModel>
 #include "OPEMg.h"
+#include "Relay.h"
 #endif
 
 string convertLogic (int a)
@@ -586,6 +587,8 @@ Boundary::Boundary(int startLine_, int endLine_)
 
 bool Boundary::load(string *indent, inputFile *inputs)
 {
+   //std:: cout << "Boundary::load" << std::endl; std::cout.flush();
+
    bool fail=false;
    bool found_first_path=false;
 
@@ -1582,11 +1585,16 @@ void Boundary::draw (Relay *relay, struct projectData *projData, BoundaryDatabas
     else if (is_surface_impedance()) boundary_type=2;
     else if (is_radiation()) boundary_type=3;
 
+    // set a default for later user changes, if needed
+    double wave_impedance=sqrt(M_PI*4e-7/8.8541878176e-12);
+    if (boundary_type == 3) wave_impedance=get_wave_impedance();
+
     if (pathItem) {
         pathItem->showArrows(false);
-        boundaryItem=new BoundaryItem(mw,pathItem,boundary_type,get_wave_impedance(),QString::fromStdString(get_material()));
+        boundaryItem=new BoundaryItem(mw,pathItem,boundary_type,wave_impedance,QString::fromStdString(get_material()));
         rootBoundaryItem->addChild(boundaryItem);
 
+        boundaryItem->resetWidgets();
         boundaryItem->setText(0,textName);
         drawingWindow->showItem(boundaryItem);
     }
@@ -7214,6 +7222,11 @@ void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryIte
         portItem->addShapeData(newShapeData);
         portItem->startItemChange();
         portItem->addItemChange();
+        portItem->setModified(true);
+
+        //portItem->setMenus();
+        //portItem->clearTreeSelection();
+        //portItem->updateViewer();
     }
 
     if (boundaryItem) {
@@ -7222,6 +7235,11 @@ void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryIte
         boundaryItem->addShapeData(newShapeData);
         boundaryItem->startItemChange();
         boundaryItem->addItemChange();
+        boundaryItem->setModified(true);
+
+        //boundaryItem->setMenus();
+        //boundaryItem->clearTreeSelection();
+        //boundaryItem->updateViewer();
     }
 
     // Port: impedance definition
@@ -7284,6 +7302,11 @@ void comboTextChanged (QString text, BoundaryItem *boundaryItem)
         boundaryItem->addShapeData(newShapeData);
         boundaryItem->startItemChange();
         boundaryItem->addItemChange();
+        boundaryItem->setModified(true);
+
+        //boundaryItem->setMenus();
+        //boundaryItem->clearTreeSelection();
+        //boundaryItem->updateViewer();
     }
 }
 
@@ -7299,15 +7322,18 @@ void spinValueChanged (int value, SportNumberItem *sportNumberItem)
     sportNumberItem->addShapeData(newShapeData);
     sportNumberItem->startItemChange();
     sportNumberItem->addItemChange();
+    sportNumberItem->setModified(true);
+
+    //sportNumberItem->setMenus();
+    //sportNumberItem->clearTreeSelection();
+    //sportNumberItem->updateViewer();
 }
 
 void textValueChanged (QString text, BaseItem *baseItem, BoundaryDatabase *boundaryDatabase)
 {
-    std::cout << "textValueChanged  baseItem=" << baseItem << std::endl; std::cout.flush();
+    //std::cout << "textValueChanged  baseItem=" << baseItem << std::endl; std::cout.flush();
 
     if (!baseItem) return;
-
-    std::cout << "                  baseItem->get_itemType()=" << baseItem->get_itemType() << std::endl; std::cout.flush();
 
     // boundaryItem changes are for wave impedances
     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(baseItem);
@@ -7318,19 +7344,27 @@ void textValueChanged (QString text, BaseItem *baseItem, BoundaryDatabase *bound
         boundaryItem->addShapeData(newShapeData);
         boundaryItem->startItemChange();
         boundaryItem->addItemChange();
+        boundaryItem->setModified(true);
+
+        //boundaryItem->setMenus();
+        //boundaryItem->clearTreeSelection();
+        //boundaryItem->updateViewer();
     }
 
     // scaleItem for integration path scaling
-    std::cout << "   testing for ScaleValueItem" << std::endl; std::cout.flush();
     ScaleValueItem *scaleValueItem=dynamic_cast<ScaleValueItem *>(baseItem);
     if (scaleValueItem) {
-        std::cout << "   changing data" << std::endl; std::cout.flush();
         ShapeData *newShapeData=scaleValueItem->getShapeData()->copyCreate();
         newShapeData->setEdit();
         newShapeData->set_scale(text.toDouble());
         scaleValueItem->addShapeData(newShapeData);
         scaleValueItem->startItemChange();
         scaleValueItem->addItemChange();
+        scaleValueItem->setModified(true);
+
+        //scaleValueItem->setMenus();
+        //scaleValueItem->clearTreeSelection();
+        //scaleValueItem->updateViewer();
     }
 }
 

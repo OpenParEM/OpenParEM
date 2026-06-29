@@ -487,6 +487,12 @@ public:
 
     BaseItem* getRootParent ();
 
+    bool isModified () {return modified;}
+    void setModified (bool);
+    // void setMenus ();
+    // void clearTreeSelection ();
+    // void updateViewer ();
+
     void showDisplayStatus ();
     void alignForegroundColor ();
 
@@ -497,8 +503,8 @@ public:
     void setForUndoRedo (bool, int);
 
     virtual void rename (QString);
-    void expandToItem ();
-    void expandToItemPlus1 ();
+    //void expandToItem ();
+    //void expandToItemPlus1 ();
 
     virtual bool isValidShow () {return false;}
     virtual bool isValidHide () {return false;}
@@ -756,7 +762,7 @@ protected:
                                                        // 103 - root mesh item
                                                        // 104 - root path item
 
-
+    bool modified;
     // int depth;                                         // item depth in the tree for saving formatted drawing files
     // bool hasArrows;                                    // whether to show arrows when drawing; used by DrawingItem and PathItem
     // bool isActive;                                     // indicates whether the item is assigned to the tree
@@ -789,10 +795,6 @@ public:
     ScaleValueItem (OpenParEMg *mw_, ScaleLabelItem *parentItem_);
 
     void insertScaleValueWidget (double);
-
-    //void setScaleLabelItem (ScaleLabelItem *scaleLabelItem_) {scaleLabelItem=scaleLabelItem_;}
-    //ScaleLabelItem* getScaleLabelItem () {return scaleLabelItem;}
-
     void undo () override;
     void redo () override;
     bool hasUndo () override {return dataStack.hasUndo();}
@@ -815,6 +817,7 @@ public:
         mw=mw_;
         itemType=100;
         parentItem=nullptr;
+        modified=false;
         setForeground(0,Qt::black);
     }
 
@@ -983,6 +986,7 @@ public:
         mw=mw_;
         itemType=104;
         parentItem=nullptr;
+        modified=false;
         setForeground(0,Qt::black);
     }
 
@@ -1090,6 +1094,7 @@ public:
         mw=mw_;
         itemType=102;
         parentItem=nullptr;
+        modified=false;
         setForeground(0,Qt::black);
     }
 
@@ -1142,6 +1147,7 @@ public:
         mw=mw_;
         itemType=101;
         parentItem=nullptr;
+        modified=false;
         setForeground(0,Qt::black);
     }
 
@@ -1284,14 +1290,9 @@ public:
     void show (bool) override;
     void hide (bool) override;
     void showMenu (QMenu *) override;
-    //void setModeItem (ModeItem *modeItem_) {modeItem=modeItem_;}
-    //ModeItem* getModeItem () {return modeItem;}
-    //void setScaleLabelItem (ScaleLabelItem *scaleLabelItem_) {scaleLabelItem=scaleLabelItem_;}
-    //ScaleLabelItem* getScaleLabelItem (){return scaleLabelItem;}
     void drawLinePath ();
     void drawPolylinePath ();
     bool isValidInsertSelectedPath ();
-    //void insertSelectedPath ();
     bool hasScale ();
     bool hasIntegrationPathItem ();
     void addScaleItem ();
@@ -1350,6 +1351,7 @@ public:
         mw=mw_;
         itemType=103;
         parentItem=nullptr;
+        modified=false;
         setForeground(0,Qt::black);
     }
     bool isValidShow () override;
