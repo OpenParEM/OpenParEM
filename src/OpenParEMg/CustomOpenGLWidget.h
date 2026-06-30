@@ -572,7 +572,6 @@ public:
         graphicDriver.Nullify();
 
         doneCurrent();
-        //std::cout << "exit CustomOpenGLWidget::shutdown" << std::endl; std::cout.flush();
     }
 
 protected:

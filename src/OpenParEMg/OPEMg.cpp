@@ -501,7 +501,10 @@ OpenParEMg::~OpenParEMg ()
     ui->drawingWindow->shutdown();
 
     freeQActionList();
-
+    free_project(&defaultData);
+    free_project(&projData);
+    if (materialDatabase) {delete materialDatabase; materialDatabase=nullptr;}
+    if (relay) {delete relay; relay=nullptr;}
     if (timer) delete timer;
     if (MPI_PORT_COMM) MPI_Comm_free(MPI_PORT_COMM);
     if (request) MPI_Request_free(request);
@@ -7220,7 +7223,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 
 void OpenParEMg::finishOperation (bool cancel, int source)
 {
-    std::cout << "OpenParEMg::finishOperation  cancel=" << cancel << "  source=" << source << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishOperation  cancel=" << cancel << "  source=" << source << std::endl; std::cout.flush();
 
     if (cancel) {
 
@@ -7293,8 +7296,6 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
     ui->drawingWindow->updateViewer();
     setMenusI(0);
-
-    std::cout << "exit OpenParEMg::finishOperation  cancel=" << cancel << "  source=" << source << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::on_actionUndo_triggered ()

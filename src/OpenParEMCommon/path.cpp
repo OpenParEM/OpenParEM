@@ -683,7 +683,6 @@ void Path::save (std::ofstream *out)
     modified=false;
     if (rank != 0) return;
 
-    std::cout << "   saving" << std::endl; std::cout.flush();
     int dim=0;
     *out << "Path" << std::endl;
     *out << "   name=" << get_name() << std::endl;
