@@ -4003,8 +4003,6 @@ void OpenParEMg::renumberDimTag ()
 
 void OpenParEMg::setPhysicalGroups ()
 {
-    std::cout << "OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
-
     // re-build the physical groups list
 
     clear_physicalGroupMaterials (&projData);
@@ -4406,6 +4404,11 @@ void OpenParEMg::resetProject ()
     port->reset();
     boundary->reset();
     mesh->reset();
+
+    // clear tabs
+    ui->logText->clear();
+    ui->iterationsText->clear();
+    ui->dataText->clear();
 
     resetLockouts();
 

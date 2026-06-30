@@ -64,4 +64,3 @@ solution.iteration.limit 10000
 //debug.tempfiles.keep false
 //debug.refine.preconditioner 1
 //gui.slot.count 5
-gui.physical.group 3,1,air

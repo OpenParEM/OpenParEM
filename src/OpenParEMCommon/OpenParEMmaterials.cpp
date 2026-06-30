@@ -1549,12 +1549,12 @@ bool MaterialDatabase::load (const char *path, const char *filename, bool checkI
    // assemble the full path name
 
    char *fullPathName=nullptr;
-   fullPathName=(char *)malloc((strlen(path)+strlen(filename)+1)*sizeof(char));
+   fullPathName=(char *)malloc((strlen(path)+strlen(filename)+2)*sizeof(char));
    if (!fullPathName) return true;
 
    if (pathHasSeparator) {
       if (filenameHasSeparator) {
-         sprintf (fullPathName,"%s%s",path,filename+1);
+         sprintf (fullPathName,"%s%s",path,filename);
       } else {
          sprintf (fullPathName,"%s%s",path,filename);
       }

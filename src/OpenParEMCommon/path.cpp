@@ -675,8 +675,6 @@ void Path::print (std::string indent)
 
 void Path::save (std::ofstream *out)
 {
-    std::cout << "Path::save" << std::endl; std::cout.flush();
-
     if (!isUsed) return;
 
     PetscMPIInt rank;

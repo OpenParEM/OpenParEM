@@ -3652,10 +3652,10 @@ void ModeItem::save (std::ofstream *out)
         else if (calculation.compare("mode") == 0) calculation="Mode";
     }
 
-    ShapeData *shapeData=getShapeData();
+    //ShapeData *shapeData=getShapeData();
     *out << "   " << calculation.toStdString() << std::endl;
     *out << "      net=" << text(0).toStdString() << std::endl;
-    *out << "      Sport=" << shapeData->get_Sport() << std::endl;
+    *out << "      Sport=" << get_Sport() << std::endl;
 
     int i=0;
     while (i < childCount()) {
@@ -3786,26 +3786,18 @@ void SportNumberItem::insertSportNumberWidget (int Sport)
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::clearTreeSelection);
 }
 
+//xxx
 int SportNumberItem::get_Sport ()
 {
-    // int i=0;
-    // while (i < childCount()) {
-    //     BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-    //     if (baseItem) {
-    //         CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(baseItem,0));
-    //         if (sportNumber) {
-    //             return sportNumber->value();
-    //         }
-    //         i++;
-    //     }
+    // CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
+    // if (sportNumber) {
+    //     return sportNumber->value();
     // }
 
-    CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
-    if (sportNumber) {
-        return sportNumber->value();
-    }
+    ShapeData *shapeData=getShapeData();
+    return shapeData->get_Sport();
 
-    return 0;
+    //return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
