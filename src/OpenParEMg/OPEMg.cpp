@@ -4576,40 +4576,41 @@ void OpenParEMg::saveProject ()
 
     // project
     if (projectChanged) {
-        std::cout << "Saved project file" << std::endl; std::cout.flush();
         if (save_project (projectFile.toStdString().c_str(),&projData,&defaultData,"")) {
             QString message="Error in saving the project file.";
             QMessageBox mb;
             mb.critical(nullptr,"Error",message);
             mb.setFixedSize(500, 200);
+        } else {
+            std::cout << "Saved project file" << std::endl; std::cout.flush();
+            projData.modified=0;
+            projectChanged=false;
         }
-        projData.modified=0;
-        projectChanged=false;
+    }
+
+    // drawing
+    if (drawing->isModified()) {
+        QString drawingFile=projectName;
+        drawingFile.append(".opd");
+        if (saveDrawingFile(drawingFile)) {
+            std::cout << "Saved drawing file" << std::endl; std::cout.flush();
+        }
     }
 
     // ports and boundaries
-    {
+    if (saveBoundaryDatabase()) {
+        QString message="Error in saving the boundary database.";
+        QMessageBox mb;
+        mb.critical(nullptr, "Error",message);
+        mb.setFixedSize(500, 200);
+    } else {
         std::cout << "Saved boundary database file" << std::endl; std::cout.flush();
-        if (saveBoundaryDatabase()) {
-            QString message="Error in saving the boundary database.";
-            QMessageBox mb;
-            mb.critical(nullptr, "Error",message);
-            mb.setFixedSize(500, 200);
-        }
     }
 
     // mesh
     if (mesh->childCount() > 0 && mesh->isModified()) {
         std::cout << "Saved mesh file" << std::endl; std::cout.flush();
         on_actionMeshSave_triggered();
-    }
-
-    // drawing
-    if (drawing->isModified()) {
-        std::cout << "Saved drawing file" << std::endl; std::cout.flush();
-        QString drawingFile=projectName;
-        drawingFile.append(".opd");
-        saveDrawingFile(drawingFile);
     }
 
     setMenusI(47);

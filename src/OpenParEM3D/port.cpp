@@ -2579,7 +2579,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
                             OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, QTreeWidget *drawingItemTree,
                             RootPathItem *rootPathItem, VIItem *viItem)
 {
-    std::cout << "IntegrationPath::draw" << std::endl;  std::cout.flush();
+    //std::cout << "IntegrationPath::draw" << std::endl;  std::cout.flush();
 
     // scale
 

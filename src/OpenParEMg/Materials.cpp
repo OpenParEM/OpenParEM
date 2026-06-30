@@ -1056,6 +1056,7 @@ Materials::~Materials ()
     if (materials_global_name) {free(materials_global_name); materials_global_name=nullptr;}
     if (materials_local_path) {free(materials_local_path); materials_local_path=nullptr;}
     if (materials_local_name) {free(materials_local_name); materials_local_name=nullptr;}
+    if (materials_default_boundary) {free(materials_default_boundary); materials_default_boundary=nullptr;}
     delete ui;
 }
 
@@ -1867,7 +1868,10 @@ void Materials::on_OkButton_clicked ()
     if (projData->materials_default_boundary) {free(projData->materials_default_boundary); projData->materials_default_boundary=nullptr;}
     projData->materials_default_boundary=allocCopyString(materials_default_boundary);
 
-    projData->materials_check_limits=materials_check_limits;
+    if (projData->materials_check_limits != materials_check_limits) {
+        projData->materials_check_limits=materials_check_limits;
+        projectDataModified=true;
+    }
 
     if (projectDataModified) projData->modified=1;
 
@@ -1888,6 +1892,7 @@ void Materials::reject ()
 
 void Materials::on_checkLimits_stateChanged (int arg1)
 {
-    materials_check_limits=arg1;
+    materials_check_limits=false;
+    if (arg1 > 0) materials_check_limits=true;
 }
 
