@@ -1015,6 +1015,8 @@ void OpenParEMg::collapseAllItems ()
 
 void OpenParEMg::buildFaceMenu (QMenu &menu)
 {
+    //std::cout  << "OpenParEMg::buildFaceMenu" << std::endl; std::cout.flush();
+
     createPathAction=new QAction("Create Path");
     createPathAction->setToolTip("Create a path from the face.");
     createPortAction=new QAction("Create Port");
@@ -1031,7 +1033,6 @@ void OpenParEMg::buildFaceMenu (QMenu &menu)
     if (isValidCreatePathFromFace()) menu.addAction(createPathAction);
     if (isValidCreatePortFromFace()) menu.addAction(createPortAction);
     if (isValidCreateBoundaryFromFace()) menu.addAction(createBoundaryAction);
-    if (isValidDeletePath()) menu.addAction(deleteAction);
     menu.addAction(cancelAction);
 }
 
@@ -1042,7 +1043,7 @@ void OpenParEMg::cancelMenu ()
 
 void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
 {
-    std::cout << "OpenParEMg::itemTreeContextMenu_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::itemTreeContextMenu_triggered" << std::endl; std::cout.flush();
 
     clickedItem=dynamic_cast<BaseItem *>(ui->drawingItemTree->itemAt(pnt));
     if (!clickedItem) return;
@@ -1114,6 +1115,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
             menu.addAction(cancelAction);
         }
     } else {
+
         // check for selected subshape
         if (ui->drawingWindow->get_selectedItems_size() == 0 && ui->drawingWindow->get_NbSelected()) {
             buildFaceMenu(menu);

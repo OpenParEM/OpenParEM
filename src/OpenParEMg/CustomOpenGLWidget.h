@@ -420,10 +420,21 @@ public:
 
     int numberDrawingFaceSelected ()
     {
+        std::cout << "numberDrawingFaceSelected" << std::endl; std::cout.flush();
+        if (viewerContext.IsNull()) {
+            std::cout << "   null viewerContext" << std::endl; std::cout.flush();
+            return 0;
+        }
+
+        std::cout << "   continuing" << std::endl; std::cout.flush();
+
         int count=0;
         for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
-            TopoDS_Shape pickedShape = viewerContext->SelectedShape();
-            if (pickedShape.ShapeType() == TopAbs_FACE) count++;
+            std::cout << "   count=" << count << std::endl;  std::cout.flush();
+            TopoDS_Shape pickedShape=viewerContext->SelectedShape();
+            if (!pickedShape.IsNull()) {
+                if (pickedShape.ShapeType() == TopAbs_FACE) count++;
+            }
         }
         return count;
     }
