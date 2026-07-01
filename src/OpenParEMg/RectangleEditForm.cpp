@@ -130,21 +130,21 @@ void RectangleEditForm::repopulateOffSize ()
 void RectangleEditForm::on_positionX_editingFinished ()
 {
     p0.SetX(ui->positionX->text().toDouble()/conversionFactor);
-    repopulate();
+    repopulateOffSize();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_positionY_editingFinished ()
 {
     p0.SetY(ui->positionY->text().toDouble()/conversionFactor);
-    repopulate();
+    repopulateOffSize();
     ui->OkButton->setEnabled(isValid());
 }
 
 void RectangleEditForm::on_positionZ_editingFinished ()
 {
     p0.SetZ(ui->positionZ->text().toDouble()/conversionFactor);
-    repopulate();
+    repopulateOffSize();
     ui->OkButton->setEnabled(isValid());
 }
 

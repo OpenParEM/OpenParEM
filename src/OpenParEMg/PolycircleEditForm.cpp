@@ -125,6 +125,7 @@ void PolycircleEditForm::repopulate ()
 
 void PolycircleEditForm::on_centerPositionX_editingFinished ()
 {
+    firstPoint.SetX(firstPoint.X()-centerPoint.X()+ui->centerPositionX->text().toDouble()/conversionFactor);
     centerPoint.SetX(ui->centerPositionX->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
@@ -132,6 +133,7 @@ void PolycircleEditForm::on_centerPositionX_editingFinished ()
 
 void PolycircleEditForm::on_centerPositionY_editingFinished ()
 {
+    firstPoint.SetY(firstPoint.Y()-centerPoint.Y()+ui->centerPositionY->text().toDouble()/conversionFactor);
     centerPoint.SetY(ui->centerPositionY->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
@@ -139,6 +141,7 @@ void PolycircleEditForm::on_centerPositionY_editingFinished ()
 
 void PolycircleEditForm::on_centerPositionZ_editingFinished ()
 {
+    firstPoint.SetZ(firstPoint.Z()-centerPoint.Z()+ui->centerPositionZ->text().toDouble()/conversionFactor);
     centerPoint.SetZ(ui->centerPositionZ->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
