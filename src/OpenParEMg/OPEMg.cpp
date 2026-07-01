@@ -84,6 +84,7 @@
 #include "CustomLineEdit.h"
 #include "CustomTreeWidgetItem.h"
 #include "MaterialSelection.h"
+#include "../OpenParEM3D/fileCleanup.hpp"
 #include "mpi.h"
 
 
@@ -587,17 +588,32 @@ void OpenParEMg::setUnmodified ()
     mesh->setModified(false);
 }
 
+bool OpenParEMg::hasResults ()
+{
+    std::cout << "OpenParEMg::hasResults" << std::endl; std::cout.flush();
+    std::cout << "   baseName=" << projData.project_name << std::endl; std::cout.flush();
+    std::cout << "   SportCount=" << port->get_SportCount() << std::endl; std::cout.flush();
+
+    if (has_results_files(projData.project_name,port->get_SportCount())) return true;
+    return false;
+}
+
 int OpenParEMg::check_changed ()
 {
     int retVal=0;
     if (isModified()) {
         QMessageBox msgBox(this);
         msgBox.setText("The project has been modified.");
-        msgBox.setInformativeText("Do you want to save your changes?");
+        if (hasResults()) {
+            msgBox.setInformativeText("Do you want to save your changes? \n\nWarning: Previous computed results will be permanently deleted.");
+        } else {
+            msgBox.setInformativeText("Do you want to save your changes?");
+        }
         msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
         msgBox.setDefaultButton(QMessageBox::Save);
-        retVal = msgBox.exec();
+        retVal=msgBox.exec();
     }
+
     return retVal;
 }
 
@@ -4272,6 +4288,11 @@ void OpenParEMg::on_actionOpen_triggered ()
             drawingLoaded=true;
         }
 
+        // load last results, if any
+        updateLogTab(true);
+        updateIterationsTab(true);
+        updateDataTab(true);
+
         // set dimTag and material
         if (drawingLoaded && materialsLoaded) {
             //resetDimTag(&drawing);
@@ -4412,6 +4433,11 @@ void OpenParEMg::resetProject ()
     ui->logText->clear();
     ui->iterationsText->clear();
     ui->dataText->clear();
+
+    // bring drawing to the front
+    if (ui->tabs->currentWidget() != ui->drawingTab) {
+        ui->tabs->setCurrentWidget(ui->drawingTab);
+    }
 
     resetLockouts();
 
@@ -4560,44 +4586,40 @@ void OpenParEMg::saveProject ()
     // update included file names
 
     // port_definition_file
-    if (strcmp(projData.port_definition_file,"") == 0) {
-        QString portDefinitionFile=projectName;
-        portDefinitionFile.append("_ports.txt");
-        cstrFromQString (&(projData.port_definition_file),portDefinitionFile);
-        projectChanged=true;
-    }
+    QString portDefinitionFile=projectName;
+    portDefinitionFile.append("_ports.txt");
+    if (portDefinitionFile.compare(projData.port_definition_file) != 0) projectChanged=true;
+    cstrFromQString (&(projData.port_definition_file),portDefinitionFile);
+    std::cout << "projData.port_definition_file=" << projData.port_definition_file << std::endl; std::cout.flush();
 
     // mesh_file
-    if (mesh->childCount() > 0 && strcmp(projData.mesh_file,"") == 0 ) {
+    if (mesh->childCount() > 0) {
         QString meshFile=projectName;
         meshFile.append(".msh");
+        if (meshFile.compare(projData.mesh_file) != 0) projectChanged=true;
         cstrFromQString (&(projData.mesh_file),meshFile);
-        projectChanged=true;
+        std::cout << "projData.mesh_file=" << projData.mesh_file << std::endl; std::cout.flush();
     }
 
     // save files
 
     // project
-    if (projectChanged) {
-        if (save_project (projectFile.toStdString().c_str(),&projData,&defaultData,"")) {
-            QString message="Error in saving the project file.";
-            QMessageBox mb;
-            mb.critical(nullptr,"Error",message);
-            mb.setFixedSize(500, 200);
-        } else {
-            std::cout << "Saved project file" << std::endl; std::cout.flush();
-            projData.modified=0;
-            projectChanged=false;
-        }
+    if (save_project(projectFile.toStdString().c_str(),&projData,&defaultData,"")) {
+        QString message="Error in saving the project file.";
+        QMessageBox mb;
+        mb.critical(nullptr,"Error",message);
+        mb.setFixedSize(500, 200);
+    } else {
+        std::cout << "Saved project file" << std::endl; std::cout.flush();
+        projData.modified=0;
+        projectChanged=false;
     }
 
     // drawing
-    if (drawing->isModified()) {
-        QString drawingFile=projectName;
-        drawingFile.append(".opd");
-        if (saveDrawingFile(drawingFile)) {
-            std::cout << "Saved drawing file" << std::endl; std::cout.flush();
-        }
+    QString drawingFile=projectName;
+    drawingFile.append(".opd");
+    if (saveDrawingFile(drawingFile)) {
+        std::cout << "Saved drawing file" << std::endl; std::cout.flush();
     }
 
     // ports and boundaries
@@ -4611,7 +4633,7 @@ void OpenParEMg::saveProject ()
     }
 
     // mesh
-    if (mesh->childCount() > 0 && mesh->isModified()) {
+    if (mesh->childCount() > 0) {
         std::cout << "Saved mesh file" << std::endl; std::cout.flush();
         on_actionMeshSave_triggered();
     }
@@ -4624,6 +4646,29 @@ void OpenParEMg::on_actionSave_triggered ()
     std::cout << "projectFile=" << projectFile.toStdString() << std::endl; std::cout.flush();
     if (QFile::exists(projectFile)) {
         std::cout << "file exists" << std::endl; std::cout.flush();
+
+        //xxx
+        int retVal=0;
+        if (hasResults()) {
+            QMessageBox msgBox(this);
+            msgBox.setText("The project has existing computed results.");
+            msgBox.setInformativeText("Do you want to permanently delete the existing results?");
+            msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+            msgBox.setDefaultButton(QMessageBox::Save);
+            retVal=msgBox.exec();
+        }
+        if (retVal == QMessageBox::Cancel) return;
+
+        // bring drawing to the front
+        if (ui->tabs->currentWidget() != ui->drawingTab) {
+            ui->tabs->setCurrentWidget(ui->drawingTab);
+        }
+
+        // clear stale data
+        ui->logText->clear();
+        ui->iterationsText->clear();
+        ui->dataText->clear();
+        delete_stale_files(projData.project_name,port->get_SportCount());
         saveProject();
     } else {
         std::cout << "file does not exist" << std::endl; std::cout.flush();
@@ -4638,12 +4683,43 @@ void OpenParEMg::on_actionSaveAs_triggered ()
     if (filePath.isEmpty()) return;
 
     QFileInfo fileInfo(filePath);
+
+    // see if this is being saved to a new project
+    bool isNewProject=false;
+    if (absolutePath.compare(fileInfo.absolutePath()) != 0) isNewProject=true;
+    if (projectName.compare(fileInfo.completeBaseName()) != 0) isNewProject=true;
+
+    // assign data for this (possibly) new project
     absolutePath=fileInfo.absolutePath();
     projectFile=fileInfo.fileName();
     projectName=fileInfo.completeBaseName();
     set_project_name(&projData,projectName.toStdString().c_str());
-
     QDir::setCurrent(absolutePath);
+
+    // delete stale results if this is the existing project
+    // otherwise, the old data is not copied to the new project
+    if (!isNewProject && hasResults()) {
+        int retVal=0;
+        QMessageBox msgBox(this);
+        msgBox.setText("The project has existing computed results.");
+        msgBox.setInformativeText("Do you want to permanently delete the existing results?");
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Save);
+        retVal=msgBox.exec();
+
+        if (retVal == QMessageBox::Cancel) return;
+    }
+
+    // bring drawing to the front
+    if (ui->tabs->currentWidget() != ui->drawingTab) {
+        ui->tabs->setCurrentWidget(ui->drawingTab);
+    }
+
+    // clear stale data
+    ui->logText->clear();
+    ui->iterationsText->clear();
+    ui->dataText->clear();
+    delete_stale_files(projData.project_name,port->get_SportCount());
 
     saveProject();
 }
@@ -6087,8 +6163,12 @@ void OpenParEMg::drawMesh()
             while (i < conn.size()) {
                 gp_Pnt p=nodeMap[conn[i]];
                 TopoDS_Vertex vertex=BRepBuilderAPI_MakeVertex(p);
-                Handle(AIS_Shape) shape=new AIS_Shape(vertex);
-                verticesItem->get_meshEntities()->push_back(shape);
+                if (!vertex.IsNull()) {
+                    Handle(AIS_Shape) shape=new AIS_Shape(vertex);
+                    if (!shape.IsNull()) {
+                        verticesItem->get_meshEntities()->push_back(shape);
+                    }
+                }
                 i+=1;
                 count++;
             }
@@ -6109,8 +6189,12 @@ void OpenParEMg::drawMesh()
                 gp_Pnt p1=nodeMap[conn[i]];
                 gp_Pnt p2=nodeMap[conn[i+1]];
                 TopoDS_Edge edge=BRepBuilderAPI_MakeEdge(p1,p2);
-                Handle(AIS_Shape) shape=new AIS_Shape(edge);
-                edgesItem->get_meshEntities()->push_back(shape);
+                if (!edge.IsNull()) {
+                    Handle(AIS_Shape) shape=new AIS_Shape(edge);
+                    if (!shape.IsNull()) {
+                        edgesItem->get_meshEntities()->push_back(shape);
+                    }
+                }
                 i+=2;
                 count++;
             }
@@ -6143,12 +6227,20 @@ void OpenParEMg::drawMesh()
                 TopoDS_Edge edge31=BRepBuilderAPI_MakeEdge(p3,p1);
 
                 TopoDS_Wire wire=BRepBuilderAPI_MakeWire(edge12,edge23,edge31);
-                Handle(AIS_Shape) shape=new AIS_Shape(wire);
-                wiresItem->get_meshEntities()->push_back(shape);
+                if (!wire.IsNull()) {
+                    Handle(AIS_Shape) shape=new AIS_Shape(wire);
+                    if (!shape.IsNull()) {
+                        wiresItem->get_meshEntities()->push_back(shape);
+                    }
 
-                TopoDS_Face face=BRepBuilderAPI_MakeFace(wire);
-                shape=new AIS_Shape(face);
-                trianglesItem->get_meshEntities()->push_back(shape);
+                    TopoDS_Face face=BRepBuilderAPI_MakeFace(wire);
+                    if (!face.IsNull()) {
+                        Handle(AIS_Shape) shape=new AIS_Shape(face);
+                        if (!shape.IsNull()) {
+                            trianglesItem->get_meshEntities()->push_back(shape);
+                        }
+                    }
+                }
 
                 i+=3;
                 count++;
@@ -6179,26 +6271,35 @@ void OpenParEMg::drawMesh()
                 TopoDS_Edge edge34=BRepBuilderAPI_MakeEdge(p3,p4);
                 TopoDS_Edge edge42=BRepBuilderAPI_MakeEdge(p4,p2);
 
-                TopoDS_Wire wire123=BRepBuilderAPI_MakeWire(edge12,edge23,edge13);
-                TopoDS_Wire wire134=BRepBuilderAPI_MakeWire(edge13,edge34,edge14);
-                TopoDS_Wire wire124=BRepBuilderAPI_MakeWire(edge12,edge42,edge14);
-                TopoDS_Wire wire234=BRepBuilderAPI_MakeWire(edge23,edge34,edge42);
+                if (!edge12.IsNull() && !edge13.IsNull() && !edge14.IsNull() && !edge23.IsNull() && !edge34.IsNull() && !edge42.IsNull()) {
 
-                TopoDS_Face face123=BRepBuilderAPI_MakeFace(wire123);
-                TopoDS_Face face134=BRepBuilderAPI_MakeFace(wire134);
-                TopoDS_Face face124=BRepBuilderAPI_MakeFace(wire124);
-                TopoDS_Face face234=BRepBuilderAPI_MakeFace(wire234);
+                    TopoDS_Wire wire123=BRepBuilderAPI_MakeWire(edge12,edge23,edge13);
+                    TopoDS_Wire wire134=BRepBuilderAPI_MakeWire(edge13,edge34,edge14);
+                    TopoDS_Wire wire124=BRepBuilderAPI_MakeWire(edge12,edge42,edge14);
+                    TopoDS_Wire wire234=BRepBuilderAPI_MakeWire(edge23,edge34,edge42);
 
-                TopoDS_Compound tetrahedron;
-                BRep_Builder builder;
-                builder.MakeCompound(tetrahedron);
-                builder.Add(tetrahedron,face123);
-                builder.Add(tetrahedron,face134);
-                builder.Add(tetrahedron,face124);
-                builder.Add(tetrahedron,face234);
+                    if (!wire123.IsNull() && !wire134.IsNull() && !wire124.IsNull() && !wire234.IsNull()) {
 
-                Handle(AIS_Shape) shape=new AIS_Shape(tetrahedron);
-                tetrahedronsItem->get_meshEntities()->push_back(shape);
+                        TopoDS_Face face123=BRepBuilderAPI_MakeFace(wire123);
+                        TopoDS_Face face134=BRepBuilderAPI_MakeFace(wire134);
+                        TopoDS_Face face124=BRepBuilderAPI_MakeFace(wire124);
+                        TopoDS_Face face234=BRepBuilderAPI_MakeFace(wire234);
+
+                        if (!face123.IsNull() && !face134.IsNull() && !face124.IsNull() && !face234.IsNull()) {
+
+                            TopoDS_Compound tetrahedron;
+                            BRep_Builder builder;
+                            builder.MakeCompound(tetrahedron);
+                            builder.Add(tetrahedron,face123);
+                            builder.Add(tetrahedron,face134);
+                            builder.Add(tetrahedron,face124);
+                            builder.Add(tetrahedron,face234);
+
+                            Handle(AIS_Shape) shape=new AIS_Shape(tetrahedron);
+                            tetrahedronsItem->get_meshEntities()->push_back(shape);
+                        }
+                    }
+                }
 
                 i+=4;
                 count++;
@@ -6270,6 +6371,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     // generate mesh
     TopoDS_Shape shape=drawing->getShape()->Shape();
     gmsh::model::occ::importShapesNativePointer((void *) &shape,drawingEntities,false);
+    gmsh::option::setNumber("Mesh.MeshSizeFactor",2);
     gmsh::model::occ::synchronize();
     gmsh::model::mesh::generate();
 
@@ -6283,7 +6385,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
     drawMesh();
     setPhysicalGroups();
-    //ui->drawingWindow->showItem(mesh);
+
     mesh->show(true);
 
     ui->drawingWindow->updateViewer();
@@ -6944,8 +7046,6 @@ void OpenParEMg::finishDraw ()
             //     //if (port) pathItem->set_portItem(port->get_item());
             // }
 
-
-            //xxx
             // set the impedance definition to a reasonable value
             PortItem *portItem=viItem->getPortItem();
             if (portItem) {

@@ -57,11 +57,11 @@ void OPEMg_Refinement::set_projData(struct projectData *a)
 
     ui->requiredPasses->setValue(projData->refinement_required_passes);
 
-    ui->relativeTol->setText(QString::number(projData->refinement_relative_tolerance,'g'));
+    ui->relativeTol->setText(QString::number(projData->refinement_relative_tolerance,'g',15));
     toleranceValidator.setNotation(QDoubleValidator::ScientificNotation);
     ui->relativeTol->setValidator(&toleranceValidator);
 
-    ui->absoluteTol->setText(QString::number(projData->refinement_absolute_tolerance,'g'));
+    ui->absoluteTol->setText(QString::number(projData->refinement_absolute_tolerance,'g',15));
     ui->absoluteTol->setValidator(&toleranceValidator);
 
     if (strcmp(projData->refinement_variable,"S") == 0) {
@@ -183,7 +183,7 @@ void OPEMg_Refinement::on_relativeTol_editingFinished()
         mb.setFixedSize(500, 200);
         relativeTol=1;
     }
-    ui->relativeTol->setText(QString::number(relativeTol,'g'));
+    ui->relativeTol->setText(QString::number(relativeTol,'g',15));
     ui->refineOk->setEnabled(true);
 }
 
@@ -203,7 +203,7 @@ void OPEMg_Refinement::on_absoluteTol_editingFinished()
         mb.setFixedSize(500, 200);
         absoluteTol=1;
     }
-    ui->absoluteTol->setText(QString::number(absoluteTol,'g'));
+    ui->absoluteTol->setText(QString::number(absoluteTol,'g',15));
     ui->refineOk->setEnabled(true);
 }
 

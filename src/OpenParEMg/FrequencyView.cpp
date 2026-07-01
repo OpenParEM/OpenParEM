@@ -102,7 +102,7 @@ void FrequencyView::populate (struct projectData *projData)
                 ui->frequencyView->insertRow(currentRow);
 
                 QLineEdit *entry=new QLineEdit();
-                entry->setText(QString::number(frequency->get_frequency()/conversionFactor));
+                entry->setText(QString::number(frequency->get_frequency()/conversionFactor,'g',15));
                 entry->setAlignment(Qt::AlignHCenter);
                 entry->setReadOnly(true);
                 ui->frequencyView->setCellWidget(currentRow,0,entry);
@@ -110,7 +110,7 @@ void FrequencyView::populate (struct projectData *projData)
                 if (frequency->get_refinementPriority() > 0) {
 
                     QLineEdit *entry=new QLineEdit();
-                    entry->setText(QString::number(frequency->get_refinementPriority()));
+                    entry->setText(QString::number(frequency->get_refinementPriority(),'g',15));
                     entry->setAlignment(Qt::AlignHCenter);
                     entry->setReadOnly(true);
                     ui->frequencyView->setCellWidget(currentRow,1,entry);

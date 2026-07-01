@@ -208,7 +208,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
         // frequencies - linear
         if (projData->inputFrequencyPlans[i].type == 0) {
             CustomLineEdit *start=new CustomLineEdit();
-            start->setText(QString::number(projData->inputFrequencyPlans[i].start/conversionFactor,'g'));
+            start->setText(QString::number(projData->inputFrequencyPlans[i].start/conversionFactor,'g',15));
             start->setAlignment(Qt::AlignHCenter);
             start->setStyleSheet(enabledBackground);
             start->setValidator(&doubleValidator);
@@ -216,7 +216,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
             connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *stop=new CustomLineEdit();
-            stop->setText(QString::number(projData->inputFrequencyPlans[i].stop/conversionFactor,'g'));
+            stop->setText(QString::number(projData->inputFrequencyPlans[i].stop/conversionFactor,'g',15));
             stop->setAlignment(Qt::AlignHCenter);
             stop->setStyleSheet(enabledBackground);
             stop->setValidator(&doubleValidator);
@@ -224,7 +224,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
             connect(stop,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *step=new CustomLineEdit();
-            step->setText(QString::number(projData->inputFrequencyPlans[i].step/conversionFactor,'g'));
+            step->setText(QString::number(projData->inputFrequencyPlans[i].step/conversionFactor,'g',15));
             step->setAlignment(Qt::AlignHCenter);
             step->setStyleSheet(enabledBackground);
             step->setValidator(&doubleValidator);
@@ -244,7 +244,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
         // frequencies - log
         if (projData->inputFrequencyPlans[i].type == 1) {
             CustomLineEdit *start=new CustomLineEdit();
-            start->setText(QString::number(projData->inputFrequencyPlans[i].start/conversionFactor,'g'));
+            start->setText(QString::number(projData->inputFrequencyPlans[i].start/conversionFactor,'g',15));
             start->setAlignment(Qt::AlignHCenter);
             start->setStyleSheet(enabledBackground);
             start->setValidator(&doubleValidator);
@@ -252,7 +252,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
             connect(start,&CustomLineEdit::textChanged,this,&FrequencyPlanG::frequency_textChanged);
 
             CustomLineEdit *stop=new CustomLineEdit();
-            stop->setText(QString::number(projData->inputFrequencyPlans[i].stop/conversionFactor,'g'));
+            stop->setText(QString::number(projData->inputFrequencyPlans[i].stop/conversionFactor,'g',15));
             stop->setAlignment(Qt::AlignHCenter);
             stop->setStyleSheet(enabledBackground);
             stop->setValidator(&doubleValidator);
@@ -280,7 +280,7 @@ void FrequencyPlanG::set_projData (struct projectData *a)
         // frequencies - frequency
         if (projData->inputFrequencyPlans[i].type == 2) {
             CustomLineEdit *start=new CustomLineEdit();
-            start->setText(QString::number(projData->inputFrequencyPlans[i].frequency/conversionFactor,'g'));
+            start->setText(QString::number(projData->inputFrequencyPlans[i].frequency/conversionFactor,'g',15));
             start->setAlignment(Qt::AlignHCenter);
             start->setStyleSheet(enabledBackground);
             start->setValidator(&doubleValidator);
@@ -372,7 +372,7 @@ void FrequencyPlanG::on_frequencyAdd_clicked ()
     connect(type,&QComboBox::currentIndexChanged,this,&FrequencyPlanG::typeComboBox_changed);
 
     CustomLineEdit *start=new CustomLineEdit();
-    start->setText(QString::number(1e9/conversionFactor,'g'));
+    start->setText(QString::number(1e9/conversionFactor,'g',15));
     start->setAlignment(Qt::AlignHCenter);
     start->setStyleSheet(enabledBackground);
     start->setValidator(&doubleValidator);
@@ -664,7 +664,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
             double stopValue=stop->text().toDouble();
 
             CustomLineEdit *step=(CustomLineEdit *) ui->frequencyTable->cellWidget(currentRow,3);
-            step->setText(QString::number((stopValue-startValue)/10,'g'));
+            step->setText(QString::number((stopValue-startValue)/10,'g',15));
             step->setStyleSheet(enabledBackground);
             step->setEnabled(true);
 
@@ -686,12 +686,12 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
 
             CustomLineEdit *stop=(CustomLineEdit *) ui->frequencyTable->cellWidget(currentRow,2);
             double stopValue=startValue*2;
-            stop->setText(QString::number(stopValue,'g'));
+            stop->setText(QString::number(stopValue,'g',15));
             stop->setStyleSheet("enabledBackground");
             stop->setEnabled(true);
 
             CustomLineEdit *step=(CustomLineEdit *) ui->frequencyTable->cellWidget(currentRow,3);
-            step->setText(QString::number((stopValue-startValue)/10,'g'));
+            step->setText(QString::number((stopValue-startValue)/10,'g',15));
             step->setStyleSheet("enabledBackground");
             step->setEnabled(true);
 
@@ -740,7 +740,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
 
             CustomLineEdit *stop=(CustomLineEdit *) ui->frequencyTable->cellWidget(currentRow,2);
             double stopValue=startValue*2;
-            stop->setText(QString::number(stopValue,'g'));
+            stop->setText(QString::number(stopValue,'g',15));
             stop->setStyleSheet(enabledBackground);
             stop->setEnabled(true);
 

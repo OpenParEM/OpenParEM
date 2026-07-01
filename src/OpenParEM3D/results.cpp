@@ -168,14 +168,14 @@ void Result::save (ostream *out, struct projectData *projData, int SportCount)
 }
 
 void Result::saveFormatted (ostream *out, double solveElapsedTime, double meshErrorTime, double femSetupTime,
-                            double refineTime, double radiationTime, double *priorFrequency)
+                            double refineTime, double radiationTime, double *priorFrequency, double frequencyScale)
 {
    int rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
    if (rank == 0) {
       if (double_compare(frequency,*priorFrequency,1e-12)) *out << setw(15) << "";
-      else *out << setw(15) << frequency;
+      else *out << setw(15) << setprecision(15) << frequency*frequencyScale;
 
       *out << setw(12) << iteration;
       *out << setw(12) << meshSize;
@@ -205,7 +205,7 @@ void Result::saveFormatted (ostream *out, double solveElapsedTime, double meshEr
    }
 }
 
-void Result::saveCSV (ostream *out, struct projectData *projData, double scale)
+void Result::saveCSV (ostream *out, struct projectData *projData, double frequencyScale)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -215,7 +215,7 @@ void Result::saveCSV (ostream *out, struct projectData *projData, double scale)
    int numSport=m;
 
    if (rank == 0) *out << setprecision(15);
-   if (rank == 0) *out << frequency*scale;
+   if (rank == 0) *out << frequency*frequencyScale;
 
    int i=0;
    while (i < numSport) {
@@ -637,6 +637,14 @@ Result::~Result ()
 // ResultDatabase
 //---------------------------------------------------------------------------------------------------------------------------------
 
+void ResultDatabase::set_frequencyScale (struct projectData *projData)
+{
+      if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) frequencyScale=1;
+      if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) frequencyScale=1e-3;
+      if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) frequencyScale=1e-6;
+      if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) frequencyScale=1e-9;
+}
+
 // result given iteration
 Result* ResultDatabase::get_Result (double frequency, int iteration)
 {
@@ -1053,7 +1061,6 @@ void ResultDatabase::saveCSV (ostream *out, struct projectData *projData,
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   double scale=1;
    int portCount=boundaryDatabase->get_SportCount();
 
    // Sport information
@@ -1109,7 +1116,7 @@ void ResultDatabase::saveCSV (ostream *out, struct projectData *projData,
       *out << "#OpenParEM3D " << projData->version_major << "." << projData->version_minor << "." << projData->version_patch << endl;
       *out << "#Touchstone format," << projData->touchstone_format << endl;
       *out << "#frequency unit," << projData->touchstone_frequency_unit << endl;
-      *out << "#number of frequencies," << unique_frequencies.size() << endl;
+      //*out << "#number of frequencies," << unique_frequencies.size() << endl;
       *out << "#number of ports," << portCount << endl;
 
       j=0;
@@ -1120,10 +1127,10 @@ void ResultDatabase::saveCSV (ostream *out, struct projectData *projData,
 
       if (allIterations) *out << "#prior iterations pre-pended by #" << endl;
 
-      if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) {*out << "#Frequency(Hz)"; scale=1;}
-      if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) {*out << "#Frequency(kHz)"; scale=1e-3;}
-      if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) {*out << "#Frequency(MHz)"; scale=1e-6;}
-      if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) {*out << "#Frequency(GHz)"; scale=1e-9;}
+      if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) {*out << "#Frequency(Hz)";}
+      if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) {*out << "#Frequency(kHz)";}
+      if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) {*out << "#Frequency(MHz)";}
+      if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) {*out << "#Frequency(GHz)";}
 
       int col=0;
       while (col < portCount) {
@@ -1151,7 +1158,7 @@ void ResultDatabase::saveCSV (ostream *out, struct projectData *projData,
       while (k <= lastIteration) {
          if (k != lastIteration) *out << "#";
          Result *result=get_Result(unique_frequencies[i],k);
-         if (result) result->saveCSV(out,projData,scale);
+         if (result) result->saveCSV(out,projData,frequencyScale);
          k++;
       }
 
@@ -1164,7 +1171,6 @@ void ResultDatabase::saveCSV (ostream *out, struct projectData *projData,
 bool ResultDatabase::saveTouchstone (struct projectData *projData, BoundaryDatabase *boundaryDatabase, vector<DifferentialPair *> *aggregateList)
 {
    bool fail=false;
-   double scale=1;
    int rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
@@ -1203,10 +1209,6 @@ bool ResultDatabase::saveTouchstone (struct projectData *projData, BoundaryDatab
    // common operations between formats
 
    int portCount=boundaryDatabase->get_SportCount();
-   if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) scale=1;
-   if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) scale=1e-3;
-   if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) scale=1e-6;
-   if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) scale=1e-9;
 
    stringstream ss;
    ss << projData->project_name << ".s" << portCount << "p";
@@ -1269,7 +1271,7 @@ bool ResultDatabase::saveTouchstone (struct projectData *projData, BoundaryDatab
          int lastIteration=get_lastIteration(unique_frequencies[k]);
 
          out << setprecision(15);
-         out << unique_frequencies[k]*scale;
+         out << unique_frequencies[k]*frequencyScale;
 
          Result *result=get_Result(unique_frequencies[k],lastIteration);
 
@@ -1432,7 +1434,7 @@ bool ResultDatabase::saveTouchstone (struct projectData *projData, BoundaryDatab
          int lastIteration=get_lastIteration(unique_frequencies[k]);
 
          if (rank == 0) out << setprecision(15);
-         if (rank == 0) out << unique_frequencies[k]*scale;
+         if (rank == 0) out << unique_frequencies[k]*frequencyScale;
 
          Result *result=get_Result(unique_frequencies[k],lastIteration);
 
@@ -1547,8 +1549,12 @@ void ResultDatabase::saveFormatted (ostream *out)
         << setw(17) << "-----------------"
         << endl;
 
-   *out << setw(15) << "frequency"
-        << setw(12) << "iteration"
+   if (double_compare(frequencyScale,1,1e-12)) *out << setw(15) << "frequency, Hz";
+   if (double_compare(frequencyScale,1e-3,1e-12)) *out << setw(15) << "frequency, kHz";
+   if (double_compare(frequencyScale,1e-6,1e-12)) *out << setw(15) << "frequency, MHz";
+   if (double_compare(frequencyScale,1e-9,1e-12)) *out << setw(15) << "frequency, GHz";
+  
+   *out << setw(12) << "iteration"
         << setw(12) << "mesh size"
         << setw(12) << "DOF count"
         << setw(12) << "setup,s"
@@ -1584,7 +1590,7 @@ void ResultDatabase::saveFormatted (ostream *out)
       refine=results[i]->get_refine_time();
       meshError=results[i]->get_mesh_error_time();
       radiation=results[i]->get_radiation_time();
-      results[i]->saveFormatted(out,solveElapsed,meshError,femSetup,refine,radiation,&priorFrequency);
+      results[i]->saveFormatted(out,solveElapsed,meshError,femSetup,refine,radiation,&priorFrequency,frequencyScale);
       i++;
    }
 }

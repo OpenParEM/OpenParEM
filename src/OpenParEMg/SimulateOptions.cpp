@@ -132,11 +132,11 @@ void SimOptions::set_projData (struct projectData *a)
     ui->femOrder->setValue(femOrder);
     ui->temperature->setValue(temperature);
 
-    ui->tolerance2D->setText(QString::number(projData->solution_2D_tolerance,'g'));
+    ui->tolerance2D->setText(QString::number(projData->solution_2D_tolerance,'g',15));
     toleranceValidator.setNotation(QDoubleValidator::ScientificNotation);
     ui->tolerance2D->setValidator(&toleranceValidator);
 
-    ui->tolerance3D->setText(QString::number(projData->solution_3D_tolerance,'g'));
+    ui->tolerance3D->setText(QString::number(projData->solution_3D_tolerance,'g',15));
     ui->tolerance3D->setValidator(&toleranceValidator);
 
     ui->iterationLimit->setValue(iterationLimit);
@@ -593,7 +593,7 @@ void SimOptions::on_tolerance2D_editingFinished ()
         mb.setFixedSize(500, 200);
         tolerance2D=1e-06;
     }
-    ui->tolerance2D->setText(QString::number(tolerance2D,'g'));
+    ui->tolerance2D->setText(QString::number(tolerance2D,'g',15));
     ui->simulateOptionOk->setEnabled(true);
 }
 
@@ -612,7 +612,7 @@ void SimOptions::on_tolerance3D_editingFinished ()
         mb.setFixedSize(500, 200);
         tolerance3D=1e-06;
     }
-    ui->tolerance3D->setText(QString::number(tolerance3D,'g'));
+    ui->tolerance3D->setText(QString::number(tolerance3D,'g',15));
     ui->simulateOptionOk->setEnabled(true);
 }
 

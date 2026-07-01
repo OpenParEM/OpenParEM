@@ -107,7 +107,7 @@ PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_OpenParEM3D_OBJECTS = fem3D.$(OBJEXT) \
 	OPEM_L2ZZErrorEstimator.$(OBJEXT) OpenParEM3D.$(OBJEXT) \
 	pattern.$(OBJEXT) port.$(OBJEXT) results.$(OBJEXT) \
-	project.$(OBJEXT) csr.$(OBJEXT) \
+	fileCleanup.$(OBJEXT) project.$(OBJEXT) csr.$(OBJEXT) \
 	solveComplexLinearSystem.$(OBJEXT)
 OpenParEM3D_OBJECTS = $(am_OpenParEM3D_OBJECTS)
 OpenParEM3D_LDADD = $(LDADD)
@@ -140,10 +140,10 @@ depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/OPEM_L2ZZErrorEstimator.Po \
 	./$(DEPDIR)/OpenParEM3D.Po ./$(DEPDIR)/csr.Po \
-	./$(DEPDIR)/fem3D.Po ./$(DEPDIR)/pattern.Po \
-	./$(DEPDIR)/port.Po ./$(DEPDIR)/process3D.Po \
-	./$(DEPDIR)/project.Po ./$(DEPDIR)/results.Po \
-	./$(DEPDIR)/simplify3D.Po \
+	./$(DEPDIR)/fem3D.Po ./$(DEPDIR)/fileCleanup.Po \
+	./$(DEPDIR)/pattern.Po ./$(DEPDIR)/port.Po \
+	./$(DEPDIR)/process3D.Po ./$(DEPDIR)/project.Po \
+	./$(DEPDIR)/results.Po ./$(DEPDIR)/simplify3D.Po \
 	./$(DEPDIR)/solveComplexLinearSystem.Po ./$(DEPDIR)/tline3.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -304,7 +304,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-OpenParEM3D_SOURCES = fem3D.cpp OPEM_L2ZZErrorEstimator.cpp OpenParEM3D.cpp pattern.cpp port.cpp results.cpp project.c csr.c solveComplexLinearSystem.c fem3D.hpp OPEM_L2ZZErrorEstimator.hpp pattern.hpp port.hpp results.hpp project.h csr.h solveComplexLinearSystem.h
+OpenParEM3D_SOURCES = fem3D.cpp OPEM_L2ZZErrorEstimator.cpp OpenParEM3D.cpp pattern.cpp port.cpp results.cpp fileCleanup.cpp project.c csr.c solveComplexLinearSystem.c fem3D.hpp OPEM_L2ZZErrorEstimator.hpp pattern.hpp port.hpp results.hpp fileCleanup.hpp project.h csr.h solveComplexLinearSystem.h
 simplify3D_SOURCES = simplify3D.cpp project.c simplify3D.hpp project.h
 process3D_SOURCES = process3D.cpp csr.c solveComplexLinearSystem.c port.cpp fem3D.cpp project.c results.cpp OPEM_L2ZZErrorEstimator.cpp pattern.cpp process3D.hpp csr.h solveComplexLinearSystem.h port.hpp fem3D.hpp project.h results.hpp OPEM_L2ZZErrorEstimator.hpp pattern.hpp
 tline3_SOURCES = tline3.cpp
@@ -413,6 +413,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OpenParEM3D.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csr.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fem3D.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fileCleanup.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pattern.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/port.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process3D.Po@am__quote@ # am--include-marker
@@ -588,6 +589,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/OpenParEM3D.Po
 	-rm -f ./$(DEPDIR)/csr.Po
 	-rm -f ./$(DEPDIR)/fem3D.Po
+	-rm -f ./$(DEPDIR)/fileCleanup.Po
 	-rm -f ./$(DEPDIR)/pattern.Po
 	-rm -f ./$(DEPDIR)/port.Po
 	-rm -f ./$(DEPDIR)/process3D.Po
@@ -645,6 +647,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/OpenParEM3D.Po
 	-rm -f ./$(DEPDIR)/csr.Po
 	-rm -f ./$(DEPDIR)/fem3D.Po
+	-rm -f ./$(DEPDIR)/fileCleanup.Po
 	-rm -f ./$(DEPDIR)/pattern.Po
 	-rm -f ./$(DEPDIR)/port.Po
 	-rm -f ./$(DEPDIR)/process3D.Po

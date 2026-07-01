@@ -142,6 +142,23 @@ extern "C" void remove_lock_file (const char *lockfile)
    }
 }
 
+bool exists_file (const char *baseName, string pre, string post)
+{
+   PetscMPIInt rank;
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+   if (rank == 0) {
+      stringstream ss;
+      ss << pre << baseName << post;
+      if (std::filesystem::exists(ss.str().c_str())) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
+
 void delete_file (const char *baseName, string pre, string post)
 {
    PetscMPIInt rank;

@@ -93,16 +93,16 @@ void PolycircleEditForm::populate (Polycircle *polycircle_)
     firstPoint=polycircle_->getFirstPoint();
     vertexCount=polycircle_->getVertexCount();
 
-    ui->centerPositionX->setText(QString::number(centerPoint.X()*conversionFactor));
-    ui->centerPositionY->setText(QString::number(centerPoint.Y()*conversionFactor));
-    ui->centerPositionZ->setText(QString::number(centerPoint.Z()*conversionFactor));
+    ui->centerPositionX->setText(QString::number(centerPoint.X()*conversionFactor,'g',15));
+    ui->centerPositionY->setText(QString::number(centerPoint.Y()*conversionFactor,'g',15));
+    ui->centerPositionZ->setText(QString::number(centerPoint.Z()*conversionFactor,'g',15));
 
-    ui->firstPositionX->setText(QString::number(firstPoint.X()*conversionFactor));
-    ui->firstPositionY->setText(QString::number(firstPoint.Y()*conversionFactor));
-    ui->firstPositionZ->setText(QString::number(firstPoint.Z()*conversionFactor));
+    ui->firstPositionX->setText(QString::number(firstPoint.X()*conversionFactor,'g',15));
+    ui->firstPositionY->setText(QString::number(firstPoint.Y()*conversionFactor,'g',15));
+    ui->firstPositionZ->setText(QString::number(firstPoint.Z()*conversionFactor,'g',15));
 
     radius=centerPoint.Distance(firstPoint);
-    ui->radius->setText(QString::number(radius*conversionFactor));
+    ui->radius->setText(QString::number(radius*conversionFactor,'g',15));
 
     ui->vertexCount->setText(QString::number(vertexCount));
 }

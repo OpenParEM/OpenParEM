@@ -508,7 +508,7 @@ void ScaleValueItem::insertScaleValueWidget (double scale)
 
     CustomLineEdit *scaleEdit=new CustomLineEdit();
     const QSignalBlocker blocker(scaleEdit);
-    scaleEdit->setText(QString::number(scale,'g'));
+    scaleEdit->setText(QString::number(scale,'g',15));
     scaleEdit->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
     scaleEdit->set_doubleValidator();
     scaleEdit->set_baseItem(this);
@@ -2771,7 +2771,7 @@ void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpe
     if (itemWaveImpedance) {
         CustomLineEdit *textWaveImpedance=new CustomLineEdit();
         const QSignalBlocker blockerWaveImpedance(textWaveImpedance);
-        textWaveImpedance->setText(QString::number(wave_impedance));
+        textWaveImpedance->setText(QString::number(wave_impedance,'g',15));
         textWaveImpedance->set_doubleValidator();
         textWaveImpedance->set_baseItem(this);
         mw->ui->drawingItemTree->setItemWidget(itemWaveImpedance,0,textWaveImpedance);
@@ -2918,7 +2918,7 @@ void BoundaryItem::resetWidgets ()
         itemWaveImpedance=dynamic_cast<CustomLineEdit *>(mw->ui->drawingItemTree->itemWidget(boundaryWaveImpedance,0));
         if (itemWaveImpedance) {
             const QSignalBlocker blocker(itemWaveImpedance);
-            itemWaveImpedance->setText(QString::number(wave_impedance));
+            itemWaveImpedance->setText(QString::number(wave_impedance,'g',15));
         }
     }
 
@@ -3108,6 +3108,21 @@ void RootPortItem::showMenu (QMenu *menu)
         if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
         if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
     }
+}
+
+int RootPortItem::get_SportCount ()
+{
+    int SportCount=0;
+    int i=0;
+    while (i < childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(child(i));
+        if (portItem) {
+            int testSportCount=portItem->get_SportCount();
+            if (testSportCount > SportCount) SportCount=testSportCount;
+        }
+        i++;
+    }
+    return SportCount;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4506,6 +4521,7 @@ bool MeshItem::isValidHide ()
 
 void MeshItem::show (bool update)
 {
+    std::cout << "MeshItem::show  item=" << text(0).toStdString() << std::endl; std::cout.flush();
     long unsigned int i=0;
     while (i < meshEntities.size()) {
         mw->ui->drawingWindow->displayShape(meshEntities[i]);

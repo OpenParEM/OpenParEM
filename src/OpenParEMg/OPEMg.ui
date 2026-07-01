@@ -53,6 +53,9 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="toolTip">
+        <string/>
+       </property>
        <property name="currentIndex">
         <number>0</number>
        </property>
@@ -75,6 +78,9 @@
              <verstretch>1</verstretch>
             </sizepolicy>
            </property>
+           <property name="toolTip">
+            <string>Drawing space for creating 3D structures for simulation.</string>
+           </property>
           </widget>
          </item>
         </layout>
@@ -88,6 +94,9 @@
           <widget class="QPlainTextEdit" name="logText">
            <property name="acceptDrops">
             <bool>false</bool>
+           </property>
+           <property name="toolTip">
+            <string>Output from OpenParEM3D.</string>
            </property>
            <property name="undoRedoEnabled">
             <bool>false</bool>
@@ -112,6 +121,9 @@
            <property name="acceptDrops">
             <bool>false</bool>
            </property>
+           <property name="toolTip">
+            <string>Summary statistics on the simulation run.</string>
+           </property>
            <property name="undoRedoEnabled">
             <bool>false</bool>
            </property>
@@ -134,6 +146,9 @@
           <widget class="QPlainTextEdit" name="dataText">
            <property name="acceptDrops">
             <bool>false</bool>
+           </property>
+           <property name="toolTip">
+            <string>Results summary.  Check the project directory for a Touchstone(TM) file, if generated.</string>
            </property>
            <property name="undoRedoEnabled">
             <bool>false</bool>

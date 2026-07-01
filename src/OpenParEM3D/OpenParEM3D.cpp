@@ -40,6 +40,7 @@
 #include "license.hpp"
 #include "mesh.hpp"
 #include "petscErrorHandler.hpp"
+#include "fileCleanup.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -203,36 +204,6 @@ void load_project_file (const char *projFile, struct projectData *defaultData, s
    if (projData->debug_show_project) {print_project (projData,defaultData,"      ");}
 }
 
-void delete_stale_files (const char *baseName, int portCount)
-{
-   PetscMPIInt rank;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-   if (rank == 0) {
-      stringstream ss;
-      ss << ".s" << portCount << "p";
-
-      delete_file(baseName,"","_results.csv");
-      delete_file(baseName,"","_FarField_results.csv");
-      delete_file(baseName,"","_FarField.csv");
-      delete_file(baseName,"","_results.txt");
-      delete_file(baseName,"","_iterations.txt");
-      delete_file(baseName,"","_prototype_test_cases.csv");
-      delete_file(baseName,"","_fields.csv");
-      delete_file(baseName,"","_attributes.csv");
-      delete_file(baseName,"",ss.str().c_str());
-      delete_file(baseName,"temp_","");
-      delete_file(baseName,"ParaView_","");
-      delete_file(baseName,"ParaView_","_FarField");
-      delete_file(baseName,"Report_","_FarField");
-      delete_file(baseName,"ParaView_2D_port_","");
-      delete_file(baseName,"ParaView_3D_port_","");
-      delete_file(baseName,"ParaView_modal_2D_","");
-      delete_file(baseName,"ParaView_solution_2D_","");
-   }
-   MPI_Barrier(PETSC_COMM_WORLD);
-}
-
 bool saveSerialMesh (struct projectData *projData, MeshMaterialList *meshMaterials, ParMesh *pmesh)
 {
    PetscMPIInt rank;
@@ -383,6 +354,9 @@ int main(int argc, char *argv[])
       exit_job (job_start_time,lockfile,true,3);
    }
    show_memory (projData.debug_show_memory, "   ");
+
+   // frequency scaling for outputs
+   resultDatabase.set_frequencyScale(&projData);
 
    // materials
    if (materialDatabase.load_materials(projData.materials_global_path,projData.materials_global_name,
@@ -544,7 +518,7 @@ int main(int argc, char *argv[])
 
       checkForAbort();
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"*******************************************************************************************************************************************************\n");
-      prefix(); PetscPrintf(PETSC_COMM_WORLD," Frequency: %g\n",frequency);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD," Frequency: %.15g\n",frequency);
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"*******************************************************************************************************************************************************\n");
 
       double ko=2*M_PI*frequency*sqrt(4.0e-7*M_PI*eps0);

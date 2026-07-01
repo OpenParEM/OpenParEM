@@ -358,6 +358,7 @@ public:
 
     bool isModified ();
     void setUnmodified ();
+    bool hasResults ();
 
     void closeEvent (QCloseEvent *event) override {
         close_event=event;

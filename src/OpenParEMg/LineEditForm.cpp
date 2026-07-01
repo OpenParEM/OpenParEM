@@ -96,15 +96,15 @@ void LineEditForm::populate (Line *polywire_)
     p1=polywire_->getP1();
     length=p0.Distance(p1);
 
-    ui->positionX->setText(QString::number(p0.X()*conversionFactor));
-    ui->positionY->setText(QString::number(p0.Y()*conversionFactor));
-    ui->positionZ->setText(QString::number(p0.Z()*conversionFactor));
+    ui->positionX->setText(QString::number(p0.X()*conversionFactor,'g',15));
+    ui->positionY->setText(QString::number(p0.Y()*conversionFactor,'g',15));
+    ui->positionZ->setText(QString::number(p0.Z()*conversionFactor,'g',15));
 
-    ui->position2X->setText(QString::number(p1.X()*conversionFactor));
-    ui->position2Y->setText(QString::number(p1.Y()*conversionFactor));
-    ui->position2Z->setText(QString::number(p1.Z()*conversionFactor));
+    ui->position2X->setText(QString::number(p1.X()*conversionFactor,'g',15));
+    ui->position2Y->setText(QString::number(p1.Y()*conversionFactor,'g',15));
+    ui->position2Z->setText(QString::number(p1.Z()*conversionFactor,'g',15));
 
-    ui->length->setText(QString::number(length*conversionFactor));
+    ui->length->setText(QString::number(length*conversionFactor,'g',15));
 }
 
 void LineEditForm::repopulate ()

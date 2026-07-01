@@ -1,7 +1,7 @@
 bin_PROGRAMS = OpenParEM3D simplify3D process3D 
 noinst_PROGRAMS = tline3
 
-OpenParEM3D_SOURCES = fem3D.cpp OPEM_L2ZZErrorEstimator.cpp OpenParEM3D.cpp pattern.cpp port.cpp results.cpp project.c csr.c solveComplexLinearSystem.c fem3D.hpp OPEM_L2ZZErrorEstimator.hpp pattern.hpp port.hpp results.hpp project.h csr.h solveComplexLinearSystem.h
+OpenParEM3D_SOURCES = fem3D.cpp OPEM_L2ZZErrorEstimator.cpp OpenParEM3D.cpp pattern.cpp port.cpp results.cpp fileCleanup.cpp project.c csr.c solveComplexLinearSystem.c fem3D.hpp OPEM_L2ZZErrorEstimator.hpp pattern.hpp port.hpp results.hpp fileCleanup.hpp project.h csr.h solveComplexLinearSystem.h
 
 simplify3D_SOURCES = simplify3D.cpp project.c simplify3D.hpp project.h
 

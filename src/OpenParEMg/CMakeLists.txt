@@ -62,12 +62,14 @@ qt_add_executable(OpenParEMg
     ../OpenParEMCommon/misc.cpp ../OpenParEMCommon/misc.hpp
     ../OpenParEMCommon/keywordPair.cpp ../OpenParEMCommon/keywordPair.hpp
     ../OpenParEMCommon/fem.cpp ../OpenParEMCommon/fem.hpp
+    ../OpenParEMCommon/jobrelated.cpp ../OpenParEMCommon/jobrelated.hpp
     CustomOpenGLWidget.h CustomOpenGLWidget.cpp
     ../OpenParEMCommon/path.cpp ../OpenParEMCommon/path.hpp
     ../OpenParEM3D/port.cpp ../OpenParEM3D/port.hpp
     ../OpenParEMCommon/Zsolve.c ../OpenParEMCommon/Zsolve.h
     ../OpenParEMCommon/sourcefile.cpp ../OpenParEMCommon/sourcefile.hpp
     ../OpenParEM3D/pattern.cpp ../OpenParEM3D/pattern.hpp
+    ../OpenParEM3D/fileCleanup.hpp ../OpenParEM3D/fileCleanup.cpp
     ../OpenParEMCommon/mesh.cpp ../OpenParEMCommon/mesh.hpp
 
     CustomComboBox.h

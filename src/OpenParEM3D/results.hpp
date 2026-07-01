@@ -103,7 +103,7 @@ class Result
       bool is_type_Z () {if (type.compare("Z") == 0) return true; return false;}
       bool extractS (string, string, int);
       void save (ostream *, struct projectData *, int);
-      void saveFormatted (ostream *, double, double, double, double, double, double *);
+      void saveFormatted (ostream *, double, double, double, double, double, double *, double);
       void saveCSV (ostream *, struct projectData *, double);
       void save_result_component (ofstream *, const char *, int, int *, const char *, long unsigned int);
       bool get_isRefined () {return isRefined;}
@@ -137,9 +137,11 @@ class ResultDatabase
       int SportCount;
       double solve_time=0;
       double tol=1e-12;
+      double frequencyScale=1;
    public:
       ResultDatabase () {}
       ~ResultDatabase ();
+      void set_frequencyScale (struct projectData *);
       void push (Result *);
       Result* get_Result (double, int);
       Result* get_Result (double);

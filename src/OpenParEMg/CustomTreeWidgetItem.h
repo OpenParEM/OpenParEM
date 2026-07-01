@@ -1157,6 +1157,8 @@ public:
     void hide (bool) override;
     void showMenu (QMenu *) override;
 
+    int get_SportCount ();
+
 private:
 
 };
