@@ -79,7 +79,7 @@
             </sizepolicy>
            </property>
            <property name="toolTip">
-            <string>Drawing space for creating 3D structures for simulation.</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -96,7 +96,7 @@
             <bool>false</bool>
            </property>
            <property name="toolTip">
-            <string>Output from OpenParEM3D.</string>
+            <string/>
            </property>
            <property name="undoRedoEnabled">
             <bool>false</bool>
@@ -122,7 +122,7 @@
             <bool>false</bool>
            </property>
            <property name="toolTip">
-            <string>Summary statistics on the simulation run.</string>
+            <string/>
            </property>
            <property name="undoRedoEnabled">
             <bool>false</bool>
@@ -148,7 +148,7 @@
             <bool>false</bool>
            </property>
            <property name="toolTip">
-            <string>Results summary.  Check the project directory for a Touchstone(TM) file, if generated.</string>
+            <string/>
            </property>
            <property name="undoRedoEnabled">
             <bool>false</bool>

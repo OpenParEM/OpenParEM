@@ -371,9 +371,14 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     // logging tabs
     /////////////////////////////////////////////////////////////////////////////
 
+    ui->tabs->setTabToolTip(0,"Drawing space for creating 3D structures for simulation.");
+    ui->tabs->setTabToolTip(1,"Output from OpenParEM3D.");
+    ui->tabs->setTabToolTip(2,"Summary statistics on the simulation run.");
+    ui->tabs->setTabToolTip(3,"Results summary.  Check the project directory for a Touchstone(TM) file, if generated.");
+
     ui->logText->setReadOnly(true);
     ui->iterationsText->setReadOnly(true);
-    ui->dataText->setReadOnly(true);
+    ui->dataText->setReadOnly(true);  
 
     QFont monoFont=QFontDatabase::systemFont(QFontDatabase::FixedFont);
     monoFont.setPointSize(10);
