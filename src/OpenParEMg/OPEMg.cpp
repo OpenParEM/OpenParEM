@@ -4225,8 +4225,11 @@ void OpenParEMg::on_actionOpen_triggered ()
     // load the file
     if (QFile::exists(projectFile)) {
 
+        int retVal=0;
+
         // ignore errors so that users can save incomplete project for safety and later work
-        load_project_file (projectFile.toStdString().c_str(),&projData,"   ");
+        int tempRetVal=load_project_file (projectFile.toStdString().c_str(),&projData,"   ");
+        if (tempRetVal) retVal=1;
 
         // stress test to look for leaks in loading/freeing projData; run while monitoring memory consumption with top
         // std::cout << "starting memory test" << std::endl; std::cout.flush();
@@ -4249,6 +4252,8 @@ void OpenParEMg::on_actionOpen_triggered ()
                 QMessageBox mb;
                 mb.critical(nullptr, "Error", "Unable to load the specified materials files.");
                 mb.setFixedSize(500, 200);
+
+                retVal=1;
             } else materialsLoaded=true;
         }
 
@@ -4258,6 +4263,8 @@ void OpenParEMg::on_actionOpen_triggered ()
                 QMessageBox mb;
                 mb.critical(nullptr, "Error", "Paths, ports, and/or boundaries are not complete and require correction.");
                 mb.setFixedSize(500, 200);
+
+                retVal=1;
             }
 
             // continue despite any errors
@@ -4289,14 +4296,21 @@ void OpenParEMg::on_actionOpen_triggered ()
         // load drawing
         bool drawingLoaded=false;
         if (loadDrawingFile()) {
+            retVal=1;
         } else {
             drawingLoaded=true;
         }
 
-        // load last results, if any
-        updateLogTab(true);
-        updateIterationsTab(true);
-        updateDataTab(true);
+        // load last results to the tabs, if any
+        if (retVal) {
+            ui->logText->clear();
+            ui->iterationsText->clear();
+            ui->dataText->clear();
+        } else {
+            updateLogTab(true);
+            updateIterationsTab(true);
+            updateDataTab(true);
+        }
 
         // set dimTag and material
         if (drawingLoaded && materialsLoaded) {
@@ -4307,6 +4321,12 @@ void OpenParEMg::on_actionOpen_triggered ()
 
         ui->drawingWindow->fitAll();
         ui->drawingWindow->updateViewer();
+
+        if (retVal) {
+            QMessageBox mb;
+            mb.critical(nullptr, "Error", "There were errors on loading the project.");
+            mb.setFixedSize(500, 200);
+        }
 
         projData.modified=0;
         projectFileLoaded=true;
@@ -6506,10 +6526,10 @@ void OpenParEMg::on_actionWireframe_triggered ()
     ui->drawingWindow->updateViewer();
 }
 
-void eh3D(MPI_Comm *comm, int *err, ...)
+void eh3D (MPI_Comm *comm, int *err, ...)
 {
-    QMessageBox mb;
-    mb.critical(nullptr, "Error","eh3D: Failed to launch OpenParEM3D.");
+    //QMessageBox mb;
+    //mb.critical(nullptr, "Error","eh3D: Failed to launch OpenParEM3D.");
 }
 
 void OpenParEMg::on_actionRun_triggered ()
@@ -6713,6 +6733,7 @@ void OpenParEMg::checkFinish ()
         ui->dataText->viewport()->removeEventFilter(dataFilter);
 
         // get the status of the 3D simulations
+        //std::cout << "OPEMg receive 320000" << std::endl; std::cout.flush();
         int fail3D=0;
         MPI_Recv(&fail3D,1,MPI_INT,0,320000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
 
@@ -6723,20 +6744,28 @@ void OpenParEMg::checkFinish ()
         }
 
         // unblock OpenParEM3D
+        //std::cout << "OPEMg send 300000" << std::endl; std::cout.flush();
         MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);  // stop
-        if (!isAbort) MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);  // abort
+        if (!isAbort) {
+            std::cout << "OPEMg send 300001" << std::endl; std::cout.flush();
+            MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);  // abort
+        }
 
+        //std::cout << "OPEMg disconnect MPI_PORT_COMM" << std::endl; std::cout.flush();
         if (!isAbort) MPI_Comm_disconnect(MPI_PORT_COMM);
 
+        //std::cout << "OPEMg free MPI_PORT_COMM" << std::endl; std::cout.flush();
         MPI_Comm_free(MPI_PORT_COMM);
         MPI_PORT_COMM=nullptr;
 
+        //std::cout << "OPEMg free request" << std::endl; std::cout.flush();
         MPI_Request_free(request);
         request=nullptr;
 
         if (isAbort) {
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"OpenParEM3D Job Aborted.\n");
         }
+        //std::cout << "OPEMg return checkFinish" << std::endl; std::cout.flush();
     }
 }
 
@@ -6791,8 +6820,8 @@ void OpenParEMg::on_actionDrawingPlaneShow_triggered ()
 
     Standard_Real xOrigin=0;
     Standard_Real yOrigin=0;
-    Standard_Real xStep=1/getConversionFactor()/10;
-    Standard_Real yStep=1/getConversionFactor()/10;
+    Standard_Real xStep=1/getConversionFactor();
+    Standard_Real yStep=1/getConversionFactor();
     Standard_Real rotationAngle=0;
     Standard_Real xSize=1/getConversionFactor()*projData.gui_grid_size/2;
     Standard_Real ySize=1/getConversionFactor()*projData.gui_grid_size/2;

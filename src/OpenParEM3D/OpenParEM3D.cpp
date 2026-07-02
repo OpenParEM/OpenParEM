@@ -175,15 +175,22 @@ void signalFinished (int status)
    if (rank == 0) { 
 
       // send signal that the simulation is finished
+      //std::cout << "OpenParEM3D send 310000" << std::endl; std::cout.flush();
       MPI_Send(&status,1,MPI_INT,0,310000,parent);
+      //std::cout << "OpenParEM3D send 320000" << std::endl; std::cout.flush();
       MPI_Send(&status,1,MPI_INT,0,320000,parent);
 
       // GUI must unblock these two signals
+      //std::cout << "OpenParEM3D wait for 300000" << std::endl; std::cout.flush();
       MPI_Wait(&stopRequest,MPI_STATUS_IGNORE);
+      //std::cout << "OpenParEM3D wait for 300001" << std::endl; std::cout.flush();
       MPI_Wait(&abortRequest,MPI_STATUS_IGNORE);
 
+      //std::cout << "OpenParEM3D free stopRequest" << std::endl; std::cout.flush();
       MPI_Request_free(&stopRequest);
+      //std::cout << "OpenParEM3D free abortRequest" << std::endl; std::cout.flush();
       MPI_Request_free(&abortRequest);
+      //std::cout << "OpenParEM3D return from signalFinished" << std::endl; std::cout.flush();
    }
 }
 

@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "jobrelated.hpp"
+#include "slepcsys.h"
 
 // tool: 2 for OpenParEM2D, 3 for OpenParEM3D
 void exit_job_base (chrono::steady_clock::time_point job_start_time, const char *lockfile, bool removeLock, int tool, int return_code)
@@ -46,12 +47,18 @@ void exit_job_base (chrono::steady_clock::time_point job_start_time, const char 
 
    // send tags to complete requests
    if (parent != MPI_COMM_NULL) {
-      MPI_Comm_free(&parent);
+      //std::cout << "OpenParEMCommon disconnect parent for tool=" << tool << std::endl; std::cout.flush();
+      MPI_Comm_disconnect(&parent);
    }
+   //std::cout << "OpenParEMCommon MPI_Barrier for PETSC_COMM_WORLD for tool=" << tool << std::endl; std::cout.flush();
 
+   MPI_Barrier(PETSC_COMM_WORLD);
+
+   //std::cout << "OpenParEMCommon PetscFinalize for tool=" << tool << std::endl; std::cout.flush();
    PetscFinalize();
 
-   exit(return_code);
+   //std::cout << "OpenParEMCommon exit for tool=" << tool << std::endl; std::cout.flush();
+   exit(0);  // ignore the return_code from the command line to avoid MPI shutting down for OpenMPI
 }
 
 void exit_job_on_error (chrono::steady_clock::time_point job_start_time, const char *lockfile, bool removeLock, int tool)

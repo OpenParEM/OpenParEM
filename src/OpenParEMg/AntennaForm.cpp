@@ -734,7 +734,6 @@ bool AntennaForm::hasPatternChanges ()
 
     std::cout << "patterns.size()=" << patterns.size() << "  projData->inputAntennaPatternsCount=" << projData->inputAntennaPatternsCount << std::endl; std::cout.flush();
     if (patterns.size() != projData->inputAntennaPatternsCount) return true;
-    std::cout << "place 1" << std::endl; std::cout.flush();
 
     // 3D
     long unsigned int i=0;
@@ -763,7 +762,6 @@ bool AntennaForm::hasPatternChanges ()
         i++;
     }
 
-    std::cout << "place 2" << std::endl; std::cout.flush();
     // 2D
     i=0;
     while (i < patterns.size()) {
@@ -812,7 +810,7 @@ bool AntennaForm::hasPatternChanges ()
         }
         i++;
     }
-    std::cout << "place 3" << std::endl; std::cout.flush();
+
     return false;
 }
 

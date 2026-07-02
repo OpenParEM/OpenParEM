@@ -73,10 +73,29 @@ class keywordPair
       bool positive_required;
       bool non_negative_required;
 
-      std::string indent="   ";  // for error messages
-      double dbl_tolerance=1e-14;
-      bool checkLimits=true;
+      std::string indent;
+      double dbl_tolerance;
+      bool checkLimits;
    public:
+
+      keywordPair () {
+          keyword="";
+          value="";
+          lineNumber=0;
+          int_value=0;
+          dbl_value=0;
+          bool_value=false;
+          point_value.x=0; point_value.y=0; point_value.z=0; point_value.dim=3;
+          loaded=false;
+          lowerLimit=0;
+          upperLimit=0;
+          positive_required=false;
+          non_negative_required=false;
+          indent="   ";  // for error messages
+          dbl_tolerance=1e-14;
+          checkLimits=true;
+      }
+
       void push_alias (std::string a) {aliases.push_back(a);}
       bool match_alias (std::string *);
       void set_keyword (std::string a) {keyword=a;}

@@ -3914,8 +3914,19 @@ void Mode::fillX (Vec *X, Vec *Xdofs, Array<int> *ess_tdof_port_list, HYPRE_BigI
    VecAssemblyEnd(*X);
    VecAssemblyEnd(*Xdofs);
 
-   delete data_re; data_re=nullptr;
-   delete data_im; data_im=nullptr;
+//xxx
+//   delete data_re; data_re=nullptr;
+//   delete data_im; data_im=nullptr;
+
+   double *raw_data=data_re->GetData();
+   data_re->SetDataAndSize(nullptr,0);
+   delete data_re;
+   free(raw_data);
+
+   raw_data=data_im->GetData();
+   data_im->SetDataAndSize(nullptr,0);
+   delete data_im;
+   free(raw_data);
 
    delete hypreRe;
    delete hypreIm;
@@ -5930,7 +5941,7 @@ void eh (MPI_Comm *comm, int *err, ...)
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3085: Failed to launch OpenParEM2D.\n");
 }
 
-bool Port::solve(string *directory, string *logFile)
+bool Port::solve (string *directory, string *logFile)
 {
    PetscMPIInt size,rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -5999,6 +6010,7 @@ bool Port::solve(string *directory, string *logFile)
    }
 
    // wait for the 2D simulations to finish
+   //std::cout << "OpenParEM3D synchronize flush" << std::endl; std::cout.flush();
    PetscSynchronizedFlush(MPI_PORT_COMM,PETSC_STDOUT);
    int flag=0;
    while (!flag) {
@@ -6007,6 +6019,7 @@ bool Port::solve(string *directory, string *logFile)
    } 
 
    // get the status of the 2D simulations 
+   //std::cout << "OpenParEM3D receive 100000" << std::endl; std::cout.flush();
    int fail2D=0;
    MPI_Recv(&fail2D,1,MPI_INT,rank,100000,MPI_PORT_COMM,MPI_STATUS_IGNORE);
 
@@ -6017,14 +6030,18 @@ bool Port::solve(string *directory, string *logFile)
 
    // unblock OpenParEM2D
    if (rank == 0) {
+      //std::cout << "OpenParEM3D send 200000" << std::endl; std::cout.flush();
       int signal;
       MPI_Send(&signal,1,MPI_INT,0,200000,MPI_PORT_COMM);
    }
 
+   //std::cout << "OpenParEM3D disconnect MPI_PORT_COMM" << std::endl; std::cout.flush();
    MPI_Comm_disconnect(&MPI_PORT_COMM);
 
    MPI_Comm_set_errhandler(PETSC_COMM_WORLD,MPI_ERRORS_RETURN);
    MPI_Errhandler_free(&errorHandler);
+
+   //std::cout << "OpenParEM3D return Port::Solve" << std::endl; std::cout.flush();
 
    if (project) {free(project); project=nullptr;}
    if (logfile) {free(logfile); logfile=nullptr;}

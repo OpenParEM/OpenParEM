@@ -256,19 +256,24 @@ void signalFinished (int status)
    MPI_Comm parent;
    MPI_Comm_get_parent(&parent);
 
-   PetscSynchronizedFlush(parent,PETSC_STDOUT);
+   MPI_Barrier(PETSC_COMM_WORLD);
 
    if (parent != MPI_COMM_NULL) {
+      PetscSynchronizedFlush(parent,PETSC_STDOUT);
 
       // send signal that the simulation is finished
+      //std::cout << "OpenParEM2D send 100000" << std::endl; std::cout.flush();
       MPI_Send(&status,1,MPI_INT,rank,100000,parent);
 
       // OpenParEM3D must unblock this signal
       if (rank == 0) {
+         //std::cout << "OpenParEM2D wait 200000" << std::endl; std::cout.flush();
          MPI_Wait(&request,MPI_STATUS_IGNORE);
+         //std::cout << "OpenParEM2D free request" << std::endl; std::cout.flush();
          MPI_Request_free(&request);
       }
    }
+   //std::cout << "OpenParEM2D return signalFinished" << std::endl; std::cout.flush();
 }
 
 void load_project_file (const char *projFile, struct projectData *defaultData, struct projectData *projData, char *lockfile, chrono::steady_clock::time_point job_start_time)

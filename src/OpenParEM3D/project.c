@@ -3085,7 +3085,8 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send(&(data->refinement_relative_tolerance),1,MPI_DOUBLE,i,1000031,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->refinement_absolute_tolerance),1,MPI_DOUBLE,i,1000084,PETSC_COMM_WORLD);
 
-         ierr=MPI_Send(&(data->inputFrequencyPlansCount),1,MPI_UNSIGNED_LONG,i,1000032,PETSC_COMM_WORLD);
+         planCount=data->inputFrequencyPlansCount;
+         ierr=MPI_Send(&planCount,1,MPI_INT,i,1000032,PETSC_COMM_WORLD);
          j=0;
          while (j < data->inputFrequencyPlansCount) {
             ierr=MPI_Send(&(data->inputFrequencyPlans[j].type),1,MPI_INT,i,1000033,PETSC_COMM_WORLD);
@@ -3300,7 +3301,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(&(data->refinement_relative_tolerance),1,MPI_DOUBLE,0,1000031,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->refinement_absolute_tolerance),1,MPI_DOUBLE,0,1000084,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
-      ierr=MPI_Recv(&planCount,1,MPI_UNSIGNED_LONG,0,1000032,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&planCount,1,MPI_INT,0,1000032,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       j=0;
       while (j < planCount) {
          ierr=MPI_Recv(&planType,1,MPI_INT,0,1000033,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);

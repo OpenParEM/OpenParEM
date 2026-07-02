@@ -1018,6 +1018,7 @@ void Path::subdivide (Path *test)
 Path* Path::clone()
 {
    Path *newPath=new Path(startLine,endLine);
+
    newPath->name=name;
    newPath->closed=closed;
    newPath->tol=tol;
@@ -1034,7 +1035,7 @@ Path* Path::clone()
    newPath->ymin=ymin;
    newPath->zmax=zmax;
    newPath->zmin=zmin;
-   newPath->normal.copy(normal);
+   newPath->normal=normal;
 
    long unsigned int i=0;
    while (i < points.size()) {
