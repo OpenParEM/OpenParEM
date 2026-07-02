@@ -1761,6 +1761,9 @@ OpenParEM3D is controlled by a text file consisting of keyword/value pairs.  The
     gui.slot.count                & int    & 5      & Only used for the GUI OpenParEMg. Number of slots to use when running OpenParEM3D.  Used on mpirun as mpirun -np gui.slot.count \\
     gui.units                     & text   & mm     & Only used for the GUI OpenParEMg. Length unit for the various forms: m, mm, cm, um, ft, in, mil. \\
     gui.grid.size                 & double & 10     & Only used for the GUI OpenParEMg. Size of the drawing grid as a multiple of the units set with gui.units. \\ 
+    gui.mesh.scale                & double & 1      & Only used for the GUI OpenParEMg. Scale factor elements in a generated mesh. \\
+    gui.mesh.minSize              & double & 0      & Only used for the GUI OpenParEMg. Minimum allowed mesh element size.  Depends on mesh generation behavior. \\
+    gui.mesh.maxSize              & double & 1e19   & Only used for the GUI OpenParEMg. Maximum allow mesh element size.  Depends on mesh generation behavior. \\
 
     \hline
 \end{longtable}

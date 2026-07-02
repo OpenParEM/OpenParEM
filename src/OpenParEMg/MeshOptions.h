@@ -46,11 +46,20 @@ private slots:
     void on_meshQualityLimit_textChanged (const QString &arg1);
     void on_meshOptionOk_clicked ();
     void on_meshOptionCancel_clicked ();
+    void on_meshSizeMultiplier_valueChanged(double arg1);
+
+    void on_meshMinElementSize_valueChanged(double arg1);
+
+    void on_meshMaxElementSize_valueChanged(double arg1);
+
 private:
     Ui::MeshDialog *ui;
     struct projectData *projData;
     QString meshFile;
     int meshSaveRefined;
+    double meshSizeMultiplier;
+    double meshMinElementSize;
+    double meshMaxElementSize;
     double meshRefinementFraction;
     double meshQualityLimit;
     bool simulationRunning;

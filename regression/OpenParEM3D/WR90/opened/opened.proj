@@ -68,3 +68,6 @@ reference.impedance 0
 //gui.units mm
 gui.grid.size 50
 gui.slot.count 8
+gui.mesh.scale 2
+//gui.mesh.minSize 0
+gui.mesh.maxSize 99.99

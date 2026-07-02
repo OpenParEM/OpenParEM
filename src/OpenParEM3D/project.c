@@ -755,6 +755,10 @@ void init_project (struct projectData *data) {
    data->gui_grid_size=10;
    data->gui_slot_count=5;
 
+   data->gui_mesh_scale=1;
+   data->gui_mesh_minSize=0;
+   data->gui_mesh_maxSize=1e19;
+
    data->physicalGroupMaterialAllocated=5;
    data->physicalGroupMaterialCount=0;
    data->physicalGroupMaterials=(struct physicalGroupMaterial *)malloc(data->physicalGroupMaterialAllocated*sizeof(struct physicalGroupMaterial));
@@ -1103,6 +1107,15 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
 
+   matched=0; if (defaultData && double_compare(data->gui_mesh_scale,defaultData->gui_mesh_scale,1e-14)) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.mesh.scale %.15g\n",indent,comment[matched],data->gui_mesh_scale);
+
+   matched=0; if (defaultData && double_compare(data->gui_mesh_minSize,defaultData->gui_mesh_minSize,1e-14)) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.mesh.minSize %.15g\n",indent,comment[matched],data->gui_mesh_minSize);
+
+   matched=0; if (defaultData && double_compare(data->gui_mesh_maxSize,defaultData->gui_mesh_maxSize,1e-14)) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.mesh.maxSize %.15g\n",indent,comment[matched],data->gui_mesh_maxSize);
+
    // no default field points, so print all
    i=0;
    while (i < data->field_points_count) {
@@ -1401,6 +1414,16 @@ int save_project (const char *filename, struct projectData *data, struct project
 
     matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
     fprintf(fptr,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
+
+
+    matched=0; if (defaultData && double_compare(data->gui_mesh_scale,defaultData->gui_mesh_scale,1e-14)) matched=1;
+    fprintf(fptr,"%s%sgui.mesh.scale %.15g\n",indent,comment[matched],data->gui_mesh_scale);
+
+    matched=0; if (defaultData && double_compare(data->gui_mesh_minSize,defaultData->gui_mesh_minSize,1e-14)) matched=1;
+    fprintf(fptr,"%s%sgui.mesh.minSize %.15g\n",indent,comment[matched],data->gui_mesh_minSize);
+
+    matched=0; if (defaultData && double_compare(data->gui_mesh_maxSize,defaultData->gui_mesh_maxSize,1e-14)) matched=1;
+    fprintf(fptr,"%s%sgui.mesh.maxSize %.15g\n",indent,comment[matched],data->gui_mesh_maxSize);
 
     // no default field points, so print all
     i=0;
@@ -2906,6 +2929,49 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
+               else if (strcmp(keyword,"gui.mesh.scale") == 0) {
+                   value=strtok(NULL," ");
+                   if (is_double(value)) {
+                       data->gui_mesh_scale=atof(value);
+                       value=strtok(NULL," ");
+                       if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                       if (data->gui_mesh_scale < 0.01) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3157: Value must be >= 0.01 at line %d.\n",indent,indent,lineCount);
+                       }
+                       if (data->gui_mesh_scale > 100) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3158: Value must be < 100 at line %d.\n",indent,indent,lineCount);
+                       }
+                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"gui.mesh.minSize") == 0) {
+                   value=strtok(NULL," ");
+                   if (is_double(value)) {
+                       data->gui_mesh_minSize=atof(value);
+                       value=strtok(NULL," ");
+                       if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                       if (data->gui_mesh_minSize < 0) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3157: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
+                       }
+                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"gui.mesh.maxSize") == 0) {
+                   value=strtok(NULL," ");
+                   if (is_double(value)) {
+                       data->gui_mesh_maxSize=atof(value);
+                       value=strtok(NULL," ");
+                       if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                       if (data->gui_mesh_maxSize < 0) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3157: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
+                       }
+                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
                else if (strcmp(keyword,"field.point") == 0) {
                   if (commaCount == 2) {
                      value=strtok(NULL," ,");
@@ -3201,6 +3267,10 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
 
          ierr=MPI_Send(&(data->gui_slot_count),1,MPI_INT,i,1000121,PETSC_COMM_WORLD);
 
+         ierr=MPI_Send(&(data->gui_mesh_scale),1,MPI_DOUBLE,i,1000123,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->gui_mesh_minSize),1,MPI_DOUBLE,i,1000124,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->gui_mesh_maxSize),1,MPI_DOUBLE,i,1000125,PETSC_COMM_WORLD);
+
          ierr=MPI_Send(&(data->physicalGroupMaterialCount),1,MPI_INT,i,1000115,PETSC_COMM_WORLD);
          j=0;
          while (j < data->physicalGroupMaterialCount) {
@@ -3443,6 +3513,10 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(&(data->gui_grid_size),1,MPI_DOUBLE,0,1000122,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
       ierr=MPI_Recv(&(data->gui_slot_count),1,MPI_INT,0,1000121,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+      ierr=MPI_Recv(&(data->gui_mesh_scale),1,MPI_DOUBLE,0,1000123,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->gui_mesh_minSize),1,MPI_DOUBLE,0,1000124,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->gui_mesh_maxSize),1,MPI_DOUBLE,0,1000125,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
       ierr=MPI_Recv(&physicalGroupMaterialCount,1,MPI_INT,0,1000115,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       j=0;

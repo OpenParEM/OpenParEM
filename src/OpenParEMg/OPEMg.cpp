@@ -6396,7 +6396,9 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     // generate mesh
     TopoDS_Shape shape=drawing->getShape()->Shape();
     gmsh::model::occ::importShapesNativePointer((void *) &shape,drawingEntities,false);
-    gmsh::option::setNumber("Mesh.MeshSizeFactor",2);
+    gmsh::option::setNumber("Mesh.MeshSizeFactor",projData.gui_mesh_scale);
+    gmsh::option::setNumber("Mesh.MeshSizeMin",projData.gui_mesh_minSize);
+    gmsh::option::setNumber("Mesh.MeshSizeMax",projData.gui_mesh_maxSize);
     gmsh::model::occ::synchronize();
     gmsh::model::mesh::generate();
 

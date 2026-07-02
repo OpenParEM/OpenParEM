@@ -20,6 +20,7 @@
 
 #include "MeshOptions.h"
 #include "ui_MeshOptions.h"
+#include "misc.hpp"
 
 MeshDialog::MeshDialog (QWidget *parent)
     : QDialog(parent)
@@ -45,6 +46,9 @@ void MeshDialog::set_projData (struct projectData *a)
     meshSaveRefined=projData->mesh_save_refined;
     meshRefinementFraction=projData->mesh_3D_refinement_fraction;
     meshQualityLimit=projData->mesh_quality_limit;
+    meshSizeMultiplier=projData->gui_mesh_scale;
+    meshMinElementSize=projData->gui_mesh_minSize;
+    meshMaxElementSize=projData->gui_mesh_maxSize;
 
     // fill the panel with data
 
@@ -59,11 +63,28 @@ void MeshDialog::set_projData (struct projectData *a)
     }
     ui->meshQualityLimit->setValue(meshQualityLimit);
 
+    ui->meshSizeMultiplier->setValue(meshSizeMultiplier);
+    ui->meshMinElementSize->setValue(meshMinElementSize);
+    ui->meshMaxElementSize->setValue(meshMaxElementSize);
+
+    ui->meshSizeMultiplier->setDecimals(2);
+    ui->meshSizeMultiplier->setMinimum(0.01);
+    ui->meshSizeMultiplier->setMaximum(100);
+
+    ui->meshMinElementSize->setDecimals(2);
+    ui->meshMinElementSize->setMinimum(0);
+
+    ui->meshMaxElementSize->setDecimals(2);
+    ui->meshMaxElementSize->setMinimum(0);
+
     if (simulationRunning) {
         ui->meshFileLineEdit->setEnabled(false);
         ui->meshSaveRefined->setEnabled(false);
         ui->meshRefinementFraction->setEnabled(false);
         ui->meshQualityLimit->setEnabled(false);
+        ui->meshSizeMultiplier->setEnabled(false);
+        ui->meshMinElementSize->setEnabled(false);
+        ui->meshMaxElementSize->setEnabled(false);
     }
 
     ui->meshOptionOk->setEnabled(false);
@@ -88,6 +109,24 @@ void MeshDialog::on_meshQualityLimit_textChanged (const QString &arg1)
     ui->meshOptionOk->setEnabled(true);
 }
 
+void MeshDialog::on_meshSizeMultiplier_valueChanged (double arg1)
+{
+    meshSizeMultiplier=arg1;
+    ui->meshOptionOk->setEnabled(true);
+}
+
+void MeshDialog::on_meshMinElementSize_valueChanged (double arg1)
+{
+    meshMinElementSize=arg1;
+    ui->meshOptionOk->setEnabled(true);
+}
+
+void MeshDialog::on_meshMaxElementSize_valueChanged (double arg1)
+{
+    meshMaxElementSize=arg1;
+    ui->meshOptionOk->setEnabled(true);
+}
+
 void MeshDialog::on_meshOptionOk_clicked ()
 {
     if (projData->mesh_save_refined != meshSaveRefined) {
@@ -105,6 +144,21 @@ void MeshDialog::on_meshOptionOk_clicked ()
         projData->modified=1;
     }
 
+    if (!double_compare(projData->gui_mesh_scale,meshSizeMultiplier,1e-12)) {
+        projData->gui_mesh_scale=meshSizeMultiplier;
+        projData->modified=1;
+    }
+
+    if (!double_compare(projData->gui_mesh_minSize,meshMinElementSize,1e-12)) {
+        projData->gui_mesh_minSize=meshMinElementSize;
+        projData->modified=1;
+    }
+
+    if (!double_compare(projData->gui_mesh_maxSize,meshMaxElementSize,1e-12)) {
+        projData->gui_mesh_maxSize=meshMaxElementSize;
+        projData->modified=1;
+    }
+
     close();
 }
 
@@ -112,4 +166,6 @@ void MeshDialog::on_meshOptionCancel_clicked ()
 {
     close();
 }
+
+
 
