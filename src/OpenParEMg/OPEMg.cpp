@@ -4672,28 +4672,45 @@ void OpenParEMg::on_actionSave_triggered ()
     if (QFile::exists(projectFile)) {
         std::cout << "file exists" << std::endl; std::cout.flush();
 
-        //xxx
-        int retVal=0;
+        // check for existing data
         if (hasResults()) {
+            int retVal=0;
             QMessageBox msgBox(this);
             msgBox.setText("The project has existing computed results.");
             msgBox.setInformativeText("Do you want to permanently delete the existing results?");
             msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-            msgBox.setDefaultButton(QMessageBox::Save);
+            msgBox.setDefaultButton(QMessageBox::Cancel);
             retVal=msgBox.exec();
-        }
-        if (retVal == QMessageBox::Cancel) return;
 
-        // bring drawing to the front
-        if (ui->tabs->currentWidget() != ui->drawingTab) {
-            ui->tabs->setCurrentWidget(ui->drawingTab);
+            if (retVal == QMessageBox::Cancel) return;
+
+            // bring drawing to the front
+            if (ui->tabs->currentWidget() != ui->drawingTab) {
+                ui->tabs->setCurrentWidget(ui->drawingTab);
+            }
+
+            // clear stale data
+            ui->logText->clear();
+            ui->iterationsText->clear();
+            ui->dataText->clear();
+            delete_stale_files(projData.project_name,port->get_SportCount());
         }
 
-        // clear stale data
-        ui->logText->clear();
-        ui->iterationsText->clear();
-        ui->dataText->clear();
-        delete_stale_files(projData.project_name,port->get_SportCount());
+        // check for drawing changes
+        if (drawing->isModified() && mesh->childCount() > 0) {
+            int retVal=0;
+            QMessageBox msgBox(this);
+            msgBox.setText("The mesh is obsolete due to changes to the drawing.");
+            msgBox.setInformativeText("Do you want to permanently delete the existing mesh?");
+            msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+            msgBox.setDefaultButton(QMessageBox::Cancel);
+            retVal=msgBox.exec();
+
+            if (retVal == QMessageBox::Cancel) return;
+
+            deleteMesh(true);
+        }
+
         saveProject();
     } else {
         std::cout << "file does not exist" << std::endl; std::cout.flush();
