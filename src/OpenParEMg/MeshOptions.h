@@ -38,6 +38,7 @@ public:
     explicit MeshDialog (QWidget *parent = nullptr);
     void set_projData (struct projectData *);
     void set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
+    void set_meshObsolete (bool *meshObsolete_) {meshObsolete=meshObsolete_;}
     ~MeshDialog();
 
 private slots:
@@ -46,15 +47,14 @@ private slots:
     void on_meshQualityLimit_textChanged (const QString &arg1);
     void on_meshOptionOk_clicked ();
     void on_meshOptionCancel_clicked ();
-    void on_meshSizeMultiplier_valueChanged(double arg1);
-
-    void on_meshMinElementSize_valueChanged(double arg1);
-
-    void on_meshMaxElementSize_valueChanged(double arg1);
+    void on_meshSizeMultiplier_valueChanged (double arg1);
+    void on_meshMinElementSize_valueChanged (double arg1);
+    void on_meshMaxElementSize_valueChanged (double arg1);
 
 private:
     Ui::MeshDialog *ui;
     struct projectData *projData;
+    bool *meshObsolete;
     QString meshFile;
     int meshSaveRefined;
     double meshSizeMultiplier;
@@ -63,6 +63,7 @@ private:
     double meshRefinementFraction;
     double meshQualityLimit;
     bool simulationRunning;
+    bool localMeshObsolete;
 };
 
 #endif // MESHOPTIONS_H

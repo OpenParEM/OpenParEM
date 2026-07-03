@@ -30,6 +30,7 @@ MeshDialog::MeshDialog (QWidget *parent)
     ui->setupUi(this);
     setFixedSize(width(),height());
     ui->meshFileLineEdit->setReadOnly(true);
+    localMeshObsolete=false;
 }
 
 MeshDialog::~MeshDialog ()
@@ -112,18 +113,21 @@ void MeshDialog::on_meshQualityLimit_textChanged (const QString &arg1)
 void MeshDialog::on_meshSizeMultiplier_valueChanged (double arg1)
 {
     meshSizeMultiplier=arg1;
+    localMeshObsolete=true;
     ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshMinElementSize_valueChanged (double arg1)
 {
     meshMinElementSize=arg1;
+    localMeshObsolete=true;
     ui->meshOptionOk->setEnabled(true);
 }
 
 void MeshDialog::on_meshMaxElementSize_valueChanged (double arg1)
 {
     meshMaxElementSize=arg1;
+    localMeshObsolete=true;
     ui->meshOptionOk->setEnabled(true);
 }
 
@@ -158,6 +162,8 @@ void MeshDialog::on_meshOptionOk_clicked ()
         projData->gui_mesh_maxSize=meshMaxElementSize;
         projData->modified=1;
     }
+
+    if (!(*meshObsolete) && localMeshObsolete) *meshObsolete=localMeshObsolete;
 
     close();
 }

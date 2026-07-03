@@ -829,6 +829,7 @@ private:
     double length;                // extrusion
     double angle;                 // rotation
     gp_Pnt startPoint, endPoint;  // rotation and vector input
+    bool meshObsolete;            // mesh options changed, so mesh needs to be regenerated
 
     // for undo/redo
     bool activeAction;            // shows whether a current action is active, such as move, stretch, edit, etc.

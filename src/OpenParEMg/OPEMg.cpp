@@ -469,6 +469,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     /////////////////////////////////////////////////////////////////////////////
 
     projectChanged=false;
+    meshObsolete=false;
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -580,6 +581,7 @@ bool OpenParEMg::isModified ()
     if (port->isModified()) return true;
     if (boundary->isModified()) return true;
     if (mesh->isModified()) return true;
+    if (meshObsolete) return true;
     return false;
 }
 
@@ -777,7 +779,6 @@ void OpenParEMg::setMenusI (int placeIndex)
         else ui->actionRefinement->setEnabled(true);
         ui->actionSimulateOptions->setEnabled(true);
         ui->actionRun->setEnabled(false);
-        ui->actionRun->setToolTip("Project does not have a mesh.");
         ui->actionStop->setEnabled(false);
         ui->actionAbort->setEnabled(false);
         ui->actionAbortAndExit->setEnabled(false);
@@ -823,6 +824,7 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionHideAll->setEnabled(true);
         }
 
+        ui->actionRun->setToolTip("Mesh generation is required.");
         if (mesh->childCount() > 0) {
             ui->actionFitAll->setEnabled(true);
             ui->actionMenuSelection->setEnabled(true);
@@ -834,7 +836,6 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionMeshSaveAs->setEnabled(true);
             ui->actionMeshDelete->setEnabled(true);
 
-            // start run block
             ui->actionRun->setEnabled(true);
             ui->actionRun->setToolTip("Run OpenParEM3D.");
             if (simulationRunning) {
@@ -858,19 +859,18 @@ void OpenParEMg::setMenusI (int placeIndex)
                 ui->actionAbort->setEnabled(false);
                 ui->actionAbortAndExit->setEnabled(true);
             }
-            if (mesh->isModified()) {
+            if (mesh->isModified() || meshObsolete) {
                 ui->actionRun->setEnabled(false);
-                ui->actionRun->setToolTip("Run OpenParEM3D.");
+                ui->actionRun->setToolTip("Mesh regeneration is required.");
                 ui->actionStop->setEnabled(false);
                 ui->actionAbort->setEnabled(false);
                 ui->actionAbortAndExit->setEnabled(false);
             }
-            // end run block
         }
 
-        if (projectChanged || mesh->isModified()) {
+        if (projectChanged) {
             ui->actionRun->setEnabled(false);
-            ui->actionRun->setToolTip("OpenParEM3D is running.");
+            ui->actionRun->setToolTip("Project save is required.");
             ui->actionStop->setEnabled(false);
             ui->actionAbort->setEnabled(false);
             ui->actionAbortAndExit->setEnabled(false);
@@ -945,7 +945,7 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionSimulateOptions->setEnabled(false);
 
         ui->actionRun->setEnabled(false);
-        ui->actionRun->setToolTip("Project not loaded.");
+        ui->actionRun->setToolTip("Project load is required.");
         ui->actionStop->setEnabled(false);
         ui->actionAbort->setEnabled(false);
         ui->actionAbortAndExit->setEnabled(false);
@@ -4538,6 +4538,7 @@ void OpenParEMg::on_actionMeshOptions_triggered ()
     MeshDialog *meshDialog=new MeshDialog();
     meshDialog->set_simulationRunning(simulationRunning);
     meshDialog->set_projData(&projData);
+    meshDialog->set_meshObsolete(&meshObsolete);
     meshDialog->exec();
     delete meshDialog;
 
@@ -4694,6 +4695,21 @@ void OpenParEMg::on_actionSave_triggered ()
             ui->iterationsText->clear();
             ui->dataText->clear();
             delete_stale_files(projData.project_name,port->get_SportCount());
+        }
+
+        // check for obsolete mesh
+        if (meshObsolete) {
+            int retVal=0;
+            QMessageBox msgBox(this);
+            msgBox.setText("The mesh is obsolete due to changes to the meshing criteria.");
+            msgBox.setInformativeText("Do you want to permanently delete the existing mesh?");
+            msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+            msgBox.setDefaultButton(QMessageBox::Cancel);
+            retVal=msgBox.exec();
+
+            if (retVal == QMessageBox::Cancel) return;
+
+            deleteMesh(true);
         }
 
         // check for drawing changes
@@ -6390,6 +6406,7 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
     ui->drawingWindow->updateViewer();
     mesh->deleteChildren(mesh);
     mesh->setModified(false);
+    meshObsolete=false;
     drawingEntities.clear();
     gmsh::clear();
 }
@@ -6429,6 +6446,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
     drawMesh();
     setPhysicalGroups();
+    meshObsolete=false;
 
     mesh->show(true);
 
