@@ -489,9 +489,8 @@ public:
 
     bool isModified () {return modified;}
     void setModified (bool);
-    // void setMenus ();
-    // void clearTreeSelection ();
-    // void updateViewer ();
+    void reset_modifiedSinceMeshRegen () {modifiedSinceMeshRegen=false;}
+    bool isModifiedSinceMeshRegen () {return modifiedSinceMeshRegen;}
 
     void showDisplayStatus ();
     void alignForegroundColor ();
@@ -503,9 +502,6 @@ public:
     void setForUndoRedo (bool, int);
 
     virtual void rename (QString);
-    //void expandToItem ();
-    //void expandToItemPlus1 ();
-
     virtual bool isValidShow () {return false;}
     virtual bool isValidHide () {return false;}
     virtual void show (bool) {}
@@ -515,7 +511,6 @@ public:
     void addShapeData (ShapeData *shapeData_) {dataStack.add(shapeData_);}
     void setShape (Handle(AIS_Shape) shape_) {dataStack.setShape(shape_);}
     void setPolywire (Polywire *polywire_) {dataStack.setPolywire(polywire_);}
-    //void setProcess (Process *process_) {dataStack.setProcess(process_);}
 
     virtual bool hasP0 () {return false;}
     virtual bool hasP1 () {return false;}
@@ -576,15 +571,6 @@ public:
     bool is_rootBoundary () {if (itemType == 102) return true; return false;}
     bool is_rootMesh () {if (itemType == 103) return true; return false;}
     bool is_rootPath () {if (itemType == 104) return true; return false;}
-    // bool is_root ()
-    // {
-    //     if (is_rootDrawing()) return true;
-    //     if (is_rootPort()) return true;
-    //     if (is_rootBoundary()) return true;
-    //     if (is_rootMesh()) return true;
-    //     if (is_rootPath()) return true;
-    //     return false;
-    // }
 
     void deleteChildren (QTreeWidgetItem *item)
     {
@@ -598,20 +584,6 @@ public:
         }
     }
 
-    // bool isValidShow ()
-    // {
-    //     if (!forShowHide) return false;
-    //     if (foreground(0) == Qt::gray) return true;
-    //     return false;
-    // }
-
-    // bool isValidHide ()
-    // {
-    //     if (!forShowHide) return false;
-    //     if (foreground(0) == Qt::black) return true;
-    //     return false;
-    // }
-
     TopoDS_Shape rotateShape (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2, Handle(AIS_InteractiveContext) viewerContext)
     {
         gp_Dir dir(gp_Vec(p1,p2));
@@ -624,19 +596,6 @@ public:
         BRepBuilderAPI_Transform transformer(dataStack.getShapeData()->getShape()->Shape(),rotate);
         return transformer.Shape();
     }
-
-    // BaseItem* copyCreate ()
-    // {
-    //     BaseItem *newItem=new BaseItem();
-
-    //     // copy just the current data
-
-    //     ShapeData *copyShapeData=dataStack.getShapeData()->copyCreate();
-    //     newItem->dataStack.add(copyShapeData);
-    //     newItem->setText(0,this->text(0).append("_copy"));
-    //     newItem->itemType=itemType;
-    //     return newItem;
-    // }
 
     void print_itemType ()
     {
@@ -722,20 +681,12 @@ public:
 
     BaseItem* getParentItem () {return parentItem;}
 
-    //void clearChildren () {children.clear();}
     void push_child (BaseItem *child) {children.push_back(child);}
     long unsigned int getChildrenSize () {return children.size();}
     BaseItem* getChild (long unsigned int i) {return children[i];}
 
     virtual void promoteChildren () {}
     virtual void demoteChildren () {}
-
-    // void convertPathToFace ()
-    // {
-    //     Handle(AIS_Shape) shape=getShape();
-    //     if (shape.IsNull()) return;
-
-    // }
 
     virtual void save (std::ofstream *);
 
@@ -762,10 +713,8 @@ protected:
                                                        // 103 - root mesh item
                                                        // 104 - root path item
 
-    bool modified;
-    // int depth;                                         // item depth in the tree for saving formatted drawing files
-    // bool hasArrows;                                    // whether to show arrows when drawing; used by DrawingItem and PathItem
-    // bool isActive;                                     // indicates whether the item is assigned to the tree
+    bool modified;                                     // markes item as modified;  true on creation
+    bool modifiedSinceMeshRegen;                       // supplemental modification tracker to determine need for mesh regeneration
 };
 
 class ScaleLabelItem : public BaseItem
@@ -846,12 +795,9 @@ public:
 
     QString get_material () {return text(1);}
     void set_Material (QString material_) {material=material_;}
-    //QString get_Material () {return material;}
 
     void set_dimTag (int dim, int tag) {dimTag.first=dim; dimTag.second=tag;}
-    //void set_dimTag (std::pair<int,int> dimTag_) {dimTag=dimTag_;}
     std::pair<int,int> get_dimTag () {return dimTag;}
-    //bool is_solid () {if (dimTag.first == 3) return true; return false;}
 
     void copy_depth (DrawingItem *item) {
         if (item) depth=item->depth;
@@ -929,10 +875,7 @@ public:
     bool hasP1 () override {return p1set;}
     gp_Pnt getP0 () {return p0;}
     gp_Pnt getP1 () {return p1;}
-    //void resetP0P1 () {p0set=false; p1set=false;}
 
-    //gp_Trsf getTrsf () {return aTrsf;}
-    //void setTrsf (gp_Trsf aTrsf_) {aTrsf=aTrsf_;}
     void reset_transformation () {aTrsf=gp_Trsf();}
 
     TopoDS_Shape moveShape (gp_Pnt, gp_Pnt, Handle(AIS_InteractiveContext));

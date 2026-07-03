@@ -75,25 +75,15 @@ BaseItem* BaseItem::getRootParent ()
 void BaseItem::setModified (bool modified_)
 {
     modified=modified_;
+    modifiedSinceMeshRegen=modified_;
 
     if (modified_) {
         // pass up for true so that the root item can be checked for changes
         if (parentItem) parentItem->setModified(modified_);
     } else {
-        // // trickle down for false
-        // int i=0;
-        // while (i < childCount()) {
-        //     BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-        //     if (baseItem) baseItem->setModified(modified_);
-        //     i++;
-        // }
         modified=modified_;
     }
 }
-
-// void BaseItem::setMenus () {mw->setMenusI(1);}
-// void BaseItem::clearTreeSelection () {mw->clearTreeSelection();}
-// void BaseItem::updateViewer () {mw->ui->drawingWindow->updateViewer();}
 
 void BaseItem::showDisplayStatus ()
 {

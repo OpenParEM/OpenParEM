@@ -4373,6 +4373,7 @@ void OpenParEMg::printLockouts ()
               << "   projectFileLoaded=" << projectFileLoaded << std::endl
               << "   projectChanged=" << projectChanged << std::endl
               << "   drawingChanged=" << drawing->isModified() << std::endl
+              << "   drawingChangedSinceMeshRegen=" << drawing->isModifiedSinceMeshRegen() << std::endl
               << "   pathChanged=" << path->isModified() << std::endl
               << "   portChanged=" << port->isModified() << std::endl
               << "   boundaryChanged=" << boundary->isModified() << std::endl
@@ -4713,7 +4714,7 @@ void OpenParEMg::on_actionSave_triggered ()
         }
 
         // check for drawing changes
-        if (drawing->isModified() && mesh->childCount() > 0) {
+        if (drawing->isModifiedSinceMeshRegen() && mesh->childCount() > 0) {
             int retVal=0;
             QMessageBox msgBox(this);
             msgBox.setText("The mesh is obsolete due to changes to the drawing.");
@@ -6408,6 +6409,7 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
     mesh->setModified(false);
     meshObsolete=false;
     drawingEntities.clear();
+    drawing->reset_modifiedSinceMeshRegen();
     gmsh::clear();
 }
 
@@ -6447,6 +6449,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     drawMesh();
     setPhysicalGroups();
     meshObsolete=false;
+    drawing->reset_modifiedSinceMeshRegen();
 
     mesh->show(true);
 
