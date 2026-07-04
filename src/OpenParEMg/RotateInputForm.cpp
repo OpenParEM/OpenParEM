@@ -109,6 +109,7 @@ void RotateInputForm::on_Xaxis_clicked ()
     ui->pickEnd->setEnabled(false);
 
     ui->OkButton->setEnabled(true);
+    ui->OkButton->setFocus();
 }
 
 void RotateInputForm::on_Yaxis_clicked ()
@@ -132,6 +133,7 @@ void RotateInputForm::on_Yaxis_clicked ()
     ui->pickEnd->setEnabled(false);
 
     ui->OkButton->setEnabled(true);
+    ui->OkButton->setFocus();
 }
 
 void RotateInputForm::on_Zaxis_clicked ()
@@ -155,6 +157,7 @@ void RotateInputForm::on_Zaxis_clicked ()
     ui->pickEnd->setEnabled(false);
 
     ui->OkButton->setEnabled(true);
+    ui->OkButton->setFocus();
 }
 
 void RotateInputForm::on_CustomAxis_clicked ()

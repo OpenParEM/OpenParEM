@@ -458,6 +458,7 @@ void FrequencyPlanG::on_frequencyAdd_clicked ()
     ui->frequencyDelete->setEnabled(true);
     projData->modified=1;
     ui->frequencyPlanGOk->setEnabled(true);
+    ui->frequencyPlanGOk->setFocus();
     ui->AMR->setEnabled(true);
     ui->adaptiveFrequenciesLabel->setEnabled(true);
     ui->adaptiveFrequencies->setEnabled(true);
@@ -504,6 +505,7 @@ void FrequencyPlanG::on_frequencyDelete_clicked ()
 
     projData->modified=1;
     ui->frequencyPlanGOk->setEnabled(true);
+    ui->frequencyPlanGOk->setFocus();
 }
 
 void FrequencyPlanG::on_frequencyPlanGOk_clicked ()
@@ -675,6 +677,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
 
             projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
+            ui->frequencyPlanGOk->setFocus();
         }
 
         // frequency to linear
@@ -702,6 +705,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
 
             projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
+            ui->frequencyPlanGOk->setFocus();
         }
     }
 
@@ -724,6 +728,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
 
             projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
+            ui->frequencyPlanGOk->setFocus();
         }
 
         // log to log
@@ -756,6 +761,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
 
             projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
+            ui->frequencyPlanGOk->setFocus();
         }
     }
 
@@ -783,6 +789,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
 
             projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
+            ui->frequencyPlanGOk->setFocus();
         }
 
         // log to frequency
@@ -806,6 +813,7 @@ void FrequencyPlanG::typeComboBox_changed (int newIndex)
 
             projData->modified=1;
             ui->frequencyPlanGOk->setEnabled(true);
+            ui->frequencyPlanGOk->setFocus();
         }
 
         // frequency to frequency
@@ -858,6 +866,7 @@ void FrequencyPlanG::on_AMR_checkStateChanged (const Qt::CheckState &arg1)
 
     projData->modified=1;
     ui->frequencyPlanGOk->setEnabled(true);
+    ui->frequencyPlanGOk->setFocus();
 }
 
 void FrequencyPlanG::on_adaptiveFrequencies_activated (int newIndex)
@@ -911,6 +920,7 @@ void FrequencyPlanG::on_adaptiveFrequencies_activated (int newIndex)
     currentRowWidget->setText(QString::number(newIndex));
     projData->modified=1;
     ui->frequencyPlanGOk->setEnabled(true);
+    ui->frequencyPlanGOk->setFocus();
 }
 
 void FrequencyPlanG::refine_checkStateChanged ()
@@ -918,6 +928,7 @@ void FrequencyPlanG::refine_checkStateChanged ()
     projData->modified=1;
     ui->frequencyDelete->setEnabled(true);
     ui->frequencyPlanGOk->setEnabled(true);
+    ui->frequencyPlanGOk->setFocus();
 }
 
 void FrequencyPlanG::frequency_textChanged ()
@@ -925,6 +936,7 @@ void FrequencyPlanG::frequency_textChanged ()
     projData->modified=1;
     ui->frequencyDelete->setEnabled(true);
     ui->frequencyPlanGOk->setEnabled(true);
+    ui->frequencyPlanGOk->setFocus();
 }
 
 bool FrequencyPlanG::check_inputs ()

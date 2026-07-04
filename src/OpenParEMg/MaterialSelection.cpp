@@ -54,6 +54,7 @@ void MaterialSelection::populate (std::string materialType)
                 ui->materialList->addItem(item);
 
                 ui->materialSelectOk->setEnabled(true);
+                ui->materialSelectOk->setFocus();
             }
         }
         i++;

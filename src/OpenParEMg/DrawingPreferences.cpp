@@ -61,12 +61,14 @@ void DrawingPreferences::on_units_currentTextChanged (const QString &arg1)
 {
     units=arg1;
     ui->OkButton->setEnabled(true);
+    ui->OkButton->setFocus();
 }
 
 void DrawingPreferences::on_gridSize_valueChanged (double arg1)
 {
     gridSize=arg1;
     ui->OkButton->setEnabled(true);
+    ui->OkButton->setFocus();
 }
 
 void DrawingPreferences::on_OkButton_clicked ()

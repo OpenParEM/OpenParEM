@@ -128,7 +128,10 @@ void PolycircleEditForm::on_centerPositionX_editingFinished ()
     firstPoint.SetX(firstPoint.X()-centerPoint.X()+ui->centerPositionX->text().toDouble()/conversionFactor);
     centerPoint.SetX(ui->centerPositionX->text().toDouble()/conversionFactor);
     repopulate();
-    ui->OkButton->setEnabled(isValid());
+    if (isValid()) {
+        ui->OkButton->setEnabled(true);
+        ui->OkButton->setFocus();
+    }
 }
 
 void PolycircleEditForm::on_centerPositionY_editingFinished ()
@@ -136,7 +139,10 @@ void PolycircleEditForm::on_centerPositionY_editingFinished ()
     firstPoint.SetY(firstPoint.Y()-centerPoint.Y()+ui->centerPositionY->text().toDouble()/conversionFactor);
     centerPoint.SetY(ui->centerPositionY->text().toDouble()/conversionFactor);
     repopulate();
-    ui->OkButton->setEnabled(isValid());
+    if (isValid()) {
+        ui->OkButton->setEnabled(true);
+        ui->OkButton->setFocus();
+    }
 }
 
 void PolycircleEditForm::on_centerPositionZ_editingFinished ()
@@ -144,7 +150,10 @@ void PolycircleEditForm::on_centerPositionZ_editingFinished ()
     firstPoint.SetZ(firstPoint.Z()-centerPoint.Z()+ui->centerPositionZ->text().toDouble()/conversionFactor);
     centerPoint.SetZ(ui->centerPositionZ->text().toDouble()/conversionFactor);
     repopulate();
-    ui->OkButton->setEnabled(isValid());
+    if (isValid()) {
+        ui->OkButton->setEnabled(true);
+        ui->OkButton->setFocus();
+    }
 }
 
 void PolycircleEditForm::on_pickCenter_clicked ()
@@ -181,28 +190,40 @@ void PolycircleEditForm::on_radius_editingFinished ()
     temp.recalculate();
     populate(&temp);
 
-    ui->OkButton->setEnabled(isValid());
+    if (isValid()) {
+        ui->OkButton->setEnabled(true);
+        ui->OkButton->setFocus();
+    }
 }
 
 void PolycircleEditForm::on_firstPositionX_editingFinished ()
 {
     firstPoint.SetX(ui->firstPositionX->text().toDouble()/conversionFactor);
     repopulate();
-    ui->OkButton->setEnabled(isValid());
+    if (isValid()) {
+        ui->OkButton->setEnabled(true);
+        ui->OkButton->setFocus();
+    }
 }
 
 void PolycircleEditForm::on_firstPositionY_editingFinished ()
 {
     firstPoint.SetY(ui->firstPositionY->text().toDouble()/conversionFactor);
     repopulate();
-    ui->OkButton->setEnabled(isValid());
+    if (isValid()) {
+        ui->OkButton->setEnabled(true);
+        ui->OkButton->setFocus();
+    }
 }
 
 void PolycircleEditForm::on_firstPositionZ_editingFinished ()
 {
     firstPoint.SetZ(ui->firstPositionZ->text().toDouble()/conversionFactor);
     repopulate();
-    ui->OkButton->setEnabled(isValid());
+    if (isValid()) {
+        ui->OkButton->setEnabled(true);
+        ui->OkButton->setFocus();
+    }
 }
 
 void PolycircleEditForm::on_pickFirst_clicked ()
@@ -220,7 +241,10 @@ void PolycircleEditForm::on_vertexCount_editingFinished ()
 {
     vertexCount=ui->vertexCount->text().toInt();
     repopulate();
-    ui->OkButton->setEnabled(isValid());
+    if (isValid()) {
+        ui->OkButton->setEnabled(true);
+        ui->OkButton->setFocus();
+    }
 }
 
 void PolycircleEditForm::on_OkButton_clicked ()
@@ -260,7 +284,10 @@ void PolycircleEditForm::pickVertexFinished (gp_Pnt point)
 
     repopulate();
 
-    ui->OkButton->setEnabled(isValid());
+    if (isValid()) {
+        ui->OkButton->setEnabled(true);
+        ui->OkButton->setFocus();
+    }
 }
 
 void PolycircleEditForm::on_CancelButton_clicked ()

@@ -96,18 +96,21 @@ void MeshDialog::on_meshSaveRefined_checkStateChanged (const Qt::CheckState &arg
     if (arg1 == 0) meshSaveRefined=0;
     else meshSaveRefined=1;
     ui->meshOptionOk->setEnabled(true);
+    ui->meshOptionOk->setFocus();
 }
 
 void MeshDialog::on_meshRefinementFraction_textChanged (const QString &arg1)
 {
     meshRefinementFraction=arg1.toDouble();
     ui->meshOptionOk->setEnabled(true);
+    ui->meshOptionOk->setFocus();
 }
 
 void MeshDialog::on_meshQualityLimit_textChanged (const QString &arg1)
 {
     meshQualityLimit=arg1.toDouble();
     ui->meshOptionOk->setEnabled(true);
+    ui->meshOptionOk->setFocus();
 }
 
 void MeshDialog::on_meshSizeMultiplier_valueChanged (double arg1)
@@ -115,6 +118,7 @@ void MeshDialog::on_meshSizeMultiplier_valueChanged (double arg1)
     meshSizeMultiplier=arg1;
     localMeshObsolete=true;
     ui->meshOptionOk->setEnabled(true);
+    ui->meshOptionOk->setFocus();
 }
 
 void MeshDialog::on_meshMinElementSize_valueChanged (double arg1)
@@ -122,6 +126,7 @@ void MeshDialog::on_meshMinElementSize_valueChanged (double arg1)
     meshMinElementSize=arg1;
     localMeshObsolete=true;
     ui->meshOptionOk->setEnabled(true);
+    ui->meshOptionOk->setFocus();
 }
 
 void MeshDialog::on_meshMaxElementSize_valueChanged (double arg1)
@@ -129,6 +134,7 @@ void MeshDialog::on_meshMaxElementSize_valueChanged (double arg1)
     meshMaxElementSize=arg1;
     localMeshObsolete=true;
     ui->meshOptionOk->setEnabled(true);
+    ui->meshOptionOk->setFocus();
 }
 
 void MeshDialog::on_meshOptionOk_clicked ()
