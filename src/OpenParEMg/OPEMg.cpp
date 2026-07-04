@@ -1779,6 +1779,7 @@ void OpenParEMg::rename_editingFinished ()
     if (!isExpanded) renameItem->setExpanded(false);
     renameItem=nullptr;
 
+    projectChanged=true;
     setMenusI(18);
     ui->drawingWindow->updateViewer();
 }
