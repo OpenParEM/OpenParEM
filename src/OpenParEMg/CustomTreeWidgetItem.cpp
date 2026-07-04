@@ -4511,14 +4511,20 @@ bool MeshItem::isValidHide ()
 
 void MeshItem::show (bool update)
 {
-    std::cout << "MeshItem::show  item=" << text(0).toStdString() << std::endl; std::cout.flush();
-    long unsigned int i=0;
-    while (i < meshEntities.size()) {
-        mw->ui->drawingWindow->displayShape(meshEntities[i]);
-        i++;
-    }
+    // std::cout << "MeshItem::show  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    // long unsigned int i=0;
+    // while (i < meshEntities.size()) {
+    //     mw->ui->drawingWindow->displayShape(meshEntities[i]);
+    //     i++;
+    // }
 
-    setForeground(0,Qt::black);
+    // setForeground(0,Qt::black);
+
+    // if (update) {
+    //     mw->ui->drawingWindow->updateViewer();
+    // }
+
+    mw->ui->drawingWindow->showItem(this);
 
     if (update) {
         mw->ui->drawingWindow->updateViewer();
@@ -4527,13 +4533,19 @@ void MeshItem::show (bool update)
 
 void MeshItem::hide (bool update)
 {
-    long unsigned int i=0;
-    while (i < meshEntities.size()) {
-        mw->ui->drawingWindow->removeShape(meshEntities[i]);
-        i++;
-    }
+    // long unsigned int i=0;
+    // while (i < meshEntities.size()) {
+    //     mw->ui->drawingWindow->removeShape(meshEntities[i]);
+    //     i++;
+    // }
 
-    setForeground(0,Qt::gray);
+    // setForeground(0,Qt::gray);
+
+    // if (update) {
+    //     mw->ui->drawingWindow->updateViewer();
+    // }
+
+    mw->ui->drawingWindow->hideItem(this);
 
     if (update) {
         mw->ui->drawingWindow->updateViewer();

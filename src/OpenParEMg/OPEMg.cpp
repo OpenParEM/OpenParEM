@@ -6190,197 +6190,6 @@ void OpenParEMg::on_actionUnselectAll_triggered ()
     setMenusI(61);
 }
 
-// void OpenParEMg::drawMesh()
-// {
-//     //std::cout << "OpenParEMg::drawMesh" << std::endl; std::cout.flush();
-
-//     // get all nodes
-//     std::vector<std::size_t> nodeTags;
-//     std::vector<double> nodeCoords, nodeParams;
-//     gmsh::model::mesh::getNodes(nodeTags, nodeCoords, nodeParams);
-
-//     // map node tag to coordinates
-//     std::map<std::size_t,gp_Pnt> nodeMap;
-//     long unsigned int i=0;
-//     while (i < nodeTags.size()) {
-//         double x=nodeCoords[3*i];
-//         double y=nodeCoords[3*i+1];
-//         double z=nodeCoords[3*i+2];
-//         nodeMap[nodeTags[i]]=gp_Pnt(x, y, z);
-//         i++;
-//     }
-
-//     // get all elements
-//     std::vector<int> elementTypes;
-//     std::vector<std::vector<std::size_t>> elementTags, nodeTagsPerElem;
-//     gmsh::model::mesh::getElements(elementTypes, elementTags, nodeTagsPerElem);
-
-//     size_t e=0;
-//     while (e < elementTypes.size()) {
-
-//         // vertices
-//         if (elementTypes[e] == 15) {
-//             MeshItem *verticesItem=new MeshItem(this);
-//             verticesItem->setText(0,"Vertices");
-//             verticesItem->set_itemType(3);
-//             verticesItem->setForeground(0,Qt::gray);
-//             mesh->insertChild(0,verticesItem);
-
-//             int count=0;
-//             std::vector<std::size_t> conn=nodeTagsPerElem[e];
-//             long unsigned int i=0;
-//             while (i < conn.size()) {
-//                 gp_Pnt p=nodeMap[conn[i]];
-//                 TopoDS_Vertex vertex=BRepBuilderAPI_MakeVertex(p);
-//                 if (!vertex.IsNull()) {
-//                     Handle(AIS_Shape) shape=new AIS_Shape(vertex);
-//                     if (!shape.IsNull()) {
-//                         verticesItem->get_meshEntities()->push_back(shape);
-//                     }
-//                 }
-//                 i+=1;
-//                 count++;
-//             }
-//         }
-
-//         // edges
-//         if (elementTypes[e] == 1) {
-//             MeshItem *edgesItem=new MeshItem(this);
-//             edgesItem->setText(0,"Edges");
-//             edgesItem->set_itemType(3);
-//             edgesItem->setForeground(0,Qt::gray);
-//             mesh->addChild(edgesItem);
-
-//             int count=0;
-//             std::vector<std::size_t> conn=nodeTagsPerElem[e];
-//             long unsigned int i=0;
-//             while (i < conn.size()) {
-//                 gp_Pnt p1=nodeMap[conn[i]];
-//                 gp_Pnt p2=nodeMap[conn[i+1]];
-//                 TopoDS_Edge edge=BRepBuilderAPI_MakeEdge(p1,p2);
-//                 if (!edge.IsNull()) {
-//                     Handle(AIS_Shape) shape=new AIS_Shape(edge);
-//                     if (!shape.IsNull()) {
-//                         edgesItem->get_meshEntities()->push_back(shape);
-//                     }
-//                 }
-//                 i+=2;
-//                 count++;
-//             }
-//         }
-
-//         // triangles
-//         if (elementTypes[e] == 2) {
-//             MeshItem *wiresItem=new MeshItem(this);
-//             wiresItem->setText(0,"Wires");
-//             wiresItem->set_itemType(3);
-//             wiresItem->setForeground(0,Qt::gray);
-//             mesh->addChild(wiresItem);
-
-//             MeshItem *trianglesItem=new MeshItem(this);
-//             trianglesItem->setText(0,"Triangles");
-//             trianglesItem->set_itemType(3);
-//             trianglesItem->setForeground(0,Qt::gray);
-//             mesh->addChild(trianglesItem);
-
-//             int count=0;
-//             std::vector<std::size_t> conn=nodeTagsPerElem[e];
-//             long unsigned int i=0;
-//             while (i < conn.size()) {
-//                 gp_Pnt p1=nodeMap[conn[i]];
-//                 gp_Pnt p2=nodeMap[conn[i+1]];
-//                 gp_Pnt p3=nodeMap[conn[i+2]];
-
-//                 TopoDS_Edge edge12=BRepBuilderAPI_MakeEdge(p1,p2);
-//                 TopoDS_Edge edge23=BRepBuilderAPI_MakeEdge(p2,p3);
-//                 TopoDS_Edge edge31=BRepBuilderAPI_MakeEdge(p3,p1);
-
-//                 TopoDS_Wire wire=BRepBuilderAPI_MakeWire(edge12,edge23,edge31);
-//                 if (!wire.IsNull()) {
-//                     Handle(AIS_Shape) shape=new AIS_Shape(wire);
-//                     if (!shape.IsNull()) {
-//                         wiresItem->get_meshEntities()->push_back(shape);
-//                     }
-
-//                     TopoDS_Face face=BRepBuilderAPI_MakeFace(wire);
-//                     if (!face.IsNull()) {
-//                         Handle(AIS_Shape) shape=new AIS_Shape(face);
-//                         if (!shape.IsNull()) {
-//                             trianglesItem->get_meshEntities()->push_back(shape);
-//                         }
-//                     }
-//                 }
-
-//                 i+=3;
-//                 count++;
-//             }
-//         }
-
-//         // tetrahedron
-//         if (elementTypes[e] == 4) {
-//             MeshItem *tetrahedronsItem=new MeshItem(this);
-//             tetrahedronsItem->setText(0,"Tetrahedrons");
-//             tetrahedronsItem->set_itemType(3);
-//             tetrahedronsItem->setForeground(0,Qt::gray);
-//             mesh->addChild(tetrahedronsItem);
-
-//             int count=0;
-//             std::vector<std::size_t> conn=nodeTagsPerElem[e];
-//             long unsigned int i=0;
-//             while (i < conn.size()) {
-//                 gp_Pnt p1=nodeMap[conn[i]];
-//                 gp_Pnt p2=nodeMap[conn[i+1]];
-//                 gp_Pnt p3=nodeMap[conn[i+2]];
-//                 gp_Pnt p4=nodeMap[conn[i+3]];
-
-//                 TopoDS_Edge edge12=BRepBuilderAPI_MakeEdge(p1,p2);
-//                 TopoDS_Edge edge13=BRepBuilderAPI_MakeEdge(p1,p3);
-//                 TopoDS_Edge edge14=BRepBuilderAPI_MakeEdge(p1,p4);
-//                 TopoDS_Edge edge23=BRepBuilderAPI_MakeEdge(p2,p3);
-//                 TopoDS_Edge edge34=BRepBuilderAPI_MakeEdge(p3,p4);
-//                 TopoDS_Edge edge42=BRepBuilderAPI_MakeEdge(p4,p2);
-
-//                 if (!edge12.IsNull() && !edge13.IsNull() && !edge14.IsNull() && !edge23.IsNull() && !edge34.IsNull() && !edge42.IsNull()) {
-
-//                     TopoDS_Wire wire123=BRepBuilderAPI_MakeWire(edge12,edge23,edge13);
-//                     TopoDS_Wire wire134=BRepBuilderAPI_MakeWire(edge13,edge34,edge14);
-//                     TopoDS_Wire wire124=BRepBuilderAPI_MakeWire(edge12,edge42,edge14);
-//                     TopoDS_Wire wire234=BRepBuilderAPI_MakeWire(edge23,edge34,edge42);
-
-//                     if (!wire123.IsNull() && !wire134.IsNull() && !wire124.IsNull() && !wire234.IsNull()) {
-
-//                         TopoDS_Face face123=BRepBuilderAPI_MakeFace(wire123);
-//                         TopoDS_Face face134=BRepBuilderAPI_MakeFace(wire134);
-//                         TopoDS_Face face124=BRepBuilderAPI_MakeFace(wire124);
-//                         TopoDS_Face face234=BRepBuilderAPI_MakeFace(wire234);
-
-//                         if (!face123.IsNull() && !face134.IsNull() && !face124.IsNull() && !face234.IsNull()) {
-
-//                             TopoDS_Compound tetrahedron;
-//                             BRep_Builder builder;
-//                             builder.MakeCompound(tetrahedron);
-//                             builder.Add(tetrahedron,face123);
-//                             builder.Add(tetrahedron,face134);
-//                             builder.Add(tetrahedron,face124);
-//                             builder.Add(tetrahedron,face234);
-
-//                             Handle(AIS_Shape) shape=new AIS_Shape(tetrahedron);
-//                             tetrahedronsItem->get_meshEntities()->push_back(shape);
-//                         }
-//                     }
-//                 }
-
-//                 i+=4;
-//                 count++;
-//             }
-//         }
-
-//         e++;
-//     }
-
-//     setMenusI(62);
-// }
-
 void OpenParEMg::drawMesh()
 {
     //std::cout << "OpenParEMg::drawMesh" << std::endl; std::cout.flush();
@@ -6406,24 +6215,18 @@ void OpenParEMg::drawMesh()
     std::vector<gmsh::vectorpair> entities;
     gmsh::model::getPhysicalGroupsEntities(physicalGroups,entities,3);
 
+    // loop through the physical groups
     size_t pg=0;
     while (pg < physicalGroups.size())
     {
-        //int physicalTag=physicalGroups[pg].second;
+        // save all physical group shapes into a compound
+        TopoDS_Compound compound;
+        BRep_Builder builder;
+        builder.MakeCompound(compound);
 
+        // loop through the tetrahedons of the physical group
         size_t ent=0;
         while (ent < entities[pg].size()) {
-
-            // pull the material name, if available
-            QString name;
-            if (pg < projData.physicalGroupMaterialCount) {
-                name=projData.physicalGroupMaterials[pg].materialName;
-            } else {
-                name="physicalGroup";
-                name.append(QString::number(pg+1));
-            }
-
-            // go through the physical groups
 
             int entityDim=entities[pg][ent].first;
             int entityTag=entities[pg][ent].second;
@@ -6432,12 +6235,6 @@ void OpenParEMg::drawMesh()
             std::vector<std::vector<std::size_t>> elementTags;
             std::vector<std::vector<std::size_t>> nodeTags;
             gmsh::model::mesh::getElements(elementTypes,elementTags,nodeTags,entityDim,entityTag);
-
-            MeshItem *tetrahedronsItem=new MeshItem(this);
-            tetrahedronsItem->setText(0,name);
-            tetrahedronsItem->set_itemType(3);
-            tetrahedronsItem->setForeground(0,Qt::gray);
-            mesh->addChild(tetrahedronsItem);
 
             int count=0;
             std::vector<std::size_t> conn=nodeTags[ent];
@@ -6457,38 +6254,78 @@ void OpenParEMg::drawMesh()
 
                 if (!edge12.IsNull() && !edge13.IsNull() && !edge14.IsNull() && !edge23.IsNull() && !edge34.IsNull() && !edge42.IsNull()) {
 
-                    TopoDS_Wire wire123=BRepBuilderAPI_MakeWire(edge12,edge23,edge13);
-                    TopoDS_Wire wire134=BRepBuilderAPI_MakeWire(edge13,edge34,edge14);
-                    TopoDS_Wire wire124=BRepBuilderAPI_MakeWire(edge12,edge42,edge14);
-                    TopoDS_Wire wire234=BRepBuilderAPI_MakeWire(edge23,edge34,edge42);
+                    // for viewing meshes, only the edges are needed
+                    builder.Add(compound,edge12);
+                    builder.Add(compound,edge13);
+                    builder.Add(compound,edge14);
+                    builder.Add(compound,edge23);
+                    builder.Add(compound,edge34);
+                    builder.Add(compound,edge42);
 
-                    if (!wire123.IsNull() && !wire134.IsNull() && !wire124.IsNull() && !wire234.IsNull()) {
+                    // skip building the rest of the tetrahedrons
+                    // This code no longer works with rest of this routine.
 
-                        TopoDS_Face face123=BRepBuilderAPI_MakeFace(wire123);
-                        TopoDS_Face face134=BRepBuilderAPI_MakeFace(wire134);
-                        TopoDS_Face face124=BRepBuilderAPI_MakeFace(wire124);
-                        TopoDS_Face face234=BRepBuilderAPI_MakeFace(wire234);
+                    // TopoDS_Wire wire123=BRepBuilderAPI_MakeWire(edge12,edge23,edge13);
+                    // TopoDS_Wire wire134=BRepBuilderAPI_MakeWire(edge13,edge34,edge14);
+                    // TopoDS_Wire wire124=BRepBuilderAPI_MakeWire(edge12,edge42,edge14);
+                    // TopoDS_Wire wire234=BRepBuilderAPI_MakeWire(edge23,edge34,edge42);
 
-                        if (!face123.IsNull() && !face134.IsNull() && !face124.IsNull() && !face234.IsNull()) {
+                    // if (!wire123.IsNull() && !wire134.IsNull() && !wire124.IsNull() && !wire234.IsNull()) {
 
-                            TopoDS_Compound tetrahedron;
-                            BRep_Builder builder;
-                            builder.MakeCompound(tetrahedron);
-                            builder.Add(tetrahedron,face123);
-                            builder.Add(tetrahedron,face134);
-                            builder.Add(tetrahedron,face124);
-                            builder.Add(tetrahedron,face234);
+                    //     TopoDS_Face face123=BRepBuilderAPI_MakeFace(wire123);
+                    //     TopoDS_Face face134=BRepBuilderAPI_MakeFace(wire134);
+                    //     TopoDS_Face face124=BRepBuilderAPI_MakeFace(wire124);
+                    //     TopoDS_Face face234=BRepBuilderAPI_MakeFace(wire234);
 
-                            Handle(AIS_Shape) shape=new AIS_Shape(tetrahedron);
-                            tetrahedronsItem->get_meshEntities()->push_back(shape);
-                        }
-                    }
+                    //     if (!face123.IsNull() && !face134.IsNull() && !face124.IsNull() && !face234.IsNull()) {
+
+                    //         TopoDS_Compound tetrahedron;
+                    //         BRep_Builder builder;
+                    //         builder.MakeCompound(tetrahedron);
+                    //         builder.Add(tetrahedron,face123);
+                    //         builder.Add(tetrahedron,face134);
+                    //         builder.Add(tetrahedron,face124);
+                    //         builder.Add(tetrahedron,face234);
+
+                    //         Handle(AIS_Shape) shape=new AIS_Shape(tetrahedron);
+                    //         tetrahedronsItem->get_meshEntities()->push_back(shape);
+
+                    //         builder.MakeCompound(compound);
+                    //         builder.Add(compound,face123);
+                    //         builder.Add(compound,face134);
+                    //         builder.Add(compound,face124);
+                    //         builder.Add(compound,face234);
+                    //     }
+                    // }
                 }
                 i+=4;
                 count++;
             }
             ++ent;
         }
+
+        // pull the material name, if available
+        QString name;
+        if (pg < projData.physicalGroupMaterialCount) {
+            name=projData.physicalGroupMaterials[pg].materialName;
+        } else {
+            name="physicalGroup";
+            name.append(QString::number(pg+1));
+        }
+
+        // make the item
+        MeshItem *groupItem=new MeshItem(this);
+        groupItem->setText(0,name);
+        groupItem->set_itemType(3);
+        groupItem->setForeground(0,Qt::gray);
+        mesh->addChild(groupItem);
+
+        Handle(AIS_Shape) newAISshape=new AIS_Shape(compound);
+        if (!newAISshape.IsNull()) {
+            ShapeData *shapeData=groupItem->getShapeData();
+            shapeData->setShape(newAISshape);
+        }
+
         ++pg;
     }
     setMenusI(62);
@@ -6508,13 +6345,13 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
         ui->drawingWindow->hideItem(meshItem);
         ui->drawingWindow->unselectItem(meshItem);
 
-        // remove drawing shapes
-        std::vector<Handle(AIS_Shape)> *meshEntities=meshItem->get_meshEntities();
-        long unsigned int j=0;
-        while (j < meshEntities->size()) {
-            ui->drawingWindow->deleteShape((*meshEntities)[j]);
-            j++;
+        // remove drawing shape
+        ShapeData *shapeData=meshItem->getShapeData();
+        Handle(AIS_Shape) shape=shapeData->getShape();
+        if (!shape.IsNull()) {
+            ui->drawingWindow->deleteShape(shape);
         }
+
         i++;
     }
 
@@ -6628,7 +6465,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
     setPhysicalGroups();
     drawMesh();
-    //setPhysicalGroups();
     meshObsolete=false;
     drawing->reset_modifiedSinceMeshRegen();
 

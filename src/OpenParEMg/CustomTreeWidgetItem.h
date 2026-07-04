@@ -1324,12 +1324,8 @@ public:
     void show (bool) override;
     void hide (bool) override;
     void showMenu (QMenu *) override;
-    std::vector<Handle(AIS_Shape)>* get_meshEntities () {return &meshEntities;}
-    //long unsigned int get_meshEntitiesSize () {return meshEntities.size();}
-    //Handle(AIS_Shape) get_meshEntity (long unsigned int i) {return meshEntities[i];}
 
 private:
-    std::vector<Handle(AIS_Shape)> meshEntities;
 };
 
 
