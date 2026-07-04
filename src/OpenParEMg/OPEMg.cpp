@@ -48,6 +48,7 @@
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
 #include <BRepBuilderAPI_Copy.hxx>
+#include <BOPAlgo_Builder.hxx>
 
 #include <QIcon>
 #include <QFileDialog>
@@ -6429,9 +6430,64 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     renumberDimTag();
     reprocess(drawing);
 
+    // build a boolean fragments shape
+    // ToDo: remove the COMPOUND at the drawing level since that is obsolete (wrong approach)
+
+    TopTools_ListOfShape arguments;
+
+    // drawing items
+    int i=0;
+    while (i < drawing->childCount()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
+        if (drawingItem) {
+            ShapeData *shapeData=drawingItem->getShapeData();
+            TopoDS_Shape shape=shapeData->getShape()->Shape();
+            if (!shape.IsNull()) arguments.Append(shape);
+        }
+        i++;
+    }
+
+    // path items - imprint the paths onto the mesh for better accuracy
+    i=0;
+    while (i < path->childCount()) {
+        PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
+        if (pathItem) {
+            ShapeData *shapeData=pathItem->getShapeData();
+            Handle(AIS_Shape) aisShape=shapeData->getShape();
+            if (!aisShape.IsNull()) {
+                TopoDS_Shape shape=aisShape->Shape();
+                if (!shape.IsNull()) {
+                    if (shape.ShapeType() == TopAbs_COMPOUND) {
+                        TopoDS_Iterator it(shape);
+                        while (it.More()) {
+                            // paths with arrows - take the first TopoDS_Shape with the rest being arrowheads
+                            TopoDS_Shape childShape=it.Value();
+                            if (childShape.ShapeType() != TopAbs_COMPOUND) {
+                                arguments.Append(childShape);
+                                break;
+                            }
+                            it.Next();
+                        }
+                    } else {
+                        arguments.Append(shape);
+                    }
+                }
+            }
+        }
+        i++;
+    }
+
+    // assemble
+    BOPAlgo_Builder builder;
+    builder.SetArguments(arguments);
+    builder.Perform();
+    if (builder.HasErrors()) return;
+
+    // final shape
+    TopoDS_Shape fragments=builder.Shape();
+
     // generate mesh
-    TopoDS_Shape shape=drawing->getShape()->Shape();
-    gmsh::model::occ::importShapesNativePointer((void *) &shape,drawingEntities,false);
+    gmsh::model::occ::importShapesNativePointer((void *) &fragments,drawingEntities,false);
     gmsh::option::setNumber("Mesh.MeshSizeFactor",projData.gui_mesh_scale);
     gmsh::option::setNumber("Mesh.MeshSizeMin",projData.gui_mesh_minSize);
     gmsh::option::setNumber("Mesh.MeshSizeMax",projData.gui_mesh_maxSize);
