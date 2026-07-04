@@ -396,6 +396,7 @@ public:
     bool saveDrawingFile (QString);
     bool loadDrawingFile ();
     void drawMesh ();
+    void finishDrawMesh ();
     void deleteMesh (bool);
 
     //bool hasSelectedPaths ();

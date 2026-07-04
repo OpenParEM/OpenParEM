@@ -29,9 +29,10 @@
 #include <Geom_Plane.hxx>
 #include <Geom_TrimmedCurve.hxx>
 #include <csignal>
-#include <quadmath.h>
+//#include <quadmath.h>
 #include <iostream>
 #include <filesystem>
+#include <thread>
 
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
@@ -69,8 +70,10 @@
 #include <QList>
 #include <QTreeWidgetItem>
 #include <QScrollArea>
-//#include <thread>
 #include <QTextBlock>
+#include <QtConcurrent/QtConcurrentRun>
+#include <QFutureWatcher>
+#include <QThread>
 
 #include "MeshOptions.h"
 #include "SimulateOptions.h"
@@ -4000,7 +4003,7 @@ bool OpenParEMg::isValidCreateDiffPair ()
 
 void OpenParEMg::renumberDimTag ()
 {
-    //std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
 
     int count=1;
     int i=0;
@@ -4028,6 +4031,8 @@ void OpenParEMg::renumberDimTag ()
 
 void OpenParEMg::setPhysicalGroups ()
 {
+    std::cout << "OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
+
     // re-build the physical groups list
 
     clear_physicalGroupMaterials (&projData);
@@ -4089,11 +4094,13 @@ void OpenParEMg::setPhysicalGroups ()
         gmsh::model::addPhysicalGroup(projData.physicalGroupMaterials[i].dim,physicalGroupList,-1,groupName.c_str());
         i++;
     }
+
+    std::cout << "exit OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
 }
 
 void OpenParEMg::setMaterials ()
 {
-    //std::cout << "OpenParEMg::setMaterials" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::setMaterials" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < drawing->childCount()) {
@@ -4310,12 +4317,13 @@ void OpenParEMg::on_actionOpen_triggered ()
             //resetDimTag(&drawing);
             renumberDimTag();
             setMaterials();
-            setPhysicalGroups();
+            //setPhysicalGroups();
         }
 
         // load mesh, if any, and draw
         if (strcmp(projData.mesh_file,"") != 0) {
             loadMeshFile(QString::fromStdString(projData.mesh_file));
+            setPhysicalGroups();
         }
 
         // load last results to the tabs, if any
@@ -5674,6 +5682,8 @@ bool OpenParEMg::saveDrawingFile (QString filename)
 
 bool OpenParEMg::loadDrawingFile ()
 {
+    std::cout << "OpenParEMg::loadDrawingFile" << std::endl; std::cout.flush();
+
     QString filename=absolutePath;
     filename.append("/").append(projData.project_name);
     filename.append(".opd");
@@ -6331,7 +6341,13 @@ void OpenParEMg::drawMesh()
     setMenusI(62);
 }
 
-
+void OpenParEMg::finishDrawMesh ()
+{
+    meshObsolete=false;
+    drawing->reset_modifiedSinceMeshRegen();
+    mesh->show(true);
+    setMenusI(63);
+}
 
 void OpenParEMg::deleteMesh (bool deleteMeshFile)
 {
@@ -6464,18 +6480,21 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     }
 
     setPhysicalGroups();
-    drawMesh();
-    meshObsolete=false;
-    drawing->reset_modifiedSinceMeshRegen();
 
-    mesh->show(true);
-
-    ui->drawingWindow->updateViewer();
-    setMenusI(63);
+    // draw the mesh - use a concurrent run so the GUI doesn't lock up on long draws
+    // This may or may not be helping.
+    // ToDo: keep experimenting
+    QFutureWatcher<void> *watcher=new QFutureWatcher<void>(this);
+    connect(watcher, &QFutureWatcher<void>::finished,
+            this, &OpenParEMg::finishDrawMesh);
+    QFuture<void> future=QtConcurrent::run(&OpenParEMg::drawMesh,this);
+    watcher->setFuture(future);
 }
 
 void OpenParEMg::loadMeshFile (QString meshfile)
 {
+    //std::cout << "OpenParEMg::loadMeshFile" << std::endl; std::cout.flush();
+
     if (QFile::exists(meshfile)) {
 
         if (mesh->childCount() > 0) {
@@ -6497,7 +6516,6 @@ void OpenParEMg::loadMeshFile (QString meshfile)
             cstrFromQString (&(projData.mesh_file),meshfile);
             projectChanged=true;
         }
-
     }
 
     setMenusI(64);

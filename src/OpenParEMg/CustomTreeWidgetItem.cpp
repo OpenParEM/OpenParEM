@@ -4442,6 +4442,7 @@ void RootMeshItem::show (bool update)
 {
     int i=0;
     while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
         MeshItem *meshItem=dynamic_cast<MeshItem *>(child(i));
         if (meshItem) meshItem->show(false);
         i++;
@@ -4511,7 +4512,8 @@ bool MeshItem::isValidHide ()
 
 void MeshItem::show (bool update)
 {
-    // std::cout << "MeshItem::show  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    std::cout << "MeshItem::show  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+
     // long unsigned int i=0;
     // while (i < meshEntities.size()) {
     //     mw->ui->drawingWindow->displayShape(meshEntities[i]);

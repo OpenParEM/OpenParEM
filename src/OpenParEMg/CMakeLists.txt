@@ -6,14 +6,14 @@ set(CMAKE_VERBOSE_MAKEFILE 1)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD 11)
 
-# for leak detection (very slow)
+# for leak detection
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g")
 set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer ")
 
 
 add_compile_options (-DHAS_GUI -DHAS_MPI)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Svg)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Svg Concurrent)
 find_package(OpenGL REQUIRED) #except QOpenGLWidget, which is handled separately below (include and lib)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} /opt/Qt/6.9.0/gcc_64/include/QtOpenGLWidgets /home/briany/OpenParEM/src/OpenParEM3D /home/briany/OpenParEM/include /home/briany/OpenParEM/lib /home/briany/OpenParEM/src/OpenParEMCommon /home/briany/OpenParEM/include/opencascade /usr/lib/gcc/x86_64-linux-gnu/9/include /usr/include/GL)
@@ -144,6 +144,7 @@ target_link_libraries(OpenParEMg
         Qt::Core
         Qt::Widgets
         Qt6::Svg
+        Qt6::Concurrent
         ${OpenCASCADE_LIBS}
         ${PETSC_LIBS}
         ${MPI_LIBS}
