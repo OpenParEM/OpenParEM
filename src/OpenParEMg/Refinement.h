@@ -41,7 +41,7 @@ public:
     ~OPEMg_Refinement();
 
 private slots:
-    void on_requiredPasses_textChanged (const QString &arg1);
+    void on_requiredPasses_editingFinished (const QString &arg1);
     void on_refinementVariable_activated (int);
     void on_refineOk_clicked ();
     void on_refineCancel_clicked ();

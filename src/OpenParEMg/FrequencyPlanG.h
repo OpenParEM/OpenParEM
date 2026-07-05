@@ -53,7 +53,7 @@ private slots:
     void on_frequencyPlanGCancel_clicked ();
     void typeComboBox_changed (int);
     void refine_checkStateChanged ();
-    void frequency_textChanged ();
+    void frequency_editingFinished ();
     void on_AMR_checkStateChanged (const Qt::CheckState &arg1);
     void on_adaptiveFrequencies_activated (int);
     bool check_inputs ();

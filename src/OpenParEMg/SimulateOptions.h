@@ -42,7 +42,7 @@ public:
     ~SimOptions();
 
 private slots:
-    void on_referenceImpedance_textChanged (const QString &arg1);
+    void on_referenceImpedance_editingFinished (const QString &arg1);
     void on_simulateOptionCancel_clicked ();
     void on_simulateOptionOk_clicked ();
     void on_frequencyUnit_currentIndexChanged (int);

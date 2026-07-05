@@ -43,8 +43,8 @@ public:
 
 private slots:
     void on_meshSaveRefined_checkStateChanged (const Qt::CheckState &arg1);
-    void on_meshRefinementFraction_textChanged (const QString &arg1);
-    void on_meshQualityLimit_textChanged (const QString &arg1);
+    void on_meshRefinementFraction_finishedEditing (const QString &arg1);
+    void on_meshQualityLimit_finishedEditing (const QString &arg1);
     void on_meshOptionOk_clicked ();
     void on_meshOptionCancel_clicked ();
     void on_meshSizeMultiplier_valueChanged (double arg1);

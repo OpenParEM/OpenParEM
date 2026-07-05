@@ -280,21 +280,21 @@ void SimOptions::set_projData (struct projectData *a)
     ui->simulateOptionOk->setEnabled(false);
 }
 
-void SimOptions::on_frequencyUnit_currentIndexChanged(int index)
+void SimOptions::on_frequencyUnit_currentIndexChanged (int index)
 {
     frequencyUnit=ui->frequencyUnit->currentText();
     ui->simulateOptionOk->setEnabled(true);
     ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_referenceImpedance_textChanged(const QString &arg1)
+void SimOptions::on_referenceImpedance_editingFinished (const QString &arg1)
 {
     referenceImpedance=arg1.toDouble();
     ui->simulateOptionOk->setEnabled(true);
     ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_simulateOptionOk_clicked()
+void SimOptions::on_simulateOptionOk_clicked ()
 {
     // reference_impedance
     if (projData->reference_impedance != referenceImpedance) {
@@ -531,12 +531,12 @@ void SimOptions::on_simulateOptionOk_clicked()
     close();
 }
 
-void SimOptions::on_simulateOptionCancel_clicked()
+void SimOptions::on_simulateOptionCancel_clicked ()
 {
     close();
 }
 
-void SimOptions::on_normalizeSparam_checkStateChanged(const Qt::CheckState &arg1)
+void SimOptions::on_normalizeSparam_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) {
         ui->referenceImpedance->setEnabled(true);
@@ -563,7 +563,7 @@ void SimOptions::on_normalizeSparam_checkStateChanged(const Qt::CheckState &arg1
     ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_slotCount_valueChanged(int arg1)
+void SimOptions::on_slotCount_valueChanged (int arg1)
 {
     slotCount=arg1;
     ui->simulateOptionOk->setEnabled(true);

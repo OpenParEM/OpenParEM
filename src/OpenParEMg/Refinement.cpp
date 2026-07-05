@@ -21,7 +21,7 @@
 #include "Refinement.h"
 #include "ui_Refinement.h"
 
-OPEMg_Refinement::OPEMg_Refinement(QWidget *parent)
+OPEMg_Refinement::OPEMg_Refinement (QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::OPEMg_Refinement)
 {
@@ -38,12 +38,12 @@ OPEMg_Refinement::OPEMg_Refinement(QWidget *parent)
     ui->refineOk->setEnabled(false);
 }
 
-OPEMg_Refinement::~OPEMg_Refinement()
+OPEMg_Refinement::~OPEMg_Refinement ()
 {
     delete ui;
 }
 
-void OPEMg_Refinement::set_projData(struct projectData *a)
+void OPEMg_Refinement::set_projData (struct projectData *a)
 {
     projData=a;
 
@@ -93,15 +93,13 @@ void OPEMg_Refinement::set_projData(struct projectData *a)
     ui->refineOk->setEnabled(false);
 }
 
-
-void OPEMg_Refinement::on_requiredPasses_textChanged(const QString &arg1)
+void OPEMg_Refinement::on_requiredPasses_editingFinished (const QString &arg1)
 {
     ui->refineOk->setEnabled(true);
     ui->refineOk->setFocus();
 }
 
-
-void OPEMg_Refinement::on_refinementVariable_activated(int index)
+void OPEMg_Refinement::on_refinementVariable_activated (int index)
 {
     if (index == 0) {
         ui->absoluteTolLabel->setEnabled(false);
@@ -115,8 +113,7 @@ void OPEMg_Refinement::on_refinementVariable_activated(int index)
     ui->refineOk->setFocus();
 }
 
-
-void OPEMg_Refinement::on_refineOk_clicked()
+void OPEMg_Refinement::on_refineOk_clicked ()
 {
     if (projData->refinement_iteration_min != ui->refineMin->value()) {
         projData->refinement_iteration_min=ui->refineMin->value();
@@ -164,13 +161,12 @@ void OPEMg_Refinement::on_refineOk_clicked()
     close();
 }
 
-
-void OPEMg_Refinement::on_refineCancel_clicked()
+void OPEMg_Refinement::on_refineCancel_clicked ()
 {
     close();
 }
 
-void OPEMg_Refinement::on_relativeTol_editingFinished()
+void OPEMg_Refinement::on_relativeTol_editingFinished ()
 {
     double relativeTol=ui->relativeTol->text().toDouble();
     if (relativeTol < 1e-15*(1-1e-14)) {
@@ -190,8 +186,7 @@ void OPEMg_Refinement::on_relativeTol_editingFinished()
     ui->refineOk->setFocus();
 }
 
-
-void OPEMg_Refinement::on_absoluteTol_editingFinished()
+void OPEMg_Refinement::on_absoluteTol_editingFinished ()
 {
     double absoluteTol=ui->absoluteTol->text().toDouble();
     if (absoluteTol < 1e-15*(1-1e-14)) {
@@ -211,16 +206,14 @@ void OPEMg_Refinement::on_absoluteTol_editingFinished()
     ui->refineOk->setFocus();
 }
 
-
-void OPEMg_Refinement::on_refineMin_valueChanged(int arg1)
+void OPEMg_Refinement::on_refineMin_valueChanged (int arg1)
 {
     if (arg1 > ui->refineMax->value()) ui->refineMin->setValue(ui->refineMax->value());
     ui->refineOk->setEnabled(true);
     ui->refineOk->setFocus();
 }
 
-
-void OPEMg_Refinement::on_refineMax_valueChanged(int arg1)
+void OPEMg_Refinement::on_refineMax_valueChanged (int arg1)
 {
     if (arg1 < ui->refineMin->value()) ui->refineMax->setValue(ui->refineMin->value());
     ui->refineOk->setEnabled(true);
