@@ -68,6 +68,15 @@ protected:
         QLineEdit::focusOutEvent(event);
     }
 
+    void mouseDoubleClickEvent(QMouseEvent *event) override {
+        if (event->button() == Qt::LeftButton) {
+            selectAll();
+            event->accept();
+            return;
+        }
+        QLineEdit::mouseDoubleClickEvent(event);
+    }
+
 signals:
     void CustomEditFinished (QString text, BaseItem *, BoundaryDatabase *);
 
