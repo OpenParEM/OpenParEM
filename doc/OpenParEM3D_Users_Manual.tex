@@ -1759,6 +1759,7 @@ OpenParEM3D is controlled by a text file consisting of keyword/value pairs.  The
     debug.refine.preconditioner   & int    & 1      & Select the pre-conditioner to use for adaptive mesh refinement mesh error calculation.  Select 0 for the preconditioner used in OpenParEM3D Version 1.0 \\
     debug.tempfiles.keep          & bool   & false  & Keep temporary files \\
     gui.slot.count                & int    & 5      & Only used for the GUI OpenParEMg. Number of slots to use when running OpenParEM3D.  Used on mpirun as mpirun -np gui.slot.count \\
+    gui.oversubscribe             & bool   & true   & Only used for the GUI OpenParEMg. Use the oversubscribe keyword when running MPI jobs.  Only for OpenMPI.  Uncheck for MPICH. \\
     gui.units                     & text   & mm     & Only used for the GUI OpenParEMg. Length unit for the various forms: m, mm, cm, um, ft, in, mil. \\
     gui.grid.size                 & double & 10     & Only used for the GUI OpenParEMg. Size of the drawing grid as a multiple of the units set with gui.units. \\ 
     gui.mesh.scale                & double & 1      & Only used for the GUI OpenParEMg. Scale factor elements in a generated mesh. \\

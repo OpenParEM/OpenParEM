@@ -733,8 +733,8 @@ class Port
       void print ();
       void save (std::ofstream *);
       void printSolution (std::string);
-      void printPaths(std::vector<Path *> *);
-      bool solve (std::string *, std::string *);
+      void printPaths (std::vector<Path *> *);
+      bool solve (struct projectData *, std::string *, std::string *);
       bool loadSolution (std::string *,double);
       bool loadSizes_tz (std::string *);
       bool loadTiTv (std::string *);

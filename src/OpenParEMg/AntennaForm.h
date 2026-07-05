@@ -65,22 +65,22 @@ private slots:
     void on_savePlots3D_stateChanged (int arg1);
     void on_add2Dslice_clicked ();
     void on_delete2Dslice_clicked ();
-    void on_plotRange2D_valueChanged (double arg1);
-    void on_axisInterval2D_valueChanged (double arg1);
-    void on_plotResolution2D_valueChanged (double arg1);
+    void on_plotRange2D_editingFinished ();
+    void on_axisInterval2D_editingFinished ();
+    void on_plotResolution2D_editingFinished ();
     void on_dataSummary2D_stateChanged (int arg1);
     void on_savePlots2D_stateChanged (int arg1);
-    void on_currentResolution_valueChanged (double arg1);
+    void on_currentResolution_editingFinished ();
     void on_saveRawData_stateChanged (int arg1);
     void on_OkButton_clicked ();
     void on_CancelButton_clicked ();
 
     void quantityBox_changed (int);
     void planeBox_changed (int);
-    void thetaBox_changed (int);
-    void phiBox_changed (double);
-    void latitudeBox_changed (double);
-    void rotationBox_changed (double);
+    void thetaBox_changed ();
+    void phiBox_changed ();
+    void latitudeBox_changed ();
+    void rotationBox_changed ();
 
 private:
     Ui::AntennaForm *ui;

@@ -157,6 +157,7 @@ struct projectData {
 
    char *gui_units;
    int gui_slot_count;
+   int gui_oversubscribe;
    double gui_grid_size;
    double gui_mesh_scale;
    double gui_mesh_minSize;

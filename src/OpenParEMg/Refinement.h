@@ -47,8 +47,8 @@ private slots:
     void on_refineCancel_clicked ();
     void on_relativeTol_editingFinished ();
     void on_absoluteTol_editingFinished ();
-    void on_refineMin_valueChanged (int);
-    void on_refineMax_valueChanged (int);
+    void on_refineMin_editingFinished ();
+    void on_refineMax_editingFinished ();
 
 private:
     Ui::OPEMg_Refinement *ui;

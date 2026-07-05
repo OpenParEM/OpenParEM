@@ -29,7 +29,7 @@
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -800,7 +800,7 @@
         <item>
          <widget class="QLabel" name="label_15">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of slots used to perform parallel processing. For a single computer, this is the number of physical CPU cores (not threads) or less. Experiment to find the quickest run time.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>The number of slots used to perform parallel processing. For a single computer, this is the number of physical CPU cores (not threads) or less. Experiment to find the quickest run time.</string>
           </property>
           <property name="text">
            <string>Parallel Processing Slot Count</string>
@@ -822,7 +822,7 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string/>
           </property>
           <property name="minimum">
            <number>1</number>
@@ -844,6 +844,16 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="oversubscribe">
+          <property name="toolTip">
+           <string>Oversubscribe for OpenMPI.  Uncheck for MPICH.</string>
+          </property>
+          <property name="text">
+           <string>Oversubscribe</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>

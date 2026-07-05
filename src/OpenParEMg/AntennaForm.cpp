@@ -408,7 +408,7 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     // layout->setAlignment(thetaBox,Qt::AlignCenter);
 
     ui->patternTable->setCellWidget(currentRow,2,container);
-    connect(thetaBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::thetaBox_changed);
+    connect(thetaBox,&QDoubleSpinBox::editingFinished,this,&AntennaForm::thetaBox_changed);
 
     QDoubleSpinBox *phiBox = new QDoubleSpinBox();
     phiBox->setMinimum(-180);
@@ -428,7 +428,7 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     // layout->setAlignment(phiBox,Qt::AlignCenter);
 
     ui->patternTable->setCellWidget(currentRow,3,container);
-    connect(phiBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::phiBox_changed);
+    connect(phiBox,&QDoubleSpinBox::editingFinished,this,&AntennaForm::phiBox_changed);
 
 
     if (pattern->plane) {
@@ -466,7 +466,7 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     // layout->setAlignment(latitudeBox,Qt::AlignCenter);
 
     ui->patternTable->setCellWidget(currentRow,4,container);
-    connect(latitudeBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::latitudeBox_changed);
+    connect(latitudeBox,&QDoubleSpinBox::editingFinished,this,&AntennaForm::latitudeBox_changed);
 
 
     QDoubleSpinBox *rotationBox = new QDoubleSpinBox();
@@ -487,7 +487,7 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     // layout->setAlignment(rotationBox,Qt::AlignCenter);
 
     ui->patternTable->setCellWidget(currentRow,5,container);
-    connect(rotationBox,&QDoubleSpinBox::valueChanged,this,&AntennaForm::rotationBox_changed);
+    connect(rotationBox,&QDoubleSpinBox::editingFinished,this,&AntennaForm::rotationBox_changed);
 }
 
 void AntennaForm::on_add2Dslice_clicked ()
@@ -549,23 +549,23 @@ void AntennaForm::on_delete2Dslice_clicked ()
     ui->OkButton->setFocus();
 }
 
-void AntennaForm::on_plotRange2D_valueChanged (double arg1)
+void AntennaForm::on_plotRange2D_editingFinished ()
 {
-    plotRange2D=arg1;
+    plotRange2D=ui->plotRange2D->value();
     ui->OkButton->setEnabled(true);
     ui->OkButton->setFocus();
 }
 
-void AntennaForm::on_axisInterval2D_valueChanged (double arg1)
+void AntennaForm::on_axisInterval2D_editingFinished ()
 {
-    axisInterval2D=arg1;
+    axisInterval2D=ui->axisInterval2D->value();
     ui->OkButton->setEnabled(true);
     ui->OkButton->setFocus();
 }
 
-void AntennaForm::on_plotResolution2D_valueChanged (double arg1)
+void AntennaForm::on_plotResolution2D_editingFinished ()
 {
-    plotResolution2D=arg1;
+    plotResolution2D=ui->plotResolution2D->value();
     ui->OkButton->setEnabled(true);
     ui->OkButton->setFocus();
 }
@@ -584,9 +584,9 @@ void AntennaForm::on_savePlots2D_stateChanged (int arg1)
     ui->OkButton->setFocus();
 }
 
-void AntennaForm::on_currentResolution_valueChanged (double arg1)
+void AntennaForm::on_currentResolution_editingFinished ()
 {
-    currentResolution=arg1;
+    currentResolution=ui->currentResolution->value();
     ui->OkButton->setEnabled(true);
     ui->OkButton->setFocus();
 }
@@ -997,25 +997,25 @@ void AntennaForm::planeBox_changed (int newIndex)
     ui->OkButton->setFocus();
 }
 
-void AntennaForm::thetaBox_changed (int newValue)
+void AntennaForm::thetaBox_changed ()
 {
     ui->OkButton->setEnabled(true);
     ui->OkButton->setFocus();
 }
 
-void AntennaForm::phiBox_changed (double newValue)
+void AntennaForm::phiBox_changed ()
 {
     ui->OkButton->setEnabled(true);
     ui->OkButton->setFocus();
 }
 
-void AntennaForm::latitudeBox_changed (double newValue)
+void AntennaForm::latitudeBox_changed ()
 {
     ui->OkButton->setEnabled(true);
     ui->OkButton->setFocus();
 }
 
-void AntennaForm::rotationBox_changed (double newValue)
+void AntennaForm::rotationBox_changed ()
 {
     ui->OkButton->setEnabled(true);
     ui->OkButton->setFocus();

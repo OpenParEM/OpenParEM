@@ -41,8 +41,8 @@ public:
     void set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
 
 private slots:
-    void on_units_currentTextChanged(const QString &arg1);
-    void on_gridSize_valueChanged(double arg1);
+    void on_units_currentTextChanged (const QString &arg1);
+    void on_gridSize_editingFinished ();
     void on_OkButton_clicked ();
     void on_CancelButton_clicked ();
 

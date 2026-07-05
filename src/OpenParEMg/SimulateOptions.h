@@ -42,7 +42,7 @@ public:
     ~SimOptions();
 
 private slots:
-    void on_referenceImpedance_editingFinished (const QString &arg1);
+    void on_referenceImpedance_editingFinished ();
     void on_simulateOptionCancel_clicked ();
     void on_simulateOptionOk_clicked ();
     void on_frequencyUnit_currentIndexChanged (int);
@@ -50,14 +50,14 @@ private slots:
     void on_touchstoneFormat_activated (int);
     void on_tolerance2D_editingFinished ();
     void on_tolerance3D_editingFinished ();
-    void on_temperature_valueChanged (double);
-    void on_iterationLimit_valueChanged (int);
+    void on_temperature_editingFinished ();
+    void on_iterationLimit_editingFinished ();
     void on_checkHomogeneous_checkStateChanged (const Qt::CheckState &arg1);
-    void on_modesBuffer_valueChanged (int);
+    void on_modesBuffer_editingFinished ();
     void on_checkClosedLoop_checkStateChanged (const Qt::CheckState &arg1);
     void on_accurateResidual_stateChanged (int);
     void on_shiftInvert_checkStateChanged (const Qt::CheckState &arg1);
-    void on_shiftFactor_valueChanged (double);
+    void on_shiftFactor_editingFinished ();
     void on_saveFields_checkStateChanged (const Qt::CheckState &arg1);
     void on_calculatePoynting_checkStateChanged (const Qt::CheckState &arg1);
     void on_showProjectFile_checkStateChanged (const Qt::CheckState &arg1);
@@ -74,12 +74,14 @@ private slots:
     void on_createTestCases_checkStateChanged (const Qt::CheckState &arg1);
     void on_showDetailedCases_checkStateChanged (const Qt::CheckState &arg1);
     void on_initialGuess_currentIndexChanged (int);
-    void on_slotCount_valueChanged(int arg1);
-    void on_femOrder_valueChanged(int arg1);
+    void on_slotCount_editingFinished ();
+    void on_femOrder_editingFinished ();
     void on_solverIterations_checkStateChanged(const Qt::CheckState &arg1);
     void on_meshRefinement_checkStateChanged(const Qt::CheckState &arg1);
     void on_postProcessing_checkStateChanged(const Qt::CheckState &arg1);
     void on_showLicense_checkStateChanged(const Qt::CheckState &arg1);
+
+    void on_oversubscribe_stateChanged(int arg1);
 
 private:
 
@@ -122,6 +124,7 @@ private:
     int showLicense;
     int createTestCases;
     int showDetailedCases;
+    int oversubscribe;
 
     bool simulationRunning;
 };

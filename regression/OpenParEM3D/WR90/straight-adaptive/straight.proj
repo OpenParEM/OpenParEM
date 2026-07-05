@@ -5,7 +5,7 @@
 mesh.file straight.msh
 //mesh.save.refined false
 //mesh.refinement.fraction 0.005
-mesh.quality.limit 1e9
+mesh.quality.limit 1000000000
 //fem.order 1
 port.definition.file straight_ports.txt
 //refinement.frequency high
@@ -65,7 +65,7 @@ solution.iteration.limit 10000
 //debug.refine.preconditioner 1
 //gui.units mm
 //gui.grid.size 10
-gui.slot.count 12
+gui.slot.count 8
 gui.mesh.scale 0.9
 //gui.mesh.minSize 0
 gui.mesh.maxSize 99.99

@@ -206,15 +206,17 @@ void OPEMg_Refinement::on_absoluteTol_editingFinished ()
     ui->refineOk->setFocus();
 }
 
-void OPEMg_Refinement::on_refineMin_valueChanged (int arg1)
+void OPEMg_Refinement::on_refineMin_editingFinished ()
 {
+    int arg1=ui->refineMin->value();
     if (arg1 > ui->refineMax->value()) ui->refineMin->setValue(ui->refineMax->value());
     ui->refineOk->setEnabled(true);
     ui->refineOk->setFocus();
 }
 
-void OPEMg_Refinement::on_refineMax_valueChanged (int arg1)
+void OPEMg_Refinement::on_refineMax_editingFinished ()
 {
+    int arg1=ui->refineMax->value();
     if (arg1 < ui->refineMin->value()) ui->refineMax->setValue(ui->refineMin->value());
     ui->refineOk->setEnabled(true);
     ui->refineOk->setFocus();

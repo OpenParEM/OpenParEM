@@ -47,6 +47,7 @@ void SimOptions::set_projData (struct projectData *a)
     frequencyUnit=projData->touchstone_frequency_unit;
     touchstoneFormat=projData->touchstone_format;
     slotCount=projData->gui_slot_count;
+    oversubscribe=projData->gui_oversubscribe;
     femOrder=projData->fem_order;
     temperature=projData->solution_temperature;
     tolerance2D=projData->solution_2D_tolerance;
@@ -129,6 +130,7 @@ void SimOptions::set_projData (struct projectData *a)
     ui->touchstoneFormat->setCurrentIndex(index);
 
     ui->slotCount->setValue(slotCount);
+    ui->oversubscribe->setChecked(oversubscribe);
     ui->femOrder->setValue(femOrder);
     ui->temperature->setValue(temperature);
 
@@ -241,6 +243,7 @@ void SimOptions::set_projData (struct projectData *a)
 
     if (simulationRunning) {
         ui->slotCount->setEnabled(false);
+        ui->oversubscribe->setEnabled(false);
         ui->femOrder->setEnabled(false);
         ui->temperature->setEnabled(false);
         ui->tolerance2D->setEnabled(false);
@@ -287,9 +290,9 @@ void SimOptions::on_frequencyUnit_currentIndexChanged (int index)
     ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_referenceImpedance_editingFinished (const QString &arg1)
+void SimOptions::on_referenceImpedance_editingFinished ()
 {
-    referenceImpedance=arg1.toDouble();
+    referenceImpedance=ui->referenceImpedance->value();
     ui->simulateOptionOk->setEnabled(true);
     ui->simulateOptionOk->setFocus();
 }
@@ -331,6 +334,12 @@ void SimOptions::on_simulateOptionOk_clicked ()
     // slot count
     if (projData->gui_slot_count != slotCount) {
         projData->gui_slot_count=slotCount;
+        projData->modified=1;
+    }
+
+    // oversubscribe
+    if (projData->gui_oversubscribe != oversubscribe) {
+        projData->gui_oversubscribe=oversubscribe;
         projData->modified=1;
     }
 
@@ -563,9 +572,9 @@ void SimOptions::on_normalizeSparam_checkStateChanged (const Qt::CheckState &arg
     ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_slotCount_valueChanged (int arg1)
+void SimOptions::on_slotCount_editingFinished ()
 {
-    slotCount=arg1;
+    slotCount=ui->slotCount->value();
     ui->simulateOptionOk->setEnabled(true);
     ui->simulateOptionOk->setFocus();
 }
@@ -577,9 +586,9 @@ void SimOptions::on_touchstoneFormat_activated (int index)
     ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_temperature_valueChanged (double arg1)
+void SimOptions::on_temperature_editingFinished ()
 {
-    temperature=arg1;
+    temperature=ui->temperature->value();
     ui->simulateOptionOk->setEnabled(true);
     ui->simulateOptionOk->setFocus();
 }
@@ -624,9 +633,9 @@ void SimOptions::on_tolerance3D_editingFinished ()
     ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_iterationLimit_valueChanged (int arg1)
+void SimOptions::on_iterationLimit_editingFinished ()
 {
-    iterationLimit=arg1;
+    iterationLimit=ui->iterationLimit->value();
     ui->simulateOptionOk->setEnabled(true);
     ui->simulateOptionOk->setFocus();
 }
@@ -641,9 +650,9 @@ void SimOptions::on_checkHomogeneous_checkStateChanged (const Qt::CheckState &ar
 }
 
 
-void SimOptions::on_modesBuffer_valueChanged (int arg1)
+void SimOptions::on_modesBuffer_editingFinished ()
 {
-    modesBuffer=arg1;
+    modesBuffer=ui->modesBuffer->value();
     ui->simulateOptionOk->setEnabled(true);
     ui->simulateOptionOk->setFocus();
 }
@@ -682,9 +691,9 @@ void SimOptions::on_shiftInvert_checkStateChanged (const Qt::CheckState &arg1)
 }
 
 
-void SimOptions::on_shiftFactor_valueChanged (double arg1)
+void SimOptions::on_shiftFactor_editingFinished ()
 {
-    shiftFactor=arg1;
+    shiftFactor=ui->shiftFactor->value();
     ui->simulateOptionOk->setEnabled(true);
     ui->simulateOptionOk->setFocus();
 }
@@ -836,9 +845,9 @@ void SimOptions::on_initialGuess_currentIndexChanged (int index)
     ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_femOrder_valueChanged (int arg1)
+void SimOptions::on_femOrder_editingFinished ()
 {
-    femOrder=arg1;
+    femOrder=ui->femOrder->value();
     ui->simulateOptionOk->setEnabled(true);
     ui->simulateOptionOk->setFocus();
 }
@@ -872,6 +881,14 @@ void SimOptions::on_showLicense_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) showLicense=1;
     else showLicense=0;
+    ui->simulateOptionOk->setEnabled(true);
+    ui->simulateOptionOk->setFocus();
+}
+
+void SimOptions::on_oversubscribe_stateChanged (int arg1)
+{
+    oversubscribe=0;
+    if (arg1 > 0) oversubscribe=1;
     ui->simulateOptionOk->setEnabled(true);
     ui->simulateOptionOk->setFocus();
 }

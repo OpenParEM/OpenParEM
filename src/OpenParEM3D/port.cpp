@@ -5941,7 +5941,7 @@ void eh (MPI_Comm *comm, int *err, ...)
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3085: Failed to launch OpenParEM2D.\n");
 }
 
-bool Port::solve (string *directory, string *logFile)
+bool Port::solve (struct projectData *projData, string *directory, string *logFile)
 {
    PetscMPIInt size,rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -5972,13 +5972,20 @@ bool Port::solve (string *directory, string *logFile)
 
    int *error_codes=(int *)malloc(size*sizeof(int));
 
+   // MPI_INFO object
+   MPI_Info info;
+   MPI_Info_create(&info);
+   if (projData->gui_oversubscribe) {
+       MPI_Info_set(info,"map_by", "node:OVERSUBSCRIBE");
+   }
+
    // launch the jobs from rank 0
    MPI_Errhandler errorHandler;
    MPI_Comm_create_errhandler(eh,&errorHandler);
    MPI_Comm_set_errhandler(PETSC_COMM_WORLD,errorHandler);
 
    MPI_Comm MPI_PORT_COMM;
-   MPI_Comm_spawn ("OpenParEM2D",argv,size,MPI_INFO_NULL,0,PETSC_COMM_WORLD,&MPI_PORT_COMM,error_codes);
+   MPI_Comm_spawn ("OpenParEM2D",argv,size,info,0,PETSC_COMM_WORLD,&MPI_PORT_COMM,error_codes);
 
    // check that all processes spawned
    bool fail=false;
@@ -8567,7 +8574,7 @@ bool BoundaryDatabase::solvePorts (int fem_order, ParMesh *pmesh, vector<ParSubM
       //prefix(); PetscPrintf(PETSC_COMM_WORLD,"         ------------------------------------------------------------------------------------------------------------------------------------\n");
 
       // run the 2D simulation
-      if (portList[i]->solve(&tempDirectory,&logFile)) fail=true;
+      if (portList[i]->solve(projData,&tempDirectory,&logFile)) fail=true;
 
       // verify that the lock file is removed
       stringstream ssLock;

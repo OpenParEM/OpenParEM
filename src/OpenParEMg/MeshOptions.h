@@ -43,13 +43,13 @@ public:
 
 private slots:
     void on_meshSaveRefined_checkStateChanged (const Qt::CheckState &arg1);
-    void on_meshRefinementFraction_valueChanged (double arg1);
-    void on_meshQualityLimit_valueChanged (double arg1);
+    void on_meshRefinementFraction_editingFinished ();
+    void on_meshQualityLimit_editingFinished ();
     void on_meshOptionOk_clicked ();
     void on_meshOptionCancel_clicked ();
-    void on_meshSizeMultiplier_valueChanged (double arg1);
-    void on_meshMinElementSize_valueChanged (double arg1);
-    void on_meshMaxElementSize_valueChanged (double arg1);
+    void on_meshSizeMultiplier_editingFinished ();
+    void on_meshMinElementSize_editingFinished ();
+    void on_meshMaxElementSize_editingFinished ();
 
 private:
     Ui::MeshDialog *ui;

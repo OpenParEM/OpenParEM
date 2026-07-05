@@ -6709,6 +6709,13 @@ void OpenParEMg::on_actionRun_triggered ()
 
     int *error_codes=(int *)malloc(projData.gui_slot_count*sizeof(int));
 
+    // MPI_INFO object
+    MPI_Info info;
+    MPI_Info_create(&info);
+    if (projData.gui_oversubscribe) {
+        MPI_Info_set(info,"map_by", "node:OVERSUBSCRIBE");
+    }
+
     // run the job
 
     MPI_Errhandler errorHandler;
@@ -6718,7 +6725,7 @@ void OpenParEMg::on_actionRun_triggered ()
     if (MPI_PORT_COMM) MPI_Comm_free(MPI_PORT_COMM);
     MPI_PORT_COMM=new MPI_Comm();
 
-    MPI_Comm_spawn ("OpenParEM3D",argv,projData.gui_slot_count,MPI_INFO_NULL,0,PETSC_COMM_WORLD,MPI_PORT_COMM,error_codes);
+    MPI_Comm_spawn ("OpenParEM3D",argv,projData.gui_slot_count,info,0,PETSC_COMM_WORLD,MPI_PORT_COMM,error_codes);
 
     // check that all processes spawned
     bool fail=false;
