@@ -99,16 +99,16 @@ void MeshDialog::on_meshSaveRefined_checkStateChanged (const Qt::CheckState &arg
     ui->meshOptionOk->setFocus();
 }
 
-void MeshDialog::on_meshRefinementFraction_finishedEditing (const QString &arg1)
+void MeshDialog::on_meshRefinementFraction_valueChanged (double arg1)
 {
-    meshRefinementFraction=arg1.toDouble();
+    meshRefinementFraction=arg1;
     ui->meshOptionOk->setEnabled(true);
     ui->meshOptionOk->setFocus();
 }
 
-void MeshDialog::on_meshQualityLimit_finishedEditing (const QString &arg1)
+void MeshDialog::on_meshQualityLimit_valueChanged (double arg1)
 {
-    meshQualityLimit=arg1.toDouble();
+    meshQualityLimit=arg1;
     ui->meshOptionOk->setEnabled(true);
     ui->meshOptionOk->setFocus();
 }
