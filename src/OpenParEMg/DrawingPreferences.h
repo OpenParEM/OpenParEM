@@ -42,7 +42,7 @@ public:
 
 private slots:
     void on_units_currentTextChanged (const QString &arg1);
-    void on_gridSize_editingFinished ();
+    void on_gridSize_valueChanged (double);
     void on_OkButton_clicked ();
     void on_CancelButton_clicked ();
 

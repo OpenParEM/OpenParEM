@@ -255,7 +255,6 @@ void AntennaForm::on_patternG3D_stateChanged (int arg1)
     });
 
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_patternD3D_stateChanged (int arg1)
@@ -264,7 +263,6 @@ void AntennaForm::on_patternD3D_stateChanged (int arg1)
     if (arg1 == 2) patternD3D=true;
     check3Dpatterns();
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_patternEtheta3D_stateChanged (int arg1)
@@ -273,7 +271,6 @@ void AntennaForm::on_patternEtheta3D_stateChanged (int arg1)
     if (arg1 == 2) patternEtheta3D=true;
     check3Dpatterns();
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_patternEphi3D_stateChanged (int arg1)
@@ -282,7 +279,6 @@ void AntennaForm::on_patternEphi3D_stateChanged (int arg1)
     if (arg1 == 2) patternEphi3D=true;
     check3Dpatterns();
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_patternHtheta3D_stateChanged (int arg1)    // new pattern
@@ -292,7 +288,6 @@ void AntennaForm::on_patternHtheta3D_stateChanged (int arg1)    // new pattern
     if (arg1 == 2) patternHtheta3D=true;
     check3Dpatterns();
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_patternHphi3D_stateChanged (int arg1)
@@ -301,28 +296,24 @@ void AntennaForm::on_patternHphi3D_stateChanged (int arg1)
     if (arg1 == 2) patternHphi3D=true;
     check3Dpatterns();
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_plotResolution3D_currentIndexChanged (int index)
 {
     plotResolution3D=index;
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_generateSphere_stateChanged (int arg1)
 {
     generateSphere=arg1;
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_savePlots3D_stateChanged (int arg1)
 {
     savePlots3D=arg1;
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
@@ -527,7 +518,6 @@ void AntennaForm::on_add2Dslice_clicked ()
     ui->delete2Dslice->setEnabled(true);
 
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_delete2Dslice_clicked ()
@@ -546,56 +536,48 @@ void AntennaForm::on_delete2Dslice_clicked ()
     if (ui->patternTable->rowCount() == 0) ui->delete2Dslice->setEnabled(false);
 
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
-void AntennaForm::on_plotRange2D_editingFinished ()
+void AntennaForm::on_plotRange2D_valueChanged (double arg1)
 {
-    plotRange2D=ui->plotRange2D->value();
+    plotRange2D=arg1;
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
-void AntennaForm::on_axisInterval2D_editingFinished ()
+void AntennaForm::on_axisInterval2D_valueChanged (double arg1)
 {
-    axisInterval2D=ui->axisInterval2D->value();
+    axisInterval2D=arg1;
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
-void AntennaForm::on_plotResolution2D_editingFinished ()
+void AntennaForm::on_plotResolution2D_valueChanged (double arg1)
 {
     plotResolution2D=ui->plotResolution2D->value();
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_dataSummary2D_stateChanged (int arg1)
 {
     dataSummary2D=arg1;
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_savePlots2D_stateChanged (int arg1)
 {
     savePlots2D=arg1;
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
-void AntennaForm::on_currentResolution_editingFinished ()
+void AntennaForm::on_currentResolution_valueChanged (double arg1)
 {
-    currentResolution=ui->currentResolution->value();
+    currentResolution=arg1;
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::on_saveRawData_stateChanged (int arg1)
 {
     saveRawData=arg1;
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::extractPatterns ()
@@ -962,7 +944,6 @@ void AntennaForm::reject ()
 void AntennaForm::quantityBox_changed (int newIndex)
 {
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::planeBox_changed (int newIndex)
@@ -994,31 +975,26 @@ void AntennaForm::planeBox_changed (int newIndex)
     }
 
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::thetaBox_changed ()
 {
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::phiBox_changed ()
 {
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::latitudeBox_changed ()
 {
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void AntennaForm::rotationBox_changed ()
 {
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 

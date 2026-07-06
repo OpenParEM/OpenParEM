@@ -109,7 +109,6 @@ void RotateInputForm::on_Xaxis_clicked ()
     ui->pickEnd->setEnabled(false);
 
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void RotateInputForm::on_Yaxis_clicked ()
@@ -133,7 +132,6 @@ void RotateInputForm::on_Yaxis_clicked ()
     ui->pickEnd->setEnabled(false);
 
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void RotateInputForm::on_Zaxis_clicked ()
@@ -157,7 +155,6 @@ void RotateInputForm::on_Zaxis_clicked ()
     ui->pickEnd->setEnabled(false);
 
     ui->OkButton->setEnabled(true);
-    ui->OkButton->setFocus();
 }
 
 void RotateInputForm::on_CustomAxis_clicked ()
@@ -242,7 +239,6 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
         activateWindow();
         raise();
         ui->pickStart->setChecked(false);
-        ui->pickEnd->setFocus();
     }
 
     if (pickEndPoint) {
@@ -254,16 +250,12 @@ void RotateInputForm::pickVertexFinished (gp_Pnt point)
         activateWindow();
         raise();
         ui->pickEnd->setChecked(false);
-        ui->pickStart->setFocus();
     }
 
     if (hasStartPoint && hasEndPoint) {
         Standard_Real distance=localStartPoint.Distance(localEndPoint);
         if (distance > 1e-12) {
             ui->OkButton->setEnabled(true);
-            ui->OkButton->setFocus();
-        } else {
-            ui->OkButton->setEnabled(false);
         }
     }
 }

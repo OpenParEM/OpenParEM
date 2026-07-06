@@ -127,7 +127,6 @@ void LineEditForm::on_length_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -137,7 +136,6 @@ void LineEditForm::on_positionX_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -147,7 +145,6 @@ void LineEditForm::on_positionY_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -157,7 +154,6 @@ void LineEditForm::on_positionZ_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -178,7 +174,6 @@ void LineEditForm::on_position2X_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -188,7 +183,6 @@ void LineEditForm::on_position2Y_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -198,7 +192,6 @@ void LineEditForm::on_position2Z_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -262,7 +255,6 @@ void LineEditForm::pickVertexFinished (gp_Pnt point)
     ui->pick->setChecked(false);
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 

@@ -93,10 +93,9 @@ void OPEMg_Refinement::set_projData (struct projectData *a)
     ui->refineOk->setEnabled(false);
 }
 
-void OPEMg_Refinement::on_requiredPasses_editingFinished (const QString &arg1)
+void OPEMg_Refinement::on_requiredPasses_valueChanged (int arg1)
 {
     ui->refineOk->setEnabled(true);
-    ui->refineOk->setFocus();
 }
 
 void OPEMg_Refinement::on_refinementVariable_activated (int index)
@@ -110,7 +109,6 @@ void OPEMg_Refinement::on_refinementVariable_activated (int index)
     }
 
     ui->refineOk->setEnabled(true);
-    ui->refineOk->setFocus();
 }
 
 void OPEMg_Refinement::on_refineOk_clicked ()
@@ -183,7 +181,6 @@ void OPEMg_Refinement::on_relativeTol_editingFinished ()
     }
     ui->relativeTol->setText(QString::number(relativeTol,'g',15));
     ui->refineOk->setEnabled(true);
-    ui->refineOk->setFocus();
 }
 
 void OPEMg_Refinement::on_absoluteTol_editingFinished ()
@@ -203,22 +200,17 @@ void OPEMg_Refinement::on_absoluteTol_editingFinished ()
     }
     ui->absoluteTol->setText(QString::number(absoluteTol,'g',15));
     ui->refineOk->setEnabled(true);
-    ui->refineOk->setFocus();
 }
 
-void OPEMg_Refinement::on_refineMin_editingFinished ()
+void OPEMg_Refinement::on_refineMin_valueChanged (int arg1)
 {
-    int arg1=ui->refineMin->value();
     if (arg1 > ui->refineMax->value()) ui->refineMin->setValue(ui->refineMax->value());
     ui->refineOk->setEnabled(true);
-    ui->refineOk->setFocus();
 }
 
-void OPEMg_Refinement::on_refineMax_editingFinished ()
+void OPEMg_Refinement::on_refineMax_valueChanged (int arg1)
 {
-    int arg1=ui->refineMax->value();
     if (arg1 < ui->refineMin->value()) ui->refineMax->setValue(ui->refineMin->value());
     ui->refineOk->setEnabled(true);
-    ui->refineOk->setFocus();
 }
 

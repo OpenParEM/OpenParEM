@@ -71,7 +71,6 @@ void LengthInputForm::set_length (double *length_)
         raise();
         ui->lineEdit->clearFocus();
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -84,7 +83,6 @@ void LengthInputForm::on_lineEdit_editingFinished ()
         raise();
         ui->lineEdit->clearFocus();
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 

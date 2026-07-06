@@ -132,7 +132,6 @@ void RectangleEditForm::on_positionX_editingFinished ()
     p0.SetX(ui->positionX->text().toDouble()/conversionFactor);
     repopulateOffSize();
     ui->OkButton->setEnabled(isValid());
-    ui->OkButton->setFocus();
 }
 
 void RectangleEditForm::on_positionY_editingFinished ()
@@ -140,7 +139,6 @@ void RectangleEditForm::on_positionY_editingFinished ()
     p0.SetY(ui->positionY->text().toDouble()/conversionFactor);
     repopulateOffSize();
     ui->OkButton->setEnabled(isValid());
-    ui->OkButton->setFocus();
 }
 
 void RectangleEditForm::on_positionZ_editingFinished ()
@@ -148,7 +146,6 @@ void RectangleEditForm::on_positionZ_editingFinished ()
     p0.SetZ(ui->positionZ->text().toDouble()/conversionFactor);
     repopulateOffSize();
     ui->OkButton->setEnabled(isValid());
-    ui->OkButton->setFocus();
 }
 
 void RectangleEditForm::on_pick_clicked ()
@@ -167,7 +164,6 @@ void RectangleEditForm::on_position2X_editingFinished ()
     p1.SetX(ui->position2X->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
-    ui->OkButton->setFocus();
 }
 
 void RectangleEditForm::on_position2Y_editingFinished ()
@@ -175,7 +171,6 @@ void RectangleEditForm::on_position2Y_editingFinished ()
     p1.SetY(ui->position2Y->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
-    ui->OkButton->setFocus();
 }
 
 void RectangleEditForm::on_position2Z_editingFinished ()
@@ -183,7 +178,6 @@ void RectangleEditForm::on_position2Z_editingFinished ()
     p1.SetZ(ui->position2Z->text().toDouble()/conversionFactor);
     repopulate();
     ui->OkButton->setEnabled(isValid());
-    ui->OkButton->setFocus();
 }
 
 void RectangleEditForm::on_pick2_clicked ()
@@ -202,7 +196,6 @@ void RectangleEditForm::on_width_editingFinished ()
     width=ui->width->text().toDouble()/conversionFactor;
     repopulateOffSize();
     ui->OkButton->setEnabled(isValid());
-    ui->OkButton->setFocus();
 }
 
 void RectangleEditForm::on_height_editingFinished ()
@@ -210,7 +203,6 @@ void RectangleEditForm::on_height_editingFinished ()
     height=ui->height->text().toDouble()/conversionFactor;
     repopulateOffSize();
     ui->OkButton->setEnabled(isValid());
-    ui->OkButton->setFocus();
 }
 
 void RectangleEditForm::on_OkButton_clicked ()
@@ -264,7 +256,6 @@ void RectangleEditForm::pickVertexFinished (gp_Pnt point)
     repopulate();
 
     ui->OkButton->setEnabled(isValid());
-    ui->OkButton->setFocus();
 }
 
 void RectangleEditForm::reject ()

@@ -287,14 +287,12 @@ void SimOptions::on_frequencyUnit_currentIndexChanged (int index)
 {
     frequencyUnit=ui->frequencyUnit->currentText();
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_referenceImpedance_editingFinished ()
+void SimOptions::on_referenceImpedance_valueChanged (double arg1)
 {
-    referenceImpedance=ui->referenceImpedance->value();
+    referenceImpedance=arg1;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 void SimOptions::on_simulateOptionOk_clicked ()
@@ -569,28 +567,24 @@ void SimOptions::on_normalizeSparam_checkStateChanged (const Qt::CheckState &arg
 
     ui->referenceImpedance->setValue(referenceImpedance);
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_slotCount_editingFinished ()
+void SimOptions::on_slotCount_valueChanged (int arg1)
 {
-    slotCount=ui->slotCount->value();
+    slotCount=arg1;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 void SimOptions::on_touchstoneFormat_activated (int index)
 {
     touchstoneFormat=ui->touchstoneFormat->currentText();
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_temperature_editingFinished ()
+void SimOptions::on_temperature_valueChanged (double arg1)
 {
-    temperature=ui->temperature->value();
+    temperature=arg1;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 void SimOptions::on_tolerance2D_editingFinished ()
@@ -610,7 +604,6 @@ void SimOptions::on_tolerance2D_editingFinished ()
     }
     ui->tolerance2D->setText(QString::number(tolerance2D,'g',15));
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 void SimOptions::on_tolerance3D_editingFinished ()
@@ -630,14 +623,12 @@ void SimOptions::on_tolerance3D_editingFinished ()
     }
     ui->tolerance3D->setText(QString::number(tolerance3D,'g',15));
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_iterationLimit_editingFinished ()
+void SimOptions::on_iterationLimit_valueChanged (int arg1)
 {
-    iterationLimit=ui->iterationLimit->value();
+    iterationLimit=arg1;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -646,15 +637,13 @@ void SimOptions::on_checkHomogeneous_checkStateChanged (const Qt::CheckState &ar
     if (arg1 == Qt::Checked) checkHomogeneous=1;
     else checkHomogeneous=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
-void SimOptions::on_modesBuffer_editingFinished ()
+void SimOptions::on_modesBuffer_valueChanged (int arg1)
 {
-    modesBuffer=ui->modesBuffer->value();
+    modesBuffer=arg1;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -663,7 +652,6 @@ void SimOptions::on_checkClosedLoop_checkStateChanged (const Qt::CheckState &arg
     if (arg1 == Qt::Checked) checkClosedLoop=1;
     else checkClosedLoop=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -671,7 +659,6 @@ void SimOptions::on_accurateResidual_stateChanged (int arg1)
 {
     accurateResidual=arg1;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -687,15 +674,13 @@ void SimOptions::on_shiftInvert_checkStateChanged (const Qt::CheckState &arg1)
         ui->shiftFactor->setEnabled(false);
     }
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
-void SimOptions::on_shiftFactor_editingFinished ()
+void SimOptions::on_shiftFactor_valueChanged (double arg1)
 {
-    shiftFactor=ui->shiftFactor->value();
+    shiftFactor=arg1;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -710,7 +695,6 @@ void SimOptions::on_saveFields_checkStateChanged (const Qt::CheckState &arg1)
         ui->calculatePoynting->setCheckState(Qt::Unchecked);
     }
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -719,7 +703,6 @@ void SimOptions::on_calculatePoynting_checkStateChanged (const Qt::CheckState &a
     if (arg1 == Qt::Checked) calculatePoynting=1;
     else calculatePoynting=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -728,7 +711,6 @@ void SimOptions::on_showProjectFile_checkStateChanged (const Qt::CheckState &arg
     if (arg1 == Qt::Checked) showProjectFile=1;
     else showProjectFile=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -737,7 +719,6 @@ void SimOptions::on_showFrequencyPlan_checkStateChanged (const Qt::CheckState &a
     if (arg1 == Qt::Checked) showFrequencyPlan=1;
     else showFrequencyPlan=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -746,7 +727,6 @@ void SimOptions::on_showImpedanceDetails_checkStateChanged (const Qt::CheckState
     if (arg1 == Qt::Checked) showImpedanceDetails=1;
     else showImpedanceDetails=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 void SimOptions::on_showPortDefinitions_checkStateChanged (const Qt::CheckState &arg1)
@@ -754,7 +734,6 @@ void SimOptions::on_showPortDefinitions_checkStateChanged (const Qt::CheckState 
     if (arg1 == Qt::Checked) showPortDefinitions=1;
     else showPortDefinitions=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -763,7 +742,6 @@ void SimOptions::on_showMaterials_checkStateChanged (const Qt::CheckState &arg1)
     if (arg1 == Qt::Checked) showMaterials=1;
     else showMaterials=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -772,7 +750,6 @@ void SimOptions::on_showMemoryUsage_checkStateChanged (const Qt::CheckState &arg
     if (arg1 == Qt::Checked) showMemoryUsage=1;
     else showMemoryUsage=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -781,7 +758,6 @@ void SimOptions::on_savePortFields_checkStateChanged (const Qt::CheckState &arg1
     if (arg1 == Qt::Checked) savePortFields=1;
     else savePortFields=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -790,7 +766,6 @@ void SimOptions::on_keepTempFiles_checkStateChanged (const Qt::CheckState &arg1)
     if (arg1 == Qt::Checked) keepTempFiles=1;
     else keepTempFiles=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -799,7 +774,6 @@ void SimOptions::on_skipMixedModeConversion_checkStateChanged (const Qt::CheckSt
     if (arg1 == Qt::Checked) skipMixedModeConversion=1;
     else skipMixedModeConversion=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -808,7 +782,6 @@ void SimOptions::on_skipForcedReciprocity_checkStateChanged (const Qt::CheckStat
     if (arg1 == Qt::Checked) skipForcedReciprocity=1;
     else skipForcedReciprocity=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -817,7 +790,6 @@ void SimOptions::on_preconditioner_activated (int index)
     if (index == 0) preconditioner=0;
     if (index == 1) preconditioner=1;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -826,7 +798,6 @@ void SimOptions::on_createTestCases_checkStateChanged (const Qt::CheckState &arg
     if (arg1 == Qt::Checked) createTestCases=1;
     else createTestCases=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 
@@ -835,21 +806,18 @@ void SimOptions::on_showDetailedCases_checkStateChanged (const Qt::CheckState &a
     if (arg1 == Qt::Checked) showDetailedCases=1;
     else showDetailedCases=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 void SimOptions::on_initialGuess_currentIndexChanged (int index)
 {
     initialGuessLevel=index;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
-void SimOptions::on_femOrder_editingFinished ()
+void SimOptions::on_femOrder_valueChanged (int arg1)
 {
-    femOrder=ui->femOrder->value();
+    femOrder=arg1;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 void SimOptions::on_solverIterations_checkStateChanged (const Qt::CheckState &arg1)
@@ -857,7 +825,6 @@ void SimOptions::on_solverIterations_checkStateChanged (const Qt::CheckState &ar
     if (arg1 == Qt::Checked) solverIterations=1;
     else solverIterations=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 void SimOptions::on_meshRefinement_checkStateChanged (const Qt::CheckState &arg1)
@@ -865,7 +832,6 @@ void SimOptions::on_meshRefinement_checkStateChanged (const Qt::CheckState &arg1
     if (arg1 == Qt::Checked) meshRefinement=1;
     else meshRefinement=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 void SimOptions::on_postProcessing_checkStateChanged (const Qt::CheckState &arg1)
@@ -873,16 +839,13 @@ void SimOptions::on_postProcessing_checkStateChanged (const Qt::CheckState &arg1
     if (arg1 == Qt::Checked) postProcessing=1;
     else postProcessing=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
-
 
 void SimOptions::on_showLicense_checkStateChanged (const Qt::CheckState &arg1)
 {
     if (arg1 == Qt::Checked) showLicense=1;
     else showLicense=0;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
 
 void SimOptions::on_oversubscribe_stateChanged (int arg1)
@@ -890,6 +853,4 @@ void SimOptions::on_oversubscribe_stateChanged (int arg1)
     oversubscribe=0;
     if (arg1 > 0) oversubscribe=1;
     ui->simulateOptionOk->setEnabled(true);
-    ui->simulateOptionOk->setFocus();
 }
-

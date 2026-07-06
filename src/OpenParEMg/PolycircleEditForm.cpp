@@ -130,7 +130,6 @@ void PolycircleEditForm::on_centerPositionX_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -141,7 +140,6 @@ void PolycircleEditForm::on_centerPositionY_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -152,7 +150,6 @@ void PolycircleEditForm::on_centerPositionZ_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -192,7 +189,6 @@ void PolycircleEditForm::on_radius_editingFinished ()
 
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -202,7 +198,6 @@ void PolycircleEditForm::on_firstPositionX_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -212,7 +207,6 @@ void PolycircleEditForm::on_firstPositionY_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -222,7 +216,6 @@ void PolycircleEditForm::on_firstPositionZ_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -243,7 +236,6 @@ void PolycircleEditForm::on_vertexCount_editingFinished ()
     repopulate();
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 
@@ -286,7 +278,6 @@ void PolycircleEditForm::pickVertexFinished (gp_Pnt point)
 
     if (isValid()) {
         ui->OkButton->setEnabled(true);
-        ui->OkButton->setFocus();
     }
 }
 

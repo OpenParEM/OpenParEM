@@ -41,14 +41,14 @@ public:
     ~OPEMg_Refinement();
 
 private slots:
-    void on_requiredPasses_editingFinished (const QString &arg1);
+    void on_requiredPasses_valueChanged (int);
     void on_refinementVariable_activated (int);
     void on_refineOk_clicked ();
     void on_refineCancel_clicked ();
     void on_relativeTol_editingFinished ();
     void on_absoluteTol_editingFinished ();
-    void on_refineMin_editingFinished ();
-    void on_refineMax_editingFinished ();
+    void on_refineMin_valueChanged (int);
+    void on_refineMax_valueChanged (int);
 
 private:
     Ui::OPEMg_Refinement *ui;
