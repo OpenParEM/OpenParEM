@@ -1236,6 +1236,7 @@ public:
     void show (bool) override;
     void hide (bool) override;
     void showMenu (QMenu *) override;
+    bool setPlane (gp_Pln &plane);
     void drawLinePath ();
     void drawPolylinePath ();
     bool isValidInsertSelectedPath ();
@@ -1244,8 +1245,8 @@ public:
     void addScaleItem ();
     void removeScaleItem ();
     void addRemoveScale ();
-    void createIntegrationPathItemFromPath (PathItem *);
-    PathItem* createIntegrationPathItemFromDrawing (DrawingItem *, bool);
+    IntegrationPathItem* createIntegrationPathItemFromPath (PathItem *);
+    IntegrationPathItem* createIntegrationPathItemFromDrawing (DrawingItem *, bool);
     //void convertItemToPath (DrawingItem *, bool);
     ModeItem* getModeItem () {return modeItem;}
     PortItem* getPortItem ();

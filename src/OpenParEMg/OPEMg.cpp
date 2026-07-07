@@ -7142,6 +7142,16 @@ void OpenParEMg::finishDraw ()
 
             currentDrawingItem->finishDraw();
 
+            // port
+            PortItem *portItem=viItem->getPortItem();
+            if (!portItem) return;
+
+            // port outline
+            PathItem *portPathItem=portItem->getPathItem();
+            if (!portPathItem) return;
+            Path *portPath=portPathItem->getPath();
+            if (!portPath) return;
+
             // set to a name reasonable for an integration path
             int Sport=viItem->getModeItem()->get_Sport();
             QString name;
@@ -7152,20 +7162,15 @@ void OpenParEMg::finishDraw ()
             currentDrawingItem->setText(0,name);
 
             // create path
-            PathItem *pathItem=viItem->createIntegrationPathItemFromDrawing(currentDrawingItem,true);
+            IntegrationPathItem *integrationPathItem=viItem->createIntegrationPathItemFromDrawing(currentDrawingItem,true);
             currentDrawingItem->del();
 
             //xxx
             // see if the path is within an existing port
-            // if (pathItem && pathItem->is_path()) {
-            //     Port *port=boundaryDatabase->get_matchingPort(pathItem->getPath());
-            //     // ToDo: fix
-            //     //if (port) pathItem->set_portItem(port->get_item());
-            // }
+            Path *path=integrationPathItem->getPathItem()->getPath();
+            if (portPath->is_path_inside(path)) {
 
-            // set the impedance definition to a reasonable value
-            PortItem *portItem=viItem->getPortItem();
-            if (portItem) {
+                // set the impedance definition to a reasonable value
                 int i=0;
                 while (i < portItem->childCount()) {
                     BaseItem *baseItem=dynamic_cast<BaseItem *>(portItem->child(i));
@@ -7180,14 +7185,20 @@ void OpenParEMg::finishDraw ()
                     }
                     i++;
                 }
+
+                // assume a positive direction for the new integration path
+                QString newPathText="+";
+                newPathText.append(integrationPathItem->text(0));
+
+                // add scale, if needed
+                viItem->addScaleItem();
+            } else {
+                QMessageBox mb;
+                mb.critical(nullptr, "Error", "The path is not within the port outline.");
+                mb.setFixedSize(500, 200);
+
+                integrationPathItem->del();
             }
-
-            // assume a positive direction for the new integration path
-            QString newPathText="+";
-            newPathText.append(pathItem->text(0));
-
-            // add scale, if needed
-            viItem->addScaleItem();
 
             isIntegrationPath=false;
             currentDrawingItem=nullptr;

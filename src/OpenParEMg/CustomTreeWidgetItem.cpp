@@ -3914,20 +3914,65 @@ void VIItem::showMenu (QMenu *menu)
     }
 }
 
+bool VIItem::setPlane (gp_Pln &plane)
+{
+
+    PortItem *portItem=getPortItem();
+    if (!portItem) return true;
+
+    PathItem *pathItem=portItem->getPathItem();
+    if (!pathItem) return true;
+
+    Path *path=pathItem->getPath();
+    if (!path) return true;
+
+    // construct a plane on the port
+    keywordPair *startPoint=path->get_startPoint();
+    if (!startPoint) return true;
+
+    struct point p0=startPoint->get_point_value();
+    struct point n0=path->get_normal();
+
+    gp_Pnt origin(p0.x,startPoint->get_point_value().y,startPoint->get_point_value().z);
+    gp_Dir normal(n0.x,n0.y,n0.z);
+
+    plane.SetPosition(gp_Ax3(origin, normal));
+
+    return false;
+}
+
 void VIItem::drawLinePath ()
 {
+    // restrict drawing to the plane of the port
+    gp_Pln portPlane;
+    if (setPlane(portPlane)) return;
+    mw->ui->drawingWindow->set_gridPlane(portPlane);
+    //mw->currentPrivilegedPlane=portPlane;
+    mw->restrictToDrawingPlane=true;
+
+    // setup
     mw->isIntegrationPath=true;
     mw->workingItem=mw->clickedItem;
 
+    // draw it
     mw->currentDrawingItem=new DrawingItem(mw,mw->drawing);
     mw->currentDrawingItem->startLine();
 }
 
 void VIItem::drawPolylinePath ()
 {
+    // restrict drawing to the plane of the port
+    gp_Pln portPlane;
+    if (setPlane(portPlane)) return;
+    mw->ui->drawingWindow->set_gridPlane(portPlane);
+    //mw->currentPrivilegedPlane=portPlane;
+    mw->restrictToDrawingPlane=true;
+
+    // setup
     mw->isIntegrationPath=true;
     mw->workingItem=mw->clickedItem;
 
+    // draw it
     mw->currentDrawingItem=new DrawingItem(mw,mw->drawing);
     mw->currentDrawingItem->startPolyline();
 }
@@ -3935,14 +3980,13 @@ void VIItem::drawPolylinePath ()
 bool VIItem::isValidInsertSelectedPath ()
 {
     int VIcount=0;
-    BaseItem *VIitem;
     int pathCount=0;
 
     long unsigned int i=0;
     while (i < mw->ui->drawingWindow->get_selectedItems_size()) {
         BaseItem *baseItem=mw->ui->drawingWindow->get_selectedItem(i);
         if (baseItem) {
-            if (baseItem->is_voltage() || baseItem->is_current()) {VIitem=baseItem; VIcount++;}
+            if (baseItem->is_voltage() || baseItem->is_current()) {VIcount++;}
             if (baseItem->is_path()) pathCount++;
         }
         i++;
@@ -3953,7 +3997,6 @@ bool VIItem::isValidInsertSelectedPath ()
 
     // check that the paths are within the port
 
-    ModeItem *modeItem=dynamic_cast<ModeItem *>(VIitem->getParentItem());
     PortItem *portItem=getPortItem();
 
     // port outline
@@ -3980,7 +4023,7 @@ bool VIItem::isValidInsertSelectedPath ()
     return true;
 }
 
-void VIItem::createIntegrationPathItemFromPath (PathItem *pathItem)
+IntegrationPathItem* VIItem::createIntegrationPathItemFromPath (PathItem *pathItem)
 {
     //std::cout << "VIItem::createIntegrationPathItemFromPath" << std::endl; std::cout.flush();
 
@@ -4000,16 +4043,19 @@ void VIItem::createIntegrationPathItemFromPath (PathItem *pathItem)
         pathItem->push_linkedItem(newIntegrationPathItem);
         newIntegrationPathItem->setPathItem(pathItem);
     }
-    return ;
+    return newIntegrationPathItem;
 }
 
-PathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem, bool hasArrows)
+IntegrationPathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem, bool hasArrows)
 {
     //std::cout << "VIItem::createIntegrationPathItemFromDrawing" << std::endl; std::cout.flush();
 
+    IntegrationPathItem *newIntegrationPathItem=nullptr;
     PathItem *newPathItem=drawingItem->createPath(hasArrows);
-    createIntegrationPathItemFromPath(newPathItem);
-    return newPathItem;
+    if (newPathItem) {
+        newIntegrationPathItem=createIntegrationPathItemFromPath(newPathItem);
+    }
+    return newIntegrationPathItem;
 }
 
 bool VIItem::hasScale ()
@@ -4017,6 +4063,8 @@ bool VIItem::hasScale ()
     int i=0;
     while (i < childCount()) {
         BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        //xxx
+        baseItem->print_itemType();
         if (baseItem && baseItem->is_scaleLabel()) return true;
         i++;
     }
@@ -4066,16 +4114,24 @@ void VIItem::removeScaleItem ()
 
 void VIItem::addRemoveScale ()
 {
+    std::cout << "VIItem::addRemoveScale" << std::endl; std::cout.flush();
+
     if (hasScale()) {
+        std::cout << "   place 1" << std::endl; std::cout.flush();
         if (hasIntegrationPathItem()) {
+            std::cout << "      place 1a" << std::endl; std::cout.flush();
             // nothing to do
         } else {
+            std::cout << "      place 1b" << std::endl; std::cout.flush();
             removeScaleItem();
         }
     } else {
+        std::cout << "   place 2" << std::endl; std::cout.flush();
         if (hasIntegrationPathItem()) {
+            std::cout << "   place 2a" << std::endl; std::cout.flush();
             addScaleItem();
         } else {
+            std::cout << "   place 2b" << std::endl; std::cout.flush();
             // nothing to do
         }
     }
