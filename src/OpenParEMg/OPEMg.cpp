@@ -4282,76 +4282,32 @@ void OpenParEMg::renumberDimTag ()
     }
 }
 
-void OpenParEMg::setPhysicalGroups ()
-{
-    std::cout << "OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
+// void OpenParEMg::setPhysicalGroups ()
+// {
+//     std::cout << "OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
 
-    // re-build the physical groups list
+//     // re-build the physical groups list
 
-    clear_physicalGroupMaterials (&projData);
+//     clear_physicalGroupMaterials (&projData);
 
-    gmsh::vectorpair physicalGroups;
-    gmsh::model::getPhysicalGroups(physicalGroups);
+//     gmsh::vectorpair physicalGroups;
+//     gmsh::model::getPhysicalGroups(physicalGroups);
 
-    for (const auto& group : physicalGroups) {
-        int dim = group.first;
-        int tag = group.second;
+//     for (const auto& group : physicalGroups) {
+//         int dim = group.first;
+//         int tag = group.second;
+//         std::string name;
+//         gmsh::model::getPhysicalName(dim, tag, name);
 
-        // 2. Get the name of the physical group
-        std::string name;
-        gmsh::model::getPhysicalName(dim, tag, name);
-        std::cout << "Physical Group: " << name
-                  << " (Dim: " << dim << ", Tag: " << tag << ")\n";
+//         size_t pos=name.rfind("_OPEM_RESERVED_");
+//         std::string strippedName=name.substr(0,pos);
 
+//         if (tag-1 < mesh->childCount()) {
+//             mesh->child(tag-1)->setText(0,QString::fromStdString(strippedName));
+//         }
+//     }
 
-        size_t pos=name.rfind("_OPEM_RESERVED_");
-        std::string strippedName=name.substr(0,pos);
-
-        if (tag-1 < mesh->childCount()) {
-            mesh->child(tag-1)->setText(0,QString::fromStdString(strippedName));
-        }
-    }
-
-
-
-    //xxx
-    // std::vector<std::pair<int, int>> volumes;
-    // gmsh::model::getEntities(volumes, 3);
-    // std::cout << "volumes.size()=" << volumes.size() << std::endl; std::cout.flush();
-    // int i=0;
-    // while (i < volumes.size()) {
-    //     char *material=(char *)malloc(4*sizeof(char *));
-    //     sprintf(material,"air");
-    //     add_physicalGroupMaterial(&projData,-1,3,i+1,material);
-    //     i++;
-    // }
-
-
-
-
-    // assign to mesh
-    // i=0;
-    // while (i < projData.physicalGroupMaterialCount) {
-    //     std::vector<int> physicalGroupList;
-    //     physicalGroupList.push_back(0);
-    //     physicalGroupList[0]=projData.physicalGroupMaterials[i].tag;
-
-    //     // std::cout << "OpenParEMg::setPhysicalGroups:  dim=" << projData.physicalGroupMaterials[i].dim
-    //     //           << "  tag=" << projData.physicalGroupMaterials[i].tag
-    //     //           << "  materialName=" << projData.physicalGroupMaterials[i].materialName << std::endl; std::cout.flush();
-
-    //     // uniquify the physical group name with the group tag to avoid gmsh eliminating
-    //     // physical groups with duplicated names from the $PhysicalNames/$EndPhysicalNames block in the msh file
-    //     std::string groupName=projData.physicalGroupMaterials[i].materialName;
-    //     groupName.append("_OPEM_RESERVED_");
-    //     groupName.append(std::to_string(projData.physicalGroupMaterials[i].tag));
-
-    //     gmsh::model::addPhysicalGroup(projData.physicalGroupMaterials[i].dim,physicalGroupList,-1,groupName.c_str());
-    //     i++;
-    // }
-
-    std::cout << "exit OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
-}
+// }
 
 void OpenParEMg::setMaterials ()
 {
@@ -4580,7 +4536,7 @@ void OpenParEMg::on_actionOpen_triggered ()
             //xxx
             std::cout << "projData.mesh_file=" << projData.mesh_file << std::endl; std::cout.flush();
             loadMeshFile(QString::fromStdString(projData.mesh_file));
-            setPhysicalGroups();
+            //setPhysicalGroups();
         }
 
         // load last results to the tabs, if any
@@ -6878,10 +6834,25 @@ void OpenParEMg::loadMeshFile (QString meshfile)
         }
 
         // load and display
-        //gmsh::model::remove();
         gmsh::open(meshfile.toStdString());
-
         drawMesh();
+
+        // set the item names
+        gmsh::vectorpair physicalGroups;
+        gmsh::model::getPhysicalGroups(physicalGroups);
+        for (const auto& group : physicalGroups) {
+            int dim = group.first;
+            int tag = group.second;
+            std::string name;
+            gmsh::model::getPhysicalName(dim,tag,name);
+
+            size_t pos=name.rfind("_OPEM_RESERVED_");
+            std::string strippedName=name.substr(0,pos);
+
+            if (tag-1 < mesh->childCount()) {
+                mesh->child(tag-1)->setText(0,QString::fromStdString(strippedName));
+            }
+        }
 
         // save the file name if different
         if (meshfile.compare(projData.mesh_file) != 0) {

@@ -405,7 +405,7 @@ public:
     void dumpDrawingEntities ();
     //void shapeCount (TopoDS_Shape, int *);
     void renumberDimTag ();
-    void setPhysicalGroups ();
+    //void setPhysicalGroups ();
     void setMaterials ();
 
     void clearSelection ();
