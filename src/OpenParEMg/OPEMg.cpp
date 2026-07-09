@@ -50,6 +50,11 @@
 #include <ShapeUpgrade_UnifySameDomain.hxx>
 #include <BRepBuilderAPI_Copy.hxx>
 #include <BOPAlgo_Builder.hxx>
+#include <BRepCheck_Analyzer.hxx>
+#include <ShapeFix_Shape.hxx>
+#include <GProp_GProps.hxx>
+#include <BRepGProp.hxx>
+#include <BRepAlgoAPI_Common.hxx>
 
 #include <QIcon>
 #include <QFileDialog>
@@ -417,7 +422,254 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     /////////////////////////////////////////////////////////////////////////////
 
     gmsh::initialize();
+
+//    gmsh::option::setNumber("General.Terminal", 1);
+//    gmsh::model::add("isolated_model_name");
+
+
     gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
+
+    // gmsh::option::setNumber("General.MouseHoverMeshes",0);
+    // gmsh::option::setNumber("Geometry.CopyMeshingMethod",0);
+    // gmsh::option::setNumber("Geometry.MatchGeomAndMesh",0);
+    // gmsh::option::setNumber("Geometry.MatchMeshScaleFactor",1);
+    // gmsh::option::setNumber("Geometry.MatchMeshTolerance",1e-06);
+
+    // gmsh::option::setNumber("Geometry.OCCAutoFix", 1);
+
+
+    // gmsh::option::setNumber("Mesh.Algorithm",6);
+    // gmsh::option::setNumber("Mesh.Algorithm3D",1);
+    // gmsh::option::setNumber("Mesh.AlgorithmSwitchOnFailure",1);
+    // gmsh::option::setNumber("Mesh.AngleSmoothNormals",30);
+    // gmsh::option::setNumber("Mesh.AngleToleranceFacetOverlap",0.1);
+    // gmsh::option::setNumber("Mesh.AnisoMax",9.999999999999999e+32);
+    // gmsh::option::setNumber("Mesh.AllowSwapAngle",10);
+    // gmsh::option::setNumber("Mesh.AvgQuality",0);
+    // gmsh::option::setNumber("Mesh.BdfFieldFormat",1);
+    // gmsh::option::setNumber("Mesh.Binary",0);
+    // gmsh::option::setNumber("Mesh.BoundaryLayerFanElements",5);
+    // gmsh::option::setNumber("Mesh.CgnsImportOrder",1);
+    // gmsh::option::setNumber("Mesh.CgnsImportIgnoreBC",0);
+    // gmsh::option::setNumber("Mesh.CgnsImportIgnoreSolution",0);
+    // gmsh::option::setNumber("Mesh.CgnsConstructTopology",0);
+    // gmsh::option::setNumber("Mesh.CgnsExportCPEX0045",0);
+    // gmsh::option::setNumber("Mesh.CgnsExportStructured",0);
+    // gmsh::option::setNumber("Mesh.CheckSurfaceNormalValidity",1);
+    // gmsh::option::setNumber("Mesh.Clip",0);
+    // gmsh::option::setNumber("Mesh.ColorCarousel",1);
+    // gmsh::option::setNumber("Mesh.CompoundClassify",1);
+    // gmsh::option::setNumber("Mesh.CompoundMeshSizeFactor",0.5);
+    // gmsh::option::setNumber("Mesh.CpuTime",0);
+    // gmsh::option::setNumber("Mesh.CreateTopologyMsh2",0);
+    // gmsh::option::setNumber("Mesh.DrawSkinOnly",0);
+    // gmsh::option::setNumber("Mesh.Dual",0);
+    // gmsh::option::setNumber("Mesh.ElementOrder",1);
+    // gmsh::option::setNumber("Mesh.Explode",1);
+    // gmsh::option::setNumber("Mesh.FirstElementTag",1);
+    // gmsh::option::setNumber("Mesh.FirstNodeTag",1);
+    // gmsh::option::setNumber("Mesh.FlexibleTransfinite",0);
+    // gmsh::option::setNumber("Mesh.Format",1);
+    // gmsh::option::setNumber("Mesh.Hexahedra",1);
+    // gmsh::option::setNumber("Mesh.HighOrderDistCAD",0);;
+    // gmsh::option::setNumber("Mesh.HighOrderFixBoundaryNodes",0);
+    // gmsh::option::setNumber("Mesh.HighOrderIterMax",100);
+    // gmsh::option::setNumber("Mesh.HighOrderNumLayers",6);
+    // gmsh::option::setNumber("Mesh.HighOrderOptimize",0);
+    // gmsh::option::setNumber("Mesh.HighOrderPassMax",25);
+    // gmsh::option::setNumber("Mesh.HighOrderPeriodic",0);
+    // gmsh::option::setNumber("Mesh.HighOrderPoissonRatio",0.33);
+    // gmsh::option::setNumber("Mesh.HighOrderSavePeriodic",0);
+    // gmsh::option::setNumber("Mesh.HighOrderPrimSurfMesh",0);
+    // gmsh::option::setNumber("Mesh.HighOrderThresholdMin",0.1);
+    // gmsh::option::setNumber("Mesh.HighOrderThresholdMax",2);
+    // gmsh::option::setNumber("Mesh.HighOrderFastCurvingNewAlgo",0);
+    // gmsh::option::setNumber("Mesh.HighOrderCurveOuterBL",0);
+    // gmsh::option::setNumber("Mesh.HighOrderMaxRho",0.3);
+    // gmsh::option::setNumber("Mesh.HighOrderMaxAngle",0.1745329277777778);
+    // gmsh::option::setNumber("Mesh.HighOrderMaxInnerAngle",0.5235987833333333);
+    // gmsh::option::setNumber("Mesh.HighOrderSkipQualityCheck",0);
+    // gmsh::option::setNumber("Mesh.IgnoreUnknownSections",0);
+    // gmsh::option::setNumber("Mesh.IgnoreParametrization",0);
+    // gmsh::option::setNumber("Mesh.IgnorePeriodicity",1);
+    // gmsh::option::setNumber("Mesh.LabelSampling",1);
+    // gmsh::option::setNumber("Mesh.LabelType",0);
+    // gmsh::option::setNumber("Mesh.LcIntegrationPrecision",1e-09);
+    // gmsh::option::setNumber("Mesh.Light",1);
+    // gmsh::option::setNumber("Mesh.LightLines",2);
+    // gmsh::option::setNumber("Mesh.LightTwoSide",1);
+    // gmsh::option::setNumber("Mesh.Lines",0);
+    // gmsh::option::setNumber("Mesh.LineLabels",0);
+    // gmsh::option::setNumber("Mesh.LineWidth",1);
+    // gmsh::option::setNumber("Mesh.MaxIterDelaunay3D",0);
+    // gmsh::option::setNumber("Mesh.MaxNumThreads1D",0);
+    // gmsh::option::setNumber("Mesh.MaxNumThreads2D",0);
+    // gmsh::option::setNumber("Mesh.MaxNumThreads3D",0);
+    // gmsh::option::setNumber("Mesh.MaxRetries",10);
+    // gmsh::option::setNumber("Mesh.MeshOnlyVisible",0);
+    // gmsh::option::setNumber("Mesh.MeshOnlyEmpty",0);
+    // gmsh::option::setNumber("Mesh.MeshSizeExtendFromBoundary",1);
+    // gmsh::option::setNumber("Mesh.MeshSizeFactor",1);
+    // gmsh::option::setNumber("Mesh.MeshSizeMin",0);
+    // gmsh::option::setNumber("Mesh.MeshSizeMax",1e+22);
+    // gmsh::option::setNumber("Mesh.MeshSizeFromCurvature",0);
+    // gmsh::option::setNumber("Mesh.MeshSizeFromCurvatureIsotropic",0);
+    // gmsh::option::setNumber("Mesh.MeshSizeFromPoints",1);
+    // gmsh::option::setNumber("Mesh.MeshSizeFromParametricPoints",0);
+    // gmsh::option::setNumber("Mesh.MetisAlgorithm",1);
+    // gmsh::option::setNumber("Mesh.MetisEdgeMatching",2);
+    // gmsh::option::setNumber("Mesh.MetisMaxLoadImbalance",-1);
+    // gmsh::option::setNumber("Mesh.MetisObjective",1);
+    // gmsh::option::setNumber("Mesh.MetisMinConn",-1);
+    // gmsh::option::setNumber("Mesh.MetisRefinementAlgorithm",2);
+    // gmsh::option::setNumber("Mesh.MinLineNodes",2);
+    // gmsh::option::setNumber("Mesh.MinCircleNodes",7);
+    // gmsh::option::setNumber("Mesh.MinCurveNodes",3);
+    // gmsh::option::setNumber("Mesh.MinQuality",0);
+    // gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
+    // gmsh::option::setNumber("Mesh.MedFileMinorVersion",-1);
+    // gmsh::option::setNumber("Mesh.MedImportGroupsOfNodes",0);
+    // gmsh::option::setNumber("Mesh.MedSingleModel",0);
+    // gmsh::option::setNumber("Mesh.NbHexahedra",0);
+    // gmsh::option::setNumber("Mesh.NbNodes",0);
+    // gmsh::option::setNumber("Mesh.NbPartitions",0);
+    // gmsh::option::setNumber("Mesh.NbPrisms",0);
+    // gmsh::option::setNumber("Mesh.NbPyramids",0);
+    // gmsh::option::setNumber("Mesh.NbTrihedra",0);
+    // gmsh::option::setNumber("Mesh.NbQuadrangles",0);
+    // gmsh::option::setNumber("Mesh.NbTetrahedra",0);
+    // gmsh::option::setNumber("Mesh.NbTriangles",0);
+    // gmsh::option::setNumber("Mesh.NewtonConvergenceTestXYZ",0);
+    // gmsh::option::setNumber("Mesh.Nodes",0);
+    // gmsh::option::setNumber("Mesh.NodeLabels",0);
+    // gmsh::option::setNumber("Mesh.NodeSize",4);
+    // gmsh::option::setNumber("Mesh.NodeType",0);
+    // gmsh::option::setNumber("Mesh.Normals",0);
+    // gmsh::option::setNumber("Mesh.NumSubEdges",2);
+    // gmsh::option::setNumber("Mesh.OldInitialDelaunay2D",0);
+    // gmsh::option::setNumber("Mesh.Optimize",1);
+    // gmsh::option::setNumber("Mesh.OptimizeThreshold",0.3);
+    // gmsh::option::setNumber("Mesh.OptimizeNetgen",0);
+    // gmsh::option::setNumber("Mesh.OptimizePyramids",0);
+    // gmsh::option::setNumber("Mesh.PartitionHexWeight",-1);
+    // gmsh::option::setNumber("Mesh.PartitionLineWeight",-1);
+    // gmsh::option::setNumber("Mesh.PartitionPrismWeight",-1);
+    // gmsh::option::setNumber("Mesh.PartitionPyramidWeight",-1);
+    // gmsh::option::setNumber("Mesh.PartitionQuadWeight",-1);
+    // gmsh::option::setNumber("Mesh.PartitionTrihedronWeight",0);
+    // gmsh::option::setNumber("Mesh.PartitionTetWeight",-1);
+    // gmsh::option::setNumber("Mesh.PartitionTriWeight",-1);
+    // gmsh::option::setNumber("Mesh.PartitionCreateTopology",1);
+    // gmsh::option::setNumber("Mesh.PartitionCreatePhysicals",1);
+    // gmsh::option::setNumber("Mesh.PartitionCreateGhostCells",0);
+    // gmsh::option::setNumber("Mesh.PartitionSplitMeshFiles",0);
+    // gmsh::option::setNumber("Mesh.PartitionTopologyFile",0);
+    // gmsh::option::setNumber("Mesh.PartitionOldStyleMsh2",1);
+    // gmsh::option::setNumber("Mesh.PartitionConvertMsh2",1);
+    // gmsh::option::setNumber("Mesh.PreserveNumberingMsh2",0);
+    // gmsh::option::setNumber("Mesh.Prisms",1);
+    // gmsh::option::setNumber("Mesh.Pyramids",1);
+    // gmsh::option::setNumber("Mesh.QuadqsSizemapMethod",3);
+    // gmsh::option::setNumber("Mesh.QuadqsTopologyOptimizationMethods",0);
+    // gmsh::option::setNumber("Mesh.QuadqsRemeshingBoldness",0.66);
+    // gmsh::option::setNumber("Mesh.QuadqsScalingOnTriangulation",0.75);
+    // gmsh::option::setNumber("Mesh.Quadrangles",1);
+    // gmsh::option::setNumber("Mesh.QualityInf",0);
+    // gmsh::option::setNumber("Mesh.QualitySup",0);
+    // gmsh::option::setNumber("Mesh.QualityType",2);
+    // gmsh::option::setNumber("Mesh.QuasiTransfinite",0);
+    // gmsh::option::setNumber("Mesh.RadiusInf",0);
+    // gmsh::option::setNumber("Mesh.RadiusSup",0);
+    // gmsh::option::setNumber("Mesh.RandomFactor",1e-09);
+    // gmsh::option::setNumber("Mesh.RandomFactor3D",1e-12);
+    // gmsh::option::setNumber("Mesh.RandomSeed",1);
+    // gmsh::option::setNumber("Mesh.ReadGroupsOfElements",1);
+    // gmsh::option::setNumber("Mesh.RecombinationAlgorithm",1);
+    // gmsh::option::setNumber("Mesh.RecombineAll",0);
+    // gmsh::option::setNumber("Mesh.RecombineOptimizeTopology",5);
+    // gmsh::option::setNumber("Mesh.RecombineNodeRepositioning",1);
+    // gmsh::option::setNumber("Mesh.RecombineMinimumQuality",0.01);
+    // gmsh::option::setNumber("Mesh.Recombine3DAll",0);
+    // gmsh::option::setNumber("Mesh.Recombine3DLevel",0);
+    // gmsh::option::setNumber("Mesh.Recombine3DConformity",0);
+    // gmsh::option::setNumber("Mesh.RefineSteps",10);
+    // gmsh::option::setNumber("Mesh.Renumber",1);
+    // gmsh::option::setNumber("Mesh.ReparamMaxTriangles",250000);
+    // gmsh::option::setNumber("Mesh.Reproducible",0);
+    // gmsh::option::setNumber("Mesh.SaveAll",1); // 0
+    // gmsh::option::setNumber("Mesh.SaveElementTagType",1);
+    // gmsh::option::setNumber("Mesh.SaveGroupsOfElements",1);
+    // gmsh::option::setNumber("Mesh.SaveGroupsOfNodes",0);
+    // gmsh::option::setNumber("Mesh.SaveParametric",0);
+    // gmsh::option::setNumber("Mesh.SaveWithoutOrphans",0);
+    // gmsh::option::setNumber("Mesh.SaveTopology",0);
+    // gmsh::option::setNumber("Mesh.ScalingFactor",1);
+    // gmsh::option::setNumber("Mesh.SecondOrderIncomplete",0);
+    // gmsh::option::setNumber("Mesh.SecondOrderLinear",0);
+    // gmsh::option::setNumber("Mesh.Smoothing",1);
+    // gmsh::option::setNumber("Mesh.SmoothCrossField",0);
+    // gmsh::option::setNumber("Mesh.CrossFieldClosestPoint",1);
+    // gmsh::option::setNumber("Mesh.SmoothNormals",0);
+    // gmsh::option::setNumber("Mesh.SmoothRatio",1.8);
+    // gmsh::option::setNumber("Mesh.StlAngularDeflection",0.3);
+    // gmsh::option::setNumber("Mesh.StlLinearDeflection",0.001);
+    // gmsh::option::setNumber("Mesh.StlLinearDeflectionRelative",1);
+    // gmsh::option::setNumber("Mesh.StlOneSolidPerSurface",0);
+    // gmsh::option::setNumber("Mesh.StlRemoveBadTriangles",0);
+    // gmsh::option::setNumber("Mesh.SubdivisionAlgorithm",0);
+    // gmsh::option::setNumber("Mesh.SurfaceEdges",1);
+    // gmsh::option::setNumber("Mesh.SurfaceFaces",0);
+    // gmsh::option::setNumber("Mesh.SurfaceLabels",0);
+    // gmsh::option::setNumber("Mesh.SwitchElementTags",0);
+    // gmsh::option::setNumber("Mesh.Tangents",0);
+    // gmsh::option::setNumber("Mesh.Tetrahedra",1);
+    // gmsh::option::setNumber("Mesh.ToleranceEdgeLength",0);
+    // gmsh::option::setNumber("Mesh.ToleranceInitialDelaunay",1e-12);
+    // gmsh::option::setNumber("Mesh.ToleranceReferenceElement",1e-06);
+    // gmsh::option::setNumber("Mesh.Triangles",1);
+    // gmsh::option::setNumber("Mesh.Trihedra",1);
+    // gmsh::option::setNumber("Mesh.TransfiniteTri",0);
+    // gmsh::option::setNumber("Mesh.UnvStrictFormat",1);
+    // gmsh::option::setNumber("Mesh.VolumeEdges",1);
+    // gmsh::option::setNumber("Mesh.VolumeFaces",0);
+    // gmsh::option::setNumber("Mesh.VolumeLabels",0);
+    // gmsh::option::setNumber("Mesh.Voronoi",0);
+    // gmsh::option::setNumber("Mesh.ZoneDefinition",0);
+    // // Mesh.Color.Nodes = {0,0,255};
+    // // Mesh.Color.NodesSup = {255,0,255};
+    // // Mesh.Color.Lines = {0,0,0};
+    // // Mesh.Color.Triangles = {160,150,255};
+    // // Mesh.Color.Quadrangles = {130,120,225};
+    // // Mesh.Color.Tetrahedra = {160,150,255};
+    // // Mesh.Color.Hexahedra = {130,120,225};
+    // // Mesh.Color.Prisms = {232,210,23};
+    // // Mesh.Color.Pyramids = {217,113,38};
+    // // Mesh.Color.Trihedra = {20,255,0};
+    // // Mesh.Color.Tangents = {255,255,0};
+    // // Mesh.Color.Normals = {255,0,0};
+    // // Mesh.Color.Zero = {255,120,0};
+    // // Mesh.Color.One = {0,255,132};
+    // // Mesh.Color.Two = {255,160,0};
+    // // Mesh.Color.Three = {0,255,192};
+    // // Mesh.Color.Four = {255,200,0};
+    // // Mesh.Color.Five = {0,216,255};
+    // // Mesh.Color.Six = {255,240,0};
+    // // Mesh.Color.Seven = {0,176,255};
+    // // Mesh.Color.Eight = {228,255,0};
+    // // Mesh.Color.Nine = {0,116,255};
+    // // Mesh.Color.Ten = {188,255,0};
+    // // Mesh.Color.Eleven = {0,76,255};
+    // // Mesh.Color.Twelve = {148,255,0};
+    // // Mesh.Color.Thirteen = {24,0,255};
+    // // Mesh.Color.Fourteen = {108,255,0};
+    // // Mesh.Color.Fifteen = {84,0,255};
+    // // Mesh.Color.Sixteen = {68,255,0};
+    // // Mesh.Color.Seventeen = {104,0,255};
+    // // Mesh.Color.Eighteen = {0,255,52};
+    // // Mesh.Color.Nineteen = {184,0,255};
+    // gmsh::option::setNumber("Solver.AutoMesh",2);
+    // gmsh::option::setNumber("PostProcessing.SaveMesh",1);
+
 
     /////////////////////////////////////////////////////////////////////////////
     // timer or checking when OpenParEM3D finishes and updating tabs with run data
@@ -4039,41 +4291,58 @@ void OpenParEMg::setPhysicalGroups ()
     clear_physicalGroupMaterials (&projData);
 
     // check the first-level children for SOLID or COMPOUND
+    // int i=0;
+    // while (i < drawing->childCount()) {
+    //     DrawingItem *child=dynamic_cast<DrawingItem *>(drawing->child(i));
+
+    //     // SOLID
+    //     if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
+    //         QString itemMaterial=child->text(1);
+    //         if (itemMaterial.isEmpty()) {
+    //             itemMaterial="unassigned";
+    //             child->setText(1,itemMaterial);
+    //         }
+    //         char *material=nullptr;
+    //         cstrFromQString (&material,itemMaterial);
+    //         add_physicalGroupMaterial(&projData,-1,child->get_dimTag().first,child->get_dimTag().second,material);
+    //         if (material) {free(material);}
+    //     }
+
+    //     // COMPOUND
+    //     if (child->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) {
+    //         // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
+    //         if (!child->getPolywire()) {
+    //             QString itemMaterial=child->text(1);
+    //             if (itemMaterial.isEmpty()) {
+    //                 itemMaterial="unassigned";
+    //                 child->setText(1,itemMaterial);
+    //             }
+    //             char *material=nullptr;
+    //             cstrFromQString (&material,itemMaterial);
+    //             add_physicalGroupMaterial(&projData,-1,child->get_dimTag().first,child->get_dimTag().second,material);
+    //             if (material) {free(material);}
+    //         }
+    //     }
+
+    //     i++;
+    // }
+
+
+
+    //xxx
+    std::vector<std::pair<int, int>> volumes;
+    gmsh::model::getEntities(volumes, 3);
+    std::cout << "volumes.size()=" << volumes.size() << std::endl; std::cout.flush();
     int i=0;
-    while (i < drawing->childCount()) {
-        DrawingItem *child=dynamic_cast<DrawingItem *>(drawing->child(i));
-
-        // SOLID
-        if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
-            QString itemMaterial=child->text(1);
-            if (itemMaterial.isEmpty()) {
-                itemMaterial="unassigned";
-                child->setText(1,itemMaterial);
-            }
-            char *material=nullptr;
-            cstrFromQString (&material,itemMaterial);
-            add_physicalGroupMaterial(&projData,-1,child->get_dimTag().first,child->get_dimTag().second,material);
-            if (material) {free(material);}
-        }
-
-        // COMPOUND
-        if (child->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) {
-            // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
-            if (!child->getPolywire()) {
-                QString itemMaterial=child->text(1);
-                if (itemMaterial.isEmpty()) {
-                    itemMaterial="unassigned";
-                    child->setText(1,itemMaterial);
-                }
-                char *material=nullptr;
-                cstrFromQString (&material,itemMaterial);
-                add_physicalGroupMaterial(&projData,-1,child->get_dimTag().first,child->get_dimTag().second,material);
-                if (material) {free(material);}
-            }
-        }
-
+    while (i < volumes.size()) {
+        char *material=(char *)malloc(4*sizeof(char *));
+        sprintf(material,"air");
+        add_physicalGroupMaterial(&projData,-1,3,i+1,material);
         i++;
     }
+
+
+
 
     // assign to mesh
     i=0;
@@ -4323,6 +4592,8 @@ void OpenParEMg::on_actionOpen_triggered ()
 
         // load mesh, if any, and draw
         if (strcmp(projData.mesh_file,"") != 0) {
+            //xxx
+            std::cout << "projData.mesh_file=" << projData.mesh_file << std::endl; std::cout.flush();
             loadMeshFile(QString::fromStdString(projData.mesh_file));
             setPhysicalGroups();
         }
@@ -6226,6 +6497,9 @@ void OpenParEMg::drawMesh()
     std::vector<gmsh::vectorpair> entities;
     gmsh::model::getPhysicalGroupsEntities(physicalGroups,entities,3);
 
+    //xxx
+    std::cout << "physicalGroups.size()=" << physicalGroups.size() << std::endl; std::cout.flush();
+
     // loop through the physical groups
     size_t pg=0;
     while (pg < physicalGroups.size())
@@ -6390,6 +6664,48 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
     drawingEntities.clear();
     drawing->reset_modifiedSinceMeshRegen();
     gmsh::clear();
+
+    if (projData.mesh_file) {
+        free(projData.mesh_file);
+        projData.mesh_file=(char *)malloc(sizeof(char));
+        projData.mesh_file[0]='\0';
+    }
+}
+
+Standard_Real calculateVolume (const TopoDS_Shape& shape)
+{
+    GProp_GProps properties;
+    BRepGProp::VolumeProperties(shape,properties);
+    return properties.Mass(); // Mass() returns volume for VolumeProperties
+}
+
+double calculateSolidComparison (const TopoDS_Shape& newSolid, const TopoDS_Shape& originalSolid)
+{
+    Standard_Real newSolidVolume=calculateVolume(newSolid);
+    std::cout << "            newSolidVolume=" << newSolidVolume << std::endl; std::cout.flush();
+    if (newSolidVolume < 1e-12) return 0;
+
+    Standard_Real originalSolidVolume=calculateVolume(originalSolid);
+    std::cout << "            originalSolidVolume=" << originalSolidVolume << std::endl; std::cout.flush();
+    if (originalSolidVolume < 1e-12) return 0;
+
+    if (newSolidVolume > originalSolidVolume+1e-6) return 0;
+
+    // calculate intersection
+    std::cout << "            calculating intersection" << std::endl; std::cout.flush();
+    BRepAlgoAPI_Common intersection(newSolid,originalSolid);
+    intersection.Build();
+
+    // get the result
+    const TopoDS_Shape& commonResult=intersection.Shape();
+
+    Standard_Real commonResultVolume=calculateVolume(commonResult);
+    std::cout << "            commonResultVolume=" << commonResultVolume << std::endl; std::cout.flush();
+    if (commonResultVolume < 1e-12) return 0;
+
+    std::cout << "            commonResultVolume/originalSolidVolume=" << commonResultVolume/originalSolidVolume << std::endl; std::cout.flush();
+
+    return commonResultVolume/originalSolidVolume;
 }
 
 void OpenParEMg::on_actionMeshGenerate_triggered ()
@@ -6407,7 +6723,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     // reset dimTags
     renumberDimTag();
     reprocess(drawing);
-
     // build a boolean fragments shape
     // ToDo: remove the COMPOUND at the drawing level since that is obsolete (wrong approach)
 
@@ -6425,35 +6740,35 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         i++;
     }
 
-    // path items - imprint the paths onto the mesh for better accuracy
-    i=0;
-    while (i < path->childCount()) {
-        PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
-        if (pathItem) {
-            ShapeData *shapeData=pathItem->getShapeData();
-            Handle(AIS_Shape) aisShape=shapeData->getShape();
-            if (!aisShape.IsNull()) {
-                TopoDS_Shape shape=aisShape->Shape();
-                if (!shape.IsNull()) {
-                    if (shape.ShapeType() == TopAbs_COMPOUND) {
-                        TopoDS_Iterator it(shape);
-                        while (it.More()) {
-                            // paths with arrows - take the first TopoDS_Shape with the rest being arrowheads
-                            TopoDS_Shape childShape=it.Value();
-                            if (childShape.ShapeType() != TopAbs_COMPOUND) {
-                                arguments.Append(childShape);
-                                break;
-                            }
-                            it.Next();
-                        }
-                    } else {
-                        arguments.Append(shape);
-                    }
-                }
-            }
-        }
-        i++;
-    }
+    // // path items - imprint the paths onto the mesh for better accuracy
+    // i=0;
+    // while (i < path->childCount()) {
+    //     PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
+    //     if (pathItem) {
+    //         ShapeData *shapeData=pathItem->getShapeData();
+    //         Handle(AIS_Shape) aisShape=shapeData->getShape();
+    //         if (!aisShape.IsNull()) {
+    //             TopoDS_Shape shape=aisShape->Shape();
+    //             if (!shape.IsNull()) {
+    //                 if (shape.ShapeType() == TopAbs_COMPOUND) {
+    //                     TopoDS_Iterator it(shape);
+    //                     while (it.More()) {
+    //                         // paths with arrows - take the first TopoDS_Shape with the rest being arrowheads
+    //                         TopoDS_Shape childShape=it.Value();
+    //                         if (childShape.ShapeType() != TopAbs_COMPOUND) {
+    //                             arguments.Append(childShape);
+    //                             break;
+    //                         }
+    //                         it.Next();
+    //                     }
+    //                 } else {
+    //                     arguments.Append(shape);
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     i++;
+    // }
 
     // assemble
     BOPAlgo_Builder builder;
@@ -6464,13 +6779,27 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     // final shape
     TopoDS_Shape fragments=builder.Shape();
 
-    // generate mesh
-    gmsh::model::occ::importShapesNativePointer((void *) &fragments,drawingEntities,false);
+
+
+
+
+    // gmsh::option::setNumber("Mesh.MeshSizeFactor",projData.gui_mesh_scale);
+    // gmsh::option::setNumber("Mesh.MeshSizeMin",projData.gui_mesh_minSize);
+    // gmsh::option::setNumber("Mesh.MeshSizeMax",projData.gui_mesh_maxSize);
+    //gmsh::model::occ::synchronize(); // original code
+
+    BRepTools::Write(fragments, "test.brep");
+    gmsh::open("test.brep");
+
     gmsh::option::setNumber("Mesh.MeshSizeFactor",projData.gui_mesh_scale);
     gmsh::option::setNumber("Mesh.MeshSizeMin",projData.gui_mesh_minSize);
     gmsh::option::setNumber("Mesh.MeshSizeMax",projData.gui_mesh_maxSize);
     gmsh::model::occ::synchronize();
-    gmsh::model::mesh::generate();
+
+
+    gmsh::model::mesh::generate(3);
+
+    gmsh::write("output.msh");
 
     // default name for the mesh
     if (strcmp(projData.mesh_file,"") == 0) {
@@ -6480,7 +6809,80 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         projectChanged=true;
     }
 
-    setPhysicalGroups();
+
+    clear_physicalGroupMaterials (&projData);
+
+
+    const TopoDS_Shape& finalResult=builder.Shape();
+    TopExp_Explorer exp(finalResult,TopAbs_SOLID);
+
+    int solidNumber=1;
+    for (; exp.More(); exp.Next()) {
+        std::cout << "solidNumber=" << solidNumber << std::endl; std::cout.flush();
+        const TopoDS_Shape& newSolid=exp.Current();
+
+        // find the drawingItem with the best metric
+        double maxMetric=0;
+        DrawingItem *bestDrawingItem=nullptr;
+        int i=0;
+        while (i < drawing->childCount()) {
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
+            if (drawingItem) {
+                std::cout << "   testing drawingItem=" << drawingItem->text(1).toStdString() << std::endl; std::cout.flush();
+                Handle(AIS_Shape) aisShape=drawingItem->getShape();
+                if (!aisShape.IsNull()) {
+                    double metric=calculateSolidComparison(newSolid,aisShape->Shape());
+                    std::cout << "      metric=" << metric << std::endl; std::cout.flush();
+                    if (metric > maxMetric) {
+                        std::cout << "         keep" << std::endl; std::cout.flush();
+                        maxMetric=metric;
+                        bestDrawingItem=drawingItem;
+                    }
+                }
+            }
+            i++;
+        }
+
+        // get a material name
+        QString material="unassigned";
+        if (bestDrawingItem) {
+            if (!bestDrawingItem->text(1).isEmpty()) {
+                material=bestDrawingItem->text(1);
+            }
+        }
+
+        // create a physical group
+        char *materialName=nullptr;
+        cstrFromQString (&materialName,material);
+        add_physicalGroupMaterial(&projData,-1,3,solidNumber,materialName);
+        solidNumber++;
+    }
+
+
+
+    // assign to mesh
+    i=0;
+    while (i < projData.physicalGroupMaterialCount) {
+        std::vector<int> physicalGroupList;
+        physicalGroupList.push_back(0);
+        physicalGroupList[0]=projData.physicalGroupMaterials[i].tag;
+
+        // std::cout << "OpenParEMg::setPhysicalGroups:  dim=" << projData.physicalGroupMaterials[i].dim
+        //           << "  tag=" << projData.physicalGroupMaterials[i].tag
+        //           << "  materialName=" << projData.physicalGroupMaterials[i].materialName << std::endl; std::cout.flush();
+
+        // uniquify the physical group name with the group tag to avoid gmsh eliminating
+        // physical groups with duplicated names from the $PhysicalNames/$EndPhysicalNames block in the msh file
+        std::string groupName=projData.physicalGroupMaterials[i].materialName;
+        groupName.append("_OPEM_RESERVED_");
+        groupName.append(std::to_string(projData.physicalGroupMaterials[i].tag));
+
+        gmsh::model::addPhysicalGroup(projData.physicalGroupMaterials[i].dim,physicalGroupList,-1,groupName.c_str());
+        i++;
+    }
+
+
+
 
     // draw the mesh - use a concurrent run so the GUI doesn't lock up on long draws
     // This may or may not be helping.
@@ -6830,7 +7232,7 @@ void OpenParEMg::checkFinish ()
         //std::cout << "OPEMg send 300000" << std::endl; std::cout.flush();
         MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);  // stop
         if (!isAbort) {
-            std::cout << "OPEMg send 300001" << std::endl; std::cout.flush();
+            //std::cout << "OPEMg send 300001" << std::endl; std::cout.flush();
             MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);  // abort
         }
 

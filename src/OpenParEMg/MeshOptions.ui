@@ -40,7 +40,11 @@
      </widget>
     </item>
     <item>
-     <widget class="QDoubleSpinBox" name="meshSizeMultiplier"/>
+     <widget class="QDoubleSpinBox" name="meshSizeMultiplier">
+      <property name="singleStep">
+       <double>0.100000000000000</double>
+      </property>
+     </widget>
     </item>
     <item>
      <spacer name="horizontalSpacer_4">
@@ -127,7 +131,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>9</x>
@@ -156,7 +160,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>9</x>
@@ -207,7 +211,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>9</x>
@@ -293,7 +297,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>9</x>
