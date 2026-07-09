@@ -823,6 +823,10 @@ private:
     gp_Pln currentPrivilegedPlane;
     ObjectCounts objectCounts;    // for uniquely numbering objects in their item names
 
+    // meshing
+    std::vector<TopoDS_Shape> shapeList;  // for drawing meshes to stay in the GUI thread when using a watcher
+    std::vector<QString> materialList;
+
     // for edit forms
     Line *lineEdit;               // for undo/redo
     Rectangle *rectangleEdit;     // for undo/redo

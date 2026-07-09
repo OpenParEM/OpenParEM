@@ -4282,33 +4282,6 @@ void OpenParEMg::renumberDimTag ()
     }
 }
 
-// void OpenParEMg::setPhysicalGroups ()
-// {
-//     std::cout << "OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
-
-//     // re-build the physical groups list
-
-//     clear_physicalGroupMaterials (&projData);
-
-//     gmsh::vectorpair physicalGroups;
-//     gmsh::model::getPhysicalGroups(physicalGroups);
-
-//     for (const auto& group : physicalGroups) {
-//         int dim = group.first;
-//         int tag = group.second;
-//         std::string name;
-//         gmsh::model::getPhysicalName(dim, tag, name);
-
-//         size_t pos=name.rfind("_OPEM_RESERVED_");
-//         std::string strippedName=name.substr(0,pos);
-
-//         if (tag-1 < mesh->childCount()) {
-//             mesh->child(tag-1)->setText(0,QString::fromStdString(strippedName));
-//         }
-//     }
-
-// }
-
 void OpenParEMg::setMaterials ()
 {
     std::cout << "OpenParEMg::setMaterials" << std::endl; std::cout.flush();
@@ -4528,7 +4501,6 @@ void OpenParEMg::on_actionOpen_triggered ()
             //resetDimTag(&drawing);
             renumberDimTag();
             setMaterials();
-            //setPhysicalGroups();
         }
 
         // load mesh, if any, and draw
@@ -4536,7 +4508,6 @@ void OpenParEMg::on_actionOpen_triggered ()
             //xxx
             std::cout << "projData.mesh_file=" << projData.mesh_file << std::endl; std::cout.flush();
             loadMeshFile(QString::fromStdString(projData.mesh_file));
-            //setPhysicalGroups();
         }
 
         // load last results to the tabs, if any
@@ -6417,6 +6388,9 @@ void OpenParEMg::drawMesh()
 {
     //std::cout << "OpenParEMg::drawMesh" << std::endl; std::cout.flush();
 
+    materialList.clear();
+    shapeList.clear();
+
     // get all nodes
     std::vector<std::size_t> nodeTags;
     std::vector<double> nodeCoords, nodeParams;
@@ -6539,18 +6513,21 @@ void OpenParEMg::drawMesh()
             name.append(QString::number(pg+1));
         }
 
-        // make the item
-        MeshItem *groupItem=new MeshItem(this);
-        groupItem->setText(0,name);
-        groupItem->set_itemType(3);
-        groupItem->setForeground(0,Qt::gray);
-        mesh->addChild(groupItem);
+        materialList.push_back(name);
+        shapeList.push_back(compound);
 
-        Handle(AIS_Shape) newAISshape=new AIS_Shape(compound);
-        if (!newAISshape.IsNull()) {
-            ShapeData *shapeData=groupItem->getShapeData();
-            shapeData->setShape(newAISshape);
-        }
+        // // make the item
+        // MeshItem *groupItem=new MeshItem(this);
+        // groupItem->setText(0,name);
+        // groupItem->set_itemType(3);
+        // groupItem->setForeground(0,Qt::gray);
+        // mesh->addChild(groupItem);
+
+        // Handle(AIS_Shape) newAISshape=new AIS_Shape(compound);
+        // if (!newAISshape.IsNull()) {
+        //     ShapeData *shapeData=groupItem->getShapeData();
+        //     shapeData->setShape(newAISshape);
+        // }
 
         ++pg;
     }
@@ -6559,6 +6536,25 @@ void OpenParEMg::drawMesh()
 
 void OpenParEMg::finishDrawMesh ()
 {
+    long unsigned int i=0;
+    while (i < materialList.size()) {
+
+        // make the item
+        MeshItem *groupItem=new MeshItem(this);
+        groupItem->setText(0,materialList[i]);
+        groupItem->set_itemType(3);
+        groupItem->setForeground(0,Qt::gray);
+        mesh->addChild(groupItem);
+
+        Handle(AIS_Shape) newAISshape=new AIS_Shape(shapeList[i]);
+        if (!newAISshape.IsNull()) {
+            ShapeData *shapeData=groupItem->getShapeData();
+            shapeData->setShape(newAISshape);
+        }
+
+        i++;
+    }
+
     meshObsolete=false;
     drawing->reset_modifiedSinceMeshRegen();
     mesh->show(true);
@@ -6623,17 +6619,14 @@ Standard_Real calculateVolume (const TopoDS_Shape& shape)
 double calculateSolidComparison (const TopoDS_Shape& newSolid, const TopoDS_Shape& originalSolid)
 {
     Standard_Real newSolidVolume=calculateVolume(newSolid);
-    std::cout << "            newSolidVolume=" << newSolidVolume << std::endl; std::cout.flush();
     if (newSolidVolume < 1e-12) return 0;
 
     Standard_Real originalSolidVolume=calculateVolume(originalSolid);
-    std::cout << "            originalSolidVolume=" << originalSolidVolume << std::endl; std::cout.flush();
     if (originalSolidVolume < 1e-12) return 0;
 
     if (newSolidVolume > originalSolidVolume+1e-6) return 0;
 
     // calculate intersection
-    std::cout << "            calculating intersection" << std::endl; std::cout.flush();
     BRepAlgoAPI_Common intersection(newSolid,originalSolid);
     intersection.Build();
 
@@ -6641,10 +6634,7 @@ double calculateSolidComparison (const TopoDS_Shape& newSolid, const TopoDS_Shap
     const TopoDS_Shape& commonResult=intersection.Shape();
 
     Standard_Real commonResultVolume=calculateVolume(commonResult);
-    std::cout << "            commonResultVolume=" << commonResultVolume << std::endl; std::cout.flush();
     if (commonResultVolume < 1e-12) return 0;
-
-    std::cout << "            commonResultVolume/originalSolidVolume=" << commonResultVolume/originalSolidVolume << std::endl; std::cout.flush();
 
     return commonResultVolume/originalSolidVolume;
 }
@@ -6734,16 +6724,13 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         projectChanged=true;
     }
 
-
     clear_physicalGroupMaterials (&projData);
-
 
     const TopoDS_Shape& finalResult=builder.Shape();
     TopExp_Explorer exp(finalResult,TopAbs_SOLID);
 
     int solidNumber=1;
     for (; exp.More(); exp.Next()) {
-        std::cout << "solidNumber=" << solidNumber << std::endl; std::cout.flush();
         const TopoDS_Shape& newSolid=exp.Current();
 
         // find the drawingItem with the best metric
@@ -6753,13 +6740,10 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         while (i < drawing->childCount()) {
             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
             if (drawingItem) {
-                std::cout << "   testing drawingItem=" << drawingItem->text(1).toStdString() << std::endl; std::cout.flush();
                 Handle(AIS_Shape) aisShape=drawingItem->getShape();
                 if (!aisShape.IsNull()) {
                     double metric=calculateSolidComparison(newSolid,aisShape->Shape());
-                    std::cout << "      metric=" << metric << std::endl; std::cout.flush();
                     if (metric > maxMetric) {
-                        std::cout << "         keep" << std::endl; std::cout.flush();
                         maxMetric=metric;
                         bestDrawingItem=drawingItem;
                     }
@@ -6783,18 +6767,12 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         solidNumber++;
     }
 
-
-
     // assign to mesh
     i=0;
     while (i < projData.physicalGroupMaterialCount) {
         std::vector<int> physicalGroupList;
         physicalGroupList.push_back(0);
         physicalGroupList[0]=projData.physicalGroupMaterials[i].tag;
-
-        // std::cout << "OpenParEMg::setPhysicalGroups:  dim=" << projData.physicalGroupMaterials[i].dim
-        //           << "  tag=" << projData.physicalGroupMaterials[i].tag
-        //           << "  materialName=" << projData.physicalGroupMaterials[i].materialName << std::endl; std::cout.flush();
 
         // uniquify the physical group name with the group tag to avoid gmsh eliminating
         // physical groups with duplicated names from the $PhysicalNames/$EndPhysicalNames block in the msh file
@@ -6806,17 +6784,15 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         i++;
     }
 
-
-
-
     // draw the mesh - use a concurrent run so the GUI doesn't lock up on long draws
     // This may or may not be helping.
     // ToDo: keep experimenting
     QFutureWatcher<void> *watcher=new QFutureWatcher<void>(this);
-    connect(watcher, &QFutureWatcher<void>::finished,
-            this, &OpenParEMg::finishDrawMesh);
+    connect(watcher, &QFutureWatcher<void>::finished,this,&OpenParEMg::finishDrawMesh);
     QFuture<void> future=QtConcurrent::run(&OpenParEMg::drawMesh,this);
     watcher->setFuture(future);
+    //drawMesh();
+    //finishDrawMesh();
 }
 
 void OpenParEMg::loadMeshFile (QString meshfile)
@@ -6836,6 +6812,7 @@ void OpenParEMg::loadMeshFile (QString meshfile)
         // load and display
         gmsh::open(meshfile.toStdString());
         drawMesh();
+        finishDrawMesh();
 
         // set the item names
         gmsh::vectorpair physicalGroups;
