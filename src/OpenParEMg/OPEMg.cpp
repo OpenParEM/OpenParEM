@@ -4290,80 +4290,65 @@ void OpenParEMg::setPhysicalGroups ()
 
     clear_physicalGroupMaterials (&projData);
 
-    // check the first-level children for SOLID or COMPOUND
+    gmsh::vectorpair physicalGroups;
+    gmsh::model::getPhysicalGroups(physicalGroups);
+
+    for (const auto& group : physicalGroups) {
+        int dim = group.first;
+        int tag = group.second;
+
+        // 2. Get the name of the physical group
+        std::string name;
+        gmsh::model::getPhysicalName(dim, tag, name);
+        std::cout << "Physical Group: " << name
+                  << " (Dim: " << dim << ", Tag: " << tag << ")\n";
+
+
+        size_t pos=name.rfind("_OPEM_RESERVED_");
+        std::string strippedName=name.substr(0,pos);
+
+        if (tag-1 < mesh->childCount()) {
+            mesh->child(tag-1)->setText(0,QString::fromStdString(strippedName));
+        }
+    }
+
+
+
+    //xxx
+    // std::vector<std::pair<int, int>> volumes;
+    // gmsh::model::getEntities(volumes, 3);
+    // std::cout << "volumes.size()=" << volumes.size() << std::endl; std::cout.flush();
     // int i=0;
-    // while (i < drawing->childCount()) {
-    //     DrawingItem *child=dynamic_cast<DrawingItem *>(drawing->child(i));
-
-    //     // SOLID
-    //     if (child->getShape()->Shape().ShapeType() == TopAbs_SOLID) {
-    //         QString itemMaterial=child->text(1);
-    //         if (itemMaterial.isEmpty()) {
-    //             itemMaterial="unassigned";
-    //             child->setText(1,itemMaterial);
-    //         }
-    //         char *material=nullptr;
-    //         cstrFromQString (&material,itemMaterial);
-    //         add_physicalGroupMaterial(&projData,-1,child->get_dimTag().first,child->get_dimTag().second,material);
-    //         if (material) {free(material);}
-    //     }
-
-    //     // COMPOUND
-    //     if (child->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) {
-    //         // make sure it is not a polywire (a polycircle is a COMPOUND with a center point added)
-    //         if (!child->getPolywire()) {
-    //             QString itemMaterial=child->text(1);
-    //             if (itemMaterial.isEmpty()) {
-    //                 itemMaterial="unassigned";
-    //                 child->setText(1,itemMaterial);
-    //             }
-    //             char *material=nullptr;
-    //             cstrFromQString (&material,itemMaterial);
-    //             add_physicalGroupMaterial(&projData,-1,child->get_dimTag().first,child->get_dimTag().second,material);
-    //             if (material) {free(material);}
-    //         }
-    //     }
-
+    // while (i < volumes.size()) {
+    //     char *material=(char *)malloc(4*sizeof(char *));
+    //     sprintf(material,"air");
+    //     add_physicalGroupMaterial(&projData,-1,3,i+1,material);
     //     i++;
     // }
 
 
 
-    //xxx
-    std::vector<std::pair<int, int>> volumes;
-    gmsh::model::getEntities(volumes, 3);
-    std::cout << "volumes.size()=" << volumes.size() << std::endl; std::cout.flush();
-    int i=0;
-    while (i < volumes.size()) {
-        char *material=(char *)malloc(4*sizeof(char *));
-        sprintf(material,"air");
-        add_physicalGroupMaterial(&projData,-1,3,i+1,material);
-        i++;
-    }
-
-
-
 
     // assign to mesh
-    i=0;
-    while (i < projData.physicalGroupMaterialCount) {
-        std::vector<int> physicalGroupList;
-        physicalGroupList.push_back(0);
-        physicalGroupList[0]=projData.physicalGroupMaterials[i].tag;
+    // i=0;
+    // while (i < projData.physicalGroupMaterialCount) {
+    //     std::vector<int> physicalGroupList;
+    //     physicalGroupList.push_back(0);
+    //     physicalGroupList[0]=projData.physicalGroupMaterials[i].tag;
 
-        // std::cout << "OpenParEMg::setPhysicalGroups:  dim=" << projData.physicalGroupMaterials[i].dim
-        //           << "  tag=" << projData.physicalGroupMaterials[i].tag
-        //           << "  materialName=" << projData.physicalGroupMaterials[i].materialName << std::endl; std::cout.flush();
+    //     // std::cout << "OpenParEMg::setPhysicalGroups:  dim=" << projData.physicalGroupMaterials[i].dim
+    //     //           << "  tag=" << projData.physicalGroupMaterials[i].tag
+    //     //           << "  materialName=" << projData.physicalGroupMaterials[i].materialName << std::endl; std::cout.flush();
 
-        // uniquify the physical group name with the group tag to avoid gmsh eliminating
-        // physical groups with duplicated names from the $PhysicalNames/$EndPhysicalNames block in the msh file
-        std::string groupName=projData.physicalGroupMaterials[i].materialName;
-        groupName.append("_OPEM_RESERVED_");
-        groupName.append(std::to_string(projData.physicalGroupMaterials[i].tag));
+    //     // uniquify the physical group name with the group tag to avoid gmsh eliminating
+    //     // physical groups with duplicated names from the $PhysicalNames/$EndPhysicalNames block in the msh file
+    //     std::string groupName=projData.physicalGroupMaterials[i].materialName;
+    //     groupName.append("_OPEM_RESERVED_");
+    //     groupName.append(std::to_string(projData.physicalGroupMaterials[i].tag));
 
-        gmsh::model::addPhysicalGroup(projData.physicalGroupMaterials[i].dim,physicalGroupList,-1,groupName.c_str());
-        i++;
-    }
+    //     gmsh::model::addPhysicalGroup(projData.physicalGroupMaterials[i].dim,physicalGroupList,-1,groupName.c_str());
+    //     i++;
+    // }
 
     std::cout << "exit OpenParEMg::setPhysicalGroups" << std::endl; std::cout.flush();
 }
@@ -6740,66 +6725,50 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         i++;
     }
 
-    // // path items - imprint the paths onto the mesh for better accuracy
-    // i=0;
-    // while (i < path->childCount()) {
-    //     PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
-    //     if (pathItem) {
-    //         ShapeData *shapeData=pathItem->getShapeData();
-    //         Handle(AIS_Shape) aisShape=shapeData->getShape();
-    //         if (!aisShape.IsNull()) {
-    //             TopoDS_Shape shape=aisShape->Shape();
-    //             if (!shape.IsNull()) {
-    //                 if (shape.ShapeType() == TopAbs_COMPOUND) {
-    //                     TopoDS_Iterator it(shape);
-    //                     while (it.More()) {
-    //                         // paths with arrows - take the first TopoDS_Shape with the rest being arrowheads
-    //                         TopoDS_Shape childShape=it.Value();
-    //                         if (childShape.ShapeType() != TopAbs_COMPOUND) {
-    //                             arguments.Append(childShape);
-    //                             break;
-    //                         }
-    //                         it.Next();
-    //                     }
-    //                 } else {
-    //                     arguments.Append(shape);
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     i++;
-    // }
+    // path items - imprint the paths onto the mesh for better accuracy
+    i=0;
+    while (i < path->childCount()) {
+        PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
+        if (pathItem) {
+            ShapeData *shapeData=pathItem->getShapeData();
+            Handle(AIS_Shape) aisShape=shapeData->getShape();
+            if (!aisShape.IsNull()) {
+                TopoDS_Shape shape=aisShape->Shape();
+                if (!shape.IsNull()) {
+                    if (shape.ShapeType() == TopAbs_COMPOUND) {
+                        TopoDS_Iterator it(shape);
+                        while (it.More()) {
+                            // paths with arrows - take the first TopoDS_Shape with the rest being arrowheads
+                            TopoDS_Shape childShape=it.Value();
+                            if (childShape.ShapeType() != TopAbs_COMPOUND) {
+                                arguments.Append(childShape);
+                                break;
+                            }
+                            it.Next();
+                        }
+                    } else {
+                        arguments.Append(shape);
+                    }
+                }
+            }
+        }
+        i++;
+    }
 
     // assemble
     BOPAlgo_Builder builder;
     builder.SetArguments(arguments);
     builder.Perform();
     if (builder.HasErrors()) return;
-
-    // final shape
     TopoDS_Shape fragments=builder.Shape();
 
-
-
-
-
-    // gmsh::option::setNumber("Mesh.MeshSizeFactor",projData.gui_mesh_scale);
-    // gmsh::option::setNumber("Mesh.MeshSizeMin",projData.gui_mesh_minSize);
-    // gmsh::option::setNumber("Mesh.MeshSizeMax",projData.gui_mesh_maxSize);
-    //gmsh::model::occ::synchronize(); // original code
-
-    BRepTools::Write(fragments, "test.brep");
-    gmsh::open("test.brep");
-
+    // mesh
+    gmsh::model::occ::importShapesNativePointer((void *) &fragments,drawingEntities,false);
     gmsh::option::setNumber("Mesh.MeshSizeFactor",projData.gui_mesh_scale);
     gmsh::option::setNumber("Mesh.MeshSizeMin",projData.gui_mesh_minSize);
     gmsh::option::setNumber("Mesh.MeshSizeMax",projData.gui_mesh_maxSize);
     gmsh::model::occ::synchronize();
-
-
     gmsh::model::mesh::generate(3);
-
-    gmsh::write("output.msh");
 
     // default name for the mesh
     if (strcmp(projData.mesh_file,"") == 0) {
