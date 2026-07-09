@@ -397,6 +397,7 @@ public:
     bool loadDrawingFile ();
     void drawMesh ();
     void finishDrawMesh ();
+    void finishDrawMeshShow ();
     void deleteMesh (bool);
 
     //bool hasSelectedPaths ();

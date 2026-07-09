@@ -6557,8 +6557,15 @@ void OpenParEMg::finishDrawMesh ()
 
     meshObsolete=false;
     drawing->reset_modifiedSinceMeshRegen();
-    mesh->show(true);
+    //ui->drawingWindow->fitAll();
+    //mesh->show(true);
     setMenusI(63);
+}
+
+void OpenParEMg::finishDrawMeshShow ()
+{
+    finishDrawMesh();
+    mesh->show(true);
 }
 
 void OpenParEMg::deleteMesh (bool deleteMeshFile)
@@ -6788,7 +6795,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     // This may or may not be helping.
     // ToDo: keep experimenting
     QFutureWatcher<void> *watcher=new QFutureWatcher<void>(this);
-    connect(watcher, &QFutureWatcher<void>::finished,this,&OpenParEMg::finishDrawMesh);
+    connect(watcher, &QFutureWatcher<void>::finished,this,&OpenParEMg::finishDrawMeshShow);
     QFuture<void> future=QtConcurrent::run(&OpenParEMg::drawMesh,this);
     watcher->setFuture(future);
     //drawMesh();
