@@ -1,7 +1,7 @@
 #OpenParEM3Dproject 1.0
 //Commented lines show either unspecified inputs that utilize the default values or specified inputs that match the default values.
 //project.calculate.poynting false
-project.save.fields true
+project.save.fields false
 mesh.file straight-loaded.msh
 //mesh.save.refined false
 //mesh.refinement.fraction 0.005

@@ -882,7 +882,7 @@ int OpenParEMg::check_changed ()
 
 void OpenParEMg::closeWindow_triggered ()
 {
-    std::cout << "OpenParEMg::closeWindow_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::closeWindow_triggered" << std::endl; std::cout.flush();
 
     if (lengthInputForm) {delete lengthInputForm; lengthInputForm=nullptr;}
     if (vectorInputForm) {delete vectorInputForm; vectorInputForm=nullptr;}
@@ -4256,7 +4256,7 @@ bool OpenParEMg::isValidCreateDiffPair ()
 
 void OpenParEMg::renumberDimTag ()
 {
-    std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
 
     int count=1;
     int i=0;
@@ -4284,7 +4284,7 @@ void OpenParEMg::renumberDimTag ()
 
 void OpenParEMg::setMaterials ()
 {
-    std::cout << "OpenParEMg::setMaterials" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::setMaterials" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < drawing->childCount()) {
@@ -4505,8 +4505,6 @@ void OpenParEMg::on_actionOpen_triggered ()
 
         // load mesh, if any, and draw
         if (strcmp(projData.mesh_file,"") != 0) {
-            //xxx
-            std::cout << "projData.mesh_file=" << projData.mesh_file << std::endl; std::cout.flush();
             loadMeshFile(QString::fromStdString(projData.mesh_file));
         }
 
@@ -4901,7 +4899,7 @@ void OpenParEMg::on_actionSave_triggered ()
         }
 
         // check for obsolete mesh
-        if (meshObsolete) {
+        if (meshObsolete && mesh->childCount() > 0) {
             int retVal=0;
             QMessageBox msgBox(this);
             msgBox.setText("The mesh is obsolete due to changes to the meshing criteria.");
@@ -5866,7 +5864,7 @@ bool OpenParEMg::saveDrawingFile (QString filename)
 
 bool OpenParEMg::loadDrawingFile ()
 {
-    std::cout << "OpenParEMg::loadDrawingFile" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::loadDrawingFile" << std::endl; std::cout.flush();
 
     QString filename=absolutePath;
     filename.append("/").append(projData.project_name);
@@ -6411,9 +6409,6 @@ void OpenParEMg::drawMesh()
     std::vector<std::pair<int,int>> physicalGroups;
     std::vector<gmsh::vectorpair> entities;
     gmsh::model::getPhysicalGroupsEntities(physicalGroups,entities,3);
-
-    //xxx
-    std::cout << "physicalGroups.size()=" << physicalGroups.size() << std::endl; std::cout.flush();
 
     // loop through the physical groups
     size_t pg=0;
@@ -7491,7 +7486,6 @@ void OpenParEMg::finishDraw ()
             IntegrationPathItem *integrationPathItem=viItem->createIntegrationPathItemFromDrawing(currentDrawingItem,true);
             currentDrawingItem->del();
 
-            //xxx
             // see if the path is within an existing port
             Path *path=integrationPathItem->getPathItem()->getPath();
             if (portPath->is_path_inside(path)) {

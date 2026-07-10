@@ -7399,7 +7399,6 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
                  PortItem *portItem)
 {
     //std::cout << "Port::draw" << std::endl;  std::cout.flush();
-    if (QThread::currentThread() != qApp->thread()) {qWarning() << "Port::draw: GUI method called from worker thread!";}
 
     // link paths -  assumes there is only one path, which is checked when loading the database
 

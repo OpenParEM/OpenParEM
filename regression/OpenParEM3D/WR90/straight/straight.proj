@@ -68,6 +68,7 @@ reference.impedance 0
 //gui.units mm
 //gui.grid.size 10
 gui.slot.count 8
+//gui.oversubscribe true
 //gui.mesh.scale 1
 //gui.mesh.minSize 0
 //gui.mesh.maxSize 1e+19
