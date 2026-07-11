@@ -18,7 +18,6 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <qthread.h>
 #include <quadmath.h>
 #include <iostream>
 #include <sstream>
@@ -7353,7 +7352,6 @@ void spinValueChanged (int value, SportNumberItem *sportNumberItem)
 
     // new Sport
     newShapeData->set_Sport(value);     // saves data to the item
-    std::cout << "place 3 addSport" << std::endl; std::cout.flush();
     sportNumberItem->addSport(value);   // saves data to the global list
 
     sportNumberItem->addShapeData(newShapeData);
@@ -7964,6 +7962,42 @@ bool BoundaryDatabase::check (bool check_closed_loop)
          fail=true;
       }
       i++;
+   }
+
+   // check for duplicate net names
+
+   std::vector<std::string> netNames;
+   long unsigned int m=0;
+   while (m < portList.size()) {
+       Port *port=portList[m];
+       if (port) {
+           long unsigned int n=0;
+           while (n < port->get_modeList_size()) {
+               Mode *mode=port->get_mode(n);
+               if (mode) {
+                   if (mode->get_net().compare("") != 0) {
+                      netNames.push_back(mode->get_net());
+                   }
+               }
+               n++;
+           }
+       }
+       m++;
+   }
+
+   if (netNames.size() > 0) {
+       m=0;
+       while (m < netNames.size()-1) {
+           long unsigned int n=m+1;
+           while (n < netNames.size()) {
+              if (netNames[m].compare(netNames[n]) == 0) {
+                  prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3111: Net name %s is duplicated.\n",indent.c_str(),indent.c_str(),netNames[m].c_str());
+                  fail=true;
+              }
+              n++;
+           }
+           m++;
+       }
    }
 
    return fail;
