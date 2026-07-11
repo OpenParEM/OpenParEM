@@ -991,6 +991,8 @@ void OpenParEMg::setMenusI (int placeIndex)
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
     //ui->drawingWindow->audit();
+    sportNumbers.print();
+
 
     // disable all menus on command
     if (disableMenus) {
@@ -1080,57 +1082,130 @@ void OpenParEMg::setMenusI (int placeIndex)
             ui->actionHideAll->setEnabled(true);
         }
 
-        ui->actionRun->setToolTip("Mesh generation is required.");
-        if (mesh->childCount() > 0) {
-            ui->actionFitAll->setEnabled(true);
-            ui->actionMenuSelection->setEnabled(true);
-            ui->actionWireframe->setEnabled(true);
-            ui->actionMeshGenerate->setEnabled(false);
-            ui->actionMeshLoad->setEnabled(false);
-            ui->actionMeshSave->setEnabled(false);
-            if (mesh->isModified()) ui->actionMeshSave->setEnabled(true);
-            ui->actionMeshSaveAs->setEnabled(true);
-            ui->actionMeshDelete->setEnabled(true);
+        bool okToSimulate=true;
+        QString issues="Setup issues preventing simulation:";
 
-            ui->actionRun->setEnabled(true);
-            ui->actionRun->setToolTip("Run OpenParEM3D.");
-            if (simulationRunning) {
-                ui->actionRun->setEnabled(false);
-                ui->actionRun->setToolTip("OpenParEM3D is running.");
-                ui->actionStop->setEnabled(true);
-                ui->actionAbort->setEnabled(true);
-                ui->actionAbortAndExit->setEnabled(true);
-            }
-            if (simulationStopping) {
-                ui->actionRun->setEnabled(false);
-                ui->actionRun->setToolTip("OpenParEM3D is stopping.");
-                ui->actionStop->setEnabled(false);
-                ui->actionAbort->setEnabled(true);
-                ui->actionAbortAndExit->setEnabled(true);
-            }
-            if (simulationAborting) {
-                ui->actionRun->setEnabled(false);
-                ui->actionRun->setToolTip("OpenParEM3D is aborting.");
-                ui->actionStop->setEnabled(false);
-                ui->actionAbort->setEnabled(false);
-                ui->actionAbortAndExit->setEnabled(true);
-            }
-            if (mesh->isModified() || meshObsolete) {
-                ui->actionRun->setEnabled(false);
-                ui->actionRun->setToolTip("Mesh regeneration is required.");
-                ui->actionStop->setEnabled(false);
-                ui->actionAbort->setEnabled(false);
-                ui->actionAbortAndExit->setEnabled(false);
+        if (!validDrawing()) {
+            issues.append("\n- Drawing is not valid for simulation.");
+            okToSimulate=false;
+        }
+
+        if (drawing->isModified()) {
+            issues.append("\n- Drawing is modified.");
+            okToSimulate=false;
+        }
+
+        if (path->isModified()) {
+            issues.append("\n- Paths are modified.");
+            okToSimulate=false;
+        }
+
+        if (port->childCount() == 0) {
+            issues.append("\n- At least one port must be defined.");
+            okToSimulate=false;
+        }
+
+        if (!validPorts()) {
+            issues.append("\n- At least one port does not have a valid impedance calculation.");
+            okToSimulate=false;
+        }
+
+        if (port->isModified()) {
+            issues.append("\n- Ports are modified.");
+            okToSimulate=false;
+        }
+
+        if (!sportNumbers.isStartWith1()) {
+            issues.append("- Sport numbering must start with 1.");
+            okToSimulate=false;
+        }
+
+        if (!sportNumbers.isContiguous()) {
+            issues.append("\n- Sport numbering must be contiguous.");
+            okToSimulate=false;
+        }
+
+        if (sportNumbers.hasDuplicates()) {
+            issues.append("\n- Sport numbering has duplicate assignments.");
+            okToSimulate=false;
+        }
+
+        if (!materialsAssigned()) {
+            issues.append("\n- At least one drawing 3D element does not have a material assigned.");
+            okToSimulate=false;
+        }
+
+        if (projData.inputFrequencyPlansCount == 0) {
+            issues.append("\n- At least one frequency must be assigned for simulation.");
+            okToSimulate=false;
+        }
+
+        if (mesh->childCount() == 0) {
+            issues.append("\n- Mesh generation is required.");
+            okToSimulate=false;
+        }
+
+        if (okToSimulate) {
+            if (mesh->childCount() > 0) {
+                if (meshAssigned()) {
+                    ui->actionFitAll->setEnabled(true);
+                    ui->actionMenuSelection->setEnabled(true);
+                    ui->actionWireframe->setEnabled(true);
+                    ui->actionMeshGenerate->setEnabled(false);
+                    ui->actionMeshLoad->setEnabled(false);
+                    ui->actionMeshSave->setEnabled(false);
+                    if (mesh->isModified()) ui->actionMeshSave->setEnabled(true);
+                    ui->actionMeshSaveAs->setEnabled(true);
+                    ui->actionMeshDelete->setEnabled(true);
+
+                    ui->actionRun->setEnabled(true);
+                    ui->actionRun->setToolTip("Run OpenParEM3D.");
+                    if (simulationRunning) {
+                        ui->actionRun->setEnabled(false);
+                        ui->actionRun->setToolTip("OpenParEM3D is running.");
+                        ui->actionStop->setEnabled(true);
+                        ui->actionAbort->setEnabled(true);
+                        ui->actionAbortAndExit->setEnabled(true);
+                    }
+                    if (simulationStopping) {
+                        ui->actionRun->setEnabled(false);
+                        ui->actionRun->setToolTip("OpenParEM3D is stopping.");
+                        ui->actionStop->setEnabled(false);
+                        ui->actionAbort->setEnabled(true);
+                        ui->actionAbortAndExit->setEnabled(true);
+                    }
+                    if (simulationAborting) {
+                        ui->actionRun->setEnabled(false);
+                        ui->actionRun->setToolTip("OpenParEM3D is aborting.");
+                        ui->actionStop->setEnabled(false);
+                        ui->actionAbort->setEnabled(false);
+                        ui->actionAbortAndExit->setEnabled(true);
+                    }
+                    if (mesh->isModified() || meshObsolete) {
+                        ui->actionRun->setEnabled(false);
+                        ui->actionRun->setToolTip("Mesh regeneration is required.");
+                        ui->actionStop->setEnabled(false);
+                        ui->actionAbort->setEnabled(false);
+                        ui->actionAbortAndExit->setEnabled(false);
+                    }
+                } else {
+                    issues.append("\n- Mesh has at least one region missing a material assignment.");
+                    okToSimulate=false;
+                }
             }
         }
 
         if (projectChanged) {
             ui->actionRun->setEnabled(false);
-            ui->actionRun->setToolTip("Project save is required.");
+            issues.append("\n- Project save is required.");
             ui->actionStop->setEnabled(false);
             ui->actionAbort->setEnabled(false);
             ui->actionAbortAndExit->setEnabled(false);
+            okToSimulate=false;
         }
+
+        // show the cummulative setup issues in the tool tip
+        if (!okToSimulate) ui->actionRun->setToolTip(issues);
 
         if (drawingPlaneShown) {
             ui->actionDrawingPlaneShow->setEnabled(false);
@@ -1212,6 +1287,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     }
 
     if (simulationRunning) {
+        ui->actionRun->setToolTip("Simulation is running.");
         ui->actionNew->setEnabled(false);
         ui->actionOpen->setEnabled(false);
         ui->actionSave->setEnabled(false);
@@ -2124,26 +2200,6 @@ void OpenParEMg::deleteDrawingItems ()
     }
 
     finishOperation(false,100);
-}
-
-void OpenParEMg::largestSportNumber (BaseItem *baseItem, int *Sport)
-{
-    if (!baseItem) return;
-
-    if (baseItem->is_sportNumber()) {
-        ShapeData *shapeData=baseItem->getShapeData();
-        if (shapeData) {
-            int testSport=shapeData->get_Sport();
-            if (testSport > *Sport) *Sport=testSport;
-        }
-    }
-
-    int i=0;
-    while (i < baseItem->childCount()) {
-        BaseItem *childItem=dynamic_cast<BaseItem *>(baseItem->child(i));
-        largestSportNumber(childItem,Sport);
-        i++;
-    }
 }
 
 void OpenParEMg::insertModeItems ()
@@ -3864,7 +3920,8 @@ void OpenParEMg::createPortFromPathN (bool startNew)
             selectedList[i]->showArrows(false);
 
             // next available s-port number
-            int sport=get_SportCount()+1;
+            int sport=sportNumbers.next();
+            std::cout << "new sport=" << sport << std::endl; std::cout.flush();
 
             // default port name
 
@@ -4654,6 +4711,8 @@ void OpenParEMg::resetProject ()
     port->reset();
     boundary->reset();
     mesh->reset();
+
+    sportNumbers.clear();
 
     // clear tabs
     ui->logText->clear();
@@ -6609,6 +6668,76 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
         projData.mesh_file=(char *)malloc(sizeof(char));
         projData.mesh_file[0]='\0';
     }
+}
+
+bool OpenParEMg::validDrawing ()
+{
+    int i=0;
+    while (i < drawing->childCount()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
+        if (drawingItem) {
+            Handle(AIS_Shape) aisShape=drawingItem->getShape();
+            if (aisShape) {
+                TopoDS_Shape shape=aisShape->Shape();
+                if (shape.ShapeType() == TopAbs_SOLID || shape.ShapeType() == TopAbs_COMPOUND) {
+                    return true;
+                }
+            }
+        }
+        i++;
+    }
+
+    return false;
+}
+
+bool OpenParEMg::validPorts ()
+{
+    int i=0;
+    while (i < port->childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
+        if (!portItem->isValid()) return false;
+        i++;
+    }
+
+    return true;
+}
+
+bool OpenParEMg::meshAssigned ()
+{
+    if (mesh->childCount() == 0) return false;
+
+    int i=0;
+    while (i < mesh->childCount()) {
+        MeshItem *meshItem=dynamic_cast<MeshItem *>(mesh->child(i));
+        if (meshItem) {
+            if (meshItem->text(0).compare("unassigned") == 0) return false;
+        }
+        i++;
+    }
+
+    return true;
+}
+
+bool OpenParEMg::materialsAssigned ()
+{
+    if (drawing->childCount() == 0) return false;
+
+    int i=0;
+    while (i < drawing->childCount()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
+        if (drawingItem) {
+            Handle(AIS_Shape) aisShape=drawingItem->getShape();
+            if (aisShape) {
+                TopoDS_Shape shape=aisShape->Shape();
+                if (shape.ShapeType() == TopAbs_SOLID || shape.ShapeType() == TopAbs_COMPOUND) {
+                    if (drawingItem->text(1).isEmpty()) return false;
+                }
+            }
+        }
+        i++;
+    }
+
+    return true;
 }
 
 Standard_Real calculateVolume (const TopoDS_Shape& shape)

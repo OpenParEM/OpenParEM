@@ -7335,23 +7335,31 @@ void comboTextChanged (QString text, BoundaryItem *boundaryItem)
     }
 }
 
+//xxx
 void spinValueChanged (int value, SportNumberItem *sportNumberItem)
 {
     //std::cout << "spinValueChanged  value=" << value << std::endl; std::cout.flush();
 
     if (!sportNumberItem) return;
+    if (value < 1) return;
 
     ShapeData *newShapeData=sportNumberItem->getShapeData()->copyCreate();
     newShapeData->setEdit();
-    newShapeData->set_Sport(value);
+
+    // old Sport
+    int oldSport=newShapeData->get_Sport();
+    if (value == oldSport) return; // no need to save
+    sportNumberItem->removeSport(oldSport);
+
+    // new Sport
+    newShapeData->set_Sport(value);     // saves data to the item
+    std::cout << "place 3 addSport" << std::endl; std::cout.flush();
+    sportNumberItem->addSport(value);   // saves data to the global list
+
     sportNumberItem->addShapeData(newShapeData);
     sportNumberItem->startItemChange();
     sportNumberItem->addItemChange();
     sportNumberItem->setModified(true);
-
-    //sportNumberItem->setMenus();
-    //sportNumberItem->clearTreeSelection();
-    //sportNumberItem->updateViewer();
 }
 
 void textValueChanged (QString text, BaseItem *baseItem, BoundaryDatabase *boundaryDatabase)

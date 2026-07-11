@@ -37,6 +37,7 @@
 #include "PolycircleEditForm.h"
 #include "Relay.h"
 #include "CustomLineEdit.h"
+#include "SportNumbers.h"
 #include "VectorInputForm.h"
 #include "project.h"
 #include "OpenParEMmaterials.hpp"
@@ -400,6 +401,11 @@ public:
     void finishDrawMeshShow ();
     void deleteMesh (bool);
 
+    bool validDrawing ();
+    bool validPorts ();
+    bool meshAssigned ();
+    bool materialsAssigned ();
+
     //bool hasSelectedPaths ();
     void clearTreeSelection ();
 
@@ -605,7 +611,6 @@ private slots:
     void unselectRootDrawingItems ();
     void unselectDrawingItems ();
     void deleteDrawingItems ();
-    void largestSportNumber (BaseItem *, int *);
     void insertModeItems ();
     void unselectPortItems ();
     void renamePortItems ();
@@ -722,6 +727,8 @@ private:
     RootPortItem *port;
     RootBoundaryItem *boundary;
     RootMeshItem *mesh;
+
+    SportNumbers sportNumbers;   // for managing valid Sport numbers
 
     BaseItem *clickedItem,*previousClickedItem,*workingItem;
     int previousSelectionIndex;

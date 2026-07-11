@@ -450,6 +450,12 @@ void BaseItem::save (std::ofstream *out)
     setModified(false);
 }
 
+void BaseItem::addSport (long unsigned int sport) {mw->sportNumbers.add(sport);}
+void BaseItem::removeSport (long unsigned int sport) {mw->sportNumbers.remove(sport);}
+bool BaseItem::isAssignedSport (long unsigned int sport) {return mw->sportNumbers.isAssigned(sport);}
+long unsigned int BaseItem::nextSport () {return mw->sportNumbers.next();}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // ScaleLabelItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -3127,13 +3133,15 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
     pathItem=pathItem_;
     setModified(true);
 
-    int Sport=mw->port->childCount()+1;
+    int Sport=mw->sportNumbers.next();
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
     newShapeData->set_impedance_calculation(impedance_calculation_);
     newShapeData->set_impedance_definition(impedance_definition_);
-    newShapeData->set_Sport(Sport);
+    //newShapeData->set_Sport(Sport);
+    //std::cout << "place 1 addSport  Sport=" << Sport << std::endl; std::cout.flush();
+    //addSport(Sport);
     addShapeData(newShapeData);
 
     QString name="port";
@@ -3354,6 +3362,28 @@ void PortItem::del ()
         mw->itemChangesStack.add(this);
         mw->projectChanged=true;
     }
+
+    // sport
+    int i=0;
+    while (i < childCount()) {
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+        if (modeItem) {
+            mw->sportNumbers.remove(modeItem->get_Sport());
+        }
+
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+        if (diffPairItem) {
+            int j=0;
+            while (j < diffPairItem->childCount()) {
+                ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
+                if (modeItem) {
+                    mw->sportNumbers.remove(modeItem->get_Sport());
+                }
+                j++;
+            }
+        }
+        i++;
+    }
 }
 
 void PortItem::undo ()
@@ -3369,11 +3399,55 @@ void PortItem::undo ()
             pathItem->removeLinkedItem(this);
             pathItem->showArrows(true);
         }
+
+        // sport
+        int i=0;
+        while (i < childCount()) {
+            ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+            if (modeItem) {
+                mw->sportNumbers.remove(modeItem->get_Sport());
+            }
+
+            DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+            if (diffPairItem) {
+                int j=0;
+                while (j < diffPairItem->childCount()) {
+                    ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
+                    if (modeItem) {
+                        mw->sportNumbers.remove(modeItem->get_Sport());
+                    }
+                    j++;
+                }
+            }
+            i++;
+        }
     } else if (shapeData->isDelete()) {
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
             pathItem->showArrows(false);
+        }
+
+        // sport
+        int i=0;
+        while (i < childCount()) {
+            ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+            if (modeItem) {
+                mw->sportNumbers.add(modeItem->get_Sport());
+            }
+
+            DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+            if (diffPairItem) {
+                int j=0;
+                while (j < diffPairItem->childCount()) {
+                    ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
+                    if (modeItem) {
+                        mw->sportNumbers.add(modeItem->get_Sport());
+                    }
+                    j++;
+                }
+            }
+            i++;
         }
     }
 
@@ -3396,11 +3470,55 @@ void PortItem::redo ()
             pathItem->push_linkedItem(this);
             pathItem->showArrows(false);
         }
+
+        // sport
+        int i=0;
+        while (i < childCount()) {
+            ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+            if (modeItem) {
+                mw->sportNumbers.add(modeItem->get_Sport());
+            }
+
+            DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+            if (diffPairItem) {
+                int j=0;
+                while (j < diffPairItem->childCount()) {
+                    ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
+                    if (modeItem) {
+                        mw->sportNumbers.add(modeItem->get_Sport());
+                    }
+                    j++;
+                }
+            }
+            i++;
+        }
     } else if (next->isDelete()) {
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
             pathItem->showArrows(true);
+        }
+
+        // sport
+        int i=0;
+        while (i < childCount()) {
+            ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+            if (modeItem) {
+                mw->sportNumbers.remove(modeItem->get_Sport());
+            }
+
+            DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+            if (diffPairItem) {
+                int j=0;
+                while (j < diffPairItem->childCount()) {
+                    ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
+                    if (modeItem) {
+                        mw->sportNumbers.remove(modeItem->get_Sport());
+                    }
+                    j++;
+                }
+            }
+            i++;
         }
     }
 
@@ -3447,6 +3565,26 @@ void PortItem::save (std::ofstream *out)
     setModified(false);
 }
 
+bool PortItem::isValid ()
+{
+    //xxx
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem && baseItem->is_impedanceDefinition()) {
+            CustomComboBox *comboZdef=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(baseItem,0));
+            if (comboZdef) {
+                if (comboZdef->currentText().compare("invalid") == 0) return false;
+                break;
+            }
+        }
+        i++;
+    }
+
+    return true;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // ModeItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -3462,10 +3600,8 @@ ModeItem::ModeItem (OpenParEMg *mw_, BaseItem *parentItem_, bool dummyFill)
     newShapeData->setCreate();
     addShapeData(newShapeData);
 
-    // get the current largest Sport number
-    int Sport=0;
-    mw->largestSportNumber (mw->port,&Sport);
-    Sport++;
+    // next available Sport
+    int Sport=nextSport();
 
     QString name="net";
     name.append(QString::number(Sport));
@@ -3697,6 +3833,8 @@ SportItem::SportItem (OpenParEMg *mw_, ModeItem *modeItem_, int Sport)
     SportNumberItem *sportNumberItem=new SportNumberItem(mw,this);
     ShapeData *shapeData=sportNumberItem->getShapeData();
     shapeData->set_Sport(Sport);
+    std::cout << "place 2 addSport  Sport=" << Sport << std::endl; std::cout.flush();
+    addSport(Sport);
     addChild(sportNumberItem);
 
     // spin box for changing the port number
@@ -3776,6 +3914,79 @@ void SportNumberItem::showMenu (QMenu *menu)
 {
 }
 
+void SportNumberItem::undo ()
+{
+    std::cout << "SportNumberItem::undo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    mw->ui->drawingWindow->unselectAllItems();
+
+    if (shapeData->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // nothing to do
+    } else if (shapeData->isCreate()) {
+        mw->sportNumbers.remove(shapeData->get_Sport());
+        dataStack.undo();
+    } else if (shapeData->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        mw->sportNumbers.remove(shapeData->get_Sport());
+        dataStack.undo();
+        shapeData=getShapeData();
+        mw->sportNumbers.add(shapeData->get_Sport());
+        restoreWidgets();
+    } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        dataStack.undo();
+        mw->sportNumbers.add(shapeData->get_Sport());
+        restoreWidgets();
+    } else if (shapeData->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        dataStack.undo();
+        setText(0,getShapeData()->get_name());
+    }
+}
+
+void SportNumberItem::redo ()
+{
+    std::cout << "SportNumberItem::redo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    mw->ui->drawingWindow->unselectAllItems();
+
+    ShapeData *next=shapeData->getNext();
+    if (!next) return;
+
+    if (next->isNoop()) {
+        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        // should not occur
+    } else if (next->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        dataStack.redo();
+        mw->sportNumbers.add(shapeData->get_Sport());
+        restoreWidgets();
+    } else if (next->isEdit()) {
+        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        mw->sportNumbers.remove(shapeData->get_Sport());
+        dataStack.redo();
+        shapeData=getShapeData();
+        mw->sportNumbers.add(shapeData->get_Sport());
+        restoreWidgets();
+    } else if (next->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        mw->sportNumbers.remove(shapeData->get_Sport());
+        dataStack.redo();
+    } else if (next->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+
+        dataStack.redo();
+        setText(0,getShapeData()->get_name());
+    }
+}
+
 void SportNumberItem::insertSportNumberWidget (int Sport)
 {
     CustomSpinBox *sportNumber=new CustomSpinBox();
@@ -3791,7 +4002,6 @@ void SportNumberItem::insertSportNumberWidget (int Sport)
     QObject::connect(sportNumber,&CustomSpinBox::CustomValueChanged,mw->relay,&Relay::clearTreeSelection);
 }
 
-//xxx
 int SportNumberItem::get_Sport ()
 {
     // CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
@@ -4063,7 +4273,6 @@ bool VIItem::hasScale ()
     int i=0;
     while (i < childCount()) {
         BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-        //xxx
         baseItem->print_itemType();
         if (baseItem && baseItem->is_scaleLabel()) return true;
         i++;
@@ -4117,21 +4326,15 @@ void VIItem::addRemoveScale ()
     std::cout << "VIItem::addRemoveScale" << std::endl; std::cout.flush();
 
     if (hasScale()) {
-        std::cout << "   place 1" << std::endl; std::cout.flush();
         if (hasIntegrationPathItem()) {
-            std::cout << "      place 1a" << std::endl; std::cout.flush();
             // nothing to do
         } else {
-            std::cout << "      place 1b" << std::endl; std::cout.flush();
             removeScaleItem();
         }
     } else {
-        std::cout << "   place 2" << std::endl; std::cout.flush();
         if (hasIntegrationPathItem()) {
-            std::cout << "   place 2a" << std::endl; std::cout.flush();
             addScaleItem();
         } else {
-            std::cout << "   place 2b" << std::endl; std::cout.flush();
             // nothing to do
         }
     }

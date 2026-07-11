@@ -690,6 +690,11 @@ public:
 
     virtual void save (std::ofstream *);
 
+    void addSport (long unsigned int);
+    void removeSport (long unsigned int);
+    bool isAssignedSport (long unsigned int);
+    long unsigned int nextSport ();
+
 private slots:
 
 protected:
@@ -1135,6 +1140,8 @@ public:
     int get_SportCount ();
     void save (std::ofstream *) override;
 
+    bool isValid ();
+
 private:
     PathItem *pathItem;   // PathItem associated with this port
 };
@@ -1213,8 +1220,8 @@ public:
     void show (bool) override;
     void hide (bool) override;
     void showMenu (QMenu *) override;
-    //void setSportItem (SportItem *sportItem_) {sportItem=sportItem_;}
-    //SportItem* getSportItem () {return sportItem;}
+    void undo () override;
+    void redo () override;
 
     void insertSportNumberWidget (int);
     int get_Sport ();

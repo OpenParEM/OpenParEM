@@ -98,6 +98,8 @@ qt_add_executable(OpenParEMg
     CustomTreeWidgetItem.cpp
     AntennaForm.h AntennaForm.cpp AntennaForm.ui
 
+    SportNumbers.h SportNumbers.cpp
+
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)

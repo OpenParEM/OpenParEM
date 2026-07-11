@@ -2,7 +2,7 @@
 //Commented lines show either unspecified inputs that utilize the default values or specified inputs that match the default values.
 //project.calculate.poynting false
 //project.save.fields false
-//mesh.file 
+mesh.file straight-loaded.msh
 //mesh.save.refined false
 //mesh.refinement.fraction 0.005
 mesh.quality.limit 1000000
@@ -67,6 +67,6 @@ reference.impedance 0
 //gui.grid.size 10
 gui.slot.count 12
 //gui.oversubscribe true
-//gui.mesh.scale 1
+gui.mesh.scale 2
 //gui.mesh.minSize 0
 gui.mesh.maxSize 99.99
