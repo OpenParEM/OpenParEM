@@ -53,20 +53,40 @@ void MeshDialog::set_projData (struct projectData *a)
 
     // fill the panel with data
 
+    ui->meshFileLineEdit->blockSignals(true);
     ui->meshFileLineEdit->setText(meshFile);
+    ui->meshFileLineEdit->blockSignals(false);
 
+    ui->meshSaveRefined->blockSignals(true);
     if (meshSaveRefined) ui->meshSaveRefined->setCheckState(Qt::Checked);
     else ui->meshSaveRefined->setCheckState(Qt::Unchecked);
+    ui->meshSaveRefined->blockSignals(true);
 
+    ui->meshRefinementFraction->blockSignals(true);
     ui->meshRefinementFraction->setValue(meshRefinementFraction);
+    ui->meshRefinementFraction->blockSignals(false);
+
+    ui->meshRefinementFraction->blockSignals(true);
     if (strcmp(projData->refinement_frequency,"none") == 0) {
         ui->meshRefinementFraction->setEnabled(false);
     }
-    ui->meshQualityLimit->setValue(meshQualityLimit);
+    ui->meshRefinementFraction->blockSignals(false);
 
+    ui->meshQualityLimit->blockSignals(true);
+    ui->meshQualityLimit->setValue(meshQualityLimit);
+    ui->meshQualityLimit->blockSignals(false);
+
+    ui->meshSizeMultiplier->blockSignals(true);
     ui->meshSizeMultiplier->setValue(meshSizeMultiplier);
+    ui->meshSizeMultiplier->blockSignals(false);
+
+    ui->meshMinElementSize->blockSignals(true);
     ui->meshMinElementSize->setValue(meshMinElementSize);
+    ui->meshMinElementSize->blockSignals(false);
+
+    ui->meshMaxElementSize->blockSignals(true);
     ui->meshMaxElementSize->setValue(meshMaxElementSize);
+    ui->meshMaxElementSize->blockSignals(false);
 
     ui->meshSizeMultiplier->setDecimals(2);
     ui->meshSizeMultiplier->setMinimum(0.01);

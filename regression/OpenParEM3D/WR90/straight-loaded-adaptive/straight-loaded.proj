@@ -4,7 +4,7 @@
 //project.save.fields false
 mesh.file straight-loaded.msh
 //mesh.save.refined false
-//mesh.refinement.fraction 0.005
+mesh.refinement.fraction 0.0055
 mesh.quality.limit 1000000
 fem.order 3
 port.definition.file straight-loaded_ports.txt
@@ -15,10 +15,10 @@ refinement.iteration.max 50
 refinement.relative.tolerance 0.0001
 //refinement.absolute.tolerance 1e-06
 refinement.variable S
-materials.global.path ./
-materials.global.name 
-materials.local.path ./
-materials.local.name 
+materials.global.path /home/briany/OpenParEM/regression/OpenParEM2D
+materials.global.name global_materials.txt
+materials.local.path /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-loaded-adaptive/freecad_build
+materials.local.name local_materials.txt
 materials.default.boundary PEC
 //materials.check.limits true
 frequency.plan.point 8300000000

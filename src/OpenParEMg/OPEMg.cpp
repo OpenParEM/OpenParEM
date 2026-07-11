@@ -1145,53 +1145,54 @@ void OpenParEMg::setMenusI (int placeIndex)
             okToSimulate=false;
         }
 
-        if (okToSimulate) {
-            if (mesh->childCount() > 0) {
-                if (meshAssigned()) {
-                    ui->actionFitAll->setEnabled(true);
-                    ui->actionMenuSelection->setEnabled(true);
-                    ui->actionWireframe->setEnabled(true);
-                    ui->actionMeshGenerate->setEnabled(false);
-                    ui->actionMeshLoad->setEnabled(false);
-                    ui->actionMeshSave->setEnabled(false);
-                    if (mesh->isModified()) ui->actionMeshSave->setEnabled(true);
-                    ui->actionMeshSaveAs->setEnabled(true);
-                    ui->actionMeshDelete->setEnabled(true);
+        if (mesh->childCount() > 0) {
 
-                    ui->actionRun->setEnabled(true);
-                    ui->actionRun->setToolTip("Run OpenParEM3D.");
-                    if (simulationRunning) {
-                        ui->actionRun->setEnabled(false);
-                        ui->actionRun->setToolTip("OpenParEM3D is running.");
-                        ui->actionStop->setEnabled(true);
-                        ui->actionAbort->setEnabled(true);
-                        ui->actionAbortAndExit->setEnabled(true);
-                    }
-                    if (simulationStopping) {
-                        ui->actionRun->setEnabled(false);
-                        ui->actionRun->setToolTip("OpenParEM3D is stopping.");
-                        ui->actionStop->setEnabled(false);
-                        ui->actionAbort->setEnabled(true);
-                        ui->actionAbortAndExit->setEnabled(true);
-                    }
-                    if (simulationAborting) {
-                        ui->actionRun->setEnabled(false);
-                        ui->actionRun->setToolTip("OpenParEM3D is aborting.");
-                        ui->actionStop->setEnabled(false);
-                        ui->actionAbort->setEnabled(false);
-                        ui->actionAbortAndExit->setEnabled(true);
-                    }
-                    if (mesh->isModified() || meshObsolete) {
-                        ui->actionRun->setEnabled(false);
-                        ui->actionRun->setToolTip("Mesh regeneration is required.");
-                        ui->actionStop->setEnabled(false);
-                        ui->actionAbort->setEnabled(false);
-                        ui->actionAbortAndExit->setEnabled(false);
-                    }
-                } else {
-                    issues.append("\n- Mesh has at least one region missing a material assignment.");
-                    okToSimulate=false;
+            ui->actionFitAll->setEnabled(true);
+            ui->actionMenuSelection->setEnabled(true);
+            ui->actionWireframe->setEnabled(true);
+            ui->actionMeshGenerate->setEnabled(false);
+            ui->actionMeshLoad->setEnabled(false);
+            ui->actionMeshSave->setEnabled(false);
+            if (mesh->isModified()) ui->actionMeshSave->setEnabled(true);
+            ui->actionMeshSaveAs->setEnabled(true);
+            ui->actionMeshDelete->setEnabled(true);
+
+            if (okToSimulate) {
+                ui->actionRun->setEnabled(true);
+                ui->actionRun->setToolTip("Run OpenParEM3D.");
+                if (simulationRunning) {
+                    ui->actionRun->setEnabled(false);
+                    ui->actionRun->setToolTip("OpenParEM3D is running.");
+                    ui->actionStop->setEnabled(true);
+                    ui->actionAbort->setEnabled(true);
+                    ui->actionAbortAndExit->setEnabled(true);
                 }
+                if (simulationStopping) {
+                    ui->actionRun->setEnabled(false);
+                    ui->actionRun->setToolTip("OpenParEM3D is stopping.");
+                    ui->actionStop->setEnabled(false);
+                    ui->actionAbort->setEnabled(true);
+                    ui->actionAbortAndExit->setEnabled(true);
+                }
+                if (simulationAborting) {
+                    ui->actionRun->setEnabled(false);
+                    ui->actionRun->setToolTip("OpenParEM3D is aborting.");
+                    ui->actionStop->setEnabled(false);
+                    ui->actionAbort->setEnabled(false);
+                    ui->actionAbortAndExit->setEnabled(true);
+                }
+                if (mesh->isModified() || meshObsolete) {
+                    ui->actionRun->setEnabled(false);
+                    ui->actionRun->setToolTip("Mesh regeneration is required.");
+                    ui->actionStop->setEnabled(false);
+                    ui->actionAbort->setEnabled(false);
+                    ui->actionAbortAndExit->setEnabled(false);
+                }
+            }
+
+            if (!meshAssigned()) {
+                issues.append("\n- Mesh has at least one region missing a material assignment.");
+                okToSimulate=false;
             }
         }
 
