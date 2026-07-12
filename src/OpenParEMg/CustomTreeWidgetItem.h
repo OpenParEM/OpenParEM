@@ -1142,6 +1142,8 @@ public:
 
     bool isValid ();
 
+    bool hasNet (QString);
+
 private:
     PathItem *pathItem;   // PathItem associated with this port
 };

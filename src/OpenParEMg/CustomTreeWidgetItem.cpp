@@ -3584,6 +3584,28 @@ bool PortItem::isValid ()
     return true;
 }
 
+bool PortItem::hasNet (QString net)
+{
+    long unsigned int i=0;
+    while (i < childCount()) {
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+        if (modeItem && modeItem->text(0).compare(net) == 0) return true;
+
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+        if (diffPairItem) {
+            long unsigned int j=0;
+            while (j < diffPairItem->childCount()) {
+                ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
+                if (modeItem && modeItem->text(0).compare(net) == 0) return true;
+                j++;
+            }
+        }
+        i++;
+    }
+
+    return false;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // ModeItem

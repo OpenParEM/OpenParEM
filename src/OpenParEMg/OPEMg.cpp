@@ -2087,9 +2087,34 @@ void OpenParEMg::insertIntegrationPath (VIItem *viItem)
     setMenusI(17);
 }
 
+bool OpenParEMg::isUniqueNetName (QString net)
+{
+    int i=0;
+    while (i < port->childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
+        if (portItem && portItem->hasNet(net)) return false;
+        i++;
+    }
+    return true;
+}
+
+//xxx
 void OpenParEMg::rename_editingFinished ()
 {
     //std::cout << "OpenParEMg::rename_editingFinished" << std::endl; std::cout.flush();
+
+    ModeItem *modeItem=dynamic_cast<ModeItem *>(renameItem);
+    if (modeItem) {
+        if (!isUniqueNetName(renameEdit->text())) {
+            //xxx
+            QMessageBox mb;
+            mb.critical(nullptr, "Error", "Name must be unique.");
+            mb.setFixedSize(500, 200);
+
+            finishOperation(true,1);
+            return;
+        }
+    }
 
     // new text
     QString newText=renameEdit->text();
