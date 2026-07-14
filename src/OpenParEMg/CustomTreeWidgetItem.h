@@ -944,6 +944,8 @@ public:
     void hide (bool) override;
     void showMenu (QMenu *) override;
     bool isUniquePathName (QString);
+    QString getUniquePathName ();
+    QString getUniquePathName (QString);
 
 private:
 
@@ -1053,6 +1055,7 @@ public:
     void hide (bool) override;
     void showMenu (QMenu *) override;
     bool isUniqueBoundaryName (QString);
+    QString getUniqueBoundaryName ();
 
 private:
 
@@ -1111,6 +1114,7 @@ public:
 
     bool isUniquePortName (QString);
     bool isUniqueNetName (QString);
+    QString getUniquePortName ();
 
 private:
 

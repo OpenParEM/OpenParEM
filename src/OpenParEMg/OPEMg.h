@@ -573,8 +573,6 @@ private slots:
     void collapse (BaseItem *);
     void expandAllItems ();
     void collapseAllItems ();
-    bool pathNameExists (QString);
-    void uniqueifyPathName (QString& pathName);
     void renamePathItems ();
     void deletePathItems ();
     bool isValidDeletePath ();
@@ -616,7 +614,6 @@ private slots:
     void renamePortItems ();
     void deleteRootPortItems ();
     bool portNameExists (QString);
-    void uniqueifyPortName (QString& pathName);
     void deletePortItems ();
     void deleteModeItems ();
     void flipSignIntegrationPathItems ();
@@ -653,7 +650,6 @@ private slots:
     void createPathFromFaceN (bool);
     void createPortFromFace ();
     void createPortFromPath ();
-    int get_SportCount ();
     void createPortFromPathN (bool);
     void createBoundaryFromFace ();
     void createBoundaryFromPath ();

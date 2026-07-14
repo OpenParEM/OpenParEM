@@ -1516,30 +1516,6 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
     freeQActionList();
 }
 
-bool OpenParEMg::pathNameExists (QString name)
-{
-    int i=0;
-    while (i < path->childCount()) {
-        PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
-        if (pathItem) {
-            if (pathItem->text(0).compare(name) == 0) return true;
-        }
-        i++;
-    }
-    return false;
-}
-
-void OpenParEMg::uniqueifyPathName (QString& pathName)
-{
-    int i=1;
-    while (pathNameExists(pathName)) {
-        QString testName=pathName;
-        testName.append("_").append(std::to_string(i));
-        if (pathNameExists(testName)) {i++;}
-        else {pathName=testName; break;}
-    }
-}
-
 void OpenParEMg::renamePathItems ()
 {
     //std::cout << "OpenParEMg::renamePathItems" << std::endl; std::cout.flush();
@@ -2286,17 +2262,6 @@ bool OpenParEMg::portNameExists (QString name)
     return false;
 }
 
-void OpenParEMg::uniqueifyPortName (QString& pathName)
-{
-    int i=1;
-    while (portNameExists(pathName)) {
-        QString testName=pathName;
-        testName.append("_").append(std::to_string(i));
-        if (portNameExists(testName)) {i++;}
-        else {pathName=testName; break;}
-    }
-}
-
 void OpenParEMg::renamePortItems ()
 {
     //std::cout << "OpenParEMg::renamePortItems" << std::endl; std::cout.flush();
@@ -2475,17 +2440,7 @@ void OpenParEMg::createPath ()
         if (selectedShape.ShapeType() == TopAbs_FACE) {
 
             // default path name
-
-            QString pathName="path";
-            pathName.append(QString::number(path->childCount()+1));
-            uniqueifyPathName(pathName);
-
-            // path name placed in a keywordPair
-            keywordPair *kwPathName=new keywordPair();
-            kwPathName->set_keyword("path");
-            kwPathName->set_value(pathName.toStdString());
-            kwPathName->set_lineNumber(0);
-            kwPathName->set_loaded(true);
+            QString pathName=path->getUniquePathName();
 
             // path
 
@@ -3810,7 +3765,7 @@ bool OpenParEMg::isValidRotateObject ()
 
 void OpenParEMg::rotateObject ()
 {
-    std::cout << "OpenParEMg::rotateObject" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::rotateObject" << std::endl; std::cout.flush();
 
     startOperation(true);
     activeAction=true;
@@ -3841,7 +3796,7 @@ void OpenParEMg::rotateObject ()
 
 void OpenParEMg::finishRotateObject (double angle_, gp_Pnt startPoint_, gp_Pnt endPoint_)
 {
-    std::cout << "OpenParEMg::finishRotateObject" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishRotateObject" << std::endl; std::cout.flush();
 
     std::vector<DrawingItem *> selectedList;
     int i=0;
@@ -3903,22 +3858,6 @@ void OpenParEMg::createPortFromPath ()
 }
 
 
-// return the largest Sport number found
-int OpenParEMg::get_SportCount ()
-{
-    int SportCount=0;
-    int i=0;
-    while (i < port->childCount()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
-        if (portItem) {
-            int testSportCount=portItem->get_SportCount();
-            if (testSportCount > SportCount) SportCount=testSportCount;
-        }
-        i++;
-    }
-    return SportCount;
-}
-
 void OpenParEMg::createPortFromPathN (bool startNew)
 {
     //std::cout << "OpenParEMg::createPortFromPath" << std::endl; std::cout.flush();
@@ -3957,13 +3896,6 @@ void OpenParEMg::createPortFromPathN (bool startNew)
 
             // next available s-port number
             int sport=sportNumbers.next();
-            std::cout << "new sport=" << sport << std::endl; std::cout.flush();
-
-            // default port name
-
-            QString portName="port";
-            portName.append(std::to_string(sport));
-            uniqueifyPortName(portName);
 
             QString impedance_calculation="line";
             QString impedance_definition="invalid";
@@ -4018,15 +3950,7 @@ void OpenParEMg::createPathFromFaceN (bool startNew)
             if (selectedShape.ShapeType() == TopAbs_FACE) {
 
                 // default path name
-                QString pathName="path";
-                uniqueifyPathName(pathName);
-
-                // path name placed in a keywordPair
-                // keywordPair *kwPathName=new keywordPair();
-                // kwPathName->set_keyword("path");
-                // kwPathName->set_value(pathName.toStdString());
-                // kwPathName->set_lineNumber(0);
-                // kwPathName->set_loaded(true);
+                QString pathName=path->getUniquePathName();
 
                 // path
                 Path *newPath=new Path(0,0);
@@ -4129,6 +4053,9 @@ void OpenParEMg::createBoundaryFromPathN (bool startNew)
         double default_wave_impedance=sqrt(M_PI*4e-7/8.8541878176e-12);
         QString boundary_material;
         BoundaryItem *newBoundaryItem=new BoundaryItem(this,selectedList[i],3,default_wave_impedance,boundary_material);
+
+        QString boundaryName=boundary->getUniqueBoundaryName();
+        newBoundaryItem->setText(0,boundaryName);
 
         boundary->addChild(newBoundaryItem);
         boundary->setExpanded(true);
@@ -4279,7 +4206,7 @@ void OpenParEMg::reversePathItems ()
 
 void OpenParEMg::createDiffPairItem ()
 {
-    std::cout << "OpenParEMg::createDiffPairIte" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::createDiffPairIte" << std::endl; std::cout.flush();
 
     itemChangesStack.startNew();
 
@@ -4291,8 +4218,6 @@ void OpenParEMg::createDiffPairItem ()
         if (modeItem) modeList.push_back(modeItem);
         i++;
     }
-
-    std::cout << "   modeList.size()=" << modeList.size() << std::endl; std::cout.flush();
 
     // should only be 2
     if (modeList.size() != 2) return;

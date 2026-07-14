@@ -1832,8 +1832,11 @@ PathItem* DrawingItem::createPath (bool hasArrows)
     if (!polywire) return nullptr;
 
     // default path name
-    QString pathName=text(0);
-    mw->uniqueifyPathName(pathName);
+    QString pathName="newPath";
+    RootPathItem *rootParentItem=dynamic_cast<RootPathItem *>(parentItem);
+    if (rootParentItem) {
+        pathName=rootParentItem->getUniquePathName(text(0));
+    }
 
     // path name placed in a keywordPair
     keywordPair *kwPathName=new keywordPair();
@@ -2136,6 +2139,33 @@ bool RootPathItem::isUniquePathName (QString pathName)
         i++;
     }
     return true;
+}
+
+QString RootPathItem::getUniquePathName ()
+{
+    QString pathName="path";
+    int i=1;
+    QString testPathName=pathName;
+    testPathName=testPathName.append(QString::number(i));
+    while (!isUniquePathName(testPathName)) {
+        i++;
+        testPathName=pathName;
+        testPathName=testPathName.append(QString::number(i));
+    }
+    return testPathName;
+}
+
+QString RootPathItem::getUniquePathName (QString pathName)
+{
+    int i=1;
+    QString testPathName=pathName;
+    testPathName=testPathName.append(QString::number(i));
+    while (!isUniquePathName(testPathName)) {
+        i++;
+        testPathName=pathName;
+        testPathName=testPathName.append(QString::number(i));
+    }
+    return testPathName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2671,6 +2701,20 @@ bool RootBoundaryItem::isUniqueBoundaryName (QString boundaryName)
     return true;
 }
 
+QString RootBoundaryItem::getUniqueBoundaryName ()
+{
+    QString boundaryName="boundary";
+    int i=1;
+    QString testBoundaryName=boundaryName;
+    testBoundaryName=testBoundaryName.append(QString::number(i));
+    while (!isUniqueBoundaryName(testBoundaryName)) {
+        i++;
+        testBoundaryName=boundaryName;
+        testBoundaryName=testBoundaryName.append(QString::number(i));
+    }
+    return testBoundaryName;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // BoundaryItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -3165,6 +3209,20 @@ bool RootPortItem::isUniqueNetName (QString net)
     return true;
 }
 
+QString RootPortItem::getUniquePortName ()
+{
+    QString portName="port";
+    int i=1;
+    QString testPortName=portName;
+    testPortName=testPortName.append(QString::number(i));
+    while (!isUniquePortName(testPortName)) {
+        i++;
+        testPortName=portName;
+        testPortName=testPortName.append(QString::number(i));
+    }
+    return testPortName;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // PortItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -3177,19 +3235,13 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
     pathItem=pathItem_;
     setModified(true);
 
-    int Sport=mw->sportNumbers.next();
-
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();
     newShapeData->set_impedance_calculation(impedance_calculation_);
     newShapeData->set_impedance_definition(impedance_definition_);
-    //newShapeData->set_Sport(Sport);
-    //std::cout << "place 1 addSport  Sport=" << Sport << std::endl; std::cout.flush();
-    //addSport(Sport);
     addShapeData(newShapeData);
 
-    QString name="port";
-    name.append(QString::number(Sport));
+    QString name=mw->port->getUniquePortName();
     setText(0,name);
     newShapeData->set_name(text(0));
     setForeground(0,Qt::black);
