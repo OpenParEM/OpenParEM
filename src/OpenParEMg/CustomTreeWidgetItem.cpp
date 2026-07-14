@@ -2127,6 +2127,17 @@ void RootPathItem::showMenu (QMenu *menu)
     }
 }
 
+bool RootPathItem::isUniquePathName (QString pathName)
+{
+    int i=0;
+    while (i < childCount()) {
+        PathItem *pathItem=dynamic_cast<PathItem *>(child(i));
+        if (pathItem && pathItem->text(0).compare(pathName) == 0) return false;
+        i++;
+    }
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // PathItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -2649,6 +2660,17 @@ void RootBoundaryItem::showMenu (QMenu *menu)
     }
 }
 
+bool RootBoundaryItem::isUniqueBoundaryName (QString boundaryName)
+{
+    int i=0;
+    while (i < childCount()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(child(i));
+        if (boundaryItem && boundaryItem->text(0).compare(boundaryName) == 0) return false;
+        i++;
+    }
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // BoundaryItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -3119,6 +3141,28 @@ int RootPortItem::get_SportCount ()
         i++;
     }
     return SportCount;
+}
+
+bool RootPortItem::isUniquePortName (QString portName)
+{
+    int i=0;
+    while (i < childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(child(i));
+        if (portItem && portItem->text(0).compare(portName) == 0) return false;
+        i++;
+    }
+    return true;
+}
+
+bool RootPortItem::isUniqueNetName (QString net)
+{
+    int i=0;
+    while (i < childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(child(i));
+        if (portItem && portItem->hasNet(net)) return false;
+        i++;
+    }
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

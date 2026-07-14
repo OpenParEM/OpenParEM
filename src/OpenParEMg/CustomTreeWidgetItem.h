@@ -943,6 +943,7 @@ public:
     void show (bool) override;
     void hide (bool) override;
     void showMenu (QMenu *) override;
+    bool isUniquePathName (QString);
 
 private:
 
@@ -1051,6 +1052,7 @@ public:
     void show (bool) override;
     void hide (bool) override;
     void showMenu (QMenu *) override;
+    bool isUniqueBoundaryName (QString);
 
 private:
 
@@ -1106,6 +1108,9 @@ public:
     void showMenu (QMenu *) override;
 
     int get_SportCount ();
+
+    bool isUniquePortName (QString);
+    bool isUniqueNetName (QString);
 
 private:
 

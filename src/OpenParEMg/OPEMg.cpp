@@ -2087,59 +2087,43 @@ void OpenParEMg::insertIntegrationPath (VIItem *viItem)
     setMenusI(17);
 }
 
-bool OpenParEMg::isUniqueNetName (QString net)
-{
-    int i=0;
-    while (i < port->childCount()) {
-        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
-        if (portItem && portItem->hasNet(net)) return false;
-        i++;
-    }
-    return true;
-}
-
-bool OpenParEMg::isUniquePathName (QString pathName)
-{
-    int i=0;
-    while (i < path->childCount()) {
-        PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
-        if (pathItem && pathItem->text(0).compare(pathName) == 0) return false;
-        i++;
-    }
-    return true;
-}
-
-
-//xxx
 void OpenParEMg::rename_editingFinished ()
 {
     //std::cout << "OpenParEMg::rename_editingFinished" << std::endl; std::cout.flush();
 
+    bool unique=true;
+
     // paths
     PathItem *pathItem=dynamic_cast<PathItem *>(renameItem);
     if (pathItem) {
-        if (!isUniquePathName(renameEdit->text())) {
-            QMessageBox mb;
-            mb.critical(nullptr, "Error", "Name must be unique.");
-            mb.setFixedSize(500, 200);
-
-            finishOperation(true,1);
-            return;
-        }
+        if (!path->isUniquePathName(renameEdit->text())) unique=false;
     }
 
+    // ports
+    PortItem *portItem=dynamic_cast<PortItem *>(renameItem);
+    if (portItem) {
+        if (!port->isUniquePortName(renameEdit->text())) unique=false;
+    }
 
     // nets
     ModeItem *modeItem=dynamic_cast<ModeItem *>(renameItem);
     if (modeItem) {
-        if (!isUniqueNetName(renameEdit->text())) {
-            QMessageBox mb;
-            mb.critical(nullptr, "Error", "Name must be unique.");
-            mb.setFixedSize(500, 200);
+        if (!port->isUniqueNetName(renameEdit->text())) unique=false;
+    }
 
-            finishOperation(true,1);
-            return;
-        }
+    // boundaries
+    BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(renameItem);
+    if (boundaryItem) {
+        if (!boundary->isUniqueBoundaryName(renameEdit->text())) unique=false;
+    }
+
+    if (!unique) {
+        QMessageBox mb;
+        mb.critical(nullptr, "Error", "Name must be unique.");
+        mb.setFixedSize(500, 200);
+
+        finishOperation(true,1);
+        return;
     }
 
     // new text
