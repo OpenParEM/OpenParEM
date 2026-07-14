@@ -2098,15 +2098,41 @@ bool OpenParEMg::isUniqueNetName (QString net)
     return true;
 }
 
+bool OpenParEMg::isUniquePathName (QString pathName)
+{
+    int i=0;
+    while (i < path->childCount()) {
+        PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
+        if (pathItem && pathItem->text(0).compare(pathName) == 0) return false;
+        i++;
+    }
+    return true;
+}
+
+
 //xxx
 void OpenParEMg::rename_editingFinished ()
 {
     //std::cout << "OpenParEMg::rename_editingFinished" << std::endl; std::cout.flush();
 
+    // paths
+    PathItem *pathItem=dynamic_cast<PathItem *>(renameItem);
+    if (pathItem) {
+        if (!isUniquePathName(renameEdit->text())) {
+            QMessageBox mb;
+            mb.critical(nullptr, "Error", "Name must be unique.");
+            mb.setFixedSize(500, 200);
+
+            finishOperation(true,1);
+            return;
+        }
+    }
+
+
+    // nets
     ModeItem *modeItem=dynamic_cast<ModeItem *>(renameItem);
     if (modeItem) {
         if (!isUniqueNetName(renameEdit->text())) {
-            //xxx
             QMessageBox mb;
             mb.critical(nullptr, "Error", "Name must be unique.");
             mb.setFixedSize(500, 200);

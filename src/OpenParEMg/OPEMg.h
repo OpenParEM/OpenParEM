@@ -601,6 +601,7 @@ private slots:
     void renameBoundaryItems ();
     void deleteBoundaryItems ();
     bool isUniqueNetName (QString);
+    bool isUniquePathName (QString);
     void renameSportNet ();
     void rename_editingFinished ();
     bool hasOneSelectedSport ();
