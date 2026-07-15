@@ -964,20 +964,7 @@ public:
     long unsigned int linkedItems_size () {return linkedItems.size();}
     void push_linkedItem (BaseItem *linkedItem) {linkedItems.push_back(linkedItem);}
     BaseItem* get_linkedItem (long unsigned int i) {return linkedItems[i];}
-
-    void removeLinkedItem (BaseItem *item)
-    {
-        long unsigned int i=0;
-        while (i < linkedItems.size()) {
-            if (linkedItems[i] == item) linkedItems.erase(linkedItems.begin()+i);
-            i++;
-        }
-    }
-
-    //void clearLinkedItems () {linkedItems.clear();}
-
-    //void setHasArrows (bool hasArrows_)  {hasArrows=hasArrows_;}
-    //bool getHasArrows () {return hasArrows;}
+    void removeLinkedItem (BaseItem *);
 
     void rename (QString) override;
 
@@ -1175,9 +1162,12 @@ public:
     void hide (bool) override;
     bool hasUndo () override {return dataStack.hasUndo();}
     bool hasRedo () override {return dataStack.hasRedo();}
+    void undo () override;
+    void redo () override;
 
     bool isValidDelete ();
     void unlinkPaths (BaseItem *);
+    void relinkPaths (BaseItem *);
     void del () override;
     void showMenu (QMenu *) override;
     //void setPortItem (PortItem *portItem_) {portItem=portItem_;}

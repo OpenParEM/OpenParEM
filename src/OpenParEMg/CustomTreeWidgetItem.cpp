@@ -2176,6 +2176,19 @@ PathItem::PathItem (OpenParEMg *mw_, BaseItem *parentItem_)
     addShapeData(newShapeData);
 }
 
+void PathItem::removeLinkedItem (BaseItem *item)
+{
+    if (!item) return;
+
+    long unsigned int i=0;
+    while (i < linkedItems.size()) {
+        if (linkedItems[i] == item) {
+            linkedItems.erase(linkedItems.begin()+i);
+        }
+        i++;
+    }
+}
+
 bool PathItem::isValidShow ()
 {
     if (foreground(0) == Qt::gray) return true;
@@ -2541,8 +2554,6 @@ void IntegrationPathItem::undo ()
             if (portItem) portItem->setImpedanceDefinitionOptions();
         }
     }
-
-    //BaseItem::undo();
 }
 
 void IntegrationPathItem::redo ()
@@ -2582,8 +2593,6 @@ void IntegrationPathItem::redo ()
             if (portItem) portItem->setImpedanceDefinitionOptions();
         }
     }
-
-    //BaseItem::redo();
 }
 
 void IntegrationPathItem::del ()
@@ -3498,12 +3507,13 @@ void PortItem::del ()
         mw->projectChanged=true;
     }
 
-    // sport
+    // sport and path linkages
     int i=0;
     while (i < childCount()) {
         ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
         if (modeItem) {
             mw->sportNumbers.remove(modeItem->get_Sport());
+            modeItem->unlinkPaths(modeItem);
         }
 
         DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
@@ -3513,6 +3523,7 @@ void PortItem::del ()
                 ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
                 if (modeItem) {
                     mw->sportNumbers.remove(modeItem->get_Sport());
+                    modeItem->unlinkPaths(modeItem);
                 }
                 j++;
             }
@@ -3541,6 +3552,7 @@ void PortItem::undo ()
             ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
             if (modeItem) {
                 mw->sportNumbers.remove(modeItem->get_Sport());
+                modeItem->unlinkPaths(modeItem);
             }
 
             DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
@@ -3550,6 +3562,7 @@ void PortItem::undo ()
                     ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
                     if (modeItem) {
                         mw->sportNumbers.remove(modeItem->get_Sport());
+                        modeItem->unlinkPaths(modeItem);
                     }
                     j++;
                 }
@@ -3569,6 +3582,7 @@ void PortItem::undo ()
             ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
             if (modeItem) {
                 mw->sportNumbers.add(modeItem->get_Sport());
+                modeItem->relinkPaths(modeItem);
             }
 
             DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
@@ -3578,6 +3592,7 @@ void PortItem::undo ()
                     ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
                     if (modeItem) {
                         mw->sportNumbers.add(modeItem->get_Sport());
+                        modeItem->relinkPaths(modeItem);
                     }
                     j++;
                 }
@@ -3612,6 +3627,7 @@ void PortItem::redo ()
             ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
             if (modeItem) {
                 mw->sportNumbers.add(modeItem->get_Sport());
+                modeItem->relinkPaths(modeItem);
             }
 
             DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
@@ -3621,6 +3637,7 @@ void PortItem::redo ()
                     ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
                     if (modeItem) {
                         mw->sportNumbers.add(modeItem->get_Sport());
+                        modeItem->relinkPaths(modeItem);
                     }
                     j++;
                 }
@@ -3640,6 +3657,7 @@ void PortItem::redo ()
             ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
             if (modeItem) {
                 mw->sportNumbers.remove(modeItem->get_Sport());
+                modeItem->unlinkPaths(modeItem);
             }
 
             DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
@@ -3649,6 +3667,7 @@ void PortItem::redo ()
                     ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
                     if (modeItem) {
                         mw->sportNumbers.remove(modeItem->get_Sport());
+                        modeItem->unlinkPaths(modeItem);
                     }
                     j++;
                 }
@@ -3793,7 +3812,6 @@ bool PortItem::hasValidCurrents ()
     return false;
 }
 
-//xxx
 void PortItem::setImpedanceDefinitionOptions ()
 {
     std::cout << "PortItem::setImpedanceDefinitionOptions" << std::endl; std::cout.flush();
@@ -3951,21 +3969,73 @@ bool ModeItem::isValidDelete ()
     return true;
 }
 
+void ModeItem::undo ()
+{
+    std::cout << "ModeItem::undo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    BaseItem::undo();
+
+    if (shapeData->isCreate()) {
+        unlinkPaths(this);
+    } else if (shapeData->isDelete()) {
+        relinkPaths(this);
+    }
+}
+
+void ModeItem::redo ()
+{
+    std::cout << "ModeItem::redo  this=" << this << std::endl; std::cout.flush();
+
+    ShapeData *shapeData=getShapeData();
+    if (!shapeData) return;
+
+    ShapeData *next=shapeData->getNext();
+    if (!next) return;
+
+    BaseItem::redo();
+
+    if (next->isCreate()) {
+        relinkPaths(this);
+    } else if (next->isDelete()) {
+        unlinkPaths(this);
+    }
+}
+
 void ModeItem::unlinkPaths (BaseItem *baseItem)
 {
     if (!baseItem) return;
 
     IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(baseItem);
-    if (integrationPathItem && is_integrationPathSegment()) {
+    if (integrationPathItem) {
         PathItem *pathItem=integrationPathItem->getPathItem();
-        pathItem->removeLinkedItem(integrationPathItem);
-        // ToDo: null out the path item in integrationPathItem?
+        if (pathItem) pathItem->removeLinkedItem(integrationPathItem);
     }
 
     int i=0;
     while (i < baseItem->childCount()) {
         BaseItem *childItem=dynamic_cast<BaseItem *>(baseItem->child(i));
         unlinkPaths(childItem);
+        i++;
+    }
+}
+
+void ModeItem::relinkPaths (BaseItem *baseItem)
+{
+    if (!baseItem) return;
+
+    IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(baseItem);
+    if (integrationPathItem) {
+        PathItem *pathItem=integrationPathItem->getPathItem();
+        if (pathItem) pathItem->push_linkedItem(integrationPathItem);
+    }
+
+    int i=0;
+    while (i < baseItem->childCount()) {
+        BaseItem *childItem=dynamic_cast<BaseItem *>(baseItem->child(i));
+        relinkPaths(childItem);
         i++;
     }
 }
