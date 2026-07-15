@@ -194,8 +194,6 @@ public:
     void setChangeName () {type=8;}
 
     void set_name (QString name_) {name=name_;}
-    //void set_impedance_definition (std::string impedance_definition_) {impedance_definition=QString::fromStdString(impedance_definition_);}
-    //void set_impedance_calculation (std::string impedance_calculation_) {impedance_calculation=QString::fromStdString(impedance_calculation_);}
     void set_impedance_definition (QString impedance_definition_) {impedance_definition=impedance_definition_;}
     void set_impedance_calculation (QString impedance_calculation_) {impedance_calculation=impedance_calculation_;}
     QString get_impedance_definition () {return impedance_definition;}
@@ -1150,6 +1148,9 @@ public:
     void save (std::ofstream *) override;
 
     bool isValid ();
+    bool hasValidVoltages ();
+    bool hasValidCurrents ();
+    void setImpedanceDefinitionOptions ();
 
     bool hasNet (QString);
 
@@ -1186,6 +1187,9 @@ public:
 
     int get_SportCount ();
     int get_Sport ();
+
+    bool has_voltageIntegrationPath ();
+    bool has_currentIntegrationPath ();
 
     void save (std::ofstream *) override;
 
@@ -1248,6 +1252,7 @@ class VIItem : public BaseItem
 public:
     VIItem () {}
     VIItem (OpenParEMg *, ModeItem *, int);
+    void setScaleLabelItem (ScaleLabelItem *scaleLabelItem_) {scaleLabelItem=scaleLabelItem_;}
     bool isValidShow () override;
     bool isValidHide () override;
     bool isValidDrawPath ();
@@ -1268,6 +1273,8 @@ public:
     //void convertItemToPath (DrawingItem *, bool);
     ModeItem* getModeItem () {return modeItem;}
     PortItem* getPortItem ();
+
+    bool has_integrationPath ();
 
     void save (std::ofstream *) override;
 

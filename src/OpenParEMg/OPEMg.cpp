@@ -986,12 +986,13 @@ void OpenParEMg::setMenusI (int placeIndex)
     //ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    //itemChangesStack.print();
+    std::cout << "place 0" << std::endl;
+    itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
     //ui->drawingWindow->audit();
-    sportNumbers.print();
+    //sportNumbers.print();
 
 
     // disable all menus on command
@@ -2007,7 +2008,7 @@ bool OpenParEMg::hasCurrent ()
 
 void OpenParEMg::insertIntegrationPath (VIItem *viItem)
 {
-    std::cout << "OpenParEMg::insertIntegrationPath" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::insertIntegrationPath" << std::endl; std::cout.flush();
 
     if (!viItem) return;
 
@@ -2058,6 +2059,8 @@ void OpenParEMg::insertIntegrationPath (VIItem *viItem)
         }
         i++;
     }
+
+    portItem->setImpedanceDefinitionOptions();
 
     ui->drawingWindow->updateViewer();
     setMenusI(17);
@@ -3912,6 +3915,8 @@ void OpenParEMg::createPortFromPathN (bool startNew)
                 port->addChild(newPortItem);
                 port->setExpanded(true);
                 newPortItem->setExpanded(true);
+
+                newPortItem->setImpedanceDefinitionOptions();
             }
         }
         i++;
@@ -7609,6 +7614,8 @@ void OpenParEMg::finishDraw ()
 
                 integrationPathItem->del();
             }
+
+            portItem->setImpedanceDefinitionOptions();
 
             isIntegrationPath=false;
             currentDrawingItem=nullptr;

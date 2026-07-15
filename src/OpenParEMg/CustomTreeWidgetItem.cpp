@@ -25,6 +25,7 @@
 #include "ui_OPEMg.h"
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <TopoDS_Iterator.hxx>
+#include <qstandarditemmodel.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // BaseItem
@@ -147,7 +148,7 @@ void BaseItem::setForUndoRedo (bool withMidPoints, int shapeOperation)
 
 void BaseItem::restoreWidgets ()
 {
-    //std::cout << "BaseItem::restoreWidgets" << std::endl; std::cout.flush();
+    std::cout << "BaseItem::restoreWidgets" << std::endl; std::cout.flush();
 
     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(this);
     if (boundaryItem) {
@@ -339,13 +340,6 @@ void BaseItem::undo ()
         dataStack.undo();
         setText(0,getShapeData()->get_name());
     }
-
-    // add or remove integration path scales as needed
-    IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(this);
-    if (integrationPathItem) {
-        VIItem *viItem=dynamic_cast<VIItem *>(integrationPathItem->getParentItem());
-        if (viItem) viItem->addRemoveScale();
-    }
 }
 
 void BaseItem::redo ()
@@ -398,13 +392,6 @@ void BaseItem::redo ()
 
         dataStack.redo();
         setText(0,getShapeData()->get_name());
-    }
-
-    // add or remove integration path scales as needed
-    IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(this);
-    if (integrationPathItem) {
-        VIItem *viItem=dynamic_cast<VIItem *>(integrationPathItem->getParentItem());
-        if (viItem) viItem->addRemoveScale();
     }
 }
 
@@ -2527,19 +2514,35 @@ void IntegrationPathItem::undo ()
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
+    BaseItem::undo();
+
     if (shapeData->isCreate()) {
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
+        }
+
+        VIItem *viItem=dynamic_cast<VIItem *>(parentItem);
+        if (viItem) {
+            viItem->addRemoveScale();
+            PortItem *portItem=viItem->getPortItem();
+            if (portItem) portItem->setImpedanceDefinitionOptions();
         }
     } else if (shapeData->isDelete()) {
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
         }
+
+        VIItem *viItem=dynamic_cast<VIItem *>(parentItem);
+        if (viItem) {
+            viItem->addRemoveScale();
+            PortItem *portItem=viItem->getPortItem();
+            if (portItem) portItem->setImpedanceDefinitionOptions();
+        }
     }
 
-    BaseItem::undo();
+    //BaseItem::undo();
 }
 
 void IntegrationPathItem::redo ()
@@ -2552,40 +2555,76 @@ void IntegrationPathItem::redo ()
     ShapeData *next=shapeData->getNext();
     if (!next) return;
 
+    BaseItem::redo();
+
     if (next->isCreate()) {
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
+        }
+
+        VIItem *viItem=dynamic_cast<VIItem *>(parentItem);
+        if (viItem) {
+            viItem->addRemoveScale();
+            PortItem *portItem=viItem->getPortItem();
+            if (portItem) portItem->setImpedanceDefinitionOptions();
         }
     } else if (next->isDelete()) {
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
         }
+
+        VIItem *viItem=dynamic_cast<VIItem *>(parentItem);
+        if (viItem) {
+            viItem->addRemoveScale();
+            PortItem *portItem=viItem->getPortItem();
+            if (portItem) portItem->setImpedanceDefinitionOptions();
+        }
     }
 
-    BaseItem::redo();
+    //BaseItem::redo();
 }
 
 void IntegrationPathItem::del ()
 {
+    std::cout << "IntegrationPathItem::del" << std::endl; std::cout.flush();
+    mw->itemChangesStack.print();
+
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setDelete();
     addShapeData(newShapeData);
+    std::cout << "place a" << std::endl;
+    mw->itemChangesStack.print();
 
     VIItem *viItem=dynamic_cast<VIItem *>(parentItem);
     if (viItem) {
         viItem->removeChild(this);
         viItem->addRemoveScale();
+        std::cout << "place b" << std::endl;
+        mw->itemChangesStack.print();
 
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
         }
+        std::cout << "place c" << std::endl;
+        mw->itemChangesStack.print();
+
+        PortItem *portItem=viItem->getPortItem();
+        if (portItem) {
+            portItem->setImpedanceDefinitionOptions();
+        }
+        std::cout << "place d" << std::endl;
+        mw->itemChangesStack.print();
 
         mw->itemChangesStack.add(this);
         mw->projectChanged=true;
+        std::cout << "place e" << std::endl;
+        mw->itemChangesStack.print();
     }
+
+    std::cout << "exit IntegrationPathItem::del" << std::endl; std::cout.flush();
 }
 
 void IntegrationPathItem::flipSign ()
@@ -2806,7 +2845,7 @@ void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpe
 
     if (itemType) {
         CustomComboBox *comboType=new CustomComboBox();
-        const QSignalBlocker blockerZdef(comboType);
+        const QSignalBlocker blockerType(comboType);
         comboType->addItem("PEC");
         comboType->addItem("PMC");
         comboType->addItem("Zs");
@@ -3663,7 +3702,6 @@ void PortItem::save (std::ofstream *out)
 
 bool PortItem::isValid ()
 {
-    //xxx
     int i=0;
     while (i < childCount()) {
         BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
@@ -3678,6 +3716,129 @@ bool PortItem::isValid ()
     }
 
     return true;
+}
+
+bool PortItem::hasValidVoltages ()
+{
+    std::cout << "PortItem::hasValidVoltages" << std::endl; std::cout.flush();
+    mw->itemChangesStack.print();
+
+    int modeCount=0;
+    int voltageCount=0;
+
+    int i=0;
+    while (i < childCount()) {
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+        if (modeItem) {
+            modeCount++;
+            if (modeItem->has_voltageIntegrationPath()) voltageCount++;
+        }
+
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+        if (diffPairItem) {
+            int j=0;
+            while (j < diffPairItem->childCount()) {
+                ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
+                if (modeItem) {
+                    modeCount++;
+                    if (modeItem->has_voltageIntegrationPath()) voltageCount++;
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+
+    if (modeCount > 0) {
+        if (modeCount == voltageCount) return true;
+    }
+
+    return false;
+}
+
+bool PortItem::hasValidCurrents ()
+{
+    std::cout << "PortItem::hasValidCurrents" << std::endl; std::cout.flush();
+
+    int modeCount=0;
+    int currentCount=0;
+
+    int i=0;
+    while (i < childCount()) {
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+        if (modeItem) {
+            modeCount++;
+            if (modeItem->has_currentIntegrationPath()) currentCount++;
+        }
+
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+        if (diffPairItem) {
+            int j=0;
+            while (j < diffPairItem->childCount()) {
+                ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
+                if (modeItem) {
+                    modeCount++;
+                    if (modeItem->has_currentIntegrationPath()) currentCount++;
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+
+    if (modeCount > 0) {
+        if (modeCount == currentCount) return true;
+    }
+
+    return false;
+}
+
+//xxx
+void PortItem::setImpedanceDefinitionOptions ()
+{
+    std::cout << "PortItem::setImpedanceDefinitionOptions" << std::endl; std::cout.flush();
+    mw->itemChangesStack.print();
+
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem && baseItem->is_impedanceDefinition()) {
+            CustomComboBox *comboZdef=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(baseItem,0));
+            if (comboZdef) {
+                const QSignalBlocker blockerZdef(comboZdef);
+                QStandardItemModel *model=qobject_cast<QStandardItemModel *>(comboZdef->model());
+
+                // disable all
+                model->item(0)->setEnabled(false);
+                model->item(1)->setEnabled(false);
+                model->item(2)->setEnabled(false);
+                model->item(3)->setEnabled(false);
+
+                // enable valid options
+                bool validVoltages=hasValidVoltages();
+                bool validCurrents=hasValidCurrents();
+                if (validVoltages && validCurrents) model->item(0)->setEnabled(true);
+                if (validVoltages) model->item(1)->setEnabled(true);
+                if (validCurrents) model->item(2)->setEnabled(true);
+                if (!validVoltages && !validCurrents) {
+                    model->item(3)->setEnabled(true);
+                    comboZdef->setCurrentIndex(3);
+                }
+
+                // set a definition, if needed
+                if (comboZdef->currentIndex() == 3) {
+                    if (validVoltages) comboZdef->setCurrentIndex(1);
+                    if (validCurrents) comboZdef->setCurrentIndex(2);
+                }
+
+                break;
+            }
+        }
+        i++;
+    }
+
+    mw->itemChangesStack.print();
+    std::cout << "exit PortItem::setImpedanceDefinitionOptions" << std::endl; std::cout.flush();
 }
 
 bool PortItem::hasNet (QString net)
@@ -3822,6 +3983,9 @@ void ModeItem::del ()
 
     mw->itemChangesStack.add(this);
 
+    PortItem *portItem=dynamic_cast<PortItem *>(parentItem);
+    if (portItem) portItem->setImpedanceDefinitionOptions();
+
     mw->clickedItem=nullptr;
     mw->previousClickedItem=nullptr;
 
@@ -3890,6 +4054,41 @@ int ModeItem::get_Sport ()
         i++;
     }
     return 0;
+}
+
+bool ModeItem::has_voltageIntegrationPath ()
+{
+    std::cout << "ModeItem::has_voltageIntegrationPath" << std::endl; std::cout.flush();
+    mw->itemChangesStack.print();
+
+    int i=0;
+    while (i < childCount()) {
+        VIItem *viItem=dynamic_cast<VIItem *>(child(i));
+        if (viItem) {
+            if (viItem->is_voltage() && viItem->has_integrationPath()) {
+                return true;
+            }
+        }
+        i++;
+    }
+    return false;
+}
+
+bool ModeItem::has_currentIntegrationPath ()
+{
+    std::cout << "ModeItem::has_currentIntegrationPath" << std::endl; std::cout.flush();
+
+    int i=0;
+    while (i < childCount()) {
+        VIItem *viItem=dynamic_cast<VIItem *>(child(i));
+        if (viItem) {
+            if (viItem->is_current() && viItem->has_integrationPath()) {
+                return true;
+            }
+        }
+        i++;
+    }
+    return false;
 }
 
 void ModeItem::save (std::ofstream *out)
@@ -4391,7 +4590,6 @@ bool VIItem::hasScale ()
     int i=0;
     while (i < childCount()) {
         BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-        baseItem->print_itemType();
         if (baseItem && baseItem->is_scaleLabel()) return true;
         i++;
     }
@@ -4435,6 +4633,7 @@ void VIItem::addScaleItem ()
 
 void VIItem::removeScaleItem ()
 {
+    std::cout << "VIItem::removeScaleItem  hasScale()=" << hasScale() << "  scaleLabelItem=" << scaleLabelItem << std::endl; std::cout.flush();
     if (!hasScale()) return;
     removeChild(scaleLabelItem);
 }
@@ -4445,14 +4644,18 @@ void VIItem::addRemoveScale ()
 
     if (hasScale()) {
         if (hasIntegrationPathItem()) {
+            std::cout << "place 1" << std::endl; std::cout.flush();
             // nothing to do
         } else {
+            std::cout << "place 2" << std::endl; std::cout.flush();
             removeScaleItem();
         }
     } else {
         if (hasIntegrationPathItem()) {
+            std::cout << "place 3" << std::endl; std::cout.flush();
             addScaleItem();
         } else {
+            std::cout << "place 4" << std::endl; std::cout.flush();
             // nothing to do
         }
     }
@@ -4470,6 +4673,22 @@ PortItem* VIItem::getPortItem ()
     }
 
     return nullptr;
+}
+
+bool VIItem::has_integrationPath ()
+{
+    std::cout << "VIItem::has_integrationPath" << std::endl; std::cout.flush();
+    mw->itemChangesStack.print();
+
+    int i=0;
+    while (i < childCount()) {
+        IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(child(i));
+        if (integrationPathItem) {
+            return true;
+        }
+        i++;
+    }
+    return false;
 }
 
 void VIItem::save (std::ofstream *out)
@@ -4651,6 +4870,9 @@ void DiffPairItem::del ()
     if (portItem) {
         promoteChildren();
         portItem->removeChild(this);
+
+        portItem->setImpedanceDefinitionOptions();
+
         mw->projectChanged=true;
     }
 

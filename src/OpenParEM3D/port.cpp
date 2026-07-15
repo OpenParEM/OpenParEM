@@ -2588,6 +2588,7 @@ void IntegrationPath::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     scaleLabelItem->set_itemType(12);
     scaleLabelItem->setFlags(scaleLabelItem->flags() & ~Qt::ItemIsEditable);
     scaleLabelItem->setToolTip(0,"Scale factor for the integration path.");
+    viItem->setScaleLabelItem(scaleLabelItem);
     viItem->addChild(scaleLabelItem);
 
     ScaleValueItem *scaleValueItem=new ScaleValueItem(mw,scaleLabelItem);
@@ -7239,6 +7240,8 @@ void comboRefresh (int index, PortItem *portItem, BoundaryItem *boundaryItem, in
 void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryItem, int type,
                         BaseItem *itemMaterial, BaseItem *itemWaveImpedance)
 {
+    std::cout << "comboIndexChanged  index=" << index << "  type=" << type << std::endl; std::cout.flush();
+
     ShapeData *newShapeData;
     if (portItem) {
         newShapeData=portItem->getShapeData()->copyCreate();
@@ -7247,10 +7250,6 @@ void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryIte
         portItem->startItemChange();
         portItem->addItemChange();
         portItem->setModified(true);
-
-        //portItem->setMenus();
-        //portItem->clearTreeSelection();
-        //portItem->updateViewer();
     }
 
     if (boundaryItem) {
@@ -7260,10 +7259,6 @@ void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryIte
         boundaryItem->startItemChange();
         boundaryItem->addItemChange();
         boundaryItem->setModified(true);
-
-        //boundaryItem->setMenus();
-        //boundaryItem->clearTreeSelection();
-        //boundaryItem->updateViewer();
     }
 
     // Port: impedance definition
@@ -7271,6 +7266,7 @@ void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryIte
         if (index == 0) newShapeData->set_impedance_definition(QString("VI"));
         if (index == 1) newShapeData->set_impedance_definition(QString("PV"));
         if (index == 2) newShapeData->set_impedance_definition(QString("PI"));
+        if (index == 3) newShapeData->set_impedance_definition(QString("invalid"));
     }
 
     // Port: impedance calculation
@@ -7491,6 +7487,9 @@ void Port::draw (Relay *relay, struct projectData *projData, BoundaryDatabase *b
         }
         i++;
     }
+
+    // set the options for impedance definition
+    portItem->setImpedanceDefinitionOptions();
 }
 
 #endif
