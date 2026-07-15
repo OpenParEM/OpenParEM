@@ -384,7 +384,7 @@ void BaseItem::redo ()
 
         promoteChildren();
         getParentItem()->removeChild(this);
-        mw->ui->drawingWindow->showItem(this);
+        //mw->ui->drawingWindow->showItem(this);
 
         dataStack.redo();
     } else if (next->isChangeName()) {
@@ -1819,18 +1819,12 @@ PathItem* DrawingItem::createPath (bool hasArrows)
     if (!polywire) return nullptr;
 
     // default path name
-    QString pathName="newPath";
-    RootPathItem *rootParentItem=dynamic_cast<RootPathItem *>(parentItem);
-    if (rootParentItem) {
-        pathName=rootParentItem->getUniquePathName(text(0));
-    }
-
-    // path name placed in a keywordPair
-    keywordPair *kwPathName=new keywordPair();
-    kwPathName->set_keyword("path");
-    kwPathName->set_value(pathName.toStdString());
-    kwPathName->set_lineNumber(0);
-    kwPathName->set_loaded(true);
+    // QString pathName="newPath";
+    // RootPathItem *rootParentItem=dynamic_cast<RootPathItem *>(parentItem);
+    // if (rootParentItem) {
+    //     pathName=rootParentItem->getUniquePathName(text(0));
+    // }
+    QString pathName=mw->path->getUniquePathName();
 
     // new path for the path database
     Path *newPath=new Path(0,0);
