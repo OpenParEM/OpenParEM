@@ -2048,7 +2048,7 @@ void OpenParEMg::insertIntegrationPath (VIItem *viItem)
                 viItem->createIntegrationPathItemFromPath (pathItemList[i]);
             } else {
                 QString message="Path \"";
-                message.append(itemPath->get_name());
+                message.append(pathItemList[i]->text(0));
                 message.append("\" cannot be assigned to the selected port.");
                 QMessageBox mb;
                 mb.critical(nullptr, "Error", message);
@@ -5023,7 +5023,7 @@ void OpenParEMg::on_actionRefinement_triggered ()
 
 void OpenParEMg::on_actionMaterials_triggered  ()
 {
-    std::cout << "OpenParEMg::on_actionMaterialsEditor_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionMaterialsEditor_triggered" << std::endl; std::cout.flush();
 
     Materials *localMaterials=new Materials();
     localMaterials->set_projData(&projData);
@@ -5031,6 +5031,8 @@ void OpenParEMg::on_actionMaterials_triggered  ()
     localMaterials->setAbsolutePath(absolutePath);
     localMaterials->exec();
     delete localMaterials;
+
+    boundary->fillMaterialWidgets();
 
     if (projData.modified) {
         projectChanged=true;

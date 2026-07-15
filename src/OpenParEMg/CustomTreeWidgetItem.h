@@ -1041,6 +1041,7 @@ public:
     void showMenu (QMenu *) override;
     bool isUniqueBoundaryName (QString);
     QString getUniqueBoundaryName ();
+    void fillMaterialWidgets ();
 
 private:
 
@@ -1054,6 +1055,7 @@ public:
     BoundaryItem (OpenParEMg *, PathItem *, int, double, QString);
 
     void setSolidColor ();
+    void fillMaterialWidget ();
     void insertItemWidgets (BaseItem *, BaseItem *, BaseItem *);
     void resetWidgets ();
     bool isValidShow () override;

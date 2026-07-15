@@ -2433,7 +2433,10 @@ void PathItem::reverse ()
 
 void PathItem::save (std::ofstream *out)
 {
-    if (path) path->save(out);
+    if (path) {
+        path->set_name(text(0).toStdString());
+        path->save(out);
+    }
     setModified(false);
 }
 
@@ -2730,6 +2733,16 @@ QString RootBoundaryItem::getUniqueBoundaryName ()
     return testBoundaryName;
 }
 
+void RootBoundaryItem::fillMaterialWidgets ()
+{
+    int i=0;
+    while (i < childCount()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(child(i));
+        if (boundaryItem) boundaryItem->fillMaterialWidget();
+        i++;
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // BoundaryItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -2805,6 +2818,33 @@ void BoundaryItem::setSolidColor ()
             else if (boundary_type == 3) shape->SetColor(Quantity_NOC_CORNFLOWERBLUE);
             mw->setShaded(shape);
         }
+    }
+}
+
+void BoundaryItem::fillMaterialWidget ()
+{
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem && baseItem->is_boundaryMaterial()) {
+            CustomComboBox *itemMaterial=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(baseItem,0));
+            if (itemMaterial) {
+                const QSignalBlocker blockerMaterial(itemMaterial);
+                //xxx
+                if (mw->materialDatabase) {
+                    itemMaterial->clear();
+                    long unsigned int j=0;
+                    while (j < mw->materialDatabase->get_size()) {
+                        Material *material=mw->materialDatabase->get_material(j);
+                        if (material->is_conductor()) {
+                            itemMaterial->addItem(QString::fromStdString(material->get_name()->get_value()));
+                        }
+                        j++;
+                    }
+                }
+            }
+        }
+        i++;
     }
 }
 
@@ -2959,7 +2999,7 @@ void BoundaryItem::del ()
 
 void BoundaryItem::resetWidgets ()
 {
-    //std::cout << "BoundaryItem::resetWidgets" << std::endl; std::cout.flush();
+    std::cout << "BoundaryItem::resetWidgets" << std::endl; std::cout.flush();
 
     BaseItem *boundaryType=nullptr;
     BaseItem *boundaryWaveImpedance=nullptr;
@@ -3027,9 +3067,6 @@ void BoundaryItem::resetWidgets ()
 
     // set the shape color
     setSolidColor();
-
-    //clearTreeSelection();
-    //updateViewer();
 }
 
 void BoundaryItem::undo ()
@@ -3105,10 +3142,7 @@ void BoundaryItem::save (std::ofstream *out)
     }
 
     if (pathItem) {
-        Path *boundaryPath=pathItem->getPath();
-        if (boundaryPath) {
-            *out << "   path=" << boundaryPath->get_name() << std::endl;
-        }
+        *out << "   path=" << pathItem->text(0).toStdString() << std::endl;
     }
 
     *out << "EndBoundary" << std::endl;
@@ -3667,10 +3701,7 @@ void PortItem::save (std::ofstream *out)
     *out << "   name=" << text(0).toStdString() << std::endl;
 
     if (pathItem) {
-        Path *portPath=pathItem->getPath();
-        if (portPath) {
-            *out << "   path=" << portPath->get_name() << std::endl;
-        }
+        *out << "   path=" << pathItem->text(0).toStdString() << std::endl;
     }
 
     int i=0;
