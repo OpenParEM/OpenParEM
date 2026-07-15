@@ -1259,7 +1259,7 @@ public:
     void removeScaleItem ();
     void addRemoveScale ();
     IntegrationPathItem* createIntegrationPathItemFromPath (PathItem *);
-    IntegrationPathItem* createIntegrationPathItemFromDrawing (DrawingItem *, bool);
+    //IntegrationPathItem* createIntegrationPathItemFromDrawing (DrawingItem *, bool);
     //void convertItemToPath (DrawingItem *, bool);
     ModeItem* getModeItem () {return modeItem;}
     PortItem* getPortItem ();

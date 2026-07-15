@@ -297,7 +297,7 @@ BaseItem* BaseItem::findTopLevelItem (BaseItem *parentItem, BaseItem *currentIte
 
 void BaseItem::undo ()
 {
-    std::cout << "BaseItem::undo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "BaseItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -344,7 +344,7 @@ void BaseItem::undo ()
 
 void BaseItem::redo ()
 {
-    std::cout << "BaseItem::redo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "BaseItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -487,7 +487,7 @@ ScaleValueItem::ScaleValueItem (OpenParEMg *mw_, ScaleLabelItem *parentItem_)
 
 void ScaleValueItem::insertScaleValueWidget (double scale)
 {
-    std::cout << "ScaleValueItem::insertScaleValueWidget  scale=" << scale << std::endl; std::cout.flush();
+    //std::cout << "ScaleValueItem::insertScaleValueWidget  scale=" << scale << std::endl; std::cout.flush();
 
     CustomLineEdit *scaleEdit=new CustomLineEdit();
     const QSignalBlocker blocker(scaleEdit);
@@ -502,7 +502,7 @@ void ScaleValueItem::insertScaleValueWidget (double scale)
 
 void ScaleValueItem::undo ()
 {
-    std::cout << "ScaleValueItem::undo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "ScaleValueItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -517,7 +517,7 @@ void ScaleValueItem::undo ()
 
 void ScaleValueItem::redo ()
 {
-    std::cout << "ScaleValueItem::redo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "ScaleValueItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -1865,7 +1865,7 @@ BaseItem* DrawingItem::findTopLevelItem (BaseItem *baseItem)
 
 void DrawingItem::undo ()
 {
-    std::cout << "DrawingItem::undo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "DrawingItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -1889,15 +1889,6 @@ void DrawingItem::undo ()
 
         getParentItem()->removeChild(this);
         promoteChildren();
-
-        // int i=0;
-        // while (i < getChildrenSize()) {
-        //     BaseItem *child=getChild(i);
-        //     if (child) {
-        //         child->expandToItem();
-        //     }
-        //     i++;
-        // }
 
         dataStack.undo();
     } else if (shapeData->isEdit()) {
@@ -1932,11 +1923,6 @@ void DrawingItem::undo ()
         if (isDisplayed) mw->ui->drawingWindow->showItem(this);
         else mw->ui->drawingWindow->hideItem(this);
 
-        //mw->ui->drawingWindow->showItem(this);
-
-        //BaseItem *baseItem=findTopLevelItem(this);
-        //baseItem->expandToItem();
-        //expandToItem();
     } else if (shapeData->isDelete()) {
         std::cout << "   isDelete" << std::endl; std::cout.flush();
 
@@ -1961,7 +1947,7 @@ void DrawingItem::undo ()
 
 void DrawingItem::redo ()
 {
-    std::cout << "DrawingItem::redo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "DrawingItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2289,7 +2275,7 @@ BaseItem* PathItem::findTopLevelItem (BaseItem *baseItem)
 
 void PathItem::undo ()
 {
-    std::cout << "PathItem::undo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "PathItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2373,7 +2359,7 @@ void PathItem::rename (QString name)
 
 void PathItem::redo ()
 {
-    std::cout << "PathItem::redo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "PathItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2516,7 +2502,7 @@ void IntegrationPathItem::showMenu (QMenu *menu)
 
 void IntegrationPathItem::undo ()
 {
-    std::cout << "IntegrationPathItem::undo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "IntegrationPathItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2552,7 +2538,7 @@ void IntegrationPathItem::undo ()
 
 void IntegrationPathItem::redo ()
 {
-    std::cout << "IntegrationPathItem::redo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "IntegrationPathItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2591,43 +2577,30 @@ void IntegrationPathItem::redo ()
 
 void IntegrationPathItem::del ()
 {
-    std::cout << "IntegrationPathItem::del" << std::endl; std::cout.flush();
-    mw->itemChangesStack.print();
+    //std::cout << "IntegrationPathItem::del" << std::endl; std::cout.flush();
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setDelete();
     addShapeData(newShapeData);
-    std::cout << "place a" << std::endl;
-    mw->itemChangesStack.print();
 
     VIItem *viItem=dynamic_cast<VIItem *>(parentItem);
     if (viItem) {
         viItem->removeChild(this);
         viItem->addRemoveScale();
-        std::cout << "place b" << std::endl;
-        mw->itemChangesStack.print();
 
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->removeLinkedItem(this);
         }
-        std::cout << "place c" << std::endl;
-        mw->itemChangesStack.print();
 
         PortItem *portItem=viItem->getPortItem();
         if (portItem) {
             portItem->setImpedanceDefinitionOptions();
         }
-        std::cout << "place d" << std::endl;
-        mw->itemChangesStack.print();
 
         mw->itemChangesStack.add(this);
         mw->projectChanged=true;
-        std::cout << "place e" << std::endl;
-        mw->itemChangesStack.print();
     }
-
-    std::cout << "exit IntegrationPathItem::del" << std::endl; std::cout.flush();
 }
 
 void IntegrationPathItem::flipSign ()
@@ -3061,7 +3034,7 @@ void BoundaryItem::resetWidgets ()
 
 void BoundaryItem::undo ()
 {
-    std::cout << "BoundaryItem::undo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "BoundaryItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -3086,7 +3059,7 @@ void BoundaryItem::undo ()
 
 void BoundaryItem::redo ()
 {
-    std::cout << "BoundaryItem::redo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "BoundaryItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -3528,7 +3501,7 @@ void PortItem::del ()
 
 void PortItem::undo ()
 {
-    std::cout << "PortItem::undo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "PortItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -3600,7 +3573,7 @@ void PortItem::undo ()
 
 void PortItem::redo ()
 {
-    std::cout << "PortItem::redo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "PortItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -3733,8 +3706,7 @@ bool PortItem::isValid ()
 
 bool PortItem::hasValidVoltages ()
 {
-    std::cout << "PortItem::hasValidVoltages" << std::endl; std::cout.flush();
-    mw->itemChangesStack.print();
+    //std::cout << "PortItem::hasValidVoltages" << std::endl; std::cout.flush();
 
     int modeCount=0;
     int voltageCount=0;
@@ -3771,7 +3743,7 @@ bool PortItem::hasValidVoltages ()
 
 bool PortItem::hasValidCurrents ()
 {
-    std::cout << "PortItem::hasValidCurrents" << std::endl; std::cout.flush();
+    //std::cout << "PortItem::hasValidCurrents" << std::endl; std::cout.flush();
 
     int modeCount=0;
     int currentCount=0;
@@ -3808,8 +3780,7 @@ bool PortItem::hasValidCurrents ()
 
 void PortItem::setImpedanceDefinitionOptions ()
 {
-    std::cout << "PortItem::setImpedanceDefinitionOptions" << std::endl; std::cout.flush();
-    mw->itemChangesStack.print();
+    //std::cout << "PortItem::setImpedanceDefinitionOptions" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < childCount()) {
@@ -3848,9 +3819,6 @@ void PortItem::setImpedanceDefinitionOptions ()
         }
         i++;
     }
-
-    mw->itemChangesStack.print();
-    std::cout << "exit PortItem::setImpedanceDefinitionOptions" << std::endl; std::cout.flush();
 }
 
 bool PortItem::hasNet (QString net)
@@ -3965,7 +3933,7 @@ bool ModeItem::isValidDelete ()
 
 void ModeItem::undo ()
 {
-    std::cout << "ModeItem::undo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "ModeItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -3981,7 +3949,7 @@ void ModeItem::undo ()
 
 void ModeItem::redo ()
 {
-    std::cout << "ModeItem::redo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "ModeItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4122,8 +4090,7 @@ int ModeItem::get_Sport ()
 
 bool ModeItem::has_voltageIntegrationPath ()
 {
-    std::cout << "ModeItem::has_voltageIntegrationPath" << std::endl; std::cout.flush();
-    mw->itemChangesStack.print();
+    //std::cout << "ModeItem::has_voltageIntegrationPath" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < childCount()) {
@@ -4140,7 +4107,7 @@ bool ModeItem::has_voltageIntegrationPath ()
 
 bool ModeItem::has_currentIntegrationPath ()
 {
-    std::cout << "ModeItem::has_currentIntegrationPath" << std::endl; std::cout.flush();
+    //std::cout << "ModeItem::has_currentIntegrationPath" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < childCount()) {
@@ -4297,7 +4264,7 @@ void SportNumberItem::showMenu (QMenu *menu)
 
 void SportNumberItem::undo ()
 {
-    std::cout << "SportNumberItem::undo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "SportNumberItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4331,7 +4298,7 @@ void SportNumberItem::undo ()
 
 void SportNumberItem::redo ()
 {
-    std::cout << "SportNumberItem::redo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "SportNumberItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4637,17 +4604,17 @@ IntegrationPathItem* VIItem::createIntegrationPathItemFromPath (PathItem *pathIt
     return newIntegrationPathItem;
 }
 
-IntegrationPathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem, bool hasArrows)
-{
-    //std::cout << "VIItem::createIntegrationPathItemFromDrawing" << std::endl; std::cout.flush();
+// IntegrationPathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem, bool hasArrows)
+// {
+//     //std::cout << "VIItem::createIntegrationPathItemFromDrawing" << std::endl; std::cout.flush();
 
-    IntegrationPathItem *newIntegrationPathItem=nullptr;
-    PathItem *newPathItem=drawingItem->createPath(hasArrows);
-    if (newPathItem) {
-        newIntegrationPathItem=createIntegrationPathItemFromPath(newPathItem);
-    }
-    return newIntegrationPathItem;
-}
+//     IntegrationPathItem *newIntegrationPathItem=nullptr;
+//     PathItem *newPathItem=drawingItem->createPath(hasArrows);
+//     if (newPathItem) {
+//         newIntegrationPathItem=createIntegrationPathItemFromPath(newPathItem);
+//     }
+//     return newIntegrationPathItem;
+// }
 
 bool VIItem::hasScale ()
 {
@@ -4673,7 +4640,7 @@ bool VIItem::hasIntegrationPathItem ()
 
 void VIItem::addScaleItem ()
 {
-    std::cout << "VIItem::addScaleItem" << std::endl; std::cout.flush();
+    //std::cout << "VIItem::addScaleItem" << std::endl; std::cout.flush();
 
     if (hasScale()) return;
 
@@ -4697,29 +4664,25 @@ void VIItem::addScaleItem ()
 
 void VIItem::removeScaleItem ()
 {
-    std::cout << "VIItem::removeScaleItem  hasScale()=" << hasScale() << "  scaleLabelItem=" << scaleLabelItem << std::endl; std::cout.flush();
+    //std::cout << "VIItem::removeScaleItem  hasScale()=" << hasScale() << "  scaleLabelItem=" << scaleLabelItem << std::endl; std::cout.flush();
     if (!hasScale()) return;
     removeChild(scaleLabelItem);
 }
 
 void VIItem::addRemoveScale ()
 {
-    std::cout << "VIItem::addRemoveScale" << std::endl; std::cout.flush();
+    //std::cout << "VIItem::addRemoveScale" << std::endl; std::cout.flush();
 
     if (hasScale()) {
         if (hasIntegrationPathItem()) {
-            std::cout << "place 1" << std::endl; std::cout.flush();
             // nothing to do
         } else {
-            std::cout << "place 2" << std::endl; std::cout.flush();
             removeScaleItem();
         }
     } else {
         if (hasIntegrationPathItem()) {
-            std::cout << "place 3" << std::endl; std::cout.flush();
             addScaleItem();
         } else {
-            std::cout << "place 4" << std::endl; std::cout.flush();
             // nothing to do
         }
     }
@@ -4741,8 +4704,7 @@ PortItem* VIItem::getPortItem ()
 
 bool VIItem::has_integrationPath ()
 {
-    std::cout << "VIItem::has_integrationPath" << std::endl; std::cout.flush();
-    mw->itemChangesStack.print();
+    //std::cout << "VIItem::has_integrationPath" << std::endl; std::cout.flush();
 
     int i=0;
     while (i < childCount()) {
@@ -4981,7 +4943,7 @@ void DiffPairItem::demoteChildren ()
 
 void DiffPairItem::undo ()
 {
-    std::cout << "DiffPairItem::undo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "DiffPairItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -5005,7 +4967,7 @@ void DiffPairItem::undo ()
 
 void DiffPairItem::redo ()
 {
-    std::cout << "DiffPairItem::redo  this=" << this << std::endl; std::cout.flush();
+    std::cout << "DiffPairItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;

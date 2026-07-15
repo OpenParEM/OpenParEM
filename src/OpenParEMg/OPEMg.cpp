@@ -986,8 +986,7 @@ void OpenParEMg::setMenusI (int placeIndex)
     //ui->drawingWindow->compactVisibleItems();
 
     // debug options
-    std::cout << "place 0" << std::endl;
-    itemChangesStack.print();
+    //itemChangesStack.print();
     //printLockouts();
     //debugPrintStats(0);
     //ui->drawingWindow->PrintAllActiveModes();
@@ -7574,16 +7573,20 @@ void OpenParEMg::finishDraw ()
             if (viItem->is_voltage()) name="v";
             if (viItem->is_current()) name="i";
             name.append(QString::number(Sport));
-            currentDrawingItem->rename(name);
-            currentDrawingItem->setText(0,name);
 
             // create path
-            IntegrationPathItem *integrationPathItem=viItem->createIntegrationPathItemFromDrawing(currentDrawingItem,true);
+            PathItem *newPathItem=currentDrawingItem->createPath(true);
+            ShapeData *shapeData=newPathItem->getShapeData();
+            shapeData->set_name(name);
+            newPathItem->setText(0,name);
             currentDrawingItem->del();
 
             // see if the path is within an existing port
-            Path *path=integrationPathItem->getPathItem()->getPath();
+            Path *path=newPathItem->getPath();
             if (portPath->is_path_inside(path)) {
+
+                // create the integration path
+                viItem->createIntegrationPathItemFromPath(newPathItem);
 
                 // set the impedance definition to a reasonable value
                 int i=0;
@@ -7601,10 +7604,6 @@ void OpenParEMg::finishDraw ()
                     i++;
                 }
 
-                // assume a positive direction for the new integration path
-                QString newPathText="+";
-                newPathText.append(integrationPathItem->text(0));
-
                 // add scale, if needed
                 viItem->addScaleItem();
             } else {
@@ -7612,7 +7611,7 @@ void OpenParEMg::finishDraw ()
                 mb.critical(nullptr, "Error", "The path is not within the port outline.");
                 mb.setFixedSize(500, 200);
 
-                integrationPathItem->del();
+                newPathItem->del();
             }
 
             portItem->setImpedanceDefinitionOptions();
