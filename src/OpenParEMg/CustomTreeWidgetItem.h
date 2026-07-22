@@ -693,6 +693,9 @@ public:
     bool isAssignedSport (long unsigned int);
     long unsigned int nextSport ();
 
+    void setOriginalSelection (bool originalSelection_) {originalSelection=originalSelection_;}
+    bool isOriginalSelection () {return originalSelection;}
+
 private slots:
 
 protected:
@@ -718,6 +721,7 @@ protected:
 
     bool modified;                                     // markes item as modified;  true on creation
     bool modifiedSinceMeshRegen;                       // supplemental modification tracker to determine need for mesh regeneration
+    bool originalSelection;                            // flag to reset to the original user selection for move and rotate
 };
 
 class ScaleLabelItem : public BaseItem

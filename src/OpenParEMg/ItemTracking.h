@@ -513,6 +513,16 @@ public:
         }
     }
 
+    void simpleSelectDrawingItem (DrawingItem *drawingItem)
+    {
+        if (!drawingItem) return;
+
+        if (!drawingItem->getShape().IsNull()) {
+            SelectShape(drawingItem->getShape());
+        }
+        selectedItems.push_back(drawingItem);
+    }
+
     void selectItem (BaseItem *item)
     {
         if (selectTracking) {std::cout << "ItemTracker::selectItem" << std::endl; std::cout.flush();}
@@ -529,6 +539,12 @@ public:
         }
 
         if (item->is_rootDrawing()) {
+            item->setSelected(Standard_True);
+            selectedItems.push_back(item);
+        } else if (item->is_drawing()) {
+            if (!item->getShape().IsNull()) {
+                SelectShape(item->getShape());
+            }
             item->setSelected(Standard_True);
             selectedItems.push_back(item);
         } else {
@@ -558,7 +574,6 @@ public:
             PortItem *portItem=dynamic_cast<PortItem *>(item);
             if (portItem && portItem->is_port()) {
                 PathItem *pathItem=portItem->getPathItem();
-                std::cout << "pathItem=" << pathItem << std::endl; std::cout.flush();
                 if (pathItem) selectItem(pathItem);
             }
 

@@ -194,6 +194,11 @@ public:
         drawingTracker->refreshSelectedItems();
     }
 
+    void simpleSelectDrawingItem (DrawingItem *drawingItem)
+    {
+        drawingTracker->simpleSelectDrawingItem(drawingItem);
+    }
+
     void selectItem (BaseItem *item)
     {
         //if (showTracking) std::cout << "CustomOpenGLWidget::selectItem" << std::endl; std::cout.flush();

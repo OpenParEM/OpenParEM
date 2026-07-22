@@ -726,7 +726,7 @@ void DrawingItem::demoteChildren ()
 
 void DrawingItem::cancelOperation ()
 {
-    //std::cout << "DrawingItem::cancelOperation" << std::endl; std::cout.flush();
+    std::cout << "DrawingItem::cancelOperation  item=" << this->text(0).toStdString () << std::endl; std::cout.flush();
 
     bool isDisplayed=false;
     if (foreground(0) == Qt::black) isDisplayed=true;
@@ -756,12 +756,15 @@ void DrawingItem::cancelOperation ()
 
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
-        long unsigned int i=0;
-        while (i < getChildrenSize()) {
-            // dataStack.undo(); // Do not go back to the prior shape data - operations work on the children
-            getChild(i)->cancelOperation();
-            i++;
-        }
+        //xxx
+        // long unsigned int i=0;
+        // while (i < getChildrenSize()) {
+        //     // dataStack.undo(); // Do not go back to the prior shape data - operations work on the children
+        //     getChild(i)->cancelOperation();
+        //     i++;
+        // }
+        dataStack.undo(); // go back to the prior shape data
+        mw->reprocess(this);
     }
 
     if (!polywire && !process) {
@@ -903,16 +906,22 @@ void DrawingItem::startMove (bool isAnimate)
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
         if (isAnimate) setAnimate(mw->ui->drawingWindow->get_viewerContext());
-        int i=0;
-        while (i < childCount()) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
-            if (drawingItem) {
-                resetOperation();
-                setEnableMove(true);
-                drawingItem->startMove(false);
-            }
-            i++;
-        }
+        // int i=0;
+        // while (i < childCount()) {
+        //     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
+        //     if (drawingItem) {
+        //         resetOperation();
+        //         setEnableMove(true);
+        //         drawingItem->startMove(false);
+        //     }
+        //     i++;
+        // }
+
+        setForUndoRedo(true,0);
+        resetOperation();
+        if (isAnimate) setAnimate(mw->ui->drawingWindow->get_viewerContext());
+        setEnableMove(true);
+        mw->itemChangesStack.add(this);
     }
 
     if (!polywire && !process) {
@@ -928,8 +937,8 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 {
     //std::cout << "DrawingItem::finishMove  drawingItem=" << text(0).toStdString() << std::endl; std::cout.flush();
 
-    bool isDisplayed=false;
-    if (foreground(0) == Qt::black) isDisplayed=true;
+    //bool isDisplayed=false;
+    //if (foreground(0) == Qt::black) isDisplayed=true;
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -939,12 +948,13 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
-        int i=0;
-        while (i < childCount()) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
-            if (drawingItem) drawingItem->finishMove(p0_,p1_);
-            i++;
-        }
+        //xxx
+        // int i=0;
+        // while (i < childCount()) {
+        //     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
+        //     if (drawingItem) drawingItem->finishMove(p0_,p1_);
+        //     i++;
+        // }
     }
 
     if (!polywire && !process) {
@@ -964,8 +974,12 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
     mw->activeAction=false;
     setModified(true);
 
-    if (isDisplayed) mw->ui->drawingWindow->showItem(this);
-    else mw->ui->drawingWindow->hideItem(this);
+    //if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+    //else mw->ui->drawingWindow->hideItem(this);
+    if (!isOriginalSelection()) {
+        mw->ui->drawingWindow->unselectItem(this);
+        mw->ui->drawingWindow->hideItem(this);
+    }
 
     resetOperation();
     unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
@@ -982,15 +996,20 @@ void DrawingItem::startRotate ()
 
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
-        int i=0;
-        while (i < childCount()) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
-            if (drawingItem) {
-                resetOperation();
-                drawingItem->startRotate();
-            }
-            i++;
-        }
+        // xxx
+        setForUndoRedo(true,0);
+        resetOperation();
+        mw->itemChangesStack.add(this);
+
+        // int i=0;
+        // while (i < childCount()) {
+        //     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
+        //     if (drawingItem) {
+        //         //resetOperation();
+        //         drawingItem->startRotate();
+        //     }
+        //     i++;
+        // }
     }
 
     if (!polywire && !process) {
@@ -1004,8 +1023,8 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
 {
     //bool isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
 
-    bool isDisplayed=false;
-    if (foreground(0) == Qt::black) isDisplayed=true;
+    //bool isDisplayed=false;
+    //if (foreground(0) == Qt::black) isDisplayed=true;
 
     // remove the old version from display and tracking
     mw->ui->drawingWindow->hideItem(this);
@@ -1022,14 +1041,14 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
 
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
-        int i=0;
-        while (i < childCount()) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
-            if (drawingItem) drawingItem->finishRotate(angle,startPoint,endPoint);
-            i++;
-        }
+        // int i=0;
+        // while (i < childCount()) {
+        //     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
+        //     if (drawingItem) drawingItem->finishRotate(angle,startPoint,endPoint);
+        //     i++;
+        // }
 
-        mw->ui->drawingWindow->activateItem(this);
+        // mw->ui->drawingWindow->activateItem(this);
     }
 
     if (!polywire && !process) {
@@ -1049,8 +1068,12 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
     mw->activeAction=false;
     setModified(true);
 
-    if (isDisplayed) mw->ui->drawingWindow->showItem(this);
-    else mw->ui->drawingWindow->hideItem(this);
+    //if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+    //else mw->ui->drawingWindow->hideItem(this);
+    if (!isOriginalSelection()) {
+        mw->ui->drawingWindow->unselectItem(this);
+        mw->ui->drawingWindow->hideItem(this);
+    }
 
     resetOperation();
 
@@ -1233,6 +1256,7 @@ DrawingItem* DrawingItem::copy (BaseItem *parent)
 void DrawingItem::startEdit ()
 {
     setForUndoRedo(false,0);
+    mw->itemChangesStack.add(this);
 
     // polywire to edit
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
@@ -1316,8 +1340,6 @@ void DrawingItem::startEdit ()
             }
         }
     }
-
-    mw->itemChangesStack.add(this);
 }
 
 void DrawingItem::finishEdit ()
@@ -1901,24 +1923,26 @@ void DrawingItem::undo ()
 
         dataStack.undo();
 
-        ShapeData *shapeData=getShapeData();
-        if (shapeData) {
-            Process *process=static_cast<Process *>(shapeData->getProcess());
-            if (process) {
-                int i=0;
-                while (i < childCount()) {
-                    DrawingItem *childItem=dynamic_cast<DrawingItem *>(child(i));
-                    if (childItem) {
-                        childItem->undo();
-                        mw->ui->drawingWindow->hideItem(childItem);
-                    }
-                    i++;
-                }
-            } else {
-                mw->reprocess(this);
-                //mw->ui->drawingWindow->unselectItem(this);
-            }
-        }
+        //xxx
+        // ShapeData *shapeData=getShapeData();
+        // if (shapeData) {
+        //     Process *process=static_cast<Process *>(shapeData->getProcess());
+        //     if (process) {
+        //         int i=0;
+        //         while (i < childCount()) {
+        //             DrawingItem *childItem=dynamic_cast<DrawingItem *>(child(i));
+        //             if (childItem) {
+        //                 childItem->undo();
+        //                 mw->ui->drawingWindow->hideItem(childItem);
+        //             }
+        //             i++;
+        //         }
+        //     } else {
+        //         mw->reprocess(this);
+        //         //mw->ui->drawingWindow->unselectItem(this);
+        //     }
+        // }
+        mw->reprocess(this);
 
         if (isDisplayed) mw->ui->drawingWindow->showItem(this);
         else mw->ui->drawingWindow->hideItem(this);
@@ -1993,20 +2017,21 @@ void DrawingItem::redo ()
 
         dataStack.redo();
 
-        ShapeData *shapeData=getShapeData();
-        if (shapeData) {
-            Process *process=static_cast<Process *>(shapeData->getProcess());
-            if (process) {
-                int i=0;
-                while (i < childCount()) {
-                    DrawingItem *childItem=dynamic_cast<DrawingItem *>(child(i));
-                    if (childItem) {
-                        childItem->redo();
-                    }
-                    i++;
-                }
-            }
-        }
+        //xx
+        // ShapeData *shapeData=getShapeData();
+        // if (shapeData) {
+        //     Process *process=static_cast<Process *>(shapeData->getProcess());
+        //     if (process) {
+        //         int i=0;
+        //         while (i < childCount()) {
+        //             DrawingItem *childItem=dynamic_cast<DrawingItem *>(child(i));
+        //             if (childItem) {
+        //                 childItem->redo();
+        //             }
+        //             i++;
+        //         }
+        //     }
+        // }
 
         mw->reprocess(this);
         //mw->insertToMapActivateItem(this);
