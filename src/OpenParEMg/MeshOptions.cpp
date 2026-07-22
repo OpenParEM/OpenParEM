@@ -60,7 +60,7 @@ void MeshDialog::set_projData (struct projectData *a)
     ui->meshSaveRefined->blockSignals(true);
     if (meshSaveRefined) ui->meshSaveRefined->setCheckState(Qt::Checked);
     else ui->meshSaveRefined->setCheckState(Qt::Unchecked);
-    ui->meshSaveRefined->blockSignals(true);
+    ui->meshSaveRefined->blockSignals(false);
 
     ui->meshRefinementFraction->blockSignals(true);
     ui->meshRefinementFraction->setValue(meshRefinementFraction);
