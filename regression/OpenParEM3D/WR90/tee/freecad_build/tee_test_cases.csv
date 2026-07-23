@@ -1,0 +1,19 @@
+# ResultDatabase::save_as_test
+tee_1_0_result,9000000000,magS(dB),1,1,equal,-1.04605703419521,1e-07
+tee_1_1_result,9000000000,argS(deg),1,1,equal,-45.924033224064,1e-07
+tee_1_2_result,9000000000,magS(dB),2,1,equal,-9.70512396485175,1e-08
+tee_1_3_result,9000000000,argS(deg),2,1,equal,56.6130007224115,1e-08
+tee_1_4_result,9000000000,magS(dB),3,1,equal,-9.70512288889558,1e-08
+tee_1_5_result,9000000000,argS(deg),3,1,equal,56.613002756413,1e-08
+tee_1_6_result,9000000000,magS(dB),1,2,equal,-9.70512396485174,1e-08
+tee_1_7_result,9000000000,argS(deg),1,2,equal,56.6130007224114,1e-08
+tee_1_8_result,9000000000,magS(dB),2,2,equal,-1.49983946411459,1e-07
+tee_1_9_result,9000000000,argS(deg),2,2,equal,7.82461887656814,1e-07
+tee_1_10_result,9000000000,magS(dB),3,2,equal,-7.32822378620395,1e-07
+tee_1_11_result,9000000000,argS(deg),3,2,equal,-90.6785142948006,1e-08
+tee_1_12_result,9000000000,magS(dB),1,3,equal,-9.70512288889558,1e-08
+tee_1_13_result,9000000000,argS(deg),1,3,equal,56.613002756413,1e-08
+tee_1_14_result,9000000000,magS(dB),2,3,equal,-7.32822378620395,1e-07
+tee_1_15_result,9000000000,argS(deg),2,3,equal,-90.6785142948006,1e-08
+tee_1_16_result,9000000000,magS(dB),3,3,equal,-1.49983962676798,1e-07
+tee_1_17_result,9000000000,argS(deg),3,3,equal,7.82461576798453,1e-07
