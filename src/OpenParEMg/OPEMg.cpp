@@ -7773,6 +7773,64 @@ void OpenParEMg::updateIterationsTab (bool force)
     }
 }
 
+// void OpenParEMg::updateDataTab (bool force)
+// {
+//     // default data csv file name used throughout
+//     QString dataFile=projData.project_name;
+//     dataFile.append("_results.csv");
+
+//     // open the file
+//     QFile file(dataFile);
+//     if (!file.exists()) return;
+//     if (!QFileInfo(dataFile).isFile()) return;
+//     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+
+//     // get new data that has been added to the file
+//     file.seek(dataLastPos);
+//     QByteArray newData=file.readAll();
+//     dataLastPos=file.pos();
+//     if (newData.isEmpty()) return;
+
+//     // test for a quirk of back-to-back line returns due to block boundaries when loading
+//     if (dataLastChar == '\n' && newData[0] == '\n') newData.removeFirst();
+//     dataLastChar=newData[newData.size()-1];
+
+//     // check for skip or force
+//     if (!force && dataFilter->skipLoad) return;
+
+//     // load the new data
+//     // set the cursor so the user can scroll up to view prior data
+
+//     QTextCursor cursor=ui->dataText->textCursor();
+//     QTextCursor oldCursor=cursor;
+
+//     cursor.movePosition(QTextCursor::End);
+//     cursor.insertText(QString::fromUtf8(newData));
+
+//     if (dataFilter->followTail) {
+//         ui->dataText->setTextCursor(cursor);
+//     } else {
+//         ui->dataText->setTextCursor(oldCursor);
+//     }
+// }
+
+// updateTextKeepScroll is courtesy of Google AI
+void updateTextKeepScroll(QPlainTextEdit *editor, const QString &newText) {
+    // 1. Save the current scroll position
+    QScrollBar *scrollbar = editor->verticalScrollBar();
+    int previousScrollValue = scrollbar->value();
+
+    // 2. Update the content
+    editor->setPlainText(newText);
+
+    // 3. Force Qt to process the layout so the scrollbar max value updates
+    editor->document()->documentLayout()->update();
+
+    // 4. Restore the scroll position
+    scrollbar->setValue(previousScrollValue);
+}
+
+// change from the other tabs since new data can appear in the middle of the text block
 void OpenParEMg::updateDataTab (bool force)
 {
     // default data csv file name used throughout
@@ -7785,15 +7843,16 @@ void OpenParEMg::updateDataTab (bool force)
     if (!QFileInfo(dataFile).isFile()) return;
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
 
-    // get new data that has been added to the file
+    // see if new data that has been added to the file
     file.seek(dataLastPos);
     QByteArray newData=file.readAll();
     dataLastPos=file.pos();
     if (newData.isEmpty()) return;
 
-    // test for a quirk of back-to-back line returns due to block boundaries when loading
-    if (dataLastChar == '\n' && newData[0] == '\n') newData.removeFirst();
-    dataLastChar=newData[newData.size()-1];
+    // load all of the data because new data may appear in the middle
+    file.seek(0);
+    newData=file.readAll();
+    dataLastPos=file.pos();
 
     // check for skip or force
     if (!force && dataFilter->skipLoad) return;
@@ -7801,19 +7860,22 @@ void OpenParEMg::updateDataTab (bool force)
     // load the new data
     // set the cursor so the user can scroll up to view prior data
 
-    QTextCursor cursor=ui->dataText->textCursor();
-    QTextCursor oldCursor=cursor;
+    // QTextCursor cursor=ui->dataText->textCursor();
+    // QTextCursor oldCursor=cursor;
 
-    cursor.movePosition(QTextCursor::End);
-    cursor.insertText(QString::fromUtf8(newData));
+    // // replace the text with the full data set
+    // ui->dataText->clear();
+    // ui->dataText->insertPlainText(QString::fromUtf8(newData));
 
-    if (dataFilter->followTail) {
-        ui->dataText->setTextCursor(cursor);
-    } else {
-        ui->dataText->setTextCursor(oldCursor);
-    }
+    // if (dataFilter->followTail) {
+    //     ui->dataText->setTextCursor(cursor);
+    // } else {
+    //     ui->dataText->setTextCursor(oldCursor);
+    // }
+    // ui->dataText->ensureCursorVisible();
+
+    updateTextKeepScroll(ui->dataText,QString::fromUtf8(newData));
 }
-
 
 
 // end of file
