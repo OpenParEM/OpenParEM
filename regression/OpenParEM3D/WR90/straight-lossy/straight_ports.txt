@@ -16,8 +16,8 @@ EndPath
 
 Path
    name=v1
-   point=(0.01143,0.01016,0)
    point=(0.01143,0,0)
+   point=(0.01143,0.01016,0)
    closed=false
    normal=(0,0,-1)
 EndPath
@@ -34,24 +34,14 @@ EndPath
 
 Path
    name=v2
-   point=(0.01143,0.01016,0.1)
    point=(0.01143,0,0.1)
+   point=(0.01143,0.01016,0.1)
    closed=false
    normal=(0,-0,1)
 EndPath
 
 Path
    name=path3
-   point=(0,0.01016,0.1)
-   point=(0,0.01016,0)
-   point=(0,0,0)
-   point=(0,0,0.1)
-   closed=true
-   normal=(-1,0,0)
-EndPath
-
-Path
-   name=path4
    point=(0,0,0.1)
    point=(0,0,0)
    point=(0.02286,0,0)
@@ -61,13 +51,23 @@ Path
 EndPath
 
 Path
-   name=path5
+   name=path4
    point=(0.02286,0,0.1)
    point=(0.02286,0,0)
    point=(0.02286,0.01016,0)
    point=(0.02286,0.01016,0.1)
    closed=true
    normal=(1,0,0)
+EndPath
+
+Path
+   name=path5
+   point=(0,0.01016,0.1)
+   point=(0,0.01016,0)
+   point=(0,0,0)
+   point=(0,0,0.1)
+   closed=true
+   normal=(-1,0,0)
 EndPath
 
 Path
