@@ -11,8 +11,8 @@ port.definition.file straight_ports.txt
 //refinement.frequency high
 //refinement.iteration.min 1
 refinement.iteration.max 30
-//refinement.required.passes 1
-refinement.relative.tolerance 0.001
+refinement.required.passes 2
+refinement.relative.tolerance 0.01
 //refinement.absolute.tolerance 1e-06
 refinement.variable S
 materials.global.path /home/briany/OpenParEM/regression/OpenParEM2D
