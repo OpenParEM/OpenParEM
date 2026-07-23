@@ -221,13 +221,21 @@ bool saveSerialMesh (struct projectData *projData, MeshMaterialList *meshMateria
 
    Mesh mesh=pmesh->GetSerialMesh(0);
    if (rank == 0) {
-      mesh.Save(ssMesh.str());
+
+      // native MFEM mesh format
+      //mesh.Save(ssMesh.str());
+
+      // gmsh format
+      if (!WriteGmsh22(mesh,ssMesh.str(),meshMaterials->getMaterialNames())) {
+         return true;
+      }
    }
 
-   stringstream ssRegions;
-   ssRegions << "materials_for_refined_" << projData->mesh_file;
-   bool retval=meshMaterials->saveRegionsFile (ssRegions.str().c_str());
-   if (retval) return true;
+   // required materials output when using the native MFEM mesh format
+   //stringstream ssRegions;
+   //ssRegions << "materials_for_refined_" << projData->mesh_file;
+   //bool retval=meshMaterials->saveRegionsFile (ssRegions.str().c_str());
+   //if (retval) return true;
 
    return false;
 }
@@ -377,7 +385,7 @@ int main(int argc, char *argv[])
    // mesh
 
    checkForAbort();
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Loading mesh and assigning materials ...\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   loading mesh file \"%s\"\n",projData.mesh_file);
    if (!projData.materials_check_limits) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Skipping limit checks on material values\n");}
    if (meshMaterials.load(projData.mesh_file,3)) {
       signalFinished(1);

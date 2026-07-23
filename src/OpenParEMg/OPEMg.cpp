@@ -4805,10 +4805,12 @@ void OpenParEMg::saveProject ()
 
     // mesh_file
     if (mesh->childCount() > 0) {
-        QString meshFile=projectName;
-        meshFile.append(".msh");
-        if (meshFile.compare(projData.mesh_file) != 0) projectChanged=true;
-        cstrFromQString (&(projData.mesh_file),meshFile);
+        if (strcmp(projData.mesh_file,"") == 0) {
+            QString meshFile=projectName;
+            meshFile.append(".msh");
+            if (meshFile.compare(projData.mesh_file) != 0) projectChanged=true;
+            cstrFromQString (&(projData.mesh_file),meshFile);
+        }
         std::cout << "projData.mesh_file=" << projData.mesh_file << std::endl; std::cout.flush();
     }
 
@@ -6860,6 +6862,8 @@ void OpenParEMg::loadMeshFile (QString meshfile)
 
         // load and display
         gmsh::open(meshfile.toStdString());
+        //gmsh::merge(meshfile.toStdString());
+        //gmsh::plugin::run("CreatePhysicalGroupsByField");
         drawMesh();
         finishDrawMesh();
 

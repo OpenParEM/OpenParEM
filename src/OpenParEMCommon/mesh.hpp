@@ -35,6 +35,11 @@
 #include "misc.hpp"
 #include "prefix.h"
 
+#include <iomanip>
+
+using namespace mfem;
+
+
 extern "C" void prefix ();
 
 bool is_comment (std::string);
@@ -64,6 +69,7 @@ class MeshMaterialList {
        long unsigned int get_index (int);
        int get_index (long unsigned int);
        std::string get_name (long unsigned int);
+       std::vector<std::string> getMaterialNames () {return list;}
 };
 
 void reset_attributes (mfem::Mesh *, mfem::ParMesh *, MeshMaterialList *);
@@ -89,6 +95,10 @@ class Vertex3Ddatabase {
       long unsigned int find (Vertex3D *);
       long unsigned int push (Vertex3D *a) {vertex3DList.push_back(a); return vertex3DList.size()-1;}
 };
+
+bool WriteGmsh22(const mfem::Mesh &mesh,
+                 const std::string &filename,
+                 const std::vector<std::string> &materialNames);
 
 #endif
 

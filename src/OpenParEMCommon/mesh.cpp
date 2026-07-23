@@ -444,10 +444,10 @@ bool MeshMaterialList::load (const char *filename, int dimension)
 
       if (getline(meshFile,line)) {
          if (line.compare("MFEM mesh v1.0") == 0 || line.compare("MFEM mesh v1.2") == 0) {
-            prefix(); PetscPrintf(PETSC_COMM_WORLD,"   loading MFEM mesh format\n");
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"      using MFEM mesh format\n");
             if (loadMFEM (filename)) fail=true;
          } else if (line.compare("$MeshFormat") == 0) {
-            prefix(); PetscPrintf(PETSC_COMM_WORLD,"   loading gmsh mesh format\n");
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"      using gmsh mesh format\n");
             if (loadGMSH(filename,dimension)) fail=true;
          } else {
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1076: Unrecognized mesh format in file \"%s\".\n",filename);
@@ -790,5 +790,185 @@ Vertex3Ddatabase::~Vertex3Ddatabase()
       delete vertex3DList[i];
       i++;
    }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// WriteGmsh22 courtesy of ChatGPT
+//
+// Saves a MFEM mesh to a gmsh format msh22 mesh file.
+// For linear meshes with triangles and tetrahedra.
+//
+// WriteGmsh22 is released under the MIT License
+///////////////////////////////////////////////////////////////////////////////////////////
+
+bool WriteGmsh22(const mfem::Mesh &mesh,
+                 const std::string &filename,
+                 const std::vector<std::string> &materialNames)
+{
+    std::ofstream out(filename.c_str());
+
+    if (!out)
+        return false;
+
+    out << "$MeshFormat\n";
+    out << "2.2 0 8\n";
+    out << "$EndMeshFormat\n";
+
+    //
+    // Physical names (volume regions)
+    //
+
+    if (!materialNames.empty())
+    {
+        out << "$PhysicalNames\n";
+        out << materialNames.size() << "\n";
+
+        int i = 0;
+
+        while (i < static_cast<int>(materialNames.size()))
+        {
+            out << "3 "
+                << i + 1
+                << " \""
+                << materialNames[i]
+                << "\"\n";
+
+            i++;
+        }
+
+        out << "$EndPhysicalNames\n";
+    }
+
+    //
+    // Nodes
+    //
+
+    int nv = mesh.GetNV();
+
+    out << "$Nodes\n";
+    out << nv << "\n";
+
+    int i = 0;
+
+    while (i < nv)
+    {
+        const double *v = mesh.GetVertex(i);
+
+        out << i + 1 << " "
+            << std::setprecision(17)
+            << v[0] << " "
+            << v[1] << " ";
+
+        if (mesh.SpaceDimension() == 3)
+            out << v[2];
+        else
+            out << 0.0;
+
+        out << "\n";
+
+        i++;
+    }
+
+    out << "$EndNodes\n";
+
+    //
+    // Elements
+    //
+
+    int nbe = mesh.GetNBE();
+    int ne  = mesh.GetNE();
+
+    out << "$Elements\n";
+    out << nbe + ne << "\n";
+
+    int elementID = 1;
+
+    //
+    // Boundary triangles
+    //
+
+    i = 0;
+
+    while (i < nbe)
+    {
+        const Element *el = mesh.GetBdrElement(i);
+
+        if (el->GetGeometryType() == Geometry::TRIANGLE)
+        {
+            Array<int> v;
+
+            el->GetVertices(v);
+
+            int attr = el->GetAttribute();
+
+            out << elementID++
+                << " "
+                << 2                 // Gmsh triangle
+                << " "
+                << 2                 // number of tags
+                << " "
+                << attr              // physical group
+                << " "
+                << attr;             // elementary entity
+
+            int j = 0;
+
+            while (j < v.Size())
+            {
+                out << " " << v[j] + 1;
+                j++;
+            }
+
+            out << "\n";
+        }
+
+        i++;
+    }
+
+    //
+    // Volume tetrahedra
+    //
+
+    i = 0;
+
+    while (i < ne)
+    {
+        const Element *el = mesh.GetElement(i);
+
+        if (el->GetGeometryType() == Geometry::TETRAHEDRON)
+        {
+            Array<int> v;
+
+            el->GetVertices(v);
+
+            int attr = el->GetAttribute();
+
+            out << elementID++
+                << " "
+                << 4                 // Gmsh tetrahedron
+                << " "
+                << 2                 // number of tags
+                << " "
+                << attr              // physical group
+                << " "
+                << attr;             // elementary entity
+
+            int j = 0;
+
+            while (j < v.Size())
+            {
+                out << " " << v[j] + 1;
+                j++;
+            }
+
+            out << "\n";
+        }
+
+        i++;
+    }
+
+    out << "$EndElements\n";
+
+    return true;
 }
 

@@ -1515,9 +1515,7 @@ Including voltage integration paths in the Boolean fragments object will also fo
 
 \subsection{Mesh Re-Use}
 
-When using adaptive mesh refinement, the refined mesh can be saved by setting \texttt{mesh.save.refined true} in the project control file.  This can be used to advantage when multiple frequency sweeps are expected.  A first simulation pass can be done to just adaptively refine the mesh.  Then, the project control file can be copied, the mesh changed to the refined mesh, refinement disabled, and the frequency sweep added.  Multiple frequency sweeps can be make without having to re-refine the mesh.  For example, a relatively coarse sweep can be made, then finer sweeps can be done to fill in sharp resonance peaks and nulls.
-
-The refined mesh is in the MFEM native format rather than the gmsh format.  To view the MFEM mesh directly, glvis can be used.
+When using adaptive mesh refinement, the refined mesh can be saved by setting \texttt{mesh.save.refined true} in the project control file.  This can be used to advantage when multiple frequency sweeps are expected.  A first simulation pass can be done to just adaptively refine the mesh.  Then, the project control file can be copied, the mesh changed to the refined mesh, refinement disabled, and the frequency sweep added.  Multiple frequency sweeps can be made without having to re-refine the mesh.  For example, a relatively coarse sweep can be made, then finer sweeps can be done to fill in sharp resonance peaks and nulls.
 
 \subsection{Adaptive Mesh Refinement Convergence}
 
