@@ -1,0 +1,66 @@
+#OpenParEMports 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D/regression/WR90/straight-rotated-y/straight-rotated.FCstd
+EndFile
+
+Path
+   name=port1
+   point=(-0.01143,-0.1,-0.00508)
+   point=(0.01143,-0.1,-0.00508)
+   point=(0.01143,-0.1,0.00508)
+   point=(-0.01143,-0.1,0.00508)
+   closed=true
+EndPath
+
+Path
+   name=v1
+   point=(0.0,-0.099999999999994,-0.00508)
+   point=(-1.8e-15,-0.099999999999994,0.00508)
+   closed=false
+EndPath
+
+Path
+   name=port2
+   point=(-0.01143,-0.0,-0.00508)
+   point=(0.01143,0.0,-0.00508)
+   point=(0.01143,2.2559731860383182e-18,0.00508)
+   point=(-0.01143,2.2559731860383182e-18,0.00508)
+   closed=true
+EndPath
+
+Path
+   name=v2
+   point=(0.0,-0.0,-0.00508)
+   point=(0.0,0.0,0.00508)
+   closed=false
+EndPath
+
+Port
+   name=1
+   path=+port1
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=1
+      IntegrationPath
+         type=voltage
+         path=+v1
+      EndIntegrationPath
+   EndLine
+EndPort
+
+Port
+   name=2
+   path=+port2
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=2
+      IntegrationPath
+         type=voltage
+         path=+v2
+      EndIntegrationPath
+   EndLine
+EndPort
+
