@@ -1,0 +1,38 @@
+#OpenParEMgDrawing 1.0
+
+Extrude
+   name=Extrude1
+   material=air
+   length=0.04572
+   Rectangle
+      name=Rectangle1
+      origin=(0,0,0)
+      width=0.01905
+      height=0.009525
+      isSquare=0
+      tempWidth=0.00249591274397363
+      tempHeight=0.00116581220730904
+      u=(1,0,0)
+      v=(0,1,0)
+      normal=(0,0,1)
+      reverse=false
+   EndRectangle
+EndExtrude
+Extrude
+   name=Extrude2
+   material=dielectric-loading
+   length=0.0038
+   Rectangle
+      name=Rectangle3
+      origin=(0.005296,0,0.01905)
+      width=0.00762
+      height=0.008458
+      isSquare=0
+      tempWidth=0.0132295024468294
+      tempHeight=0.0133965237754
+      u=(0,-0,1)
+      v=(1,0,-0)
+      normal=(0,1,0)
+      reverse=false
+   EndRectangle
+EndExtrude

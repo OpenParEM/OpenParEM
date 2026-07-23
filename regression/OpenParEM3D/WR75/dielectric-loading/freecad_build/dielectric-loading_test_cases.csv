@@ -1,0 +1,25 @@
+# ResultDatabase::save_as_test
+dielectric-loading_1_0_result,8500000000,magS(dB),1,1,equal,-3.45747501419187,1e-10
+dielectric-loading_1_1_result,8500000000,argS(deg),1,1,equal,44.2004174503239,1e-10
+dielectric-loading_1_2_result,8500000000,magS(dB),2,1,equal,-2.6048808564933,1e-10
+dielectric-loading_1_3_result,8500000000,argS(deg),2,1,equal,134.183615801807,1e-10
+dielectric-loading_1_4_result,8500000000,magS(dB),1,2,equal,-2.6048808564933,1e-10
+dielectric-loading_1_5_result,8500000000,argS(deg),1,2,equal,134.183615801807,1e-10
+dielectric-loading_1_6_result,8500000000,magS(dB),2,2,equal,-3.4574796661973,1e-10
+dielectric-loading_1_7_result,8500000000,argS(deg),2,2,equal,44.165701474158,1e-10
+dielectric-loading_2_8_result,11600000000,magS(dB),1,1,equal,-32.5580676110036,1e-10
+dielectric-loading_2_9_result,11600000000,argS(deg),1,1,equal,96.0909641965454,1e-10
+dielectric-loading_2_10_result,11600000000,magS(dB),2,1,equal,-0.00238583737232409,1e-09
+dielectric-loading_2_11_result,11600000000,argS(deg),2,1,equal,-174.335296267542,1e-10
+dielectric-loading_2_12_result,11600000000,magS(dB),1,2,equal,-0.00238583737232409,1e-09
+dielectric-loading_2_13_result,11600000000,argS(deg),1,2,equal,-174.335296267542,1e-10
+dielectric-loading_2_14_result,11600000000,magS(dB),2,2,equal,-32.5583093831309,1e-10
+dielectric-loading_2_15_result,11600000000,argS(deg),2,2,equal,95.2107472690647,1e-10
+dielectric-loading_3_16_result,13000000000,magS(dB),1,1,equal,-0.192573332275802,1e-10
+dielectric-loading_3_17_result,13000000000,argS(deg),1,1,equal,91.2925673619318,1e-10
+dielectric-loading_3_18_result,13000000000,magS(dB),2,1,equal,-13.6446709606283,1e-10
+dielectric-loading_3_19_result,13000000000,argS(deg),2,1,equal,1.2715666661208,1e-10
+dielectric-loading_3_20_result,13000000000,magS(dB),1,2,equal,-13.6446709606283,1e-10
+dielectric-loading_3_21_result,13000000000,argS(deg),1,2,equal,1.2715666661208,1e-10
+dielectric-loading_3_22_result,13000000000,magS(dB),2,2,equal,-0.192576491888623,1e-10
+dielectric-loading_3_23_result,13000000000,argS(deg),2,2,equal,91.2357577494222,1e-10

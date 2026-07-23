@@ -1,66 +1,72 @@
 #OpenParEMports 1.0
 
 File
-   name=/home/briany/Desktop/OpenParEM3D/regression/WR75/dielectric-loading/dielectric-loading.FCStd
+   name=generated_by_OpenParEMg
 EndFile
 
 Path
-   name=1
-   point=(0.0,0.0,0.0)
-   point=(0.01905,0.0,0.0)
-   point=(0.01905,0.009525,0.0)
-   point=(0.0,0.009525,0.0)
-   closed=true
-EndPath
-
-Path
-   name=2
-   point=(0.0,0.0,0.04572)
-   point=(0.01905,0.0,0.04572)
+   name=path1
+   point=(0,0,0.04572)
+   point=(0.01905,0,0.04572)
    point=(0.01905,0.009525,0.04572)
-   point=(0.0,0.009525,0.04572)
+   point=(0,0.009525,0.04572)
    closed=true
+   normal=(0,-0,1)
 EndPath
 
 Path
-   name=V1
-   point=(0.009525,0.0,0.0)
-   point=(0.009525,0.009525,0.0)
+   name=v1
+   point=(0.009525,0,0.04572)
+   point=(0.009525,0.009525,0.04572)
    closed=false
+   normal=(0,-0,1)
 EndPath
 
 Path
-   name=V2
-   point=(0.009525,0.0,0.0457200000000029)
-   point=(0.009525,0.009525,0.0457200000000029)
+   name=path2
+   point=(0.01905,0,0)
+   point=(0,0,0)
+   point=(0,0.009525,0)
+   point=(0.01905,0.009525,0)
+   closed=true
+   normal=(0,0,-1)
+EndPath
+
+Path
+   name=v2
+   point=(0.009525,0,0)
+   point=(0.009525,0.009525,0)
    closed=false
+   normal=(0,0,-1)
 EndPath
 
 Port
-   name=1
-   path=+1
+   name=port1
+   path=path1
    impedance_definition=PV
-   impedance_calculation=modal
-   Mode
+   impedance_calculation=line
+   Line
+      net=net1
       Sport=1
       IntegrationPath
          type=voltage
-         path=+V1
+         path=+v1
       EndIntegrationPath
-   EndMode
+   EndLine
 EndPort
 
 Port
-   name=2
-   path=+2
+   name=port2
+   path=path2
    impedance_definition=PV
-   impedance_calculation=modal
-   Mode
+   impedance_calculation=line
+   Line
+      net=net2
       Sport=2
       IntegrationPath
          type=voltage
-         path=+V2
+         path=+v2
       EndIntegrationPath
-   EndMode
+   EndLine
 EndPort
 
