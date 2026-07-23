@@ -8,7 +8,7 @@ fem.order                      3
 
 port.definition.file           shorted-step_ports.txt
 
-materials.global.path          ../../../../../OpenParEM2D/
+materials.global.path          ../../../../../../OpenParEM2D/
 materials.global.name          global_materials.txt
 materials.local.path           ./
 materials.local.name           //local_materials.txt
