@@ -642,7 +642,9 @@ void RootDrawingItem::showMenu (QMenu *menu)
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    if (isValidSelectAll()) menu->addAction(mw->selectAllAction);
+    if (!mw->simulationRunning) {
+        if (isValidSelectAll()) menu->addAction(mw->selectAllAction);
+    }
     if (mw->clickedItem) {
         if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
         if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
@@ -1751,37 +1753,39 @@ void DrawingItem::showMenu (QMenu *menu)
     connect(mw->expandAllAction, &QAction::triggered, mw, &OpenParEMg::expandAllItems);
     connect(mw->collapseAllAction, &QAction::triggered, mw, &OpenParEMg::collapseAllItems);
 
-    if (mw->isValidAssignMaterial()) menu->addAction(mw->assignMaterialAction);
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    if (mw->isValidCopy()) menu->addAction(mw->copyAction);
-    if (mw->isValidRenameDrawingItems()) menu->addAction(mw->renameAction);
-    if (mw->isValidObjectDelete()) menu->addAction(mw->deleteAction);
-    if (mw->isValidSetPlane()) menu->addAction(mw->setPlaneAction);
-    if (mw->isValidSetPlane()) menu->addAction(mw->setPlaneAxisAction);
-    if (mw->isValidCreatePath()) menu->addAction(mw->createPathAction);
-    if (mw->isValidCreatePortFromFace()) menu->addAction(mw->createPortAction);
-    if (mw->isValidCreateBoundaryFromFace()) menu->addAction(mw->createBoundaryAction);
-    if (mw->isValidObjectEdit()) menu->addAction(mw->editAction);
-    if (mw->isValidObjectMove()) menu->addAction(mw->moveAction);
-    if (mw->isValidObjectStretch()) menu->addAction(mw->stretchAction);
-    if (mw->isValidInsertPoint()) menu->addAction(mw->insertPointAction);
-    if (mw->isValidDeletePoint()) menu->addAction(mw->deletePointAction);
-    if (mw->isValidCloseExistingPolyline()) menu->addAction(mw->closePolylineAction);
-    if (mw->isValidOpenExistingPolyline()) menu->addAction(mw->openPolylineAction);
-    if (mw->isValidRotateObject()) menu->addAction(mw->rotateAction);
-    if (mw->isValidExtrudePolywire()) menu->addAction(mw->extrudeAction);
-    if (mw->isValidMergeSolids()) menu->addAction(mw->mergeAction);
-    if (mw->isValidSubtractSolids()) menu->addAction(mw->subtractAction);
-    if (mw->isValidConvertToPolyline()) menu->addAction(mw->convertToPolylineAction);
-    if (mw->isValidConvertToPath()) menu->addAction(mw->convertToPathAction);
-    if (mw->isValidConvertToPort()) menu->addAction(mw->convertToPortAction);
-    if (mw->isValidConvertToBoundary()) menu->addAction(mw->convertToBoundaryAction);
-    menu->addAction(mw->cancelAction);
+    if (!mw->simulationRunning) {
+        if (mw->isValidAssignMaterial()) menu->addAction(mw->assignMaterialAction);
+        if (mw->isValidCopy()) menu->addAction(mw->copyAction);
+        if (mw->isValidRenameDrawingItems()) menu->addAction(mw->renameAction);
+        if (mw->isValidObjectDelete()) menu->addAction(mw->deleteAction);
+        if (mw->isValidSetPlane()) menu->addAction(mw->setPlaneAction);
+        if (mw->isValidSetPlane()) menu->addAction(mw->setPlaneAxisAction);
+        if (mw->isValidCreatePath()) menu->addAction(mw->createPathAction);
+        if (mw->isValidCreatePortFromFace()) menu->addAction(mw->createPortAction);
+        if (mw->isValidCreateBoundaryFromFace()) menu->addAction(mw->createBoundaryAction);
+        if (mw->isValidObjectEdit()) menu->addAction(mw->editAction);
+        if (mw->isValidObjectMove()) menu->addAction(mw->moveAction);
+        if (mw->isValidObjectStretch()) menu->addAction(mw->stretchAction);
+        if (mw->isValidInsertPoint()) menu->addAction(mw->insertPointAction);
+        if (mw->isValidDeletePoint()) menu->addAction(mw->deletePointAction);
+        if (mw->isValidCloseExistingPolyline()) menu->addAction(mw->closePolylineAction);
+        if (mw->isValidOpenExistingPolyline()) menu->addAction(mw->openPolylineAction);
+        if (mw->isValidRotateObject()) menu->addAction(mw->rotateAction);
+        if (mw->isValidExtrudePolywire()) menu->addAction(mw->extrudeAction);
+        if (mw->isValidMergeSolids()) menu->addAction(mw->mergeAction);
+        if (mw->isValidSubtractSolids()) menu->addAction(mw->subtractAction);
+        if (mw->isValidConvertToPolyline()) menu->addAction(mw->convertToPolylineAction);
+        if (mw->isValidConvertToPath()) menu->addAction(mw->convertToPathAction);
+        if (mw->isValidConvertToPort()) menu->addAction(mw->convertToPortAction);
+        if (mw->isValidConvertToBoundary()) menu->addAction(mw->convertToBoundaryAction);
+    }
     if (mw->clickedItem) {
         if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
         if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
     }
+    menu->addAction(mw->cancelAction);
 }
 
 TopoDS_Shape DrawingItem::moveShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_InteractiveContext) viewerContext)
@@ -2263,11 +2267,13 @@ void PathItem::showMenu (QMenu *menu)
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    if (mw->ui->drawingWindow->get_pathSelectedCount() == 1) menu->addAction(mw->renameAction);
-    if (mw->isValidCreatePortFromPath()) menu->addAction(mw->createPortAction);
-    if (mw->isValidCreateBoundaryFromPath()) menu->addAction(mw->createBoundaryAction);
-    if (mw->isValidReversePath()) menu->addAction(mw->reversePathAction);
-    if (mw->isValidDeletePath()) menu->addAction(mw->deleteAction);
+    if (!mw->simulationRunning) {
+        if (mw->ui->drawingWindow->get_pathSelectedCount() == 1) menu->addAction(mw->renameAction);
+        if (mw->isValidCreatePortFromPath()) menu->addAction(mw->createPortAction);
+        if (mw->isValidCreateBoundaryFromPath()) menu->addAction(mw->createBoundaryAction);
+        if (mw->isValidReversePath()) menu->addAction(mw->reversePathAction);
+        if (mw->isValidDeletePath()) menu->addAction(mw->deleteAction);
+    }
     menu->addAction(mw->cancelAction);
 }
 
@@ -2524,8 +2530,10 @@ void IntegrationPathItem::showMenu (QMenu *menu)
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    menu->addAction(mw->renameAction);
-    menu->addAction(mw->deleteAction);
+    if (!mw->simulationRunning) {
+        menu->addAction(mw->renameAction);
+        menu->addAction(mw->deleteAction);
+    }
 }
 
 void IntegrationPathItem::undo ()
@@ -2993,8 +3001,10 @@ void BoundaryItem::showMenu (QMenu *menu)
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
     if (mw->ui->drawingWindow->hasBoundarySelectedItems()) menu->addAction(mw->unselectAction);
-    if (mw->ui->drawingWindow->get_boundarySelectedCount() == 1) menu->addAction(mw->renameAction);
-    menu->addAction(mw->deleteAction);
+    if (!mw->simulationRunning) {
+        if (mw->ui->drawingWindow->get_boundarySelectedCount() == 1) menu->addAction(mw->renameAction);
+        menu->addAction(mw->deleteAction);
+    }
     if (mw->clickedItem) {
         if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
         if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
@@ -3499,9 +3509,11 @@ void PortItem::showMenu (QMenu *menu)
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
     if (mw->ui->drawingWindow->hasPortSelectedItems()) menu->addAction(mw->unselectAction);
-    if (mw->ui->drawingWindow->get_portSelectedCount() == 1) menu->addAction(mw->renameAction);
-    menu->addAction(mw->insertAction);
-    menu->addAction(mw->deleteAction);
+    if (!mw->simulationRunning) {
+        if (mw->ui->drawingWindow->get_portSelectedCount() == 1) menu->addAction(mw->renameAction);
+        menu->addAction(mw->insertAction);
+        menu->addAction(mw->deleteAction);
+    }
     if (mw->clickedItem) {
         if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
         if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
@@ -4100,9 +4112,11 @@ void ModeItem::showMenu (QMenu *menu)
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    if (mw->ui->drawingWindow->get_selectedItems_count() == 1) menu->addAction(mw->renameAction);
-    if (mw->isValidCreateDiffPair()) menu->addAction(mw->createDiffpairAction);
-    if (isValidDelete()) menu->addAction(mw->deleteAction);
+    if (!mw->simulationRunning) {
+        if (mw->ui->drawingWindow->get_selectedItems_count() == 1) menu->addAction(mw->renameAction);
+        if (mw->isValidCreateDiffPair()) menu->addAction(mw->createDiffpairAction);
+        if (isValidDelete()) menu->addAction(mw->deleteAction);
+    }
     if (mw->clickedItem) {
         if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
         if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
@@ -4519,9 +4533,11 @@ void VIItem::showMenu (QMenu *menu)
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    if (isValidDrawPath()) menu->addAction(mw->drawPathAction);
-    if (isValidDrawPath()) menu->addAction(mw->drawPolylineAction);
-    if (isValidInsertSelectedPath()) menu->addAction(mw->insertAction);
+    if (!mw->simulationRunning) {
+        if (isValidDrawPath()) menu->addAction(mw->drawPathAction);
+        if (isValidDrawPath()) menu->addAction(mw->drawPolylineAction);
+        if (isValidInsertSelectedPath()) menu->addAction(mw->insertAction);
+    }
     if (mw->clickedItem) {
         if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
         if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);
@@ -4929,7 +4945,9 @@ void DiffPairItem::showMenu (QMenu *menu)
 
     if (isValidShow()) menu->addAction(mw->showAction);
     if (isValidHide()) menu->addAction(mw->hideAction);
-    if (isValidDelete()) menu->addAction(mw->deleteAction);
+    if (!mw->simulationRunning) {
+        if (isValidDelete()) menu->addAction(mw->deleteAction);
+    }
     if (mw->clickedItem) {
         if (!mw->clickedItem->isExpanded()) menu->addAction(mw->expandAllAction);
         if (mw->clickedItem->isExpanded()) menu->addAction(mw->collapseAllAction);

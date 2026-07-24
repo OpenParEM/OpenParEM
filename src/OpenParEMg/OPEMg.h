@@ -361,6 +361,8 @@ public:
     void setUnmodified ();
     bool hasResults ();
 
+    void enablePortBoundarySelections (BaseItem *, bool);
+
     void closeEvent (QCloseEvent *event) override {
         close_event=event;
         closeWindow_triggered();
@@ -855,6 +857,9 @@ private:
     char logLastChar;
     char iterationsLastChar;
     char dataLastChar;
+
+    // for disabling selection boxes while running simulations
+    bool isDisabledSelection;
 
     // for closing
     QCloseEvent *close_event;

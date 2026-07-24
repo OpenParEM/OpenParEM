@@ -440,6 +440,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     /////////////////////////////////////////////////////////////////////////////
 
     renameItem=nullptr;
+    isDisabledSelection=false;
 
     /////////////////////////////////////////////////////////////////////////////
     // drawing
@@ -1077,6 +1078,52 @@ void OpenParEMg::setMenusI (int placeIndex)
 
     ui->actionUndo->setEnabled(itemChangesStack.hasUndo());
     ui->actionRedo->setEnabled(itemChangesStack.hasRedo());
+
+    if (simulationRunning) {
+        if (!isDisabledSelection) {
+            enablePortBoundarySelections(port,false);
+            enablePortBoundarySelections(boundary,false);
+            isDisabledSelection=true;
+        }
+    } else {
+        if (isDisabledSelection) {
+            enablePortBoundarySelections(port,true);
+            enablePortBoundarySelections(boundary,true);
+            isDisabledSelection=false;
+        }
+    }
+}
+
+//xxx
+void OpenParEMg::enablePortBoundarySelections (BaseItem *baseItem, bool enable)
+{
+    std::cout << "OpenParEMg::enablePortBoundarySelections  item=" << baseItem->text(0).toStdString() << std::endl; std::cout.flush();
+
+    if (!baseItem) return;
+
+    bool found=false;
+    if (baseItem->is_impedanceDefinition()) found=true;
+    else if (baseItem->is_impedanceCalculation()) found=true;
+    else if (baseItem->is_boundaryWaveImpedance()) found=true;
+    else if (baseItem->is_boundaryMaterial()) found=true;
+    else if (baseItem->is_sportNumber()) found=true;
+    else if (baseItem->is_scaleValue()) found=true;
+
+    if (found) {
+        std::cout << "   found" << std::endl; std::cout.flush();
+        QWidget *widget=ui->drawingItemTree->itemWidget(baseItem,0);
+        if (widget) {
+            std::cout << "   widget found, setting enable=" << enable << std::endl; std::cout.flush();
+            widget->setEnabled(enable);
+        }
+    }
+
+    int i=0;
+    while (i < baseItem->childCount()) {
+        BaseItem *childItem=dynamic_cast<BaseItem *>(baseItem->child(i));
+        enablePortBoundarySelections(childItem,enable);
+        i++;
+    }
 }
 
 void OpenParEMg::expand (BaseItem *baseItem)
@@ -7857,23 +7904,7 @@ void OpenParEMg::updateDataTab (bool force)
     // check for skip or force
     if (!force && dataFilter->skipLoad) return;
 
-    // load the new data
-    // set the cursor so the user can scroll up to view prior data
-
-    // QTextCursor cursor=ui->dataText->textCursor();
-    // QTextCursor oldCursor=cursor;
-
-    // // replace the text with the full data set
-    // ui->dataText->clear();
-    // ui->dataText->insertPlainText(QString::fromUtf8(newData));
-
-    // if (dataFilter->followTail) {
-    //     ui->dataText->setTextCursor(cursor);
-    // } else {
-    //     ui->dataText->setTextCursor(oldCursor);
-    // }
-    // ui->dataText->ensureCursorVisible();
-
+    // update the text
     updateTextKeepScroll(ui->dataText,QString::fromUtf8(newData));
 }
 
