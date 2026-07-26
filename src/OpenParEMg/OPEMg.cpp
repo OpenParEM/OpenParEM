@@ -4191,6 +4191,11 @@ void OpenParEMg::on_actionOpen_triggered ()
     // reset as new
     on_actionNew_triggered ();
 
+    // set the window title bar
+    QString title="OpenParEMg: ";
+    title.append(testProjectFile);
+    setWindowTitle(title);
+
     // break up the full path
     QFileInfo fileInfo(testProjectFile);
     absolutePath=fileInfo.absolutePath();
@@ -4523,6 +4528,9 @@ void OpenParEMg::on_actionClose_triggered()
         }
     }
 
+    // set the window title bar
+    setWindowTitle("OpenParEMg");
+
     resetProject();
     setMenusI(43);
 }
@@ -4735,6 +4743,11 @@ void OpenParEMg::on_actionSaveAs_triggered ()
     QString filePath=QFileDialog::getSaveFileName(this,tr("Save Project"),absolutePath,tr("Project Files (*.proj)","All Files (*)"),
                                                   nullptr,QFileDialog::DontUseNativeDialog);
     if (filePath.isEmpty()) return;
+
+    // set the window title bar
+    QString title="OpenParEMg: ";
+    title.append(filePath);
+    setWindowTitle(title);
 
     QFileInfo fileInfo(filePath);
 

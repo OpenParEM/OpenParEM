@@ -4,7 +4,7 @@
 //project.save.fields false
 mesh.file straight-loaded_field.msh
 //mesh.save.refined false
-mesh.refinement.fraction 0.003
+//mesh.refinement.fraction 0.005
 mesh.quality.limit 1000000
 fem.order 3
 port.definition.file straight-loaded_field_ports.txt
@@ -13,7 +13,7 @@ port.definition.file straight-loaded_field_ports.txt
 refinement.iteration.max 50
 //refinement.required.passes 1
 refinement.relative.tolerance 0.1
-refinement.absolute.tolerance 2e-07
+refinement.absolute.tolerance 3e-08
 //refinement.variable SandH
 materials.global.path /home/briany/OpenParEM/regression/OpenParEM2D
 materials.global.name global_materials.txt
