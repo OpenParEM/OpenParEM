@@ -3468,7 +3468,7 @@ void PortItem::show (bool update)
     int i=0;
     while (i < childCount()) {
         BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
-        if (baseItem) baseItem->hide(update);
+        if (baseItem) baseItem->show(update);
         i++;
     }
 }
