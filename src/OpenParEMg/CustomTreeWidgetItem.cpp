@@ -3355,7 +3355,7 @@ void PortItem::setSolidColor ()
         Handle(AIS_Shape) shape=pathItem->getShape();
         if (!shape.IsNull()) {
             shape->SetColor(Quantity_NOC_MINTCREAM);
-            shape->SetTransparency(0.25);
+            shape->SetTransparency(0.5); // 0.25
             shape->SetMaterial(Graphic3d_NameOfMaterial_Plastered);
             mw->setShaded(shape);
         }
