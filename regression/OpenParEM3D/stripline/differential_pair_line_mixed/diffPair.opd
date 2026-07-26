@@ -1,0 +1,116 @@
+#OpenParEMgDrawing 1.0
+
+Extrude
+   name=lower
+   material=er3p3
+   length=0.002
+   Rectangle
+      name=Rectangle1
+      origin=(0,0,0)
+      width=0.0013
+      height=0.0001
+      isSquare=0
+      tempWidth=0
+      tempHeight=0
+      u=(1,0,0)
+      v=(0,1,0)
+      normal=(0,0,1)
+      reverse=false
+   EndRectangle
+EndExtrude
+Subtract
+   name=upper
+   material=er3p15
+   Subtract
+      name=Subtract1
+      Extrude
+         name=Extrude3
+         length=0.002
+         Rectangle
+            name=Rectangle1_copy
+            origin=(0,0.0001,0)
+            width=0.0013
+            height=0.0001
+            isSquare=0
+            tempWidth=0
+            tempHeight=0
+            u=(1,0,0)
+            v=(0,1,0)
+            normal=(0,0,1)
+            reverse=false
+         EndRectangle
+      EndExtrude
+      Extrude
+         name=Extrude2
+         length=0.002
+         Polyline
+            name=Polyline1_copy
+            point=(0.0007,0.0001,0)
+            point=(0.0007054598314495,0.000115,0)
+            point=(0.0007945401685505,0.000115,0)
+            point=(0.0008,0.0001,0)
+            point=(0.0007,0.0001,0)
+            normal=(0,0,1)
+            reverse=false
+         EndPolyline
+      EndExtrude
+   EndSubtract
+   Extrude
+      name=Extrude4
+      length=0.002
+      Polyline
+         name=Polyline1
+         point=(0.0005,0.0001,0)
+         point=(0.0005054598314495,0.000115,0)
+         point=(0.0005945401685505,0.000115,0)
+         point=(0.0006,0.0001,0)
+         point=(0.0005,0.0001,0)
+         normal=(0,0,1)
+         reverse=false
+      EndPolyline
+   EndExtrude
+EndSubtract
+Polyline
+   name=dummy4
+   point=(0.00061,9e-05,0.002)
+   point=(0.00049,9e-05,0.002)
+   point=(0.00049,0.00013,0.002)
+   point=(0.00055,0.00013,0.002)
+   point=(0.00061,0.00013,0.002)
+   point=(0.00061,9e-05,0.002)
+   normal=(0,0,1)
+   reverse=false
+EndPolyline
+Polyline
+   name=dummy3
+   point=(0.00081,9e-05,0.002)
+   point=(0.00069,9e-05,0.002)
+   point=(0.00069,0.00013,0.002)
+   point=(0.00075,0.00013,0.002)
+   point=(0.00081,0.00013,0.002)
+   point=(0.00081,9e-05,0.002)
+   normal=(0,0,1)
+   reverse=false
+EndPolyline
+Polyline
+   name=dummy2
+   point=(0.00061,9e-05,0)
+   point=(0.00049,9e-05,0)
+   point=(0.00049,0.00013,0)
+   point=(0.00055,0.00013,0)
+   point=(0.00061,0.00013,0)
+   point=(0.00061,9e-05,0)
+   normal=(0,0,1)
+   reverse=false
+EndPolyline
+Polyline
+   name=dummy1
+   point=(0.00081,9e-05,0)
+   point=(0.00069,9e-05,0)
+   point=(0.00069,0.00013,0)
+   point=(0.00075,0.00013,0)
+   point=(0.00081,0.00013,0)
+   point=(0.00081,9e-05,0)
+   normal=(0,0,1)
+   reverse=false
+EndPolyline
