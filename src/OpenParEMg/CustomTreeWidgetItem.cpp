@@ -5091,10 +5091,8 @@ void DiffPairItem::save (std::ofstream *out)
     int i=0;
     while (i < childCount()) {
         ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
-        if (modeItem && modeItem->is_sport()) {
-            ShapeData *shapeData=modeItem->getShapeData();
-            Sport.push_back(shapeData->get_Sport());
-
+        if (modeItem) {
+            Sport.push_back(modeItem->get_Sport());
             modeItem->save(out);
         }
         i++;
