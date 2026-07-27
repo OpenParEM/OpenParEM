@@ -2172,14 +2172,14 @@ void OpenParEMg::flipSignIntegrationPathItems ()
 
     itemChangesStack.startNew();
 
-    // long unsigned int i=0;
-    // while (i < ui->drawingWindow->get_selectedItems_size()) {
-    //     IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(ui->drawingWindow->get_selectedItem(i));
-    //     if (integrationPathItem) integrationPathItem->flipSign();
-    //     i++;
-    // }
-    IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(clickedItem);
-    if (integrationPathItem) integrationPathItem->flipSign();
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (integrationPathItem) integrationPathItem->flipSign();
+        i++;
+    }
+    // IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(clickedItem);
+    // if (integrationPathItem) integrationPathItem->flipSign();
 
     clickedItem=nullptr;
     previousClickedItem=nullptr;

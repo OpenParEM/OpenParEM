@@ -568,19 +568,40 @@ public:
             IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(item);
             if (integrationPathItem && integrationPathItem->is_integrationPathSegment()) {
                 PathItem *pathItem=integrationPathItem->getPathItem();
-                if (pathItem) selectItem(pathItem);
+                if (pathItem) {
+                    if (!pathItem->getShape().IsNull()) {
+                        SelectShape(pathItem->getShape());
+                    }
+                    pathItem->setSelected(Standard_True);
+                    selectedItems.push_back(pathItem);
+                }
+                //if (pathItem) selectItem(pathItem);
             }
 
             PortItem *portItem=dynamic_cast<PortItem *>(item);
             if (portItem && portItem->is_port()) {
                 PathItem *pathItem=portItem->getPathItem();
-                if (pathItem) selectItem(pathItem);
+                if (pathItem) {
+                    if (!pathItem->getShape().IsNull()) {
+                        SelectShape(pathItem->getShape());
+                    }
+                    pathItem->setSelected(Standard_True);
+                    selectedItems.push_back(pathItem);
+                }
+                //if (pathItem) selectItem(pathItem);
             }
 
             BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
             if (boundaryItem && boundaryItem->is_boundary()) {
                 PathItem *pathItem=boundaryItem->getPathItem();
-                if (pathItem) selectItem(pathItem);
+                if (pathItem) {
+                    if (!pathItem->getShape().IsNull()) {
+                        SelectShape(pathItem->getShape());
+                    }
+                    pathItem->setSelected(Standard_True);
+                    selectedItems.push_back(pathItem);
+                }
+                //if (pathItem) selectItem(pathItem);
             }
         }
     }
