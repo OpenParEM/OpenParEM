@@ -585,6 +585,15 @@ void OpenParEMg::convertPathToFace (BaseItem *baseItem)
 
 bool OpenParEMg::isModified ()
 {
+    // std::cout << "OpenParEMg::isModified" << std::endl; std::cout.flush();
+    // std::cout << "   projectChanged=" << projectChanged << std::endl; std::cout.flush();
+    // std::cout << "   drawing->isModified()=" << drawing->isModified() << std::endl; std::cout.flush();
+    // std::cout << "   path->isModified()=" << path->isModified() << std::endl; std::cout.flush();
+    // std::cout << "   port->isModified()=" << port->isModified() << std::endl; std::cout.flush();
+    // std::cout << "   boundary->isModified()=" << boundary->isModified() << std::endl; std::cout.flush();
+    // std::cout << "   mesh->isModified()=" << mesh->isModified() << std::endl; std::cout.flush();
+    // std::cout << "   meshObsolete=" << meshObsolete << std::endl; std::cout.flush();
+
     if (projectChanged) return true;
     if (drawing->isModified()) return true;
     if (path->isModified()) return true;
@@ -4397,7 +4406,7 @@ void OpenParEMg::resetDrawing ()
     newShapeData->setCreate();
     newShapeData->setShape(newShape);
     drawing->addShapeData(newShapeData);
-    drawing->setModified(true);
+    drawing->setModified(false);
 
     //reset the tracking
     ui->drawingWindow->reset();
@@ -4430,6 +4439,7 @@ void OpenParEMg::resetProject ()
     projectFile="";
     free_project(&defaultData);
     free_project(&projData);
+    projectFileLoaded=false;
 
     resetDrawing();
 
@@ -4534,7 +4544,6 @@ void OpenParEMg::on_actionClose_triggered()
     setWindowTitle("OpenParEMg");
 
     resetProject();
-    setMenusI(43);
 }
 
 void OpenParEMg::on_actionMeshOptions_triggered ()
@@ -5287,8 +5296,11 @@ void OpenParEMg::saveItem (std::ofstream *out, BaseItem *baseItem)
 {
     if (!baseItem) return;
 
+    std::cout << "OpenParEMg::saveItem  item=" << baseItem->text(0).toStdString() << std::endl; std::cout.flush();
+
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
     if (rootDrawingItem) {
+        std::cout << "   rootDrawingItem" << std::endl; std::cout.flush();
         int i=0;
         while (i < rootDrawingItem->childCount()) {
             DrawingItem *child=(DrawingItem *) rootDrawingItem->child(i);

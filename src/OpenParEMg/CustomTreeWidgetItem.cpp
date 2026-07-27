@@ -4251,7 +4251,6 @@ SportItem::SportItem (OpenParEMg *mw_, ModeItem *modeItem_, int Sport)
     SportNumberItem *sportNumberItem=new SportNumberItem(mw,this);
     ShapeData *shapeData=sportNumberItem->getShapeData();
     shapeData->set_Sport(Sport);
-    std::cout << "place 2 addSport  Sport=" << Sport << std::endl; std::cout.flush();
     addSport(Sport);
     addChild(sportNumberItem);
 
