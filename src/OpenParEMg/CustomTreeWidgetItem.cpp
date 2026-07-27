@@ -537,7 +537,7 @@ void ScaleValueItem::save (std::ofstream *out)
 {
     CustomLineEdit *scaleValue=dynamic_cast<CustomLineEdit *>(mw->ui->drawingItemTree->itemWidget(this,0));
     if (scaleValue) {
-        std::cout << "         scale=" << scaleValue->text().toStdString() << std::endl;
+        *out << "         scale=" << scaleValue->text().toStdString() << std::endl;
     }
     setModified(false);
 }
@@ -2655,6 +2655,7 @@ void IntegrationPathItem::flipSign ()
     setText(0,newName);
 
     mw->itemChangesStack.add(this);
+    mw->projectChanged=true;
 }
 
 void IntegrationPathItem::save (std::ofstream *out)
@@ -4203,16 +4204,15 @@ void ModeItem::save (std::ofstream *out)
 
     if (!portItem) return;
 
-    QString calculation="Mode";
+    QString calculationText="Mode";
     if (portItem && portItem->is_port()) {
         ShapeData *shapeData=portItem->getShapeData();
-        calculation=shapeData->get_impedance_calculation();
-        if (calculation.compare("line") == 0) calculation="Line";
-        else if (calculation.compare("mode") == 0) calculation="Mode";
+        QString calculation=shapeData->get_impedance_calculation();
+        if (calculation.compare("line") == 0) calculationText="Line";
+        else if (calculation.compare("modal") == 0) calculationText="Mode";
     }
 
-    //ShapeData *shapeData=getShapeData();
-    *out << "   " << calculation.toStdString() << std::endl;
+    *out << "   " << calculationText.toStdString() << std::endl;
     *out << "      net=" << text(0).toStdString() << std::endl;
     *out << "      Sport=" << get_Sport() << std::endl;
 
@@ -4223,7 +4223,7 @@ void ModeItem::save (std::ofstream *out)
         i++;
     }
 
-    *out << "   End" << calculation.toStdString() << std::endl;
+    *out << "   End" << calculationText.toStdString() << std::endl;
 
     setModified(false);
 }
@@ -4801,11 +4801,16 @@ void VIItem::save (std::ofstream *out)
     int count=0;
     int i=0;
     while (i < childCount()) {
-        IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(child(i));
-        if (integrationPathItem) {
-            if (count == 0) integrationPathItem->save(out);
-            else integrationPathItem->saveN(out);
-            count++;
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem) {
+            IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(baseItem);
+            if (integrationPathItem) {
+                if (count == 0) integrationPathItem->save(out);
+                else integrationPathItem->saveN(out);
+                count++;
+            } else {
+                baseItem->save(out);
+            }
         }
         i++;
     }

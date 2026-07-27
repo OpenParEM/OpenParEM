@@ -7372,10 +7372,6 @@ void textValueChanged (QString text, BaseItem *baseItem, BoundaryDatabase *bound
         boundaryItem->startItemChange();
         boundaryItem->addItemChange();
         boundaryItem->setModified(true);
-
-        //boundaryItem->setMenus();
-        //boundaryItem->clearTreeSelection();
-        //boundaryItem->updateViewer();
     }
 
     // scaleItem for integration path scaling
@@ -7388,10 +7384,6 @@ void textValueChanged (QString text, BaseItem *baseItem, BoundaryDatabase *bound
         scaleValueItem->startItemChange();
         scaleValueItem->addItemChange();
         scaleValueItem->setModified(true);
-
-        //scaleValueItem->setMenus();
-        //scaleValueItem->clearTreeSelection();
-        //scaleValueItem->updateViewer();
     }
 }
 
