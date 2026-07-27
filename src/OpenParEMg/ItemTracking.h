@@ -548,25 +548,34 @@ public:
             item->setSelected(Standard_True);
             selectedItems.push_back(item);
         } else {
+
+            // select the item
             if (!item->getShape().IsNull()) {
                 SelectShape(item->getShape());
             }
             item->setSelected(Standard_True);
             selectedItems.push_back(item);
 
+            // select the linked items for paths
             PathItem *pathItem=dynamic_cast<PathItem *>(item);
             if (pathItem) {
-                if (pathItem->is_path() || pathItem->is_integrationPathSegment()) {
-                    long unsigned int i=0;
-                    while (i < pathItem->linkedItems_size()) {
-                        selectItem(pathItem->get_linkedItem(i));
-                        i++;
+                long unsigned int i=0;
+                while (i < pathItem->linkedItems_size()) {
+                    if (pathItem->get_linkedItem(i)) {
+                        if (!pathItem->get_linkedItem(i)->getShape().IsNull()) {
+                            SelectShape(pathItem->get_linkedItem(i)->getShape());
+                        }
+                        pathItem->get_linkedItem(i)->setSelected(Standard_True);
+                        selectedItems.push_back(pathItem->get_linkedItem(i));
                     }
+                    i++;
                 }
             }
 
+            // select the path item
+
             IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(item);
-            if (integrationPathItem && integrationPathItem->is_integrationPathSegment()) {
+            if (integrationPathItem) {
                 PathItem *pathItem=integrationPathItem->getPathItem();
                 if (pathItem) {
                     if (!pathItem->getShape().IsNull()) {
@@ -575,11 +584,10 @@ public:
                     pathItem->setSelected(Standard_True);
                     selectedItems.push_back(pathItem);
                 }
-                //if (pathItem) selectItem(pathItem);
             }
 
             PortItem *portItem=dynamic_cast<PortItem *>(item);
-            if (portItem && portItem->is_port()) {
+            if (portItem) {
                 PathItem *pathItem=portItem->getPathItem();
                 if (pathItem) {
                     if (!pathItem->getShape().IsNull()) {
@@ -588,11 +596,10 @@ public:
                     pathItem->setSelected(Standard_True);
                     selectedItems.push_back(pathItem);
                 }
-                //if (pathItem) selectItem(pathItem);
             }
 
             BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(item);
-            if (boundaryItem && boundaryItem->is_boundary()) {
+            if (boundaryItem) {
                 PathItem *pathItem=boundaryItem->getPathItem();
                 if (pathItem) {
                     if (!pathItem->getShape().IsNull()) {
@@ -601,7 +608,6 @@ public:
                     pathItem->setSelected(Standard_True);
                     selectedItems.push_back(pathItem);
                 }
-                //if (pathItem) selectItem(pathItem);
             }
         }
     }

@@ -1657,9 +1657,7 @@ void OpenParEMg::insertSelectedPaths ()
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         VIItem *viItem=dynamic_cast<VIItem *>(ui->drawingWindow->get_selectedItem(i));
-        if (viItem) {
-            if (viItem) insertIntegrationPath(viItem);
-        }
+        if (viItem) insertIntegrationPath(viItem);
         i++;
     }
 }
@@ -1807,11 +1805,9 @@ bool OpenParEMg::hasCurrent ()
 
 void OpenParEMg::insertIntegrationPath (VIItem *viItem)
 {
-    //std::cout << "OpenParEMg::insertIntegrationPath" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::insertIntegrationPath" << std::endl; std::cout.flush();
 
     if (!viItem) return;
-
-    viItem->addScaleItem();
 
     QDoubleValidator doubleValidator;
     doubleValidator.setBottom(0);
@@ -1823,6 +1819,7 @@ void OpenParEMg::insertIntegrationPath (VIItem *viItem)
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         PathItem *pathItem=dynamic_cast<PathItem *>(ui->drawingWindow->get_selectedItem(i));
         if (pathItem) {
+            std::cout << "  pathItem to add = " << pathItem->text(0).toStdString() << "   address=" << pathItem << std::endl; std::cout.flush();
             pathItemList.push_back(pathItem);
             pathsToAdd.push_back(pathItem->getPath());
         }
@@ -1832,7 +1829,15 @@ void OpenParEMg::insertIntegrationPath (VIItem *viItem)
     // check that the selected paths can be used on the port
 
     ModeItem *modeItem=dynamic_cast<ModeItem *>(viItem->getParentItem());
+    if (!modeItem) return;
     PortItem *portItem=dynamic_cast<PortItem *>(modeItem->getParentItem());
+    if (!portItem) {
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(modeItem->getParentItem());
+        if (diffPairItem) {
+            portItem=dynamic_cast<PortItem *>(diffPairItem->getParentItem());
+            if (!portItem) return;
+        } else return;
+    }
 
     // port outline
     PathItem *portPathItem=portItem->getPathItem();
@@ -1845,7 +1850,7 @@ void OpenParEMg::insertIntegrationPath (VIItem *viItem)
         Path *itemPath=pathItemList[i]->getPath();
         if (itemPath) {
             if (portPath->is_path_inside(itemPath)) {
-                viItem->createIntegrationPathItemFromPath (pathItemList[i]);
+                viItem->createIntegrationPathItemFromPath(pathItemList[i]);
             } else {
                 QString message="Path \"";
                 message.append(pathItemList[i]->text(0));
@@ -1859,6 +1864,7 @@ void OpenParEMg::insertIntegrationPath (VIItem *viItem)
         i++;
     }
 
+    viItem->addRemoveScale();
     portItem->setImpedanceDefinitionOptions();
 
     ui->drawingWindow->updateViewer();

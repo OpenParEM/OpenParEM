@@ -4654,7 +4654,7 @@ bool VIItem::isValidInsertSelectedPath ()
 
 IntegrationPathItem* VIItem::createIntegrationPathItemFromPath (PathItem *pathItem)
 {
-    //std::cout << "VIItem::createIntegrationPathItemFromPath" << std::endl; std::cout.flush();
+    std::cout << "VIItem::createIntegrationPathItemFromPath" << std::endl; std::cout.flush();
 
     // create an integration path item
     IntegrationPathItem *newIntegrationPathItem=new IntegrationPathItem(mw,this,pathItem);
@@ -4711,12 +4711,25 @@ bool VIItem::hasIntegrationPathItem ()
 
 void VIItem::addScaleItem ()
 {
-    //std::cout << "VIItem::addScaleItem" << std::endl; std::cout.flush();
+    std::cout << "VIItem::addScaleItem" << std::endl; std::cout.flush();
 
     if (hasScale()) return;
 
     if (scaleLabelItem) {
+
+        // label
         insertChild(0,scaleLabelItem);
+
+        // value
+        int i=0;
+        while (i < scaleLabelItem->childCount()) {
+            ScaleValueItem *scaleValueItem=dynamic_cast<ScaleValueItem *>(scaleLabelItem->child(i));
+            if (scaleValueItem) {
+                ShapeData *shapeData=scaleValueItem->getShapeData();
+                scaleValueItem->insertScaleValueWidget(shapeData->get_scale());
+            }
+            i++;
+        }
     } else {
 
         // label
@@ -4735,14 +4748,14 @@ void VIItem::addScaleItem ()
 
 void VIItem::removeScaleItem ()
 {
-    //std::cout << "VIItem::removeScaleItem  hasScale()=" << hasScale() << "  scaleLabelItem=" << scaleLabelItem << std::endl; std::cout.flush();
+    std::cout << "VIItem::removeScaleItem  hasScale()=" << hasScale() << "  scaleLabelItem=" << scaleLabelItem << std::endl; std::cout.flush();
     if (!hasScale()) return;
     removeChild(scaleLabelItem);
 }
 
 void VIItem::addRemoveScale ()
 {
-    //std::cout << "VIItem::addRemoveScale" << std::endl; std::cout.flush();
+    std::cout << "VIItem::addRemoveScale" << std::endl; std::cout.flush();
 
     if (hasScale()) {
         if (hasIntegrationPathItem()) {
