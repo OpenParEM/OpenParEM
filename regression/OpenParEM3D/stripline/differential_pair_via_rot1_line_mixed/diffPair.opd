@@ -1,0 +1,136 @@
+#OpenParEMgDrawing 1.0
+
+Subtract
+   name=upper
+   material=er3p15
+   Subtract
+      name=Subtract1
+      Extrude
+         name=Extrude3
+         length=0.002
+         Rectangle
+            name=Rectangle1_copy
+            origin=(0,1.11022302462516e-20,0.0001)
+            width=0.0013
+            height=0.0001
+            isSquare=0
+            tempWidth=0
+            tempHeight=0
+            u=(1,0,0)
+            v=(0,1.11022302462516e-16,1)
+            normal=(0,-1,1.11022302462516e-16)
+            reverse=false
+         EndRectangle
+      EndExtrude
+      Extrude
+         name=Extrude2
+         length=0.002
+         Polyline
+            name=Polyline1_copy
+            point=(0.0007,1.11022302462516e-20,0.0001)
+            point=(0.0007054598314495,1.27675647831893e-20,0.000115)
+            point=(0.0007945401685505,1.27675647831893e-20,0.000115)
+            point=(0.0008,1.11022302462516e-20,0.0001)
+            point=(0.0007,1.11022302462516e-20,0.0001)
+            normal=(0,-1,1.11022302462516e-16)
+            reverse=false
+         EndPolyline
+      EndExtrude
+   EndSubtract
+   Extrude
+      name=Extrude4
+      length=0.002
+      Polyline
+         name=Polyline1
+         point=(0.0005,1.11022302462516e-20,0.0001)
+         point=(0.0005054598314495,1.27675647831893e-20,0.000115)
+         point=(0.0005945401685505,1.27675647831893e-20,0.000115)
+         point=(0.0006,1.11022302462516e-20,0.0001)
+         point=(0.0005,1.11022302462516e-20,0.0001)
+         normal=(0,-1,1.11022302462516e-16)
+         reverse=false
+      EndPolyline
+   EndExtrude
+EndSubtract
+Polyline
+   name=dummy4
+   point=(0.00061,-0.002,9.00000000000002e-05)
+   point=(0.00049,-0.002,9.00000000000002e-05)
+   point=(0.00049,-0.002,0.00013)
+   point=(0.00055,-0.002,0.00013)
+   point=(0.00061,-0.002,0.00013)
+   point=(0.00061,-0.002,9.00000000000002e-05)
+   normal=(0,-1,1.11022302462516e-16)
+   reverse=false
+EndPolyline
+Polyline
+   name=dummy3
+   point=(0.00081,-0.002,9.00000000000002e-05)
+   point=(0.00069,-0.002,9.00000000000002e-05)
+   point=(0.00069,-0.002,0.00013)
+   point=(0.00075,-0.002,0.00013)
+   point=(0.00081,-0.002,0.00013)
+   point=(0.00081,-0.002,9.00000000000002e-05)
+   normal=(0,-1,1.11022302462516e-16)
+   reverse=false
+EndPolyline
+Polyline
+   name=dummy2
+   point=(0.00061,9.99200722162641e-21,9e-05)
+   point=(0.00049,9.99200722162641e-21,9e-05)
+   point=(0.00049,1.4432899320127e-20,0.00013)
+   point=(0.00055,1.4432899320127e-20,0.00013)
+   point=(0.00061,1.4432899320127e-20,0.00013)
+   point=(0.00061,9.99200722162641e-21,9e-05)
+   normal=(0,-1,1.11022302462516e-16)
+   reverse=false
+EndPolyline
+Polyline
+   name=dummy1
+   point=(0.00081,9.99200722162641e-21,9e-05)
+   point=(0.00069,9.99200722162641e-21,9e-05)
+   point=(0.00069,1.4432899320127e-20,0.00013)
+   point=(0.00075,1.4432899320127e-20,0.00013)
+   point=(0.00081,1.4432899320127e-20,0.00013)
+   point=(0.00081,9.99200722162641e-21,9e-05)
+   normal=(0,-1,1.11022302462516e-16)
+   reverse=false
+EndPolyline
+Subtract
+   name=lower
+   material=er3p3
+   Extrude
+      name=lower
+      length=0.002
+      Rectangle
+         name=Rectangle1
+         origin=(0,0,0)
+         width=0.0013
+         height=0.0001
+         isSquare=0
+         tempWidth=0
+         tempHeight=0
+         u=(1,0,0)
+         v=(0,1.11022302462516e-16,1)
+         normal=(0,-1,1.11022302462516e-16)
+         reverse=false
+      EndRectangle
+   EndExtrude
+   Extrude
+      name=Extrude5
+      length=0.0001
+      Rectangle
+         name=Rectangle3
+         origin=(0.0007,-0.00105,1.16573417585641e-19)
+         width=-0.0001
+         height=0.0001
+         isSquare=0
+         tempWidth=0
+         tempHeight=0
+         u=(0,-1,1.11022302462516e-16)
+         v=(1,0,0)
+         normal=(0,1.11022302462516e-16,1)
+         reverse=false
+      EndRectangle
+   EndExtrude
+EndSubtract
