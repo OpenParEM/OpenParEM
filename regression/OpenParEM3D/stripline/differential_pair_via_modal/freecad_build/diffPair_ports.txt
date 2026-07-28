@@ -1,0 +1,162 @@
+#OpenParEMports 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D_Sparam_experiment/regression/stripline/differential_pair_via_modal/diffPair.FCStd
+EndFile
+
+Path
+   name=i22
+   point=(0.00015,-0.0999,4.995)
+   point=(0.00014454016855,-0.099885,4.995)
+   point=(5.5459553514000014e-05,-0.099885,4.995)
+   point=(5.000000000000002e-05,-0.0999,4.995)
+   closed=true
+EndPath
+
+Path
+   name=i21
+   point=(-5e-05,-0.0999,4.995)
+   point=(-5.545983145000001e-05,-0.099885,4.995)
+   point=(-0.000144540446486,-0.099885,4.995)
+   point=(-0.00015,-0.0999,4.995)
+   closed=true
+EndPath
+
+Path
+   name=i11
+   point=(-0.00015000000000000007,-0.0999,4.997)
+   point=(-0.00014454044648600008,-0.099885,4.997)
+   point=(-5.5459831450000075e-05,-0.099885,4.997)
+   point=(-5.000000000000008e-05,-0.0999,4.997)
+   closed=true
+EndPath
+
+Path
+   name=i12
+   point=(4.999999999999992e-05,-0.0999,4.997)
+   point=(5.545955351399992e-05,-0.099885,4.997)
+   point=(0.0001445401685499999,-0.099885,4.997)
+   point=(0.0001499999999999999,-0.0999,4.997)
+   closed=true
+EndPath
+
+Path
+   name=port1
+   point=(-0.0006500000000000003,-0.1,4.997)
+   point=(0.0006499999999999996,-0.1,4.997)
+   point=(0.0006499999999999996,-0.0998,4.997)
+   point=(-0.0006500000000000003,-0.0998,4.997)
+   closed=true
+EndPath
+
+Path
+   name=v11
+   point=(-0.00010000000000000007,-0.1,4.997)
+   point=(-0.00010000000000010009,-0.09990000000000002,4.997)
+   closed=false
+EndPath
+
+Path
+   name=v12
+   point=(9.999999999999991e-05,-0.1,4.997)
+   point=(9.999999999987788e-05,-0.09990000000000002,4.997)
+   closed=false
+EndPath
+
+Path
+   name=port2
+   point=(-0.00065,-0.1,4.995)
+   point=(-0.00065,-0.0998,4.995)
+   point=(0.00065,-0.0998,4.995)
+   point=(0.00065,-0.1,4.995)
+   closed=true
+EndPath
+
+Path
+   name=v21
+   point=(-0.0001,-0.1,4.995)
+   point=(-0.0001000000000001,-0.0999,4.995)
+   closed=false
+EndPath
+
+Path
+   name=v22
+   point=(0.0001,-0.1,4.995)
+   point=(9.99999999999e-05,-0.0999,4.995)
+   closed=false
+EndPath
+
+Port
+   name=in
+   path=+port1
+   impedance_definition=PV
+   impedance_calculation=modal
+   Mode
+      Sport=1
+      net=comm_in
+      IntegrationPath
+         type=voltage
+         scale=0.5
+         path=+v11
+         path+=v12
+      EndIntegrationPath
+      IntegrationPath
+         type=current
+         path=+i11
+         path+=i12
+      EndIntegrationPath
+   EndMode
+   Mode
+      Sport=2
+      net=diff_in
+      IntegrationPath
+         type=voltage
+         path=+v11
+         path-=v12
+      EndIntegrationPath
+      IntegrationPath
+         type=current
+         scale=0.5
+         path=+i11
+         path-=i12
+      EndIntegrationPath
+   EndMode
+EndPort
+
+Port
+   name=out
+   path=+port2
+   impedance_definition=PV
+   impedance_calculation=modal
+   Mode
+      Sport=3
+      net=comm_out
+      IntegrationPath
+         type=voltage
+         scale=0.5
+         path=+v21
+         path+=v22
+      EndIntegrationPath
+      IntegrationPath
+         type=current
+         path=+i21
+         path+=i22
+      EndIntegrationPath
+   EndMode
+   Mode
+      Sport=4
+      net=diff_out
+      IntegrationPath
+         type=voltage
+         path=+v21
+         path-=v22
+      EndIntegrationPath
+      IntegrationPath
+         type=current
+         scale=0.5
+         path=+i21
+         path-=i22
+      EndIntegrationPath
+   EndMode
+EndPort
+
