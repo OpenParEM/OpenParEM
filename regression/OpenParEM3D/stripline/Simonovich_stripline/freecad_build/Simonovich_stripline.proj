@@ -1,0 +1,35 @@
+#OpenParEM3Dproject 1.0
+
+project.save.fields               false
+mesh.file                         Simonovich_stripline.msh
+mesh.quality.limit                1e8
+mesh.refinement.fraction          0.002
+fem.order                         2
+port.definition.file              Simonovich_stripline_ports.txt
+materials.global.path             
+materials.global.name             
+materials.local.path              ./
+materials.local.name              local_materials.txt
+refinement.frequency              plan
+refinement.iteration.min          1
+refinement.iteration.max          50
+refinement.required.passes        1 
+refinement.relative.tolerance     0.01
+refinement.absolute.tolerance     1e-8
+refinement.variable               SandH
+//frequency.plan.point              0.3e9
+//frequency.plan.linear             1e9,50e9,1e9
+frequency.plan.point.refine       50e9
+reference.impedance               0
+touchstone.format                 DB
+solution.temperature              20
+solution.2D.tolerance             1e-8
+solution.3D.tolerance             1e-14
+solution.iteration.limit          100000
+solution.modes.buffer             0
+solution.shift.invert             true
+output.show.refining.mesh         false
+output.show.postprocessing        false
+output.show.iterations            false
+output.show.license               false
+test.create.cases                 false
