@@ -4313,7 +4313,6 @@ ModeItem* Mode::draw (Relay *relay, BoundaryDatabase *boundaryDatabase,
     }
 
     ModeItem *modeItem=new ModeItem(mw,portItem,false);
-    ShapeData *shapeData=modeItem->getShapeData();
     modeItem->setText(0,netname);
     portItem->addChild(modeItem);
 

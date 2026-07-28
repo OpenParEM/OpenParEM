@@ -4287,9 +4287,6 @@ void OpenParEMg::on_actionOpen_triggered ()
                 }
                 i++;
             }
-
-            // cross-reference paths to port and boundary outlines
-            //crossReferencePaths();
         }
 
         // load drawing
@@ -4302,7 +4299,6 @@ void OpenParEMg::on_actionOpen_triggered ()
 
         // set data for meshing
         if (drawingLoaded && materialsLoaded) {
-            //resetDimTag(&drawing);
             renumberDimTag();
             setMaterials();
         }

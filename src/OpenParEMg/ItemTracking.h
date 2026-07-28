@@ -252,10 +252,8 @@ public:
         if (showTracking) {std::cout << "ItemTracker::showItem" << std::endl; std::cout.flush();}
 
         if (!item) return;
-        //if (item->foreground(0) == Qt::black) return;
         DisplayShape(item->getShape());
         item->setForeground(0,Qt::black);
-        //visibleItems.push_back(item);
     }
 
     bool isValidShow ()

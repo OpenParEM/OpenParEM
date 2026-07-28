@@ -148,7 +148,7 @@ void BaseItem::setForUndoRedo (bool withMidPoints, int shapeOperation)
 
 void BaseItem::restoreWidgets ()
 {
-    std::cout << "BaseItem::restoreWidgets" << std::endl; std::cout.flush();
+    //std::cout << "BaseItem::restoreWidgets" << std::endl; std::cout.flush();
 
     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(this);
     if (boundaryItem) {
@@ -218,9 +218,6 @@ void BaseItem::restoreWidgets ()
         if (baseItem) baseItem->restoreWidgets();
         i++;
     }
-
-    //clearTreeSelection();
-    //updateViewer();
 }
 
 void BaseItem::startItemChange () {mw->itemChangesStack.startNew();}
@@ -5026,7 +5023,7 @@ void DiffPairItem::demoteChildren ()
             addChild(modeItem);
             modeItem->setParentItem(this);
             modeItem->restoreWidgets();
-            modeItem->show(true);
+            modeItem->show(false);
         }
         i++;
     }
