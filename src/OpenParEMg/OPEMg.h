@@ -405,6 +405,7 @@ public:
 
     bool validDrawing ();
     bool validPorts ();
+    bool validMultimodeLinePorts ();
     bool meshAssigned ();
     bool materialsAssigned ();
 

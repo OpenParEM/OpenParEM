@@ -873,6 +873,11 @@ void OpenParEMg::setMenusI (int placeIndex)
             okToSimulate=false;
         }
 
+        if (!validMultimodeLinePorts()) {
+            issues.append("\n- At least one port does not have both voltage and current specified.");
+            okToSimulate=false;
+        }
+
         if (port->isModified()) {
             issues.append("\n- Ports are modified.");
             okToSimulate=false;
@@ -6454,6 +6459,18 @@ bool OpenParEMg::validPorts ()
     while (i < port->childCount()) {
         PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
         if (!portItem->isValid()) return false;
+        i++;
+    }
+
+    return true;
+}
+
+bool OpenParEMg::validMultimodeLinePorts ()
+{
+    int i=0;
+    while (i < port->childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
+        if (!portItem->isValidMultimodeLine()) return false;
         i++;
     }
 

@@ -755,13 +755,6 @@ void DrawingItem::cancelOperation ()
 
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
-        //xxx
-        // long unsigned int i=0;
-        // while (i < getChildrenSize()) {
-        //     // dataStack.undo(); // Do not go back to the prior shape data - operations work on the children
-        //     getChild(i)->cancelOperation();
-        //     i++;
-        // }
         dataStack.undo(); // go back to the prior shape data
         mw->reprocess(this);
     }
@@ -947,13 +940,6 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
-        //xxx
-        // int i=0;
-        // while (i < childCount()) {
-        //     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
-        //     if (drawingItem) drawingItem->finishMove(p0_,p1_);
-        //     i++;
-        // }
     }
 
     if (!polywire && !process) {
@@ -995,20 +981,9 @@ void DrawingItem::startRotate ()
 
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
-        // xxx
         setForUndoRedo(true,0);
         resetOperation();
         mw->itemChangesStack.add(this);
-
-        // int i=0;
-        // while (i < childCount()) {
-        //     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
-        //     if (drawingItem) {
-        //         //resetOperation();
-        //         drawingItem->startRotate();
-        //     }
-        //     i++;
-        // }
     }
 
     if (!polywire && !process) {
@@ -1924,25 +1899,6 @@ void DrawingItem::undo ()
 
         dataStack.undo();
 
-        //xxx
-        // ShapeData *shapeData=getShapeData();
-        // if (shapeData) {
-        //     Process *process=static_cast<Process *>(shapeData->getProcess());
-        //     if (process) {
-        //         int i=0;
-        //         while (i < childCount()) {
-        //             DrawingItem *childItem=dynamic_cast<DrawingItem *>(child(i));
-        //             if (childItem) {
-        //                 childItem->undo();
-        //                 mw->ui->drawingWindow->hideItem(childItem);
-        //             }
-        //             i++;
-        //         }
-        //     } else {
-        //         mw->reprocess(this);
-        //         //mw->ui->drawingWindow->unselectItem(this);
-        //     }
-        // }
         mw->reprocess(this);
 
         if (isDisplayed) mw->ui->drawingWindow->showItem(this);
@@ -2861,7 +2817,6 @@ void BoundaryItem::fillMaterialWidget ()
             CustomComboBox *itemMaterial=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(baseItem,0));
             if (itemMaterial) {
                 const QSignalBlocker blockerMaterial(itemMaterial);
-                //xxx
                 if (mw->materialDatabase) {
                     itemMaterial->clear();
                     long unsigned int j=0;
@@ -3766,6 +3721,30 @@ bool PortItem::isValid ()
         }
         i++;
     }
+
+    return true;
+}
+
+//xxx
+bool PortItem::isValidMultimodeLine ()
+{
+    // ok if not line calculation
+    int i=0;
+    while (i < childCount()) {
+        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
+        if (baseItem && baseItem->is_impedanceCalculation()) {
+            CustomComboBox *comboZcalc=dynamic_cast<CustomComboBox *>(mw->ui->drawingItemTree->itemWidget(baseItem,0));
+            if (comboZcalc) {
+                if (comboZcalc->currentText().compare("modal") == 0) return true;
+                break;
+            }
+        }
+        i++;
+    }
+
+    // line calculation must have voltages and currents
+    if (!hasValidVoltages()) return false;
+    if (!hasValidCurrents()) return false;
 
     return true;
 }
