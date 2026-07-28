@@ -499,42 +499,70 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
 {
     //std::cout << "CustomOpenGLWidget::mouseMoveEvent" << std::endl; std::cout.flush();
 
-    //QOpenGLWidget::mouseMoveEvent(event);
-
     if (view.IsNull()) return;
 
+    // set the pixel tolerance to a loose setting so that mousing around can find the needed edge
+    viewerContext->SetPixelTolerance(10);
+
+    // mouse position
+    Standard_Real x,y,z;
+    view->Convert(event->pos().x(),event->pos().y(),x,y,z);
+    gp_Pnt mousePosition(x,y,z);
+
     if (viewerContext->HasDetected()) {
-        Handle(SelectMgr_EntityOwner) anOwner = viewerContext->DetectedOwner();
-        Handle(StdSelect_BRepOwner) aBRepOwner = Handle(StdSelect_BRepOwner)::DownCast(anOwner);
-        if (!aBRepOwner.IsNull()) {
-            TopoDS_Shape detectedShape = aBRepOwner->Shape();
 
-            // create a temporary vertex at the mid point
-            if (detectedShape.ShapeType() == TopAbs_EDGE) {
+        // closest mid point
+        gp_Pnt midPoint(0,0,0);
 
-                // clean up
-                if (!temporaryVertex.IsNull()) {
-                    viewerContext->Remove(temporaryVertex,Standard_True);
-                    temporaryVertex.Nullify();
+        // double distance
+        double distance=1e30;
+
+        // iterate over detected edges
+        viewerContext->InitDetected();
+        while (viewerContext->MoreDetected())
+        {
+            Handle(SelectMgr_EntityOwner) anOwner = viewerContext->DetectedOwner();
+            Handle(StdSelect_BRepOwner) aBRepOwner = Handle(StdSelect_BRepOwner)::DownCast(anOwner);
+            if (!aBRepOwner.IsNull()) {
+
+                TopoDS_Shape detectedShape = aBRepOwner->Shape();
+
+                // create a temporary vertex at the mid point
+                if (detectedShape.ShapeType() == TopAbs_EDGE) {
+
+                    // get the mid point
+                    const TopoDS_Edge& edge=TopoDS::Edge(detectedShape);
+                    TopoDS_Vertex v1=TopExp::FirstVertex(edge);
+                    const gp_Pnt pnt1=BRep_Tool::Pnt(v1);
+                    TopoDS_Vertex v2=TopExp::LastVertex(edge);
+                    const gp_Pnt pnt2=BRep_Tool::Pnt(v2);
+                    gp_Pnt pntmid((pnt1.X()+pnt2.X())/2.0,(pnt1.Y()+pnt2.Y())/2.0,(pnt1.Z()+pnt2.Z())/2.0);
+
+
+                    double testDistance=pntmid.Distance(mousePosition);
+                    if (testDistance < distance) {
+                        distance=testDistance;
+                        midPoint=pntmid;
+                    }
                 }
-
-                // get the mid point
-                const TopoDS_Edge& edge=TopoDS::Edge(detectedShape);
-                TopoDS_Vertex v1=TopExp::FirstVertex(edge);
-                const gp_Pnt pnt1=BRep_Tool::Pnt(v1);
-                TopoDS_Vertex v2=TopExp::LastVertex(edge);
-                const gp_Pnt pnt2=BRep_Tool::Pnt(v2);
-                gp_Pnt pntmid((pnt1.X()+pnt2.X())/2.0,(pnt1.Y()+pnt2.Y())/2.0,(pnt1.Z()+pnt2.Z())/2.0);
-
-                // create vertex - must activate for selection since SetAutoActivateSelection is set to false in the constructor
-                TopoDS_Vertex newVertex=BRepBuilderAPI_MakeVertex(pntmid);
-                temporaryVertex=new AIS_Shape(newVertex);
-                viewerContext->Display(temporaryVertex,Standard_False);
-                viewerContext->Load(temporaryVertex);
-                viewerContext->Activate(temporaryVertex,0,Standard_True);
-                viewerContext->UpdateCurrentViewer();
             }
+            viewerContext->NextDetected();
         }
+
+        // clean up
+        if (!temporaryVertex.IsNull()) {
+            viewerContext->Remove(temporaryVertex,Standard_True);
+            temporaryVertex.Nullify();
+        }
+
+        // create vertex - must activate for selection since SetAutoActivateSelection is set to false in the constructor
+        TopoDS_Vertex newVertex=BRepBuilderAPI_MakeVertex(midPoint);
+        temporaryVertex=new AIS_Shape(newVertex);
+        temporaryVertex->SetZLayer(Graphic3d_ZLayerId_Top);
+        viewerContext->Display(temporaryVertex,Standard_False);
+        viewerContext->Load(temporaryVertex);
+        viewerContext->Activate(temporaryVertex,0,Standard_True);
+        viewerContext->UpdateCurrentViewer();
 
     } else {
         // remove the temporary vertex
@@ -545,10 +573,6 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
     }
 
     // for rubberband
-
-    Standard_Real x,y,z;
-    view->Convert(event->pos().x(),event->pos().y(),x,y,z);
-    gp_Pnt mousePosition(x,y,z);
     if (!PixelToPointOnPlane (event->pos().x(),event->pos().y(),mousePosition)) {
         emit relay->getCurrentMousePosition(mousePosition);
     }
@@ -558,7 +582,8 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
     if (UpdateMousePosition(position,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
                                      OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateViewer();
 
-    //std::cout << "exit CustomOpenGLWidget::mouseMoveEvent" << std::endl; std::cout.flush();
+    // put the tolerance back to the default
+    viewerContext->SetPixelTolerance(2);
 }
 
 void CustomOpenGLWidget::set_gridPlane (TopoDS_Face &face)
