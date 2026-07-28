@@ -1001,9 +1001,9 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
     //if (foreground(0) == Qt::black) isDisplayed=true;
 
     // remove the old version from display and tracking
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
+    // mw->ui->drawingWindow->hideItem(this);
+    // mw->ui->drawingWindow->removeItemFromMap(this);
+    // mw->ui->drawingWindow->deleteShape(getShape());
 
     unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
 
@@ -1048,6 +1048,12 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
     }
+    // if (isOriginalSelection()) {
+    //     mw->ui->drawingWindow->showItem(this);
+    // } else {
+    //     mw->ui->drawingWindow->unselectItem(this);
+    //     mw->ui->drawingWindow->hideItem(this);
+    // }
 
     resetOperation();
 
@@ -1078,9 +1084,9 @@ void DrawingItem::finishStretch ()
     if (foreground(0) == Qt::black) isDisplayed=true;
 
     // remove the old version from display and tracking
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
+    // mw->ui->drawingWindow->hideItem(this);
+    // mw->ui->drawingWindow->removeItemFromMap(this);
+    // mw->ui->drawingWindow->deleteShape(getShape());
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (!polywire) return;
@@ -1385,9 +1391,9 @@ void DrawingItem::startDeletePoint ()
 void DrawingItem::finishDeletePoint ()
 {
     // remove the old version from display and tracking
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
+    // mw->ui->drawingWindow->hideItem(this);
+    // mw->ui->drawingWindow->removeItemFromMap(this);
+    // mw->ui->drawingWindow->deleteShape(getShape());
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -1451,9 +1457,9 @@ void DrawingItem::startInsertPoint ()
 void DrawingItem::finishInsertPoint ()
 {
     // remove the old version from display and tracking
-    mw->ui->drawingWindow->hideItem(this);
-    mw->ui->drawingWindow->removeItemFromMap(this);
-    mw->ui->drawingWindow->deleteShape(getShape());
+    // mw->ui->drawingWindow->hideItem(this);
+    // mw->ui->drawingWindow->removeItemFromMap(this);
+    // mw->ui->drawingWindow->deleteShape(getShape());
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
@@ -1530,9 +1536,9 @@ void DrawingItem::convertToPolyline ()
     if (polywire) {
 
         // remove the old version from display and tracking
-        mw->ui->drawingWindow->hideItem(this);
-        mw->ui->drawingWindow->removeItemFromMap(this);
-        mw->ui->drawingWindow->deleteShape(getShape());
+        // mw->ui->drawingWindow->hideItem(this);
+        // mw->ui->drawingWindow->removeItemFromMap(this);
+        // mw->ui->drawingWindow->deleteShape(getShape());
 
         // convert
         Polyline *newPolyline=polywire->convert();

@@ -7314,7 +7314,7 @@ void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryIte
 
 void comboTextChanged (QString text, BoundaryItem *boundaryItem)
 {
-    if (boundaryItem && boundaryItem->is_boundary()) {
+    if (boundaryItem) {
         ShapeData *newShapeData=boundaryItem->getShapeData()->copyCreate();
         newShapeData->setEdit();
         newShapeData->set_boundary_material(text);
@@ -7322,10 +7322,6 @@ void comboTextChanged (QString text, BoundaryItem *boundaryItem)
         boundaryItem->startItemChange();
         boundaryItem->addItemChange();
         boundaryItem->setModified(true);
-
-        //boundaryItem->setMenus();
-        //boundaryItem->clearTreeSelection();
-        //boundaryItem->updateViewer();
     }
 }
 
