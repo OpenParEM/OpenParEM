@@ -1928,7 +1928,19 @@ void DrawingItem::undo ()
         RootDrawingItem *rootParentItem=dynamic_cast<RootDrawingItem *>(getParentItem());
         if (rootParentItem) mw->ui->drawingWindow->showItem(this);
     } else if (shapeData->isChangeName()) {
-        BaseItem::undo();
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+
+        mw->ui->drawingWindow->unselectItem(this);
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+
+        dataStack.undo();
+
+        setText(0,getShapeData()->get_name());
+
+        if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+        else mw->ui->drawingWindow->hideItem(this);
     }
 }
 
@@ -1966,10 +1978,6 @@ void DrawingItem::redo ()
         mw->ui->drawingWindow->hideItem(this);
         RootDrawingItem *rootParentItem=dynamic_cast<RootDrawingItem *>(getParentItem());
         if (rootParentItem) mw->ui->drawingWindow->showItem(this);
-
-        //BaseItem *baseItem=findTopLevelItem(this);
-        //baseItem->expandToItem();
-        //expandToItem();
     } else if (next->isEdit()) {
         std::cout << "   isEdit" << std::endl; std::cout.flush();
 
@@ -1980,22 +1988,6 @@ void DrawingItem::redo ()
 
         dataStack.redo();
 
-        //xx
-        // ShapeData *shapeData=getShapeData();
-        // if (shapeData) {
-        //     Process *process=static_cast<Process *>(shapeData->getProcess());
-        //     if (process) {
-        //         int i=0;
-        //         while (i < childCount()) {
-        //             DrawingItem *childItem=dynamic_cast<DrawingItem *>(child(i));
-        //             if (childItem) {
-        //                 childItem->redo();
-        //             }
-        //             i++;
-        //         }
-        //     }
-        // }
-
         mw->reprocess(this);
         //mw->insertToMapActivateItem(this);
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
@@ -2003,15 +1995,25 @@ void DrawingItem::redo ()
 
         if (isDisplayed) mw->ui->drawingWindow->showItem(this);
         else mw->ui->drawingWindow->hideItem(this);
-        //mw->ui->drawingWindow->showItem(this);
-
-        //BaseItem *baseItem=findTopLevelItem(this);
-        //baseItem->expandToItem();
-        //expandToItem();
     } else if (next->isDelete()) {
         BaseItem::redo();
     } else if (next->isChangeName()) {
-        BaseItem::redo();
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+
+        mw->ui->drawingWindow->unselectItem(this);
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+
+        dataStack.redo();
+
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+        mw->ui->drawingWindow->activateItem(this);
+
+        setText(0,getShapeData()->get_name());
+
+        if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+        else mw->ui->drawingWindow->hideItem(this);
     }
 }
 
@@ -2270,6 +2272,9 @@ void PathItem::undo ()
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
+    bool isDisplayed=false;
+    if (foreground(0) == Qt::black) isDisplayed=true;
+
     if (shapeData->isReversePath()) {
         std::cout << "   isReversePath" << std::endl; std::cout.flush();
         mw->ui->drawingWindow->hideItem(this);
@@ -2292,6 +2297,30 @@ void PathItem::undo ()
         mw->ui->drawingWindow->displayShape(getShape());
         mw->ui->drawingWindow->activateItem(this);
         mw->ui->drawingWindow->showItem(this);
+    } else if (shapeData->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+
+        mw->ui->drawingWindow->unselectItem(this);
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+
+        dataStack.undo();
+
+        setText(0,getShapeData()->get_name());
+
+        long unsigned int i=0;
+        while (i < linkedItems_size()) {
+            PortItem *portItem=dynamic_cast<PortItem *>(get_linkedItem(i));
+            if (portItem) portItem->setSolidColor();
+
+            BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(get_linkedItem(i));
+            if (boundaryItem) boundaryItem->setSolidColor();
+            i++;
+        }
+
+        if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+        else mw->ui->drawingWindow->hideItem(this);
     } else {
         BaseItem::undo();
     }
@@ -2324,8 +2353,19 @@ void PathItem::rename (QString name)
 {
     BaseItem::rename(name);
 
-    // change the names of the linked items
+    // reset colors
     long unsigned int i=0;
+    while (i < linkedItems_size()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(get_linkedItem(i));
+        if (portItem) portItem->setSolidColor();
+
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(get_linkedItem(i));
+        if (boundaryItem) boundaryItem->setSolidColor();
+        i++;
+    }
+
+    // change the names of the linked items
+    i=0;
     while (i < linkedItems_size()) {
         BaseItem *baseItem=get_linkedItem(i);
         if (baseItem->is_integrationPathSegment()) {
@@ -2357,6 +2397,9 @@ void PathItem::redo ()
     ShapeData *next=shapeData->getNext();
     if (!next) return;
 
+    bool isDisplayed=false;
+    if (foreground(0) == Qt::black) isDisplayed=true;
+
     if (next->isReversePath()) {
         std::cout << "   isReversePath" << std::endl; std::cout.flush();
         mw->ui->drawingWindow->hideItem(this);
@@ -2379,7 +2422,34 @@ void PathItem::redo ()
         mw->ui->drawingWindow->displayShape(getShape());
         mw->ui->drawingWindow->activateItem(this);
         mw->ui->drawingWindow->showItem(this);
-        //expandToItem();
+    } else if (next->isChangeName()) {
+        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+
+        mw->ui->drawingWindow->unselectItem(this);
+        mw->ui->drawingWindow->hideItem(this);
+        mw->ui->drawingWindow->removeItemFromMap(this);
+        mw->ui->drawingWindow->deleteShape(getShape());
+
+        dataStack.redo();
+
+        mw->ui->drawingWindow->insertItemToMap(getShape(),this);
+        mw->ui->drawingWindow->activateItem(this);
+
+        setText(0,getShapeData()->get_name());
+
+        //xxx
+        long unsigned int i=0;
+        while (i < linkedItems_size()) {
+            PortItem *portItem=dynamic_cast<PortItem *>(get_linkedItem(i));
+            if (portItem) portItem->setSolidColor();
+
+            BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(get_linkedItem(i));
+            if (boundaryItem) boundaryItem->setSolidColor();
+            i++;
+        }
+
+        if (isDisplayed) mw->ui->drawingWindow->showItem(this);
+        else mw->ui->drawingWindow->hideItem(this);
     } else {
         BaseItem::redo();
     }
@@ -3309,6 +3379,8 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
 
 void PortItem::setSolidColor ()
 {
+    //std::cout << "PortItem::setSolidColor" << std::endl; std::cout.flush();
+
     PathItem *pathItem=getPathItem();
     if (pathItem) {
         Handle(AIS_Shape) shape=pathItem->getShape();
@@ -3731,7 +3803,6 @@ bool PortItem::isValid ()
     return true;
 }
 
-//xxx
 bool PortItem::isValidMultimodeLine ()
 {
     // ok if not line calculation

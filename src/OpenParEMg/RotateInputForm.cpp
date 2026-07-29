@@ -103,7 +103,7 @@ void RotateInputForm::on_Xaxis_clicked ()
     ui->endX->setText("1");
     ui->endY->setText("0");
     ui->endZ->setText("0");
-    localEndPoint.SetCoord(1,0,0);
+    localEndPoint.SetCoord(conversionFactor,0,0);
 
     ui->pickStart->setEnabled(false);
     ui->pickEnd->setEnabled(false);
@@ -126,7 +126,7 @@ void RotateInputForm::on_Yaxis_clicked ()
     ui->endX->setText("0");
     ui->endY->setText("1");
     ui->endZ->setText("0");
-    localEndPoint.SetCoord(0,1,0);
+    localEndPoint.SetCoord(0,conversionFactor,0);
 
     ui->pickStart->setEnabled(false);
     ui->pickEnd->setEnabled(false);
@@ -149,7 +149,7 @@ void RotateInputForm::on_Zaxis_clicked ()
     ui->endX->setText("0");
     ui->endY->setText("0");
     ui->endZ->setText("1");
-    localEndPoint.SetCoord(0,0,1);
+    localEndPoint.SetCoord(0,0,conversionFactor);
 
     ui->pickStart->setEnabled(false);
     ui->pickEnd->setEnabled(false);

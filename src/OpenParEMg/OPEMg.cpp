@@ -460,7 +460,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     uLocalAxis.SetCoord(1,0,0);  // rectangles
     length=0;                    // extrusion
     angle=90;                    // rotation
-    startPoint.SetCoord(0,0,0);  // rotating and vector input
+    startPoint.SetCoord(0,0,0);  // rotation and vector input
     endPoint.SetCoord(0,0,1);    // rotation and vector input
 
     restrictToDrawingPlane=false;
