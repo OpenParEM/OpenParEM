@@ -345,7 +345,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     boundary->setText(0,"Boundary");
     ui->drawingItemTree->addTopLevelItem(boundary);
 
-    mesh->setText(0,"Mesh");
+    mesh->setText(0,"Initial Mesh");
     ui->drawingItemTree->addTopLevelItem(mesh);
 
     // context menu
