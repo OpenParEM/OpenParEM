@@ -780,6 +780,81 @@ public:
     //     }
     // }
 
+    // bool isValidDelete ()
+    // {
+    //     if (deleteTracking) {std::cout << "ItemTracker::isValidDelete" << std::endl; std::cout.flush();}
+
+    //     // do not enable deletion of subshapes
+    //     if (selectedItems.size() == 0) return false;
+
+    //     bool performCheck=true;
+
+    //     // count the items
+    //     long unsigned int i=0;
+    //     while (i < selectedItems.size()) {
+    //         BaseItem *item=selectedItems[i];
+    //         if (item) {
+    //             if (item->is_mesh()) {
+    //                 // nothing to do
+    //             } else if (item->is_port() || item->is_boundary()) {
+    //                 if (!viewerContext->IsDisplayed(item->getShape())) performCheck=false;
+    //             } else if (item->is_sportLabel()) {
+    //                 // nothing to do
+    //             } else {
+    //                 // drawing
+    //                 if (viewerContext->IsDisplayed(item->getShape())) {
+
+    //                     BaseItem *parent=dynamic_cast<BaseItem *>(item->QTreeWidgetItem::parent());
+    //                     if (parent && !parent->is_rootDrawing()) {
+    //                         // parent must be a COMPOUND
+    //                         //if (parent->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) count++;
+
+    //                         performCheck=false;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         i++;
+    //     }
+
+    //     if (!performCheck) {
+    //         return false;
+    //     }
+
+    //     // checks
+    //     i=0;
+    //     while (i < selectedItems.size()) {
+    //         BaseItem *item=selectedItems[i];
+    //         if (item) {
+    //             if (item->is_mesh()) {
+    //                 // nothing to do
+    //             } else if (item->is_port() || item->is_boundary()) {
+    //                 if (!viewerContext->IsDisplayed(item->getShape())) return false;
+    //             } else if (item->is_sportLabel()) {
+    //                 // nothing to do
+    //             } else {
+    //                 // drawing
+    //                 if (!viewerContext->IsDisplayed(item->getShape())) {
+    //                     return false;
+    //                 }
+
+    //                 BaseItem *parent=dynamic_cast<BaseItem *>(item->QTreeWidgetItem::parent());
+    //                 if (parent && !parent->is_rootDrawing()) {
+    //                     // ToDo: probably have to generalize this at some point
+
+    //                     // parent must be a COMPOUND
+    //                     //if (parent->get_AIS_Shape()->Shape().ShapeType() != TopAbs_COMPOUND) return false;
+
+    //                     return false;
+    //                 }
+    //             }
+    //         }
+    //         i++;
+    //     }
+
+    //     return true;
+    // }
+
     bool isValidDelete ()
     {
         if (deleteTracking) {std::cout << "ItemTracker::isValidDelete" << std::endl; std::cout.flush();}
@@ -787,73 +862,20 @@ public:
         // do not enable deletion of subshapes
         if (selectedItems.size() == 0) return false;
 
-        bool performCheck=true;
-
-        // count the items
+        // only top-level drawing items can be deleted
         long unsigned int i=0;
         while (i < selectedItems.size()) {
-            BaseItem *item=selectedItems[i];
-            if (item) {
-                if (item->is_mesh()) {
-                    // nothing to do
-                } else if (item->is_port() || item->is_boundary()) {
-                    if (!viewerContext->IsDisplayed(item->getShape())) performCheck=false;
-                } else if (item->is_sportLabel()) {
-                    // nothing to do
-                } else {
-                    // drawing
-                    if (viewerContext->IsDisplayed(item->getShape())) {
-
-                        BaseItem *parent=dynamic_cast<BaseItem *>(item->QTreeWidgetItem::parent());
-                        if (parent && !parent->is_rootDrawing()) {
-                            // parent must be a COMPOUND
-                            //if (parent->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) count++;
-
-                            performCheck=false;
-                        }
-                    }
-                }
-            }
-            i++;
-        }
-
-        if (!performCheck) {
-            return false;
-        }
-
-        // checks
-        i=0;
-        while (i < selectedItems.size()) {
-            BaseItem *item=selectedItems[i];
-            if (item) {
-                if (item->is_mesh()) {
-                    // nothing to do
-                } else if (item->is_port() || item->is_boundary()) {
-                    if (!viewerContext->IsDisplayed(item->getShape())) return false;
-                } else if (item->is_sportLabel()) {
-                    // nothing to do
-                } else {
-                    // drawing
-                    if (!viewerContext->IsDisplayed(item->getShape())) {
-                        return false;
-                    }
-
-                    BaseItem *parent=dynamic_cast<BaseItem *>(item->QTreeWidgetItem::parent());
-                    if (parent && !parent->is_rootDrawing()) {
-                        // ToDo: probably have to generalize this at some point
-
-                        // parent must be a COMPOUND
-                        //if (parent->get_AIS_Shape()->Shape().ShapeType() != TopAbs_COMPOUND) return false;
-
-                        return false;
-                    }
-                }
+            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(selectedItems[i]);
+            if (drawingItem && drawingItem->is_drawing()) {
+                BaseItem *parentItem=dynamic_cast<BaseItem *>(drawingItem->QTreeWidgetItem::parent());
+                if (parentItem && !parentItem->is_rootDrawing()) return false;
             }
             i++;
         }
 
         return true;
     }
+
 
     // map
 
