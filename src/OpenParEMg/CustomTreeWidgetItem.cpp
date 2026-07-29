@@ -727,9 +727,6 @@ void DrawingItem::cancelOperation ()
 {
     std::cout << "DrawingItem::cancelOperation  item=" << this->text(0).toStdString () << std::endl; std::cout.flush();
 
-    bool isDisplayed=false;
-    if (foreground(0) == Qt::black) isDisplayed=true;
-
     resetOperation();
 
     // remove animate shape
@@ -764,8 +761,13 @@ void DrawingItem::cancelOperation ()
         mw->reprocess(this);
     }
 
-    if (isDisplayed) mw->ui->drawingWindow->showItem(this);
-    else mw->ui->drawingWindow->hideItem(this);
+    if (isOriginalSelection()) {
+        mw->ui->drawingWindow->showItem(this);
+        mw->ui->drawingWindow->selectItem(this);
+    } else {
+        mw->ui->drawingWindow->unselectItem(this);
+        mw->ui->drawingWindow->hideItem(this);
+    }
 }
 
 void DrawingItem::startDraw ()
@@ -929,9 +931,6 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 {
     //std::cout << "DrawingItem::finishMove  drawingItem=" << text(0).toStdString() << std::endl; std::cout.flush();
 
-    //bool isDisplayed=false;
-    //if (foreground(0) == Qt::black) isDisplayed=true;
-
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
         polywire->shift(p1_,p0_);
@@ -959,8 +958,6 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
     mw->activeAction=false;
     setModified(true);
 
-    //if (isDisplayed) mw->ui->drawingWindow->showItem(this);
-    //else mw->ui->drawingWindow->hideItem(this);
     if (!isOriginalSelection()) {
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -1236,6 +1233,7 @@ DrawingItem* DrawingItem::copy (BaseItem *parent)
 void DrawingItem::startEdit ()
 {
     setForUndoRedo(false,0);
+    setOriginalSelection(true);
     mw->itemChangesStack.add(this);
 
     // polywire to edit
