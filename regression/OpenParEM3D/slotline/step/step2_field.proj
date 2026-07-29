@@ -51,7 +51,7 @@ reference.impedance 0
 //output.show.postprocessing false
 //output.show.iterations false
 //output.show.license false
-test.create.cases true
+//test.create.cases true
 //test.show.detailed.cases false
 //debug.show.memory false
 //debug.show.project false
