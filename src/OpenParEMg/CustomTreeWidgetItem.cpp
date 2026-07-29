@@ -3801,8 +3801,35 @@ bool PortItem::isValid ()
     return true;
 }
 
+int PortItem::getModeCount ()
+{
+    int modeCount=0;
+
+    int i=0;
+    while (i < childCount()) {
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+        if (modeItem) modeCount++;
+
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+        if (diffPairItem) {
+            int j=0;
+            while (j < diffPairItem->childCount()) {
+                ModeItem *modeItem=dynamic_cast<ModeItem *>(diffPairItem->child(j));
+                if (modeItem) modeCount++;
+                j++;
+            }
+        }
+        i++;
+    }
+
+    return modeCount;
+}
+
 bool PortItem::isValidMultimodeLine ()
 {
+    // no issues if not multimode
+    if (getModeCount() < 2) return true;
+
     // ok if not line calculation
     int i=0;
     while (i < childCount()) {

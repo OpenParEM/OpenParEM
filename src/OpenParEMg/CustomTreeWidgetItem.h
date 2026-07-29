@@ -1141,6 +1141,7 @@ public:
     void save (std::ofstream *) override;
 
     bool isValid ();
+    int getModeCount ();
     bool isValidMultimodeLine ();
     bool hasValidVoltages ();
     bool hasValidCurrents ();
