@@ -6011,7 +6011,7 @@ void OpenParEMg::on_actionWire_triggered ()
 
 void OpenParEMg::on_actionFace_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionFace_triggered" << std::endl; std::cout.flush();
+    std::cout << "OpenParEMg::on_actionFace_triggered" << std::endl; std::cout.flush();
 
     clearSelection();
     ui->actionFace->setCheckable(true);
@@ -7164,19 +7164,21 @@ void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered ()
 
 void OpenParEMg::setPlaneToFace ()
 {
+    //std::cout << "OpenParEMg::setPlaneToFace" << std::endl; std::cout.flush();
     skipDrawingPlaneAxisForm=true;
     startPlaneSetToFace();
 }
 
 void OpenParEMg::setPlaneToFaceAxis ()
 {
+    //std::cout << "OpenParEMg::setPlaneToFaceAxis" << std::endl; std::cout.flush();
     skipDrawingPlaneAxisForm=false;
     startPlaneSetToFace();
 }
 
 void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
-    std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFace_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFace_triggered" << std::endl; std::cout.flush();
 
     startOperation(false);
 
@@ -7188,7 +7190,7 @@ void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 
 void OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered ()
 {
-    std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered" << std::endl; std::cout.flush();
 
     restrictToDrawingPlane=true;
     startOperation(true);
@@ -7196,11 +7198,12 @@ void OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered ()
     skipDrawingPlaneAxisForm=false;
     on_actionFace_triggered();
     ui->drawingWindow->setSubshapeSelection(true);
+    ui->drawingWindow->setSetToPlane(true);
 }
 
 void OpenParEMg::startPlaneSetToFace ()
 {
-    std::cout << "OpenParEMg::startPlaneSetToFace" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::startPlaneSetToFace" << std::endl; std::cout.flush();
 
     // reset the selection
     on_actionShape_triggered();
