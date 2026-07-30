@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>226</width>
-    <height>351</height>
+    <width>401</width>
+    <height>310</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,8 +17,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>220</y>
-     <width>211</width>
+     <y>170</y>
+     <width>381</width>
      <height>22</height>
     </rect>
    </property>
@@ -62,8 +62,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>280</y>
-     <width>211</width>
+     <y>230</y>
+     <width>381</width>
      <height>22</height>
     </rect>
    </property>
@@ -101,8 +101,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>280</y>
-     <width>211</width>
+     <y>230</y>
+     <width>381</width>
      <height>22</height>
     </rect>
    </property>
@@ -146,8 +146,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>220</y>
-     <width>211</width>
+     <y>170</y>
+     <width>381</width>
      <height>22</height>
     </rect>
    </property>
@@ -185,8 +185,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>180</y>
-     <width>211</width>
+     <y>130</y>
+     <width>381</width>
      <height>31</height>
     </rect>
    </property>
@@ -223,8 +223,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>310</y>
-     <width>211</width>
+     <y>270</y>
+     <width>381</width>
      <height>31</height>
     </rect>
    </property>
@@ -321,7 +321,7 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>211</width>
+     <width>381</width>
      <height>31</height>
     </rect>
    </property>
@@ -362,14 +362,27 @@
       </property>
      </widget>
     </item>
+    <item>
+     <spacer name="horizontalSpacer_5">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
    </layout>
   </widget>
   <widget class="QWidget" name="horizontalLayoutWidget_7">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>250</y>
-     <width>211</width>
+     <y>200</y>
+     <width>381</width>
      <height>22</height>
     </rect>
    </property>
@@ -413,8 +426,8 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>250</y>
-     <width>211</width>
+     <y>200</y>
+     <width>381</width>
      <height>22</height>
     </rect>
    </property>
@@ -453,7 +466,7 @@
     <rect>
      <x>10</x>
      <y>60</y>
-     <width>211</width>
+     <width>381</width>
      <height>25</height>
     </rect>
    </property>
@@ -481,18 +494,6 @@
       </property>
      </spacer>
     </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="horizontalLayoutWidget_5">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>90</y>
-     <width>211</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <layout class="QHBoxLayout" name="horizontalLayout_2">
     <item>
      <widget class="QRadioButton" name="Yaxis">
       <property name="toolTip">
@@ -504,7 +505,7 @@
      </widget>
     </item>
     <item>
-     <spacer name="horizontalSpacer_2">
+     <spacer name="horizontalSpacer_6">
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
@@ -516,18 +517,6 @@
       </property>
      </spacer>
     </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="horizontalLayoutWidget_6">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>120</y>
-     <width>211</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <layout class="QHBoxLayout" name="horizontalLayout_3">
     <item>
      <widget class="QRadioButton" name="Zaxis">
       <property name="toolTip">
@@ -538,27 +527,14 @@
       </property>
      </widget>
     </item>
-    <item>
-     <spacer name="horizontalSpacer_3">
-      <property name="orientation">
-       <enum>Qt::Orientation::Horizontal</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>40</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
    </layout>
   </widget>
   <widget class="QWidget" name="horizontalLayoutWidget_8">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>150</y>
-     <width>211</width>
+     <y>100</y>
+     <width>381</width>
      <height>25</height>
     </rect>
    </property>

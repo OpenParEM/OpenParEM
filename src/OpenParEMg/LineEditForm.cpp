@@ -58,6 +58,12 @@ LineEditForm::LineEditForm (QWidget *parent)
     conversionFactor=1;
     isXclose=true;
     isClosing=false;
+
+    // position
+    QRect parentRect=parent->geometry();
+    int x=parentRect.right()-width()-20;
+    int y=parentRect.top()+20;
+    move(mapToGlobal(QPoint(x,y)));
 }
 
 LineEditForm::~LineEditForm ()

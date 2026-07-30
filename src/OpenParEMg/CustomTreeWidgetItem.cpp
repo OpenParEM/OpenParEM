@@ -1248,7 +1248,7 @@ void DrawingItem::startEdit ()
     if (line) {
         mw->lineEdit=line->copyCreate();
         if (mw->lineEditForm) delete mw->lineEditForm;
-        mw->lineEditForm=new LineEditForm();
+        mw->lineEditForm=new LineEditForm(mw);
         mw->lineEditForm->set_conversionFactor(mw->getConversionFactor());
         mw->lineEditForm->set_drawingWindow(mw->ui->drawingWindow);
         mw->lineEditForm->set_polywire(mw->lineEdit);
@@ -1263,7 +1263,7 @@ void DrawingItem::startEdit ()
     if (rectangle) {
         mw->rectangleEdit=rectangle->copyCreate();
         if (mw->rectangleEditForm) delete mw->rectangleEditForm;
-        mw->rectangleEditForm=new RectangleEditForm();
+        mw->rectangleEditForm=new RectangleEditForm(mw);
         mw->rectangleEditForm->set_conversionFactor(mw->getConversionFactor());
         mw->rectangleEditForm->set_drawingWindow(mw->ui->drawingWindow);
         mw->rectangleEditForm->set_polywire(mw->rectangleEdit);
@@ -1278,7 +1278,7 @@ void DrawingItem::startEdit ()
     if (polycircle) {
         mw->polycircleEdit=polycircle->copyCreate();
         if (mw->polycircleEditForm) delete mw->polycircleEditForm;
-        mw->polycircleEditForm=new PolycircleEditForm();
+        mw->polycircleEditForm=new PolycircleEditForm(mw);
         mw->polycircleEditForm->set_conversionFactor(mw->getConversionFactor());
         mw->polycircleEditForm->set_drawingWindow(mw->ui->drawingWindow);
         mw->polycircleEditForm->set_Polycircle(mw->polycircleEdit);
@@ -1306,7 +1306,7 @@ void DrawingItem::startEdit ()
 
             if (polywire) {
                 if (mw->lengthEditForm) delete mw->lengthEditForm;
-                mw->lengthEditForm=new LengthInputForm();
+                mw->lengthEditForm=new LengthInputForm(mw);
                 mw->lengthEditForm->set_conversionFactor(mw->getConversionFactor());
                 mw->length=extrude->get_length();
                 mw->lengthEditForm->set_length(&(mw->length));

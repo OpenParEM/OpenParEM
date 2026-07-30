@@ -457,8 +457,9 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     polycircleEditForm=nullptr;
     rotateInputForm=nullptr;
 
+    // form defaults
     uLocalAxis.SetCoord(1,0,0);  // rectangles
-    length=0;                    // extrusion
+    length=1;                    // extrusion
     angle=90;                    // rotation
     startPoint.SetCoord(0,0,0);  // rotation and vector input
     endPoint.SetCoord(0,0,1);    // rotation and vector input
@@ -2310,6 +2311,7 @@ bool OpenParEMg::isValidExtrudePolywire ()
 // from m to the given unit
 double OpenParEMg::getConversionFactor ()
 {
+    if (!projData.gui_units) return 1;
     if (strcmp(projData.gui_units,"m") == 0) return 1;
     if (strcmp(projData.gui_units,"cm") == 0) return 100;
     if (strcmp(projData.gui_units,"mm") == 0) return 1000;
@@ -2329,7 +2331,7 @@ void OpenParEMg::extrudePolywire ()
 
     // user input form
     if (lengthInputForm) delete lengthInputForm;
-    lengthInputForm=new LengthInputForm();
+    lengthInputForm=new LengthInputForm(this);
     lengthInputForm->set_conversionFactor(getConversionFactor());
     lengthInputForm->set_drawingWindow(ui->drawingWindow);
     extrusionDirection.SetCoord(0,0,0);
@@ -3575,7 +3577,7 @@ void OpenParEMg::rotateObject ()
     ui->drawingWindow->updateViewer();
 
     if (rotateInputForm) delete rotateInputForm;
-    rotateInputForm=new RotateInputForm();
+    rotateInputForm=new RotateInputForm(this);
     rotateInputForm->set_conversionFactor(getConversionFactor());
     rotateInputForm->set_drawingWindow(ui->drawingWindow);
     rotateInputForm->set_angle(&angle);
@@ -4333,6 +4335,8 @@ void OpenParEMg::on_actionOpen_triggered ()
             mb.setFixedSize(500, 200);
         }
 
+        scaleFormDefaults();
+
         projData.modified=0;
         projectFileLoaded=true;
         setUnmodified();
@@ -4429,6 +4433,13 @@ void OpenParEMg::resetDrawing ()
     previousClickedItem=nullptr;
     workingItem=nullptr;
 
+    // form defaults
+    uLocalAxis.SetCoord(1,0,0);  // rectangles
+    length=1;                    // extrusion
+    angle=90;                    // rotation
+    startPoint.SetCoord(0,0,0);  // rotation and vector input
+    endPoint.SetCoord(0,0,1);    // rotation and vector input
+
     on_actionShape_triggered();
 }
 
@@ -4487,6 +4498,15 @@ void OpenParEMg::resetProject ()
     setMenusI(41);
 }
 
+void OpenParEMg::scaleFormDefaults ()
+{
+    //uLocalAxis.SetCoord(1,0,0);                        // rectangles
+    length=1/getConversionFactor();                    // extrusion
+    angle=90;                                          // rotation
+    startPoint.SetCoord(0,0,0);                        // rotation and vector input
+    endPoint.SetCoord(0,0,1/getConversionFactor());    // rotation and vector input
+}
+
 // set the scale in the drawing window to the size of the drawing plane
 void OpenParEMg::setScale ()
 {
@@ -4525,6 +4545,7 @@ void OpenParEMg::on_actionNew_triggered ()
     init_project (&projData);
 
     setScale();
+    scaleFormDefaults();
 
     projData.modified=0;
     projectFileLoaded=true;
@@ -7233,7 +7254,7 @@ void OpenParEMg::startPlaneSetToFace ()
 
     // use a form to get the local x-direction
     if (vectorInputForm) delete vectorInputForm;
-    vectorInputForm=new VectorInputForm();
+    vectorInputForm=new VectorInputForm(this);
     vectorInputForm->set_conversionFactor(getConversionFactor());
     vectorInputForm->set_startPoint(&startPoint);
     vectorInputForm->set_endPoint(&endPoint);

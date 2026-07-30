@@ -497,6 +497,7 @@ public:
 
     void debugPrintStats (int);
 
+    void scaleFormDefaults ();
     void setScale ();
 
     void clonePathData ();
