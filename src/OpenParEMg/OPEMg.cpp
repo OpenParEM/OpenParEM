@@ -6545,13 +6545,19 @@ Standard_Real calculateVolume (const TopoDS_Shape& shape)
 
 double calculateSolidComparison (const TopoDS_Shape& newSolid, const TopoDS_Shape& originalSolid)
 {
+    //std::cout << "calculateSolidComparison" << std::endl; std::cout.flush();
+
+    double tol=1e-30;
+
     Standard_Real newSolidVolume=calculateVolume(newSolid);
-    if (newSolidVolume < 1e-12) return 0;
+    //std::cout << "   newSolidVoume=" << newSolidVolume << std::endl; std::cout.flush();
+    if (newSolidVolume < tol) return 0;
 
     Standard_Real originalSolidVolume=calculateVolume(originalSolid);
-    if (originalSolidVolume < 1e-12) return 0;
+    //std::cout << "   originalSolidVolume=" << originalSolidVolume << std::endl; std::cout.flush();
+    if (originalSolidVolume < tol) return 0;
 
-    if (newSolidVolume > originalSolidVolume+1e-6) return 0;
+    if (newSolidVolume > originalSolidVolume*(1+1e-6)) return 0;
 
     // calculate intersection
     BRepAlgoAPI_Common intersection(newSolid,originalSolid);
@@ -6561,8 +6567,10 @@ double calculateSolidComparison (const TopoDS_Shape& newSolid, const TopoDS_Shap
     const TopoDS_Shape& commonResult=intersection.Shape();
 
     Standard_Real commonResultVolume=calculateVolume(commonResult);
-    if (commonResultVolume < 1e-12) return 0;
+    //std::cout << "   commonResultVolume=" << commonResultVolume << std::endl; std::cout.flush();
+    if (commonResultVolume < tol) return 0;
 
+    //std::cout << "   metric=" << commonResultVolume/originalSolidVolume << std::endl; std::cout.flush();
     return commonResultVolume/originalSolidVolume;
 }
 
@@ -6586,14 +6594,18 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
     TopTools_ListOfShape arguments;
 
-    // drawing items
+    // build boolean fragments shape
+    std::cout << "build boolean fragments shape" << std::endl; std::cout.flush();
     int i=0;
     while (i < drawing->childCount()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
         if (drawingItem) {
             ShapeData *shapeData=drawingItem->getShapeData();
             TopoDS_Shape shape=shapeData->getShape()->Shape();
-            if (!shape.IsNull()) arguments.Append(shape);
+            if (!shape.IsNull()) {
+                std::cout << "   add drawingItem=" << drawingItem->text(0).toStdString() << std::endl; std::cout.flush();
+                arguments.Append(shape);
+            }
         }
         i++;
     }
@@ -6614,12 +6626,14 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
                             // paths with arrows - take the first TopoDS_Shape with the rest being arrowheads
                             TopoDS_Shape childShape=it.Value();
                             if (childShape.ShapeType() != TopAbs_COMPOUND) {
+                                std::cout << "   imprint pathItem without arrows=" << pathItem->text(0).toStdString() << std::endl; std::cout.flush();
                                 arguments.Append(childShape);
                                 break;
                             }
                             it.Next();
                         }
                     } else {
+                        std::cout << "   imprint pathItem=" << pathItem->text(0).toStdString() << std::endl; std::cout.flush();
                         arguments.Append(shape);
                     }
                 }
@@ -6635,7 +6649,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     if (builder.HasErrors()) return;
     TopoDS_Shape fragments=builder.Shape();
 
-    // mesh
+    // build mesh
     gmsh::model::occ::importShapesNativePointer((void *) &fragments,drawingEntities,false);
     gmsh::option::setNumber("Mesh.MeshSizeFactor",projData.gui_mesh_scale);
     gmsh::option::setNumber("Mesh.MeshSizeMin",projData.gui_mesh_minSize);
@@ -6656,6 +6670,8 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     const TopoDS_Shape& finalResult=builder.Shape();
     TopExp_Explorer exp(finalResult,TopAbs_SOLID);
 
+    // create physical groups
+    std::cout << "create physical groups in mesh" << std::endl; std::cout.flush();
     int solidNumber=1;
     for (; exp.More(); exp.Next()) {
         const TopoDS_Shape& newSolid=exp.Current();
@@ -6679,6 +6695,9 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
             i++;
         }
 
+        if (bestDrawingItem) {std::cout << "  bestDrawingItem=" << bestDrawingItem->text(0).toStdString() << std::endl; std::cout.flush();}
+        else {std::cout << "   bestDrawingItem=nullptr" << std::endl; std::cout.flush();}
+
         // get a material name
         QString material="unassigned";
         if (bestDrawingItem) {
@@ -6686,15 +6705,18 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
                 material=bestDrawingItem->text(1);
             }
         }
+        std::cout << "   material=" << material.toStdString() << std::endl; std::cout.flush();
 
         // create a physical group
         char *materialName=nullptr;
         cstrFromQString (&materialName,material);
+        std::cout << "add physical group  solidNumber=" << solidNumber << "  materialName=" << materialName << std::endl; std::cout.flush();
         add_physicalGroupMaterial(&projData,-1,3,solidNumber,materialName);
         solidNumber++;
     }
 
     // assign to mesh
+    std::cout << "assign physical groups to mesh" << std::endl; std::cout.flush();
     i=0;
     while (i < projData.physicalGroupMaterialCount) {
         std::vector<int> physicalGroupList;
@@ -6707,6 +6729,7 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         groupName.append("_OPEM_RESERVED_");
         groupName.append(std::to_string(projData.physicalGroupMaterials[i].tag));
 
+        std::cout << "  add physicalGroup  groupName=" << groupName << std::endl; std::cout.flush();
         gmsh::model::addPhysicalGroup(projData.physicalGroupMaterials[i].dim,physicalGroupList,-1,groupName.c_str());
         i++;
     }
