@@ -139,7 +139,7 @@
        </widget>
        <widget class="QWidget" name="dataTab">
         <attribute name="title">
-         <string>Results</string>
+         <string>S-Parameter Results</string>
         </attribute>
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
@@ -160,6 +160,16 @@
             <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
            </property>
           </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="antennaTab">
+        <attribute name="title">
+         <string>Antenna Results</string>
+        </attribute>
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <item>
+          <widget class="QPlainTextEdit" name="antennaText"/>
          </item>
         </layout>
        </widget>

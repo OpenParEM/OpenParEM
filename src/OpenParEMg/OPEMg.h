@@ -671,6 +671,7 @@ private slots:
     void updateLogTab (bool);
     void updateIterationsTab (bool);
     void updateDataTab (bool);
+    void updateAntennaTab (bool);
     void checkFinish ();
 
     void cancelDraw ();
@@ -852,13 +853,16 @@ private:
     qint64 logLastPos;
     qint64 iterationLastPos;
     qint64 dataLastPos;
+    qint64 antennaLastPos;
     LogViewerFilter *logFilter;
     LogViewerFilter *iterationsFilter;
     LogViewerFilter *dataFilter;
+    LogViewerFilter *antennaFilter;
     QString partialLogLine;
     char logLastChar;
     char iterationsLastChar;
     char dataLastChar;
+    char antennaLastChar;
 
     // for disabling selection boxes while running simulations
     bool isDisabledSelection;

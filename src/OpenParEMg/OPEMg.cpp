@@ -50,6 +50,7 @@
 #include <ShapeUpgrade_UnifySameDomain.hxx>
 #include <BRepBuilderAPI_Copy.hxx>
 #include <BOPAlgo_Builder.hxx>
+#include <BOPAlgo_CellsBuilder.hxx>
 #include <BRepCheck_Analyzer.hxx>
 #include <ShapeFix_Shape.hxx>
 #include <GProp_GProps.hxx>
@@ -383,17 +384,20 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->tabs->setTabToolTip(0,"Drawing space for creating 3D structures for simulation.");
     ui->tabs->setTabToolTip(1,"Output from OpenParEM3D.");
     ui->tabs->setTabToolTip(2,"Summary statistics on the simulation run.");
-    ui->tabs->setTabToolTip(3,"Results summary.  Check the project directory for a Touchstone(TM) file, if generated.");
+    ui->tabs->setTabToolTip(3,"S-parameter results summary.  Check the project directory for a Touchstone(TM) file, if generated.");
+    ui->tabs->setTabToolTip(4,"Antenna parameter results summary.  Check the project directory for reports, if generated.");
 
     ui->logText->setReadOnly(true);
     ui->iterationsText->setReadOnly(true);
-    ui->dataText->setReadOnly(true);  
+    ui->dataText->setReadOnly(true);
+    ui->antennaText->setReadOnly(true);
 
     QFont monoFont=QFontDatabase::systemFont(QFontDatabase::FixedFont);
     monoFont.setPointSize(10);
     ui->logText->setFont(monoFont);
     ui->iterationsText->setFont(monoFont);
     ui->dataText->setFont(monoFont);
+    ui->antennaText->setFont(monoFont);
 
     logFilter=new LogViewerFilter(this);
     logFilter->setTextEdit(ui->logText);
@@ -409,6 +413,11 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     dataFilter->setTextEdit(ui->dataText);
     ui->dataText->viewport()->installEventFilter(dataFilter);
     ui->dataText->verticalScrollBar()->installEventFilter(dataFilter);
+
+    antennaFilter=new LogViewerFilter(this);
+    antennaFilter->setTextEdit(ui->antennaText);
+    ui->antennaText->viewport()->installEventFilter(antennaFilter);
+    ui->antennaText->verticalScrollBar()->installEventFilter(antennaFilter);
 
     /////////////////////////////////////////////////////////////////////////////
     // context menu for drawingWindow
@@ -434,6 +443,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateLogTab(defaultForce);});
     connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateIterationsTab(defaultForce);});
     connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateDataTab(defaultForce);});
+    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateAntennaTab(defaultForce);});
 
     /////////////////////////////////////////////////////////////////////////////
     // misc
@@ -4324,6 +4334,7 @@ void OpenParEMg::on_actionOpen_triggered ()
             updateLogTab(true);
             updateIterationsTab(true);
             updateDataTab(true);
+            updateAntennaTab(true);
         }
 
         ui->drawingWindow->fitAll();
@@ -4479,14 +4490,17 @@ void OpenParEMg::resetProject ()
     ui->logText->clear();
     ui->iterationsText->clear();
     ui->dataText->clear();
+    ui->antennaText->clear();
 
     logLastPos=0;
     iterationLastPos=0;
     dataLastPos=0;
+    antennaLastPos=0;
 
     logLastChar='\0';
     iterationsLastChar='\0';
     dataLastChar='\0';
+    antennaLastChar='\0';
 
     // bring drawing to the front
     if (ui->tabs->currentWidget() != ui->drawingTab) {
@@ -4650,6 +4664,33 @@ void OpenParEMg::on_actionAntennaPatterns_triggered ()
 
 void OpenParEMg::saveProject ()
 {
+    // adjust the project file for antennas
+    if (hasRadiationBoundary()) {
+        // must have at least 1 pattern with gain
+        // assumes that if there are patterns, that one is gain, which is enforced by the antenna pattern form
+        if (projData.inputAntennaPatternsCount == 0) {
+            char *quantity1=(char *)malloc(2*sizeof(char));
+            quantity1[0]='G';
+            quantity1[1]='\0';
+            add_antennaPattern(&projData,0,3,quantity1,nullptr,nullptr,0,0,0,0);
+            if (quantity1) free(quantity1);
+        }
+    } else {
+        // cannot have patterns
+        if (projData.inputAntennaPatterns) {
+           long unsigned int i=0;
+           while (i < projData.inputAntennaPatternsAllocated) {
+               if (projData.inputAntennaPatterns[i].quantity1) {free(projData.inputAntennaPatterns[i].quantity1); projData.inputAntennaPatterns[i].quantity1=NULL;}
+               if (projData.inputAntennaPatterns[i].quantity2) {free(projData.inputAntennaPatterns[i].quantity2); projData.inputAntennaPatterns[i].quantity2=NULL;}
+               if (projData.inputAntennaPatterns[i].plane) {free(projData.inputAntennaPatterns[i].plane); projData.inputAntennaPatterns[i].plane=NULL;}
+              i++;
+           }
+           free(projData.inputAntennaPatterns); projData.inputAntennaPatterns=NULL;
+        }
+        projData.inputAntennaPatternsCount=0;
+        projData.inputAntennaPatternsAllocated=0;
+    }
+
     // update included file names
 
     // port_definition_file
@@ -6576,7 +6617,7 @@ double calculateSolidComparison (const TopoDS_Shape& newSolid, const TopoDS_Shap
 
 void OpenParEMg::on_actionMeshGenerate_triggered ()
 {
-    std::cout << "OpenParEMg::on_actionMeshGenerate_triggered" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_actionMeshGenerate_triggered" << std::endl; std::cout.flush();
 
     if (mesh->childCount() > 0) {
         QMessageBox::StandardButton reply;
@@ -6603,7 +6644,13 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
             ShapeData *shapeData=drawingItem->getShapeData();
             TopoDS_Shape shape=shapeData->getShape()->Shape();
             if (!shape.IsNull()) {
-                std::cout << "   add drawingItem=" << drawingItem->text(0).toStdString() << std::endl; std::cout.flush();
+                std::cout << "   add drawingItem=" << drawingItem->text(0).toStdString();
+                TopAbs_Orientation orient=shape.Orientation();
+                if (orient == TopAbs_FORWARD) std::cout << "  TopAbs_FORWARD";
+                if (orient == TopAbs_REVERSED) std::cout << "  TopAbs_REVERSED";
+                if (orient == TopAbs_INTERNAL) std::cout << "  TopAbs_INTERNAL";
+                if (orient == TopAbs_EXTERNAL) std::cout << "  TopAbs_EXTERNAL";
+                std::cout << std::endl; std::cout.flush();
                 arguments.Append(shape);
             }
         }
@@ -6642,12 +6689,19 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         i++;
     }
 
+    // assemble - This can produce duplicates of enclosed solids.
+    // BOPAlgo_Builder builder;
+    // builder.SetArguments(arguments);
+    // builder.Perform();
+    // if (builder.HasErrors()) return;
+    // TopoDS_Shape fragments=builder.Shape();
+
     // assemble
-    BOPAlgo_Builder builder;
-    builder.SetArguments(arguments);
-    builder.Perform();
-    if (builder.HasErrors()) return;
-    TopoDS_Shape fragments=builder.Shape();
+    BOPAlgo_CellsBuilder cellBuilder;
+    cellBuilder.SetArguments(arguments);
+    cellBuilder.Perform();
+    if (cellBuilder.HasErrors()) return;
+    TopoDS_Shape fragments=cellBuilder.GetAllParts();
 
     // build mesh
     gmsh::model::occ::importShapesNativePointer((void *) &fragments,drawingEntities,false);
@@ -6667,11 +6721,11 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
     clear_physicalGroupMaterials (&projData);
 
-    const TopoDS_Shape& finalResult=builder.Shape();
-    TopExp_Explorer exp(finalResult,TopAbs_SOLID);
+    //const TopoDS_Shape& finalResult=builder.Shape();
+    //TopExp_Explorer exp(finalResult,TopAbs_SOLID);
+    TopExp_Explorer exp(fragments,TopAbs_SOLID);
 
     // create physical groups
-    std::cout << "create physical groups in mesh" << std::endl; std::cout.flush();
     int solidNumber=1;
     for (; exp.More(); exp.Next()) {
         const TopoDS_Shape& newSolid=exp.Current();
@@ -6695,9 +6749,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
             i++;
         }
 
-        if (bestDrawingItem) {std::cout << "  bestDrawingItem=" << bestDrawingItem->text(0).toStdString() << std::endl; std::cout.flush();}
-        else {std::cout << "   bestDrawingItem=nullptr" << std::endl; std::cout.flush();}
-
         // get a material name
         QString material="unassigned";
         if (bestDrawingItem) {
@@ -6705,18 +6756,15 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
                 material=bestDrawingItem->text(1);
             }
         }
-        std::cout << "   material=" << material.toStdString() << std::endl; std::cout.flush();
 
         // create a physical group
         char *materialName=nullptr;
         cstrFromQString (&materialName,material);
-        std::cout << "add physical group  solidNumber=" << solidNumber << "  materialName=" << materialName << std::endl; std::cout.flush();
         add_physicalGroupMaterial(&projData,-1,3,solidNumber,materialName);
         solidNumber++;
     }
 
     // assign to mesh
-    std::cout << "assign physical groups to mesh" << std::endl; std::cout.flush();
     i=0;
     while (i < projData.physicalGroupMaterialCount) {
         std::vector<int> physicalGroupList;
@@ -6729,7 +6777,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         groupName.append("_OPEM_RESERVED_");
         groupName.append(std::to_string(projData.physicalGroupMaterials[i].tag));
 
-        std::cout << "  add physicalGroup  groupName=" << groupName << std::endl; std::cout.flush();
         gmsh::model::addPhysicalGroup(projData.physicalGroupMaterials[i].dim,physicalGroupList,-1,groupName.c_str());
         i++;
     }
@@ -6741,8 +6788,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     connect(watcher, &QFutureWatcher<void>::finished,this,&OpenParEMg::finishDrawMeshShow);
     QFuture<void> future=QtConcurrent::run(&OpenParEMg::drawMesh,this);
     watcher->setFuture(future);
-    //drawMesh();
-    //finishDrawMesh();
 }
 
 void OpenParEMg::loadMeshFile (QString meshfile)
@@ -6940,14 +6985,17 @@ void OpenParEMg::on_actionRun_triggered ()
     ui->logText->clear();
     ui->iterationsText->clear();
     ui->dataText->clear();
+    ui->antennaText->clear();
 
     logLastPos=0;
     iterationLastPos=0;
     dataLastPos=0;
+    antennaLastPos=0;
 
     logLastChar='\0';
     iterationsLastChar='\0';
     dataLastChar='\0';
+    antennaLastChar='\0';
 
     // bring log to the front
     if (ui->tabs->currentWidget() != ui->logTab) {
@@ -7074,6 +7122,7 @@ void OpenParEMg::checkFinish ()
         updateLogTab(true);
         updateIterationsTab(true);
         updateDataTab(true);
+        updateAntennaTab(true);
 
         // uninstall event filters on the tabs
 
@@ -8001,5 +8050,34 @@ void OpenParEMg::updateDataTab (bool force)
     updateTextKeepScroll(ui->dataText,QString::fromUtf8(newData));
 }
 
+void OpenParEMg::updateAntennaTab (bool force)
+{
+    // default data csv file name used throughout
+    QString antennaFile=projData.project_name;
+    antennaFile.append("_FarField_results.csv");
+
+    // open the file
+    QFile file(antennaFile);
+    if (!file.exists()) return;
+    if (!QFileInfo(antennaFile).isFile()) return;
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+
+    // see if new data that has been added to the file
+    file.seek(antennaLastPos);
+    QByteArray newData=file.readAll();
+    antennaLastPos=file.pos();
+    if (newData.isEmpty()) return;
+
+    // load all of the data because new data may appear in the middle
+    file.seek(0);
+    newData=file.readAll();
+    antennaLastPos=file.pos();
+
+    // check for skip or force
+    if (!force && antennaFilter->skipLoad) return;
+
+    // update the text
+    updateTextKeepScroll(ui->antennaText,QString::fromUtf8(newData));
+}
 
 // end of file
