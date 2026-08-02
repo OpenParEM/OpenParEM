@@ -7,7 +7,7 @@ mesh.file filter.msh
 //mesh.refinement.fraction 0.005
 mesh.quality.limit 100000
 fem.order 3
-port.definition.file filter_ports.txt
+port.definition.file filter_sweep_ports.txt
 refinement.frequency plan
 //refinement.iteration.min 1
 refinement.iteration.max 50
@@ -21,6 +21,7 @@ materials.local.path /home/briany/OpenParEM/regression/OpenParEM3D/microstrip/fi
 materials.local.name local_materials.txt
 materials.default.boundary copper
 //materials.check.limits true
+frequency.plan.linear 500000000,4500000000,50000000
 frequency.plan.point.refine 3000000000
 //reference.impedance 50
 //touchstone.frequency.unit GHz

@@ -1,0 +1,66 @@
+#OpenParEMports 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D/regression/microstrip/filter_study/filter.FCStd
+EndFile
+
+Path
+   name=V1
+   point=(-0.0005174999999999,-0.0097100000000001,-0.0)
+   point=(-0.0005174999999999,-0.0097100000000001,-0.000813)
+   closed=false
+EndPath
+
+Path
+   name=V2
+   point=(-0.0005174999999999,0.0097100000000001,0.0)
+   point=(-0.0005174999999999,0.0097100000000001,-0.000813)
+   closed=false
+EndPath
+
+Path
+   name=port1
+   point=(-0.0054025,-0.00971,0.005)
+   point=(0.004367499999999999,-0.00971,0.005)
+   point=(0.004367499999999999,-0.009709999999999998,-0.0008129999999999995)
+   point=(-0.0054025,-0.009709999999999998,-0.0008129999999999995)
+   closed=true
+EndPath
+
+Path
+   name=port2
+   point=(-0.0054025,0.00971,0.005)
+   point=(0.004367499999999999,0.00971,0.005)
+   point=(0.004367499999999999,0.009710000000000002,-0.0008129999999999995)
+   point=(-0.0054025,0.009710000000000002,-0.0008129999999999995)
+   closed=true
+EndPath
+
+Port
+   name=1
+   path=+port1
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=1
+      IntegrationPath
+         type=voltage
+         path=+V1
+      EndIntegrationPath
+   EndLine
+EndPort
+
+Port
+   name=2
+   path=+port2
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=2
+      IntegrationPath
+         type=voltage
+         path=+V2
+      EndIntegrationPath
+   EndLine
+EndPort
+
