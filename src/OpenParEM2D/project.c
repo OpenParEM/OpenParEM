@@ -516,7 +516,7 @@ void init_project (struct projectData *data) {
    data->solution_shift_factor=1;
    data->solution_initial_alpha=0;
    data->solution_initial_beta=0;
-   data->solution_initial_guess_level=2; //xxx update the manual to remove solution_use_initial_guess and add solution_initial_guess_level
+   data->solution_initial_guess_level=2;
 
    data->output_show_refining_mesh=0;
    data->output_show_postprocessing=0;

@@ -1830,7 +1830,7 @@ bool write_OpenParEM2D_proj_text (string indent, string name, int mode_count, st
       proj << "solution.impedance.definition     " << impedance_definition << endl;
       proj << "solution.impedance.calculation    " << impedance_calculation << endl;
       proj << "solution.shift.invert             true" << endl;
-      proj << "solution.use.initial.guess        true" << endl;
+      proj << "solution.initial.guess.level      2" << endl;
       proj << endl;
       proj << "output.show.refining.mesh         false" << endl;
       proj << "output.show.postprocessing        false" << endl;
@@ -1897,7 +1897,7 @@ bool write_OpenParEM3D_proj_text (string indent, string name, keywordPair *defau
       proj << "solution.iteration.limit          10000" << endl;
       proj << "solution.modes.buffer             0" << endl;
       proj << "solution.shift.invert             true" << endl;
-      proj << "solution.use.initial.guess        true" << endl;
+      proj << "solution.initial.guess.level      2" << endl;
       proj << "output.show.refining.mesh         false" << endl;
       proj << "output.show.postprocessing        false" << endl;
       proj << "output.show.iterations            false" << endl;

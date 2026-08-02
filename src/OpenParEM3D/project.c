@@ -707,7 +707,7 @@ void init_project (struct projectData *data) {
    data->solution_accurate_residual=0;
    data->solution_shift_invert=1;
    data->solution_shift_factor=1;
-   data->solution_initial_guess_level=2;  //xxx update the manual to remove solution_use_initial_guess and add solution_initial_guess_level
+   data->solution_initial_guess_level=2;
 
    data->inputAntennaPatternsAllocated=5;
    data->inputAntennaPatternsCount=0;
