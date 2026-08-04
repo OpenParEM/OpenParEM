@@ -93,7 +93,6 @@ void checkForAbort ()
 
             // send status signal
             int retval=1;
-printf ("1 send 320000\n");
             MPI_Send(&retval,1,MPI_INT,0,320000,parent);
 
             MPI_Wait(&stopRequest,MPI_STATUS_IGNORE);
@@ -103,6 +102,8 @@ printf ("1 send 320000\n");
          }
 
          //MPI_Comm_disconnect(&parent);
+
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job aborted.\n");
 
          MPI_Barrier(PETSC_COMM_WORLD);
          PetscFinalize();
