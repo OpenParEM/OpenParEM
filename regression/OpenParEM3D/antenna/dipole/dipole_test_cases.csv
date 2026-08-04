@@ -1,8 +1,12 @@
 # ResultDatabase::save_as_test
-dipole_1_0_result,9380000000,magS(dB),1,1,equal,-38.7836605262577,1e-06
-dipole_1_1_result,9380000000,argS(deg),1,1,equal,-25.8683198175383,1e-05
+dipole_1_0_result,9600000000,magS(dB),1,1,equal,-19.1803090312352,1e-02
+dipole_1_1_result,9600000000,argS(deg),1,1,equal,80.1362750144674,1e-02
+dipole_2_2_result,12000000000,magS(dB),1,1,equal,-2.34149840379551,1e-02
+dipole_2_3_result,12000000000,argS(deg),1,1,equal,18.8854167437257,1e-02
 # PatternDatabase::save_as_test
-dipole_1_2_farfield,9380000000,gain,1,equal,2.2076406436668,1e-07
-dipole_1_3_farfield,9380000000,directivity,1,equal,2.15217780748723,1e-09
-dipole_1_4_farfield,9380000000,radiationEfficiency,1,equal,1.01285268476763,1e-07
-
+dipole_1_4_farfield,9600000000,gain,1,equal,2.10483146073572,1e-02
+dipole_1_5_farfield,9600000000,directivity,1,equal,2.16077271655685,1e-02
+dipole_1_6_farfield,9600000000,radiationEfficiency,1,equal,0.987201654210278,1e-02
+dipole_2_7_farfield,12000000000,gain,1,equal,-1.69473658995363,1e-02
+dipole_2_8_farfield,12000000000,directivity,1,equal,2.41947495743305,1e-02
+dipole_2_9_farfield,12000000000,radiationEfficiency,1,equal,0.387774141710494,1e-02

@@ -2,12 +2,12 @@
 //Commented lines show either unspecified inputs that utilize the default values or specified inputs that match the default values.
 //project.calculate.poynting false
 //project.save.fields false
-mesh.file dipole.msh
+mesh.file dipole_sweep.msh
 //mesh.save.refined false
 //mesh.refinement.fraction 0.005
 mesh.quality.limit 100000
 fem.order 3
-port.definition.file dipole_ports.txt
+port.definition.file dipole_sweep_ports.txt
 //refinement.frequency high
 //refinement.iteration.min 1
 refinement.iteration.max 100
@@ -21,8 +21,8 @@ materials.local.path /home/briany/OpenParEM/regression/OpenParEM3D/antenna/dipol
 materials.local.name local_materials.txt
 materials.default.boundary copper
 //materials.check.limits true
-frequency.plan.point 12000000000
-frequency.plan.point 9600000000
+frequency.plan.linear 8000000000,12000000000,250000000
+frequency.plan.linear 9200000000,9600000000,20000000
 reference.impedance 0
 //touchstone.frequency.unit GHz
 //touchstone.format DB

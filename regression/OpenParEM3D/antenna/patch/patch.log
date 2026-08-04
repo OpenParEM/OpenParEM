@@ -1,0 +1,19 @@
+OpenParEM3D 2.1.0 Copyright (C) 2025 Brian Young
+
+This program comes with ABSOLUTELY NO WARRANTY.  This is free software,
+and you are welcome to distribute it under certain conditions. To see
+the full license, set
+  output.show.license true
+in the setup file.
+
+Setting up ...
+   loading project file "patch.proj"
+      Warning: Value at line 6 is large.
+   loading materials file "../../../OpenParEM2D/global_materials.txt"
+   loading materials file "./local_materials.txt"
+Loading mesh and assigning materials ...
+   loading MFEM mesh format
+   loading port definition file "patch_ports.txt"
+   ERROR3007: "copper" specified by material.default.boundary in the project file does not exist in the materials database.
+Job Complete
+Elapsed time: 0.407508 s
