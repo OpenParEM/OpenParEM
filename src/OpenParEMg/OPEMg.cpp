@@ -4591,6 +4591,7 @@ void OpenParEMg::on_actionClose_triggered()
 void OpenParEMg::on_actionMeshOptions_triggered ()
 {
     MeshDialog *meshDialog=new MeshDialog();
+    meshDialog->set_conversionFactor(getConversionFactor());
     meshDialog->set_simulationRunning(simulationRunning);
     meshDialog->set_projData(&projData);
     meshDialog->set_meshObsolete(&meshObsolete);
@@ -6708,6 +6709,8 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     gmsh::option::setNumber("Mesh.MeshSizeFactor",projData.gui_mesh_scale);
     gmsh::option::setNumber("Mesh.MeshSizeMin",projData.gui_mesh_minSize);
     gmsh::option::setNumber("Mesh.MeshSizeMax",projData.gui_mesh_maxSize);
+    //xxx
+    std::cout << "OpenParEMg::on_actionMeshGenerate_triggered  projData.gui_mesh_maxSize=" << projData.gui_mesh_maxSize << std::endl; std::cout.flush();
     gmsh::model::occ::synchronize();
     gmsh::model::mesh::generate(3);
 

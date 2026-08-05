@@ -48,8 +48,8 @@ void MeshDialog::set_projData (struct projectData *a)
     meshRefinementFraction=projData->mesh_3D_refinement_fraction;
     meshQualityLimit=projData->mesh_quality_limit;
     meshSizeMultiplier=projData->gui_mesh_scale;
-    meshMinElementSize=projData->gui_mesh_minSize;
-    meshMaxElementSize=projData->gui_mesh_maxSize;
+    meshMinElementSize=projData->gui_mesh_minSize*conversionFactor;
+    meshMaxElementSize=projData->gui_mesh_maxSize*conversionFactor;
 
     // fill the panel with data
 
@@ -174,12 +174,12 @@ void MeshDialog::on_meshOptionOk_clicked ()
     }
 
     if (!double_compare(projData->gui_mesh_minSize,meshMinElementSize,1e-12)) {
-        projData->gui_mesh_minSize=meshMinElementSize;
+        projData->gui_mesh_minSize=meshMinElementSize/conversionFactor;
         projData->modified=1;
     }
 
     if (!double_compare(projData->gui_mesh_maxSize,meshMaxElementSize,1e-12)) {
-        projData->gui_mesh_maxSize=meshMaxElementSize;
+        projData->gui_mesh_maxSize=meshMaxElementSize/conversionFactor;
         projData->modified=1;
     }
 

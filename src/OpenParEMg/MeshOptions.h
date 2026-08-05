@@ -39,6 +39,7 @@ public:
     void set_projData (struct projectData *);
     void set_simulationRunning (bool simulationRunning_) {simulationRunning=simulationRunning_;}
     void set_meshObsolete (bool *meshObsolete_) {meshObsolete=meshObsolete_;}
+    void set_conversionFactor (double conversionFactor_) {conversionFactor=conversionFactor_;}
     ~MeshDialog();
 
 private slots:
@@ -64,6 +65,7 @@ private:
     double meshQualityLimit;
     bool simulationRunning;
     bool localMeshObsolete;
+    double conversionFactor;  // converts from m to some other unit coming in, then back to m going out
 };
 
 #endif // MESHOPTIONS_H
