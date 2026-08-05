@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>470</width>
+    <width>468</width>
     <height>339</height>
    </rect>
   </property>
@@ -114,20 +114,14 @@
      </widget>
     </item>
     <item>
-     <widget class="QDoubleSpinBox" name="meshMaxElementSize"/>
-    </item>
-    <item>
-     <spacer name="horizontalSpacer_7">
-      <property name="orientation">
-       <enum>Qt::Orientation::Horizontal</enum>
+     <widget class="QDoubleSpinBox" name="meshMaxElementSize">
+      <property name="maximum">
+       <double>1000000000.000000000000000</double>
       </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>40</width>
-        <height>20</height>
-       </size>
+      <property name="stepType">
+       <enum>QAbstractSpinBox::StepType::AdaptiveDecimalStepType</enum>
       </property>
-     </spacer>
+     </widget>
     </item>
    </layout>
   </widget>
