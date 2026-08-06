@@ -33,18 +33,12 @@ class Process : public QWidget
     Q_OBJECT
 public:
     explicit Process (QWidget *parent = nullptr);
-    //~Process ();
-    //bool isModified () {return modified;}
+    virtual QString getTip (double) = 0;
     virtual Process* copyCreate () = 0;
     virtual bool canEdit () = 0;
     virtual QString getName (ObjectCounts *objectCounts) = 0;
     virtual void startSave (std::ofstream *, QString, QString, int) = 0;
     virtual void endSave (std::ofstream *, int) = 0;
-
-    //void addChild (CustomTreeWidgetItem *item) {childList.push_back(item);}
-    //void clearChildren () {childList.clear();}
-    //CustomTreeWidgetItem* getFirstChild ();
-    //CustomTreeWidgetItem* getSecondChild ();
 
 signals:
 
@@ -56,6 +50,7 @@ protected:
 class Extrude : public Process
 {
 public:
+    QString getTip (double) override;
     void set_length (double length_) {length=length_;}
     double get_length () {return length;}
     Extrude* copyCreate () override;
@@ -70,6 +65,7 @@ private:
 class Merge : public Process
 {
 public:
+    QString getTip (double) override;
     Merge* copyCreate () override;
     bool canEdit () override {return false;}
     QString getName (ObjectCounts *objectCounts) override;
@@ -80,6 +76,7 @@ public:
 class Subtract : public Process
 {
 public:
+    QString getTip (double) override;
     Subtract* copyCreate () override;
     bool canEdit () override {return false;}
     QString getName (ObjectCounts *objectCounts) override;

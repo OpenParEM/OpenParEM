@@ -675,6 +675,29 @@ DrawingItem::DrawingItem (OpenParEMg *mw_, BaseItem *parentItem_)
     newShapeData->setCreate();
     newShapeData->set_name(text(0));
     addShapeData(newShapeData);
+
+    setTip();
+}
+
+void DrawingItem::setTip ()
+{
+    QString tip;
+
+    ShapeData *shapeData=getShapeData();
+    if (shapeData) {
+
+        Polywire *polywire=shapeData->getPolywire();
+        if (polywire) tip=polywire->getTip(mw->getConversionFactor());
+
+        Process *process=shapeData->getProcess();
+        if (process) tip=process->getTip(mw->getConversionFactor());
+
+        if (!polywire && !process) {
+            tip="BRep object";
+        }
+    }
+
+    setToolTip(0,tip);
 }
 
 void DrawingItem::promoteChildren ()
@@ -858,6 +881,9 @@ void DrawingItem::finishDraw ()
     mw->restrictToDrawingPlane=false;
     mw->activePolywire=nullptr;
 
+    // tip
+    setTip();
+
     // mark as changed
     setModified(true);
 }
@@ -963,6 +989,7 @@ void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
         mw->ui->drawingWindow->hideItem(this);
     }
 
+    setTip();
     resetOperation();
     unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
 }
@@ -1052,6 +1079,7 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
     //     mw->ui->drawingWindow->hideItem(this);
     // }
 
+    setTip();
     resetOperation();
 
     //findTopLevelItem(this);
@@ -1158,6 +1186,9 @@ void DrawingItem::extrude ()
             newItem->push_child(this);
             newItem->demoteChildren();
 
+            // set tip
+            newItem->setTip();
+
             // hide/show
 
             mw->ui->drawingWindow->hideItem(this);
@@ -1171,6 +1202,7 @@ void DrawingItem::extrude ()
             mw->clickedItem=newItem;
         }
     }
+
     resetOperation();
     mw->activeAction=false;
     //mw->finishOperation(false,1);
@@ -1226,6 +1258,7 @@ DrawingItem* DrawingItem::copy (BaseItem *parent)
     }
 
     mw->ui->drawingWindow->hideItem(newItem);
+    setTip();
 
     return newItem;
 }
@@ -1356,6 +1389,7 @@ void DrawingItem::finishEdit ()
 
     mw->activeAction=false;
 
+    setTip();
     setModified(true);
 
     //findTopLevelItem(this);
@@ -1414,6 +1448,7 @@ void DrawingItem::finishDeletePoint ()
         mw->reprocess(this);
     }
 
+    setTip();
     resetOperation();
     mw->activeAction=false;
     setModified(true);
@@ -1476,6 +1511,8 @@ void DrawingItem::finishInsertPoint ()
 
         // finishStretchPoint completes the operation
     }
+
+    setTip();
 }
 
 void DrawingItem::finishStretchPoint ()
@@ -1512,6 +1549,7 @@ void DrawingItem::finishStretchPoint ()
         mw->reprocess(this);
     }
 
+    setTip();
     resetOperation();
     mw->activeAction=false;
     setModified(true);
@@ -1550,6 +1588,8 @@ void DrawingItem::convertToPolyline ()
         //findTopLevelItem(this);
         mw->ui->drawingWindow->showItem(this);
     }
+
+    setTip();
 }
 
 void DrawingItem::del ()
@@ -1616,6 +1656,7 @@ DrawingItem* DrawingItem::copyCreate ()
     newItem->dimTag=dimTag;
     newItem->itemType=itemType;
     newItem->depth=depth;
+    newItem->setTip();
 
     return newItem;
 }
@@ -1939,6 +1980,8 @@ void DrawingItem::undo ()
 
         if (isDisplayed) mw->ui->drawingWindow->showItem(this);
         else mw->ui->drawingWindow->hideItem(this);
+
+        setTip();
     }
 }
 
@@ -2013,6 +2056,8 @@ void DrawingItem::redo ()
         if (isDisplayed) mw->ui->drawingWindow->showItem(this);
         else mw->ui->drawingWindow->hideItem(this);
     }
+
+    setTip();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

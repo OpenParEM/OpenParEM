@@ -43,6 +43,7 @@ public:
     explicit Polywire(QObject *parent = nullptr);
     virtual ~Polywire() {}
 
+    virtual QString getTip (double) = 0;              // description for item tip
     virtual void drawRubberband () = 0;         // while drawing - currentMousePosition is the next point
     virtual void drawStretchRubberband () = 0;  // while stretching - currentMousePosition takes the editIndex place
     void deleteRubberband ();
@@ -78,6 +79,8 @@ public:
     virtual void reverseOrder () = 0;
 
     gp_Pnt getPosition ();
+    gp_Pnt getEndPoint ();
+    double getLength ();
     virtual gp_Pln getPlane ();
 
     void set_viewerContext (Handle(AIS_InteractiveContext) viewerContext_) {viewerContext=viewerContext_;}
@@ -138,6 +141,7 @@ class Line : public Polywire
 public:
     Line () {}
     Line (Line *);
+    QString getTip (double) override;
     void drawRubberband () override;
     void drawStretchRubberband () override;
     bool canDeleteLastPoint () override {return false;}
@@ -176,6 +180,8 @@ public:
     {
         checkIntersection=true;
     }
+
+    QString getTip (double) override;
     void drawRubberband () override;
     void drawStretchRubberband () override;
     bool isValidInsertPoint (gp_Pnt &pnt) override;
@@ -229,6 +235,7 @@ public:
     }
 
     Rectangle (Rectangle *);
+    QString getTip (double) override;
     void drawRubberband () override;
     void drawStretchRubberband () override;
     bool isValidPoint (gp_Pnt &pnt, bool) override;
@@ -296,6 +303,7 @@ public:
     }
     Polycircle (Polycircle *);
 
+    QString getTip (double) override;
     void drawRubberband () override;
     void drawStretchRubberband () override;
     bool isValidPoint (gp_Pnt &pnt, bool) override;

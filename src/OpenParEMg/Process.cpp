@@ -51,6 +51,16 @@ Process::Process (QWidget *parent)
 //     return item;
 // }
 
+QString Extrude::getTip (double conversionFactor)
+{
+    QString tip="Extrude";
+
+    tip.append("\nlength=");
+    tip.append(QString::number(length*conversionFactor,'g',15));
+
+    return tip;
+}
+
 Extrude* Extrude::copyCreate ()
 {
     Extrude* newExtrude=new Extrude();
@@ -104,6 +114,13 @@ void Extrude::endSave (std::ofstream *out, int level)
     *out << space << "EndExtrude" << std::endl;
 }
 
+QString Merge::getTip (double conversionFactor)
+{
+    QString tip="Merge";
+
+    return tip;
+}
+
 Merge* Merge::copyCreate ()
 {
     Merge* newMerge=new Merge();
@@ -147,6 +164,13 @@ void Merge::endSave (std::ofstream *out, int level)
     }
 
     *out << space << "EndMerge" << std::endl;
+}
+
+QString Subtract::getTip (double conversionFactor)
+{
+    QString tip="Subtract";
+
+    return tip;
 }
 
 Subtract* Subtract::copyCreate ()

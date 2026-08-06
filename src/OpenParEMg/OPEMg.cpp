@@ -2867,6 +2867,9 @@ void OpenParEMg::finishMergeSolids ()
         item1->setText(1,QString());
     }
 
+    // set tip
+    newItem->setTip();
+
     // reset dimTags
     item0->set_dimTag(-1,-1);
     item1->set_dimTag(-1,-1);
@@ -2980,6 +2983,9 @@ void OpenParEMg::finishSubtractSolids ()
         newItem->setText(1,item1->text(1));
         item1->setText(1,QString());
     }
+
+    // set tip
+    newItem->setTip();
 
     // reset dimTags
     item0->set_dimTag(-1,-1);

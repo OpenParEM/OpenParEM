@@ -298,6 +298,24 @@ gp_Pnt Polywire::getPosition ()
     return position;
 }
 
+gp_Pnt Polywire::getEndPoint ()
+{
+    gp_Pnt endPoint(0,0,0);
+    if (shapePoints.size() > 1) endPoint=shapePoints[1];
+    return endPoint;
+}
+
+double Polywire::getLength ()
+{
+    double length=0;
+    long unsigned int i=0;
+    while (i < shapePoints.size()-1) {
+        length+=shapePoints[i].Distance(shapePoints[i+1]);
+        i++;
+    }
+    return length;
+}
+
 gp_Pln Polywire::getPlane ()
 {
     gp_Pln plane;
@@ -458,6 +476,34 @@ Line::Line (Line *line)
     }
 
     viewerContext=line->viewerContext;
+}
+
+QString Line::getTip (double conversionFactor)
+{
+    QString tip="Line";
+
+    gp_Pnt startPoint=getPosition();
+    gp_Pnt endPoint=getEndPoint();
+    tip.append("\nlength=");
+    tip.append(QString::number(startPoint.Distance(endPoint)*conversionFactor,'g',15));
+
+    tip.append("\nstart=(");
+    tip.append(QString::number(startPoint.X()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(startPoint.Y()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(startPoint.Z()*conversionFactor,'g',15));
+    tip.append(")");
+
+    tip.append("\nend=(");
+    tip.append(QString::number(endPoint.X()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(endPoint.Y()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(endPoint.Z()*conversionFactor,'g',15));
+    tip.append(")");
+
+    return tip;
 }
 
 gp_Pnt Line::getP0 ()
@@ -710,6 +756,37 @@ void Line::print ()
 ////////////////////////////////////////////////////////////////////////////////
 // Polyline
 ////////////////////////////////////////////////////////////////////////////////
+
+QString Polyline::getTip (double conversionFactor)
+{
+    QString tip="Polyine";
+
+    gp_Pnt startPoint=getPosition();
+    gp_Pnt endPoint=getEndPoint();
+    tip.append("\nlength=");
+    tip.append(QString::number(getLength()*conversionFactor,'g',15));
+
+    tip.append("\npoints=");
+    tip.append(QString::number(shapePoints.size()));
+
+    tip.append("\nstart=(");
+    tip.append(QString::number(startPoint.X()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(startPoint.Y()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(startPoint.Z()*conversionFactor,'g',15));
+    tip.append(")");
+
+    tip.append("\nend=(");
+    tip.append(QString::number(endPoint.X()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(endPoint.Y()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(endPoint.Z()*conversionFactor,'g',15));
+    tip.append(")");
+
+    return tip;
+}
 
 bool Polyline::canClose ()
 {
@@ -1244,6 +1321,31 @@ Rectangle::Rectangle (Rectangle *rectangle)
     }
 
     viewerContext=rectangle->viewerContext;
+}
+
+QString Rectangle::getTip (double conversionFactor)
+{
+    QString tip="Rectangle";
+
+    tip.append("\nwidth=");
+    tip.append(QString::number(width*conversionFactor,'g',15));
+
+    tip.append("\nheight=");
+    tip.append(QString::number(height*conversionFactor,'g',15));
+
+    tip.append("\nperimeter=");
+    tip.append(QString::number(getLength()*conversionFactor,'g',15));
+
+    gp_Pnt startPoint=getPosition();
+    tip.append("\nposition=(");
+    tip.append(QString::number(startPoint.X()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(startPoint.Y()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(startPoint.Z()*conversionFactor,'g',15));
+    tip.append(")");
+
+    return tip;
 }
 
 bool Rectangle::isValidPoint (gp_Pnt &pnt, bool zeroPntLogic)
@@ -1967,6 +2069,38 @@ Polycircle::Polycircle (Polycircle *polycircle)
     viewerContext=polycircle->viewerContext;
     modified=polycircle->modified;
     hasArrows=false;
+}
+
+QString Polycircle::getTip (double conversionFactor)
+{
+    QString tip="Polycircle";
+
+    tip.append("\nradius=");
+    tip.append(QString::number(centerPoint.Distance(firstPoint)*conversionFactor,'g',15));
+
+    tip.append("\nsides=");
+    tip.append(QString::number(vertexCount));
+
+    tip.append("\nperimeter=");
+    tip.append(QString::number(getLength()*conversionFactor,'g',15));
+
+    tip.append("\ncenter=(");
+    tip.append(QString::number(centerPoint.X()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(centerPoint.Y()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(centerPoint.Z()*conversionFactor,'g',15));
+    tip.append(")");
+
+    tip.append("\npoint=(");
+    tip.append(QString::number(firstPoint.X()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(firstPoint.Y()*conversionFactor,'g',15));
+    tip.append(",");
+    tip.append(QString::number(firstPoint.Z()*conversionFactor,'g',15));
+    tip.append(")");
+
+    return tip;
 }
 
 void Polycircle::drawRubberband ()

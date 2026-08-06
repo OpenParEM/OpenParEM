@@ -797,6 +797,8 @@ public:
     DrawingItem () {}
     DrawingItem (OpenParEMg *, BaseItem *);
 
+    void setTip ();
+
     void setParentItem (BaseItem *parentItem_) {parentItem=parentItem_;}
     BaseItem* getParentItem () {return parentItem;}
 
