@@ -35,6 +35,3 @@ Material
       reference paper
    EndSource
 EndMaterial
-
-
-

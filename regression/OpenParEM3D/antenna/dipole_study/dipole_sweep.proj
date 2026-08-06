@@ -42,11 +42,11 @@ antenna.plot.3D.pattern q=G
 //antenna.plot.2D.range 40
 //antenna.plot.2D.resolution 1
 //antenna.plot.2D.annotations true
-//antenna.plot.2D.save true
+antenna.plot.2D.save false
 //antenna.plot.3D.refinement 4
 //antenna.plot.2D.interval 10
 //antenna.plot.3D.sphere false
-//antenna.plot.3D.save true
+antenna.plot.3D.save false
 //antenna.plot.raw.save false
 //output.show.refining.mesh false
 //output.show.postprocessing false

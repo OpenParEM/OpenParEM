@@ -1,17 +1,12 @@
 # ResultDatabase::save_as_test
-patch_1_0_result,5400000000,magS(dB),1,1,equal,-1.91854925113917,1e-09
-patch_1_1_result,5400000000,argS(deg),1,1,equal,80.8287527799795,1e-09
-patch_2_2_result,5800000000,magS(dB),1,1,equal,-17.764889399079,1e-09
-patch_2_3_result,5800000000,argS(deg),1,1,equal,-74.424161310367,1e-09
-patch_3_4_result,6200000000,magS(dB),1,1,equal,-1.7008790526527,1e-09
-patch_3_5_result,6200000000,argS(deg),1,1,equal,147.397915571208,1e-09
+patch_1_0_result,5860000000,magS(dB),1,1,equal,-17.4607042834276,1e-02
+patch_1_1_result,5860000000,argS(deg),1,1,equal,-67.5472371508697,1e-02
+patch_2_2_result,6400000000,magS(dB),1,1,equal,-1.1336205956556,1e-02
+patch_2_3_result,6400000000,argS(deg),1,1,equal,134.942363110851,1e-02
 # PatternDatabase::save_as_test
-patch_1_6_farfield,5400000000,gain,1,equal,1.30886216815682,1e-09
-patch_1_7_farfield,5400000000,directivity,1,equal,5.91007183604098,1e-09
-patch_1_8_farfield,5400000000,radiationEfficiency,1,equal,0.346640285094001,1e-09
-patch_2_9_farfield,5800000000,gain,1,equal,5.53346277008433,1e-09
-patch_2_10_farfield,5800000000,directivity,1,equal,5.72619710348134,1e-09
-patch_2_11_farfield,5800000000,radiationEfficiency,1,equal,0.956591608203167,1e-09
-patch_3_12_farfield,6200000000,gain,1,equal,1.07836275027639,2e-09
-patch_3_13_farfield,6200000000,directivity,1,equal,6.12333000325727,1e-09
-patch_3_14_farfield,6200000000,radiationEfficiency,1,equal,0.31297040703191,1e-09
+patch_1_4_farfield,5860000000,gain,1,equal,5.64497815212049,1e-02
+patch_1_5_farfield,5860000000,directivity,1,equal,5.81203860773571,1e-02
+patch_1_6_farfield,5860000000,radiationEfficiency,1,equal,0.962263370889047,1e-02
+patch_2_7_farfield,6400000000,gain,1,equal,-0.645974106011191,1e-02
+patch_2_8_farfield,6400000000,directivity,1,equal,5.99272213624172,1e-02
+patch_2_9_farfield,6400000000,radiationEfficiency,1,equal,0.216835495013063,1e-02
