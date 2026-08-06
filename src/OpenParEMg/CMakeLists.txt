@@ -99,6 +99,7 @@ qt_add_executable(OpenParEMg
     AntennaForm.h AntennaForm.cpp AntennaForm.ui
 
     SportNumbers.h SportNumbers.cpp
+    MeasureDistanceForm.h MeasureDistanceForm.cpp MeasureDistanceForm.ui
 
 )
 

@@ -310,6 +310,12 @@
     <addaction name="actionSelectFace"/>
     <addaction name="actionSelectWithBox2"/>
    </widget>
+   <widget class="QMenu" name="menuToos">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionMeasure"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
    <addaction name="menuSelect"/>
@@ -317,6 +323,7 @@
    <addaction name="menuMesh"/>
    <addaction name="menuSimulate"/>
    <addaction name="menuRun"/>
+   <addaction name="menuToos"/>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -725,6 +732,11 @@
   <action name="actionAntennaPatterns">
    <property name="text">
     <string>Antenna Patterns ...</string>
+   </property>
+  </action>
+  <action name="actionMeasure">
+   <property name="text">
+    <string>Measure ...</string>
    </property>
   </action>
  </widget>

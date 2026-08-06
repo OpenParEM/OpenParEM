@@ -32,6 +32,7 @@
 
 #include "LengthInputForm.h"
 #include "LineEditForm.h"
+#include "MeasureDistanceForm.h"
 #include "RotateInputForm.h"
 #include "RectangleEditForm.h"
 #include "PolycircleEditForm.h"
@@ -694,6 +695,8 @@ private slots:
     void on_actionUndo_triggered ();
     void on_actionRedo_triggered ();
 
+    void on_actionMeasure_triggered();
+
 public slots:
     void setMenus ();
     void setMenusI (int);
@@ -817,6 +820,7 @@ private:
     RectangleEditForm *rectangleEditForm;
     PolycircleEditForm *polycircleEditForm;
     RotateInputForm *rotateInputForm;
+    MeasureDistanceForm *measureDistanceForm;
 
     // drawing
     DrawingItem *currentDrawingItem;

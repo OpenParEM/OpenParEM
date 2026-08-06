@@ -18,56 +18,54 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef VECTORINPUTFORM_H
-#define VECTORINPUTFORM_H
+#ifndef MEASUREDISTANCEFORM_H
+#define MEASUREDISTANCEFORM_H
 
 #include "CustomOpenGLWidget.h"
 #include <QDialog>
 #include <gp_Pnt.hxx>
 
 namespace Ui {
-class VectorInputForm;
+class MeasureDistanceForm;
 }
 
-class VectorInputForm : public QDialog
+class MeasureDistanceForm : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit VectorInputForm(QWidget *parent = nullptr);
-    ~VectorInputForm();
+    explicit MeasureDistanceForm(QWidget *parent = nullptr);
+    ~MeasureDistanceForm();
 
-    void set_startPoint (gp_Pnt *);
-    void set_endPoint (gp_Pnt *);
+    void pickVertexFinished (gp_Pnt);
     void set_drawingWindow (CustomOpenGLWidget *drawingWindow_) {drawingWindow=drawingWindow_;}
+    void set_conversionFactor (double conversionFactor_) {conversionFactor=conversionFactor_;}
     void set_relay (Relay *relay_) {relay=relay_;}
 
-    void set_conversionFactor (double conversionFactor_) {conversionFactor=conversionFactor_;}
-
     void reject () override;
+
+public slots:
+    void on_CloseButton_clicked ();
 
 private slots:
     void on_pickOrigin_clicked ();
     void on_pickTip_clicked ();
-    void on_OkButton_clicked ();
-
-public slots:
-    void pickVertexFinished (gp_Pnt);
-    void on_CancelButton_clicked ();
 
 private:
-    Ui::VectorInputForm *ui;
+    Ui::MeasureDistanceForm *ui;
 
     bool pickStartPoint;
     bool pickEndPoint;
-    bool hasStartPoint;
-    bool hasEndPoint;
-    gp_Pnt *transferStartPoint, *transferEndPoint, localStartPoint, localEndPoint;
+    gp_Pnt startPnt,endPnt;
 
-    CustomOpenGLWidget *drawingWindow;
+    Handle(AIS_Shape) line;
+
     Relay *relay;
-    double conversionFactor;  // converts from m to some other unit coming in, then back to m going out
+    CustomOpenGLWidget *drawingWindow;
+    double conversionFactor;
     bool isXclose;            // user clicked the "X" to close
 };
 
-#endif // VECTORINPUTFORM_H
+#endif // MEASUREDISTANCEFORM_H
+
+

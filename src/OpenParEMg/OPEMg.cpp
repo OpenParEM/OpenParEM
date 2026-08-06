@@ -466,6 +466,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     rectangleEditForm=nullptr;
     polycircleEditForm=nullptr;
     rotateInputForm=nullptr;
+    measureDistanceForm=nullptr;
 
     // form defaults
     uLocalAxis.SetCoord(1,0,0);  // rectangles
@@ -665,6 +666,7 @@ void OpenParEMg::closeWindow_triggered ()
     if (rectangleEditForm) {delete rectangleEditForm; rectangleEditForm=nullptr;}
     if (polycircleEditForm) {delete polycircleEditForm; polycircleEditForm=nullptr;}
     if (rotateInputForm) {delete rotateInputForm; rotateInputForm=nullptr;}
+    if (measureDistanceForm) {delete measureDistanceForm; measureDistanceForm=nullptr;}
     finishOperation(true,6000);
 
     int retVal=check_changed();
@@ -1119,7 +1121,6 @@ void OpenParEMg::setMenusI (int placeIndex)
     }
 }
 
-//xxx
 void OpenParEMg::enablePortBoundarySelections (BaseItem *baseItem, bool enable)
 {
     std::cout << "OpenParEMg::enablePortBoundarySelections  item=" << baseItem->text(0).toStdString() << std::endl; std::cout.flush();
@@ -6218,6 +6219,11 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
             rotateInputForm=nullptr;
         }
 
+        if (measureDistanceForm) {
+            measureDistanceForm->on_CloseButton_clicked();
+            measureDistanceForm=nullptr;
+        }
+
         finishOperation(true,30);
     }
     QWidget::keyPressEvent(event);
@@ -6715,8 +6721,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     gmsh::option::setNumber("Mesh.MeshSizeFactor",projData.gui_mesh_scale);
     gmsh::option::setNumber("Mesh.MeshSizeMin",projData.gui_mesh_minSize);
     gmsh::option::setNumber("Mesh.MeshSizeMax",projData.gui_mesh_maxSize);
-    //xxx
-    std::cout << "OpenParEMg::on_actionMeshGenerate_triggered  projData.gui_mesh_maxSize=" << projData.gui_mesh_maxSize << std::endl; std::cout.flush();
     gmsh::model::occ::synchronize();
     gmsh::model::mesh::generate(3);
 
@@ -7666,6 +7670,7 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
     if (lineEditForm) lineEditForm->pickVertexFinished(pnt);
     if (rectangleEditForm) rectangleEditForm->pickVertexFinished(pnt);
     if (polycircleEditForm) polycircleEditForm->pickVertexFinished(pnt);
+    if (measureDistanceForm) measureDistanceForm->pickVertexFinished(pnt);
 
     // actions for which several selected items are allowed
     bool finishMove=false;
@@ -7810,6 +7815,10 @@ void OpenParEMg::finishOperation (bool cancel, int source)
             ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
         }
 
+        if (measureDistanceForm) {
+            ui->drawingWindow->set_gridPlane(currentPrivilegedPlane);
+        }
+
         restrictToDrawingPlane=false;
 
     } else {
@@ -7829,6 +7838,7 @@ void OpenParEMg::finishOperation (bool cancel, int source)
     if (rectangleEditForm) {rectangleEditForm=nullptr;}
     if (polycircleEditForm) {polycircleEditForm=nullptr;}
     if (rotateInputForm) {rotateInputForm=nullptr;}
+    if (measureDistanceForm) {measureDistanceForm=nullptr;}
 
     // enable tree
     ui->drawingItemTree->setEnabled(true);
@@ -8089,4 +8099,24 @@ void OpenParEMg::updateAntennaTab (bool force)
     updateTextKeepScroll(ui->antennaText,QString::fromUtf8(newData));
 }
 
+//xxx
+void OpenParEMg::on_actionMeasure_triggered()
+{
+    startOperation(true);
+    activeAction=false;
+
+    if (measureDistanceForm) delete measureDistanceForm;
+    measureDistanceForm=new MeasureDistanceForm(this);
+    measureDistanceForm->set_conversionFactor(getConversionFactor());
+    measureDistanceForm->set_drawingWindow(ui->drawingWindow);
+    measureDistanceForm->set_relay(relay);
+    measureDistanceForm->setModal(false);
+    connect(this,&OpenParEMg::sendPnt,measureDistanceForm,&MeasureDistanceForm::pickVertexFinished);
+    restrictToDrawingPlane=false;
+    measureDistanceForm->show();
+}
+
 // end of file
+
+
+
