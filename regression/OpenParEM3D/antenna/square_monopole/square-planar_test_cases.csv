@@ -1,8 +1,0 @@
-# ResultDatabase::save_as_test
-square-planar_1_0_result,2000000000,magS(dB),1,1,equal,-21.5924382281752,1e-05
-square-planar_1_1_result,2000000000,argS(deg),1,1,equal,-38.5804036106321,1e-05
-square-planar_2_2_result,4000000000,magS(dB),1,1,equal,-3.63018366077821,1e-04
-square-planar_2_3_result,4000000000,argS(deg),1,1,equal,173.654739847267,1e-04
-square-planar_3_4_result,6000000000,magS(dB),1,1,equal,-4.28311528525499,1e-03
-square-planar_3_5_result,6000000000,argS(deg),1,1,equal,-24.3070259501114,1e-03
-

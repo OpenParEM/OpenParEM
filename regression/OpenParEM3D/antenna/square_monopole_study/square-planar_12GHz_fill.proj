@@ -7,9 +7,9 @@ mesh.file square-planar_12GHz.msh
 //mesh.refinement.fraction 0.005
 mesh.quality.limit 1000000
 fem.order 3
-port.definition.file square-planar_12GHz_ports.txt
+port.definition.file square-planar_12GHz_fill_ports.txt
 //refinement.frequency high
-refinement.iteration.min 4
+//refinement.iteration.min 1
 //refinement.iteration.max 10
 //refinement.required.passes 1
 refinement.relative.tolerance 0.01
@@ -21,8 +21,8 @@ materials.local.path /home/briany/OpenParEM/regression/OpenParEM3D/antenna/squar
 materials.local.name local_materials.txt
 materials.default.boundary brass
 //materials.check.limits true
+frequency.plan.linear 1650000000,2450000000,100000000
 frequency.plan.point 12000000000
-frequency.plan.point 2600000000
 //reference.impedance 50
 //touchstone.frequency.unit GHz
 //touchstone.format DB
@@ -52,7 +52,7 @@ antenna.plot.3D.save false
 //output.show.postprocessing false
 //output.show.iterations false
 //output.show.license false
-test.create.cases true
+//test.create.cases false
 //test.show.detailed.cases false
 //debug.show.memory false
 //debug.show.project false
