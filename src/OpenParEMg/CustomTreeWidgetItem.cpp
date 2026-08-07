@@ -584,7 +584,8 @@ void RootDrawingItem::show (bool update)
     while (i < mw->drawing->childCount()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
         if (drawingItem) {
-            mw->ui->drawingWindow->showItem(drawingItem);
+            //mw->ui->drawingWindow->showItem(drawingItem);
+            drawingItem->show(false);
         }
         i++;
     }
@@ -598,7 +599,8 @@ void RootDrawingItem::hide (bool update)
     while (i < mw->drawing->childCount()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
         if (drawingItem) {
-            mw->ui->drawingWindow->hideItem(drawingItem);
+            drawingItem->hide(false);
+            //mw->ui->drawingWindow->hideItem(drawingItem);
         }
         i++;
     }
