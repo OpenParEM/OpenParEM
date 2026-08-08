@@ -38,7 +38,7 @@ class CustomLineEdit : public QLineEdit {
 public:
     CustomLineEdit(QWidget *parent = nullptr) : QLineEdit(parent) {
         connect(this,&QLineEdit::editingFinished,this,&CustomLineEdit::handleFinishEdit);
-        rx.setPattern("^[A-Za-z0-9_\\[\\]]*$");  // alphanumeric plus _,[, and ]
+        rx.setPattern("^[A-Za-z0-9_\\-\\[\\]]*$");  // alphanumeric plus _,-,[, and ]
         rxValidator.setRegularExpression(rx);
         doubleValidator.setNotation(QDoubleValidator::ScientificNotation);
         doubleValidator.setBottom(0);
