@@ -1,6 +1,7 @@
 #OpenParEMmaterials 1.0
 Material
    name=air
+   type=dielectric
    Temperature
       temperature=any
       Frequency
@@ -18,6 +19,7 @@ Material
 EndMaterial
 Material
    name=alumina
+   type=dielectric
    Temperature
       temperature=any
       Frequency
