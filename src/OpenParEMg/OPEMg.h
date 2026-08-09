@@ -873,6 +873,9 @@ private:
 
     // for closing
     QCloseEvent *close_event;
+
+    // view at startup for resetting the view
+    V3d_TypeOfOrientation defaultProjection;
 };
 
 #endif // OPEMG_H

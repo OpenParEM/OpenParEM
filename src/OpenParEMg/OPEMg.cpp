@@ -516,6 +516,9 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     this->setGeometry(locationX,locationY,windowWidth,windowHeight);
 
+    // default projection to enable reset
+    defaultProjection=ui->drawingWindow->getProjection();
+
     setMenus();
 
     close_event=nullptr;
@@ -4567,6 +4570,7 @@ void OpenParEMg::on_actionNew_triggered ()
 
     setScale();
     scaleFormDefaults();
+    ui->drawingWindow->setProjection(defaultProjection);
 
     projData.modified=0;
     projectFileLoaded=true;

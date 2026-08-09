@@ -551,6 +551,9 @@ public:
     //     }
     // }
 
+    V3d_TypeOfOrientation getProjection () {return view->Viewer()->DefaultViewProj();}
+    void setProjection (V3d_TypeOfOrientation projection) {view->SetProj(projection); updateViewer();}
+
     void compactSelectedItems () {drawingTracker->compactSelectedItems();}
     //void compactVisibleItems () {drawingTracker->compactVisibleItems();}
     void printTrackerStats () {drawingTracker->printStats();}
