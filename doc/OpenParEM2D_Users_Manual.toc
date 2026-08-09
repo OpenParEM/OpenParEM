@@ -1,0 +1,58 @@
+\contentsline {section}{\numberline {1}Introduction}{3}{}%
+\contentsline {section}{\numberline {2}Features}{3}{}%
+\contentsline {section}{\numberline {3}Characteristic Impedance}{4}{}%
+\contentsline {subsection}{\numberline {3.1}Definitions}{4}{}%
+\contentsline {subsection}{\numberline {3.2}Single-Mode Setups}{5}{}%
+\contentsline {subsection}{\numberline {3.3}Multi-Mode Setups}{5}{}%
+\contentsline {section}{\numberline {4}Files}{6}{}%
+\contentsline {subsection}{\numberline {4.1}Project Control File}{6}{}%
+\contentsline {subsection}{\numberline {4.2}Materials Files}{7}{}%
+\contentsline {subsection}{\numberline {4.3}Mesh File}{7}{}%
+\contentsline {subsection}{\numberline {4.4}Mode Definition File}{7}{}%
+\contentsline {section}{\numberline {5}Example Projects}{7}{}%
+\contentsline {section}{\numberline {6}Flow}{8}{}%
+\contentsline {subsection}{\numberline {6.1}Geometry Definition Using FreeCAD}{8}{}%
+\contentsline {subsection}{\numberline {6.2}Mode and Boundary Annotation Using FreeCAD}{9}{}%
+\contentsline {subsubsection}{\numberline {6.2.1}Paths (\textunderscore \linebreak [1]P)}{9}{}%
+\contentsline {subsubsection}{\numberline {6.2.2}Integration Paths (\textunderscore \linebreak [1]M, and \textunderscore \linebreak [1]L)}{9}{}%
+\contentsline {subsubsection}{\numberline {6.2.3}Boundaries (\textunderscore \linebreak [1]B)}{9}{}%
+\contentsline {subsection}{\numberline {6.3}Meshing Using gmsh}{10}{}%
+\contentsline {subsection}{\numberline {6.4}Solution With OpenParEM2D}{11}{}%
+\contentsline {subsection}{\numberline {6.5}Viewing Fields}{11}{}%
+\contentsline {section}{\numberline {7}Results File}{12}{}%
+\contentsline {section}{\numberline {8}Tutorials}{12}{}%
+\contentsline {subsection}{\numberline {8.1}Rectangular Waveguide}{12}{}%
+\contentsline {subsubsection}{\numberline {8.1.1}Drawing and Mode Annotation}{12}{}%
+\contentsline {subsubsection}{\numberline {8.1.2}Meshing}{13}{}%
+\contentsline {subsubsection}{\numberline {8.1.3}Solving}{13}{}%
+\contentsline {subsubsection}{\numberline {8.1.4}Results}{15}{}%
+\contentsline {subsection}{\numberline {8.2}Coaxial Waveguide}{16}{}%
+\contentsline {subsubsection}{\numberline {8.2.1}Drawing and Mode Annotation}{16}{}%
+\contentsline {subsubsection}{\numberline {8.2.2}Meshing}{17}{}%
+\contentsline {subsubsection}{\numberline {8.2.3}Solving}{19}{}%
+\contentsline {subsubsection}{\numberline {8.2.4}Results}{20}{}%
+\contentsline {subsection}{\numberline {8.3}Coupled Microstrip with Line Setup}{21}{}%
+\contentsline {subsubsection}{\numberline {8.3.1}Drawing and Mode Annotation}{21}{}%
+\contentsline {subsubsection}{\numberline {8.3.2}Meshing}{23}{}%
+\contentsline {subsubsection}{\numberline {8.3.3}Solving}{23}{}%
+\contentsline {subsubsection}{\numberline {8.3.4}Results}{24}{}%
+\contentsline {subsection}{\numberline {8.4}Coupled Microstrip with Modal Setup}{25}{}%
+\contentsline {subsubsection}{\numberline {8.4.1}Drawing and Mode Annotation}{25}{}%
+\contentsline {subsubsection}{\numberline {8.4.2}Meshing}{26}{}%
+\contentsline {subsubsection}{\numberline {8.4.3}Solving}{26}{}%
+\contentsline {subsubsection}{\numberline {8.4.4}Results}{26}{}%
+\contentsline {section}{\numberline {9}Techniques}{26}{}%
+\contentsline {subsection}{\numberline {9.1}Finite Element Order}{26}{}%
+\contentsline {subsection}{\numberline {9.2}Over-Meshing}{27}{}%
+\contentsline {subsection}{\numberline {9.3}Very Coarse Meshes}{28}{}%
+\contentsline {subsection}{\numberline {9.4}Mesh Quality}{28}{}%
+\contentsline {subsection}{\numberline {9.5}Adaptive Mesh Refinement}{28}{}%
+\contentsline {subsection}{\numberline {9.6}Conductor Loss}{29}{}%
+\contentsline {subsection}{\numberline {9.7}Convergence Difficulties of the Eigenvalue Solution}{29}{}%
+\contentsline {subsection}{\numberline {9.8}Missing Higher-Order Modes}{29}{}%
+\contentsline {subsection}{\numberline {9.9}MPI and Iterative Solvers}{29}{}%
+\contentsline {subsection}{\numberline {9.10}Companion Tool builder}{30}{}%
+\contentsline {section}{\numberline {A}Control File Specification}{31}{}%
+\contentsline {section}{\numberline {B}Boundary/Mode File Specification}{34}{}%
+\contentsline {section}{\numberline {C}Regression Suite}{36}{}%
+\contentsline {section}{\numberline {D}Accuracy Studies}{38}{}%

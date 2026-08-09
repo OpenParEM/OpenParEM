@@ -23,9 +23,9 @@
    \vspace*{3cm}
    {\huge\bfseries OpenParEM3D User's Manual} \\
    \vskip1cm
-   {\Large Version 2.1} \\
+   {\Large Version 2.2} \\
    \vskip1cm
-   {\Large April 2025} \\
+   {\Large August 2026} \\
    \vskip1cm
    {\Large Brian Young} \\
 
@@ -34,7 +34,7 @@
    \includegraphics[width=0.5\textwidth]{figures/logo-crop}
 
    \vspace*{\fill}
-   Copyright \copyright{} 2025 Brian Young. All Rights Reserved.
+   Copyright \copyright{} 2026 Brian Young. All Rights Reserved.
 \end{titlepage}
 
 %\newpage
@@ -47,7 +47,7 @@ OpenParEM3D is a full-wave electromagnetic simulator that solves the for the fre
 
 OpenParEM3D solves the full set of Maxwell's Equations (hence, full-wave) in the frequency domain.  Ports on the outer surface of the 3D space enable energy to enter and leave.  It is assumed that the ports are 2D and represent transmission lines or waveguides with complex propagation constants.  At each port, OpenParEM2D solves for the full-wave 2D fields, characteristic impedance of the dominant and optional higher-order modes, and the complex propagation constants and applies the fields in the 3D solution.  Typically, port setups using the full-wave 2D solution in this manner are called "wave ports".  After applying boundary conditions to the remaining outer surfaces, the full 3D problem is solved.  Post-processing generates the S-parameters and optionally outputs files for viewing the fields.  If radiation boundary conditions are applied, then post-processing is also used to calculate far fields and antenna performance metrics. 
 
-OpenParEM3D is a command-line tool that does just the electromagnetic calculations.  To complete a project, other tools must be used to create and mesh a geometry and plot results.  The complete set of tools and operations is called a flow, and any number of flows are possible.  The particular flow assembled for the development of OpenParEM3D is documented here.
+OpenParEM3D is a command-line tool that does just the electromagnetic calculations.  To complete a project, other tools must be used to create and mesh a geometry and plot results.  A graphical user interface (GUI) called OpenParEMg (see \"OpenParEMg\_Users\_Manual.pdf") provides a complete front-end for OpenParEMg enabling the drawing and meshing of 3D structures, assignments of ports and boundary conditions, simulation setup, and simulation execution and monitoring.  Post-processing is handled by ParaView \cite{ParaView} for fields and by the user's selection of spreadsheets or S-parameter plotting tools for S-parameters.  Also documented in this guide is a front-end simulation flow based on FreeCAD \cite{FreeCAD} and gmsh \cite{gmsh}\cite{gmshweb} along with command-line execution and monitoring.  Any number of alternative tool collections can be used as front-ends and back-ends for OpenParEM3D..
 
 This document covers how to use OpenParEM3D.  Details on the theory, methodology, and accuracy of OpenParEM3D are covered in a separate document "OpenParEM3D\_Theory\_Methodology\_Accuracy.pdf".
 
@@ -68,6 +68,8 @@ OpenParEM3D features are listed in Table~\ref{table:features}, while anticipated
   \item Impedance and radiation boundary conditions
   \item Antenna parameter calculations and radiation pattern plots
   \item Isotropic materials with variable permittivity
+  \item Finite element order ramping for 2D solves in OpenParEM2D
+  \item Front-end graphical user interface OpenParEMg
 \end{itemize}
 \noindent \hrulefill
 \label{table:features}
@@ -82,8 +84,6 @@ OpenParEM3D features are listed in Table~\ref{table:features}, while anticipated
    \item Variable permeability evaluation with additional test cases
    \item Anisotropic materials
    \item Lumped ports
-   \item Order ramping in OpenParEM2D
-   \item One or more graphical user interfaces (GUI)
    \item Microsoft Windows\textsuperscript{\textregistered} port
 \end{itemize}
 \noindent \hrulefill
@@ -93,6 +93,12 @@ OpenParEM3D features are listed in Table~\ref{table:features}, while anticipated
 \section{Installation and Execution}
 
 Installation and execution instructions are provided in a separate document called \newline"Installation\_Execution.pdf".  The document is available at \texttt{https://openparem.org} and at \newline\texttt{https://github.com/OpenParEM/OpenParEMCommon} in the \texttt{doc} directory. 
+
+\section{OpenParEMg}
+
+OpenParEMg is a GUI front-end for OpenParEM3D to enable the creation and execution of projects for OpenParEM3D.  All needed files are managed by OpenParEMg, so the user does not need to be familiar with the file formats described below.  All OpenParEM3D files are human-readable text with simple formats, so familiarity of the file formats does open up opportunities to modify or create setups by script for enhanced productivity.  Note that visualization of fields and S-parameters require external tools.
+
+Since OpenParEMg programmatically runs OpenParEM3D using the command line, projects set up by OpenParEMg can always be run manually at the commmand line.  In other words, OpenParEMg and command line execution run the same compiled executable for OpenParEM3D.
 
 \section{Files}
 \label{sec:files}
@@ -105,9 +111,15 @@ and in parallel it is
 \begin{Verbatim}[fontsize=\small]
    $ mpirun -q --oversubscribe -np N OpenParEM3D projectname.proj
 \end{Verbatim}
-where \verb+N+ is the number of cores to use for the calculation.  All inputs are captured in the project control file including names of files that must be included. So setting up a project involves creating/editing a project control file and ensuring that the additionally required files are specified and available.
+where \verb+N+ is the number of cores to use for the calculation.  All inputs are captured in the project control file including names of files that must be included. So setting up a project involves creating/editing a project control file and ensuring that the additionally required files are specified and available.  Note that the \texttt{--oversubscribe} option is used with OpenMPI\cite{OpenMPI} and is omitted for MPICH\cite{MPICH}.  
+When using OpenParEMg, the project file includes GUI-specific data that is ignored when executing from the command line.
 
-The required included files in a project control file are materials, mesh, and port definitions. Each of the required files are covered in detail in the following sections.
+The execution output from OpenParEM3D is captured to a log file with the name \texttt{projectname.log}.  For longer runs, it is very useful to watch the output as it is being generated, and this can be done by opening another terminal in the and running
+\begin{Verbatim}[fontsize=\small]
+   $ tail -f projectname.proj
+\end{Verbatim}
+
+The required included files in a project control file are materials, mesh, and port definitions. Each of the required files are covered in detail in the following sections.  When using OpenParEMg, these additional files are handled automatically.
 
 To view a very short help message and the version number, execute
 \begin{Verbatim}[fontsize=\small]
@@ -133,8 +145,7 @@ All aspects of the execution of OpenParEM3D are controlled by the project contro
    reference.impedance            0
 \end{Verbatim}
 
-\noindent In this example setup, the mesh file "straight.msh" is generated using gmsh \cite{gmsh}\cite{gmshweb}, the "straight\_ports.txt" file is generated using the script "OpenParEM3D\_save.py" in FreeCAD \cite{FreeCAD}, and the materials file "global\_materials.txt" is a hand-generated library file used across many projects.
-Keyword/value pairs can be added to the control file to do things like outputting files to enable plotting with ParaView \cite{ParaView} [project.save.fields true] or to turn on adaptive mesh refinement [ex. refinement.frequency high].
+\noindent Additional keyword/value pairs can be added to the control file to do things like outputting files to enable plotting with ParaView \cite{ParaView} [project.save.fields true] or to turn on adaptive mesh refinement [ex. refinement.frequency high].
 
 The names of the files generated by OpenParEM3D are based on the name of the project control file with the extension removed.  So a control file called "my\_projectname.proj" for a 2-port simulation results in new files being created called "my\_projectname.s2p", "my\_projectname\_results.csv", "my\_projectname\_iterations.txt", etc.  The files are uniquely identified by the project name, so more than one project can exist in a single directory without file name conflicts.
 
@@ -143,7 +154,7 @@ The text-based control file has several advantages, with a few techniques listed
   \item Project control files tend to be similar across projects, so common practice is to copy a control file from an old project to a new one and then edit as necessary.
   \item A project can have multiple control files to explore simulation strategies.  A simple comparison of project control files [e.g. Linux diff or sdiff] shows the differences in setup.
   \item Directory trees can be easily searched to find projects using or not using certain simulation features using the helper tool "proj\_search".  As completed projects accumulate, this feature becomes more useful.
-  \item Comments can be used to add notes and keep track of changes or variations.  In a GUI, the only option for the user is to check/uncheck a box or to change a number.  With a text-based setup file, the change can not only be made, but the \textit{reason} for the change can be given or the \textit{history} of the setting can be maintained.  This is a surprisingly capable feature that should be liberally used.
+  \item If managing a project without a GUI, comments can be used to add notes and keep track of changes or variations.  In a GUI such as OpenParEMg, the only option for the user is to check/uncheck a box or to change a number.  With a text-based setup file, the change can not only be made, but the \textit{reason} for the change can be given or the \textit{history} of the setting can be maintained.  This is a surprisingly capable feature that should be liberally used.
 \end{itemize}
 
 \subsubsection{Frequency Plan}
@@ -254,7 +265,7 @@ While OpenParEM3D provides great flexibility in specifying AMR refinement freque
 
 \subsection{Materials Files}
 
-Materials are specified in one or more materials files following the specification in Appendix~\ref{sec:materials_file_spec}.  At least one materials file is required to run OpenParEM3D, using either \texttt{materials.global.path} plus \newline \texttt{materials.global.name} or \texttt{materials.local.path} plus \texttt{materials.local.name}.  Typical simulation environments will have the bulk of the materials specified in a global file for general use across all projects, then a local materials file for materials specialized for the current project.
+Materials are specified in one or two materials files following the specification in Appendix~\ref{sec:materials_file_spec}.  At least one materials file is required to run OpenParEM3D, using either \texttt{materials.global.path} plus \newline \texttt{materials.global.name} or \texttt{materials.local.path} plus \texttt{materials.local.name}.  Typical simulation environments will have the bulk of the materials specified in a global file for general use across all projects, then a local materials file for materials specialized for the current project.
 
 The material type is either \"dielectric\" or \"conductor\" and is only used in GUIs to reduce the material selection to appropriate types.  The material type never plays a role in a calculation.
 
@@ -309,18 +320,20 @@ A simple materials file consisting of just air is
 
 \subsection{Mesh File}
 
-The supported mesh file formats are gmsh v.2.2 and the native format of MFEM \cite{MFEM}\cite{MFEMweb}.  When setting up a project, the general procedure is to use a CAD program that can output geometry data readable by gmsh, then use gmsh to mesh the structure and output a gmsh v2.2 mesh file.  The mesh file is then specified in the project control file using the \texttt{mesh.file} keyword.  To get the v.2.2 mesh output from gmsh, the format must be specified on the command line when starting as follows
+The supported mesh file formats are gmsh v.2.2 and the native format of MFEM \cite{MFEM}\cite{MFEMweb}.  When manually setting up a project, the general procedure is to use a CAD program that can output geometry data readable by gmsh, then use gmsh to mesh the structure and output a gmsh v2.2 mesh file.  The mesh file is then specified in the project control file using the \texttt{mesh.file} keyword.  To get the v.2.2 mesh output from gmsh, the format must be specified on the command line when starting as follows
 \begin{Verbatim}[fontsize=\small]
    $ gmsh -format msh22 &
 \end{Verbatim}
-\noindent One free and open-source CAD program that is supported by gmsh is FreeCAD.  FreeCAD outputs a *.brep file that can be imported by gmsh.
+\noindent One free and open-source CAD program that is supported by gmsh is FreeCAD.  FreeCAD outputs a *.brep file that can be imported by gmsh.  Note that OpenParEMg uses the gmsh API to create meshes.
 
-The MFEM mesh format is used by OpenParEM3D to transfer 2D port meshes to OpenParEM2D for port solution. MFEM meshes can be visualized using glvis \cite{glvis}.  
+The MFEM mesh format is used by OpenParEM3D to transfer 2D port meshes to OpenParEM2D for port solution. MFEM meshes can be visualized using glvis \cite{glvis}. 
+
+When using AMR, the refined mesh can be output using the keyword/value pair \texttt{mesh.save.refined true}.  At each iteration, the mesh is output and can be viewed using gmsh to visually check the progress of the mesh adaptation.
 
 \subsection{Port Definition File}
 \label{sec:port_definition_file}
 
-Ports and boundaries are specified in a text file following the specification in Appendix~\ref{sec:port_file_spec}.  The project control file specifies the port definition file using the \texttt{port.definition.file} keyword. Due to complexity, the port definition file is very difficult to write by hand, so scripted generation is generally required.  When using FreeCAD, the Python script "OpenParEM3D\_save.py" can be used to generate the port definition file.
+Ports and boundaries are specified in a text file following the specification in Appendix~\ref{sec:port_file_spec}.  The project control file specifies the port definition file using the \texttt{port.definition.file} keyword. Due to complexity, the port definition file is very difficult to write by hand, so scripted generation is generally required.  When using OpenParEMg, the file is created automatically.  When using FreeCAD in a manual setup, the Python script "OpenParEM3D\_save.py" can be used to generate the port definition file.
 
 Port names are general text, such as "in" or "out", and they can also be numbers. Within each port are one or more modes that become the S-parameter ports in the computed S-parameter Touchstone\textsuperscript{\textregistered} \cite{IBIS} file, and the S-parameter ports are numbered as integers starting with 1. Consider the example of a differential pair with an input port named "in" and an output port named "out". Each port has two modes: even and odd.  So in total, there are two ports ("in" and "out") and four S-parameter ports ("in" even mode, "in" odd mode, "out" even mode, and "out" odd mode) leading to a 4-port S-parameter Touchstone file (with extension s4p). The port definition file has the generality to define any number of ports with any number or S-parameter ports ("Sport" in the specification).
 
@@ -330,18 +343,34 @@ When solving for multiple modes within a port, the modes are assigned to the S-p
 
 Several sources are available for example projects.  Tutorial projects are described in detail in Sec.~\ref{sec:tutorials}, including setup, execution, and results.  These are also listed in Appendix~\ref{sec:appendixtutorials}.
 
-An automated regression suite is in place as part of the release methodology. The projects with short descriptions are listed in Appendix~\ref{sec:regression_suite}.  The suite also represents a large number of worked examples that are ready to run with known answers.  For example, for the regression project \verb+WR90/straight/straight.proj+, at the command line in that project directory enter
+An automated regression suite is in place as part of the release methodology. The projects with short descriptions are listed in Appendix~\ref{sec:regression_suite}.  The suite also represents a large number of worked examples that are ready to run with known answers.  For each project, there are two implementations: OpenParEMg, and a manual setup using FreeCAD and gmsh.
+
+To run the project using OpenParEMg, simply start OpenParEMg and open the project file with the \texttt{proj} extension, then execute the project by clicking the \texttt{Run} menu item.  After successful completion, the results can be checked by executing the command line script \texttt{./check\_results.sh} in a terminal directed to the project directory.  The project can also be run manually as described next for the manual setup.
+
+The manual setup is in the project subdirectory \texttt{freecad\_build}, so in a terminal pointed at this subdirectory, the project can be executed at the command line with
 \begin{Verbatim}[fontsize=\small]
-   $ process3D.sh straight.proj 12
+   $ mpirun -np 12 --oversubscribe OpenParEM3D project.proj
 \end{Verbatim}
-where depending on the computer, a number smaller or larger than 12 could be appropriate for the number of cores to use.  At successful completion, the file "straight\_test\_results.csv" can be viewed for the pass/fail report.  Additional files are produced including the S-parameters in the csv file "straight\_results.csv".  Since this example does not renormalize the S-parameters, a Touchstone file is not produced.  See Sec.~\ref{sec:Soutput} for more details.  To view the fields, set \texttt{project.save.fields true} before running the project.  Then run ParaView to setup and view fields.
-The regression suite cases are set up for more accuracy than that needed for engineering work to enable tight pass/fail criteria.  In many situations, looser settings are appropriate.
+where \texttt{12} is the number of processors to use appropriate for the computer being used, \texttt{--oversubscribe} is for OpenMPI and omitted for MPICH, and \texttt{project.proj} is the project file name for the given project.  Like for OpenParEMg, after successful completion, the results can be checked by executing the command line script \texttt{./check\_results.sh}.  The log file can be viewed during execution from another terminal using the \texttt{tail -f} command as previously described.
+
+For example, for the regression project \verb+WR90/straight/freecad_build/straight.proj+, at the command line in that project directory enter
+\begin{Verbatim}[fontsize=\small]
+   $ mpirun -np 12 --oversubscribe OpenParEM3D straight.proj
+\end{Verbatim}
+where depending on the computer, a number smaller or larger than 12 could be appropriate for the number of cores to use, and OpenMPI is assumed.  After successful completeion, run
+B\begin{Verbatim}[fontsize=\small]
+   $ ./check\_results.sh
+\end{Verbatim}
+which prints the results comparing the computed results to the expected results.  Small errors labeled as \texttt{FAIL} can be ignored.  Additional files are produced including the S-parameters in the csv file "straight\_results.csv".  Since this example does not renormalize the S-parameters, a Touchstone file is not produced.  See Sec.~\ref{sec:Soutput} for more details.  To view the fields, set \texttt{project.save.fields true} before running the project.  Then run ParaView to setup and view fields.
+The regression suite cases are generally set up for more accuracy than that needed for engineering work to enable tight pass/fail criteria.  In many situations, looser settings are appropriate.
 
 In addition, detailed studies developed to demonstrate accuracy also represent good examples.  These projects with short descriptions are listed in Appendix~\ref{sec:studies}.
 
-\section{Flow}
+\section{Manual Flow}
 
-The process of setting up and running a project from scratch involves several steps: draw the geometry via CAD or script, define ports and set boundary conditions [if needed], create a local materials file if the needed materials do not exist in the global library file, and finally run OpenParEM3D.  Except for the OpenParEM3D step, any number of tools and techniques can be used to generate the needed files.  One flow is described in detail here.
+The complete drawing, setup, and execution of an OpenParEM3D project can be managed using OpenParEMg, which has its own dedicated user document "OpenParEMg\_Users\_Manual.pdf".  However, OpenParEMg is not required and any number of other tools can be used to execute simulations.
+
+The process of manually setting up and running a project from scratch involves several steps: draw the geometry via CAD or script, define ports and set boundary conditions [if needed], create a local materials file if the needed materials do not exist in the global library file, and finally run OpenParEM3D.  Except for the OpenParEM3D step, any number of tools and techniques can be used to generate the needed files.  One flow is described in detail here that can be used directly or used as a guideline for setting up a flow using different tools.
 
 \subsection{Geometry Definition Using FreeCAD}
 \label{sec:freecad}
@@ -545,15 +574,19 @@ where \verb+N+ is the number of cores to use for the calculation.  The switch \v
 It is likely on initial attempts to run a new setup with OpenParEM3D that errors will be reported and the simulation stopped.  The design of OpenParEM3D is to make no assumptions or corrections to input decks, so every error is reported even if it would be possible for OpenParEM3D to fix or adjust the setup.  In OpenParEM3D v2.0, there are 647 individual checks with customized error messages.  Correct the errors and try again.
 
 While a job is running, progress is shown by extensive data sent to the terminal.  In addition,
-there are two continuously updated files showing progress: \texttt{projectname\_results.csv} and \texttt{projectname\_iterations.csv}.  They can be viewed as scrolling log files by opening two new terminals, then after the files appear, run
+there are three continuously updated files showing progress: \texttt{projectname.log}, \texttt{projectname\_results.csv}, and \texttt{projectname\_iterations.csv}.  They can be viewed as scrolling log files by opening three new terminals, then after the files appear, run
+\begin{Verbatim}[fontsize=\small]
+   $ tail -f projectame.log
+\end{Verbatim}
+\noindent in one terminal,
 \begin{Verbatim}[fontsize=\small]
    $ tail -f projectame_results.csv
 \end{Verbatim}
-\noindent in one terminal and
+\noindent in a second terminal, and
 \begin{Verbatim}[fontsize=\small]
    $ tail -f projectame_iterations.txt
 \end{Verbatim}
-\noindent in the other.  The three terminals together enable a comprehensive view of execution progress.
+\noindent in a third terminal.  The three terminals together enable a comprehensive view of execution progress.
 
 OpenParEM3D uses a lock file while running to prevent data collisions from attempting to run the same project file in a given directory.  The project lock file has the form \texttt{.projectname.lock}.  Should a running job exit unexpectedly, the lock file can be deleted as
 \begin{Verbatim}[fontsize=\small]
@@ -674,6 +707,8 @@ In the raw file, patterns are grouped by frequency and driving Sport indicated b
 \section{Tutorials}
 \label{sec:tutorials}
 
+Several projects are created from scratch to demonstrate the setup and use of OpenParEM3D.  The tutorials are covered twice: once for OpenParEMg and once with a manual setup based on FreeCAD and gmsh.  The tuturals using OpenparEMg are covered in the dedicated OpenParEMg user manual "OpenParEMg\_Users\_Manual.pdf".  The tutorials using the manual setup are covered in detail below.
+
 \subsection{Rectangular Waveguide}
 A straight section of WR90 rectangular is constructed, annotated for 2-port S-parameter simulation, meshed, and solved.  WR90 rectangular waveguide is 22.86 mm wide and 10.16 mm tall and has a recommended frequency range from 6.557 GHz to 13.114 GHz.
 
@@ -692,7 +727,7 @@ $ cd rectangular_waveguide
 \item Zoom to view the rectangle with \texttt{View}$\rightarrow$\texttt{Standard Views}$\rightarrow$\texttt{Fit All}.  A reference screen shot is shown in Fig.~\ref{fig:rectangle} 
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/screenshots/rectangle}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/freecad/screenshots/rectangle}
   \caption{Screen shot of a rectangle sized for WR90 waveguide using $\mu$m for ultimate mm scaling.}
   \label{fig:rectangle}
 \end{figure}
@@ -702,7 +737,7 @@ $ cd rectangular_waveguide
 \item For learning purposes, change the extrusion length for the rectangle to 90 um and zoom to fit all.  A reference screen shot is shown in Fig.~\ref{fig:extrusion}.
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/screenshots/extrusion}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/freecad/screenshots/extrusion}
   \caption{Screen shot of the rectangle extruded 90 um.}
   \label{fig:extrusion}
 \end{figure}
@@ -712,7 +747,7 @@ $ cd rectangular_waveguide
 \item Click on the end of the long extrusion that is opposite of \texttt{\_Pportin} then change the drawing plane to this plane by selecting \texttt{Utilities}$\rightarrow$\texttt{Select Plane}.  Alternatively, click the menu bar item as shown in Fig.~\ref{fig:portout} to change from \texttt{Top} to \texttt{Custom}.
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/screenshots/portout-crop}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/freecad/screenshots/portout-crop}
   \caption{Setting the drawing plane to the end of the extrusion.}
   \label{fig:portout}
 \end{figure}
@@ -720,14 +755,14 @@ $ cd rectangular_waveguide
 \item Hover the cursor over the \texttt{\_Pportout} in the \texttt{Combo View} window and the rectangle will highlight as shown in Fig.~\ref{fig:hover}.
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/screenshots/hover}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/freecad/screenshots/hover}
   \caption{Hovering over the port object \hbox{\texttt{\_Pportout}} in the \texttt{Combo View} window highlights the output port.}
   \label{fig:hover}
 \end{figure}
 \item Expand the \texttt{lock} icon and select \texttt{Snap Midpoint}.  The screenshot in Fig.~\ref{fig:lock} shows the selection of the snapping to the midpoint of lines.
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/screenshots/lock-crop}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/freecad/screenshots/lock-crop}
   \caption{Snapping selection showing snapping to line ends and centers and to face centers.}
   \label{fig:lock}
 \end{figure}
@@ -743,7 +778,7 @@ $ cd rectangular_waveguide
 \item A screen shot of the completed drawing with a successfully exported ports description file is shown in Fig.~\ref{fig:drawing_finished}.
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/screenshots/drawing_finished}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/freecad/screenshots/drawing_finished}
   \caption{Screenshot of the completed drawing with exported ports description file.}
   \label{fig:drawing_finished}
 \end{figure}
@@ -762,7 +797,7 @@ $ cd rectangular_waveguide
 \item To mesh the geometry, in the options tree click $\boxplus$\texttt{Mesh}$\rightarrow$\texttt{3D}. A screenshot of the mesh is shown in Fig.~\ref{fig:mesh}.
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/screenshots/mesh}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/freecad/screenshots/mesh}
   \caption{Screenshot of the meshed straight section of rectangular waveguide.}
   \label{fig:mesh}
 \end{figure}
@@ -779,6 +814,7 @@ $ cd rectangular_waveguide
   #OpenParEMmaterials 1.0
   Material
      name=air
+     type=dielectric
      Temperature
         temperature=any
         Frequency
@@ -827,7 +863,7 @@ to run serially with a single core or with
 \begin{Verbatim}[fontsize=\small]
    $ mpirun -q --oversubscribe -np 12 OpenParEM3D rectangular_waveguide.proj
 \end{Verbatim}
-to run in parallel with 12 cores.  Substitute a larger or smaller core number as needed.  The option \verb+--oversubscribe+ is not needed if the number of cores is less than or equal to half the number of available cores.
+to run in parallel with 12 cores.  Substitute a larger or smaller core number as needed.  The option \verb+--oversubscribe+ is not needed if the number of cores is less than or equal to half the number of available cores.  The log output can be viewed as previously described using \texttt{tail -f rectangular\_waveguide.proj}, although this run is so short that it is not really needed.
 \item View the 2-port S-parameters, such as with \texttt{\$ more rectangular\_waveguide.s2p}, with the results looking very similar to 
 \begin{Verbatim}[fontsize=\tiny]
 ! 2-port S-parameter data
@@ -851,7 +887,7 @@ From the result of the 2D simulations scrolled in the output when running OpenPa
 \item Click on the box \texttt{Magnitude} and select \texttt{Y} to view the y-component of the electric field.  A screen shot is shown in Fig.~\ref{fig:ReEy}.
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/screenshots/ReEy}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/rectangular_waveguide/freecad/screenshots/ReEy}
   \caption{Re($E_y$) for the rectangular waveguide when driven by port 1.}
   \label{fig:ReEy}
 \end{figure}
@@ -865,12 +901,12 @@ From the result of the 2D simulations scrolled in the output when running OpenPa
 \begin{figure}[H]
   \centering
   \begin{subfigure}{0.73\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/rectangular_waveguide/screenshots/ReE} 
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/rectangular_waveguide/freecad/screenshots/ReE} 
      \caption{Re($\overline{E}$)}
   \end{subfigure}
   \par\bigskip
   \begin{subfigure}{0.73\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/rectangular_waveguide/screenshots/ReH}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/rectangular_waveguide/freecad/screenshots/ReH}
      \caption{Re($\overline{H}$)}
   \end{subfigure}
   \caption{Vector fields for the rectangular waveguide when driven by port 1.}
@@ -907,7 +943,7 @@ $ cd microstrip_step
 \item The project should look like the screen shot in Fig.~\ref{fig:microstrip2D}.
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/microstrip_step/screenshots/microstrip2D}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/microstrip_step/freecad/screenshots/microstrip2D}
   \caption{Screenshot of the 2D setup for the microstrip-step-in-width tutorial.}
   \label{fig:microstrip2D}
 \end{figure}
@@ -921,7 +957,7 @@ $ cd microstrip_step
 \item Change back to the \texttt{Draft} workspace, then select \texttt{output} and move it 5~$\mu$m so that the near end snaps to the far end of \texttt{input}.  The two microstrip lines should be co-linear and end-to-end, as shown in Fig.~\ref{fig:microstrip_extrusion}.
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/microstrip_step/screenshots/microstrip_extruded}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/microstrip_step/freecad/screenshots/microstrip_extruded}
   \caption{Screenshot of the 3D setup after extrusion and movement of one microstrip segment.}
   \label{fig:microstrip_extrusion}
 \end{figure}
@@ -940,7 +976,7 @@ $ cd microstrip_step
 \item A screen shot of the completed drawing with successfully export ports description file is shown in Fig.~\ref{fig:microstrip3D}.
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/microstrip_step/screenshots/microstrip3D}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/microstrip_step/freecad/screenshots/microstrip3D}
   \caption{Screenshot of the completed 3D setup.}
   \label{fig:microstrip3D}
 \end{figure}
@@ -959,7 +995,7 @@ $ cd microstrip_step
 \item Mesh the geometry by selecting in the options tree click $\boxplus$\texttt{Mesh}$\rightarrow$\texttt{3D}. A screenshot of the mesh is shown in Fig.~\ref{fig:microstrip_mesh}.
 \begin{figure}
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/microstrip_step/screenshots/microstrip_mesh}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/microstrip_step/freecad/screenshots/microstrip_mesh}
   \caption{Screenshot of the meshed microstrip step in width.}
   \label{fig:microstrip_mesh}
 \end{figure}
@@ -977,6 +1013,7 @@ $ cd microstrip_step
 #OpenParEMmaterials 1.0
 Material
    name=air
+   type=dielectric
    Temperature
       temperature=any
       Frequency
@@ -1079,7 +1116,7 @@ The output from OpenParEM3D shows the results from the 2D port simulations, and 
 \item A screen shot of the resulting Re($E_y$) field just under the microstrip traces is shown in Fig.~\ref{fig:microstrip_ReEy}.
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/microstrip_step/screenshots/microstrip_ReEy}
+  \includegraphics[width=0.75\textwidth]{../tutorials/OpenParEM3D/microstrip_step/freecad/screenshots/microstrip_ReEy}
   \caption{Screenshot of Re($E_y$) just under the microstrip lines.}
   \label{fig:microstrip_ReEy}
 \end{figure}
@@ -1112,12 +1149,12 @@ A monopole antenna with coax feed is constructed and annotated for 1-port S-para
 \begin{figure}
   \centering
   \begin{subfigure}{0.75\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/monopole_building_blocks}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/monopole_building_blocks}
      \caption{View of all}
   \end{subfigure}
   \par\bigskip
   \begin{subfigure}{0.75\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/monopole_zoom}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/monopole_zoom}
      \caption{Zoom towards center}
   \end{subfigure}
   \caption{Monopole building blocks.}
@@ -1168,6 +1205,7 @@ The solution for the monopole antenna is performed in two steps to minimize the 
 #OpenParEMmaterials 1.0
 Material
    name=air
+   type=dielectric
    Temperature
       temperature=any
       Frequency
@@ -1238,12 +1276,12 @@ reference.impedance            0
 \begin{figure}[H]
   \centering
   \begin{subfigure}{0.5\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/monopole_mag}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/monopole_mag}
      \caption{Magnitude.}
   \end{subfigure}
   \par\bigskip
   \begin{subfigure}{0.5\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/monopole_phase}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/monopole_phase}
      \caption{Phase.}
   \end{subfigure}
   \caption{Computed S-parameters for a monopole antenna.}
@@ -1304,11 +1342,11 @@ Open the files \texttt{slice\_G\_4.75e+09\_xz\_0\_0\_SP1} and \texttt{slice\_G\_
 \begin{figure}[H]
   \centering
   \begin{subfigure}{0.33\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/monopole_3D_gain}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/monopole_3D_gain}
      \caption{Isotropic gain.}
   \end{subfigure}
   \begin{subfigure}{0.33\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/monopole_3D_gain_slices}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/monopole_3D_gain_slices}
      \caption{Isotropic gain with slices.}
   \end{subfigure}
   \caption{Isotropic gain at 4.75 GHz.}
@@ -1325,11 +1363,11 @@ Open the files \texttt{slice\_G\_4.75e+09\_xz\_0\_0\_SP1} and \texttt{slice\_G\_
 \begin{figure}[H]
   \centering
   \begin{subfigure}{0.408\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/radiation_pattern_G_4.75e+09_xz_0_180_SP1}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/radiation_pattern_G_4.75e+09_xz_0_180_SP1}
      \caption{Slice through the x-z plane.}
   \end{subfigure}
   \begin{subfigure}{0.41\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/radiation_pattern_G_4.75e+09_xy_15_0_SP1}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/radiation_pattern_G_4.75e+09_xy_15_0_SP1}
      \caption{Slice through the x-y plane at latitude 15$^\circ$.}
   \end{subfigure}
   \caption{Isotropic gain slice reports at 4.75 GHz.}
@@ -1341,12 +1379,12 @@ Open the files \texttt{slice\_G\_4.75e+09\_xz\_0\_0\_SP1} and \texttt{slice\_G\_
 \begin{figure}[H]
   \centering
   \begin{subfigure}{0.6\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/Eplane_4p75GHz}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/Eplane_4p75GHz}
      \caption{$|\textnormal{Re}(\overline{E})|$}
   \end{subfigure}
   \par\bigskip
   \begin{subfigure}{0.6\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/Eplane_vector_4p75GHz}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/Eplane_vector_4p75GHz}
      \caption{$\textnormal{Re}(\overline{E})$}
   \end{subfigure}
   \caption{Real part of the electric field at 4.75~GHz.}
@@ -1355,12 +1393,12 @@ Open the files \texttt{slice\_G\_4.75e+09\_xz\_0\_0\_SP1} and \texttt{slice\_G\_
 \begin{figure}[H]
   \centering
   \begin{subfigure}{0.6\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/Hplane_4p75GHz}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/Hplane_4p75GHz}
      \caption{$|\textnormal{Re}(\overline{H})|$}
   \end{subfigure}
   \par\bigskip
   \begin{subfigure}{0.6\textwidth}
-     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/screenshots/Hplane_vector_4p75GHz}
+     \includegraphics[width=\linewidth]{../tutorials/OpenParEM3D/monopole_antenna/freecad/screenshots/Hplane_vector_4p75GHz}
      \caption{$\textnormal{Re}(\overline{H})$}
   \end{subfigure}
   \caption{Real part of the magnetic field at 4.75~GHz.}
@@ -1374,7 +1412,7 @@ Open the files \texttt{slice\_G\_4.75e+09\_xz\_0\_0\_SP1} and \texttt{slice\_G\_
 
 \subsection{Wave Ports}
 
-The math behind OpenParEM3D assumes that the 3D electromagnetic fields at the ports represent transmission lines or waveguides, meaning that the field dependence along the direction orthogonal to the port ($\hat{n}$) has the dependence $e^{-\gamma n}$.  Ports must be placed on the ends of transmission lines or waveguides that are long enough to ensure that the electromagnetic fields have settled into their modal configurations.  How long is long enough?  A reasonable rule-of-thumb is to make the transmission lines or waveguides twice as long as the lateral extent of the fields, which may or may not align with the dimensions of the port.  For critical work, it could be reasonable to run the problem a second time with a longer transmission lines or waveguides to see if the S-parameters change.  Visual inspection of the fields from a completed solution can also help determine if the transmission lines or waveguides for the ports are long enough.  \textit{Failure to ensure that the port transmission lines or waveguides are long enough will result in incorrect answers with no warning from OpenParEM3D.}
+The math behind OpenParEM3D assumes that the 3D electromagnetic fields at the ports represent transmission lines or waveguides, meaning that the field dependence along the direction orthogonal to the port ($\hat{n}$) has the dependence $e^{-\gamma n}$.  Ports must be placed on the ends of transmission lines or waveguides that are long enough to ensure that the electromagnetic fields have settled into their modal configurations.  How long is long enough?  A reasonable rule-of-thumb is to make the transmission lines or waveguides twice as long as the lateral extent of the fields, which may or may not align with the dimensions of the port.  For critical work, it could be reasonable to run the problem a second time with a longer transmission lines or waveguides to see if the S-parameters change other than the phase shift due to the longer feeds.  Visual inspection of the fields from a completed solution can also help determine if the transmission lines or waveguides for the ports are long enough.  \textit{Failure to ensure that the port transmission lines or waveguides are long enough will result in incorrect answers with no warning from OpenParEM3D.}
 
 In some setups, the parasitic effects from short port transmission lines or waveguides produce minimal error and may be acceptable.  When the port transmission lines or waveguides are too short, the 2D field imposed at the port carries into the 3D space, where the 3D fields adjust to create the needed parasitics to satisfy Maxwell's equations.  These parasitics are not correct, but their impact may be small enough to ignore.  It is up to the user to decide if the parasitics can be negelected.
 
@@ -1397,10 +1435,18 @@ Higher values for \texttt{N} have potential advantages due to the polynomial acc
 \begin{itemize}
 \item Slower run times for a given mesh size.
 \item Larger memory consumption.
-\item Harder convergence in 2D simulations, although order-ramping in OpenParEM2D may offer a fix, when implemented.
+\item Harder convergence in 2D simulations, although order ramping in OpenParEM2D helps with this problem.
 \end{itemize}
 \noindent The disadvantages ramp quickly with increasing \texttt{N}.
 OpenParEM3D does not currently support GPU computing, which can alleviate the disadvantages of higher \texttt{N}.
+
+\subsection{Lossy Conductors Touching Ports}
+
+The 2D waveport solutions calculated with OpenParEM2D take conductor losses into account via a perturbational approach. The 2D problem is solved including dielectric losses but with lossless conductors, then the computed fields are used to calculate the conductor loss which are then added to the dielectric loss to get the total loss.  This means that the computed field structure at the conductor boundaries are those of the lossless conductors.
+
+OpenParEM3D calculates the fields for the lossy conductors directly, so the field structure at the conductor boundaries are those of the lossy conductors.  In imposing the 2D field structure onto the 3D space, the lossless fields are imposed, and OpenParEM3D will generate small parasitics to align the field structure from the lossless conductors at the prots to the lossy conductors in the 3D structure.  It is up to the user to ensure that these parasitics are negligible for the problem at hand.
+
+In the regression suite and accuracy tests for OpenParEM3D, the parasitics are assumed neglible in all cases except two: \texttt{WR90/straight-lossy-default} and \texttt{partially\_filled\_rect\_waveguide/partially\_filled\_rect\_waveguide\_lossy}.  In these cases, the surface impedance boundary condition is pulled back slightly from the port so that the 2D port fields, which use a PEC boundary, touch a PEC boundary in the 3D space.  The transition from PEC to surfance impedance boundary is then handled fully in OpenParEM3D.
 
 \subsubsection{Guidelines}
 
@@ -1513,6 +1559,8 @@ The port must align exactly to the mesh.  In cases where the port does not fall 
 
 Including voltage integration paths in the Boolean fragments object will also force mesh edges to follow the path, and this may slightly improve the simulation accuracy.
 
+OpenParEMg automatically implements these two techniques.
+
 \subsection{Mesh Re-Use}
 
 When using adaptive mesh refinement, the refined mesh can be saved by setting \texttt{mesh.save.refined true} in the project control file.  This can be used to advantage when multiple frequency sweeps are expected.  A first simulation pass can be done to just adaptively refine the mesh.  Then, the project control file can be copied, the mesh changed to the refined mesh, refinement disabled, and the frequency sweep added.  Multiple frequency sweeps can be made without having to re-refine the mesh.  For example, a relatively coarse sweep can be made, then finer sweeps can be done to fill in sharp resonance peaks and nulls.
@@ -1545,13 +1593,11 @@ This option is included for completeness, but it may not be useful in general.
 
 \subsection{Conductor Loss}
 
-Conductor losses are added with polygons defined on each surface to convert from the default perfect electric conductor (PEC) boundary to some other conductor.  Until additional scripting is available in FreeCAD to automate this, it can be very tedious to draw these except for the simplest of cases.
-
 If all metals are the same, then there is an option to change the default boundary condition from PEC to a defined material, such as copper.  To make this change, add the keyword/value pair \newline\texttt{materials.default.boundary some\_metal} to the project control file, where \texttt{some\_metal} is a conductor defined in either the local or global material databases.  Other boundary conditions can still be applied to override the default boundary condition.
 
 \subsection{Antennas}
 
-Much of the volume that is meshed and solved for an antenna is the freespace between the antenna and the radiation boundary condition.  Since OpenParEM3D has a 1$^{\textnormal{st}}$-order radiation boundary condition, the boundary must be placed about 1$\lambda$ or more from the antenna at the lowest simulation freqeuncy to avoid reflections.  The field must be well-modeled throughout the volume to avoid reflections from poorly modeled regions.  In other words, the fields must be well-resolved throughout the 3D volume.
+Much of the volume that is meshed and solved for an antenna is the freespace between the antenna and the radiation boundary condition.  Since OpenParEM3D has a 1$^{\textnormal{st}}$-order radiation boundary condition, the boundary must be placed about 1$\lambda$ or more from the antenna at the lowest simulation freqeuncy to minimize reflections.  The field must be well-modeled throughout the volume to avoid reflections from poorly modeled regions.  In other words, the fields must be well-resolved throughout the 3D volume.
 
 Since it is known that the fields must be well-modelled everywhere, it is good practice to not rely exclusively on AMR to resolve the fields in the transition and far-field areas.  Since the fields are close to or are sinusoidal in these regions, higher order finite elements along with a constrained mesh size can ensure that the fields are accurately represented in the transition and far-field areas.  For example, if the mesher is set to produce a mesh with no edge longer than 1/2$\lambda$, then Table~\ref{table:sinusoidal} shows that a 3$^{\textnormal{rd}}$-order finite element can model the transition and far-fields with $\pm 0.8\%$ accuracy without AMR, and then AMR is only required in the near field near the antenna.  This can accelerate AMR to a more consistent final solution.
 
@@ -1561,13 +1607,17 @@ If this strategy is used, then it is important to be careful with the setting fo
 
 OpenParEM3D runs OpenParEM2D at the wave ports, and with MPI parallel processing, an efficiency issue occurs with OpenParEM2D.  With MPI, the 3D problem is subdivided and spread across many processors as described in Sec.~\ref{sec:files}.  Generally, the surface areas representing wave ports are a small fraction of the overall 3D problem, so when a large number of processors are specified to \texttt{mpirun}, only a small percentage of them are involved with solving the 2D problem with OpenParEM2D.  However, all the processors must still communicate to solve the problem, so for OpenParEM2D, the MPI overhead of communication increases but the computational power does not. 
 
-When running OpenParEM2D standalone, increasing the number of processors reduces run time until the computer saturates its bandwidth.  When running OpenParEM3D, increasing the number of processors reduces the 3D run time [until the computer saturates], but the OpenParEM2D run times while being run from OpenParEM3D will generally \texttt{increase} even for small numbers of processors.
+When running OpenParEM2D standalone, increasing the number of processors reduces run time until the computer saturates its bandwidth.  When running OpenParEM3D, increasing the number of processors reduces the 3D run time [until the computer saturates], but the OpenParEM2D run times while being run from OpenParEM3D will generally \textit{increase} even for small numbers of processors.
 
 The overall run time of a 3D problem is dominated by the 3D solve time, not the 2D port solve times.  So while OpenParEM2D suffers a reduction in efficiency, the impact on overall run times is negligible.  However, it can be disconcerting to see the port solves slowing down as the number of processors applied for MPI increases.
 
 \subsection{OpenParEM2D Convergence}
 
-The first step in solving a 3D problem is to solve the 2D eigenvalue problem for the fields and propagation constants at the wave ports.  Since these calculations are full-wave electromagnetic simulations, they can become problematic if they are failing to converge since that stalls the 3D simulation.  Scenarios leading to issues with 2D wave port convergence are described in the following sections.
+The first step in solving a 3D problem is to solve the 2D eigenvalue problems for the fields and propagation constants at the wave ports using OpenParEM2D.  Since these calculations are full-wave electromagnetic simulations, they can become problematic if they are failing to converge since that stalls the 3D simulation. To help with 2D convergence, OpenParEM2D implements a technique called \textit{order ramping}, where a 2D port is solved with finite elements of order 1, and the solution is used as the initial guess for a solve with order 2, which is then used as the initial guess for order 3, etc., until the user-specified order for the problem is reached.  Order ramping takes advantage of the fact that solves with first order elements are far easier numerically and are far more likely to quickly converge than higher-order elements.  With a good initial guess, the higher-order element solves then proceed quickly.
+
+Order ramping is the default, but it can be turned off if needed using the keyword/value pair \newline\texttt{solution.initial.guess.level value}.  See "OpenParEM2D\_Users\_Manual.pdf" for details.
+
+Scenarios leading to issues with 2D wave port convergence are described in the following sections.
 
 \subsubsection{Poor Mesh Quality}
 
@@ -1675,7 +1725,7 @@ OpenParEM3D is controlled by a text file consisting of keyword/value pairs.  The
     solution.check.closed.loop    & bool   & true   & Check if current loops are closed.  Set to false when use of symmetry causes valid open-loop current paths \\
     solution.accurate.residual    & bool   & false  & Sets an input parameter to the eigenvalue solver that may produce higher accuracy results. In many cases, the eigenvalue solver will hang with this is set to true \\
     solution.shift.invert         & bool   & true   & Sets the eigenvalue solver to use the shift-and-invert method \\
-    solution.use.initial.guess    & bool   & true   & Use the current eigenvalue solution as the initial guess in the following iteration \\
+    solution.initial.guess.level  & int    & 2      & Sets the initial guess method for OpenParEM2D. Default is to use order ramping \\
     solution.shift.factor         & double & 1.0    & Multiplier for the initial guess eigenvalue \\
     antenna.plot.3D.pattern       & string &  none  & Specifies a 3D plot.  At least one 3D plot must be specified to calculate the antenna metrics such as gain.\\
                                   &        &        &    The string takes the form: \\
@@ -2096,6 +2146,10 @@ The projects are located in the installation area in the "tutorials" directory. 
 \bibitem{FreeCAD} \verb+https://www.freecad.org/+ version 0.21
 
 \bibitem{ParaView} \verb+https://www.paraview.org/+
+
+\bibitem{OpenMPI} \verb+https://www.open-mpi.org/+
+
+\bibitem{MPICH} \verb+https://www.mpich.org/+
 
 \bibitem{MFEM} R. Anderson, J. Andrej, A. Barker, J. Bramwell, J.-S. Camier, J. Cerveny, V. Dobrev, Y. Dudouit, A. Fisher, Tz. Kolev, W. Pazner, M. Stowell, V. Tomov, I. Akkerman, J. Dahm, D. Medina, and S. Zampini, "MFEM: A modular finite element methods library", \textit{Computers and Mathematics with Applications}, vol. 81, 2021, pp. 42-74.
 

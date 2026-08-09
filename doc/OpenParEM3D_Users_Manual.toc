@@ -1,0 +1,84 @@
+\contentsline {section}{\numberline {1}Introduction}{3}{}%
+\contentsline {section}{\numberline {2}Features}{3}{}%
+\contentsline {section}{\numberline {3}Installation and Execution}{4}{}%
+\contentsline {section}{\numberline {4}OpenParEMg}{4}{}%
+\contentsline {section}{\numberline {5}Files}{4}{}%
+\contentsline {subsection}{\numberline {5.1}Project Control File}{5}{}%
+\contentsline {subsubsection}{\numberline {5.1.1}Frequency Plan}{5}{}%
+\contentsline {subsection}{\numberline {5.2}Materials Files}{7}{}%
+\contentsline {subsection}{\numberline {5.3}Mesh File}{8}{}%
+\contentsline {subsection}{\numberline {5.4}Port Definition File}{9}{}%
+\contentsline {section}{\numberline {6}Example Projects}{9}{}%
+\contentsline {section}{\numberline {7}Manual Flow}{10}{}%
+\contentsline {subsection}{\numberline {7.1}Geometry Definition Using FreeCAD}{10}{}%
+\contentsline {subsection}{\numberline {7.2}Port and Boundary Annotation Using FreeCAD}{11}{}%
+\contentsline {subsubsection}{\numberline {7.2.1}Paths (\textunderscore \linebreak [1]P)}{11}{}%
+\contentsline {subsubsection}{\numberline {7.2.2}Ports (\textunderscore \linebreak [1]S, \textunderscore \linebreak [1]M, and \textunderscore \linebreak [1]L)}{11}{}%
+\contentsline {subsubsection}{\numberline {7.2.3}Boundaries (\textunderscore \linebreak [1]B)}{12}{}%
+\contentsline {subsubsection}{\numberline {7.2.4}Differential Pairs (\textunderscore \linebreak [1]D)}{13}{}%
+\contentsline {subsubsection}{\numberline {7.2.5}Multimode Ports}{13}{}%
+\contentsline {subsubsection}{\numberline {7.2.6}Degenerate Modes}{14}{}%
+\contentsline {subsection}{\numberline {7.3}Meshing Using gmsh}{14}{}%
+\contentsline {subsubsection}{\numberline {7.3.1}Plotting Attributes}{15}{}%
+\contentsline {subsection}{\numberline {7.4}Solution With OpenParEM3D}{16}{}%
+\contentsline {subsubsection}{\numberline {7.4.1}Very Small Problems}{17}{}%
+\contentsline {subsection}{\numberline {7.5}Viewing Fields}{17}{}%
+\contentsline {subsubsection}{\numberline {7.5.1}Volume Fields}{17}{}%
+\contentsline {subsubsection}{\numberline {7.5.2}Far-Field Radiation Patterns}{17}{}%
+\contentsline {section}{\numberline {8}S-parameter Output Files}{19}{}%
+\contentsline {subsection}{\numberline {8.1}Modal Setups}{19}{}%
+\contentsline {subsection}{\numberline {8.2}Line Setups}{19}{}%
+\contentsline {subsubsection}{\numberline {8.2.1}Mixed-Mode S-parameters}{19}{}%
+\contentsline {section}{\numberline {9}Far-Field Output Files}{19}{}%
+\contentsline {section}{\numberline {10}Tutorials}{20}{}%
+\contentsline {subsection}{\numberline {10.1}Rectangular Waveguide}{20}{}%
+\contentsline {subsubsection}{\numberline {10.1.1}Drawing and Port Annotation}{20}{}%
+\contentsline {subsubsection}{\numberline {10.1.2}Meshing}{25}{}%
+\contentsline {subsubsection}{\numberline {10.1.3}Solving}{25}{}%
+\contentsline {subsection}{\numberline {10.2}Microstrip Step in Width}{28}{}%
+\contentsline {subsubsection}{\numberline {10.2.1}Drawing and Port Annotation}{28}{}%
+\contentsline {subsubsection}{\numberline {10.2.2}Meshing}{31}{}%
+\contentsline {subsubsection}{\numberline {10.2.3}Solving}{32}{}%
+\contentsline {subsection}{\numberline {10.3}Monopole Antenna}{35}{}%
+\contentsline {subsubsection}{\numberline {10.3.1}Drawing and Port Annotation}{35}{}%
+\contentsline {subsubsection}{\numberline {10.3.2}Meshing}{38}{}%
+\contentsline {subsubsection}{\numberline {10.3.3}Solving}{38}{}%
+\contentsline {section}{\numberline {11}Techniques}{45}{}%
+\contentsline {subsection}{\numberline {11.1}Wave Ports}{45}{}%
+\contentsline {subsection}{\numberline {11.2}Multimode Ports With Unequal $\gamma $}{45}{}%
+\contentsline {subsection}{\numberline {11.3}Finite Element Order}{45}{}%
+\contentsline {subsection}{\numberline {11.4}Lossy Conductors Touching Ports}{46}{}%
+\contentsline {subsubsection}{\numberline {11.4.1}Guidelines}{46}{}%
+\contentsline {subsubsection}{\numberline {11.4.2}Sinusoidal Fields}{47}{}%
+\contentsline {subsection}{\numberline {11.5}Over-Meshing}{47}{}%
+\contentsline {subsubsection}{\numberline {11.5.1}identifying over-meshing}{48}{}%
+\contentsline {subsubsection}{\numberline {11.5.2}mesh edge length/wavelength in element}{48}{}%
+\contentsline {subsubsection}{\numberline {11.5.3}concentrated fields}{48}{}%
+\contentsline {subsubsection}{\numberline {11.5.4}diffuse fields}{48}{}%
+\contentsline {subsubsection}{\numberline {11.5.5}small mesh elements}{48}{}%
+\contentsline {subsubsection}{\numberline {11.5.6}large mesh elements}{48}{}%
+\contentsline {subsubsection}{\numberline {11.5.7}mesh.refinement.fraction}{48}{}%
+\contentsline {subsubsection}{\numberline {11.5.8}refinement.required.passes}{49}{}%
+\contentsline {subsubsection}{\numberline {11.5.9}refinement.absolute.tolerance}{49}{}%
+\contentsline {subsubsection}{\numberline {11.5.10}1$^{\textnormal {st}}$-order elements}{49}{}%
+\contentsline {subsection}{\numberline {11.6}FreeCAD Port Alignment to Mesh}{49}{}%
+\contentsline {subsection}{\numberline {11.7}Mesh Re-Use}{49}{}%
+\contentsline {subsection}{\numberline {11.8}Adaptive Mesh Refinement Convergence}{49}{}%
+\contentsline {subsubsection}{\numberline {11.8.1}S with relative error}{49}{}%
+\contentsline {subsubsection}{\numberline {11.8.2}H with absolute error}{50}{}%
+\contentsline {subsubsection}{\numberline {11.8.3}S with relative error \textit {and} H with absolute error}{50}{}%
+\contentsline {subsubsection}{\numberline {11.8.4}S with relative error \textit {or} H with absolute error}{50}{}%
+\contentsline {subsection}{\numberline {11.9}Conductor Loss}{50}{}%
+\contentsline {subsection}{\numberline {11.10}Antennas}{50}{}%
+\contentsline {subsection}{\numberline {11.11}OpenParEM2D Run Time with MPI}{51}{}%
+\contentsline {subsection}{\numberline {11.12}OpenParEM2D Convergence}{51}{}%
+\contentsline {subsubsection}{\numberline {11.12.1}Poor Mesh Quality}{51}{}%
+\contentsline {subsubsection}{\numberline {11.12.2}Large Frequency Step}{51}{}%
+\contentsline {subsection}{\numberline {11.13}MPI and Iterative Solvers}{52}{}%
+\contentsline {subsection}{\numberline {11.14}Companion Tool builder}{52}{}%
+\contentsline {section}{\numberline {A}Control File Specification}{53}{}%
+\contentsline {section}{\numberline {B}Materials File Specification}{58}{}%
+\contentsline {section}{\numberline {C}Port File Specification}{60}{}%
+\contentsline {section}{\numberline {D}Regression Suite}{63}{}%
+\contentsline {section}{\numberline {E}Accuracy Studies}{65}{}%
+\contentsline {section}{\numberline {F}Tutorials}{66}{}%

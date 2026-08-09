@@ -23,9 +23,9 @@
    \vspace*{3cm}
    {\huge\bfseries OpenParEM2D User's Manual} \\
    \vskip1cm
-   {\Large Version 2.1} \\
+   {\Large Version 2.2} \\
    \vskip1cm
-   {\Large April 2025} \\
+   {\Large August 2026} \\
    \vskip1cm
    {\Large Brian Young} \\
 
@@ -65,6 +65,7 @@ OpenParEM2D features are listed in Table~\ref{table:features}, while anticipated
   \item Parallel processing using the Message Passing Interface (MPI)
   \item Adaptive mesh refinement
   \item PEC, PMC, and impedance (perturbational) boundary conditions
+  \item Finite element order ramping
   \item Calculations
   \begin{itemize}
     \item complex propagation constant
@@ -86,7 +87,6 @@ OpenParEM2D features are listed in Table~\ref{table:features}, while anticipated
 \noindent \hrulefill
 \begin{itemize}[nosep]
    \item Eliminate null-space solutions
-   \item Finite element order ramping
    \item Non-perturbational impedance boundary
    \item Anisotropic materials
    \item One or more graphical user interfaces (GUI)
@@ -446,6 +446,7 @@ $ cd rectangular_waveguide
   #OpenParEMmaterials 1.0
   Material
      name=air
+     type=dielectric
      Temperature
         temperature=any
         Frequency
@@ -601,6 +602,7 @@ $ cd coaxial_waveguide
   #OpenParEMmaterials 1.0
   Material
      name=PTFE
+     type=dielectric
      Temperature
         temperature=any
         Frequency
@@ -617,6 +619,7 @@ $ cd coaxial_waveguide
   EndMaterial
   Material
      name=copper
+     type=conductor
      Temperature
         temperature=20
         Frequency
@@ -770,6 +773,7 @@ The coupled microstrip pair from Fig.~8 in \cite{Olyslager} is set up with line 
   #OpenParEMmaterials 1.0
   Material
      name=air
+     type=dielectric
      Temperature
         temperature=any
         Frequency
@@ -787,6 +791,7 @@ The coupled microstrip pair from Fig.~8 in \cite{Olyslager} is set up with line 
   EndMaterial
   Material
      name=alumina
+     type=dielectric
      Temperature
         temperature=any
         Frequency
@@ -937,6 +942,8 @@ Impedance calculations are a post-processing step, so the field solution is the 
 
 The finite element order is set with the keyword/value pair \texttt{fem.order N} in the project control file.  \texttt{N} can be any integer and sets the order of the polynomial approximating the field in each finite element.  All elements in a mesh have the same element order.
 
+Order ramping is supported where the problem is first solved using \texttt{N}=1, then the solution is used as the initial guess for a second solution with \texttt{N}=2, which then becomes the initial guess for \texttt{N}=3, and so on.  The technique takes advantage of the ability of first-order elements to solve problems with lower quality meshes, then the good initial guesses enable the higher-order elements to solve far more quickly.  Experience has shown order ramping to be very robust, but it can be turned off, if needed.
+
 Higher values for \texttt{N} have potential advantages due to the polynomial accommodating larger field variations within any given element.  The advantages of higher order include:
 \begin{itemize}
 \item Greater accuracy for a given mesh size.
@@ -949,7 +956,7 @@ Higher values for \texttt{N} have potential advantages due to the polynomial acc
 \item Slower run times for a given mesh size.
 \item Larger memory consumption.
 \item Slower mesh error calculation for a given mesh size.
-\item Harder convergence for the initial solution, although order-ramping may offer a fix, when implemented.
+\item Harder convergence for the initial solution if order ramping is disabled.
 \end{itemize}
 \noindent The disadvantages ramp quickly with increasing \texttt{N}.
 OpenParEM2D does not currently support GPU computing, which can alleviate the disadvantages of higher \texttt{N}.
@@ -1120,7 +1127,15 @@ OpenParEM2D is controlled by a text file consisting of keyword/value pairs.  The
     solution.check.closed.loop    & bool   & true   & Enables checking if current integration paths form closed loops \\
     solution.accurate.residual    & bool   & false  & Sets an input parameter to the eigenvalue solver that may produce higher accuracy results. In many cases, the eigenvalue solver will hang with this is set to true \\
     solution.shift.invert         & bool   & true   & Sets the eigenvalue solver to use the shift-and-invert method \\
-    solution.use.initial.guess    & bool   & true   & Use the current eigenvalue solution as the initial guess in the following iteration \\
+    solution.initial.guess.level  & int    & 2      & Sets the initial guess for the eigensolveer 
+
+                                                      Options:
+                                                      \begin{itemize}[nosep]
+                                                        \item 0 - use no initial guess or order ramping
+                                                        \item 1 - use prior solution as initial guess with frequency scaling (method used in version 2.1 and earlier)
+                                                        \item 2 - level 1 plus plus order ramping on the first iteration (default)
+                                                        \item 3 - use order ramping for every solution without using any prior solution
+                                                      \end{itemize}\\
     solution.shift.factor         & double & 1.0    & Multiplier for the initial guess eigenvalue \\
     solution.initial.alpha        & double & 0      & Initial guess for alpha, where the complex propagation constant is alpha+jbeta \\
     solution.initial.beta         & double & 0      & Initial guess for beta, where the complex propagation constant is alpha+jbeta \\
