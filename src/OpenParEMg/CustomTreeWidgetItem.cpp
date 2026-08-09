@@ -1982,9 +1982,9 @@ void DrawingItem::undo ()
 
         if (isDisplayed) mw->ui->drawingWindow->showItem(this);
         else mw->ui->drawingWindow->hideItem(this);
-
-        setTip();
     }
+
+    setTip();
 }
 
 void DrawingItem::redo ()
