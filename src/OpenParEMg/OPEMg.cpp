@@ -7203,11 +7203,10 @@ void OpenParEMg::on_actionAbort_triggered ()
 
 void OpenParEMg::on_actionAbortAndExit_triggered ()
 {
-    if (projectChanged) {
-        QMessageBox::StandardButton reply;
-        reply = QMessageBox::question(this,"OpenParEMg","Are you sure you want to exit?",QMessageBox::Yes|QMessageBox::No);
-        if (reply != QMessageBox::Yes) return;
-    }
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this,"OpenParEMg","Are you sure you want to abort the simulation and immediately exit OpenParEMg?",QMessageBox::Yes|QMessageBox::No);
+    if (reply != QMessageBox::Yes) return;
+
     prefix(); PetscPrintf(PETSC_COMM_WORLD,"OpenParEM3D Job Aborted.\n");
 
     std::string lockfile=".";
