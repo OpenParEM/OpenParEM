@@ -2064,7 +2064,7 @@ cd "$scripts_dir"
 
 if [ "$with_OpenParEM" = "1" ]; then
    #wrap_executable builder $HAS_ORTERUN 0 0
-   wrap_executable OpenParEM2D $HAS_ORTERUN 0 1
+   wrap_executable OpenParEM2D $HAS_ORTERUN 1 1
    #wrap_executable process2D $HAS_ORTERUN 0 0
    #wrap_executable simplify2D $HAS_ORTERUN 0 0
    wrap_executable OpenParEM3D $HAS_ORTERUN 1 1
