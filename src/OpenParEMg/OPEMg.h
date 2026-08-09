@@ -611,9 +611,10 @@ private slots:
     void insertIntegrationPath (VIItem *);
     bool isValidRenameDrawingItems ();
     void renameDrawingItems ();
-    void unselectRootDrawingItems ();
     void unselectDrawingItems ();
     void deleteDrawingItems ();
+    void collectChildren (DrawingItem *, std::vector<DrawingItem *> *);
+    void deletePlusDrawingItems ();
     void insertModeItems ();
     void unselectPortItems ();
     void renamePortItems ();
@@ -752,6 +753,7 @@ private:
     QAction *unselectAction;
     QAction *copyAction;
     QAction *deleteAction;
+    QAction *deletePlusAction;
     QAction *deletePointAction;
     QAction *insertPointAction;
     QAction *closePolylineAction;

@@ -273,6 +273,7 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     QActionList.push_back(unselectAction);
     QActionList.push_back(copyAction);
     QActionList.push_back(deleteAction);
+    QActionList.push_back(deletePlusAction);
     QActionList.push_back(deletePointAction);
     QActionList.push_back(insertPointAction);
     QActionList.push_back(closePolylineAction);
@@ -1952,27 +1953,6 @@ void OpenParEMg::rename_editingFinished ()
     ui->drawingWindow->updateViewer();
 }
 
-void OpenParEMg::unselectRootDrawingItems()
-{
-    //std::cout << "OpenParEMg::unselectRootDrawingItems" << std::endl; std::cout.flush();
-
-    int i=0;
-    while (i < ui->drawingWindow->get_selectedItems_size()) {
-        RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(ui->drawingWindow->get_selectedItem(i));
-        if (rootDrawingItem) ui->drawingWindow->unselectItem(rootDrawingItem,i);
-        i++;
-    }
-
-    //setRootForeground(&drawing);
-    showAction->setEnabled(ui->drawingWindow->isValidShow());
-    hideAction->setEnabled(ui->drawingWindow->isValidHide());
-    unselectAction->setEnabled(ui->drawingWindow->hasDrawingSelectedItems());
-    deleteAction->setEnabled(ui->drawingWindow->isValidDelete());
-
-    ui->drawingWindow->updateViewer();
-    setMenusI(19);
-}
-
 void OpenParEMg::unselectDrawingItems()
 {
     //std::cout << "OpenParEMg::unselectDrawingItems" << std::endl; std::cout.flush();
@@ -2036,6 +2016,48 @@ void OpenParEMg::deleteDrawingItems ()
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(ui->drawingWindow->get_selectedItem(i));
         if (drawingItem) drawingItem->del();
+        i++;
+    }
+
+    finishOperation(false,100);
+}
+
+void OpenParEMg::collectChildren (DrawingItem *drawingItem, std::vector<DrawingItem *> *list)
+{
+    if (!drawingItem) return;
+
+    list->push_back(drawingItem);
+
+    int i=0;
+    while (i < drawingItem->childCount()) {
+        DrawingItem *child=dynamic_cast<DrawingItem *>(drawingItem->child(i));
+        collectChildren(child,list);
+        i++;
+    }
+}
+
+// delete the item and its children
+void OpenParEMg::deletePlusDrawingItems ()
+{
+    std::cout << "OpenParEMg::deletePlusDrawingItems" << std::endl; std::cout.flush();
+
+    //activeAction=true;  // no need since there is not a cancel option
+    itemChangesStack.startNew();
+
+    // list of objects to delete
+    std::vector<DrawingItem *> itemList;
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (drawingItem) collectChildren(drawingItem,&itemList);
+        i++;
+    }
+
+    // deletions
+    i=0;
+    while (i < itemList.size()) {
+        std::cout << "deleting drawing item" << std::endl; std::cout.flush();
+        itemList[i]->del();
         i++;
     }
 

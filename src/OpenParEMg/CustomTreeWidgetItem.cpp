@@ -1719,6 +1719,7 @@ void DrawingItem::showMenu (QMenu *menu)
     mw->copyAction=new QAction("Copy");
     mw->renameAction=new QAction("Rename",this);
     mw->deleteAction=new QAction("Delete");
+    mw->deletePlusAction=new QAction("Delete Subtree");
     mw->setPlaneAction=new QAction("Set Drawing Plane");
     mw->setPlaneAxisAction=new QAction("Set Drawing Plane with Axis");
     mw->createPathAction=new QAction("Create Path");
@@ -1757,6 +1758,7 @@ void DrawingItem::showMenu (QMenu *menu)
     connect(mw->unselectAction, &QAction::triggered, mw, &OpenParEMg::unselectDrawingItems);
     connect(mw->renameAction, &QAction::triggered, mw, &OpenParEMg::renameDrawingItems);
     connect(mw->deleteAction, &QAction::triggered, mw, &OpenParEMg::deleteDrawingItems);
+    connect(mw->deletePlusAction, &QAction::triggered, mw, &OpenParEMg::deletePlusDrawingItems);
     connect(mw->copyAction, &QAction::triggered, mw, &OpenParEMg::copyDrawingItems);
     connect(mw->setPlaneAction, &QAction::triggered, mw, &OpenParEMg::setPlaneToFace);
     connect(mw->setPlaneAxisAction, &QAction::triggered, mw, &OpenParEMg::setPlaneToFaceAxis);
@@ -1779,6 +1781,7 @@ void DrawingItem::showMenu (QMenu *menu)
         if (mw->isValidCopy()) menu->addAction(mw->copyAction);
         if (mw->isValidRenameDrawingItems()) menu->addAction(mw->renameAction);
         if (mw->isValidObjectDelete()) menu->addAction(mw->deleteAction);
+        if (mw->isValidObjectDelete() && childCount() > 0) menu->addAction(mw->deletePlusAction);
         if (mw->isValidSetPlane()) menu->addAction(mw->setPlaneAction);
         if (mw->isValidSetPlane()) menu->addAction(mw->setPlaneAxisAction);
         if (mw->isValidCreatePath()) menu->addAction(mw->createPathAction);
