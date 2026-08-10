@@ -507,7 +507,7 @@ int main(int argc, char *argv[])
    }
    if (projData.debug_show_mode_definitions) boundaryDatabase.print();
 
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Loading mesh and assigning materials ...\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   loading mesh and assigning materials ...\n");
    if (!projData.materials_check_limits) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"    Skipping limit checks on material values\n");
    }

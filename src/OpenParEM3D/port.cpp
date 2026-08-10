@@ -8578,11 +8578,13 @@ bool BoundaryDatabase::solvePorts (int fem_order, ParMesh *pmesh, vector<ParSubM
                                    struct projectData *projData, GammaDatabase *gammaDatabase)
 {
    bool fail=false;
-   PetscMPIInt rank;
+   PetscMPIInt rank,size;
    chrono::duration<double> elapsed;
    chrono::steady_clock::time_point start;
    chrono::steady_clock::time_point current;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+   MPI_Comm_size(PETSC_COMM_WORLD, &size);
+
 
    if (create2Dmeshes(fem_order,pmesh,parSubMeshesPort)) {fail=true; return fail;}
 
@@ -8592,9 +8594,25 @@ bool BoundaryDatabase::solvePorts (int fem_order, ParMesh *pmesh, vector<ParSubM
       saveModeFiles (projData);
    }
 
+   // log file
    string logFile=projData->project_name;
    logFile.append(".log");
 
+   // see if a log file is being used
+   int isUsed=0;
+   if (rank == 0) {
+      if (std::filesystem::exists(logFile)) {isUsed=1;}
+      int i=1;
+      while (i < size) {
+         MPI_Send(&isUsed,1,MPI_INT,i,10,PETSC_COMM_WORLD);
+         i++;
+      }
+   } else {
+      MPI_Recv(&isUsed,1,MPI_INT,0,10,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+   }
+   if (!isUsed) logFile="";
+
+   // loop over the ports
    long unsigned int i=0;
    while (i < portList.size()) {
 

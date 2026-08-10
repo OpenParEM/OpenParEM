@@ -114,10 +114,7 @@ and in parallel it is
 where \verb+N+ is the number of cores to use for the calculation.  All inputs are captured in the project control file including names of files that must be included. So setting up a project involves creating/editing a project control file and ensuring that the additionally required files are specified and available.  Note that the \texttt{--oversubscribe} option is used with OpenMPI\cite{OpenMPI} and is omitted for MPICH\cite{MPICH}.  
 When using OpenParEMg, the project file includes GUI-specific data that is ignored when executing from the command line.
 
-The execution output from OpenParEM3D is captured to a log file with the name \texttt{projectname.log}.  For longer runs, it is very useful to watch the output as it is being generated, and this can be done by opening another terminal in the and running
-\begin{Verbatim}[fontsize=\small]
-   $ tail -f projectname.proj
-\end{Verbatim}
+The execution output from OpenParEM3D is scrolled to the terminal.  To create a log file, the output can be re-directed.  When OpenParEMg runs OpenParEM3D, the output that normally scrolls to the terminal is captured to a log file with the name \texttt{projectname.log} for display in the GUI.
 
 The required included files in a project control file are materials, mesh, and port definitions. Each of the required files are covered in detail in the following sections.  When using OpenParEMg, these additional files are handled automatically.
 

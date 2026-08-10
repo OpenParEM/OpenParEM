@@ -342,6 +342,14 @@ wrap_executable() {
       echo 'fi' >> $PROG
       echo '' >> $PROG
 
+
+      echo '' >> $PROG
+      echo 'HASLOGFILE=0' >> $PROG
+      echo 'if [ "$2" != "" ]; then' >> $PROG
+      echo '   HASLOGFILE=1' >> $PROG
+      echo 'fi' >> $PROG
+      echo '' >> $PROG
+
       if [ "$REMOVE_LOGFILE" = "1" ]; then
          echo 'if [ -n "$OMPI_COMM_WORLD_RANK" ]; then' >> $PROG
          echo '     # Open MPI' >> $PROG
@@ -366,7 +374,11 @@ wrap_executable() {
       fi
 
       if [ "$TEST_REDIRECT" = "1" ]; then
-         echo '$BINPROG "$1" >> "$LOGFILE" 2>&1' >> $PROG
+         echo 'if [ "$HASLOGFILE" = "1" ]; then' >> $PROG
+         echo '   $BINPROG "$1" >> "$LOGFILE" 2>&1' >> $PROG
+         echo 'else' >> $PROG
+         echo '   $BINPROG "$1"' >> $PROG
+         echo 'fi' >> $PROG
       else
          echo '$BINPROG "$1"' >> $PROG
       fi
@@ -2064,7 +2076,7 @@ cd "$scripts_dir"
 
 if [ "$with_OpenParEM" = "1" ]; then
    #wrap_executable builder $HAS_ORTERUN 0 0
-   wrap_executable OpenParEM2D $HAS_ORTERUN 1 1
+   wrap_executable OpenParEM2D $HAS_ORTERUN 0 1
    #wrap_executable process2D $HAS_ORTERUN 0 0
    #wrap_executable simplify2D $HAS_ORTERUN 0 0
    wrap_executable OpenParEM3D $HAS_ORTERUN 1 1
