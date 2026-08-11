@@ -32,7 +32,6 @@
 //#include <quadmath.h>
 #include <iostream>
 #include <filesystem>
-#include <thread>
 
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
@@ -239,6 +238,12 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     on_actionShape_triggered();
 
     ui->actionWireframe->setChecked(true);
+
+    /////////////////////////////////////////////////////////////////////////////
+    // macro
+    /////////////////////////////////////////////////////////////////////////////
+
+    macro=new Macro(this);
 
     /////////////////////////////////////////////////////////////////////////////
     // relay for receiving signals from controls
@@ -539,6 +544,7 @@ OpenParEMg::~OpenParEMg ()
     if (materialDatabase) {delete materialDatabase; materialDatabase=nullptr;}
     if (relay) {delete relay; relay=nullptr;}
     if (timer) delete timer;
+    if (macro) delete macro;
     if (MPI_PORT_COMM) MPI_Comm_free(MPI_PORT_COMM);
     if (request) MPI_Request_free(request);
     gmsh::finalize();
@@ -781,6 +787,25 @@ void OpenParEMg::setMenusI (int placeIndex)
     }
 
     ui->menubar->setEnabled(true);
+
+    if (macro->isLoaded()) {
+        if (macro->isRunning()) {
+            ui->actionMacroLoad->setEnabled(false);
+            ui->actionMacroRun->setEnabled(false);
+            ui->actionMacroStop->setEnabled(true);
+            ui->actionMacroClose->setEnabled(false);
+        } else {
+            ui->actionMacroLoad->setEnabled(false);
+            ui->actionMacroRun->setEnabled(true);
+            ui->actionMacroStop->setEnabled(false);
+            ui->actionMacroClose->setEnabled(true);
+        }
+    } else {
+        ui->actionMacroLoad->setEnabled(true);
+        ui->actionMacroRun->setEnabled(false);
+        ui->actionMacroStop->setEnabled(false);
+        ui->actionMacroClose->setEnabled(false);
+    }
 
     if (projectFileLoaded) {
         ui->actionNew->setEnabled(false);
@@ -2020,6 +2045,54 @@ void OpenParEMg::deleteDrawingItems ()
     }
 
     finishOperation(false,100);
+}
+
+void OpenParEMg::selectDrawingItem (QString name)
+{
+    int i=0;
+    while (i < drawing->childCount()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
+        if (drawingItem && drawingItem->text(0).compare(name) == 0) {
+            ui->drawingWindow->selectItem(drawingItem);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(1);
+}
+
+void OpenParEMg::renameSelectedDrawingItem (QString name)
+{
+    itemChangesStack.startNew();
+
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (drawingItem) {
+            drawingItem->setText(0,name);
+
+            // remove the old version from display and tracking
+            ui->drawingWindow->hideItem(drawingItem);
+            ui->drawingWindow->removeItemFromMap(drawingItem);
+            ui->drawingWindow->deleteShape(drawingItem->getShape());  // lose selection
+
+            // clone the item onto itself for undo/redo
+            ShapeData *newShapeData=drawingItem->getShapeData()->copyCreate();
+            newShapeData->setChangeName();
+            newShapeData->set_name(name);
+            drawingItem->addShapeData(newShapeData);
+            itemChangesStack.add(drawingItem);
+
+            // add the new item back to the display and tracking
+            ui->drawingWindow->insertItemToMap(drawingItem->getShape(),drawingItem);
+            ui->drawingWindow->showItem(drawingItem);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(1);
 }
 
 void OpenParEMg::collectChildren (DrawingItem *drawingItem, std::vector<DrawingItem *> *list)
@@ -7573,6 +7646,35 @@ void OpenParEMg::finishDraw ()
     finishOperation(false,13);
 }
 
+void OpenParEMg::createRectangle (QString name, double x0, double y0, double z0,
+                                                double ux, double uy, double uz,
+                                                double vx, double vy, double vz,
+                                                double width, double height)
+{
+    Rectangle *rectangle=new Rectangle(x0,y0,z0,ux,uy,uz,vx,vy,vz,width,height);
+    if (!rectangle) return;
+    rectangle->set_viewerContext(ui->drawingWindow->get_viewerContext());
+
+    DrawingItem *drawingItem=new DrawingItem(this,drawing);
+    if (!drawingItem) {
+        delete rectangle;
+        return;
+    }
+
+    ShapeData *shapeData=drawingItem->getShapeData();
+    shapeData->setPolywire(rectangle);
+    shapeData->setShape(rectangle->get_AIS_Shape());
+    drawingItem->setText(0,name);
+    shapeData->set_name(drawingItem->text(0));
+
+    drawing->addChild(drawingItem);
+    ui->drawingWindow->insertItemToMap(drawingItem->getShape(),drawingItem);
+    ui->drawingWindow->showItem(drawingItem);
+    ui->drawingWindow->selectItem(drawingItem);
+    itemChangesStack.startNew();
+    itemChangesStack.add(drawingItem);
+}
+
 void OpenParEMg::deleteLastPoint ()
 {
     activePolywire->deleteLastPoint();
@@ -8125,7 +8227,7 @@ void OpenParEMg::updateAntennaTab (bool force)
 }
 
 //xxx
-void OpenParEMg::on_actionMeasure_triggered()
+void OpenParEMg::on_actionMeasure_triggered ()
 {
     startOperation(true);
     activeAction=false;
@@ -8141,7 +8243,76 @@ void OpenParEMg::on_actionMeasure_triggered()
     measureDistanceForm->show();
 }
 
+void OpenParEMg::on_actionMacroLoad_triggered ()
+{
+    QString macroFile=QFileDialog::getOpenFileName(this,tr("Open Macro"),absolutePath,tr("Macro Files (*.opm);;All Files (*)"),
+                                                         nullptr,QFileDialog::DontUseNativeDialog);
+
+    // return if user cancels
+    if (macroFile.isNull()) return;
+
+    // load the file
+    if (QFile::exists(macroFile)) {
+
+        QFile file(macroFile);
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QTextStream in(&file);
+            //stream.setEncoding(QStringConverter::Encoding::Latin1);
+            QString macroText=in.readAll();
+
+            // check the format
+            QStringList lines=macroText.split('\n');
+            bool found=false;
+            int i=0;
+            while (i < lines.size()) {
+                const QString &line=lines[i];
+                std::vector<std::string> tokens=splitWhitespace(line.toStdString());
+                if (tokens.size() == 2) {
+                    if (tokens[0].compare("#OpenParEMgMacro") == 0) {
+                        if (tokens[1].compare("1.0") == 0) {found=true; break;}
+                    }
+                }
+                i++;
+            }
+            if (!found) {
+                QMessageBox mb;
+                mb.critical(nullptr, "Error","Macro file format not recognized.");
+                mb.setFixedSize(500, 200);
+                return;
+            }
+
+            // save it
+            macro->reset();
+            macro->setText(macroText);
+        }
+    }
+    setMenusI(1);
+}
+
+void OpenParEMg::on_actionMacroRun_triggered ()
+{
+    macro->setRunning(true);
+    setMenusI(1);
+    macro->run();
+    macro->setRunning(false);
+    setMenusI(1);
+}
+
+void OpenParEMg::on_actionMacroStop_triggered ()
+{
+    macro->setStopping(true);
+    setMenusI(1);
+}
+
+void OpenParEMg::on_actionMacroClose_triggered()
+{
+    macro->reset();
+    setMenusI(1);
+}
+
 // end of file
+
+
 
 
 

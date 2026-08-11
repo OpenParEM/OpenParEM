@@ -100,6 +100,7 @@ qt_add_executable(OpenParEMg
 
     SportNumbers.h SportNumbers.cpp
     MeasureDistanceForm.h MeasureDistanceForm.cpp MeasureDistanceForm.ui
+    Macro.h Macro.cpp
 
 )
 

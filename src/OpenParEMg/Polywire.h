@@ -234,6 +234,8 @@ public:
         isSquare=false;
     }
 
+    Rectangle (double, double, double, double, double, double, double, double, double, double, double);
+
     Rectangle (Rectangle *);
     QString getTip (double) override;
     void drawRubberband () override;

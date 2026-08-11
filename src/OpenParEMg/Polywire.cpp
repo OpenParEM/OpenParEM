@@ -1296,6 +1296,32 @@ void Polyline::print ()
 // Rectangle
 ////////////////////////////////////////////////////////////////////////////////
 
+Rectangle::Rectangle (double x0, double y0, double z0,
+                      double ux, double uy, double uz,
+                      double vx, double vy, double vz,
+                      double width_, double height_)
+{
+    closed=true;
+    isSquare=false;
+    hasArrows=false;
+    modified=false;
+
+    int i=0;
+    while (i < 5) {
+        shapePoints.push_back(gp_Pnt(0,0,0));
+        i++;
+    }
+
+    gp_Pnt p0(x0,y0,z0);
+    u=gp_Vec(ux,uy,uz);
+    v=gp_Vec(vx,vy,vz);
+    width=width_;
+    height=height_;
+    recalculate(p0,width,height);
+
+    normal=u.Crossed(v).Normalized();
+}
+
 Rectangle::Rectangle (Rectangle *rectangle)
 {
     u=rectangle->u;

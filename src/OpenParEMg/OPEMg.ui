@@ -314,7 +314,17 @@
     <property name="title">
      <string>Tools</string>
     </property>
+    <widget class="QMenu" name="menuMacro">
+     <property name="title">
+      <string>Macro ...</string>
+     </property>
+     <addaction name="actionMacroLoad"/>
+     <addaction name="actionMacroRun"/>
+     <addaction name="actionMacroStop"/>
+     <addaction name="actionMacroClose"/>
+    </widget>
     <addaction name="actionMeasure"/>
+    <addaction name="menuMacro"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -737,6 +747,26 @@
   <action name="actionMeasure">
    <property name="text">
     <string>Measure ...</string>
+   </property>
+  </action>
+  <action name="actionMacroLoad">
+   <property name="text">
+    <string>Load ...</string>
+   </property>
+  </action>
+  <action name="actionMacroRun">
+   <property name="text">
+    <string>Run</string>
+   </property>
+  </action>
+  <action name="actionMacroClose">
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </action>
+  <action name="actionMacroStop">
+   <property name="text">
+    <string>Stop</string>
    </property>
   </action>
  </widget>

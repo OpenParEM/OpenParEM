@@ -967,6 +967,50 @@ EndItem
 \end{Verbatim}
 
 \newpage
+\section{Macro File Format Specification}
+\label{sec:macro_file_spec}
+
+
+\begin{Verbatim}[fontsize=\small]
+#OpenParEMgMacro 1.0 // required in the file
+
+# a comment
+
+newProject
+closeProject
+
+# For drawing a rectangle at (x0,y0,z0), with the given u and v vectors, and width and height.
+drawRectangle name x0 y0 z0 ux uy uz vx vy vz width height 
+
+undo
+redo
+fitAll
+
+unselectAllObjects
+selectObject name
+deleteSelectedObjects
+
+# Extrude the selected objects by the given length and then re-name it to the given name.
+extrudeSelectedObjects name length
+
+# Merge the selected objects an then re-name the result to the given name.  Works only with two selected objects.
+mergeSelectedObjects name
+
+# Subtract the selected objects an then re-name the result to the given name.  Works only with two selected objects.
+# Subtracts the second selected object from the first.
+subtractSelectedObjects name
+
+For i = N To M Step P
+   command
+   command
+   ...
+   command
+EndFor
+
+\end{Verbatim}
+
+
+\newpage
 \begin{thebibliography}{unsrt}
 
 \bibitem{gmsh} C. Geuzaine and J.-F. Remacle, "Gmsh: a three-dimensional finite element mesh generator with built-in pre- and post-processing facilities," \textit{International Journal for Numerical Methods in Engineering}, 79(11), pp. 1309-1331, 2009.

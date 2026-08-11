@@ -1,0 +1,47 @@
+#OpenParEMgMacro 1.0
+
+For i = 1 To 10 Step 1
+   newProject
+   closeProject
+EndFor
+
+newProject
+For i = 1 To 10 Step 1
+   drawRectangle newRectangle 0 0 0 1 0 0 0 1 0 0.005 0.010
+   undo
+   redo
+   unselectAllObjects
+   selectObject newRectangle
+   deleteSelectedObjects
+   undo
+   drawRectangle newRectangle2 0.001 0.001 0.001 1 0 0 0 0 1 0.002 0.003
+   undo
+   redo
+   selectObject newRectangle
+   selectObject newRectangle2
+   deleteSelectedObjects
+EndFor
+
+For i = 1 To 1000 Step 1
+   drawRectangle newRectangle 0 0 0 1 0 0 0 1 0 0.005 0.010
+   drawRectangle newRectangle1 0.001 0.001 0 1 0 0 0 1 0 0.006 0.008
+   extrudeSelectedObjects newExtrude 0.005
+   unselectAllObjects
+   selectObject newExtrude
+   mergeSelectedObjects newMerged
+   fitAll
+   undo
+   undo
+   unselectAllObjects
+   selectObject newExtrude
+   subtractSelectedObjects newSubtracted
+   unselectAllObjects
+   selectObject newSubtracted
+   deleteSelectedObjects
+   selectObject newExtrude
+   deleteSelectedObjects
+   selectObject newRectangle
+   selectObject newRectangle1
+   deleteSelectedObjects
+EndFor
+
