@@ -46,6 +46,7 @@
 #include "CustomTreeWidgetItem.h"
 #include "gmsh.h"
 #include "ObjectCounts.h"
+#include "Macro.h"
 
 
 extern "C" void init_project (struct projectData *);
@@ -354,6 +355,8 @@ class OpenParEMg : public QMainWindow
     friend class RootMeshItem;
     friend class MeshItem;
 
+    friend class Macro;
+
 public:
     OpenParEMg (QWidget *parent = nullptr);
     ~OpenParEMg ();
@@ -481,6 +484,7 @@ public:
 
     bool isValidExtrudePolywire ();
     void finishExtrudePolywire ();
+    void setLength (double length_) {length=length_;}
 
     void finishMoveObject (gp_Pnt, gp_Pnt);
 
@@ -613,6 +617,8 @@ private slots:
     void renameDrawingItems ();
     void unselectDrawingItems ();
     void deleteDrawingItems ();
+    void selectDrawingItem (QString);
+    void renameSelectedDrawingItem (QString name);
     void collectChildren (DrawingItem *, std::vector<DrawingItem *> *);
     void deletePlusDrawingItems ();
     void insertModeItems ();
@@ -683,6 +689,7 @@ private slots:
     void on_actionDrawRectangle_triggered ();
     void finishDraw ();
     void finishPolyline ();
+    void createRectangle (QString, double, double, double, double, double, double, double, double, double, double, double);
     void deleteLastPoint ();
     void closePolyline ();
 
@@ -696,7 +703,14 @@ private slots:
     void on_actionUndo_triggered ();
     void on_actionRedo_triggered ();
 
-    void on_actionMeasure_triggered();
+    void on_actionMeasure_triggered ();
+
+    //void extracted(bool &found, QStringList &lines);
+    void on_actionMacroLoad_triggered();
+    void on_actionMacroRun_triggered ();
+    void on_actionMacroClose_triggered ();
+
+    void on_actionMacroStop_triggered();
 
 public slots:
     void setMenus ();
@@ -869,6 +883,9 @@ private:
     char iterationsLastChar;
     char dataLastChar;
     char antennaLastChar;
+
+    // for macro
+    Macro *macro;
 
     // for disabling selection boxes while running simulations
     bool isDisabledSelection;
