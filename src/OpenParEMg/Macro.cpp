@@ -139,13 +139,34 @@ int Macro::drawRectangle (std::vector<std::string> &tokens)
                                 std::stod(tokens[8]),std::stod(tokens[9]),std::stod(tokens[10]),
                                 std::stod(tokens[11]),std::stod(tokens[12]));
         } else {
-            //log.append("ERROR: drawRectangle failed due to no active project");
-            std::cout << "ERROR: drawRectangle failed due to no active project" << std::endl;
+            //log.append("ERROR: drawRectangle failed due to no active project.");
+            std::cout << "ERROR: drawRectangle failed due to no active project." << std::endl;
             return 2;
         }
 
         //log.append("tokens[0]"drawRectangle\n");
         std::cout << "drawRectangle" << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::drawPolycircle (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 12 && tokens[0].compare("drawPolycircle") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->createPolycircle(QString::fromStdString(tokens[1]),std::stod(tokens[2]),std::stod(tokens[3]),std::stod(tokens[4]),
+                                std::stod(tokens[5]),std::stod(tokens[6]),std::stod(tokens[7]),
+                                std::stod(tokens[8]),std::stod(tokens[9]),std::stod(tokens[10]),
+                                std::stoi(tokens[11]));
+        } else {
+            //log.append("ERROR: drawPolycircle failed due to no active project.");
+            std::cout << "ERROR: drawPolycircle failed due to no active project." << std::endl;
+            return 2;
+        }
+
+        //log.append("tokens[0]"drawPolycircle\n");
+        std::cout << "drawPolycircle" << std::endl;
         return 1;
     }
     return 0;
@@ -393,6 +414,12 @@ void Macro::run ()
                 }
 
                 retVal=drawRectangle(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=drawPolycircle(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
                     i++; continue;

@@ -7673,6 +7673,39 @@ void OpenParEMg::createRectangle (QString name, double x0, double y0, double z0,
     ui->drawingWindow->selectItem(drawingItem);
     itemChangesStack.startNew();
     itemChangesStack.add(drawingItem);
+
+    drawingItem->setTip();
+}
+
+void OpenParEMg::createPolycircle (QString name, double x0, double y0, double z0,
+                                                 double x1, double y1, double z1,
+                                                 double nx, double ny, double nz,
+                                                 int N)
+{
+    Polycircle *polycircle=new Polycircle(x0,y0,z0,x1,y1,z1,nx,ny,nz,N);
+    if (!polycircle) return;
+    polycircle->set_viewerContext(ui->drawingWindow->get_viewerContext());
+
+    DrawingItem *drawingItem=new DrawingItem(this,drawing);
+    if (!drawingItem) {
+        delete polycircle;
+        return;
+    }
+
+    ShapeData *shapeData=drawingItem->getShapeData();
+    shapeData->setPolywire(polycircle);
+    shapeData->setShape(polycircle->get_AIS_Shape());
+    drawingItem->setText(0,name);
+    shapeData->set_name(drawingItem->text(0));
+
+    drawing->addChild(drawingItem);
+    ui->drawingWindow->insertItemToMap(drawingItem->getShape(),drawingItem);
+    ui->drawingWindow->showItem(drawingItem);
+    ui->drawingWindow->selectItem(drawingItem);
+    itemChangesStack.startNew();
+    itemChangesStack.add(drawingItem);
+
+    drawingItem->setTip();
 }
 
 void OpenParEMg::deleteLastPoint ()

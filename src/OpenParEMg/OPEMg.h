@@ -690,6 +690,7 @@ private slots:
     void finishDraw ();
     void finishPolyline ();
     void createRectangle (QString, double, double, double, double, double, double, double, double, double, double, double);
+    void createPolycircle (QString, double, double, double, double, double, double, double, double, double, int);
     void deleteLastPoint ();
     void closePolyline ();
 

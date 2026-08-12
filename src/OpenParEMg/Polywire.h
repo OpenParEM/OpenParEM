@@ -303,6 +303,9 @@ public:
         vertexCount=12;
         closed=true;
     }
+
+    Polycircle (double, double, double, double, double, double, double, double, double, int);
+
     Polycircle (Polycircle *);
 
     QString getTip (double) override;

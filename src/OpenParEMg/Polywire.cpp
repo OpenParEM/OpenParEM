@@ -2076,6 +2076,28 @@ void Rectangle::print ()
 // Polycircle
 ////////////////////////////////////////////////////////////////////////////////
 
+Polycircle::Polycircle (double x0, double y0, double z0,
+                        double x1, double y1, double z1,
+                        double nx, double ny, double nz,
+                        int N)
+{
+    centerPointSet=true;
+    centerPoint=gp_Pnt(x0,y0,z0);
+
+    firstPointSet=true;
+    firstPoint=gp_Pnt(x1,y1,z1);
+
+    normal=gp_Vec(nx,ny,nz);
+
+    vertexCount=N;
+
+    modified=false;
+    hasArrows=false;
+    closed=true;
+
+    recalculate();
+}
+
 Polycircle::Polycircle (Polycircle *polycircle)
 {
     normal=polycircle->normal;

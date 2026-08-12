@@ -62,6 +62,7 @@ public:
     int newProject (std::vector<std::string> &tokens);
     int closeProject (std::vector<std::string> &tokens);
     int drawRectangle (std::vector<std::string> &tokens);
+    int drawPolycircle (std::vector<std::string> &tokens);
     int undo (std::vector<std::string> &tokens);
     int redo (std::vector<std::string> &tokens);
     int fitAll (std::vector<std::string> &tokens);

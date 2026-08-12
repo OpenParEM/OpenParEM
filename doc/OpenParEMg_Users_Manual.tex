@@ -979,8 +979,11 @@ EndItem
 newProject
 closeProject
 
-# For drawing a rectangle at (x0,y0,z0), with the given u and v vectors, and width and height.
+# rectangle at (x0,y0,z0), with the given u and v vectors, and width and height.
 drawRectangle name x0 y0 z0 ux uy uz vx vy vz width height 
+
+# circle with center at (x0,y0,z0), first point at (x1,y1,z1) [which also sets the radius, normal (nx,ny,nz) and the number of points N
+drawCircle name x0 y0 z0 x1 y1 z1 nx ny nz N
 
 undo
 redo
