@@ -130,14 +130,66 @@ int Macro::closeProject (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::setDrawingPlane (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 10 && tokens[0].compare("setDrawingPlane") == 0) {
+        mw->setPlane(gp_Pnt(std::stod(tokens[1]),std::stod(tokens[2]),std::stod(tokens[3])),
+                     gp_Pnt(std::stod(tokens[4]),std::stod(tokens[5]),std::stod(tokens[6])),
+                     gp_Dir(gp_Vec(gp_Pnt(0,0,0),gp_Pnt(std::stod(tokens[7]),std::stod(tokens[8]),std::stod(tokens[9])))));
+
+        //log.append("tokens[0]"setDrawingPlane\n");
+        std::cout << "setDrawingPlane" << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::setDrawingPlaneToXY (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("setDrawingPlaneToXY") == 0) {
+        mw->on_actionDrawingSetPlaneToXY_triggered();
+        //log.append("tokens[0]"setDrawingPlaneToXY\n");
+        std::cout << "setDrawingPlaneToXY" << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::setDrawingPlaneToXZ (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("setDrawingPlaneToXZ") == 0) {
+        mw->on_actionDrawingSetPlaneToXZ_triggered();
+        //log.append("tokens[0]"setDrawingPlaneToXZ\n");
+        std::cout << "setDrawingPlaneToXZ" << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::setDrawingPlaneToYZ (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("setDrawingPlaneToYZ") == 0) {
+        mw->on_actionDrawingSetPlaneToYZ_triggered();
+        //log.append("tokens[0]"setDrawingPlaneToYZ\n");
+        std::cout << "setDrawingPlaneToYZ" << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
+
 int Macro::drawRectangle (std::vector<std::string> &tokens)
 {
-    if (tokens.size() == 13 && tokens[0].compare("drawRectangle") == 0) {
+    if (tokens.size() == 8 && tokens[0].compare("drawRectangle") == 0) {
         if (mw->projectFileLoaded) {
-            mw->createRectangle(QString::fromStdString(tokens[1]),std::stod(tokens[2]),std::stod(tokens[3]),std::stod(tokens[4]),
-                                std::stod(tokens[5]),std::stod(tokens[6]),std::stod(tokens[7]),
-                                std::stod(tokens[8]),std::stod(tokens[9]),std::stod(tokens[10]),
-                                std::stod(tokens[11]),std::stod(tokens[12]));
+            // mw->createRectangle(QString::fromStdString(tokens[1]),std::stod(tokens[2]),std::stod(tokens[3]),std::stod(tokens[4]),
+            //                     std::stod(tokens[5]),std::stod(tokens[6]),std::stod(tokens[7]),
+            //                     std::stod(tokens[8]),std::stod(tokens[9]),std::stod(tokens[10]),
+            //                     std::stod(tokens[11]),std::stod(tokens[12]));
+            mw->on_actionDrawRectangle_triggered();
+            mw->getPickedVertex(gp_Pnt(std::stod(tokens[2]),std::stod(tokens[3]),std::stod(tokens[4])),false);
+            mw->getPickedVertex(gp_Pnt(std::stod(tokens[5]),std::stod(tokens[6]),std::stod(tokens[7])),false);
+            mw->renameSelectedDrawingItem(QString::fromStdString(tokens[1]));
         } else {
             //log.append("ERROR: drawRectangle failed due to no active project.");
             std::cout << "ERROR: drawRectangle failed due to no active project." << std::endl;
@@ -153,12 +205,16 @@ int Macro::drawRectangle (std::vector<std::string> &tokens)
 
 int Macro::drawPolycircle (std::vector<std::string> &tokens)
 {
-    if (tokens.size() == 12 && tokens[0].compare("drawPolycircle") == 0) {
+    if (tokens.size() == 8 && tokens[0].compare("drawPolycircle") == 0) {
         if (mw->projectFileLoaded) {
-            mw->createPolycircle(QString::fromStdString(tokens[1]),std::stod(tokens[2]),std::stod(tokens[3]),std::stod(tokens[4]),
-                                std::stod(tokens[5]),std::stod(tokens[6]),std::stod(tokens[7]),
-                                std::stod(tokens[8]),std::stod(tokens[9]),std::stod(tokens[10]),
-                                std::stoi(tokens[11]));
+            // mw->createPolycircle(QString::fromStdString(tokens[1]),std::stod(tokens[2]),std::stod(tokens[3]),std::stod(tokens[4]),
+            //                     std::stod(tokens[5]),std::stod(tokens[6]),std::stod(tokens[7]),
+            //                     std::stod(tokens[8]),std::stod(tokens[9]),std::stod(tokens[10]),
+            //                     std::stoi(tokens[11]));
+            mw->on_actionDrawPolycircle_triggered();
+            mw->getPickedVertex(gp_Pnt(std::stod(tokens[2]),std::stod(tokens[3]),std::stod(tokens[4])),false);
+            mw->getPickedVertex(gp_Pnt(std::stod(tokens[5]),std::stod(tokens[6]),std::stod(tokens[7])),false);
+            mw->renameSelectedDrawingItem(QString::fromStdString(tokens[1]));
         } else {
             //log.append("ERROR: drawPolycircle failed due to no active project.");
             std::cout << "ERROR: drawPolycircle failed due to no active project." << std::endl;
@@ -342,6 +398,31 @@ int Macro::subtractSelectedObjects (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::moveSelectedObjects (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 4 && tokens[0].compare("moveSelectedObjects") == 0) {
+        if (mw->projectFileLoaded) {
+            if (mw->ui->drawingWindow->get_selectedItems_size() > 0) {
+                mw->moveObject();
+                mw->getPickedVertex(gp_Pnt(0,0,0),false);
+                mw->getPickedVertex(gp_Pnt(std::stod(tokens[1]),std::stod(tokens[2]),std::stod(tokens[3])),false);
+            } else {
+                //log.append("ERROR: moveSelectedObjects failed because no objects are selected.");
+                std::cout << "ERROR: moveSelectedObjects failed because no objects are selected." << std::endl;
+                return 2;
+            }
+        } else {
+            //log.append("ERROR: moveSelectedObjects failed due to no active project.");
+            std::cout << "ERROR: moveSelectedObjects failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("moveSelectedObjects\n");
+        std::cout << "moveSelectedObjects" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
 
 void Macro::run ()
 {
@@ -413,6 +494,30 @@ void Macro::run ()
                     i++; continue;
                 }
 
+                retVal=setDrawingPlane(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=setDrawingPlaneToXY(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=setDrawingPlaneToXZ(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=setDrawingPlaneToYZ(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
                 retVal=drawRectangle(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
@@ -474,6 +579,12 @@ void Macro::run ()
                 }
 
                 retVal=subtractSelectedObjects(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=moveSelectedObjects(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
                     i++; continue;

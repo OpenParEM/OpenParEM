@@ -7380,6 +7380,14 @@ void OpenParEMg::setPlaneToFaceAxis ()
     startPlaneSetToFace();
 }
 
+void OpenParEMg::setPlane (gp_Pnt origin, gp_Pnt u, gp_Dir normal)
+{
+    uLocalAxis.SetCoord(u.X(),u.Y(),u.Z());
+    ui->drawingWindow->set_gridPlane(origin,normal);
+    ui->drawingWindow->updateViewer();
+    setMenusI(76);
+}
+
 void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
     //std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFace_triggered" << std::endl; std::cout.flush();

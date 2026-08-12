@@ -979,11 +979,18 @@ EndItem
 newProject
 closeProject
 
-# rectangle at (x0,y0,z0), with the given u and v vectors, and width and height.
-drawRectangle name x0 y0 z0 ux uy uz vx vy vz width height 
+# Set the drawing plane with the origin at (x0,y0,z0), the u-direction (ux,uy,uz), and the normal (nx,ny,nz)
+setDrawingPlane x0 y0 z0 ux uy uz nx ny nz
 
-# circle with center at (x0,y0,z0), first point at (x1,y1,z1) [which also sets the radius, normal (nx,ny,nz) and the number of points N
-drawCircle name x0 y0 z0 x1 y1 z1 nx ny nz N
+setDrawingPlaneToXY
+setDrawingPlaneToXZ
+setDrawingPlaneToYZ
+
+# rectangle is drawn from (x0,y0,z0) to (x1,y1,z1) on the drawing plane.  Points must be legal for the drawing plane.
+drawRectangle name x0 y0 z0 x1 y1 z1
+
+# circle with center at (x0,y0,z0), first point at (x1,y1,z1).  Points must be legal for the drawing plane.
+drawCircle name x0 y0 z0 x1 y1 z1 
 
 undo
 redo
@@ -1002,6 +1009,8 @@ mergeSelectedObjects name
 # Subtract the selected objects an then re-name the result to the given name.  Works only with two selected objects.
 # Subtracts the second selected object from the first.
 subtractSelectedObjects name
+
+moveSelectedObjects x y z
 
 For i = N To M Step P
    command

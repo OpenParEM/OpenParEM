@@ -61,6 +61,10 @@ public:
     int endForLoop (std::vector<std::string> &tokens, ForLoop *loop);
     int newProject (std::vector<std::string> &tokens);
     int closeProject (std::vector<std::string> &tokens);
+    int setDrawingPlane (std::vector<std::string> &tokens);
+    int setDrawingPlaneToXY (std::vector<std::string> &tokens);
+    int setDrawingPlaneToXZ (std::vector<std::string> &tokens);
+    int setDrawingPlaneToYZ (std::vector<std::string> &tokens);
     int drawRectangle (std::vector<std::string> &tokens);
     int drawPolycircle (std::vector<std::string> &tokens);
     int undo (std::vector<std::string> &tokens);
@@ -72,6 +76,7 @@ public:
     int extrudeSelectedObjects (std::vector<std::string> &tokens);
     int mergeSelectedObjects (std::vector<std::string> &tokens);
     int subtractSelectedObjects (std::vector<std::string> &tokens);
+    int moveSelectedObjects (std::vector<std::string> &tokens);
 
     void run ();
 

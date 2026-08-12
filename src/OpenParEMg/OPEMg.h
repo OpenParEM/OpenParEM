@@ -435,6 +435,7 @@ public:
     bool isValidSetPlane ();
     void setPlaneToFace ();
     void setPlaneToFaceAxis ();
+    void setPlane (gp_Pnt, gp_Pnt, gp_Dir);
 
     bool isValidCreatePath ();
     PortItem* get_matchingPortItem (Path *);
