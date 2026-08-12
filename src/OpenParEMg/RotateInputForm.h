@@ -55,10 +55,10 @@ private slots:
     void on_CustomAxis_clicked ();
     void on_pickStart_clicked ();
     void on_pickEnd_clicked ();
-    void on_OkButton_clicked ();
 
 public slots:
     void pickVertexFinished (gp_Pnt);
+    void on_OkButton_clicked ();
     void on_CancelButton_clicked ();
 
 private:

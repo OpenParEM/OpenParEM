@@ -986,6 +986,13 @@ setDrawingPlaneToXY
 setDrawingPlaneToXZ
 setDrawingPlaneToYZ
 
+# line is drawn from (x0,y0,z0) to (x1,y1,z1) on the drawing plane.  Points must be legal for the drawing plane.
+drawLine name x0 y0 z0 x1 y1 z1
+
+# polyline is drawn for the given N points on the drawing plane.  Points must be legal for the drawing plane.
+# The polyline is closed if x0=xN, y0=yN, z0=zN
+drawPolyine name N x0 y0 z0 x1 y1 z1 ... xN yN zN
+
 # rectangle is drawn from (x0,y0,z0) to (x1,y1,z1) on the drawing plane.  Points must be legal for the drawing plane.
 drawRectangle name x0 y0 z0 x1 y1 z1
 

@@ -65,6 +65,7 @@ public:
     int setDrawingPlaneToXY (std::vector<std::string> &tokens);
     int setDrawingPlaneToXZ (std::vector<std::string> &tokens);
     int setDrawingPlaneToYZ (std::vector<std::string> &tokens);
+    int drawLine (std::vector<std::string> &tokens);
     int drawRectangle (std::vector<std::string> &tokens);
     int drawPolycircle (std::vector<std::string> &tokens);
     int undo (std::vector<std::string> &tokens);

@@ -177,6 +177,26 @@ int Macro::setDrawingPlaneToYZ (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::drawLine (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 8 && tokens[0].compare("drawLine") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->on_actionDrawLine_triggered();
+            mw->getPickedVertex(gp_Pnt(std::stod(tokens[2]),std::stod(tokens[3]),std::stod(tokens[4])),false);
+            mw->getPickedVertex(gp_Pnt(std::stod(tokens[5]),std::stod(tokens[6]),std::stod(tokens[7])),false);
+            mw->renameSelectedDrawingItem(QString::fromStdString(tokens[1]));
+        } else {
+            //log.append("ERROR: drawLine failed due to no active project.");
+            std::cout << "ERROR: drawLine failed due to no active project." << std::endl;
+            return 2;
+        }
+
+        //log.append("tokens[0]"drawLine\n");
+        std::cout << "drawLine" << std::endl;
+        return 1;
+    }
+    return 0;
+}
 
 int Macro::drawRectangle (std::vector<std::string> &tokens)
 {
@@ -585,6 +605,12 @@ void Macro::run ()
                 }
 
                 retVal=setDrawingPlaneToYZ(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=drawLine(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
                     i++; continue;
