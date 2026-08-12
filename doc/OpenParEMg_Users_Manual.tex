@@ -998,7 +998,12 @@ fitAll
 
 unselectAllObjects
 selectObject name
+
+# Delete the objects and promote the children.
 deleteSelectedObjects
+
+# Delete the object and its children.
+deleteSubtreeSelectedObjects
 
 # Extrude the selected objects by the given length and then re-name it to the given name.
 extrudeSelectedObjects name length
@@ -1011,6 +1016,12 @@ mergeSelectedObjects name
 subtractSelectedObjects name
 
 moveSelectedObjects x y z
+
+
+
+# Rotate the objects about the axis given by (x0,y0,z0) to (x1,y1,z1) by the given angle in degrees.
+rotateSelectedObjects x0 y0 z0 x1 y1 z1 angle
+
 
 For i = N To M Step P
    command

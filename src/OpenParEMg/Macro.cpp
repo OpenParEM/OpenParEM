@@ -331,6 +331,23 @@ int Macro::deleteSelectedObjects (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::deleteSubtreeSelectedObjects (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("deleteSubtreeSelectedObjects") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->deletePlusDrawingItems();
+        } else {
+            //log.append("ERROR: deleteSubtreeSelectedObjects failed due to no active project");
+            std::cout << "ERROR: deleteSubtreeSelectedObjects failed due to no active project" << std::endl;
+            return 2;
+        }
+        //log.append("deleteSubtreeSelectedObjects\n");
+        std::cout << "deleteSubtreeSelectedObjects" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
 int Macro::extrudeSelectedObjects (std::vector<std::string> &tokens)
 {
     if (tokens.size() == 3 && tokens[0].compare("extrudeSelectedObjects") == 0) {
@@ -423,6 +440,38 @@ int Macro::moveSelectedObjects (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::rotateSelectedObjects (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 8 && tokens[0].compare("rotateSelectedObjects") == 0) {
+        if (mw->projectFileLoaded) {
+            if (mw->ui->drawingWindow->get_selectedItems_size() > 0) {
+                mw->setStartPoint(std::stod(tokens[1]),std::stod(tokens[2]),std::stod(tokens[3]));
+                mw->setEndPoint(std::stod(tokens[4]),std::stod(tokens[5]),std::stod(tokens[6]));
+                mw->setAngle(std::stod(tokens[7]));
+                mw->rotateObject();
+                if (mw->rotateInputForm) {
+                    mw->rotateInputForm->on_OkButton_clicked();
+                } else {
+                    //log.append("ERROR: rotateSelectedObjects failed on invalid form.");
+                    std::cout << "ERROR: rotateSelectedObjects failed on invalid form" << std::endl;
+                    return 2;
+                }
+            } else {
+                //log.append("ERROR: rotateSelectedObjects failed because no objects are selected.");
+                std::cout << "ERROR: rotateSelectedObjects failed because no objects are selected." << std::endl;
+                return 2;
+            }
+        } else {
+            //log.append("ERROR: rotateSelectedObjects failed due to no active project.");
+            std::cout << "ERROR: rotateSelectedObjects failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("rotateSelectedObjects\n");
+        std::cout << "rotateSelectedObjects" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
 
 void Macro::run ()
 {
@@ -566,6 +615,12 @@ void Macro::run ()
                     i++; continue;
                 }
 
+                retVal=deleteSubtreeSelectedObjects(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
                 retVal=extrudeSelectedObjects(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
@@ -585,6 +640,12 @@ void Macro::run ()
                 }
 
                 retVal=moveSelectedObjects(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=rotateSelectedObjects(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
                     i++; continue;

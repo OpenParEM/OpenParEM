@@ -73,10 +73,12 @@ public:
     int unselectAllObjects (std::vector<std::string> &tokens);
     int selectObject (std::vector<std::string> &tokens);
     int deleteSelectedObjects (std::vector<std::string> &tokens);
+    int deleteSubtreeSelectedObjects (std::vector<std::string> &tokens);
     int extrudeSelectedObjects (std::vector<std::string> &tokens);
     int mergeSelectedObjects (std::vector<std::string> &tokens);
     int subtractSelectedObjects (std::vector<std::string> &tokens);
     int moveSelectedObjects (std::vector<std::string> &tokens);
+    int rotateSelectedObjects (std::vector<std::string> &tokens);
 
     void run ();
 

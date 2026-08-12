@@ -1,20 +1,51 @@
 #OpenParEMgMacro 1.0
 
-For i = 1 To 10 Step 1
+For i = 1 To 2 Step 1
    newProject
    closeProject
 EndFor
 
 newProject
-For i = 1 To 10 Step 1
-   drawRectangle newRectangle 0 0 0 1 0 0 0 1 0 0.005 0.010
+
+For i = 1 To 2 Step 1
+   setDrawingPlaneToXZ
+   setDrawingPlaneToXY 
+   drawPolycircle PC1 0 0 0    0 0.001 0
+   setDrawingPlaneToYZ
+   drawPolycircle PC2 0 0 0    0 0.001 0
+   setDrawingPlaneToXZ
+   drawPolycircle PC3 0 0 0   0 0 0.001
+
+   setDrawingPlane 0 0 0   1 0 0   0 0 1  # XY
+   drawRectangle R1 -0.001 -0.001 0   0.001 0.001 0
+
+   setDrawingPlane 0 0 0   1 0 0   0 1 0  # XZ
+   drawRectangle R2 -0.001 0 -0.001   0.001 0 0.001
+
+   setDrawingPlane 0 0 0   0 1 0   1 0 0  # YZ
+   drawRectangle R3 0 -0.001 -0.001   0 0.001 0.001 
+
+   unselectAllObjects
+   selectObject PC1
+   selectObject PC2
+   selectObject PC3
+   selectObject R1
+   selectObject R2
+   selectObject R3
+   deleteSelectedObjects
+EndFor
+
+For i = 1 To 2 Step 1
+   setDrawingPlaneToXY
+   drawRectangle newRectangle 0 0 0   0.005 0.010 0
    undo
    redo
    unselectAllObjects
    selectObject newRectangle
    deleteSelectedObjects
    undo
-   drawRectangle newRectangle2 0.001 0.001 0.001 1 0 0 0 0 1 0.002 0.003
+   setDrawingPlane  0 0.001 0   1 0 0   0 1 0  # offset XZ
+   drawRectangle newRectangle2  0.001 0.001 0.001  0.002 0.001 0.003
    undo
    redo
    selectObject newRectangle
@@ -22,9 +53,30 @@ For i = 1 To 10 Step 1
    deleteSelectedObjects
 EndFor
 
-For i = 1 To 1000 Step 1
-   drawRectangle newRectangle 0 0 0 1 0 0 0 1 0 0.005 0.010
-   drawRectangle newRectangle1 0.001 0.001 0 1 0 0 0 1 0 0.006 0.008
+setDrawingPlaneToXY
+drawRectangle newRectangle1 0 0 0 0.001 0.002 0 
+drawRectangle newRectangle2 0.001 0.002 0 0.002 0.003 0
+For i = 1 To 10 Step 1
+   undo
+   undo
+   undo
+   undo
+   redo
+   redo
+   redo
+   redo
+EndFor
+selectObject newRectangle1
+selectObject newRectangle2
+deleteSelectedObjects
+
+setDrawingPlaneToXY
+For i = 1 To 2 Step 1
+   drawRectangle newRectangle 0 0 0   0.005 0.010 0 
+   drawRectangle newRectangle1 0.001 0.001 0  0.007 0.009 0
+   unselectAllObjects
+   selectObject newRectangle
+   selectObject newRectangle1
    extrudeSelectedObjects newExtrude 0.005
    unselectAllObjects
    selectObject newExtrude
@@ -43,5 +95,52 @@ For i = 1 To 1000 Step 1
    selectObject newRectangle
    selectObject newRectangle1
    deleteSelectedObjects
+EndFor
+
+setDrawingPlaneToXY
+For i = 1 To 5 Step 1
+   drawRectangle R1  0 0 0   0.003 0.001 0
+   extrudeSelectedObjects E1 0.005
+   unselectAllObjects
+   drawPolycircle PC1  0 0.001 0  0 0 0
+   drawPolycircle PC2  0.003 0.001 0  0.003 0 0
+   unselectAllObjects
+   selectObject PC1
+   selectObject PC2
+   extrudeSelectedObjects E2 0.0025
+   mergeSelectedObjects M1
+   unselectAllObjects
+   selectObject E1
+   selectObject M1
+   mergeSelectedObjects M2
+
+   unselectAllObjects
+   drawPolycircle PC3  0 0.001 0  0 0.0005 0
+   drawPolycircle PC4  0.003 0.001 0  0.003 0.0005 0
+   unselectAllObjects
+   selectObject PC3
+   selectObject PC4
+   extrudeSelectedObjects E3 0.005
+   mergeSelectedObjects M3
+   unselectAllObjects
+   selectObject M2
+   selectObject M3
+   subtractSelectedObjects S1
+
+   fitAll
+   unselectAllObjects
+   selectObject M1
+   moveObject 0 0 0.00125
+   unselectAllObjects
+
+   selectObject S1
+   deleteSubtreeSelectedObjects
+EndFor
+undo
+unselectAllObjects
+selectObject S1
+For i = 1 To 5 Step 1
+   rotateSelectedObjects 0 0 0 0 1 0 15
+   moveSelectedObjects 0 0 0.0005
 EndFor
 

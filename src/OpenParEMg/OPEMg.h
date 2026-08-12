@@ -486,6 +486,9 @@ public:
     bool isValidExtrudePolywire ();
     void finishExtrudePolywire ();
     void setLength (double length_) {length=length_;}
+    void setAngle (double angle_) {angle=angle_;}
+    void setStartPoint (double x, double y, double z) {startPoint=gp_Pnt(x,y,z);}
+    void setEndPoint (double x, double y, double z) {endPoint=gp_Pnt(x,y,z);}
 
     void finishMoveObject (gp_Pnt, gp_Pnt);
 
