@@ -198,6 +198,37 @@ int Macro::drawLine (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::drawPolyline (std::vector<std::string> &tokens)
+{
+    if (tokens.size() > 8 && tokens[0].compare("drawPolyline") == 0) {
+        if (mw->projectFileLoaded) {
+            if (std::stoi(tokens[2])*3+3 == tokens.size()) {
+                mw->on_actionDrawPolyline_triggered();
+                int i=0;
+                while (i < std::stoi(tokens[2])) {
+                    mw->getPickedVertex(gp_Pnt(std::stod(tokens[i*3+3]),std::stod(tokens[i*3+4]),std::stod(tokens[i*3+5])),false);
+                    i++;
+                }
+                mw->finishDraw();
+                mw->renameSelectedDrawingItem(QString::fromStdString(tokens[1]));
+            } else {
+                //log.append("ERROR: drawPolyline failed due to invalid number of points.");
+                std::cout << "ERROR: drawPolyline failed due to invalid number of points." << std::endl;
+                return 2;
+            }
+        } else {
+            //log.append("ERROR: drawPolyline failed due to no active project.");
+            std::cout << "ERROR: drawPolyline failed due to no active project." << std::endl;
+            return 2;
+        }
+
+        //log.append("tokens[0]"drawPolyline\n");
+        std::cout << "drawPolyline" << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
 int Macro::drawRectangle (std::vector<std::string> &tokens)
 {
     if (tokens.size() == 8 && tokens[0].compare("drawRectangle") == 0) {
@@ -611,6 +642,12 @@ void Macro::run ()
                 }
 
                 retVal=drawLine(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=drawPolyline(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
                     i++; continue;

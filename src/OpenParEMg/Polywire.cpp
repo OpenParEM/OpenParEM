@@ -785,6 +785,9 @@ QString Polyline::getTip (double conversionFactor)
     tip.append(QString::number(endPoint.Z()*conversionFactor,'g',15));
     tip.append(")");
 
+    if (closed) tip.append("\nclosed=true");
+    else tip.append("\nclosed=false");
+
     return tip;
 }
 
