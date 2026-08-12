@@ -473,6 +473,29 @@ int Macro::rotateSelectedObjects (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::copySelectedObjects (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("copySelectedObjects") == 0) {
+        if (mw->projectFileLoaded) {
+            if (mw->ui->drawingWindow->get_selectedItems_size() > 0) {
+                mw->copyDrawingItems();
+            } else {
+                //log.append("ERROR: copySelectedObjects failed because no objects are selected.");
+                std::cout << "ERROR: copySelectedObjects failed because no objects are selected." << std::endl;
+                return 2;
+            }
+        } else {
+            //log.append("ERROR: copySelectedObjects failed due to no active project.");
+            std::cout << "ERROR: copySelectedObjects failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("copySelectedObjects\n");
+        std::cout << "copySelectedObjects" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
 void Macro::run ()
 {
     QStringList lines=text.split('\n');
@@ -640,6 +663,12 @@ void Macro::run ()
                 }
 
                 retVal=moveSelectedObjects(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=copySelectedObjects(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
                     i++; continue;

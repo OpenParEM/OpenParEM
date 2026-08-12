@@ -1,13 +1,13 @@
 #OpenParEMgMacro 1.0
 
-For i = 1 To 2 Step 1
+For i = 1 To 1000 Step 1
    newProject
    closeProject
 EndFor
 
 newProject
 
-For i = 1 To 2 Step 1
+For i = 1 To 1000 Step 1
    setDrawingPlaneToXZ
    setDrawingPlaneToXY 
    drawPolycircle PC1 0 0 0    0 0.001 0
@@ -35,7 +35,38 @@ For i = 1 To 2 Step 1
    deleteSelectedObjects
 EndFor
 
-For i = 1 To 2 Step 1
+For i = 1 To 1000 Step 1
+   drawRectangle R1  0 0 0   0.003 0.001 0
+   extrudeSelectedObjects E1 0.003
+
+   unselectAllObjects
+   selectObject E1
+   copySelectedObjects
+
+   unselectAllObjects
+   selectObject E1
+   deleteSelectedObjects
+   selectObject R1
+   deleteSelectedObjects
+
+   undo
+   undo
+   undo
+   undo
+   redo
+   redo
+   redo
+   redo
+
+   unselectAllObjects
+   selectObject E1_copy
+   deleteSubtreeSelectedObjects
+   undo
+   redo
+EndFor
+
+
+For i = 1 To 1000 Step 1
    setDrawingPlaneToXY
    drawRectangle newRectangle 0 0 0   0.005 0.010 0
    undo
@@ -56,7 +87,7 @@ EndFor
 setDrawingPlaneToXY
 drawRectangle newRectangle1 0 0 0 0.001 0.002 0 
 drawRectangle newRectangle2 0.001 0.002 0 0.002 0.003 0
-For i = 1 To 10 Step 1
+For i = 1 To 1000 Step 1
    undo
    undo
    undo
@@ -71,7 +102,7 @@ selectObject newRectangle2
 deleteSelectedObjects
 
 setDrawingPlaneToXY
-For i = 1 To 2 Step 1
+For i = 1 To 1000 Step 1
    drawRectangle newRectangle 0 0 0   0.005 0.010 0 
    drawRectangle newRectangle1 0.001 0.001 0  0.007 0.009 0
    unselectAllObjects
@@ -98,7 +129,7 @@ For i = 1 To 2 Step 1
 EndFor
 
 setDrawingPlaneToXY
-For i = 1 To 5 Step 1
+For i = 1 To 1000 Step 1
    drawRectangle R1  0 0 0   0.003 0.001 0
    extrudeSelectedObjects E1 0.005
    unselectAllObjects
@@ -139,7 +170,7 @@ EndFor
 undo
 unselectAllObjects
 selectObject S1
-For i = 1 To 5 Step 1
+For i = 1 To 1000 Step 1
    rotateSelectedObjects 0 0 0 0 1 0 15
    moveSelectedObjects 0 0 0.0005
 EndFor

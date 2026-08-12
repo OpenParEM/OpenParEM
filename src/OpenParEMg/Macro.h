@@ -79,6 +79,7 @@ public:
     int subtractSelectedObjects (std::vector<std::string> &tokens);
     int moveSelectedObjects (std::vector<std::string> &tokens);
     int rotateSelectedObjects (std::vector<std::string> &tokens);
+    int copySelectedObjects (std::vector<std::string> &tokens);
 
     void run ();
 
