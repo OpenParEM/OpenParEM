@@ -1151,6 +1151,9 @@ public:
 
     bool hasNet (QString);
 
+    void selectVoltageVIItem ();
+    void selectCurrentVIItem ();
+
 private:
     PathItem *pathItem;   // PathItem associated with this port
 };

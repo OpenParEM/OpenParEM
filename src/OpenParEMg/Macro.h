@@ -61,6 +61,7 @@ public:
     int endForLoop (std::vector<std::string> &tokens, ForLoop *loop);
     int newProject (std::vector<std::string> &tokens);
     int closeProject (std::vector<std::string> &tokens);
+    int forceCloseProject (std::vector<std::string> &tokens);
     int setDrawingPlane (std::vector<std::string> &tokens);
     int setDrawingPlaneToXY (std::vector<std::string> &tokens);
     int setDrawingPlaneToXZ (std::vector<std::string> &tokens);
@@ -85,6 +86,26 @@ public:
 
     int convertSelectedObjectsToPolylines (std::vector<std::string> &tokens);
     int convertSelectedObjectsToPaths (std::vector<std::string> &tokens);
+    int convertSelectedObjectsToPorts (std::vector<std::string> &tokens);
+    int convertSelectedObjectsToBoundaries (std::vector<std::string> &tokens);
+
+    int unselectAllPaths (std::vector<std::string> &tokens);
+    int unselectAllPorts (std::vector<std::string> &tokens);
+    int unselectAllBoundaries (std::vector<std::string> &tokens);
+
+    int selectPath (std::vector<std::string> &tokens);
+    int selectPort (std::vector<std::string> &tokens);
+    int selectBoundary (std::vector<std::string> &tokens);
+
+    int deleteSelectedPaths (std::vector<std::string> &tokens);
+    int deleteSelectedPorts (std::vector<std::string> &tokens);
+    int deleteSelectedBoundaries (std::vector<std::string> &tokens);
+
+    int selectPortVoltageObject (std::vector<std::string> &tokens);
+    int selectPortCurrentObject (std::vector<std::string> &tokens);
+
+    int drawPortIntegrationLine (std::vector<std::string> &tokens);
+    int drawPortIntegrationPolyline (std::vector<std::string> &tokens);
 
     void run ();
 

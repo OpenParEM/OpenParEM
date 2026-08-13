@@ -979,6 +979,9 @@ EndItem
 newProject
 closeProject
 
+# close project without saving
+forceCloseProject
+
 # Set the drawing plane with the origin at (x0,y0,z0), the u-direction (ux,uy,uz), and the normal (nx,ny,nz)
 setDrawingPlane x0 y0 z0 ux uy uz nx ny nz
 
@@ -1038,6 +1041,30 @@ rotateSelectedObjects x0 y0 z0 x1 y1 z1 angle
 
 convertSelectedObjectsToPolylines
 convertSelectedObjectsToPaths
+convertSelectedObjectsToPorts
+convertSelectedObjectsToBoundaries
+
+# select the voltage or current object for the port with the given name
+selectPortVoltageObject name
+selectPortCurrentObject name
+
+# drawing lines and polylines must be within the port outline
+drawPortIntegrationLine x0 y0 z0 x1 y1 z1
+drawPortIntegrationPolyline N x0 y0 z0 x1 y1 z1 ... xN yN zN
+
+
+unselectAllPaths
+unselectAllPorts
+unselectAllBoundaries
+
+selectPath name
+deleteSelectedPaths
+
+selectPort name
+deleteSelectedPorts
+
+selectBoundary name
+deleteSelectedBoundaries
 
 
 For i = N To M Step P

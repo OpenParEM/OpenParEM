@@ -4041,6 +4041,92 @@ bool PortItem::hasNet (QString net)
 }
 
 
+void PortItem::selectVoltageVIItem ()
+{
+    std::cout << "PortItem::selectVoltageVIItem" << std::endl; std::cout.flush();
+    long unsigned int i=0;
+    while (i < childCount()) {
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+        if (modeItem) {
+            long unsigned int j=0;
+            while (j < modeItem->childCount()) {
+                VIItem *viItem=dynamic_cast<VIItem *>(modeItem->child(j));
+                if (viItem && viItem->is_voltage()) {
+                    mw->ui->drawingWindow->selectItem(viItem);
+                    return;
+                }
+                j++;
+            }
+        }
+
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+        if (diffPairItem) {
+            long unsigned int j=0;
+            while (j < diffPairItem->childCount()) {
+                ModeItem *modeItem=dynamic_cast<ModeItem *>(child(j));
+                if (modeItem) {
+                    long unsigned int k=0;
+                    while (k < modeItem->childCount()) {
+                        VIItem *viItem=dynamic_cast<VIItem *>(modeItem->child(k));
+                        if (viItem && viItem->is_voltage()) {
+                            mw->ui->drawingWindow->selectItem(viItem);
+                            return;
+                        }
+                        k++;
+                    }
+                }
+            }
+        }
+        i++;
+    }
+
+    return;
+}
+
+void PortItem::selectCurrentVIItem ()
+{
+    std::cout << "PortItem::selectCurrentVIItem" << std::endl; std::cout.flush();
+
+    long unsigned int i=0;
+    while (i < childCount()) {
+        ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
+        if (modeItem) {
+            long unsigned int j=0;
+            while (j < modeItem->childCount()) {
+                VIItem *viItem=dynamic_cast<VIItem *>(modeItem->child(j));
+                if (viItem && viItem->is_current()) {
+                    mw->ui->drawingWindow->selectItem(viItem);
+                    return;
+                }
+                j++;
+            }
+        }
+
+        DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(child(i));
+        if (diffPairItem) {
+            long unsigned int j=0;
+            while (j < diffPairItem->childCount()) {
+                ModeItem *modeItem=dynamic_cast<ModeItem *>(child(j));
+                if (modeItem) {
+                    long unsigned int k=0;
+                    while (k < modeItem->childCount()) {
+                        VIItem *viItem=dynamic_cast<VIItem *>(modeItem->child(k));
+                        if (viItem && viItem->is_current()) {
+                            mw->ui->drawingWindow->selectItem(viItem);
+                            return;
+                        }
+                        k++;
+                    }
+                }
+            }
+        }
+        i++;
+    }
+
+    return;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // ModeItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -4700,6 +4786,8 @@ bool VIItem::setPlane (gp_Pln &plane)
 
 void VIItem::drawLinePath ()
 {
+    std::cout << "VIItem::drawLinePath" << std::endl; std::cout.flush();
+
     // restrict drawing to the plane of the port
     gp_Pln portPlane;
     if (setPlane(portPlane)) return;

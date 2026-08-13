@@ -444,6 +444,8 @@ public:
     bool isValidCreatePortFromPath ();
     bool isValidReversePath ();
     bool isValidCreateDiffPair ();
+    void selectPortVoltageItem (QString);
+    void selectPortCurrentItem (QString);
 
     bool isValidCreateBoundaryFromFace ();
     bool isValidCreateBoundaryFromPath ();
@@ -482,6 +484,8 @@ public:
     bool isValidConvertToPath ();
     void convertDrawingToPath ();
     void convertDrawingToPathN (bool);
+    void drawIntegrationLine ();
+    void drawIntegrationPolyline ();
 
     bool isValidExtrudePolywire ();
     void finishExtrudePolywire ();
@@ -608,6 +612,7 @@ private slots:
     void showMeshItems ();
     void hideMeshItems ();
     void insertSelectedPaths ();
+    void unselectPathItems ();
     void unselectBoundaryItems ();
     void renameBoundaryItems ();
     void deleteBoundaryItems ();
@@ -626,7 +631,10 @@ private slots:
     void collectChildren (DrawingItem *, std::vector<DrawingItem *> *);
     void deletePlusDrawingItems ();
     void insertModeItems ();
+    void selectPathItem (QString);
+    void selectPortItem (QString);
     void unselectPortItems ();
+    void selectBoundaryItem (QString);
     void renamePortItems ();
     void deleteRootPortItems ();
     bool portNameExists (QString);

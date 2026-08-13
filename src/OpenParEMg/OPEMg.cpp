@@ -1708,7 +1708,24 @@ void OpenParEMg::insertSelectedPaths ()
     }
 }
 
-void OpenParEMg::unselectBoundaryItems()
+void OpenParEMg::unselectPathItems ()
+{
+    //std::cout << "OpenParEMg::unselectPathItems" << std::endl; std::cout.flush();
+
+    int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        PathItem *pathItem=dynamic_cast<PathItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (pathItem) {
+            ui->drawingWindow->unselectItem(pathItem,i);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(23);
+}
+
+void OpenParEMg::unselectBoundaryItems ()
 {
     //std::cout << "OpenParEMg::unselectBoundaryItems" << std::endl; std::cout.flush();
 
@@ -1978,6 +1995,21 @@ void OpenParEMg::rename_editingFinished ()
     ui->drawingWindow->updateViewer();
 }
 
+void OpenParEMg::selectDrawingItem (QString name)
+{
+    int i=0;
+    while (i < drawing->childCount()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
+        if (drawingItem && drawingItem->text(0).compare(name) == 0) {
+            ui->drawingWindow->selectItem(drawingItem);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(1);
+}
+
 void OpenParEMg::unselectDrawingItems()
 {
     //std::cout << "OpenParEMg::unselectDrawingItems" << std::endl; std::cout.flush();
@@ -2045,21 +2077,6 @@ void OpenParEMg::deleteDrawingItems ()
     }
 
     finishOperation(false,100);
-}
-
-void OpenParEMg::selectDrawingItem (QString name)
-{
-    int i=0;
-    while (i < drawing->childCount()) {
-        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
-        if (drawingItem && drawingItem->text(0).compare(name) == 0) {
-            ui->drawingWindow->selectItem(drawingItem);
-        }
-        i++;
-    }
-
-    ui->drawingWindow->updateViewer();
-    setMenusI(1);
 }
 
 void OpenParEMg::renameSelectedDrawingItem (QString name)
@@ -2157,6 +2174,36 @@ void OpenParEMg::insertModeItems ()
     setMenusI(22);
 }
 
+void OpenParEMg::selectPathItem (QString name)
+{
+    int i=0;
+    while (i < path->childCount()) {
+        PathItem *pathItem=dynamic_cast<PathItem *>(path->child(i));
+        if (pathItem && pathItem->text(0).compare(name) == 0) {
+            ui->drawingWindow->selectItem(pathItem);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(1);
+}
+
+void OpenParEMg::selectPortItem (QString name)
+{
+    int i=0;
+    while (i < port->childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
+        if (portItem && portItem->text(0).compare(name) == 0) {
+            ui->drawingWindow->selectItem(portItem);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(1);
+}
+
 void OpenParEMg::unselectPortItems()
 {
     //std::cout << "OpenParEMg::unselectPortItems" << std::endl; std::cout.flush();
@@ -2170,6 +2217,21 @@ void OpenParEMg::unselectPortItems()
 
     ui->drawingWindow->updateViewer();
     setMenusI(23);
+}
+
+void OpenParEMg::selectBoundaryItem (QString name)
+{
+    int i=0;
+    while (i < boundary->childCount()) {
+        BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(boundary->child(i));
+        if (boundaryItem && boundaryItem->text(0).compare(name) == 0) {
+            ui->drawingWindow->selectItem(boundaryItem);
+        }
+        i++;
+    }
+
+    ui->drawingWindow->updateViewer();
+    setMenusI(1);
 }
 
 bool OpenParEMg::portNameExists (QString name)
@@ -3634,6 +3696,40 @@ void OpenParEMg::convertDrawingToPathN (bool startNew)
     finishOperation(false,1);
 }
 
+void OpenParEMg::drawIntegrationLine ()
+{
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        VIItem *viItem=dynamic_cast<VIItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (viItem) {
+            clickedItem=viItem;
+            previousClickedItem=nullptr;
+            viItem->drawLinePath();
+
+            // stop at one path
+            return;
+        }
+        i++;
+    }
+}
+
+void OpenParEMg::drawIntegrationPolyline ()
+{
+    long unsigned int i=0;
+    while (i < ui->drawingWindow->get_selectedItems_size()) {
+        VIItem *viItem=dynamic_cast<VIItem *>(ui->drawingWindow->get_selectedItem(i));
+        if (viItem) {
+            clickedItem=viItem;
+            previousClickedItem=nullptr;
+            viItem->drawPolylinePath();
+
+            // stop at one path
+            return;
+        }
+        i++;
+    }
+}
+
 bool OpenParEMg::isValidRotateObject ()
 {
     int count=0;
@@ -4173,6 +4269,37 @@ bool OpenParEMg::isValidCreateDiffPair ()
     if (shapeData->get_impedance_calculation().compare("line") != 0) return false;
 
     return true;
+}
+
+void OpenParEMg::selectPortVoltageItem (QString name)
+{
+    std::cout << "OpenParEMg::selectPortVoltageItem  name=" << name.toStdString() << std::endl; std::cout.flush();
+    int i=0;
+    while (i < port->childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
+        if (portItem) {
+            if (portItem->text(0).compare(name) == 0) {
+                portItem->selectVoltageVIItem();
+                return;
+            }
+        }
+        i++;
+    }
+}
+
+void OpenParEMg::selectPortCurrentItem (QString name)
+{
+    int i=0;
+    while (i < port->childCount()) {
+        PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
+        if (portItem) {
+            if (portItem->text(0).compare(name) == 0) {
+                portItem->selectCurrentVIItem();
+                return;
+            }
+        }
+        i++;
+    }
 }
 
 void OpenParEMg::renumberDimTag ()

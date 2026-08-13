@@ -130,6 +130,19 @@ int Macro::closeProject (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::forceCloseProject (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("forceCloseProject") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->resetProject();
+        }
+        //log.append("forceCloseProject\n");
+        std::cout << "forceCloseProject" << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
 int Macro::setDrawingPlane (std::vector<std::string> &tokens)
 {
     if (tokens.size() == 10 && tokens[0].compare("setDrawingPlane") == 0) {
@@ -593,6 +606,287 @@ int Macro::convertSelectedObjectsToPaths (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::convertSelectedObjectsToPorts (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("convertSelectedObjectsToPorts") == 0) {
+        if (mw->projectFileLoaded) {
+            if (mw->ui->drawingWindow->get_selectedItems_size() > 0) {
+                mw->convertDrawingToPort();
+            } else {
+                //log.append("ERROR: convertSelectedObjectsToPorts failed because no objects are selected.");
+                std::cout << "ERROR: convertSelectedObjectsToPorts failed because no objects are selected." << std::endl;
+                return 2;
+            }
+        } else {
+            //log.append("ERROR: convertSelectedObjectsToPorts failed due to no active project.");
+            std::cout << "ERROR: convertSelectedObjectsToPorts failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("convertSelectedObjectsToPorts\n");
+        std::cout << "convertSelectedObjectsToPorts" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::convertSelectedObjectsToBoundaries (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("convertSelectedObjectsToBoundaries") == 0) {
+        if (mw->projectFileLoaded) {
+            if (mw->ui->drawingWindow->get_selectedItems_size() > 0) {
+                mw->convertDrawingToBoundary();
+            } else {
+                //log.append("ERROR: convertSelectedObjectsToBoundaries failed because no objects are selected.");
+                std::cout << "ERROR: convertSelectedObjectsToBoundaries failed because no objects are selected." << std::endl;
+                return 2;
+            }
+        } else {
+            //log.append("ERROR: convertSelectedObjectsToBoundaries failed due to no active project.");
+            std::cout << "ERROR: convertSelectedObjectsToBoundaries failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("convertSelectedObjectsToBoundaries\n");
+        std::cout << "convertSelectedObjectsToBoundaries" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::unselectAllPaths (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("unselectAllPaths") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->unselectPathItems();
+        } else {
+            //log.append("ERROR: unselectAllPaths failed due to no active project.");
+            std::cout << "ERROR: unselectAllPaths failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("unselectAllPaths\n");
+        std::cout << "unselectAllPaths" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::unselectAllPorts (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("unselectAllPorts") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->unselectPortItems();
+        } else {
+            //log.append("ERROR: unselectAllPorts failed due to no active project.");
+            std::cout << "ERROR: unselectAllPorts failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("unselectAllPorts\n");
+        std::cout << "unselectAllPorts" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::unselectAllBoundaries (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("unselectAllBoundaries") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->unselectBoundaryItems();
+        } else {
+            //log.append("ERROR: unselectAllBoundaries failed due to no active project.");
+            std::cout << "ERROR: unselectAllBoundaries failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("unselectAllBoundaries\n");
+        std::cout << "unselectAllBoundaries" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::selectPath (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 2 && tokens[0].compare("selectPath") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->selectPathItem(QString::fromStdString(tokens[1]));
+        } else {
+            //log.append("ERROR: selectPath failed due to no active project.");
+            std::cout << "ERROR: selectPath failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("selectPath\n");
+        std::cout << "selectPath" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::selectPort (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 2 && tokens[0].compare("selectPort") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->selectPortItem(QString::fromStdString(tokens[1]));
+        } else {
+            //log.append("ERROR: selectPort failed due to no active project.");
+            std::cout << "ERROR: selectPort failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("selectPort\n");
+        std::cout << "selectPort" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::selectBoundary (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 2 && tokens[0].compare("selectBoundary") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->selectBoundaryItem(QString::fromStdString(tokens[1]));
+        } else {
+            //log.append("ERROR: selectBoundary failed due to no active project.");
+            std::cout << "ERROR: selectBoundary failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("selectBoundary\n");
+        std::cout << "selectBoundary" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::deleteSelectedPaths (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("deleteSelectedPaths") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->deletePathItems();
+        } else {
+            //log.append("ERROR: deleteSelectedPaths failed due to no active project.");
+            std::cout << "ERROR: deleteSelectedPaths failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("deleteSelectedPaths\n");
+        std::cout << "deleteSelectedPaths" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::deleteSelectedPorts (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("deleteSelectedPorts") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->deletePortItems();
+        } else {
+            //log.append("ERROR: deleteSelectedPorts failed due to no active project.");
+            std::cout << "ERROR: deleteSelectedPorts failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("deleteSelectedPorts\n");
+        std::cout << "deleteSelectedPorts" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::deleteSelectedBoundaries (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("deleteSelectedBoundaries") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->deleteBoundaryItems();
+        } else {
+            //log.append("ERROR: deleteSelectedBoundaries failed due to no active project.");
+            std::cout << "ERROR: deleteSelectedBoundaries failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("deleteSelectedBoundaries\n");
+        std::cout << "deleteSelectedBoundaries" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::selectPortVoltageObject (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 2 && tokens[0].compare("selectPortVoltageObject") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->selectPortVoltageItem(QString::fromStdString(tokens[1]));
+        } else {
+            //log.append("ERROR: selectPortVoltageObject failed due to no active project.");
+            std::cout << "ERROR: selectPortVoltageObject failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("selectPortVoltageObject\n");
+        std::cout << "selectPortVoltageObject" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::selectPortCurrentObject (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 2 && tokens[0].compare("selectPortCurrentObject") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->selectPortCurrentItem(QString::fromStdString(tokens[1]));
+        } else {
+            //log.append("ERROR: selectPortCurrentObject failed due to no active project.");
+            std::cout << "ERROR: selectPortCurrentObject failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("selectPortCurrentObject\n");
+        std::cout << "selectPortCurrentObject" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::drawPortIntegrationLine (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 7 && tokens[0].compare("drawPortIntegrationLine") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->drawIntegrationLine();
+            mw->getPickedVertex(gp_Pnt(std::stod(tokens[1]),std::stod(tokens[2]),std::stod(tokens[3])),false);
+            mw->getPickedVertex(gp_Pnt(std::stod(tokens[4]),std::stod(tokens[5]),std::stod(tokens[6])),false);
+        } else {
+            //log.append("ERROR: drawPortIntegrationLine failed due to no active project.");
+            std::cout << "ERROR: drawPortIntegrationLine failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("drawPortIntegrationLine\n");
+        std::cout << "drawPortIntegrationLine" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::drawPortIntegrationPolyline (std::vector<std::string> &tokens)
+{
+    if (tokens.size() > 7 && tokens[0].compare("drawPortIntegrationPolyline") == 0) {
+        if (mw->projectFileLoaded) {
+            if (std::stoi(tokens[1])*3+2 == tokens.size()) {
+                mw->drawIntegrationPolyline();
+                int i=0;
+                while (i < std::stoi(tokens[1])) {
+                    mw->getPickedVertex(gp_Pnt(std::stod(tokens[i*3+2]),std::stod(tokens[i*3+3]),std::stod(tokens[i*3+4])),false);
+                    i++;
+                }
+                mw->finishDraw();
+            }  else {
+                //log.append("ERROR: drawPortIntegrationPolyline failed due to invalid number of points.");
+                std::cout << "ERROR: drawPortIntegrationPolyline failed due to invalid number of points." << std::endl;
+                return 2;
+            }
+        } else {
+            //log.append("ERROR: drawPortIntegrationPolyline failed due to no active project.");
+            std::cout << "ERROR: drawPortIntegrationPolyline failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("drawPortIntegrationPolyline\n");
+        std::cout << "drawPortIntegrationPolyline" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
 void Macro::run ()
 {
     QStringList lines=text.split('\n');
@@ -658,6 +952,12 @@ void Macro::run ()
                 }
 
                 retVal=closeProject(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=forceCloseProject(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
                     i++; continue;
@@ -796,6 +1096,96 @@ void Macro::run ()
                 }
 
                 retVal=convertSelectedObjectsToPolylines(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=convertSelectedObjectsToPorts(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=convertSelectedObjectsToBoundaries(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=unselectAllPaths(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=unselectAllPorts(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=unselectAllBoundaries(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=selectPath(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=selectPort(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=selectBoundary(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=deleteSelectedPaths(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=deleteSelectedPorts(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=deleteSelectedBoundaries(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=selectPortVoltageObject(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=selectPortCurrentObject(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=drawPortIntegrationLine(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=drawPortIntegrationPolyline(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
                     i++; continue;
