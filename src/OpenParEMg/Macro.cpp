@@ -547,6 +547,29 @@ int Macro::copySelectedObjects (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::convertSelectedObjectsToPaths (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("convertSelectedObjectsToPaths") == 0) {
+        if (mw->projectFileLoaded) {
+            if (mw->ui->drawingWindow->get_selectedItems_size() > 0) {
+                mw->convertDrawingToPathN(true);
+            } else {
+                //log.append("ERROR: convertSelectedObjectsToPaths failed because no objects are selected.");
+                std::cout << "ERROR: convertSelectedObjectsToPaths failed because no objects are selected." << std::endl;
+                return 2;
+            }
+        } else {
+            //log.append("ERROR: convertSelectedObjectsToPaths failed due to no active project.");
+            std::cout << "ERROR: convertSelectedObjectsToPaths failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("convertSelectedObjectsToPaths\n");
+        std::cout << "convertSelectedObjectsToPaths" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
 void Macro::run ()
 {
     QStringList lines=text.split('\n');
@@ -738,6 +761,12 @@ void Macro::run ()
                 }
 
                 retVal=rotateSelectedObjects(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=convertSelectedObjectsToPaths(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
                     i++; continue;
