@@ -7,6 +7,7 @@ EndFor
 
 newProject
 
+# circle and rectangle
 For i = 1 To 1000 Step 1
    setDrawingPlaneToXZ
    setDrawingPlaneToXY 
@@ -35,6 +36,7 @@ For i = 1 To 1000 Step 1
    deleteSelectedObjects
 EndFor
 
+# set drawing plane
 For i = 1 To 1000 Step 1
    setDrawingPlaneToXY
    drawLine L1  0 0 0   0.003 0.001 0
@@ -58,6 +60,7 @@ For i = 1 To 1000 Step 1
    deleteSelectedObjects
 EndFor
 
+# copy
 For i = 1 To 1000 Step 1
    drawRectangle R1  0 0 0   0.003 0.001 0
    extrudeSelectedObjects E1 0.003
@@ -88,6 +91,7 @@ For i = 1 To 1000 Step 1
    redo
 EndFor
 
+# drawing plane
 For i = 1 To 1000 Step 1
    setDrawingPlaneToXY
    drawRectangle newRectangle 0 0 0   0.005 0.010 0
@@ -106,6 +110,7 @@ For i = 1 To 1000 Step 1
    deleteSelectedObjects
 EndFor
 
+# undo/redo
 setDrawingPlaneToXY
 drawRectangle newRectangle1 0 0 0 0.001 0.002 0 
 drawRectangle newRectangle2 0.001 0.002 0 0.002 0.003 0
@@ -123,6 +128,7 @@ selectObject newRectangle1
 selectObject newRectangle2
 deleteSelectedObjects
 
+# extrusion, merge, subtract
 setDrawingPlaneToXY
 For i = 1 To 1000 Step 1
    drawRectangle newRectangle 0 0 0   0.005 0.010 0 
@@ -150,6 +156,40 @@ For i = 1 To 1000 Step 1
    deleteSelectedObjects
 EndFor
 
+# convert to polylines
+For i = 1 To 1000 Step 1
+   setDrawingPlaneToXY
+   drawRectangle L1 0 0 0   0.003 0.001 0
+   drawRectangle L2  0.003 0 0  0.004 0.003 0
+
+   unselectAllObjects
+   selectObject L1
+   selectObject L2
+   convertSelectedObjectsToPolylines
+
+   selectObject L1
+   selectObject L2
+   deleteSubtreeSelectedObjects
+EndFor
+
+# convert to paths
+For i = 1 To 1000 Step 1
+   setDrawingPlaneToXY
+   drawPolyline L1 3  0 0 0   0.003 0.001 0   0.001 0.003 0
+   drawPolyline L2 4  0 0 0   0.003 0.001 0   0.001 0.003 0   0 0 0
+
+   unselectAllObjects
+   selectObject L1
+   selectObject L2
+   convertSelectedObjectsToPaths
+
+   undo
+   selectObject L1
+   selectObject L2
+   deleteSubtreeSelectedObjects
+EndFor
+
+# complex object
 setDrawingPlaneToXY
 For i = 1 To 1000 Step 1
    drawRectangle R1  0 0 0   0.003 0.001 0

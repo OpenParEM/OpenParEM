@@ -982,6 +982,12 @@ closeProject
 # Set the drawing plane with the origin at (x0,y0,z0), the u-direction (ux,uy,uz), and the normal (nx,ny,nz)
 setDrawingPlane x0 y0 z0 ux uy uz nx ny nz
 
+# examples
+#setDrawingPlane 0 0 0  1 0 0  0 0 1  # XY
+#setDrawingPlane 0 0 0  1 0 0  0 1 0  # XZ
+#setDrawingPlane 0 0 0  0 1 0  1 0 0  # YZ
+
+
 setDrawingPlaneToXY
 setDrawingPlaneToXZ
 setDrawingPlaneToYZ
@@ -1030,6 +1036,7 @@ copySelectedObjects
 rotateSelectedObjects x0 y0 z0 x1 y1 z1 angle
 
 
+convertSelectedObjectsToPolylines
 convertSelectedObjectsToPaths
 
 

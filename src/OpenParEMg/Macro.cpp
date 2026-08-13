@@ -547,6 +547,29 @@ int Macro::copySelectedObjects (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::convertSelectedObjectsToPolylines (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("convertSelectedObjectsToPolylines") == 0) {
+        if (mw->projectFileLoaded) {
+            if (mw->ui->drawingWindow->get_selectedItems_size() > 0) {
+                mw->convertToPolyline();
+            } else {
+                //log.append("ERROR: convertSelectedObjectsToPolylines failed because no objects are selected.");
+                std::cout << "ERROR: convertSelectedObjectsToPolylines failed because no objects are selected." << std::endl;
+                return 2;
+            }
+        } else {
+            //log.append("ERROR: convertSelectedObjectsToPolylines failed due to no active project.");
+            std::cout << "ERROR: convertSelectedObjectsToPolylines failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("convertSelectedObjectsToPolylines\n");
+        std::cout << "convertSelectedObjectsToPolylines" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
 int Macro::convertSelectedObjectsToPaths (std::vector<std::string> &tokens)
 {
     if (tokens.size() == 1 && tokens[0].compare("convertSelectedObjectsToPaths") == 0) {
@@ -767,6 +790,12 @@ void Macro::run ()
                 }
 
                 retVal=convertSelectedObjectsToPaths(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=convertSelectedObjectsToPolylines(tokens);
                 if (retVal > 0) {
                     if (retVal == 2) return;
                     i++; continue;

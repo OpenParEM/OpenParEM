@@ -83,6 +83,7 @@ public:
     int rotateSelectedObjects (std::vector<std::string> &tokens);
     int copySelectedObjects (std::vector<std::string> &tokens);
 
+    int convertSelectedObjectsToPolylines (std::vector<std::string> &tokens);
     int convertSelectedObjectsToPaths (std::vector<std::string> &tokens);
 
     void run ();
