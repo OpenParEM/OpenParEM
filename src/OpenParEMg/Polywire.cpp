@@ -301,7 +301,7 @@ gp_Pnt Polywire::getPosition ()
 gp_Pnt Polywire::getEndPoint ()
 {
     gp_Pnt endPoint(0,0,0);
-    if (shapePoints.size() > 1) endPoint=shapePoints[1];
+    if (shapePoints.size() > 1) endPoint=shapePoints[shapePoints.size()-1];
     return endPoint;
 }
 
