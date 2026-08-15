@@ -970,6 +970,7 @@ EndItem
 \section{Macro File Format Specification}
 \label{sec:macro_file_spec}
 
+A simple macro language is defined to enable stress and regression testing.  The stress and regression tests can be found in \texttt{regression/OpenParEMg}. Given its limited scope, the language is not fully developed and has limited error detection and messages. Any system implementing full automation of OpenParEM3D is expected to use a full-featured programming language to write the necessary text files to develop a complete project.
 
 \begin{Verbatim}[fontsize=\small]
 #OpenParEMgMacro 1.0 // required in the file
@@ -979,69 +980,91 @@ EndItem
 # all dimensions in m
 # all frequencies in Hz
 
+openProject path projectName
 newProject path projectName
+
+# Close project that has no pending changes
 closeProject
 
-# close project without saving
+# Close project without saving 
 forceCloseProject
 
-# Set the drawing plane with the origin at (x0,y0,z0), the u-direction (ux,uy,uz), and the normal (nx,ny,nz)
+# Set the drawing plane with the origin at (x0,y0,z0), the u-direction (ux,uy,uz),
+# and the normal (nx,ny,nz)
 setDrawingPlane x0 y0 z0 ux uy uz nx ny nz
 
-# examples
+# Examples
 #setDrawingPlane 0 0 0  1 0 0  0 0 1  # XY
 #setDrawingPlane 0 0 0  1 0 0  0 1 0  # XZ
 #setDrawingPlane 0 0 0  0 1 0  1 0 0  # YZ
 
-
+# Set the drawing plane to a specific plane centered at the origin
 setDrawingPlaneToXY
 setDrawingPlaneToXZ
 setDrawingPlaneToYZ
 
-# line is drawn from (x0,y0,z0) to (x1,y1,z1) on the drawing plane.  Points must be legal for the drawing plane.
+# Line is drawn from (x0,y0,z0) to (x1,y1,z1) on the drawing plane.
+# Points must be legal for the drawing plane.
 drawLine name x0 y0 z0 x1 y1 z1
 
-# polyline is drawn for the given N points on the drawing plane.  Points must be legal for the drawing plane.
+# Polyline is drawn for the given N points on the drawing plane.
+# Points must be legal for the drawing plane.
 # The polyline is closed if x0=xN, y0=yN, z0=zN
 drawPolyine name N x0 y0 z0 x1 y1 z1 ... xN yN zN
 
-# rectangle is drawn from (x0,y0,z0) to (x1,y1,z1) on the drawing plane.  Points must be legal for the drawing plane.
+# Rectangle is drawn from (x0,y0,z0) to (x1,y1,z1) on the drawing plane.
+# Points must be legal for the drawing plane.
 drawRectangle name x0 y0 z0 x1 y1 z1
 
-# circle with center at (x0,y0,z0), first point at (x1,y1,z1).  Points must be legal for the drawing plane.
-drawCircle name x0 y0 z0 x1 y1 z1 
+# Polycircle with center at (x0,y0,z0), first point at (x1,y1,z1).
+# Points must be legal for the drawing plane.
+drawPolycircle name x0 y0 z0 x1 y1 z1 
 
 undo
 redo
 fitAll
 
+# Operations on specific objects follows the method used when driving the user interface manually:
+# clear the selection, select one or more objects, then select an operation to perform on the
+# selected object.  A typical sequence is:
+#    unselectAllObjects
+#    selectObject name
+#    deleteSelectedObjects
+
+# unselect all drawing items
 unselectAllObjects
+
+# select a drawing item by name, where name is what appears in the selection tree
 selectObject name
 
-# Delete the objects and promote the children.
+# Delete the drawing items and promote the children.
 deleteSelectedObjects
 
-# Delete the object and its children.
+# Delete the drawing item  and its children.
 deleteSubtreeSelectedObjects
 
-# Extrude the selected objects by the given length and then re-name it to the given name.
+# Extrude the selected 2D drawing items by the given length and then re-name it to the given name.
 extrudeSelectedObjects name length
 
-# Merge the selected objects an then re-name the result to the given name.  Works only with two selected objects.
+# Merge the selected 3D drawing items and then re-name the result to the given name.
+# Works only with two selected objects.
 mergeSelectedObjects name
 
-# Subtract the selected objects an then re-name the result to the given name.  Works only with two selected objects.
-# Subtracts the second selected object from the first.
+# Subtract the selected 3D drawing items and then re-name the result to the given name.
+# Works only with two selected objects. Subtracts the second selected object from the first.
 subtractSelectedObjects name
 
+# Move the selected drawing items by the relative distance (x,y,z)
 moveSelectedObjects x y z
+
+# Copy the selected drawing item, where the name is copied and appended with "_copy"
 copySelectedObjects
 
-
-# Rotate the objects about the axis given by (x0,y0,z0) to (x1,y1,z1) by the given angle in degrees.
+# Rotate the drawing items about the axis given by (x0,y0,z0) to (x1,y1,z1)
+# by the given angle in degrees.
 rotateSelectedObjects x0 y0 z0 x1 y1 z1 angle
 
-
+# Conversion options
 convertSelectedObjectsToPolylines
 convertSelectedObjectsToPaths
 convertSelectedObjectsToPorts
@@ -1051,10 +1074,11 @@ convertSelectedObjectsToBoundaries
 selectPortVoltageObject name
 selectPortCurrentObject name
 
-# drawing lines and polylines must be within the port outline
+# Drawn lines and polylines for integration paths must be within the port outline
 drawPortIntegrationLine x0 y0 z0 x1 y1 z1
 drawPortIntegrationPolyline N x0 y0 z0 x1 y1 z1 ... xN yN zN
 
+# Similar to drawing items, paths, ports, and boundaries are first selected then processed.
 
 unselectAllPaths
 unselectAllPorts
@@ -1068,6 +1092,10 @@ deleteSelectedPorts
 
 selectBoundary name
 deleteSelectedBoundaries
+
+# Setup variables can be changed with the following commands.
+# This is a small subset of those available through the project file and the GUI of OpenParEMg.
+# Errors in setting these will be reported when OpenParEM3D runs.
 
 # none, high, low, highlow, lowhigh, all, plan
 setRefinementFrequency text
@@ -1086,6 +1114,8 @@ setLocalMaterialDatabase path filename
 setGlobalMaterialDatabase path filename
 setMaterialToObject name material
 
+# Execution commands
+
 generateMesh
 forceSave
 runSimulation
@@ -1093,7 +1123,8 @@ runSimulation
 # simple scripts with no command line inputs
 runScript name
 
-
+# Simple looping for stress testing
+# Note that there is no processing with i, so it is just a placeholder in the command.
 For i = N To M Step P
    command
    command
@@ -1102,7 +1133,6 @@ For i = N To M Step P
 EndFor
 
 \end{Verbatim}
-
 
 \newpage
 \begin{thebibliography}{unsrt}
