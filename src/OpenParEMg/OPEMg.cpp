@@ -100,6 +100,7 @@
 #include <AIS_Shape.hxx>
 #include <AIS_InteractiveContext.hxx>
 #include <TopoDS_Shape.hxx>
+#include <thread>
 
 std::string trim(const std::string& str);
 bool extractText(const std::string& input, std::string& keyword, std::string& value);
@@ -1097,8 +1098,9 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionLicense->setEnabled(true);
     }
 
-    if (simulationRunning) {
-        ui->actionRun->setToolTip("Simulation is running.");
+    if (simulationRunning || meshingRunning) {
+        if (simulationRunning) ui->actionRun->setToolTip("Simulation is running.");
+        if (meshingRunning) ui->actionRun->setToolTip("Meshing is running.");
         ui->actionNew->setEnabled(false);
         ui->actionOpen->setEnabled(false);
         ui->actionSave->setEnabled(false);
@@ -4623,6 +4625,7 @@ void OpenParEMg::resetLockouts ()
     simulationRunning=false;
     simulationStopping=false;
     simulationAborting=false;
+    meshingRunning=false;
     setMenusI(40);
 }
 
@@ -4641,7 +4644,8 @@ void OpenParEMg::printLockouts ()
               << "   drawingPlaneShown=" << drawingPlaneShown << std::endl
               << "   simulationRunning=" << simulationRunning << std::endl
               << "   simulationStopping=" << simulationStopping << std::endl
-              << "   simulationAborting=" << simulationAborting << std::endl;
+              << "   simulationAborting=" << simulationAborting << std::endl
+              << "   meshingRunning=" << meshingRunning << std::endl;
 }
 
 void OpenParEMg::resetDrawing ()
@@ -6531,7 +6535,7 @@ void OpenParEMg::on_actionUnselectAll_triggered ()
     setMenusI(61);
 }
 
-void OpenParEMg::drawMesh()
+void OpenParEMg::drawMesh ()
 {
     //std::cout << "OpenParEMg::drawMesh" << std::endl; std::cout.flush();
 
@@ -6642,9 +6646,17 @@ void OpenParEMg::drawMesh()
                     //     }
                     // }
                 }
+
+                // to prevent the GUI from locking up for large meshes
+                // ToDo: Switch to using Graphic3d_ArrayOfTriangles, which is designed to do mesh visualization very quickly.
+                if (count % 100 == 0) {
+                    QApplication::processEvents(QEventLoop::AllEvents);
+                }
+
                 i+=4;
                 count++;
             }
+
             ++ent;
         }
 
@@ -6680,6 +6692,8 @@ void OpenParEMg::drawMesh()
 
 void OpenParEMg::finishDrawMesh ()
 {
+    //std::cout << "OpenParEMg::finishDrawMesh" << std::endl; std::cout.flush();
+
     long unsigned int i=0;
     while (i < materialList.size()) {
 
@@ -6701,8 +6715,7 @@ void OpenParEMg::finishDrawMesh ()
 
     meshObsolete=false;
     drawing->reset_modifiedSinceMeshRegen();
-    //ui->drawingWindow->fitAll();
-    //mesh->show(true);
+
     setMenusI(63);
 }
 
@@ -6892,6 +6905,10 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         deleteMesh(true);
     }
 
+    meshingRunning=true;
+    disableMenus=true;
+    setMenusI(150);
+
     // reset dimTags
     renumberDimTag();
     reprocess(drawing);
@@ -6959,11 +6976,25 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     // TopoDS_Shape fragments=builder.Shape();
 
     // assemble
-    BOPAlgo_CellsBuilder cellBuilder;
-    cellBuilder.SetArguments(arguments);
-    cellBuilder.Perform();
-    if (cellBuilder.HasErrors()) return;
-    TopoDS_Shape fragments=cellBuilder.GetAllParts();
+    TopoDS_Shape fragments;
+    if (arguments.Size() > 1) {
+        BOPAlgo_CellsBuilder cellBuilder;
+        cellBuilder.SetArguments(arguments);
+        cellBuilder.Perform();
+        if (cellBuilder.HasErrors()) {
+            QMessageBox mb;
+            mb.critical(nullptr, "Meshing Error","Error in building cell for meshing.");
+
+            meshingRunning=false;
+            disableMenus=false;
+            setMenusI(150);
+
+            return;
+        }
+        fragments=cellBuilder.GetAllParts();
+    } else {
+        fragments=arguments.First();
+    }
 
     // build mesh
     gmsh::model::occ::importShapesNativePointer((void *) &fragments,drawingEntities,false);
@@ -7043,17 +7074,13 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         i++;
     }
 
-    // // draw the mesh - use a concurrent run so the GUI doesn't lock up on long draws
-    // // This may or may not be helping.
-    // // ToDo: keep experimenting
-    // QFutureWatcher<void> *watcher=new QFutureWatcher<void>(this);
-    // connect(watcher, &QFutureWatcher<void>::finished,this,&OpenParEMg::finishDrawMeshShow);
-    // QFuture<void> future=QtConcurrent::run(&OpenParEMg::drawMesh,this);
-    // watcher->setFuture(future);
-
     drawMesh();
     finishDrawMesh();
     mesh->show(true);
+
+    meshingRunning=false;
+    disableMenus=false;
+    setMenusI(151);
 }
 
 void OpenParEMg::loadMeshFile (QString meshfile)

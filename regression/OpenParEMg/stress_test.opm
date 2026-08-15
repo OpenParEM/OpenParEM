@@ -172,7 +172,7 @@ For i = 1 To 1000 Step 1
    deleteSubtreeSelectedObjects
 EndFor
 
-# convert to paths
+# draw polylines; convert to paths
 For i = 1 To 1000 Step 1
    setDrawingPlaneToXY
    drawPolyline L1 3  0 0 0   0.003 0.001 0   0.001 0.003 0
@@ -235,5 +235,88 @@ selectObject S1
 For i = 1 To 1000 Step 1
    rotateSelectedObjects 0 0 0 0 1 0 15
    moveSelectedObjects 0 0 0.0005
+EndFor
+
+# ports and boundaries
+For i = 1 To 1000 Step 1
+   setDrawingPlaneToXY
+   drawRectangle R1 0 0 0 0.001 0.001 0
+   drawRectangle R2 0.002 0 0  0.003 0.002 0
+
+   unselectAllObjects
+   selectObject R1
+   selectObject R2
+   convertSelectedObjectsToPorts
+
+   undo
+
+   unselectAllObjects
+   selectObject R1
+   selectObject R2
+   convertSelectedObjectsToBoundaries
+
+   undo
+
+   selectObject R1
+   selectObject R2
+   deleteSelectedObjects
+EndFor
+
+# ports with integration paths
+forceCloseProject
+For i = 1 To 1000 Step 1
+   newProject
+
+   setDrawingPlaneToXY
+   drawRectangle R1 0 0 0 0.001 0.001 0
+   drawRectangle R2 0 0.002 0 0.001 0.003 0
+
+   unselectAllObjects
+   selectObject R1
+   selectObject R2
+   convertSelectedObjectsToPorts
+
+   # port1
+   unselectAllObjects
+   selectPortVoltageObject port1
+
+   drawPortIntegrationLine 0.0005 0 0  0.0005 0.001 0
+
+   unselectAllObjects
+   selectPortCurrentObject port1
+
+   drawPortIntegrationPolyline 5 0.0005 0 0  0.0005 0.001 0  0.0004 0.001 0 0.0004 0 0 0.0005 0 0
+
+   # port2
+   unselectAllObjects
+   selectPortVoltageObject port2
+
+   drawPortIntegrationLine 0.0005 0.002 0  0.0005 0.003 0
+
+   unselectAllObjects
+   selectPortCurrentObject port2
+
+   drawPortIntegrationPolyline 5 0.0005 0.002 0  0.0005 0.003 0  0.0004 0.003 0 0.0004 0.002 0 0.0005 0.002 0
+
+   unselectAllPorts
+   selectPort port1
+   selectPort port2
+   deleteSelectedPorts
+
+   unselectAllPaths
+   selectPath path1
+   selectPath path2
+   selectPath v1
+   selectPath v2
+   selectPath i1
+   selectPath i2
+   deleteSelectedPaths
+
+   unselectAllObjects
+   selectObject R1
+   selectObject R2
+   deleteSelectedObjects
+
+   forceCloseProject
 EndFor
 

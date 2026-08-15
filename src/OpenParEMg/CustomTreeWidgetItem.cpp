@@ -5372,7 +5372,6 @@ void RootMeshItem::show (bool update)
 {
     int i=0;
     while (i < childCount()) {
-        BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
         MeshItem *meshItem=dynamic_cast<MeshItem *>(child(i));
         if (meshItem) meshItem->show(false);
         i++;

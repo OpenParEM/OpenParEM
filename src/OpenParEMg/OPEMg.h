@@ -834,6 +834,7 @@ private:
     bool simulationRunning;
     bool simulationStopping;
     bool simulationAborting;
+    bool meshingRunning;
 
     // rename
     QString originalText;
