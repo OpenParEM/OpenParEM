@@ -22,6 +22,12 @@
 #include "OPEMg.h"
 #include "ui_OPEMg.h"
 #include <qapplication.h>
+#include <qdir.h>
+#include <qfileinfo.h>
+#include <QProcess>
+#include <iostream>
+#include <filesystem>
+#include <thread>
 
 Macro::Macro (OpenParEMg *mw_)
 {
@@ -94,7 +100,7 @@ int Macro::endForLoop (std::vector<std::string> &tokens, ForLoop *loop)
 
 int Macro::newProject (std::vector<std::string> &tokens)
 {
-    if (tokens.size() == 1 && tokens[0].compare("newProject") == 0) {
+    if (tokens.size() == 3 && tokens[0].compare("newProject") == 0) {
         if (mw->projectFileLoaded) {
             if (mw->projectChanged) {
                 //log.append("ERROR: newProject failed due to existing modified project.\n");
@@ -104,6 +110,27 @@ int Macro::newProject (std::vector<std::string> &tokens)
             mw->on_actionClose_triggered();
         } else {
             mw->on_actionNew_triggered();
+
+            // full path name
+            QString filePath=QString::fromStdString(tokens[1]);
+            if (!filePath.endsWith('/')) filePath.append('/');
+            QString projectName=QString::fromStdString(tokens[2]);
+            if (projectName.startsWith('/')) projectName.remove(0,1);
+            filePath.append(projectName);
+
+            // set the window title bar
+            QString title="OpenParEMg: ";
+            title.append(filePath);
+            mw->setWindowTitle(title);
+
+            QFileInfo fileInfo(filePath);
+
+            // assign data for this project
+            mw->absolutePath=fileInfo.absolutePath();
+            mw->projectFile=fileInfo.fileName();
+            mw->projectName=fileInfo.completeBaseName();
+            set_project_name(&(mw->projData),mw->projectName.toStdString().c_str());
+            QDir::setCurrent(mw->absolutePath);
         }
         //log.append("newProject\n");
         std::cout << "newProject" << std::endl;
@@ -887,6 +914,268 @@ int Macro::drawPortIntegrationPolyline (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::setLocalMaterialDatabase (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 3 && tokens[0].compare("assignLocalMaterialDatabase") == 0) {
+        if (mw->projectFileLoaded) {
+            if (mw->projData.materials_local_path) free(mw->projData.materials_local_path);
+            mw->projData.materials_local_path=allocCopyConstString(tokens[1].c_str());
+
+            if (mw->projData.materials_local_name) free(mw->projData.materials_local_name);
+            mw->projData.materials_local_name=allocCopyConstString(tokens[2].c_str());
+        } else {
+            //log.append("ERROR: assignLocalMaterialDatabase failed due to no active project.");
+            std::cout << "ERROR: assignLocalMaterialDatabase failed due to no active project." << std::endl;
+            return 2;
+        }
+
+        //log.append("assignLocalMaterialDatabase\n");
+        std::cout << "assignLocalMaterialDatabase" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::setGlobalMaterialDatabase (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 3 && tokens[0].compare("setGlobalMaterialDatabase") == 0) {
+        if (mw->projectFileLoaded) {
+            if (mw->projData.materials_global_path) free(mw->projData.materials_global_path);
+            mw->projData.materials_global_path=allocCopyConstString(tokens[1].c_str());
+
+            if (mw->projData.materials_global_name) free(mw->projData.materials_global_name);
+            mw->projData.materials_global_name=allocCopyConstString(tokens[2].c_str());
+        } else {
+            //log.append("ERROR: setGlobalMaterialDatabase failed due to no active project.");
+            std::cout << "ERROR: setGlobalMaterialDatabase failed due to no active project." << std::endl;
+            return 2;
+        }
+
+        //log.append("setGlobalMaterialDatabase\n");
+        std::cout << "setGlobalMaterialDatabase" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::setMaterialToObject (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 3 && tokens[0].compare("setMaterialToObject") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->assignMaterialToDrawingItem(QString::fromStdString(tokens[1]),QString::fromStdString(tokens[2]));
+        } else {
+            //log.append("ERROR: setMaterialToObject failed due to no active project.");
+            std::cout << "ERROR: setMaterialToObject failed due to no active project." << std::endl;
+            return 2;
+        }
+
+        //log.append("setMaterialToObject\n");
+        std::cout << "setMaterialToObject" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::generateMesh (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("generateMesh") == 0) {
+        if (mw->projectFileLoaded) {
+            if (mw->mesh->childCount() > 0) mw->on_actionMeshDelete_triggered();
+            if (mw->drawing->childCount() > 0) mw->on_actionMeshGenerate_triggered();
+        } else {
+            //log.append("ERROR: generateMesh failed due to no active project.");
+            std::cout << "ERROR: generateMesh failed due to no active project." << std::endl;
+            return 2;
+        }
+
+        //log.append("generateMesh\n");
+        std::cout << "generateMesh" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::forceSave (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("forceSave") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->forceSave();
+        } else {
+            //log.append("ERROR: forceSave failed due to no active project.");
+            std::cout << "ERROR: forceSave failed due to no active project." << std::endl;
+            return 2;
+        }
+
+        //log.append("forceSave\n");
+        std::cout << "forceSave" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::setReferenceImpedance (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 2 && tokens[0].compare("setReferenceImpedance") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->projData.reference_impedance=stod(tokens[1]);
+        } else {
+            //log.append("ERROR: setReferenceImpedance failed due to no active project.");
+            std::cout << "ERROR: setReferenceImpedance failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("setReferenceImpedance\n");
+        std::cout << "setReferenceImpedance" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::setFEMorder (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 2 && tokens[0].compare("setFEMorder") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->projData.fem_order=stoi(tokens[1]);
+        } else {
+            //log.append("ERROR: setFEMorder failed due to no active project.");
+            std::cout << "ERROR: setFEMorder failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("setFEMorder\n");
+        std::cout << "setFEMorder" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::setCPUslotCount (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 2 && tokens[0].compare("setCPUslotCount") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->projData.gui_slot_count=stoi(tokens[1]);
+        } else {
+            //log.append("ERROR: setCPUslotCount failed due to no active project.");
+            std::cout << "ERROR: setCPUslotCount failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("setCPUslotCount\n");
+        std::cout << "setCPUslotCount" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::setRefinementFrequency (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 2 && tokens[0].compare("setRefinementFrequency") == 0) {
+        if (mw->projectFileLoaded) {
+            if (mw->projData.refinement_frequency) free(mw->projData.refinement_frequency);
+            mw->projData.refinement_frequency=allocCopyConstString(tokens[1].c_str());
+        } else {
+            //log.append("ERROR: setRefinementFrequency failed due to no active project.");
+            std::cout << "ERROR: setRefinementFrequency failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("setRefinementFrequency\n");
+        std::cout << "setRefinementFrequency" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::addSimulationFrequency (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 2 && tokens[0].compare("addSimulationFrequency") == 0) {
+        if (mw->projectFileLoaded) {
+            add_inputFrequencyPlan (&(mw->projData),2,stod(tokens[1]),-1,-1,-1,-1,0,0);
+        } else {
+            //log.append("ERROR: addSimulationFrequency failed due to no active project.");
+            std::cout << "ERROR: addSimulationFrequency failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("addSimulationFrequency\n");
+        std::cout << "addSimulationFrequency" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::runSimulation (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("runSimulation") == 0) {
+        if (mw->projectFileLoaded) {
+            mw->on_actionRun_triggered();
+
+            // loop until the simulation has started
+            while (!mw->simulationRunning) {
+                QApplication::processEvents(QEventLoop::AllEvents);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+        } else {
+            //log.append("ERROR: runSimulation failed due to no active project.");
+            std::cout << "ERROR: runSimulation failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("runSimulation\n");
+        std::cout << "runSimulation" << std::endl; std::cout.flush();
+
+        // loop until the simulation is finished
+        while (mw->simulationRunning) {
+            QApplication::processEvents(QEventLoop::AllEvents);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::runScript (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 2 && tokens[0].compare("runScript") == 0) {
+        if (mw->projectFileLoaded) {
+
+
+            std::filesystem::path filePath=tokens[1];
+
+            if (!std::filesystem::exists(filePath)) {
+                //log.append("ERROR: runScript failed due to script file not found.");
+                std::cout << "ERROR: runScript failed due to script file not found." << std::endl;
+                return 2;
+            }
+
+            if (std::filesystem::is_directory(filePath)) {
+                //log.append("ERROR: runScript failed due to the script being a directory.");
+                std::cout << "ERROR: runScript failed due to the script being a directory." << std::endl;
+                return 2;
+            }
+
+            std::filesystem::perms prms=std::filesystem::status(filePath).permissions();
+
+            if ((prms & (std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec | std::filesystem::perms::others_exec)) == std::filesystem::perms::none) {
+                //log.append("ERROR: runScript failed due to the script not being executable.");
+                std::cout << "ERROR: runScript failed due to the script not being executable." << std::endl;
+                return 2;
+            }
+
+            std::string command = "cd " + mw->absolutePath.toStdString() + " && ./" + tokens[1];
+            int result=std::system(command.c_str());
+            if (result > 0) {
+                //log.append("ERROR: runScript failed due to a script error.");
+                std::cout << "ERROR: runScript failed due to a script error." << std::endl;
+                return 2;
+            }
+        } else {
+            //log.append("ERROR: runScript failed due to no active project.");
+            std::cout << "ERROR: runScript failed due to no active project." << std::endl;
+            return 2;
+        }
+        //log.append("runScript\n");
+        std::cout << "runScript" << std::endl; std::cout.flush();
+        return 1;
+    }
+    return 0;
+}
+
 void Macro::run ()
 {
     QStringList lines=text.split('\n');
@@ -894,9 +1183,6 @@ void Macro::run ()
     // parse inputs and perform actions
     int i=0;
     while (i < lines.size()) {
-
-        //std::cout << "i=" << i << "  loopActive=" << loop.active << std::endl; std::cout.flush();
-
         QString &line=lines[i];
 
         // skip comment lines
@@ -909,7 +1195,6 @@ void Macro::run ()
             }
 
             if (loop.active) {
-                //std::cout << "  loop.bodyStart=" << loop.bodyStart << "loop.bodyEnd=" << loop.bodyEnd << "  loop.count=" << loop.count << std::endl; std::cout.flush();
                 if (loop.bodyEnd == 0) {
                     // keep going
                 } else if (i > loop.bodyEnd) {
@@ -1191,6 +1476,78 @@ void Macro::run ()
                     i++; continue;
                 }
 
+                retVal=setLocalMaterialDatabase(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=setGlobalMaterialDatabase(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=setMaterialToObject(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=generateMesh(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=forceSave(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=setReferenceImpedance(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=setFEMorder(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=setCPUslotCount(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=setRefinementFrequency(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=addSimulationFrequency(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=runSimulation(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
+                retVal=runScript(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                }
+
                 std::string message="ERROR: Unrecognized macro command \"";
                 message.append(line.toStdString());
                 message.append("\".");
@@ -1205,9 +1562,6 @@ void Macro::run ()
             std::cout << "Macro execution stopped." << std::endl; std::cout.flush();
             return;
         }
-
-        //mw->ui->drawingWindow->updateViewer();
-        //QApplication::processEvents(QEventLoop::AllEvents,10);
 
         i++;
     }

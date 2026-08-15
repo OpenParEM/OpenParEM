@@ -1152,7 +1152,7 @@ void OpenParEMg::setMenusI (int placeIndex)
 
 void OpenParEMg::enablePortBoundarySelections (BaseItem *baseItem, bool enable)
 {
-    std::cout << "OpenParEMg::enablePortBoundarySelections  item=" << baseItem->text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::enablePortBoundarySelections  item=" << baseItem->text(0).toStdString() << std::endl; std::cout.flush();
 
     if (!baseItem) return;
 
@@ -1165,10 +1165,8 @@ void OpenParEMg::enablePortBoundarySelections (BaseItem *baseItem, bool enable)
     else if (baseItem->is_scaleValue()) found=true;
 
     if (found) {
-        std::cout << "   found" << std::endl; std::cout.flush();
         QWidget *widget=ui->drawingItemTree->itemWidget(baseItem,0);
         if (widget) {
-            std::cout << "   widget found, setting enable=" << enable << std::endl; std::cout.flush();
             widget->setEnabled(enable);
         }
     }
@@ -4394,6 +4392,16 @@ void OpenParEMg::assignMaterial ()
     }
 }
 
+void OpenParEMg::assignMaterialToDrawingItem (QString name, QString material)
+{
+    int i=0;
+    while (i < drawing->childCount()) {
+        DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
+        if (drawingItem) drawingItem->setText(1,material);
+        i++;
+    }
+}
+
 void OpenParEMg::dumpDrawingEntities ()
 {
     long unsigned int i=0;
@@ -5105,6 +5113,25 @@ void OpenParEMg::on_actionSaveAs_triggered ()
     saveProject();
 }
 
+void OpenParEMg::forceSave ()
+{
+    // bring drawing to the front
+    if (ui->tabs->currentWidget() != ui->drawingTab) {
+        ui->tabs->setCurrentWidget(ui->drawingTab);
+    }
+
+    // clear stale data
+    ui->logText->clear();
+    ui->iterationsText->clear();
+    ui->dataText->clear();
+    delete_stale_files(projData.project_name,port->get_SportCount());
+
+    //xxx
+    setMenusI(1);
+    saveProject();
+    setMenusI(1);
+}
+
 void OpenParEMg::on_actionRefinement_triggered ()
 {
     OPEMg_Refinement *refinement=new OPEMg_Refinement();
@@ -5599,11 +5626,10 @@ void OpenParEMg::saveItem (std::ofstream *out, BaseItem *baseItem)
 {
     if (!baseItem) return;
 
-    std::cout << "OpenParEMg::saveItem  item=" << baseItem->text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::saveItem  item=" << baseItem->text(0).toStdString() << std::endl; std::cout.flush();
 
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
     if (rootDrawingItem) {
-        std::cout << "   rootDrawingItem" << std::endl; std::cout.flush();
         int i=0;
         while (i < rootDrawingItem->childCount()) {
             DrawingItem *child=(DrawingItem *) rootDrawingItem->child(i);
@@ -6875,7 +6901,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
     TopTools_ListOfShape arguments;
 
     // build boolean fragments shape
-    std::cout << "build boolean fragments shape" << std::endl; std::cout.flush();
     int i=0;
     while (i < drawing->childCount()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
@@ -6912,14 +6937,12 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
                             // paths with arrows - take the first TopoDS_Shape with the rest being arrowheads
                             TopoDS_Shape childShape=it.Value();
                             if (childShape.ShapeType() != TopAbs_COMPOUND) {
-                                std::cout << "   imprint pathItem without arrows=" << pathItem->text(0).toStdString() << std::endl; std::cout.flush();
                                 arguments.Append(childShape);
                                 break;
                             }
                             it.Next();
                         }
                     } else {
-                        std::cout << "   imprint pathItem=" << pathItem->text(0).toStdString() << std::endl; std::cout.flush();
                         arguments.Append(shape);
                     }
                 }
@@ -7020,13 +7043,17 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
         i++;
     }
 
-    // draw the mesh - use a concurrent run so the GUI doesn't lock up on long draws
-    // This may or may not be helping.
-    // ToDo: keep experimenting
-    QFutureWatcher<void> *watcher=new QFutureWatcher<void>(this);
-    connect(watcher, &QFutureWatcher<void>::finished,this,&OpenParEMg::finishDrawMeshShow);
-    QFuture<void> future=QtConcurrent::run(&OpenParEMg::drawMesh,this);
-    watcher->setFuture(future);
+    // // draw the mesh - use a concurrent run so the GUI doesn't lock up on long draws
+    // // This may or may not be helping.
+    // // ToDo: keep experimenting
+    // QFutureWatcher<void> *watcher=new QFutureWatcher<void>(this);
+    // connect(watcher, &QFutureWatcher<void>::finished,this,&OpenParEMg::finishDrawMeshShow);
+    // QFuture<void> future=QtConcurrent::run(&OpenParEMg::drawMesh,this);
+    // watcher->setFuture(future);
+
+    drawMesh();
+    finishDrawMesh();
+    mesh->show(true);
 }
 
 void OpenParEMg::loadMeshFile (QString meshfile)

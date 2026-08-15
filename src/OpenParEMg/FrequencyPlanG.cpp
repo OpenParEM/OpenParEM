@@ -125,6 +125,8 @@ void FrequencyPlanG::set_projData (struct projectData *a)
     ui->adaptiveFrequencies->addItem("all frequencies");
 
     int adaptiveIndex=-1;
+    //xxx
+    std::cout << ">>>>  1 projData->refinement_frequency=" << projData->refinement_frequency << std::endl; std::cout.flush();
     if (strcmp(projData->refinement_frequency,"none") == 0) {
         ui->AMR->setCheckState(Qt::Unchecked);
         ui->adaptiveFrequenciesLabel->setEnabled(false);

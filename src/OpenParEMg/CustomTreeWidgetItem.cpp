@@ -4870,7 +4870,7 @@ bool VIItem::isValidInsertSelectedPath ()
 
 IntegrationPathItem* VIItem::createIntegrationPathItemFromPath (PathItem *pathItem)
 {
-    std::cout << "VIItem::createIntegrationPathItemFromPath" << std::endl; std::cout.flush();
+    //std::cout << "VIItem::createIntegrationPathItemFromPath" << std::endl; std::cout.flush();
 
     // create an integration path item
     IntegrationPathItem *newIntegrationPathItem=new IntegrationPathItem(mw,this,pathItem);
@@ -4927,7 +4927,7 @@ bool VIItem::hasIntegrationPathItem ()
 
 void VIItem::addScaleItem ()
 {
-    std::cout << "VIItem::addScaleItem" << std::endl; std::cout.flush();
+    //std::cout << "VIItem::addScaleItem" << std::endl; std::cout.flush();
 
     if (hasScale()) return;
 

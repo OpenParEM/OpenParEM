@@ -376,6 +376,7 @@ public:
     void closeWindow_triggered ();
 
     //void pruneBoundaryDatabase ();
+    void forceSave ();
     void saveProject ();
     //void insertToMapActivateItem (BaseItem *);
     QString getAISshapeName (Handle(AIS_Shape));
@@ -645,6 +646,7 @@ private slots:
     void deleteDiffPairItems ();
 
     void assignMaterial ();
+    void assignMaterialToDrawingItem (QString, QString);
 
     void cancelMenu ();
     void buildFaceMenu (QMenu &menu);

@@ -591,7 +591,7 @@ int check_antennaPatterns (struct projectData *projData, const char* indent)
 
 void clear_physicalGroupMaterials (struct projectData *data)
 {
-    printf ("clear_physicalGroupMaterials\n");
+    //printf ("clear_physicalGroupMaterials\n");
 
     int i=0;
     while (i < data->physicalGroupMaterialCount) {
@@ -606,7 +606,7 @@ void clear_physicalGroupMaterials (struct projectData *data)
 
 void add_physicalGroupMaterial (struct projectData *data, int lineNumber, int dim, int tag, char *materialName)
 {
-    printf ("add_physicalGroupMaterials\n");
+    //printf ("add_physicalGroupMaterials\n");
 
     int i;
 

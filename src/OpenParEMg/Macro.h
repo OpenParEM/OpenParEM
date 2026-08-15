@@ -25,6 +25,9 @@
 #include <qobject.h>
 
 std::vector<std::string> splitWhitespace(const std::string& input);
+extern "C" char* allocCopyString (char *);
+extern "C" char* allocCopyConstString (const char *);
+extern "C" void add_inputFrequencyPlan (struct projectData *, int, double, double, double, double, int, int, int);
 
 class OpenParEMg;
 
@@ -106,6 +109,22 @@ public:
 
     int drawPortIntegrationLine (std::vector<std::string> &tokens);
     int drawPortIntegrationPolyline (std::vector<std::string> &tokens);
+
+    int setLocalMaterialDatabase (std::vector<std::string> &tokens);
+    int setGlobalMaterialDatabase (std::vector<std::string> &tokens);
+    int setMaterialToObject (std::vector<std::string> &tokens);
+
+    int generateMesh (std::vector<std::string> &tokens);
+    int forceSave (std::vector<std::string> &tokens);
+
+    int setReferenceImpedance (std::vector<std::string> &tokens);
+    int setFEMorder (std::vector<std::string> &tokens);
+    int setCPUslotCount (std::vector<std::string> &tokens);
+    int setRefinementFrequency (std::vector<std::string> &tokens);
+    int addSimulationFrequency (std::vector<std::string> &tokens);
+
+    int runSimulation (std::vector<std::string> &tokens);
+    int runScript (std::vector<std::string> &tokens);
 
     void run ();
 

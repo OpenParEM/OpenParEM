@@ -1,0 +1,52 @@
+#OpenParEMgMacro 1.0
+
+# loop 500 times for stress testing
+# comment out the For and EndFor statements to just run it once
+For i = 1 To 500 Step 1
+
+newProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight/macro_build straight.proj
+
+# waveguide
+drawRectangle R1  -0.01143 -0.00508 0  0.01143 0.00508 0
+extrudeSelectedObjects body 0.1
+unselectAllObjects
+fitAll
+
+# port 1
+drawRectangle port1  -0.01143 -0.00508 0  0.01143 0.00508 0
+convertSelectedObjectsToPorts
+selectPortVoltageObject port1
+drawPortIntegrationLine 0 -0.00508 0  0 0.00508 0
+
+# port 2
+setDrawingPlane 0 0 0.1  1 0 0  0 0 1  # XY
+drawRectangle port2  -0.01143 -0.00508 0.1  0.01143 0.00508 0.1
+convertSelectedObjectsToPorts
+selectPortVoltageObject port2
+drawPortIntegrationLine 0 -0.00508 0.1  0 0.00508 0.1
+
+# simulation setup
+
+setGlobalMaterialDatabase /home/briany/OpenParEM/regression/OpenParEM2D/ global_materials.txt
+setMaterialToObject body air
+
+setCPUslotCount 12
+setFEMorder 6
+setReferenceImpedance 0
+setRefinementFrequency none
+
+addSimulationFrequency 9e9
+addSimulationFrequency 9999999999
+addSimulationFrequency 11e9
+
+generateMesh
+forceSave
+
+# simulation
+
+runSimulation
+runScript check_results.sh
+
+closeProject
+
+EndFor
