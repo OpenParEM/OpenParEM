@@ -251,6 +251,37 @@ void CustomOpenGLWidget::finishPickVertex (bool cancel)
     emit relay->getPickedVertex(vertexPoint,cancel);
 }
 
+// courtesy of ChatGPT with flipped return values
+bool CustomOpenGLWidget::pixelToSnappedGrid (int px, int py, Standard_Real gridSpacing, gp_Pnt& snappedPoint)
+{
+    gp_Pnt point;
+
+    // First get the unsnapped point on the drawing plane.
+    if (PixelToPointOnPlane(px, py, point)) return false;
+
+    // Coordinates relative to the drawing plane.
+    gp_Vec delta(drawingPlane.Location(), point);
+
+    Standard_Real u =
+        delta.Dot(gp_Vec(drawingPlane.XAxis().Direction()));
+
+    Standard_Real v =
+        delta.Dot(gp_Vec(drawingPlane.YAxis().Direction()));
+
+    // Snap in the plane's local coordinate system.
+    u = std::round(u / gridSpacing) * gridSpacing;
+    v = std::round(v / gridSpacing) * gridSpacing;
+
+    // Convert the snapped coordinates back to 3D.
+    gp_Vec offset =
+        gp_Vec(drawingPlane.XAxis().Direction()) * u +
+        gp_Vec(drawingPlane.YAxis().Direction()) * v;
+
+    snappedPoint = drawingPlane.Location().Translated(offset);
+
+    return false;
+}
+
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
     if (view.IsNull()) return;
@@ -272,11 +303,9 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     // get a gp_Pnt
     clickPointValid=false;
     if (viewer->IsGridActive() && snapToGrid) {
-        Standard_Real X,Y,Z;
-        view->ConvertToGrid(pos.x(),pos.y(),X,Y,Z);
-        clickPoint.SetCoord(X,Y,Z);
+        if (!pixelToSnappedGrid(pos.x(),pos.y(),gridSpacing,clickPoint)) clickPointValid=true;
     } else {
-        if (!PixelToPointOnPlane (pos.x(),pos.y(),clickPoint)) clickPointValid=true;
+        if (!PixelToPointOnPlane(pos.x(),pos.y(),clickPoint)) clickPointValid=true;
     }
 
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();

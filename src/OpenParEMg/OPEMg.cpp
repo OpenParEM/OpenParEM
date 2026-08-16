@@ -7430,6 +7430,7 @@ void OpenParEMg::on_actionDrawingPlaneShow_triggered ()
     Standard_Real yOrigin=0;
     Standard_Real xStep=1/getConversionFactor();
     Standard_Real yStep=1/getConversionFactor();
+    ui->drawingWindow->set_gridSpacing(xStep);
     Standard_Real rotationAngle=0;
     Standard_Real xSize=1/getConversionFactor()*projData.gui_grid_size/2;
     Standard_Real ySize=1/getConversionFactor()*projData.gui_grid_size/2;

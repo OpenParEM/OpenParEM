@@ -76,6 +76,7 @@ public:
 
     void wheelEvent (QWheelEvent*) override;
     void keyPressEvent (QKeyEvent*) override;
+    bool pixelToSnappedGrid (int, int, Standard_Real, gp_Pnt& snappedPoint);
     void mousePressEvent (QMouseEvent*) override;
     void mouseReleaseEvent (QMouseEvent*) override;
     void mouseMoveEvent (QMouseEvent*) override;
@@ -88,6 +89,7 @@ public:
         snapToGrid=state;
         viewer->SetGridEcho(state);
     }
+    void set_gridSpacing (Standard_Real gridSpacing_) {gridSpacing=gridSpacing_;}
     void set_gridPlane (TopoDS_Face &face);
     void set_gridPlane (gp_Pnt &origin, gp_Dir &direction);
     void set_gridPlane (gp_Pln &plane);
@@ -452,6 +454,7 @@ private:
     gp_Dir drawingPlaneDirection;
     gp_Ax1 drawingPlaneAxis;
     bool snapToGrid;
+    Standard_Real gridSpacing;
 
     RectangleSelector *rectSelect;
 
