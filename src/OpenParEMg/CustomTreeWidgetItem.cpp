@@ -27,6 +27,8 @@
 #include <TopoDS_Iterator.hxx>
 #include <qstandarditemmodel.h>
 
+bool showUndoRedoTracking=false;
+
 ////////////////////////////////////////////////////////////////////////////////
 // BaseItem
 ////////////////////////////////////////////////////////////////////////////////
@@ -256,7 +258,7 @@ BaseItem* BaseItem::findTopLevelItem (BaseItem *parentItem, BaseItem *currentIte
 
 void BaseItem::undo ()
 {
-    std::cout << "BaseItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "BaseItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -264,10 +266,10 @@ void BaseItem::undo ()
     mw->ui->drawingWindow->unselectAllItems();
 
     if (shapeData->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isNoop" << std::endl; std::cout.flush();}
         // nothing to do
     } else if (shapeData->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isCreate" << std::endl; std::cout.flush();}
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
@@ -275,11 +277,11 @@ void BaseItem::undo ()
         getParentItem()->removeChild(this);
         dataStack.undo();
     } else if (shapeData->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isEdit" << std::endl; std::cout.flush();}
         dataStack.undo();
         restoreWidgets();
     } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isDelete" << std::endl; std::cout.flush();}
         dataStack.undo();
 
         Handle(AIS_Shape) shape=getShape();
@@ -295,7 +297,7 @@ void BaseItem::undo ()
         mw->ui->drawingWindow->activateItem(this);
         restoreWidgets();
     } else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isChangeName" << std::endl; std::cout.flush();}
         dataStack.undo();
         setText(0,getShapeData()->get_name());
     }
@@ -303,7 +305,7 @@ void BaseItem::undo ()
 
 void BaseItem::redo ()
 {
-    //std::cout << "BaseItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "BaseItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -314,7 +316,7 @@ void BaseItem::redo ()
     if (!next) return;
 
     if (next->isNoop()) {
-        //std::cout << "   isNoop" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isNoop" << std::endl; std::cout.flush();}
         // should not occur
     } else if (next->isCreate()) {
         //std::cout << "   isCreate" << std::endl; std::cout.flush();
@@ -331,11 +333,11 @@ void BaseItem::redo ()
         mw->ui->drawingWindow->showItem(this);
         restoreWidgets();
     } else if (next->isEdit()) {
-        //std::cout << "   isEdit" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isEdit" << std::endl; std::cout.flush();}
         dataStack.redo();
         restoreWidgets();
     } else if (next->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isDelete" << std::endl; std::cout.flush();}
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
@@ -347,7 +349,7 @@ void BaseItem::redo ()
 
         dataStack.redo();
     } else if (next->isChangeName()) {
-        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isChangeName" << std::endl; std::cout.flush();}
 
         dataStack.redo();
         setText(0,getShapeData()->get_name());
@@ -459,6 +461,8 @@ void ScaleValueItem::insertScaleValueWidget (double scale)
 
 void ScaleValueItem::undo ()
 {
+    if (showUndoRedoTracking) {std::cout << "ScaleValueItem::undo" << std::endl; std::cout.flush();}
+
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
@@ -472,6 +476,8 @@ void ScaleValueItem::undo ()
 
 void ScaleValueItem::redo ()
 {
+    if (showUndoRedoTracking) {std::cout << "ScaleValueItem::redo" << std::endl; std::cout.flush();}
+
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
@@ -1782,7 +1788,7 @@ BaseItem* DrawingItem::findTopLevelItem (BaseItem *baseItem)
 
 void DrawingItem::undo ()
 {
-    //std::cout << "DrawingItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "DrawingItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -1793,10 +1799,10 @@ void DrawingItem::undo ()
     if (foreground(0) == Qt::black) isDisplayed=true;
 
     if (shapeData->isNoop()) {
-        //std::cout << "   isNoop" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isNoop" << std::endl; std::cout.flush();}
         // nothing to do
     } else if (shapeData->isCreate()) {
-        //std::cout << "   isCreate" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isCreate" << std::endl; std::cout.flush();}
 
         // remove the item
         mw->ui->drawingWindow->unselectItem(this);
@@ -1809,7 +1815,7 @@ void DrawingItem::undo ()
 
         dataStack.undo();
     } else if (shapeData->isEdit()) {
-        //std::cout << "   isEdit" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isEdit" << std::endl; std::cout.flush();}
 
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -1824,7 +1830,7 @@ void DrawingItem::undo ()
         else mw->ui->drawingWindow->hideItem(this);
 
     } else if (shapeData->isDelete()) {
-        //std::cout << "   isDelete" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isDelete" << std::endl; std::cout.flush();}
 
         dataStack.undo();
 
@@ -1841,7 +1847,7 @@ void DrawingItem::undo ()
         RootDrawingItem *rootParentItem=dynamic_cast<RootDrawingItem *>(getParentItem());
         if (rootParentItem) mw->ui->drawingWindow->showItem(this);
     } else if (shapeData->isChangeName()) {
-        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isChangeName" << std::endl; std::cout.flush();}
 
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -1861,7 +1867,7 @@ void DrawingItem::undo ()
 
 void DrawingItem::redo ()
 {
-    //std::cout << "DrawingItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "DrawingItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -1875,7 +1881,7 @@ void DrawingItem::redo ()
     if (foreground(0) == Qt::black) isDisplayed=true;
 
     if (next->isNoop()) {
-        //std::cout << "   isNoop" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isNoop" << std::endl; std::cout.flush();}
         // should not occur
     } else if (next->isCreate()) {
         //std::cout << "   isCreate" << std::endl; std::cout.flush();
@@ -1894,7 +1900,7 @@ void DrawingItem::redo ()
         RootDrawingItem *rootParentItem=dynamic_cast<RootDrawingItem *>(getParentItem());
         if (rootParentItem) mw->ui->drawingWindow->showItem(this);
     } else if (next->isEdit()) {
-        //std::cout << "   isEdit" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isEdit" << std::endl; std::cout.flush();}
 
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -1913,7 +1919,7 @@ void DrawingItem::redo ()
     } else if (next->isDelete()) {
         BaseItem::redo();
     } else if (next->isChangeName()) {
-        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isChangeName" << std::endl; std::cout.flush();}
 
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -2184,7 +2190,7 @@ BaseItem* PathItem::findTopLevelItem (BaseItem *baseItem)
 
 void PathItem::undo ()
 {
-    std::cout << "PathItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "PathItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2193,7 +2199,7 @@ void PathItem::undo ()
     if (foreground(0) == Qt::black) isDisplayed=true;
 
     if (shapeData->isReversePath()) {
-        std::cout << "   isReversePath" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isReversePath" << std::endl; std::cout.flush();}
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
@@ -2215,7 +2221,7 @@ void PathItem::undo ()
         mw->ui->drawingWindow->activateItem(this);
         mw->ui->drawingWindow->showItem(this);
     } else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isChangeName" << std::endl; std::cout.flush();}
 
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -2250,15 +2256,11 @@ void PathItem::showArrows (bool show)
     mw->ui->drawingWindow->deleteShape(getShape());
 
     ShapeData *shapeData=this->getShapeData();
-    shapeData->print();
     Polywire *polywire=getPolywire();
     if (polywire) {
-        std::cout << "set new shape" << std::endl; std::cout.flush();
         polywire->setHasArrows(show);
         shapeData->setShape(polywire->get_AIS_Shape());
     }
-
-    std::cout << "getShape().IsNull()=" << getShape().IsNull() << std::endl; std::cout.flush();
 
     mw->ui->drawingWindow->displayShape(getShape());
     mw->ui->drawingWindow->insertItemToMap(getShape(),this);
@@ -2308,7 +2310,7 @@ void PathItem::rename (QString name)
 
 void PathItem::redo ()
 {
-    //std::cout << "PathItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "PathItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2320,7 +2322,7 @@ void PathItem::redo ()
     if (foreground(0) == Qt::black) isDisplayed=true;
 
     if (next->isReversePath()) {
-        //std::cout << "   isReversePath" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isReversePath" << std::endl; std::cout.flush();}
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
@@ -2342,7 +2344,7 @@ void PathItem::redo ()
         mw->ui->drawingWindow->activateItem(this);
         mw->ui->drawingWindow->showItem(this);
     } else if (next->isChangeName()) {
-        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isChangeName" << std::endl; std::cout.flush();}
 
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -2485,7 +2487,7 @@ void IntegrationPathItem::showMenu (QMenu *menu)
 
 void IntegrationPathItem::undo ()
 {
-    //std::cout << "IntegrationPathItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "IntegrationPathItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2521,7 +2523,7 @@ void IntegrationPathItem::undo ()
 
 void IntegrationPathItem::redo ()
 {
-    //std::cout << "IntegrationPathItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "IntegrationPathItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -3045,7 +3047,7 @@ void BoundaryItem::resetWidgets ()
 
 void BoundaryItem::undo ()
 {
-    //std::cout << "BoundaryItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "BoundaryItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -3070,7 +3072,7 @@ void BoundaryItem::undo ()
 
 void BoundaryItem::redo ()
 {
-    //std::cout << "BoundaryItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "BoundaryItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -3509,22 +3511,19 @@ void PortItem::del ()
 
 void PortItem::undo ()
 {
-    std::cout << "PortItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "PortItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
     if (shapeData->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isCreate" << std::endl; std::cout.flush();}
         PathItem *pathItem=getPathItem();
         if (pathItem) {
-            std::cout << "   place 1" << std::endl; std::cout.flush();
             pathItem->removeLinkedItem(this);
-            std::cout << "   place 2" << std::endl; std::cout.flush();
             pathItem->showArrows(true);
         }
 
-        std::cout << "   place 3" << std::endl; std::cout.flush();
         // sport
         int i=0;
         while (i < childCount()) {
@@ -3549,7 +3548,7 @@ void PortItem::undo ()
             i++;
         }
     } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isDelete" << std::endl; std::cout.flush();}
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
@@ -3586,7 +3585,7 @@ void PortItem::undo ()
 
 void PortItem::redo ()
 {
-    //std::cout << "PortItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "PortItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4070,7 +4069,7 @@ bool ModeItem::isValidDelete ()
 
 void ModeItem::undo ()
 {
-    //std::cout << "ModeItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "ModeItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4086,7 +4085,7 @@ void ModeItem::undo ()
 
 void ModeItem::redo ()
 {
-    //std::cout << "ModeItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "ModeItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4397,7 +4396,7 @@ void SportNumberItem::showMenu (QMenu *menu)
 
 void SportNumberItem::undo ()
 {
-    //std::cout << "SportNumberItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "SportNumberItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4405,25 +4404,26 @@ void SportNumberItem::undo ()
     mw->ui->drawingWindow->unselectAllItems();
 
     if (shapeData->isNoop()) {
-        //std::cout << "   isNoop" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isNoop" << std::endl; std::cout.flush();}
         // nothing to do
     } else if (shapeData->isCreate()) {
+        if (showUndoRedoTracking) {std::cout << "   isCreate" << std::endl; std::cout.flush();}
         mw->sportNumbers.remove(shapeData->get_Sport());
         dataStack.undo();
     } else if (shapeData->isEdit()) {
-        //std::cout << "   isEdit" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isEdit" << std::endl; std::cout.flush();}
         mw->sportNumbers.remove(shapeData->get_Sport());
         dataStack.undo();
         shapeData=getShapeData();
         mw->sportNumbers.add(shapeData->get_Sport());
         restoreWidgets();
     } else if (shapeData->isDelete()) {
-        //std::cout << "   isDelete" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isDelete" << std::endl; std::cout.flush();}
         dataStack.undo();
         mw->sportNumbers.add(shapeData->get_Sport());
         restoreWidgets();
     } else if (shapeData->isChangeName()) {
-        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isChangeName" << std::endl; std::cout.flush();}
         dataStack.undo();
         setText(0,getShapeData()->get_name());
     }
@@ -4431,7 +4431,7 @@ void SportNumberItem::undo ()
 
 void SportNumberItem::redo ()
 {
-    //std::cout << "SportNumberItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "SportNumberItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4442,27 +4442,26 @@ void SportNumberItem::redo ()
     if (!next) return;
 
     if (next->isNoop()) {
-        //std::cout << "   isNoop" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isNoop" << std::endl; std::cout.flush();}
         // should not occur
     } else if (next->isCreate()) {
-        //std::cout << "   isCreate" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isCreate" << std::endl; std::cout.flush();}
         dataStack.redo();
         mw->sportNumbers.add(shapeData->get_Sport());
         restoreWidgets();
     } else if (next->isEdit()) {
-        //std::cout << "   isEdit" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isEdit" << std::endl; std::cout.flush();}
         mw->sportNumbers.remove(shapeData->get_Sport());
         dataStack.redo();
         shapeData=getShapeData();
         mw->sportNumbers.add(shapeData->get_Sport());
         restoreWidgets();
     } else if (next->isDelete()) {
-        //std::cout << "   isDelete" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isDelete" << std::endl; std::cout.flush();}
         mw->sportNumbers.remove(shapeData->get_Sport());
         dataStack.redo();
     } else if (next->isChangeName()) {
-        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
-
+        if (showUndoRedoTracking) {std::cout << "   isChangeName" << std::endl; std::cout.flush();}
         dataStack.redo();
         setText(0,getShapeData()->get_name());
     }
@@ -4485,15 +4484,8 @@ void SportNumberItem::insertSportNumberWidget (int Sport)
 
 int SportNumberItem::get_Sport ()
 {
-    // CustomSpinBox *sportNumber=dynamic_cast<CustomSpinBox *>(mw->ui->drawingItemTree->itemWidget(this,0));
-    // if (sportNumber) {
-    //     return sportNumber->value();
-    // }
-
     ShapeData *shapeData=getShapeData();
     return shapeData->get_Sport();
-
-    //return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5077,7 +5069,7 @@ void DiffPairItem::demoteChildren ()
 
 void DiffPairItem::undo ()
 {
-    //std::cout << "DiffPairItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "DiffPairItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -5101,7 +5093,7 @@ void DiffPairItem::undo ()
 
 void DiffPairItem::redo ()
 {
-    //std::cout << "DiffPairItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    if (showUndoRedoTracking) {std::cout << "DiffPairItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();}
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;

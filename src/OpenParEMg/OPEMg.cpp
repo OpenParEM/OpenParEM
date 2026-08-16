@@ -5109,7 +5109,6 @@ void OpenParEMg::forceSave ()
     ui->dataText->clear();
     delete_stale_files(projData.project_name,port->get_SportCount());
 
-    //xxx
     setMenusI(1);
     saveProject();
     setMenusI(1);
@@ -8105,12 +8104,12 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
 void OpenParEMg::on_actionUndo_triggered ()
 {
-    itemChangesStack.readNew();
-    BaseItem *baseItem=itemChangesStack.getItem();
+    itemChangesStack.readNewReverse();
+    BaseItem *baseItem=itemChangesStack.getItemReverse();
     while (baseItem) {
-        baseItem->print_itemType();
+        //baseItem->print_itemType();
         baseItem->undo();
-        baseItem=itemChangesStack.getItem();
+        baseItem=itemChangesStack.getItemReverse();
     }
 
     itemChangesStack.undo();
@@ -8121,12 +8120,12 @@ void OpenParEMg::on_actionUndo_triggered ()
 void OpenParEMg::on_actionRedo_triggered ()
 {
     itemChangesStack.redo();
-    itemChangesStack.readNew();
-    BaseItem *baseItem=itemChangesStack.getItem();
+    itemChangesStack.readNewForward();
+    BaseItem *baseItem=itemChangesStack.getItemForward();
     while (baseItem) {
-        baseItem->print_itemType();
+        //baseItem->print_itemType();
         baseItem->redo();
-        baseItem=itemChangesStack.getItem();
+        baseItem=itemChangesStack.getItemForward();
     }
 
     ui->drawingWindow->updateViewer();
@@ -8292,7 +8291,6 @@ void OpenParEMg::updateAntennaTab (bool force)
     updateTextKeepScroll(ui->antennaText,QString::fromUtf8(newData));
 }
 
-//xxx
 void OpenParEMg::on_actionMeasure_triggered ()
 {
     startOperation(true);

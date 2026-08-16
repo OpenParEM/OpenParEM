@@ -154,6 +154,7 @@ public:
 
     void startNew ()
     {
+        //std::cout << "ItemChangesStack: startNew" << std::endl; std::cout.flush();
         ItemChanges *itemChanges=new ItemChanges();
         itemChangesList.push_back(itemChanges);
         if (current) {
@@ -163,10 +164,12 @@ public:
         current=itemChanges;
     }
 
-    void readNew () {readIndex=0;}
+    void readNewForward () {readIndex=0;}
+    void readNewReverse () {readIndex=current->getChangeListSize()-1;}
 
     void add (BaseItem *item)
     {
+        //std::cout << "ItemChangesStack: add item=" << item->text(0).toStdString() << "  type=" << item->getShapeData()->get_typeText() << std::endl; std::cout.flush();
         current->push_back(item);
     }
 
@@ -216,7 +219,7 @@ public:
         readIndex=0;
     }
 
-    BaseItem* getItem ()
+    BaseItem* getItemForward ()
     {
         if (!current) return nullptr;
 
@@ -224,6 +227,20 @@ public:
             BaseItem *item=current->getItem(readIndex);
             readIndex++;
             return item;
+        }
+        return nullptr;
+    }
+
+    BaseItem* getItemReverse ()
+    {
+        if (!current) return nullptr;
+
+        if (readIndex != -1) {
+            if (readIndex >= 0) {
+                BaseItem *item=current->getItem(readIndex);
+                readIndex--;
+                return item;
+            }
         }
         return nullptr;
     }
@@ -242,17 +259,6 @@ public:
         current=nullptr;
         readIndex=0;
     }
-
-    // ItemChanges* getCurrentNext ()
-    // {
-    //     if (current) return current->getNext();
-    //     return nullptr;
-    // }
-
-    // void setCurrentNext (ItemChanges *next)
-    // {
-    //     if (current) current->setNext(next);
-    // }
 
     void pop_back ()
     {

@@ -1622,5 +1622,8 @@ void Macro::run ()
         i++;
     }
 
+    //log.append("Macro execution finished.\n");
+    std::cout << "Macro execution finished." << std::endl; std::cout.flush();
+
     return;
 }

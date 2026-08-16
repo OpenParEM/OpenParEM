@@ -221,6 +221,20 @@ public:
     ShapeData* getPrior () {return prior;}
     ShapeData* getNext () {return next;}
 
+    std::string get_typeText ()
+    {
+        if (isNoop()) return "Noop";
+        if (isCreate()) return "create";
+        if (isEdit()) return "edit";
+        if (isDelete()) return "delete";
+        if (isConvertToPath()) return "convertToPath";
+        if (isConvertToPort()) return "convertToPort";
+        if (isConvertToBoundary()) return "convertToBoundary";
+        if (isReversePath()) return "reversePath";
+        if (isChangeName()) return "changeName";
+        return "unknown";
+    }
+
     void print ()
     {
         std::cout << "               ShapeData: " << this << std::endl;
