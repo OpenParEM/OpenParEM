@@ -82,17 +82,12 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     viewer->SetDefaultBackgroundColor(Quantity_NOC_BLACK);
     viewer->SetDefaultLights();
     viewer->SetLightOn();
-    //viewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines);  // shows a 2D grid; ToDo: hook this up when drawing is enabled
 
     // AIS context
     viewerContext=new AIS_InteractiveContext(viewer);
 
     // item tracking
     drawingTracker=new ItemTracker(viewerContext);
-
-    // mesh
-    //hasMesh=false;
-    //meshVisibility=false;
 
     // create an orientation cube for the display
     viewCube=new AIS_ViewCube();
@@ -132,12 +127,6 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
 
     viewerContext->SetAutoActivateSelection(Standard_False);
 }
-
-// CustomOpenGLWidget::~CustomOpenGLWidget()
-// {
-//     std::cout << "CustomOpenGLWidget::~CustomOpenGLWidget" << std::endl; std::cout.flush();
-//     std::cout << "exit CustomOpenGLWidget::~CustomOpenGLWidget" << std::endl; std::cout.flush();
-// }
 
 void CustomOpenGLWidget::initializeGL ()
 {
@@ -188,7 +177,6 @@ void CustomOpenGLWidget::paintGL ()
 
 void CustomOpenGLWidget::updateViewer ()
 {
-    //std::cout << "CustomOpenGLWidget::updateViewer" << std::endl; std::cout.flush();
     viewerContext->UpdateCurrentViewer();
     repaint();
 }
@@ -248,15 +236,12 @@ bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const
         return false;
     }
 
-    //std::cout << "CustomOpenGLWidget::PixelToPointOnPlane  return true" << std::endl; std::cout.flush();
     return true;
 }
 
 // vertex draw or pick
 void CustomOpenGLWidget::finishPickVertex (bool cancel)
 {
-    std::cout << "CustomOpenGLWidget::finishPickVertex  cancel=" << cancel << std::endl; std::cout.flush();
-
     // remove temporaryVertex
     if (!temporaryVertex.IsNull()) {
        viewerContext->Remove(temporaryVertex,Standard_True);
@@ -268,16 +253,12 @@ void CustomOpenGLWidget::finishPickVertex (bool cancel)
 
 void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 {
-    std::cout << "CustomOpenGLWidget::mousePressEvent   pickFirstVertex=" << pickFirstVertex << "  pickSecondVertex=" << pickSecondVertex << std::endl; std::cout.flush();
-
-    //QOpenGLWidget::mousePressEvent(event);
-
     if (view.IsNull()) return;
     ignoreMouseRelease=false;
 
     // pass the mouse press from OCCT to Qt
     bool passClick=true;
-    if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
+    if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;         // a popup menu will appear
     if (event->button() == Qt::RightButton && (pickFirstVertex || pickSecondVertex)) passClick=false;   // prevent right-click from zooming
     if (passClick) {
         const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
@@ -331,8 +312,6 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
 void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 {
-    std::cout << "CustomOpenGLWidget::mouseReleaseEvent   pickSecondVertex=" << pickSecondVertex << "  ignoreMouseRelease=" << ignoreMouseRelease << std::endl; std::cout.flush();
-
     // re-enable view rotation that is disabled when using a selection box
     SetAllowRotation(Standard_True);
     SetAllowZooming(Standard_True);
@@ -480,8 +459,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         updateViewer();
         emit relay->setMenus();
 
-    } //else if (event->button() == Qt::RightButton) {
-    //}
+    }
 }
 
 Handle(AIS_InteractiveObject) CustomOpenGLWidget::getLastSelected ()
@@ -497,8 +475,6 @@ Handle(AIS_InteractiveObject) CustomOpenGLWidget::getLastSelected ()
 
 void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
 {
-    //std::cout << "CustomOpenGLWidget::mouseMoveEvent" << std::endl; std::cout.flush();
-
     if (view.IsNull()) return;
 
     // set the pixel tolerance to a loose setting so that mousing around can find the needed edge
@@ -588,8 +564,6 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
 
 void CustomOpenGLWidget::set_gridPlane (TopoDS_Face &face)
 {
-    //std::cout << "CustomOpenGLWidget::set_gridPlane" << std::endl; std::cout.flush();
-
     if (!face.IsNull()) {
 
         // plane
@@ -624,12 +598,6 @@ void CustomOpenGLWidget::showGrid (Standard_Real xOrigin, Standard_Real yOrigin,
                                   Standard_Real xStep, Standard_Real yStep, Standard_Real rotationAngle,
                                   Standard_Real xSize, Standard_Real ySize, Standard_Real offset)
 {
-    //std::cout << "CustomOpenGLWidget::showGrid  origin: (" << xOrigin << "," << yOrigin << "), step: (" << xStep << "," << yStep << ")" << ", size: (" << xSize << "," << ySize << "), offset=" << offset << std::endl; std::cout.flush();
-
-    //Handle(V3d_RectangularGrid) grid=new V3d_RectangularGrid(&(*viewer),Quantity_NOC_GRAY80,Quantity_NOC_GRAY50);
-    //viewer->SetGridEcho(Standard_False);
-    //Handle(Aspect_Grid) grid = viewer->Grid();
-
     viewer->SetRectangularGridValues(xOrigin,yOrigin,xStep,yStep,rotationAngle);
     viewer->SetRectangularGridGraphicValues(xSize,ySize,offset);
     viewer->ActivateGrid(Aspect_GT_Rectangular,Aspect_GDM_Lines);
@@ -637,8 +605,6 @@ void CustomOpenGLWidget::showGrid (Standard_Real xOrigin, Standard_Real yOrigin,
 
 void CustomOpenGLWidget::hideGrid ()
 {
-    //std::cout << "CustomOpenGLWidget::hideGrid" << std::endl; std::cout.flush();
-
     viewer->DeactivateGrid();
 }
 

@@ -730,9 +730,6 @@ void AntennaForm::extractPatterns ()
 
 bool AntennaForm::hasPatternChanges ()
 {
-    std::cout << "AntennaForm::hasPatternChanges" << std::endl; std::cout.flush();
-
-    std::cout << "patterns.size()=" << patterns.size() << "  projData->inputAntennaPatternsCount=" << projData->inputAntennaPatternsCount << std::endl; std::cout.flush();
     if (patterns.size() != projData->inputAntennaPatternsCount) return true;
 
     // 3D

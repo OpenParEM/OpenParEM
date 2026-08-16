@@ -69,10 +69,6 @@ FrequencyPlanG::FrequencyPlanG (QWidget *parent)
     ui->frequencyTable->setColumnWidth(4,ppdColWidth-verticalHeaderWidth-scrollBarOffset);
     ui->frequencyTable->setColumnWidth(5,refineColWidth);
 
-    //QStringList headers;
-    //headers << "Type" << "Start" << "Stop" << "Step" << "Points Per Decade" << "Refine" << "current type";
-    //ui->frequencyTable->setHorizontalHeaderLabels(headers);
-
     // number cell background colors
     enabledBackground="background: rgb(255,255,255);";
     disabledBackground="background: rgb(240,240,240);";
@@ -125,8 +121,6 @@ void FrequencyPlanG::set_projData (struct projectData *a)
     ui->adaptiveFrequencies->addItem("all frequencies");
 
     int adaptiveIndex=-1;
-    //xxx
-    std::cout << ">>>>  1 projData->refinement_frequency=" << projData->refinement_frequency << std::endl; std::cout.flush();
     if (strcmp(projData->refinement_frequency,"none") == 0) {
         ui->AMR->setCheckState(Qt::Unchecked);
         ui->adaptiveFrequenciesLabel->setEnabled(false);

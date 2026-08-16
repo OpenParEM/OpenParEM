@@ -639,9 +639,9 @@ void OpenParEMg::setUnmodified ()
 
 bool OpenParEMg::hasResults ()
 {
-    std::cout << "OpenParEMg::hasResults" << std::endl; std::cout.flush();
-    std::cout << "   baseName=" << projData.project_name << std::endl; std::cout.flush();
-    std::cout << "   SportCount=" << port->get_SportCount() << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::hasResults" << std::endl; std::cout.flush();
+    //std::cout << "   baseName=" << projData.project_name << std::endl; std::cout.flush();
+    //std::cout << "   SportCount=" << port->get_SportCount() << std::endl; std::cout.flush();
 
     if (has_results_files(projData.project_name,port->get_SportCount())) return true;
     return false;
@@ -739,19 +739,6 @@ void OpenParEMg::clearSelection ()
     ui->actionSolid->setChecked(false);
     ui->actionSolid->setCheckable(false);
 }
-
-// void OpenParEMg::restoreSelection ()
-// {
-//     //std::cout << "OpenParEMg::restoreSelection  previousSelectionIndex=" << previousSelectionIndex << std::endl; std::cout.flush();
-
-//     if (previousSelectionIndex == 0) on_actionShape_triggered();
-//     else if (previousSelectionIndex == 1) on_actionVertex_triggered();
-//     else if (previousSelectionIndex == 2) on_actionEdge_triggered();
-//     else if (previousSelectionIndex == 3) on_actionWire_triggered();
-//     else if (previousSelectionIndex == 4) on_actionFace_triggered();
-//     else if (previousSelectionIndex == 5) on_actionShell_triggered();
-//     else if (previousSelectionIndex == 6) on_actionSolid_triggered();
-// }
 
 void OpenParEMg::debugPrintStats (int i)
 {
@@ -1696,7 +1683,7 @@ void OpenParEMg::hideMeshItems ()
 
 void OpenParEMg::insertSelectedPaths ()
 {
-    std::cout << "OpenParEMg::insertSelectedPaths" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::insertSelectedPaths" << std::endl; std::cout.flush();
 
     itemChangesStack.startNew();
 
@@ -1868,7 +1855,7 @@ bool OpenParEMg::hasCurrent ()
 
 void OpenParEMg::insertIntegrationPath (VIItem *viItem)
 {
-    std::cout << "OpenParEMg::insertIntegrationPath" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::insertIntegrationPath" << std::endl; std::cout.flush();
 
     if (!viItem) return;
 
@@ -1882,7 +1869,6 @@ void OpenParEMg::insertIntegrationPath (VIItem *viItem)
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         PathItem *pathItem=dynamic_cast<PathItem *>(ui->drawingWindow->get_selectedItem(i));
         if (pathItem) {
-            std::cout << "  pathItem to add = " << pathItem->text(0).toStdString() << "   address=" << pathItem << std::endl; std::cout.flush();
             pathItemList.push_back(pathItem);
             pathsToAdd.push_back(pathItem->getPath());
         }
@@ -2129,7 +2115,7 @@ void OpenParEMg::collectChildren (DrawingItem *drawingItem, std::vector<DrawingI
 // delete the item and its children
 void OpenParEMg::deletePlusDrawingItems ()
 {
-    std::cout << "OpenParEMg::deletePlusDrawingItems" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::deletePlusDrawingItems" << std::endl; std::cout.flush();
 
     //activeAction=true;  // no need since there is not a cancel option
     itemChangesStack.startNew();
@@ -2146,7 +2132,6 @@ void OpenParEMg::deletePlusDrawingItems ()
     // deletions
     i=0;
     while (i < itemList.size()) {
-        std::cout << "deleting drawing item" << std::endl; std::cout.flush();
         itemList[i]->del();
         i++;
     }
@@ -2495,7 +2480,7 @@ double OpenParEMg::getConversionFactor ()
 
 void OpenParEMg::extrudePolywire ()
 {
-    std::cout << "OpenParEMg::extrudePolywire" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::extrudePolywire" << std::endl; std::cout.flush();
 
     startOperation(true);
     activeAction=false;
@@ -2516,7 +2501,7 @@ void OpenParEMg::extrudePolywire ()
 
 void OpenParEMg::finishExtrudePolywire ()
 {
-    std::cout << "OpenParEMg::finishExtrudePolywire" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::finishExtrudePolywire" << std::endl; std::cout.flush();
 
     if (abs(length) > 1e-12) {
 
@@ -3663,14 +3648,11 @@ bool OpenParEMg::isValidConvertToPath ()
 
 void OpenParEMg::convertDrawingToPath ()
 {
-    std::cout << "OpenParEMg::convertDrawingToPath" << std::endl; std::cout.flush();
     convertDrawingToPathN(true);
 }
 
 void OpenParEMg::convertDrawingToPathN (bool startNew)
 {
-    std::cout << "OpenParEMg::convertDrawingToPathN" << std::endl; std::cout.flush();
-
     if (startNew) itemChangesStack.startNew();
 
     std::vector<DrawingItem *> selectedList;
@@ -3900,9 +3882,6 @@ void OpenParEMg::createPortFromPathN (bool startNew)
             // remove the arrows from the path
             selectedList[i]->showArrows(false);
 
-            // next available s-port number
-            int sport=sportNumbers.next();
-
             QString impedance_calculation="line";
             QString impedance_definition="invalid";
             PortItem *newPortItem=new PortItem(this,selectedList[i],impedance_calculation,impedance_definition);
@@ -4013,19 +3992,17 @@ void OpenParEMg::createBoundaryFromFace ()
 
 bool OpenParEMg::isValidCreateBoundaryFromPath ()
 {
-    std::cout << "OpenParEMg::isValidCreateBoundaryFromPath" << std::endl; std::cout.flush();
     return isValidCreatePortFromPath();
 }
 
 void OpenParEMg::createBoundaryFromPath ()
 {
-    std::cout << "OpenParEMg::createBoundaryFromPath" << std::endl; std::cout.flush();
     createBoundaryFromPathN(true);
 }
 
 void OpenParEMg::createBoundaryFromPathN (bool startNew)
 {
-    std::cout << "OpenParEMg::createBoundaryFromPathN" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::createBoundaryFromPathN" << std::endl; std::cout.flush();
 
     if (startNew) itemChangesStack.startNew();
 
@@ -4273,7 +4250,6 @@ bool OpenParEMg::isValidCreateDiffPair ()
 
 void OpenParEMg::selectPortVoltageItem (QString name)
 {
-    std::cout << "OpenParEMg::selectPortVoltageItem  name=" << name.toStdString() << std::endl; std::cout.flush();
     int i=0;
     while (i < port->childCount()) {
         PortItem *portItem=dynamic_cast<PortItem *>(port->child(i));
@@ -4366,7 +4342,7 @@ void OpenParEMg::setMaterials ()
 
 void OpenParEMg::assignMaterial ()
 {
-    std::cout << "OpenParEMg::assignMaterial" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::assignMaterial" << std::endl; std::cout.flush();
 
     // Cannot assign material to existing mesh
     if (mesh->childCount() > 0) {
@@ -4456,24 +4432,18 @@ void OpenParEMg::clonePathData ()
     }
 }
 
-void OpenParEMg::on_actionOpen_triggered ()
+void OpenParEMg::openProject (QString fullpath)
 {
-    QString testProjectFile=QFileDialog::getOpenFileName(this,tr("Open Project"),absolutePath,tr("Project Files (*.proj);;All Files (*)"),
-                                                         nullptr,QFileDialog::DontUseNativeDialog);
-
-    // return if user cancels
-    if (testProjectFile.isNull()) return;
-
     // reset as new
     on_actionNew_triggered ();
 
     // set the window title bar
     QString title="OpenParEMg: ";
-    title.append(testProjectFile);
+    title.append(fullpath);
     setWindowTitle(title);
 
     // break up the full path
-    QFileInfo fileInfo(testProjectFile);
+    QFileInfo fileInfo(fullpath);
     absolutePath=fileInfo.absolutePath();
     projectFile=fileInfo.fileName();
     projectName=fileInfo.completeBaseName();
@@ -4614,6 +4584,17 @@ void OpenParEMg::on_actionOpen_triggered ()
     on_actionShape_triggered();  // ToDo: see if this is still required
     clearTreeSelection();
     setMenusI(39);
+}
+
+void OpenParEMg::on_actionOpen_triggered ()
+{
+    QString testProjectFile=QFileDialog::getOpenFileName(this,tr("Open Project"),absolutePath,tr("Project Files (*.proj);;All Files (*)"),
+                                                         nullptr,QFileDialog::DontUseNativeDialog);
+
+    // return if user cancels
+    if (testProjectFile.isNull()) return;
+
+    openProject(testProjectFile);
 }
 
 void OpenParEMg::resetLockouts ()
@@ -4999,9 +4980,8 @@ void OpenParEMg::saveProject ()
 
 void OpenParEMg::on_actionSave_triggered ()
 {
-    std::cout << "projectFile=" << projectFile.toStdString() << std::endl; std::cout.flush();
+    //std::cout << "projectFile=" << projectFile.toStdString() << std::endl; std::cout.flush();
     if (QFile::exists(projectFile)) {
-        std::cout << "file exists" << std::endl; std::cout.flush();
 
         // check for existing data
         if (hasResults()) {
@@ -5059,7 +5039,6 @@ void OpenParEMg::on_actionSave_triggered ()
 
         saveProject();
     } else {
-        std::cout << "file does not exist" << std::endl; std::cout.flush();
         on_actionSaveAs_triggered();
     }
 }
@@ -5459,7 +5438,7 @@ bool OpenParEMg::isValidSaveBrepFile ()
 // return true on error
 bool OpenParEMg::saveBrepFile (QString filePath)
 {
-    std::cout << "OpenParEMg::saveBrepFile" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::saveBrepFile" << std::endl; std::cout.flush();
 
     if (filePath.isEmpty()) return true;
 
@@ -6132,18 +6111,18 @@ void OpenParEMg::on_actionExit_triggered ()
 
 void OpenParEMg::on_drawingItemTree_itemClicked (QTreeWidgetItem *item, int column)
 {
-    std::cout << "OpenParEMg::on_drawingItemTree_itemClicked" << std::endl; std::cout.flush();
+    //std::cout << "OpenParEMg::on_drawingItemTree_itemClicked" << std::endl; std::cout.flush();
 
-    std::cout << "   clickedItem=" << clickedItem;
-    if (clickedItem) std::cout << "  type=" << clickedItem->get_itemType();
-    std::cout << std::endl;
+    // std::cout << "   clickedItem=" << clickedItem;
+    // if (clickedItem) std::cout << "  type=" << clickedItem->get_itemType();
+    // std::cout << std::endl;
 
-    std::cout << "   previousClickedItem=" << previousClickedItem;
-    if (previousClickedItem) std::cout << "  type=" << previousClickedItem->get_itemType();
-    std::cout << std::endl;
+    // std::cout << "   previousClickedItem=" << previousClickedItem;
+    // if (previousClickedItem) std::cout << "  type=" << previousClickedItem->get_itemType();
+    // std::cout << std::endl;
 
-    std::cout << "   CTRLpressed=" << CTRLpressed << std::endl;
-    std::cout << "   SHIFTpressed=" << SHIFTpressed << std::endl;
+    // std::cout << "   CTRLpressed=" << CTRLpressed << std::endl;
+    // std::cout << "   SHIFTpressed=" << SHIFTpressed << std::endl;
 
     if (!item) return;
 
@@ -6281,8 +6260,6 @@ void OpenParEMg::on_actionFitAll_triggered ()
 
 void OpenParEMg::on_actionShape_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionShape_triggered" << std::endl; std::cout.flush();
-
     clearSelection();
     ui->actionShape->setCheckable(true);
     ui->actionShape->setChecked(true);
@@ -6295,8 +6272,6 @@ void OpenParEMg::on_actionShape_triggered ()
 
 void OpenParEMg::on_actionVertex_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionVertex_triggered" << std::endl; std::cout.flush();
-
     clearSelection();
     ui->actionVertex->setCheckable(true);
     ui->actionVertex->setChecked(true);
@@ -6309,8 +6284,6 @@ void OpenParEMg::on_actionVertex_triggered ()
 
 void OpenParEMg::on_actionEdge_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionEdge_triggered" << std::endl; std::cout.flush();
-
     clearSelection();
     ui->actionEdge->setCheckable(true);
     ui->actionEdge->setChecked(true);
@@ -6323,8 +6296,6 @@ void OpenParEMg::on_actionEdge_triggered ()
 
 void OpenParEMg::on_actionWire_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionWire_triggered" << std::endl; std::cout.flush();
-
     clearSelection();
     ui->actionWire->setCheckable(true);
     ui->actionWire->setChecked(true);
@@ -6337,8 +6308,6 @@ void OpenParEMg::on_actionWire_triggered ()
 
 void OpenParEMg::on_actionFace_triggered ()
 {
-    std::cout << "OpenParEMg::on_actionFace_triggered" << std::endl; std::cout.flush();
-
     clearSelection();
     ui->actionFace->setCheckable(true);
     ui->actionFace->setChecked(true);
@@ -6351,8 +6320,6 @@ void OpenParEMg::on_actionFace_triggered ()
 
 void OpenParEMg::on_actionShell_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionShell_triggered" << std::endl; std::cout.flush();
-
     clearSelection();
     ui->actionShell->setCheckable(true);
     ui->actionShell->setChecked(true);
@@ -6365,8 +6332,6 @@ void OpenParEMg::on_actionShell_triggered ()
 
 void OpenParEMg::on_actionSolid_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionSolid_triggered" << std::endl; std::cout.flush();
-
     clearSelection();
     ui->actionSolid->setCheckable(true);
     ui->actionSolid->setChecked(true);
@@ -6377,24 +6342,8 @@ void OpenParEMg::on_actionSolid_triggered ()
     ui->drawingWindow->updateViewer();
 }
 
-// bool OpenParEMg::hasSelectedPaths ()
-// {
-//     long unsigned int i=0;
-//     while (i < ui->drawingWindow->get_selectedItems_size()) {
-//         BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
-//         if (baseItem) {
-//             PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
-//             if (pathItem && pathItem->is_path()) return true;
-//         }
-//         i++;
-//     }
-//     return false;
-// }
-
 void OpenParEMg::clearTreeSelection ()
 {
-    //std::cout << "OpenParEMg::clearTreeSelection" << std::endl; std::cout.flush();
-
     ui->drawingWindow->unselectAllItems();
     ui->drawingItemTree->clearSelection();
     ui->drawingItemTree->setCurrentItem(nullptr);
@@ -6406,8 +6355,6 @@ void OpenParEMg::clearTreeSelection ()
 
 bool OpenParEMg::eventFilter (QObject *obj, QEvent *event)
 {
-    //std::cout << "OpenParEMg::eventFilter  event->type()=" << event->type() << std::endl; std::cout.flush();
-
     if (event->type() == QEvent::MouseButtonPress) {
 
         // click on background in the item tree to clear the selection
@@ -6438,8 +6385,6 @@ void OpenParEMg::keyPressEvent (QKeyEvent *event)
             if (rectangle) rectangle->setIsSquare(true);
         }
     } else if (event->key() == Qt::Key_Escape) {
-        //std::cout << "OpenParEMg::keyPressEvent   Qt::Key_Escape" << std::endl; std::cout.flush();
-
         if (lengthInputForm) {
             lengthInputForm->on_CancelButton_clicked();
             lengthInputForm=nullptr;
@@ -6516,8 +6461,6 @@ void OpenParEMg::on_actionShowAll_triggered()
 
 void OpenParEMg::on_actionHideAll_triggered ()
 {
-    //ui->drawingWindow->hideAllItems();
-
     drawing->hide(false);
     path->hide(false);
     port->hide(false);
@@ -6537,8 +6480,6 @@ void OpenParEMg::on_actionUnselectAll_triggered ()
 
 void OpenParEMg::drawMesh ()
 {
-    //std::cout << "OpenParEMg::drawMesh" << std::endl; std::cout.flush();
-
     materialList.clear();
     shapeList.clear();
 
@@ -6692,8 +6633,6 @@ void OpenParEMg::drawMesh ()
 
 void OpenParEMg::finishDrawMesh ()
 {
-    //std::cout << "OpenParEMg::finishDrawMesh" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < materialList.size()) {
 
@@ -6727,8 +6666,6 @@ void OpenParEMg::finishDrawMeshShow ()
 
 void OpenParEMg::deleteMesh (bool deleteMeshFile)
 {
-    //std::cout << "OpenParEMg::deleteMesh" << std::endl; std::cout.flush();
-
     int i=0;
     while (i < mesh->childCount()) {
         MeshItem *meshItem=dynamic_cast<MeshItem *>(mesh->child(i));
@@ -6864,16 +6801,12 @@ Standard_Real calculateVolume (const TopoDS_Shape& shape)
 
 double calculateSolidComparison (const TopoDS_Shape& newSolid, const TopoDS_Shape& originalSolid)
 {
-    //std::cout << "calculateSolidComparison" << std::endl; std::cout.flush();
-
     double tol=1e-30;
 
     Standard_Real newSolidVolume=calculateVolume(newSolid);
-    //std::cout << "   newSolidVoume=" << newSolidVolume << std::endl; std::cout.flush();
     if (newSolidVolume < tol) return 0;
 
     Standard_Real originalSolidVolume=calculateVolume(originalSolid);
-    //std::cout << "   originalSolidVolume=" << originalSolidVolume << std::endl; std::cout.flush();
     if (originalSolidVolume < tol) return 0;
 
     if (newSolidVolume > originalSolidVolume*(1+1e-6)) return 0;
@@ -6886,17 +6819,13 @@ double calculateSolidComparison (const TopoDS_Shape& newSolid, const TopoDS_Shap
     const TopoDS_Shape& commonResult=intersection.Shape();
 
     Standard_Real commonResultVolume=calculateVolume(commonResult);
-    //std::cout << "   commonResultVolume=" << commonResultVolume << std::endl; std::cout.flush();
     if (commonResultVolume < tol) return 0;
 
-    //std::cout << "   metric=" << commonResultVolume/originalSolidVolume << std::endl; std::cout.flush();
     return commonResultVolume/originalSolidVolume;
 }
 
 void OpenParEMg::on_actionMeshGenerate_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionMeshGenerate_triggered" << std::endl; std::cout.flush();
-
     if (mesh->childCount() > 0) {
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this,"OpenParEMg","Delete the existing mesh?",QMessageBox::Yes|QMessageBox::No);
@@ -6925,13 +6854,13 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
             ShapeData *shapeData=drawingItem->getShapeData();
             TopoDS_Shape shape=shapeData->getShape()->Shape();
             if (!shape.IsNull()) {
-                std::cout << "   add drawingItem=" << drawingItem->text(0).toStdString();
-                TopAbs_Orientation orient=shape.Orientation();
-                if (orient == TopAbs_FORWARD) std::cout << "  TopAbs_FORWARD";
-                if (orient == TopAbs_REVERSED) std::cout << "  TopAbs_REVERSED";
-                if (orient == TopAbs_INTERNAL) std::cout << "  TopAbs_INTERNAL";
-                if (orient == TopAbs_EXTERNAL) std::cout << "  TopAbs_EXTERNAL";
-                std::cout << std::endl; std::cout.flush();
+                // std::cout << "   add drawingItem=" << drawingItem->text(0).toStdString();
+                // TopAbs_Orientation orient=shape.Orientation();
+                // if (orient == TopAbs_FORWARD) std::cout << "  TopAbs_FORWARD";
+                // if (orient == TopAbs_REVERSED) std::cout << "  TopAbs_REVERSED";
+                // if (orient == TopAbs_INTERNAL) std::cout << "  TopAbs_INTERNAL";
+                // if (orient == TopAbs_EXTERNAL) std::cout << "  TopAbs_EXTERNAL";
+                // std::cout << std::endl; std::cout.flush();
                 arguments.Append(shape);
             }
         }
@@ -7085,8 +7014,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
 void OpenParEMg::loadMeshFile (QString meshfile)
 {
-    //std::cout << "OpenParEMg::loadMeshFile" << std::endl; std::cout.flush();
-
     if (QFile::exists(meshfile)) {
 
         if (mesh->childCount() > 0) {
@@ -7099,8 +7026,6 @@ void OpenParEMg::loadMeshFile (QString meshfile)
 
         // load and display
         gmsh::open(meshfile.toStdString());
-        //gmsh::merge(meshfile.toStdString());
-        //gmsh::plugin::run("CreatePhysicalGroupsByField");
         drawMesh();
         finishDrawMesh();
 
@@ -7396,8 +7321,6 @@ void OpenParEMg::on_actionStop_triggered ()
 
 void OpenParEMg::checkFinish ()
 {
-    //std::cout << "OpenParEMg::checkFinish" << std::endl; std::cout.flush();
-
     // test for the signal that OpenParEM3D is finished
     int finished;
     MPI_Test(request,&finished,MPI_STATUS_IGNORE);
@@ -7429,7 +7352,6 @@ void OpenParEMg::checkFinish ()
         ui->dataText->viewport()->removeEventFilter(dataFilter);
 
         // get the status of the 3D simulations
-        //std::cout << "OPEMg receive 320000" << std::endl; std::cout.flush();
         int fail3D=0;
         MPI_Recv(&fail3D,1,MPI_INT,0,320000,*MPI_PORT_COMM,MPI_STATUS_IGNORE);
 
@@ -7440,35 +7362,27 @@ void OpenParEMg::checkFinish ()
         }
 
         // unblock OpenParEM3D
-        //std::cout << "OPEMg send 300000" << std::endl; std::cout.flush();
         MPI_Send(&signal,1,MPI_INT,0,300000,*MPI_PORT_COMM);  // stop
         if (!isAbort) {
-            //std::cout << "OPEMg send 300001" << std::endl; std::cout.flush();
             MPI_Send(&signal,1,MPI_INT,0,300001,*MPI_PORT_COMM);  // abort
         }
 
-        //std::cout << "OPEMg disconnect MPI_PORT_COMM" << std::endl; std::cout.flush();
         if (!isAbort) MPI_Comm_disconnect(MPI_PORT_COMM);
 
-        //std::cout << "OPEMg free MPI_PORT_COMM" << std::endl; std::cout.flush();
         MPI_Comm_free(MPI_PORT_COMM);
         MPI_PORT_COMM=nullptr;
 
-        //std::cout << "OPEMg free request" << std::endl; std::cout.flush();
         MPI_Request_free(request);
         request=nullptr;
 
         if (isAbort) {
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"OpenParEM3D Job Aborted.\n");
         }
-        //std::cout << "OPEMg return checkFinish" << std::endl; std::cout.flush();
     }
 }
 
 void OpenParEMg::on_actionAbort_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionAbort_triggered:" << std::endl;  std::cout.flush();
-
     simulationStopping=false;
     simulationAborting=true;
     setMenusI(72);
@@ -7529,8 +7443,6 @@ void OpenParEMg::on_actionDrawingPlaneShow_triggered ()
 
 void OpenParEMg::on_actionDrawingPlaneHide_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionDrawingPlaneHide_triggered" << std::endl; std::cout.flush();
-
     drawingPlaneShown=false;
     ui->drawingWindow->hideGrid();
     ui->drawingWindow->updateViewer();
@@ -7549,14 +7461,12 @@ void OpenParEMg::on_actionDrawingPlaneSnapToGrid_triggered ()
 
 void OpenParEMg::setPlaneToFace ()
 {
-    //std::cout << "OpenParEMg::setPlaneToFace" << std::endl; std::cout.flush();
     skipDrawingPlaneAxisForm=true;
     startPlaneSetToFace();
 }
 
 void OpenParEMg::setPlaneToFaceAxis ()
 {
-    //std::cout << "OpenParEMg::setPlaneToFaceAxis" << std::endl; std::cout.flush();
     skipDrawingPlaneAxisForm=false;
     startPlaneSetToFace();
 }
@@ -7571,8 +7481,6 @@ void OpenParEMg::setPlane (gp_Pnt origin, gp_Pnt u, gp_Dir normal)
 
 void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFace_triggered" << std::endl; std::cout.flush();
-
     startOperation(false);
 
     skipDrawingPlaneAxisForm=true;
@@ -7583,7 +7491,6 @@ void OpenParEMg::on_actionDrawingPlaneSetToFace_triggered ()
 
 void OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered ()
 {
-    //std::cout << "OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered" << std::endl; std::cout.flush();
 
     restrictToDrawingPlane=true;
     startOperation(true);
@@ -7596,8 +7503,6 @@ void OpenParEMg::on_actionDrawingPlaneSetToFaceAxis_triggered ()
 
 void OpenParEMg::startPlaneSetToFace ()
 {
-    //std::cout << "OpenParEMg::startPlaneSetToFace" << std::endl; std::cout.flush();
-
     // reset the selection
     on_actionShape_triggered();
 
@@ -7639,8 +7544,6 @@ void OpenParEMg::startPlaneSetToFace ()
 
 void OpenParEMg::finishPlaneSetToFace ()
 {
-    std::cout << "OpenParEMg::finishPlaneSetToFace" << std::endl; std::cout.flush();
-
     // u vector
     uLocalAxis=endPoint.XYZ()-startPoint.XYZ();
     uLocalAxis.Normalize();
@@ -7916,8 +7819,6 @@ void OpenParEMg::closePolyline ()
 
 void OpenParEMg::startOperation (bool withMidPoints)
 {
-    //std::cout << "OpenParEMg::startOperation  operation=" << operation << std::endl; std::cout.flush();
-
     // disable tree
     ui->drawingItemTree->setEnabled(false);
 
@@ -7934,8 +7835,6 @@ void OpenParEMg::startOperation (bool withMidPoints)
 
 void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
 {
-    //std::cout << "OpenParEMg::getCurrentMousePosition  restrictToDrawingPlane=" << restrictToDrawingPlane << std::endl; std::cout.flush();
-
     // draw
     if (activePolywire && activePolywire->getDrawEnable()) {
         activePolywire->setCurrentMousePosition(pnt);
@@ -7982,8 +7881,6 @@ void OpenParEMg::getCurrentMousePosition (gp_Pnt pnt)
 
 void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 {
-    std::cout << "OpenParEMg::getPickedVertex  cancel=" << cancel << "  restrictToDrawingPlane=" << restrictToDrawingPlane << std::endl; std::cout.flush();
-
     if (cancel) finishOperation(true,14);
 
     // restrict to the drawing plane
@@ -8131,8 +8028,6 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
 
 void OpenParEMg::finishOperation (bool cancel, int source)
 {
-    //std::cout << "OpenParEMg::finishOperation  cancel=" << cancel << "  source=" << source << std::endl; std::cout.flush();
-
     if (cancel) {
 
         if (currentDrawingItem) {
@@ -8210,16 +8105,11 @@ void OpenParEMg::finishOperation (bool cancel, int source)
 
 void OpenParEMg::on_actionUndo_triggered ()
 {
-    std::cout << "OpenParEMg::on_actionUndo_triggered" << std::endl; std::cout.flush();
-
     itemChangesStack.readNew();
     BaseItem *baseItem=itemChangesStack.getItem();
     while (baseItem) {
-        std::cout << "*** undo item:" << std::endl; std::cout.flush();
         baseItem->print_itemType();
-
         baseItem->undo();
-
         baseItem=itemChangesStack.getItem();
     }
 
@@ -8230,17 +8120,12 @@ void OpenParEMg::on_actionUndo_triggered ()
 
 void OpenParEMg::on_actionRedo_triggered ()
 {
-    std::cout << "OpenParEMg::on_actionRedo_triggered" << std::endl; std::cout.flush();
-
     itemChangesStack.redo();
     itemChangesStack.readNew();
     BaseItem *baseItem=itemChangesStack.getItem();
     while (baseItem) {
-        std::cout << "**** redo item:" << std::endl; std::cout.flush();
         baseItem->print_itemType();
-
         baseItem->redo();
-
         baseItem=itemChangesStack.getItem();
     }
 
@@ -8329,47 +8214,6 @@ void OpenParEMg::updateIterationsTab (bool force)
         ui->iterationsText->setTextCursor(oldCursor);
     }
 }
-
-// void OpenParEMg::updateDataTab (bool force)
-// {
-//     // default data csv file name used throughout
-//     QString dataFile=projData.project_name;
-//     dataFile.append("_results.csv");
-
-//     // open the file
-//     QFile file(dataFile);
-//     if (!file.exists()) return;
-//     if (!QFileInfo(dataFile).isFile()) return;
-//     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
-
-//     // get new data that has been added to the file
-//     file.seek(dataLastPos);
-//     QByteArray newData=file.readAll();
-//     dataLastPos=file.pos();
-//     if (newData.isEmpty()) return;
-
-//     // test for a quirk of back-to-back line returns due to block boundaries when loading
-//     if (dataLastChar == '\n' && newData[0] == '\n') newData.removeFirst();
-//     dataLastChar=newData[newData.size()-1];
-
-//     // check for skip or force
-//     if (!force && dataFilter->skipLoad) return;
-
-//     // load the new data
-//     // set the cursor so the user can scroll up to view prior data
-
-//     QTextCursor cursor=ui->dataText->textCursor();
-//     QTextCursor oldCursor=cursor;
-
-//     cursor.movePosition(QTextCursor::End);
-//     cursor.insertText(QString::fromUtf8(newData));
-
-//     if (dataFilter->followTail) {
-//         ui->dataText->setTextCursor(cursor);
-//     } else {
-//         ui->dataText->setTextCursor(oldCursor);
-//     }
-// }
 
 // updateTextKeepScroll is courtesy of Google AI
 void updateTextKeepScroll(QPlainTextEdit *editor, const QString &newText) {

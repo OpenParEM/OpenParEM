@@ -170,14 +170,6 @@ void PolycircleEditForm::on_pickCenter_clicked ()
     drawingWindow->updateViewer();
 }
 
-// void PolycircleEditForm::repopulateOffFirstPoint ()
-// {
-//     Polycircle temp(polycircle);
-//     temp.setFirstPoint(firstPoint);
-//     temp.recalculate();
-//     populate(&temp);
-// }
-
 void PolycircleEditForm::on_radius_editingFinished ()
 {
     if (ui->radius->text().toDouble() < Precision::Confusion()) return;

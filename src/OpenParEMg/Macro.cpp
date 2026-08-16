@@ -98,16 +98,13 @@ int Macro::endForLoop (std::vector<std::string> &tokens, ForLoop *loop)
     return 0;
 }
 
-int Macro::newProject (std::vector<std::string> &tokens)
+int Macro::openProject (std::vector<std::string> &tokens)
 {
-    if (tokens.size() == 3 && tokens[0].compare("newProject") == 0) {
+    if (tokens.size() == 3 && tokens[0].compare("openProject") == 0) {
         if (mw->projectFileLoaded) {
-            if (mw->projectChanged) {
-                //log.append("ERROR: newProject failed due to existing modified project.\n");
-                std::cout << "ERROR: newProject failed due to existing modified project." << std::endl;
-                return 2;
-            }
-            mw->on_actionClose_triggered();
+            //log.append("ERROR: openProject failed due to existing project.\n");
+            std::cout << "ERROR: openProject failed due to existing project." << std::endl;
+            return 2;
         } else {
             mw->on_actionNew_triggered();
 
@@ -117,6 +114,56 @@ int Macro::newProject (std::vector<std::string> &tokens)
             QString projectName=QString::fromStdString(tokens[2]);
             if (projectName.startsWith('/')) projectName.remove(0,1);
             filePath.append(projectName);
+
+            QString message="openProject: ";
+            message.append(filePath);
+            log.append(message);
+            std::cout << message.toStdString() << std::endl; std::cout.flush();
+
+            // set the window title bar
+            QString title="OpenParEMg: ";
+            title.append(filePath);
+            mw->setWindowTitle(title);
+
+            QFileInfo fileInfo(filePath);
+
+            // assign data for this project
+            mw->absolutePath=fileInfo.absolutePath();
+            mw->projectFile=fileInfo.fileName();
+            mw->projectName=fileInfo.completeBaseName();
+            set_project_name(&(mw->projData),mw->projectName.toStdString().c_str());
+            QDir::setCurrent(mw->absolutePath);
+
+            mw->openProject(filePath);
+        }
+
+        return 1;
+    }
+    return 0;
+}
+
+int Macro::newProject (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 3 && tokens[0].compare("newProject") == 0) {
+        if (mw->projectFileLoaded) {
+            //log.append("ERROR: newProject failed due to existing project.\n");
+            std::cout << "ERROR: newProject failed due to existing project." << std::endl;
+            return 2;
+        } else {
+
+            mw->on_actionNew_triggered();
+
+            // full path name
+            QString filePath=QString::fromStdString(tokens[1]);
+            if (!filePath.endsWith('/')) filePath.append('/');
+            QString projectName=QString::fromStdString(tokens[2]);
+            if (projectName.startsWith('/')) projectName.remove(0,1);
+            filePath.append(projectName);
+
+            QString message="newProject: ";
+            message.append(filePath);
+            log.append(message);
+            std::cout << message.toStdString() << std::endl; std::cout.flush();
 
             // set the window title bar
             QString title="OpenParEMg: ";
@@ -132,8 +179,7 @@ int Macro::newProject (std::vector<std::string> &tokens)
             set_project_name(&(mw->projData),mw->projectName.toStdString().c_str());
             QDir::setCurrent(mw->absolutePath);
         }
-        //log.append("newProject\n");
-        std::cout << "newProject" << std::endl;
+
         return 1;
     }
     return 0;
@@ -1216,6 +1262,16 @@ void Macro::run ()
             if (tokens.size() > 0) {
                 int retVal;
 
+                QApplication::processEvents(QEventLoop::AllEvents);
+
+                if (stopping) {
+                    running=false;
+                    stopping=false;
+                    //log.append("Macro execution stopped.\n");
+                    std::cout << "Macro execution stopped." << std::endl; std::cout.flush();
+                    return;
+                }
+
                 retVal=forLoop(tokens,&loop);
                 if (retVal > 0) {
                     loop.active=true;
@@ -1227,6 +1283,12 @@ void Macro::run ()
                 retVal=endForLoop(tokens,&loop);
                 if (retVal > 0) {
                     loop.bodyEnd=i-1;
+                    i++; continue;
+                }
+
+                retVal=openProject(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
                     i++; continue;
                 }
 
@@ -1555,12 +1617,6 @@ void Macro::run ()
                 std::cout << message << std::endl; std::cout.flush();
             }
 
-        }
-
-        if (stopping) {
-            //log.append("Macro execution stopped.\n");
-            std::cout << "Macro execution stopped." << std::endl; std::cout.flush();
-            return;
         }
 
         i++;

@@ -27,30 +27,6 @@ Process::Process (QWidget *parent)
     : QWidget{parent}
 {}
 
-// Process::~Process ()
-// {
-//     long unsigned int i=0;
-//     while (i < childList.size()) {
-//         childList[i]=nullptr;
-//         i++;
-//     }
-//     childList.clear();
-// }
-
-// CustomTreeWidgetItem* Process::getFirstChild ()
-// {
-//     CustomTreeWidgetItem *item=nullptr;
-//     if (childList.size() > 0) item=childList[0];
-//     return item;
-// }
-
-// CustomTreeWidgetItem* Process::getSecondChild ()
-// {
-//     CustomTreeWidgetItem *item=nullptr;
-//     if (childList.size() > 1) item=childList[1];
-//     return item;
-// }
-
 QString Extrude::getTip (double conversionFactor)
 {
     QString tip="Extrude";
@@ -66,13 +42,6 @@ Extrude* Extrude::copyCreate ()
     Extrude* newExtrude=new Extrude();
     newExtrude->modified=modified;
     newExtrude->length=length;
-
-    // long unsigned int i=0;
-    // while (i < childList.size()) {
-    //     newExtrude->addChild(childList[i]);
-    //     i++;
-    // }
-
     return newExtrude;
 }
 
@@ -177,13 +146,6 @@ Subtract* Subtract::copyCreate ()
 {
     Subtract* newSubtract=new Subtract();
     newSubtract->modified=modified;
-
-    // long unsigned int i=0;
-    // while (i < childList.size()) {
-    //     newSubtract->addChild(childList[i]);
-    //     i++;
-    // }
-
     return newSubtract;
 }
 

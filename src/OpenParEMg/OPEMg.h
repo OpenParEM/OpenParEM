@@ -378,6 +378,7 @@ public:
     //void pruneBoundaryDatabase ();
     void forceSave ();
     void saveProject ();
+    void openProject (QString);
     //void insertToMapActivateItem (BaseItem *);
     QString getAISshapeName (Handle(AIS_Shape));
     bool loadBrepFile (QString, bool);

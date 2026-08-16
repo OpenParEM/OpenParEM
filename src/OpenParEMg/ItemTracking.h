@@ -1,3 +1,24 @@
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//    OpenParEM3g - A GUI for OpenParEM3D                                     //
+//    Copyright (C) 2025 Brian Young                                          //
+//                                                                            //
+//    This program is free software: you can redistribute it and/or modify    //
+//    it under the terms of the GNU General Public License as published by    //
+//    the Free Software Foundation, either version 3 of the License, or       //
+//    (at your option) any later version.                                     //
+//                                                                            //
+//    This program is distributed in the hope that it will be useful,         //
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of          //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           //
+//    GNU General Public License for more details.                            //
+//                                                                            //
+//    You should have received a copy of the GNU General Public License       //
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.   //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+
 #ifndef ITEMTRACKING_H
 #define ITEMTRACKING_H
 
@@ -31,8 +52,6 @@ public:
 
     void nullify (long unsigned int index)
     {
-        //std::cout << "ItemTracking::nullify  index=" << index << std::endl; std::cout.flush();
-
         if (data[index]) {
             if (data[index]) {
                 if (data[index]->is_path()) currentPathCount--;
@@ -184,7 +203,6 @@ public:
         }
     }
 
-
     BaseItem* operator[](long unsigned int index) {
         return data[index];
     }
@@ -213,39 +231,6 @@ public:
     }
 
     // show
-
-    // void reshowVisibleItems () {
-    //     if (showTracking) {std::cout << "ItemTracker::reshowVisibleItems" << std::endl; std::cout.flush();}
-
-    //     long unsigned int i=0;
-    //     while (i < visibleItems.size()) {
-    //         BaseItem *item=visibleItems[i];
-    //         if (item) {
-    //             if (item->is_mesh()) {
-    //                 MeshItem *meshItem=dynamic_cast<MeshItem *>(item);
-
-    //                 long unsigned int j=0;
-    //                 while (j < meshItem->get_meshEntitiesSize()) {
-    //                     DisplayShape(meshItem->get_meshEntity(j));
-    //                     j++;
-    //                 }
-    //             } else {
-    //                 EraseShape(item->getShape());
-    //                 DisplayShape(item->getShape());
-    //             }
-    //         }
-    //         i++;
-    //     }
-    // }
-
-    // void showShape (Handle(AIS_Shape) shape)
-    // {
-    //     if (showTracking) {std::cout << "ItemTracker::showShape" << std::endl; std::cout.flush();}
-
-    //     if (shape.IsNull()) return;
-    //     CustomTreeWidgetItem *item=shapeToItemMap[shape];
-    //     showItem(item);
-    // }
 
     void showItem (BaseItem *item)
     {
@@ -281,29 +266,6 @@ public:
 
         return false;
     }
-
-    // bool isVIValidShow ()
-    // {
-    //     if (showTracking) {std::cout << "ItemTracker::isVIValidShow" << std::endl; std::cout.flush();}
-
-    //     long unsigned int i=0;
-    //     while (i < selectedItems.size()) {
-    //         BaseItem *item=selectedItems[i];
-    //         if (item) {
-    //             int j=0;
-    //             while (j < item->childCount()) {
-    //                 BaseItem *child=dynamic_cast<BaseItem *>(item->child(j));
-    //                 if (child->is_integrationPathSegment()) {
-    //                     if (child->isValidShow()) return true;
-    //                 }
-    //                 j++;
-    //             }
-    //         }
-    //         i++;
-    //     }
-
-    //     return false;
-    // }
 
     bool isNetValidShow ()
     {
@@ -341,15 +303,6 @@ public:
 
     // hide
 
-    // void hideShape (Handle(AIS_Shape) shape)
-    // {
-    //     if (hideTracking) {std::cout << "ItemTracker::hideShape" << std::endl; std::cout.flush();}
-
-    //     if (shape.IsNull()) return;
-    //     CustomTreeWidgetItem *item=shapeToItemMap[shape];
-    //     hideItem(item);
-    // }
-
     void hideItem (BaseItem *item)
     {
         if (hideTracking) {std::cout << "ItemTracker::hideItem  item=" << item << std::endl; std::cout.flush();}
@@ -360,31 +313,6 @@ public:
         item->setForeground(0,Qt::gray);
         //nullifyVisibleItem(item);
     }
-
-    // hide all items whether selected or not
-    // void hideAllItems ()
-    // {
-    //     if (hideTracking) {std::cout << "ItemTracker::hideAllItems" << std::endl; std::cout.flush();}
-
-    //     long unsigned int i=0;
-    //     while (i < visibleItems.size()) {
-    //         hideItem(visibleItems[i]);
-    //         i++;
-    //     }
-    // }
-
-    // bool isVisibleItem (BaseItem *item)
-    // {
-    //     if (!item) return false;
-
-    //     long unsigned int i;
-    //     while (i < visibleItems.size()) {
-    //         if (visibleItems[i] == item) return true;
-    //         i++;
-    //     }
-
-    //     return false;
-    // }
 
     bool isValidHide ()
     {
@@ -411,28 +339,6 @@ public:
         }
         return false;
     }
-
-    // bool isVIValidHide ()
-    // {
-    //     if (hideTracking) {std::cout << "ItemTracker::isVIValidHide" << std::endl; std::cout.flush();}
-
-    //     long unsigned int i=0;
-    //     while (i < selectedItems.size()) {
-    //         BaseItem *item=selectedItems[i];
-    //         if (item) {
-    //             int j=0;
-    //             while (j < item->childCount()) {
-    //                 BaseItem *child=dynamic_cast<BaseItem *>(item->child(j));
-    //                 if (child->is_integrationPathSegment()) {
-    //                     if (child->isValidHide()) return true;
-    //                 }
-    //                 j++;
-    //             }
-    //         }
-    //         i++;
-    //     }
-    //     return false;
-    // }
 
     bool isNetValidHide ()
     {
@@ -475,15 +381,12 @@ public:
 
         BaseItem *item=shapeToItemMap[shape];
         if (item) {
-            //showItem(item);
             selectItem(item);  // mesh shapes are not in the map, so need to check for valid item
         }
     }
 
     void activateSelectItem (BaseItem *item)
     {
-        //std::cout << "ItemTracking::activateSelectItem" << std::endl; std::cout.flush();
-
         if (!item) return;
 
         if (!item->getShape().IsNull()) {
@@ -492,12 +395,6 @@ public:
 
         selectItem(item);
     }
-
-    // assumes it is already in the tracker
-    // void refreshSelectedItem (BaseItem *item) {
-    //     if (!item) return;
-    //     SelectShape(item->getShape());
-    // }
 
     void refreshSelectedItems ()
     {
@@ -622,69 +519,11 @@ public:
         return false;
     }
 
-    // bool hasOneSelectedItem ()
-    // {
-    //     if (selectTracking) {std::cout << "ItemTracker::hasOneSelectedItem" << std::endl; std::cout.flush();}
-
-    //     if (selectedItems.count() == 1) return true;
-    //     return false;
-    // }
-
-    // bool hasAnySelectedItems ()
-    // {
-    //     if (selectTracking) {std::cout << "ItemTracker::hasAnySelectedItems" << std::endl; std::cout.flush();}
-
-    //     if (selectedItems.count() > 0) return true;
-    //     return false;
-    // }
-
-    // bool hasOneFaceSelected ()
-    // {
-    //     if (selectTracking) {std::cout << "ItemTracker::hasOneFaceSelected" << std::endl; std::cout.flush();}
-
-    //     int count=0;
-    //     long unsigned int index;
-    //     long unsigned int i=0;
-    //     while (i < selectedItems.size()) {
-    //         if (selectedItems[i]) {
-    //             Handle(AIS_Shape) shape=selectedItems[i]->getShape();
-    //             if (!shape.IsNull()) {
-    //                 TopAbs_ShapeEnum shapeType=shape->Shape().ShapeType();
-    //                 if (shapeType == TopAbs_FACE) {
-    //                     count++;
-    //                     index=i;
-    //                 }
-    //             }
-    //         }
-    //         i++;
-    //     }
-
-    //     if (count == 1) {
-    //         Handle(AIS_Shape) shape=selectedItems[index]->getShape();
-    //         if (!shape.IsNull()) {
-    //             TopAbs_ShapeEnum shapeType=shape->Shape().ShapeType();
-    //             if (shapeType == TopAbs_FACE) return true;
-    //         }
-    //     }
-    //     return false;
-    // }
-
     int get_pathSelectedCount () {return selectedItems.pathCount();}
     int get_portSelectedCount () {return selectedItems.portCount();}
     int get_boundarySelectedCount () {return selectedItems.boundaryCount();}
 
     // unselect
-
-    // void unselectItemShape (Handle(AIS_Shape) shape)
-    // {
-    //     if (selectTracking) {std::cout << "ItemTracker::unselectShape" << std::endl; std::cout.flush();}
-
-    //     BaseItem *item=shapeToItemMap[shape];
-    //     if (item) {
-    //         //showItem(item);
-    //         unselectItem(item);  // mesh shapes are not in the map, so need to check for valid item
-    //     }
-    // }
 
     void unselectAllItems ()
     {
@@ -761,100 +600,6 @@ public:
 
     // delete
 
-    // void deleteItem (BaseItem *item)
-    // {
-    //     if (deleteTracking) {std::cout << "ItemTracker::deleteItem  item=" << item << std::endl; std::cout.flush();}
-
-    //     if (!item) return;
-    //     // if (item->is_mesh()) return;
-    //     // if (item->is_sport()) return;
-
-    //     // if (item->is_root()) return;
-
-    //     DeleteItem(item);
-
-    //     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(item);
-    //     if (!(rootDrawingItem && rootDrawingItem->is_rootDrawing())) {
-    //         delete item;
-    //         item=nullptr;
-    //     }
-    // }
-
-    // bool isValidDelete ()
-    // {
-    //     if (deleteTracking) {std::cout << "ItemTracker::isValidDelete" << std::endl; std::cout.flush();}
-
-    //     // do not enable deletion of subshapes
-    //     if (selectedItems.size() == 0) return false;
-
-    //     bool performCheck=true;
-
-    //     // count the items
-    //     long unsigned int i=0;
-    //     while (i < selectedItems.size()) {
-    //         BaseItem *item=selectedItems[i];
-    //         if (item) {
-    //             if (item->is_mesh()) {
-    //                 // nothing to do
-    //             } else if (item->is_port() || item->is_boundary()) {
-    //                 if (!viewerContext->IsDisplayed(item->getShape())) performCheck=false;
-    //             } else if (item->is_sportLabel()) {
-    //                 // nothing to do
-    //             } else {
-    //                 // drawing
-    //                 if (viewerContext->IsDisplayed(item->getShape())) {
-
-    //                     BaseItem *parent=dynamic_cast<BaseItem *>(item->QTreeWidgetItem::parent());
-    //                     if (parent && !parent->is_rootDrawing()) {
-    //                         // parent must be a COMPOUND
-    //                         //if (parent->getShape()->Shape().ShapeType() == TopAbs_COMPOUND) count++;
-
-    //                         performCheck=false;
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         i++;
-    //     }
-
-    //     if (!performCheck) {
-    //         return false;
-    //     }
-
-    //     // checks
-    //     i=0;
-    //     while (i < selectedItems.size()) {
-    //         BaseItem *item=selectedItems[i];
-    //         if (item) {
-    //             if (item->is_mesh()) {
-    //                 // nothing to do
-    //             } else if (item->is_port() || item->is_boundary()) {
-    //                 if (!viewerContext->IsDisplayed(item->getShape())) return false;
-    //             } else if (item->is_sportLabel()) {
-    //                 // nothing to do
-    //             } else {
-    //                 // drawing
-    //                 if (!viewerContext->IsDisplayed(item->getShape())) {
-    //                     return false;
-    //                 }
-
-    //                 BaseItem *parent=dynamic_cast<BaseItem *>(item->QTreeWidgetItem::parent());
-    //                 if (parent && !parent->is_rootDrawing()) {
-    //                     // ToDo: probably have to generalize this at some point
-
-    //                     // parent must be a COMPOUND
-    //                     //if (parent->get_AIS_Shape()->Shape().ShapeType() != TopAbs_COMPOUND) return false;
-
-    //                     return false;
-    //                 }
-    //             }
-    //         }
-    //         i++;
-    //     }
-
-    //     return true;
-    // }
-
     bool isValidDelete ()
     {
         if (deleteTracking) {std::cout << "ItemTracker::isValidDelete" << std::endl; std::cout.flush();}
@@ -881,8 +626,6 @@ public:
 
     void insertItemToMap (Handle(AIS_Shape) shape, BaseItem *item)
     {
-        //std::cout << "ItemTracker::insertItemToMap" << std::endl; std::cout.flush();
-
         if (!item) return;
         if (shape.IsNull()) return;
         if (item->is_mesh()) return;
@@ -910,31 +653,9 @@ public:
 
     void reset ()
     {
-        //std::cout << "ItemTracker::reset" << std::endl; std::cout.flush();
-
-        //visibleItems.clear();
         selectedItems.clear();
         shapeToItemMap.clear();
     }
-
-    // std::vector<BaseItem *> getVisibleDrawingItems ()
-    // {
-    //     //std::cout << "ItemTracking::getVisibleDrawingItems" << std::endl; std::cout.flush();
-
-    //     std::vector<BaseItem *> copyVisibleItems;
-    //     long unsigned int i=0;
-    //     while (i < visibleItems.size()) {
-    //         if (visibleItems[i]) {
-    //             DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(visibleItems[i]);
-    //             if (drawingItem && drawingItem->is_drawing()) {
-    //                 copyVisibleItems.push_back(drawingItem);
-    //             }
-    //         }
-    //         i++;
-    //     }
-
-    //     return copyVisibleItems;
-    // }
 
     long unsigned int getSelectedItemsSize () {return selectedItems.size();}
     BaseItem* getSelectedItem (long unsigned int i) {return selectedItems[i];}
@@ -953,12 +674,6 @@ public:
         //std::cout << "      visible count = " << visibleItems.count() << std::endl;
         std::cout << "      selected count = " << selectedItems.count() << std::endl; std::cout.flush();
     }
-
-    // bool isInMap (Handle(AIS_Shape) shape) {
-    //     BaseItem *item=shapeToItemMap[shape];
-    //     if (item) return true;
-    //     return false;
-    // }
 
     void audit ()
     {
@@ -1014,7 +729,6 @@ private:
 
     void SelectShape (Handle(AIS_Shape) shape)
     {
-        //std::cout << "ItemTracking::SelectShape" << std::endl; std::cout.flush();
         if (shape.IsNull()) {
             return;
         }
@@ -1025,54 +739,12 @@ private:
         viewerContext->AddOrRemoveSelected(shape,Standard_True);
     }
 
-    // void ActivateSelectShape (Handle(AIS_Shape) shape)
-    // {
-    //     //std::cout << "ItemTracking::SelectShape" << std::endl; std::cout.flush();
-    //     if (shape.IsNull()) {
-    //         return;
-    //     }
-
-    //     if (viewerContext->IsSelected(shape)) {
-    //         return;
-    //     }
-    //     viewerContext->Activate(shape);
-    //     viewerContext->AddOrRemoveSelected(shape,Standard_True);
-    // }
-
     void UnselectShape (Handle(AIS_Shape) shape)
     {
         if (shape.IsNull()) return;
         if (!viewerContext->IsSelected(shape)) return;
         viewerContext->AddOrRemoveSelected(shape,Standard_False);
     }
-
-    // void DeleteItem (BaseItem *item)
-    // {
-    //     //std::cout << "ItemTrackign::DeleteItem  item=" << item << std::endl; std::cout.flush();
-
-    //     if (!item) return;
-
-    //     unselectItem(item);
-    //     hideItem(item);
-
-    //     // remove the AIS_Shape from the viewer
-    //     viewerContext->Remove(item->getShape(),Standard_False);
-    //     shapeToItemMap.erase(item->getShape());
-    //     item->getShape().Nullify();
-
-    //     // process children
-    //     int i=0;
-    //     while (i < item->childCount()) {
-    //         BaseItem *child=dynamic_cast<BaseItem *>(item->child(i));
-    //         DeleteItem(child);
-    //         i++;
-    //     }
-    // }
-
-    // void nullifyVisibleItem (BaseItem *item)
-    // {
-    //     visibleItems.nullify(item);
-    // }
 
     Handle(AIS_InteractiveContext) viewerContext;
     //ItemVector visibleItems;

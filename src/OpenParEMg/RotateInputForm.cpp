@@ -184,7 +184,6 @@ void RotateInputForm::on_CustomAxis_clicked ()
 
 void RotateInputForm::on_pickStart_clicked ()
 {
-    //std::cout << "RotateInputForm::on_pickStart_clicked" << std::endl; std::cout.flush();
     pickStartPoint=true;
     pickEndPoint=false;
     this->setEnabled(false);
@@ -197,7 +196,6 @@ void RotateInputForm::on_pickStart_clicked ()
 
 void RotateInputForm::on_pickEnd_clicked ()
 {
-    //std::cout << "RotateInputForm::on_pickEnd_clicked" << std::endl; std::cout.flush();
     pickStartPoint=false;
     pickEndPoint=true;
     this->setEnabled(false);
@@ -230,8 +228,6 @@ void RotateInputForm::on_CancelButton_clicked ()
 
 void RotateInputForm::pickVertexFinished (gp_Pnt point)
 {
-    std::cout << "RotateInputForm::pickVertexFinished" << std::endl; std::cout.flush();
-
     this->setEnabled(true);
 
     if (pickStartPoint) {

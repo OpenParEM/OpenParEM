@@ -62,9 +62,12 @@ public:
 
     int forLoop (std::vector<std::string> &tokens, ForLoop *loop);
     int endForLoop (std::vector<std::string> &tokens, ForLoop *loop);
+
+    int openProject (std::vector<std::string> &tokens);
     int newProject (std::vector<std::string> &tokens);
     int closeProject (std::vector<std::string> &tokens);
     int forceCloseProject (std::vector<std::string> &tokens);
+
     int setDrawingPlane (std::vector<std::string> &tokens);
     int setDrawingPlaneToXY (std::vector<std::string> &tokens);
     int setDrawingPlaneToXZ (std::vector<std::string> &tokens);

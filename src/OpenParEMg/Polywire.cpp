@@ -251,8 +251,6 @@ void Polywire::deleteRubberband ()
 
 bool Polywire::isValidPoint (gp_Pnt &pnt, bool zeroPntLogic)
 {
-    //std::cout << "Polywire::isValidPoint" << std::endl; std::cout.flush();
-
     if (zeroPntLogic) {if (shapePoints.size() == 0) return true;}
     else {if (shapePoints.size() == 0) return false;}
 
@@ -535,8 +533,6 @@ void Line::setP1 (gp_Pnt &P1)
 
 void Line::drawRubberband ()
 {
-    //std::cout << "Line::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
-
     if (!isValidPoint(currentMousePosition,false)) return;
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
@@ -549,8 +545,6 @@ void Line::drawRubberband ()
 
 void Line::drawStretchRubberband ()
 {
-    //std::cout << "Line::drawStretchRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
-
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
 
     gp_Pnt p0=shapePoints[0];
@@ -974,8 +968,6 @@ Handle(AIS_Shape) Polyline::get_AIS_Shape ()
 
 void Polyline::drawRubberband ()
 {
-    //std::cout << "Polyline::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
-
     if (!isValidPoint(currentMousePosition,false)) return;
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
@@ -1138,21 +1130,6 @@ void Polyline::insertPoint (gp_Pnt &pnt)
         }
     }
 }
-
-// void Polyline::buildFromFace (TopoDS_Face &face)
-// {
-//     // use the outer wire
-//     TopoDS_Wire wire=BRepTools::OuterWire(face);
-
-//     // transfer vertices
-//     BRepTools_WireExplorer wireExp(wire,face);
-//     while (wireExp.More())
-//     {
-//         gp_Pnt point=BRep_Tool::Pnt(wireExp.CurrentVertex());
-//         shapePoints.push_back(point);
-//         wireExp.Next();
-//     }
-// }
 
 QString Polyline::getName (ObjectCounts *objectCounts) {
     objectCounts->polyline++;
@@ -1398,8 +1375,6 @@ void Rectangle::addPoint (gp_Pnt &pnt)
 
 void Rectangle::drawRubberband ()
 {
-    //std::cout << "Rectangle::drawRubberband  shapePoints.size()=" << shapePoints.size() << std::endl; std::cout.flush();
-
     if (!isValidPoint(currentMousePosition,false)) return;
 
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
@@ -1465,10 +1440,6 @@ void Rectangle::drawRubberband ()
 
 void Rectangle::drawStretchRubberband ()
 {
-    //std::cout << "Rectangle::drawStretchedRubberband  editIndex=" << editIndex << std::endl; std::cout.flush();
-
-    //if (!isValidPoint(currentMousePosition,false)) return;
-
     if (!rubberband.IsNull()) {viewerContext->Remove(rubberband,Standard_True); rubberband.Nullify();}
 
     std::vector<gp_Pnt> tempShapePoints;
@@ -1597,8 +1568,6 @@ void Rectangle::drawStretchRubberband ()
 
 TopoDS_Face Rectangle::buildFace (TopoDS_Wire &wire)
 {
-    //std::cout << "Rectangle::buildFace" << std::endl; std::cout.flush();
-
     TopoDS_Face face;
     if (wire.IsNull()) return face;
 
@@ -1613,15 +1582,12 @@ TopoDS_Face Rectangle::buildFace (TopoDS_Wire &wire)
 
 void Rectangle::setEditPoint (gp_Pnt &pnt)
 {
-    //std::cout << "Rectangle::setEditPoint  tempWidth=" << tempWidth << "  tempHeight=" << tempHeight << std::endl; std::cout.flush();
-
     if (editIndex == 0 || editIndex == 4) {
         gp_Vec d(pnt,shapePoints[2]);
         width=d.Dot(u);
         height=d.Dot(v);
 
         if (isSquare) {
-            std::cout << "   width=" << width << "  height=" << height << std::endl; std::cout.flush();
             if (abs(width) > abs(height)) {
                 height=abs(width);
                 if (tempHeight < 0) height=-height;
@@ -1712,17 +1678,6 @@ void Rectangle::recalculate ()
     shapePoints[4]=shapePoints[0];
 }
 
-// for change in origin
-// void Rectangle::recalculate (gp_Pnt p0)
-// {
-//     shapePoints[0]=p0;
-
-//     shapePoints[1]=shapePoints[0].Translated(u*width);
-//     shapePoints[2]=shapePoints[0].Translated(u*width).Translated(v*height);
-//     shapePoints[3]=shapePoints[0].Translated(v*height);
-//     shapePoints[4]=shapePoints[0];
-// }
-
 // for change in corner points
 void Rectangle::recalculate (gp_Pnt p0, gp_Pnt p1)
 {
@@ -1795,7 +1750,6 @@ void Rectangle::rotate (double &angleDegrees, gp_Pnt &p1, gp_Pnt &p2)
 
 Rectangle* Rectangle::copyCreate ()
 {
-    //std::cout << "Rectangle::copyCreate" << std::endl; std::cout.flush();
     Rectangle *newRectangle=new Rectangle();
     newRectangle->modified=modified;
     newRectangle->closed=closed;
@@ -2156,8 +2110,6 @@ QString Polycircle::getTip (double conversionFactor)
 
 void Polycircle::drawRubberband ()
 {
-    //std::cout << "Polycircle::drawRubberband" << std::endl; std::cout.flush();
-
     if (!isValidPoint(currentMousePosition,false)) return;
 
     // reset
@@ -2204,8 +2156,6 @@ void Polycircle::drawRubberband ()
 
 void Polycircle::drawStretchRubberband ()
 {
-    //std::cout << "Polycircle::drawRubberband" << std::endl; std::cout.flush();
-
     if (currentMousePosition.IsEqual(centerPoint,Precision::Confusion())) return;
 
     // reset
@@ -2316,8 +2266,6 @@ void Polycircle::addPoint (gp_Pnt &pnt)
 
 void Polycircle::recalculate ()
 {
-    //std::cout << "Polycircle::recalculate" << std::endl; std::cout.flush();
-
     shapePoints.clear();
 
     gp_Ax1 axis(centerPoint,normal);

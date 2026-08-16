@@ -46,10 +46,6 @@ FrequencyView::FrequencyView (QWidget *parent)
     scrollBarWidth=qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent);
     scrollBarOffset=0;
 
-    //QStringList headers;
-    //headers << "Frequency" << "Refinement Order" << "Restart";
-    //ui->frequencyView->setHorizontalHeaderLabels(headers);
-
     QTableWidgetItem *headerItem=ui->frequencyView->horizontalHeaderItem(0);
     if (headerItem) headerItem->setToolTip("Simulation frequencies.");
 
@@ -67,9 +63,6 @@ FrequencyView::~FrequencyView ()
 
 void FrequencyView::populate (struct projectData *projData)
 {
-    //xxx
-    std::cout << "FrequencyView::populate: projData->touchstone_frequency_unit = " << projData->touchstone_frequency_unit << std::endl; std::cout.flush();
-
     // frequency conversions
     if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) conversionFactor=1;
     else if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) conversionFactor=1e3;

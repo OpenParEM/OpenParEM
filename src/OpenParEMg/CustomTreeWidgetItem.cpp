@@ -148,8 +148,6 @@ void BaseItem::setForUndoRedo (bool withMidPoints, int shapeOperation)
 
 void BaseItem::restoreWidgets ()
 {
-    //std::cout << "BaseItem::restoreWidgets" << std::endl; std::cout.flush();
-
     BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(this);
     if (boundaryItem) {
         BaseItem *boundaryType=nullptr;
@@ -235,42 +233,6 @@ void BaseItem::rename (QString name)
     mw->finishOperation(false,1);
 }
 
-// void BaseItem::expandToItem ()
-// {
-//     //std::cout << "BaseItem::expandToItem  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
-
-//     BaseItem *baseItem=getParentItem();
-//     for (BaseItem *p=baseItem; p; p=p->getParentItem())
-//     {
-//         p->setExpanded(true);
-//     }
-
-//     mw->ui->drawingWindow->unselectAllItems();
-//     setForeground(0,Qt::black);
-//     mw->ui->drawingWindow->hideItem(this);
-//     mw->ui->drawingWindow->showItem(this);
-//     mw->ui->drawingWindow->selectItem(this);
-//     mw->ui->drawingItemTree->scrollToItem(this);
-// }
-
-// void BaseItem::expandToItemPlus1 ()
-// {
-//     //std::cout << "BaseItem::expandToItem1  text(0)=" << text(0).toStdString() << std::endl; std::cout.flush();
-
-//     BaseItem *baseItem=this;
-//     for (BaseItem *p=baseItem; p; p=p->getParentItem())
-//     {
-//         p->setExpanded(true);
-//     }
-
-//     mw->ui->drawingWindow->unselectAllItems();
-//     setForeground(0,Qt::black);
-//     mw->ui->drawingWindow->hideItem(this);
-//     mw->ui->drawingWindow->showItem(this);
-//     mw->ui->drawingWindow->selectItem(this);
-//     mw->ui->drawingItemTree->scrollToItem(this);
-// }
-
 BaseItem* BaseItem::findTopLevelItem (BaseItem *parentItem, BaseItem *currentItem)
 {
     if (!currentItem) {
@@ -341,7 +303,7 @@ void BaseItem::undo ()
 
 void BaseItem::redo ()
 {
-    std::cout << "BaseItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "BaseItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -352,10 +314,10 @@ void BaseItem::redo ()
     if (!next) return;
 
     if (next->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        //std::cout << "   isNoop" << std::endl; std::cout.flush();
         // should not occur
     } else if (next->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        //std::cout << "   isCreate" << std::endl; std::cout.flush();
         dataStack.redo();
 
         Handle(AIS_Shape) shape=getShape();
@@ -369,7 +331,7 @@ void BaseItem::redo ()
         mw->ui->drawingWindow->showItem(this);
         restoreWidgets();
     } else if (next->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        //std::cout << "   isEdit" << std::endl; std::cout.flush();
         dataStack.redo();
         restoreWidgets();
     } else if (next->isDelete()) {
@@ -385,7 +347,7 @@ void BaseItem::redo ()
 
         dataStack.redo();
     } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
 
         dataStack.redo();
         setText(0,getShapeData()->get_name());
@@ -484,8 +446,6 @@ ScaleValueItem::ScaleValueItem (OpenParEMg *mw_, ScaleLabelItem *parentItem_)
 
 void ScaleValueItem::insertScaleValueWidget (double scale)
 {
-    //std::cout << "ScaleValueItem::insertScaleValueWidget  scale=" << scale << std::endl; std::cout.flush();
-
     CustomLineEdit *scaleEdit=new CustomLineEdit();
     const QSignalBlocker blocker(scaleEdit);
     scaleEdit->setText(QString::number(scale,'g',15));
@@ -499,8 +459,6 @@ void ScaleValueItem::insertScaleValueWidget (double scale)
 
 void ScaleValueItem::undo ()
 {
-    std::cout << "ScaleValueItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
-
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
@@ -514,8 +472,6 @@ void ScaleValueItem::undo ()
 
 void ScaleValueItem::redo ()
 {
-    std::cout << "ScaleValueItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
-
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
 
@@ -724,8 +680,6 @@ void DrawingItem::promoteChildren ()
 
 void DrawingItem::demoteChildren ()
 {
-    std::cout << "DrawingItem::demoteChildren" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < getChildrenSize()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(getChild(i));
@@ -750,8 +704,6 @@ void DrawingItem::demoteChildren ()
 
 void DrawingItem::cancelOperation ()
 {
-    std::cout << "DrawingItem::cancelOperation  item=" << this->text(0).toStdString () << std::endl; std::cout.flush();
-
     resetOperation();
 
     // remove animate shape
@@ -892,8 +844,6 @@ void DrawingItem::finishDraw ()
 
 void DrawingItem::cancelDraw ()
 {
-    //std::cout << "DrawingItem::cancelDraw" << std::endl; std::cout.flush();
-
     // take care of shapes
     if (!animateShape.IsNull()) animateShape.Nullify();
     if (mw->activePolywire) {
@@ -914,8 +864,6 @@ void DrawingItem::cancelDraw ()
 
 void DrawingItem::startMove (bool isAnimate)
 {
-    //std::cout << "DrawingItem::startMove  drawingItem=" << text(0).toStdString() << "  isAnimate=" << isAnimate << std::endl; std::cout.flush();
-
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
         setForUndoRedo(true,0);
@@ -928,16 +876,6 @@ void DrawingItem::startMove (bool isAnimate)
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
         if (isAnimate) setAnimate(mw->ui->drawingWindow->get_viewerContext());
-        // int i=0;
-        // while (i < childCount()) {
-        //     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
-        //     if (drawingItem) {
-        //         resetOperation();
-        //         setEnableMove(true);
-        //         drawingItem->startMove(false);
-        //     }
-        //     i++;
-        // }
 
         setForUndoRedo(true,0);
         resetOperation();
@@ -957,8 +895,6 @@ void DrawingItem::startMove (bool isAnimate)
 
 void DrawingItem::finishMove (gp_Pnt p0_, gp_Pnt p1_)
 {
-    //std::cout << "DrawingItem::finishMove  drawingItem=" << text(0).toStdString() << std::endl; std::cout.flush();
-
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
         polywire->shift(p1_,p0_);
@@ -1021,16 +957,6 @@ void DrawingItem::startRotate ()
 
 void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint)
 {
-    //bool isDisplayed=mw->ui->drawingWindow->isDisplayed(getShape());
-
-    //bool isDisplayed=false;
-    //if (foreground(0) == Qt::black) isDisplayed=true;
-
-    // remove the old version from display and tracking
-    // mw->ui->drawingWindow->hideItem(this);
-    // mw->ui->drawingWindow->removeItemFromMap(this);
-    // mw->ui->drawingWindow->deleteShape(getShape());
-
     unsetAnimate(mw->ui->drawingWindow->get_viewerContext());
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
@@ -1041,14 +967,6 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
 
     Process *process=static_cast<Process *>(getProcess());
     if (process) {
-        // int i=0;
-        // while (i < childCount()) {
-        //     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(child(i));
-        //     if (drawingItem) drawingItem->finishRotate(angle,startPoint,endPoint);
-        //     i++;
-        // }
-
-        // mw->ui->drawingWindow->activateItem(this);
     }
 
     if (!polywire && !process) {
@@ -1068,23 +986,13 @@ void DrawingItem::finishRotate (double angle, gp_Pnt startPoint, gp_Pnt endPoint
     mw->activeAction=false;
     setModified(true);
 
-    //if (isDisplayed) mw->ui->drawingWindow->showItem(this);
-    //else mw->ui->drawingWindow->hideItem(this);
     if (!isOriginalSelection()) {
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
     }
-    // if (isOriginalSelection()) {
-    //     mw->ui->drawingWindow->showItem(this);
-    // } else {
-    //     mw->ui->drawingWindow->unselectItem(this);
-    //     mw->ui->drawingWindow->hideItem(this);
-    // }
 
     setTip();
     resetOperation();
-
-    //findTopLevelItem(this);
 }
 
 void DrawingItem::startStretch ()
@@ -1109,11 +1017,6 @@ void DrawingItem::finishStretch ()
 {
     bool isDisplayed=false;
     if (foreground(0) == Qt::black) isDisplayed=true;
-
-    // remove the old version from display and tracking
-    // mw->ui->drawingWindow->hideItem(this);
-    // mw->ui->drawingWindow->removeItemFromMap(this);
-    // mw->ui->drawingWindow->deleteShape(getShape());
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (!polywire) return;
@@ -1393,8 +1296,6 @@ void DrawingItem::finishEdit ()
 
     setTip();
     setModified(true);
-
-    //findTopLevelItem(this);
 }
 
 void DrawingItem::startDeletePoint ()
@@ -1403,9 +1304,6 @@ void DrawingItem::startDeletePoint ()
 
     Handle(AIS_Shape) shape=getShape();
     if (!shape.IsNull()) {
-        // set the selected shape to be the only selectable shape
-        // includes selecting just on vertices of the shape and not midpoints
-        //ui->drawingWindow->set_activeShape(shape);
 
         // set the drawing plane
         mw->currentPrivilegedPlane=mw->ui->drawingWindow->get_gridPlane();
@@ -1424,11 +1322,6 @@ void DrawingItem::startDeletePoint ()
 
 void DrawingItem::finishDeletePoint ()
 {
-    // remove the old version from display and tracking
-    // mw->ui->drawingWindow->hideItem(this);
-    // mw->ui->drawingWindow->removeItemFromMap(this);
-    // mw->ui->drawingWindow->deleteShape(getShape());
-
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
         gp_Pnt p0=getP0();
@@ -1470,9 +1363,6 @@ void DrawingItem::startInsertPoint ()
 
     Handle(AIS_Shape) shape=getShape();
     if (!shape.IsNull()) {
-        // set the selected shape to be the only selectable shape
-        // includes selecting just on vertices of the shape and not midpoints
-        //ui->drawingWindow->set_activeShape(shape);
 
         // set the drawing plane
         mw->currentPrivilegedPlane=mw->ui->drawingWindow->get_gridPlane();
@@ -1491,11 +1381,6 @@ void DrawingItem::startInsertPoint ()
 
 void DrawingItem::finishInsertPoint ()
 {
-    // remove the old version from display and tracking
-    // mw->ui->drawingWindow->hideItem(this);
-    // mw->ui->drawingWindow->removeItemFromMap(this);
-    // mw->ui->drawingWindow->deleteShape(getShape());
-
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
 
@@ -1555,7 +1440,6 @@ void DrawingItem::finishStretchPoint ()
     resetOperation();
     mw->activeAction=false;
     setModified(true);
-    //findTopLevelItem(this);
 
     mw->ui->drawingWindow->showItem(this);
     mw->finishOperation(false,1);
@@ -1572,11 +1456,6 @@ void DrawingItem::convertToPolyline ()
 
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (polywire) {
-
-        // remove the old version from display and tracking
-        // mw->ui->drawingWindow->hideItem(this);
-        // mw->ui->drawingWindow->removeItemFromMap(this);
-        // mw->ui->drawingWindow->deleteShape(getShape());
 
         // convert
         Polyline *newPolyline=polywire->convert();
@@ -1643,8 +1522,6 @@ void DrawingItem::del ()
 
 DrawingItem* DrawingItem::copyCreate ()
 {
-    //std::cout << "DrawingItem::copyCreate" << std::endl; std::cout.flush();
-
     DrawingItem *newItem=new DrawingItem(mw,parentItem);
     if (!newItem) return nullptr;
 
@@ -1841,7 +1718,6 @@ void DrawingItem::setAnimate (Handle(AIS_InteractiveContext) viewerContext)
 
 void DrawingItem::unsetAnimate (Handle(AIS_InteractiveContext) viewerContext)
 {
-    //std::cout << "unsetAnimate" << std::endl; std::cout.flush();
     if (animateShape.IsNull()) return;
     viewerContext->Remove(animateShape,Standard_False);  // Standard_True
     animateShape.Nullify();
@@ -1861,17 +1737,10 @@ void DrawingItem::moveAnimateShape (gp_Pnt p1, gp_Pnt p2, Handle(AIS_Interactive
 
 PathItem* DrawingItem::createPath (bool hasArrows)
 {
-    //std::cout << "DrawingItem::createPath" << std::endl; std::cout.flush();
-
     Polywire *polywire=static_cast<Polywire *>(getPolywire());
     if (!polywire) return nullptr;
 
     // default path name
-    // QString pathName="newPath";
-    // RootPathItem *rootParentItem=dynamic_cast<RootPathItem *>(parentItem);
-    // if (rootParentItem) {
-    //     pathName=rootParentItem->getUniquePathName(text(0));
-    // }
     QString pathName=mw->path->getUniquePathName();
 
     // new path for the path database
@@ -1913,7 +1782,7 @@ BaseItem* DrawingItem::findTopLevelItem (BaseItem *baseItem)
 
 void DrawingItem::undo ()
 {
-    std::cout << "DrawingItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "DrawingItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -1924,10 +1793,10 @@ void DrawingItem::undo ()
     if (foreground(0) == Qt::black) isDisplayed=true;
 
     if (shapeData->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        //std::cout << "   isNoop" << std::endl; std::cout.flush();
         // nothing to do
     } else if (shapeData->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        //std::cout << "   isCreate" << std::endl; std::cout.flush();
 
         // remove the item
         mw->ui->drawingWindow->unselectItem(this);
@@ -1940,7 +1809,7 @@ void DrawingItem::undo ()
 
         dataStack.undo();
     } else if (shapeData->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        //std::cout << "   isEdit" << std::endl; std::cout.flush();
 
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -1955,7 +1824,7 @@ void DrawingItem::undo ()
         else mw->ui->drawingWindow->hideItem(this);
 
     } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        //std::cout << "   isDelete" << std::endl; std::cout.flush();
 
         dataStack.undo();
 
@@ -1972,7 +1841,7 @@ void DrawingItem::undo ()
         RootDrawingItem *rootParentItem=dynamic_cast<RootDrawingItem *>(getParentItem());
         if (rootParentItem) mw->ui->drawingWindow->showItem(this);
     } else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
 
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -1992,7 +1861,7 @@ void DrawingItem::undo ()
 
 void DrawingItem::redo ()
 {
-    std::cout << "DrawingItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "DrawingItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2006,10 +1875,10 @@ void DrawingItem::redo ()
     if (foreground(0) == Qt::black) isDisplayed=true;
 
     if (next->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        //std::cout << "   isNoop" << std::endl; std::cout.flush();
         // should not occur
     } else if (next->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        //std::cout << "   isCreate" << std::endl; std::cout.flush();
         dataStack.redo();
 
         DrawingItem *parentItem=dynamic_cast<DrawingItem *>(getParentItem());
@@ -2025,7 +1894,7 @@ void DrawingItem::redo ()
         RootDrawingItem *rootParentItem=dynamic_cast<RootDrawingItem *>(getParentItem());
         if (rootParentItem) mw->ui->drawingWindow->showItem(this);
     } else if (next->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        //std::cout << "   isEdit" << std::endl; std::cout.flush();
 
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -2044,7 +1913,7 @@ void DrawingItem::redo ()
     } else if (next->isDelete()) {
         BaseItem::redo();
     } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
 
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -2376,18 +2245,20 @@ void PathItem::undo ()
 
 void PathItem::showArrows (bool show)
 {
-    //std::cout << "PathItem::showArrows  show=" << show << std::endl; std::cout.flush();
-
     mw->ui->drawingWindow->hideItem(this);
     mw->ui->drawingWindow->removeItemFromMap(this);
     mw->ui->drawingWindow->deleteShape(getShape());
 
     ShapeData *shapeData=this->getShapeData();
+    shapeData->print();
     Polywire *polywire=getPolywire();
     if (polywire) {
+        std::cout << "set new shape" << std::endl; std::cout.flush();
         polywire->setHasArrows(show);
         shapeData->setShape(polywire->get_AIS_Shape());
     }
+
+    std::cout << "getShape().IsNull()=" << getShape().IsNull() << std::endl; std::cout.flush();
 
     mw->ui->drawingWindow->displayShape(getShape());
     mw->ui->drawingWindow->insertItemToMap(getShape(),this);
@@ -2437,7 +2308,7 @@ void PathItem::rename (QString name)
 
 void PathItem::redo ()
 {
-    std::cout << "PathItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "PathItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2449,7 +2320,7 @@ void PathItem::redo ()
     if (foreground(0) == Qt::black) isDisplayed=true;
 
     if (next->isReversePath()) {
-        std::cout << "   isReversePath" << std::endl; std::cout.flush();
+        //std::cout << "   isReversePath" << std::endl; std::cout.flush();
         mw->ui->drawingWindow->hideItem(this);
         mw->ui->drawingWindow->removeItemFromMap(this);
         mw->ui->drawingWindow->deleteShape(getShape());
@@ -2471,7 +2342,7 @@ void PathItem::redo ()
         mw->ui->drawingWindow->activateItem(this);
         mw->ui->drawingWindow->showItem(this);
     } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
 
         mw->ui->drawingWindow->unselectItem(this);
         mw->ui->drawingWindow->hideItem(this);
@@ -2485,7 +2356,6 @@ void PathItem::redo ()
 
         setText(0,getShapeData()->get_name());
 
-        //xxx
         long unsigned int i=0;
         while (i < linkedItems_size()) {
             PortItem *portItem=dynamic_cast<PortItem *>(get_linkedItem(i));
@@ -2615,7 +2485,7 @@ void IntegrationPathItem::showMenu (QMenu *menu)
 
 void IntegrationPathItem::undo ()
 {
-    std::cout << "IntegrationPathItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "IntegrationPathItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2651,7 +2521,7 @@ void IntegrationPathItem::undo ()
 
 void IntegrationPathItem::redo ()
 {
-    std::cout << "IntegrationPathItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "IntegrationPathItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -2690,8 +2560,6 @@ void IntegrationPathItem::redo ()
 
 void IntegrationPathItem::del ()
 {
-    //std::cout << "IntegrationPathItem::del" << std::endl; std::cout.flush();
-
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setDelete();
     addShapeData(newShapeData);
@@ -2860,8 +2728,6 @@ void RootBoundaryItem::fillMaterialWidgets ()
 
 BoundaryItem::BoundaryItem (OpenParEMg *mw_, PathItem *pathItem_, int boundary_type_, double wave_impedance_, QString boundary_material_)
 {
-    //std::cout << "BoundaryItem::BoundaryItem" << std::endl; std::cout.flush();
-
     mw=mw_;
     parentItem=mw->boundary;
     itemType=2;
@@ -2960,8 +2826,6 @@ void BoundaryItem::fillMaterialWidget ()
 
 void BoundaryItem::insertItemWidgets (BaseItem *itemType, BaseItem *itemWaveImpedance, BaseItem *itemMaterial)
 {
-    //std::cout << "BoundaryItem::insertItemWidgets" << std::endl; std::cout.flush();
-
     ShapeData *shapeData=getShapeData();
     double wave_impedance=shapeData->get_wave_impedance();
     int boundary_type=shapeData->get_boundary_type();
@@ -3111,8 +2975,6 @@ void BoundaryItem::del ()
 
 void BoundaryItem::resetWidgets ()
 {
-    std::cout << "BoundaryItem::resetWidgets" << std::endl; std::cout.flush();
-
     BaseItem *boundaryType=nullptr;
     BaseItem *boundaryWaveImpedance=nullptr;
     BaseItem *boundaryMaterial=nullptr;
@@ -3183,7 +3045,7 @@ void BoundaryItem::resetWidgets ()
 
 void BoundaryItem::undo ()
 {
-    std::cout << "BoundaryItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "BoundaryItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -3208,7 +3070,7 @@ void BoundaryItem::undo ()
 
 void BoundaryItem::redo ()
 {
-    std::cout << "BoundaryItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "BoundaryItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -3427,8 +3289,6 @@ PortItem::PortItem (OpenParEMg *mw_, PathItem *pathItem_, QString impedance_calc
 
 void PortItem::setSolidColor ()
 {
-    //std::cout << "PortItem::setSolidColor" << std::endl; std::cout.flush();
-
     PathItem *pathItem=getPathItem();
     if (pathItem) {
         Handle(AIS_Shape) shape=pathItem->getShape();
@@ -3481,8 +3341,6 @@ void PortItem::addImpedanceDefinitionItem ()
 
 void PortItem::insertImpedanceCalculationWidget (BaseItem *impedanceCalculationItem, QString impedance_calculation)
 {
-    //std::cout << "PortItem::insertImpedanceCalculationWidget" << std::endl; std::cout.flush();
-
     CustomComboBox *comboZcalc=new CustomComboBox();
     const QSignalBlocker blockerZcalc(comboZcalc);
     comboZcalc->set_itemTracker(mw->ui->drawingWindow->get_itemTracker());
@@ -3657,12 +3515,16 @@ void PortItem::undo ()
     if (!shapeData) return;
 
     if (shapeData->isCreate()) {
+        std::cout << "   isCreate" << std::endl; std::cout.flush();
         PathItem *pathItem=getPathItem();
         if (pathItem) {
+            std::cout << "   place 1" << std::endl; std::cout.flush();
             pathItem->removeLinkedItem(this);
+            std::cout << "   place 2" << std::endl; std::cout.flush();
             pathItem->showArrows(true);
         }
 
+        std::cout << "   place 3" << std::endl; std::cout.flush();
         // sport
         int i=0;
         while (i < childCount()) {
@@ -3687,6 +3549,7 @@ void PortItem::undo ()
             i++;
         }
     } else if (shapeData->isDelete()) {
+        std::cout << "   isDelete" << std::endl; std::cout.flush();
         PathItem *pathItem=getPathItem();
         if (pathItem) {
             pathItem->push_linkedItem(this);
@@ -3723,7 +3586,7 @@ void PortItem::undo ()
 
 void PortItem::redo ()
 {
-    std::cout << "PortItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "PortItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -3903,8 +3766,6 @@ bool PortItem::isValidMultimodeLine ()
 
 bool PortItem::hasValidVoltages ()
 {
-    //std::cout << "PortItem::hasValidVoltages" << std::endl; std::cout.flush();
-
     int modeCount=0;
     int voltageCount=0;
 
@@ -3940,8 +3801,6 @@ bool PortItem::hasValidVoltages ()
 
 bool PortItem::hasValidCurrents ()
 {
-    //std::cout << "PortItem::hasValidCurrents" << std::endl; std::cout.flush();
-
     int modeCount=0;
     int currentCount=0;
 
@@ -3977,8 +3836,6 @@ bool PortItem::hasValidCurrents ()
 
 void PortItem::setImpedanceDefinitionOptions ()
 {
-    //std::cout << "PortItem::setImpedanceDefinitionOptions" << std::endl; std::cout.flush();
-
     int i=0;
     while (i < childCount()) {
         BaseItem *baseItem=dynamic_cast<BaseItem *>(child(i));
@@ -4043,7 +3900,6 @@ bool PortItem::hasNet (QString net)
 
 void PortItem::selectVoltageVIItem ()
 {
-    std::cout << "PortItem::selectVoltageVIItem" << std::endl; std::cout.flush();
     long unsigned int i=0;
     while (i < childCount()) {
         ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
@@ -4085,8 +3941,6 @@ void PortItem::selectVoltageVIItem ()
 
 void PortItem::selectCurrentVIItem ()
 {
-    std::cout << "PortItem::selectCurrentVIItem" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < childCount()) {
         ModeItem *modeItem=dynamic_cast<ModeItem *>(child(i));
@@ -4216,7 +4070,7 @@ bool ModeItem::isValidDelete ()
 
 void ModeItem::undo ()
 {
-    std::cout << "ModeItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "ModeItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4232,7 +4086,7 @@ void ModeItem::undo ()
 
 void ModeItem::redo ()
 {
-    std::cout << "ModeItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "ModeItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4375,8 +4229,6 @@ int ModeItem::get_Sport ()
 
 bool ModeItem::has_voltageIntegrationPath ()
 {
-    //std::cout << "ModeItem::has_voltageIntegrationPath" << std::endl; std::cout.flush();
-
     int i=0;
     while (i < childCount()) {
         VIItem *viItem=dynamic_cast<VIItem *>(child(i));
@@ -4392,8 +4244,6 @@ bool ModeItem::has_voltageIntegrationPath ()
 
 bool ModeItem::has_currentIntegrationPath ()
 {
-    //std::cout << "ModeItem::has_currentIntegrationPath" << std::endl; std::cout.flush();
-
     int i=0;
     while (i < childCount()) {
         VIItem *viItem=dynamic_cast<VIItem *>(child(i));
@@ -4547,7 +4397,7 @@ void SportNumberItem::showMenu (QMenu *menu)
 
 void SportNumberItem::undo ()
 {
-    std::cout << "SportNumberItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "SportNumberItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4555,25 +4405,25 @@ void SportNumberItem::undo ()
     mw->ui->drawingWindow->unselectAllItems();
 
     if (shapeData->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        //std::cout << "   isNoop" << std::endl; std::cout.flush();
         // nothing to do
     } else if (shapeData->isCreate()) {
         mw->sportNumbers.remove(shapeData->get_Sport());
         dataStack.undo();
     } else if (shapeData->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        //std::cout << "   isEdit" << std::endl; std::cout.flush();
         mw->sportNumbers.remove(shapeData->get_Sport());
         dataStack.undo();
         shapeData=getShapeData();
         mw->sportNumbers.add(shapeData->get_Sport());
         restoreWidgets();
     } else if (shapeData->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        //std::cout << "   isDelete" << std::endl; std::cout.flush();
         dataStack.undo();
         mw->sportNumbers.add(shapeData->get_Sport());
         restoreWidgets();
     } else if (shapeData->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
         dataStack.undo();
         setText(0,getShapeData()->get_name());
     }
@@ -4581,7 +4431,7 @@ void SportNumberItem::undo ()
 
 void SportNumberItem::redo ()
 {
-    std::cout << "SportNumberItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "SportNumberItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -4592,26 +4442,26 @@ void SportNumberItem::redo ()
     if (!next) return;
 
     if (next->isNoop()) {
-        std::cout << "   isNoop" << std::endl; std::cout.flush();
+        //std::cout << "   isNoop" << std::endl; std::cout.flush();
         // should not occur
     } else if (next->isCreate()) {
-        std::cout << "   isCreate" << std::endl; std::cout.flush();
+        //std::cout << "   isCreate" << std::endl; std::cout.flush();
         dataStack.redo();
         mw->sportNumbers.add(shapeData->get_Sport());
         restoreWidgets();
     } else if (next->isEdit()) {
-        std::cout << "   isEdit" << std::endl; std::cout.flush();
+        //std::cout << "   isEdit" << std::endl; std::cout.flush();
         mw->sportNumbers.remove(shapeData->get_Sport());
         dataStack.redo();
         shapeData=getShapeData();
         mw->sportNumbers.add(shapeData->get_Sport());
         restoreWidgets();
     } else if (next->isDelete()) {
-        std::cout << "   isDelete" << std::endl; std::cout.flush();
+        //std::cout << "   isDelete" << std::endl; std::cout.flush();
         mw->sportNumbers.remove(shapeData->get_Sport());
         dataStack.redo();
     } else if (next->isChangeName()) {
-        std::cout << "   isChangeName" << std::endl; std::cout.flush();
+        //std::cout << "   isChangeName" << std::endl; std::cout.flush();
 
         dataStack.redo();
         setText(0,getShapeData()->get_name());
@@ -4786,8 +4636,6 @@ bool VIItem::setPlane (gp_Pln &plane)
 
 void VIItem::drawLinePath ()
 {
-    std::cout << "VIItem::drawLinePath" << std::endl; std::cout.flush();
-
     // restrict drawing to the plane of the port
     gp_Pln portPlane;
     if (setPlane(portPlane)) return;
@@ -4870,8 +4718,6 @@ bool VIItem::isValidInsertSelectedPath ()
 
 IntegrationPathItem* VIItem::createIntegrationPathItemFromPath (PathItem *pathItem)
 {
-    //std::cout << "VIItem::createIntegrationPathItemFromPath" << std::endl; std::cout.flush();
-
     // create an integration path item
     IntegrationPathItem *newIntegrationPathItem=new IntegrationPathItem(mw,this,pathItem);
     if (newIntegrationPathItem) {
@@ -4890,18 +4736,6 @@ IntegrationPathItem* VIItem::createIntegrationPathItemFromPath (PathItem *pathIt
     }
     return newIntegrationPathItem;
 }
-
-// IntegrationPathItem* VIItem::createIntegrationPathItemFromDrawing (DrawingItem *drawingItem, bool hasArrows)
-// {
-//     //std::cout << "VIItem::createIntegrationPathItemFromDrawing" << std::endl; std::cout.flush();
-
-//     IntegrationPathItem *newIntegrationPathItem=nullptr;
-//     PathItem *newPathItem=drawingItem->createPath(hasArrows);
-//     if (newPathItem) {
-//         newIntegrationPathItem=createIntegrationPathItemFromPath(newPathItem);
-//     }
-//     return newIntegrationPathItem;
-// }
 
 bool VIItem::hasScale ()
 {
@@ -4927,8 +4761,6 @@ bool VIItem::hasIntegrationPathItem ()
 
 void VIItem::addScaleItem ()
 {
-    //std::cout << "VIItem::addScaleItem" << std::endl; std::cout.flush();
-
     if (hasScale()) return;
 
     if (scaleLabelItem) {
@@ -4964,15 +4796,12 @@ void VIItem::addScaleItem ()
 
 void VIItem::removeScaleItem ()
 {
-    std::cout << "VIItem::removeScaleItem  hasScale()=" << hasScale() << "  scaleLabelItem=" << scaleLabelItem << std::endl; std::cout.flush();
     if (!hasScale()) return;
     removeChild(scaleLabelItem);
 }
 
 void VIItem::addRemoveScale ()
 {
-    std::cout << "VIItem::addRemoveScale" << std::endl; std::cout.flush();
-
     if (hasScale()) {
         if (hasIntegrationPathItem()) {
             // nothing to do
@@ -5004,8 +4833,6 @@ PortItem* VIItem::getPortItem ()
 
 bool VIItem::has_integrationPath ()
 {
-    //std::cout << "VIItem::has_integrationPath" << std::endl; std::cout.flush();
-
     int i=0;
     while (i < childCount()) {
         IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(child(i));
@@ -5250,7 +5077,7 @@ void DiffPairItem::demoteChildren ()
 
 void DiffPairItem::undo ()
 {
-    std::cout << "DiffPairItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "DiffPairItem::undo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -5274,7 +5101,7 @@ void DiffPairItem::undo ()
 
 void DiffPairItem::redo ()
 {
-    std::cout << "DiffPairItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
+    //std::cout << "DiffPairItem::redo  item=" << text(0).toStdString() << std::endl; std::cout.flush();
 
     ShapeData *shapeData=getShapeData();
     if (!shapeData) return;
@@ -5441,20 +5268,6 @@ bool MeshItem::isValidHide ()
 
 void MeshItem::show (bool update)
 {
-    std::cout << "MeshItem::show  item=" << text(0).toStdString() << std::endl; std::cout.flush();
-
-    // long unsigned int i=0;
-    // while (i < meshEntities.size()) {
-    //     mw->ui->drawingWindow->displayShape(meshEntities[i]);
-    //     i++;
-    // }
-
-    // setForeground(0,Qt::black);
-
-    // if (update) {
-    //     mw->ui->drawingWindow->updateViewer();
-    // }
-
     mw->ui->drawingWindow->showItem(this);
 
     if (update) {
@@ -5464,18 +5277,6 @@ void MeshItem::show (bool update)
 
 void MeshItem::hide (bool update)
 {
-    // long unsigned int i=0;
-    // while (i < meshEntities.size()) {
-    //     mw->ui->drawingWindow->removeShape(meshEntities[i]);
-    //     i++;
-    // }
-
-    // setForeground(0,Qt::gray);
-
-    // if (update) {
-    //     mw->ui->drawingWindow->updateViewer();
-    // }
-
     mw->ui->drawingWindow->hideItem(this);
 
     if (update) {
