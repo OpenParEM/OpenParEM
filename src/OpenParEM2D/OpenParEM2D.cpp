@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -370,7 +370,7 @@ PetscErrorCode petscErrorHandler (MPI_Comm comm, int line, const char *file, con
     // out of memory
     if (n == 55 || n == 76) {
        //prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2252: Out of memory. %s bytes.\n",mess);
-       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2252: Out of memory.\n");
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2280: Out of memory.\n");
     }
 
     // details for potential future enhancement

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -1249,7 +1249,7 @@ bool Material::load(std::string *indent, inputFile *inputs, bool checkInputs, bo
          int recognized=0;
          if (name.match_alias(&token)) {
             if (name.is_loaded()) {
-               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1074: Duplicate entry at line %d for previous entry at line %d.\n",
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1134: Duplicate entry at line %d for previous entry at line %d.\n",
                                                       indent->c_str(),lineNumber,name.get_lineNumber());
                fail=true;
             } else {
@@ -1293,11 +1293,11 @@ bool Material::check(std::string indent)
 
    if (name.is_loaded()) {
       if (name.get_value().compare("") == 0) {
-         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1080: name is blank at line %d.\n",indent.c_str(),name.get_lineNumber());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1135: name is blank at line %d.\n",indent.c_str(),name.get_lineNumber());
          fail=true;
       }
    } else {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1081: Material block at line %d must specify a name.\n",indent.c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1131: Material block at line %d must specify a name.\n",indent.c_str(),startLine);
       fail=true;
    }
 
@@ -1538,7 +1538,7 @@ bool MaterialDatabase::load (const char *path, const char *filename, bool checkI
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1089: Invalid path and/or file name for the local materials database.\n",
                                                 indent.c_str(),indent.c_str());
       } else {
-         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1089: Invalid path and/or file name for the global materials database.\n",
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1132: Invalid path and/or file name for the global materials database.\n",
                                                 indent.c_str(),indent.c_str());
       }
       return true;
@@ -1579,7 +1579,7 @@ bool MaterialDatabase::load (const char *path, const char *filename, bool checkI
    inputs.createCrossReference();
 
    if (inputs.checkVersion(version_name, version_value)) {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1089: Version mismatch.  Expecting the first line to be: %s %s\n",
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1133: Version mismatch.  Expecting the first line to be: %s %s\n",
                                              indent.c_str(),indent.c_str(),version_name.c_str(),version_value.c_str());
       return true;
    }
@@ -1678,7 +1678,7 @@ bool MaterialDatabase::load_materials (char *global_path, char *global_name, cha
 
    if (!global || !local) return false;
 
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1093: Unable to load a local or global materials database.\n",indent.c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1040: Unable to load a local or global materials database.\n",indent.c_str());
    return true;
 }
 

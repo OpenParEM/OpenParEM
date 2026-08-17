@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -49,7 +49,7 @@ bool saveMat (ParMixedBilinearForm &blf, string name, string directory, char *un
    try {
       mat=blf.ParallelAssemble();
    } catch (const std::exception& e) {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2009: Out of memory in assembling finite-element matrix.\n");
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2010: Out of memory in assembling finite-element matrix.\n");
       return true;
    }
    if (transpose) {

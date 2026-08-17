@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
-//    OpenParEM3g - A GUI for OpenParEM3D                                     //
-//    Copyright (C) 2025 Brian Young                                          //
+//    OpenParEMg - A GUI for OpenParEM3D                                      //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -292,7 +292,7 @@ public:
     void deleteShape (Handle(AIS_Shape) shape)
     {
         if (showTracking) std::cout << "CustomOpenGLWidget::deleteShape" << std::endl; std::cout.flush();
-        viewerContext->Remove(shape,Standard_False);  //xxx Standard_True
+        viewerContext->Remove(shape,Standard_False);
         shape.Nullify();
     }
 
@@ -300,15 +300,12 @@ public:
     void Activate (int mode, Standard_Boolean theIsForce) {viewerContext->Activate(mode,theIsForce);}
     Standard_Integer get_NbSelected () {return viewerContext->NbSelected();}
 
-    //void getSelected (std::vector<Handle(AIS_InteractiveObject)> *);
     Handle(AIS_InteractiveObject) getLastSelected ();
 
     ItemTracker* get_itemTracker () {return drawingTracker;}
 
     void selectRectangle ();
     void endSelectRectangle ();
-
-    //bool hasOneFaceSelected () {return drawingTracker->hasOneFaceSelected();}
 
     bool isDisplayed (Handle(AIS_Shape) shape)
     {

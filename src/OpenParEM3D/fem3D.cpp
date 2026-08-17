@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -168,7 +168,7 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
    try {
       ImA=pmblfImA->ParallelAssemble();
    } catch (const std::exception& e) {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3009: Out of memory in assembling finite-element matrix.\n");
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3253: Out of memory in assembling finite-element matrix.\n");
       return true;
    }
 
@@ -330,7 +330,6 @@ PetscErrorCode fem3D::build_Xdofs()
    return ierr;
 }
 
-//xxx
 // x uses a local distribution on A (which is destroyed before here)
 // e_re and e_im must use a local distribution on fespace_ND
 // The two local spaces do not exactly line up, so they must be realigned from A to fespace_ND for e_re and e_im.
@@ -522,314 +521,6 @@ void fem3D::build_e_re_e_im ()
       if (global_x_im) free(global_x_im);
    }
 }
-
-//xxx
-/* avoid sending global vector to all ranks
-// x uses a local distribution on A (which is destroyed before here)
-// e_re and e_im must use a local distribution on fespace_ND
-// The two local spaces do not exactly line up, so they must be realigned from A to fespace_ND for e_re and e_im.
-void fem3D::build_e_re_e_im ()
-{
-   PetscMPIInt rank,size;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-   MPI_Comm_size(PETSC_COMM_WORLD, &size);
-
-   // local distribution of fespace_ND - for e_re and e_im
-
-   HYPRE_BigInt *fespace_ND_offsets=fespace_ND->GetTrueDofOffsets();
-
-   if (e_re) delete e_re;
-   if (e_im) delete e_im;
-
-   e_re=new Vector(fespace_ND_offsets[1]-fespace_ND_offsets[0]);
-   e_im=new Vector(fespace_ND_offsets[1]-fespace_ND_offsets[0]);
-
-   // local distribution of A - for x
-
-   PetscInt i,low,high;
-   VecGetOwnershipRange(x,&low,&high);
-   int local_x_size=high-low;
-
-   PetscInt *ixvals;
-   PetscMalloc(local_x_size*sizeof(PetscInt),&ixvals);
-
-   i=low;
-   while (i < high) {
-      ixvals[i-low]=i;
-      i++;
-   }
-
-   PetscScalar *local_x_vals;
-   PetscMalloc(local_x_size*sizeof(PetscScalar),&local_x_vals);
-
-   VecGetValues(x,local_x_size,ixvals,local_x_vals);
-
-   // global x size
-
-   int global_x_size=0;
-   MPI_Allreduce (&local_x_size,&global_x_size,1,MPI_INT,MPI_SUM,PETSC_COMM_WORLD);
-
-   // collect x at rank 0
-   PetscScalar *global_x_vals;
-
-   if (rank == 0) {
-
-      // global x
-      PetscMalloc(global_x_size*sizeof(PetscScalar),&global_x_vals);
-
-      // local
-      int i=0;
-      while (i < local_x_size) {
-         global_x_vals[low+i]=local_x_vals[i];
-         i++;
-      }
-
-      // collected
-      i=1;
-      while (i < size) {
-         int transfer_size=0;
-         MPI_Recv(&transfer_size,1,MPI_INT,i,10000,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-         int k=0;
-         while (k < transfer_size) {
-            int location=0;
-            double transfer_real=0;
-            double transfer_imag=0;
-            MPI_Recv(&location,1,MPI_INT,i,10001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            MPI_Recv(&transfer_real,1,MPI_DOUBLE,i,10002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            MPI_Recv(&transfer_imag,1,MPI_DOUBLE,i,10003,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-            global_x_vals[location]=transfer_real+PETSC_i*transfer_imag;
-
-            k++;
-         }
-         i++;
-      }
-   } else {
-      MPI_Send(&local_x_size,1,MPI_INT,0,10000,PETSC_COMM_WORLD);
-
-      int i=0;
-      while (i < local_x_size) {
-         int location=low+i;
-         double transfer_real=real(local_x_vals[i]);
-         double transfer_imag=imag(local_x_vals[i]);
-         MPI_Send(&location,1,MPI_INT,0,10001,PETSC_COMM_WORLD);
-         MPI_Send(&transfer_real,1,MPI_DOUBLE,0,10002,PETSC_COMM_WORLD);
-         MPI_Send(&transfer_imag,1,MPI_DOUBLE,0,10003,PETSC_COMM_WORLD);
-         i++;
-      }
-   }
-
-   // collect the new partitioning data
-   std::vector<int> newLow,newHigh;
-   if (rank == 0) {
-      newLow.push_back(fespace_ND_offsets[0]);
-      newHigh.push_back(fespace_ND_offsets[1]);
-
-      int i=1;
-      while (i < size) {
-         int lowPart,highPart;
-         MPI_Recv(&lowPart,1,MPI_INT,i,20010,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-         MPI_Recv(&highPart,1,MPI_INT,i,20011,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-         newLow.push_back(lowPart);
-         newHigh.push_back(highPart);
-         i++;
-      }
-   } else {
-      int lowPart=fespace_ND_offsets[0];
-      int highPart=fespace_ND_offsets[1];
-      MPI_Send(&lowPart,1,MPI_INT,0,20010,PETSC_COMM_WORLD);
-      MPI_Send(&highPart,1,MPI_INT,0,20011,PETSC_COMM_WORLD);
-   }
-
-   // send global x to all ranks
-
-   if (rank == 0) {
-      int i=newLow[0];
-      while (i < newHigh[0]) {
-         e_re->Elem(i-newLow[0])=real(global_x_vals[i]);
-         e_im->Elem(i-newLow[0])=imag(global_x_vals[i]);
-         i++;
-      }
-
-      i=1;
-      while (i < size) {
-         int k=newLow[i];
-         while (k < newHigh[i]) {
-            double transfer_real=real(global_x_vals[k]);
-            double transfer_imag=imag(global_x_vals[k]);
-            MPI_Send(&transfer_real,1,MPI_DOUBLE,i,20001,PETSC_COMM_WORLD);
-            MPI_Send(&transfer_imag,1,MPI_DOUBLE,i,20002,PETSC_COMM_WORLD);
-            k++;
-         }
-         i++;
-      }
-   } else {
-      int k=fespace_ND_offsets[0];
-      while (k < fespace_ND_offsets[1]) {
-         double transfer_real=0;
-         double transfer_imag=0;
-         MPI_Recv(&transfer_real,1,MPI_DOUBLE,0,20001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-         MPI_Recv(&transfer_imag,1,MPI_DOUBLE,0,20002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-         e_re->Elem(k-fespace_ND_offsets[0])=transfer_real;
-         e_im->Elem(k-fespace_ND_offsets[0])=transfer_imag;
-
-         k++;
-      }
-   }
-
-   // clean up
-   PetscFree(ixvals);
-   PetscFree(local_x_vals);
-   if (rank == 0) PetscFree(global_x_vals);
-}
-*/
-
-//xxx
-/* original - very slow in MPICH
-// x uses a local distribution on A (which is destroyed before here)
-// e_re and e_im must use a local distribution on fespace_ND
-// The two local spaces do not exactly line up, so they must be realigned from A to fespace_ND for e_re and e_im.
-void fem3D::build_e_re_e_im ()
-{
-   PetscMPIInt rank,size;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-   MPI_Comm_size(PETSC_COMM_WORLD, &size);
-
-   // local distribution of fespace_ND - for e_re and e_im
-   HYPRE_BigInt *fespace_ND_offsets=fespace_ND->GetTrueDofOffsets();
-   int local_ND_size=fespace_ND_offsets[1]-fespace_ND_offsets[0];
-
-   if (e_re) delete e_re;
-   if (e_im) delete e_im;
-
-   e_re=new Vector(local_ND_size);
-   e_im=new Vector(local_ND_size);
-
-   // local distribution of A - for x
-
-   PetscInt i,low,high;
-   VecGetOwnershipRange(x,&low,&high);
-   int local_x_size=high-low;
-
-   PetscInt *ixvals;
-   PetscMalloc(local_x_size*sizeof(PetscInt),&ixvals);
-
-   i=low;
-   while (i < high) {
-      ixvals[i-low]=i;
-      i++;
-   }
-
-   PetscScalar *local_x_vals;
-   PetscMalloc(local_x_size*sizeof(PetscScalar),&local_x_vals);
-
-   VecGetValues(x,local_x_size,ixvals,local_x_vals);
-
-   // global x
-
-   int global_x_size=0;
-   MPI_Allreduce (&local_x_size,&global_x_size,1,MPI_INT,MPI_SUM,PETSC_COMM_WORLD);
-
-   PetscScalar *global_x_vals;
-   PetscMalloc(global_x_size*sizeof(PetscScalar),&global_x_vals);
-
-   // collect x at rank 0
-
-   if (rank == 0) {
-
-      // local
-      int i=0;
-      while (i < local_x_size) {
-         global_x_vals[low+i]=local_x_vals[i];
-         i++;
-      }
-
-      // collected
-      i=1;
-      while (i < size) {
-         int transfer_size=0;
-         MPI_Recv(&transfer_size,1,MPI_INT,i,10000,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-         int k=0;
-         while (k < transfer_size) {
-            int location=0;
-            double transfer_real=0;
-            double transfer_imag=0;
-            MPI_Recv(&location,1,MPI_INT,i,10001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            MPI_Recv(&transfer_real,1,MPI_DOUBLE,i,10002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            MPI_Recv(&transfer_imag,1,MPI_DOUBLE,i,10003,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-            global_x_vals[location]=transfer_real+PETSC_i*transfer_imag;
-
-            k++;
-         }
-         i++;
-      }
-   } else {
-      MPI_Send(&local_x_size,1,MPI_INT,0,10000,PETSC_COMM_WORLD);
-
-      int i=0;
-      while (i < local_x_size) {
-         int location=low+i;
-         double transfer_real=real(local_x_vals[i]);
-         double transfer_imag=imag(local_x_vals[i]);
-         MPI_Send(&location,1,MPI_INT,0,10001,PETSC_COMM_WORLD);
-         MPI_Send(&transfer_real,1,MPI_DOUBLE,0,10002,PETSC_COMM_WORLD);
-         MPI_Send(&transfer_imag,1,MPI_DOUBLE,0,10003,PETSC_COMM_WORLD);
-         i++;
-      }
-   }
-
-   // send global x to all ranks
-
-   if (rank == 0) {
-      int i=1;
-      while (i < size) {
-         int k=0;
-         while (k < global_x_size) {
-            double transfer_real=real(global_x_vals[k]);
-            double transfer_imag=imag(global_x_vals[k]);
-            MPI_Send(&transfer_real,1,MPI_DOUBLE,i,20001,PETSC_COMM_WORLD);
-            MPI_Send(&transfer_imag,1,MPI_DOUBLE,i,20002,PETSC_COMM_WORLD);
-            k++;
-         }
-         i++;
-      }
-   } else {
-      int k=0;
-      while (k < global_x_size) {
-         double transfer_real=0;
-         double transfer_imag=0;
-         MPI_Recv(&transfer_real,1,MPI_DOUBLE,0,20001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-         MPI_Recv(&transfer_imag,1,MPI_DOUBLE,0,20002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-         global_x_vals[k]=transfer_real+PETSC_i*transfer_imag;
-
-         k++;
-      }
-   }
-
-   // transfer data to e_re and e_im - completes the re-alignment
-
-   int index=0;
-   i=0;
-   while (i < global_x_size) {
-      if (i >= fespace_ND_offsets[0] && i < fespace_ND_offsets[1]) {
-         e_re->Elem(index)=real(global_x_vals[i]);
-         e_im->Elem(index)=imag(global_x_vals[i]);
-         index++;
-      }
-      i++;
-   }
-
-   // clean up
-   PetscFree(ixvals);
-   PetscFree(local_x_vals);
-   PetscFree(global_x_vals);
-}
-*/
 
 void fem3D::buildEgrids (BoundaryDatabase *boundaryDatabase)
 {
@@ -1026,149 +717,6 @@ void fem3D::build_h_re_h_im (Vec *hdofs)
       if (global_hdof_im) free(global_hdof_im);
    }
 }
-
-//xxx
-/* original with poor MPICH performance
-// see notes for build_e_re_e_im
-void fem3D::build_h_re_h_im (Vec *hdofs)
-{
-   PetscMPIInt rank,size;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-   MPI_Comm_size(PETSC_COMM_WORLD, &size);
-
-   // local distribution of fespace_ND - for h_re and h_im
-   HYPRE_BigInt *fespace_ND_offsets=fespace_ND->GetTrueDofOffsets();
-   int local_ND_size=fespace_ND_offsets[1]-fespace_ND_offsets[0];
-
-   if (h_re) delete h_re;
-   if (h_im) delete h_im;
-
-   h_re=new Vector(local_ND_size);
-   h_im=new Vector(local_ND_size);
-
-   // local distribution of A - for hdofs
-
-   PetscInt i,low,high;
-   VecGetOwnershipRange(*hdofs,&low,&high);
-   int local_hdof_size=high-low;
-
-   PetscInt *ixvals;
-   PetscMalloc(local_hdof_size*sizeof(PetscInt),&ixvals);
-
-   i=low;
-   while (i < high) {
-      ixvals[i-low]=i;
-      i++;
-   }
-
-   PetscScalar *local_hdof_vals;
-   PetscMalloc(local_hdof_size*sizeof(PetscScalar),&local_hdof_vals);
-
-   VecGetValues(*hdofs,local_hdof_size,ixvals,local_hdof_vals);
-
-   // global hdofs
-
-   int global_hdof_size=0;
-   MPI_Allreduce (&local_hdof_size,&global_hdof_size,1,MPI_INT,MPI_SUM,PETSC_COMM_WORLD);
-
-   PetscScalar *global_hdof_vals;
-   PetscMalloc(global_hdof_size*sizeof(PetscScalar),&global_hdof_vals);
-
-   // collect hdofs at rank 0
-
-   if (rank == 0) {
-
-      // local
-      int i=0;
-      while (i < local_hdof_size) {
-         global_hdof_vals[low+i]=local_hdof_vals[i];
-         i++;
-      }
-
-      // collected
-      i=1;
-      while (i < size) {
-         int transfer_size=0;
-         MPI_Recv(&transfer_size,1,MPI_INT,i,10000,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-         int k=0;
-         while (k < transfer_size) {
-            int location=0;
-            double transfer_real=0;
-            double transfer_imag=0;
-            MPI_Recv(&location,1,MPI_INT,i,10001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            MPI_Recv(&transfer_real,1,MPI_DOUBLE,i,10002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            MPI_Recv(&transfer_imag,1,MPI_DOUBLE,i,10003,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-            global_hdof_vals[location]=transfer_real+PETSC_i*transfer_imag;
-
-            k++;
-         }
-         i++;
-      }
-   } else {
-      MPI_Send(&local_hdof_size,1,MPI_INT,0,10000,PETSC_COMM_WORLD);
-
-      int i=0;
-      while (i < local_hdof_size) {
-         int location=low+i;
-         double transfer_real=real(local_hdof_vals[i]);
-         double transfer_imag=imag(local_hdof_vals[i]);
-         MPI_Send(&location,1,MPI_INT,0,10001,PETSC_COMM_WORLD);
-         MPI_Send(&transfer_real,1,MPI_DOUBLE,0,10002,PETSC_COMM_WORLD);
-         MPI_Send(&transfer_imag,1,MPI_DOUBLE,0,10003,PETSC_COMM_WORLD);
-         i++;
-      }
-   }
-
-   // send global hdofs to all ranks
-
-   if (rank == 0) {
-      int i=1;
-      while (i < size) {
-         int k=0;
-         while (k < global_hdof_size) {
-            double transfer_real=real(global_hdof_vals[k]);
-            double transfer_imag=imag(global_hdof_vals[k]);
-            MPI_Send(&transfer_real,1,MPI_DOUBLE,i,20001,PETSC_COMM_WORLD);
-            MPI_Send(&transfer_imag,1,MPI_DOUBLE,i,20002,PETSC_COMM_WORLD);
-            k++;
-         }
-         i++;
-      }
-   } else {
-      int k=0;
-      while (k < global_hdof_size) {
-         double transfer_real=0;
-         double transfer_imag=0;
-         MPI_Recv(&transfer_real,1,MPI_DOUBLE,0,20001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-         MPI_Recv(&transfer_imag,1,MPI_DOUBLE,0,20002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-         global_hdof_vals[k]=transfer_real+PETSC_i*transfer_imag;
-
-         k++;
-      }
-   }
-
-   // transfer data to h_re and h_im - completes the re-alignment
-
-   int index=0;
-   i=0;
-   while (i < global_hdof_size) {
-      if (i >= fespace_ND_offsets[0] && i < fespace_ND_offsets[1]) {
-         h_re->Elem(index)=real(global_hdof_vals[i]);
-         h_im->Elem(index)=imag(global_hdof_vals[i]);
-         index++;
-      }
-      i++;
-   }
-
-   // clean up
-   PetscFree(ixvals);
-   PetscFree(local_hdof_vals);
-   PetscFree(global_hdof_vals);
-}
-*/
 
 void fem3D::buildHgrids(BoundaryDatabase *boundaryDatabase, PWConstCoefficient *Inv_w_mu)
 {
@@ -1670,20 +1218,10 @@ bool OPEM_L2ZZErrorEstimator (BilinearFormIntegrator &flux_integrator,
    PC pc;
 
    ierr=KSPCreate(PETSC_COMM_WORLD, &ksp); if (ierr) return 12;
-//xxx
-//   ierr=KSPSetType(ksp,KSPCG); if (ierr) return 13;
-ierr=KSPSetType(ksp,KSPGMRES); if (ierr) return 13;
-//ierr=KSPSetType(ksp,KSPFGMRES); if (ierr) return 13;
-//ierr=KSPSetType(ksp,KSPLGMRES); if (ierr) return 13;
-//ierr=KSPSetType(ksp,KSPBCGS); if (ierr) return 13;
+   ierr=KSPSetType(ksp,KSPGMRES); if (ierr) return 13;
    ierr=KSPSetOperators(ksp,A,A); if (ierr) return 14;
    ierr=KSPGetPC(ksp,&pc); if (ierr) return 15;
-//   ierr=PCSetType(pc,PCSOR); if (ierr) return 19;  // 2X  with CG and GMRES
-ierr=PCSetType(pc,PCCHOLESKY); if (ierr) return 19;  // 1/2X with GC and GMRES
-//ierr=PCSetType(pc,PCLU); if (ierr) return 19; // slightly more that 1/2X with GMRES
-//ierr=PCSetType(pc,PCJACOBI); if (ierr) return 19;  // almost 2X with GMRES
-//ierr=PCSetType(pc,PCILU); // fails with GMRES
-//ierr=PCSetType(pc,PCICC); // fails with GMRES
+   ierr=PCSetType(pc,PCCHOLESKY); if (ierr) return 19;  // 1/2X with GC and GMRES
    ierr=PCFactorSetShiftType(pc,MAT_SHIFT_NONZERO); if (ierr) return 16;
    ierr=KSPSetFromOptions(ksp); if (ierr) return 17;
 
@@ -1709,7 +1247,6 @@ ierr=PCSetType(pc,PCCHOLESKY); if (ierr) return 19;  // 1/2X with GC and GMRES
    // move x back onto ParFiniteElementSpace partitioning
    vecToHypreParVector (&x,Re_B,Im_B);
 
-   //xxx
    //ToDo: fix the return values
    // cleanup
    ierr=MatDestroy(&A);  if (ierr) return ierr;
@@ -2115,7 +1652,7 @@ void fem3D::saveFieldValuesHeader (struct projectData *projData)
 
          out.close();
       } else {
-         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3009: Failed to open file \"%s\" for writing.\n",ss.str().c_str());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3254: Failed to open file \"%s\" for writing.\n",ss.str().c_str());
       }
    }
 }

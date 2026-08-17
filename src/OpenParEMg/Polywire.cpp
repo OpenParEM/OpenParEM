@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
-//    OpenParEM3g - A GUI for OpenParEM3D                                     //
-//    Copyright (C) 2025 Brian Young                                          //
+//    OpenParEMg - A GUI for OpenParEM3D                                      //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -587,7 +587,7 @@ int MeshMaterialList::loadGMSH (const char *filename, int dimension)
       }
 
       if (meshFile.bad()) {
-         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1040: Error while reading file \"%s\".\n",filename);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1130: Error while reading file \"%s\".\n",filename);
          meshFile.close();
          return 1;
       }

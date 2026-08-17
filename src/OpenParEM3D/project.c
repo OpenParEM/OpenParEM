@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -2156,7 +2156,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                          !(strcmp(data->touchstone_frequency_unit,"MHz") == 0) &&
                          !(strcmp(data->touchstone_frequency_unit,"GHz") == 0)) {
                         ierr=1;
-                        prefix(); printf("%s%sERROR3155: Value must be \"Hz\", \"kHz\", \"MHz\", or \"GHz\" at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3256: Value must be \"Hz\", \"kHz\", \"MHz\", or \"GHz\" at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -2913,11 +2913,11 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                        if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                        if (data->gui_grid_size < 0.001) {
                            ierr=1;
-                           prefix(); printf("%s%sERROR3157: Value must be >= 0.001 at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3258: Value must be >= 0.001 at line %d.\n",indent,indent,lineCount);
                        }
                        if (data->gui_grid_size > 1000) {
                            ierr=1;
-                           prefix(); printf("%s%sERROR3158: Value must be < 1000 at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3260: Value must be < 1000 at line %d.\n",indent,indent,lineCount);
                        }
                    } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -2952,11 +2952,11 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                        if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                        if (data->gui_mesh_scale < 0.01) {
                            ierr=1;
-                           prefix(); printf("%s%sERROR3157: Value must be >= 0.01 at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3259: Value must be >= 0.01 at line %d.\n",indent,indent,lineCount);
                        }
                        if (data->gui_mesh_scale > 100) {
                            ierr=1;
-                           prefix(); printf("%s%sERROR3158: Value must be < 100 at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3257: Value must be < 100 at line %d.\n",indent,indent,lineCount);
                        }
                    } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -2969,7 +2969,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                        if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                        if (data->gui_mesh_minSize < 0) {
                            ierr=1;
-                           prefix(); printf("%s%sERROR3157: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3261: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
                        }
                    } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -2982,7 +2982,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                        if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                        if (data->gui_mesh_maxSize < 0) {
                            ierr=1;
-                           prefix(); printf("%s%sERROR3157: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3262: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
                        }
                    } else print_invalid_entry (&ierr,lineCount,indent);
                }

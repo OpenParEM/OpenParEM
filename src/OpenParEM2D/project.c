@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -1010,11 +1010,11 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->fem_order < 1) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2233: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2236: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
                      }
                      if (data->fem_order > 20) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2234: Value must be <= 20 at line %d.\n",indent,indent,lineCount);
+                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2278: Value must be <= 20 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1338,7 +1338,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      free(data->solution_impedance_calculation);
                      data->solution_impedance_calculation=strdup("modal");
                      ierr=1;
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2252: Value must be \"modal (default)\" or \"line\" at line %d.\n",indent,indent,lineCount);
+                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2281: Value must be \"modal (default)\" or \"line\" at line %d.\n",indent,indent,lineCount);
                   }
                   if (! is_impedance_calculation(data->solution_impedance_calculation)) {
                      ierr=1;
@@ -1420,7 +1420,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->solution_initial_guess_level < 0 || data->solution_initial_guess_level > 3) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2244: Value must be 0, 1, 2, or 3 at line %d.\n",indent,indent,lineCount);
+                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2279: Value must be 0, 1, 2, or 3 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }

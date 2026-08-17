@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -719,130 +719,6 @@ void ResultDatabase::push (Result *result)
    }
 }
 
-// original
-/*
-double ResultDatabase::calculate_maxRelativeError (struct projectData *projData, double frequency, int iteration)
-{
-   PetscErrorCode ierr=0;
-   double maxRelativeError=-1;
-
-   //PetscPrintf (PETSC_COMM_WORLD,"MatInvert Testing:\n");
-   //ierr=MatInvertTest (5); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
-   //ierr=MatInvertTest (10); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
-   //ierr=MatInvertTest (20); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
-   //ierr=MatInvertTest (30); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
-
-   if (iteration > 1) {
-
-      if (calculate_relative_error_on_S(projData->refinement_variable)) {
-
-         // current iteration
-
-         Result *result=get_Result(frequency,iteration);
-         Mat *S;
-         S=result->get_S();
-
-         Mat Scurrent;
-         ierr=MatConvert(*S,MATSAME,MAT_INITIAL_MATRIX,&Scurrent); if (ierr) return ierr;
-
-         // prior iteration - to become difference
-
-         result=get_Result(frequency,iteration-1);
-         S=result->get_S();
-
-         Mat difference;
-         ierr=MatConvert(*S,MATSAME,MAT_INITIAL_MATRIX,&difference); if (ierr) return ierr;
-
-         // difference
-         ierr=MatAXPY(difference,-1,Scurrent,SAME_NONZERO_PATTERN);
-
-         ierr=MatInvert(&Scurrent,0); if (ierr) return maxRelativeError;
-
-         Mat error;
-         ierr=MatMatMult(Scurrent,difference,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&error); if (ierr) return maxRelativeError;
-         MatDestroy(&Scurrent);
-         MatDestroy(&difference);
-
-         PetscReal *norms=(PetscReal *) malloc(SportCount*sizeof(PetscReal));
-         if (norms) {
-            ierr=MatGetColumnNorms(error,NORM_2,norms); if (ierr) return maxRelativeError;
-
-            int i=0;
-            while (i < SportCount) {
-               if (norms[i] > maxRelativeError) maxRelativeError=norms[i];
-               i++;
-            }
-
-            free(norms);
-         }
-
-         MatDestroy(&error);
-      }
-
-   }
-
-   return maxRelativeError;
-}
-*/
-
-/* original using NORM_1
-double ResultDatabase::calculate_maxRelativeError (struct projectData *projData, double frequency, int iteration)
-{
-   PetscErrorCode ierr=0;
-   double maxRelativeError=-1;
-
-   //PetscPrintf (PETSC_COMM_WORLD,"MatInvert Testing:\n");
-   //ierr=MatInvertTest (5); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
-   //ierr=MatInvertTest (10); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
-   //ierr=MatInvertTest (20); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
-   //ierr=MatInvertTest (30); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
-
-   if (iteration > 1) {
-
-      if (calculate_relative_error_on_S(projData->refinement_variable)) {
-
-         // current iteration
-
-         Result *result=get_Result(frequency,iteration);
-         Mat *S;
-         S=result->get_S();
-
-         Mat Scurrent;
-         ierr=MatConvert(*S,MATSAME,MAT_INITIAL_MATRIX,&Scurrent); if (ierr) return ierr;
-
-         // prior iteration - to become difference
-
-         result=get_Result(frequency,iteration-1);
-         S=result->get_S();
-
-         Mat difference;
-         ierr=MatConvert(*S,MATSAME,MAT_INITIAL_MATRIX,&difference); if (ierr) return ierr;
-
-         // difference
-         ierr=MatAXPY(difference,-1,Scurrent,SAME_NONZERO_PATTERN);
-
-         ierr=MatInvert(&Scurrent,0); if (ierr) return maxRelativeError;
-
-         Mat error;
-         ierr=MatMatMult(Scurrent,difference,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&error); if (ierr) return maxRelativeError;
-         MatDestroy(&Scurrent);
-         MatDestroy(&difference);
-
-         PetscReal normError;
-         //ierr=MatNorm(error,NORM_FROBENIUS,&normError); if (ierr) return ierr;
-         MatNorm(error,NORM_1,&normError); if (ierr) return ierr;
-         maxRelativeError=normError;
-
-         MatDestroy(&error);
-      }
-
-   }
-
-   return maxRelativeError;
-}
-*/
-
-//xxx update manuals
 // Error = ||Sn-Sn-1||/||Sn|| using the Frobenius norm.
 // More standard calculation
 double ResultDatabase::calculate_maxRelativeError (struct projectData *projData, double frequency, int iteration)

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -3915,9 +3915,8 @@ void Mode::fillX (Vec *X, Vec *Xdofs, Array<int> *ess_tdof_port_list, HYPRE_BigI
    VecAssemblyEnd(*X);
    VecAssemblyEnd(*Xdofs);
 
-//xxx
-//   delete data_re; data_re=nullptr;
-//   delete data_im; data_im=nullptr;
+   // delete data_re; data_re=nullptr;
+   // delete data_im; data_im=nullptr;
 
    double *raw_data=data_re->GetData();
    data_re->SetDataAndSize(nullptr,0);
@@ -7325,7 +7324,6 @@ void comboTextChanged (QString text, BoundaryItem *boundaryItem)
     }
 }
 
-//xxx
 void spinValueChanged (int value, SportNumberItem *sportNumberItem)
 {
     //std::cout << "spinValueChanged  value=" << value << std::endl; std::cout.flush();
@@ -7977,7 +7975,7 @@ bool BoundaryDatabase::check (bool check_closed_loop)
            long unsigned int n=m+1;
            while (n < netNames.size()) {
               if (netNames[m].compare(netNames[n]) == 0) {
-                  prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3111: Net name %s is duplicated.\n",indent.c_str(),indent.c_str(),netNames[m].c_str());
+                  prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3255: Net name %s is duplicated.\n",indent.c_str(),indent.c_str(),netNames[m].c_str());
                   fail=true;
               }
               n++;
