@@ -319,7 +319,7 @@ void BaseItem::redo ()
         if (showUndoRedoTracking) {std::cout << "   isNoop" << std::endl; std::cout.flush();}
         // should not occur
     } else if (next->isCreate()) {
-        //std::cout << "   isCreate" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isCreate" << std::endl; std::cout.flush();}
         dataStack.redo();
 
         Handle(AIS_Shape) shape=getShape();
@@ -345,7 +345,6 @@ void BaseItem::redo ()
 
         promoteChildren();
         getParentItem()->removeChild(this);
-        //mw->ui->drawingWindow->showItem(this);
 
         dataStack.redo();
     } else if (next->isChangeName()) {
@@ -546,7 +545,6 @@ void RootDrawingItem::show (bool update)
     while (i < mw->drawing->childCount()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
         if (drawingItem) {
-            //mw->ui->drawingWindow->showItem(drawingItem);
             drawingItem->show(false);
         }
         i++;
@@ -562,7 +560,6 @@ void RootDrawingItem::hide (bool update)
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(mw->drawing->child(i));
         if (drawingItem) {
             drawingItem->hide(false);
-            //mw->ui->drawingWindow->hideItem(drawingItem);
         }
         i++;
     }
@@ -1313,7 +1310,6 @@ void DrawingItem::startDeletePoint ()
 
         // set the drawing plane
         mw->currentPrivilegedPlane=mw->ui->drawingWindow->get_gridPlane();
-        //restrictToDrawingPlane=true;
 
         Polywire *polywire=static_cast<Polywire *>(getPolywire());
         if (polywire) {
@@ -1353,7 +1349,6 @@ void DrawingItem::finishDeletePoint ()
     resetOperation();
     mw->activeAction=false;
     setModified(true);
-    //findTopLevelItem(this);
     mw->ui->drawingWindow->showItem(this);
     mw->finishOperation(false,1);
 }
@@ -1372,7 +1367,6 @@ void DrawingItem::startInsertPoint ()
 
         // set the drawing plane
         mw->currentPrivilegedPlane=mw->ui->drawingWindow->get_gridPlane();
-        //restrictToDrawingPlane=true;
 
         Polywire *polywire=static_cast<Polywire *>(getPolywire());
         if (polywire) {
@@ -1884,7 +1878,7 @@ void DrawingItem::redo ()
         if (showUndoRedoTracking) {std::cout << "   isNoop" << std::endl; std::cout.flush();}
         // should not occur
     } else if (next->isCreate()) {
-        //std::cout << "   isCreate" << std::endl; std::cout.flush();
+        if (showUndoRedoTracking) {std::cout << "   isCreate" << std::endl; std::cout.flush();}
         dataStack.redo();
 
         DrawingItem *parentItem=dynamic_cast<DrawingItem *>(getParentItem());
@@ -1910,7 +1904,6 @@ void DrawingItem::redo ()
         dataStack.redo();
 
         mw->reprocess(this);
-        //mw->insertToMapActivateItem(this);
         mw->ui->drawingWindow->insertItemToMap(getShape(),this);
         mw->ui->drawingWindow->activateItem(this);
 
@@ -4632,7 +4625,6 @@ void VIItem::drawLinePath ()
     gp_Pln portPlane;
     if (setPlane(portPlane)) return;
     mw->ui->drawingWindow->set_gridPlane(portPlane);
-    //mw->currentPrivilegedPlane=portPlane;
     mw->restrictToDrawingPlane=true;
 
     // setup
@@ -4650,7 +4642,6 @@ void VIItem::drawPolylinePath ()
     gp_Pln portPlane;
     if (setPlane(portPlane)) return;
     mw->ui->drawingWindow->set_gridPlane(portPlane);
-    //mw->currentPrivilegedPlane=portPlane;
     mw->restrictToDrawingPlane=true;
 
     // setup

@@ -1546,52 +1546,6 @@ void Mode::calculateCurrents (fem2D *fem, BoundaryDatabase *boundaryDatabase, Bo
    }
 }
 
-/*
-void Mode::fillTi (fem2D *fem)
-{
-   int n=fem->projData->solution_modes;
-
-   // identity matrix for modal setup and for setups with no current defined
-   matrixSetValue(fem->Ti,modeNumber+modeNumber*n,1,0);
-
-   // overwrite with full matrix data for line setups
-   if (is_line_impedance(fem->projData->solution_impedance_calculation)) {
-
-      validCurrent=true;
-      long unsigned int k=0;
-      while (k < current.size()) {
-         if (current[k] == complex<double>(DBL_MAX,DBL_MAX)) {validCurrent=false; break;}
-         k++;
-      }
-
-      if (validCurrent) {
-         complex<double> return_current=0;
-         complex<double> temp_mode_current=0;
-
-         long unsigned int k=0;
-         while (k < current.size()) {
-            double sign=-1;
-            if (real(current[k]) >= 0) sign=1;
-            matrixSetValue(fem->Ti,modeNumber+k*n,sign,0);
-
-            temp_mode_current+=sign*current[k];
-            return_current+=current[k];
-
-            k++;
-         }
-
-         // scale to account for the return current
-         complex<double> scale=0.5*(abs(temp_mode_current)+abs(return_current))/abs(temp_mode_current);
-         k=0;
-         while (k < current.size()) {
-            matrixScaleValue(fem->Ti,modeNumber+k*n,real(scale),imag(scale));
-            k++;
-         }
-      }
-   }
-}
-*/
-
 void Mode::flipFieldSign ()
 {
    fields->flipSign();
@@ -1809,19 +1763,6 @@ bool Mode::calculateModalVoltage (fem2D *fem)
    return fail;
 }
 
-/*
-void Mode::checkModalSigns ()
-{
-   if (validCurrent && real(mode_current) < 0) {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"            INFO: Path defined for current for Mode %ld is reversed, producing negative mode current.\n",modeNumber+1);
-   }
-
-   if (validVoltage && real(mode_voltage) < 0) {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"            INFO: Path defined for voltage for Mode %ld is reversed, producing negative mode voltage.\n",modeNumber+1);
-   }
-}
-*/
-
 void Mode::calculateImpedance (fem2D *fem)
 {
    if (fem->projData->debug_show_impedance_details) {
@@ -1995,19 +1936,6 @@ void ModeDatabase::calculateVandI (fem2D *fem, BoundaryDatabase *boundaryDatabas
    }
 }
 
-/*
-void ModeDatabase::fillTi (fem2D *fem)
-{
-   long unsigned int n=fem->projData->solution_active_mode_count;
-
-   long unsigned int i=0;
-   while (i < n) {
-      modeList[i]->fillTi(fem);
-      i++;
-   }
-}
-*/
-
 bool ModeDatabase::calculateModalVandI (fem2D *fem)
 {
    long unsigned int i=0;
@@ -2024,17 +1952,6 @@ bool ModeDatabase::calculateModalVandI (fem2D *fem)
 
    return false;
 }
-
-/*
-void ModeDatabase::checkModalSigns (fem2D *fem)
-{
-   long unsigned int i=0;
-   while (i < (long unsigned int)fem->projData->solution_active_mode_count) {
-      modeList[i]->checkModalSigns();
-      i++;
-   }
-}
-*/
 
 void ModeDatabase::calculateImpedance (fem2D *fem, BoundaryDatabase *boundaryDatabase, BorderDatabase *borderDatabase)
 {
@@ -2462,27 +2379,6 @@ bool fem2D::buildFields (double *alpha, double *beta)
    return modeDatabase.buildFields(this,alpha,beta);
 }
 
-/*
-void fem2D::buildTiTv ()
-{
-   if (is_line_impedance(fem->projData->solution_impedance_calculation)) {
-
-      int n=projData->solution_modes;
-
-      if (Ti) free(Ti);
-      Ti=(lapack_complex_double *) malloc(n*n*sizeof(lapack_complex_double));
-      matrixZero(Ti,n);
-      modeDatabase.fillTi(this);
-
-      if (Tv) {free(Tv); Tv=nullptr;}
-      Tv=matrixClone(Ti,n);
-      matrixConjugate(Tv,n);
-      matrixInverse(Tv,n);  
-      matrixTranspose(Tv,n);
-   }
-}
-*/
-
 bool fem2D::saveTiTv ()
 {
    PetscMPIInt rank;
@@ -2548,40 +2444,6 @@ bool fem2D::calculateModalVandI ()
    if (modeDatabase.calculateModalVandI(this)) return true;
    return false;
 }
-
-/*
-void fem2D::setPolarity ()
-{
-   int n=projData->solution_modes;
-
-   // make the first column positive
-   if (Tv) {
-      int i=0;
-      while (i < n) {
-         if (matrixGetRealValue(Tv,i) < 0) {
-            modeDatabase.get_mode(i)->flipFieldSign();
-         }
-         i++;
-      }
-   } else {
-      if (Ti) {
-         int i=0;
-         while (i < n) {
-            if (matrixGetRealValue(Ti,i) < 0) {
-               modeDatabase.get_mode(i)->flipFieldSign();
-            }
-            i++;
-         }
-      }
-   }
-
-   // rebuild
-   buildTiTv();
-   calculateModalVandI();
-
-   modeDatabase.checkModalSigns(this);
-}
-*/
 
 void fem2D::calculateImpedance (BoundaryDatabase *boundaryDatabase, BorderDatabase *borderDatabase)
 {

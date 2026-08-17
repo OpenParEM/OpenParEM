@@ -62,13 +62,6 @@ protected:
         QLineEdit::focusInEvent(event);
     }
 
-    // void focusOutEvent(QFocusEvent *event) override
-    // {
-    //     //if (QLineEdit::isModified()) emit QLineEdit::returnPressed();
-    //     //qDebug() << "--- Focus Lost! ---" << event->reason();
-    //     QLineEdit::focusOutEvent(event);
-    // }
-
     void mouseDoubleClickEvent(QMouseEvent *event) override {
         if (event->button() == Qt::LeftButton) {
             selectAll();

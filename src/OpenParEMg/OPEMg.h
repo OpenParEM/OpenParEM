@@ -132,7 +132,6 @@ public:
                       << "  prior=" << prior
                       << "  next=" << next
                       << std::endl;
-            //changeList[i]->print();
             i++;
         }
         std::cout.flush();
@@ -169,7 +168,6 @@ public:
 
     void add (BaseItem *item)
     {
-        //std::cout << "ItemChangesStack: add item=" << item->text(0).toStdString() << "  type=" << item->getShapeData()->get_typeText() << std::endl; std::cout.flush();
         current->push_back(item);
     }
 
@@ -313,12 +311,6 @@ public:
         QStyledItemDelegate::initStyleOption(option, index);
 
         if (option->state & QStyle::State_Selected) {
-            //QVariant backgroundData = index.data(Qt::BackgroundRole);
-            //if (backgroundData.canConvert<QBrush>()) {
-            //    option->palette.setBrush(QPalette::Highlight, qvariant_cast<QBrush>(backgroundData));
-            //} else {
-            //    option->palette.setBrush(QPalette::Highlight, option->palette.brush(QPalette::Base));
-            //}
 
             // keep the original text color
             QVariant foregroundData=index.data(Qt::ForegroundRole);
@@ -396,7 +388,6 @@ public:
     bool saveBoundaryDatabase ();
     bool hasRadiationBoundary ();
     void increase_depth (DrawingItem *);
-    //void decrease_depth (DrawingItem *);
     void saveItem (std::ofstream *, BaseItem *);
 
     int isStartBlock (std::vector<std::string> &inputData, long unsigned int);
@@ -421,17 +412,13 @@ public:
     bool meshAssigned ();
     bool materialsAssigned ();
 
-    //bool hasSelectedPaths ();
     void clearTreeSelection ();
 
     void dumpDrawingEntities ();
-    //void shapeCount (TopoDS_Shape, int *);
     void renumberDimTag ();
-    //void setPhysicalGroups ();
     void setMaterials ();
 
     void clearSelection ();
-    //void restoreSelection ();
 
     void reprocess (BaseItem *);
 
@@ -727,7 +714,6 @@ private slots:
 
     void on_actionMeasure_triggered ();
 
-    //void extracted(bool &found, QStringList &lines);
     void on_actionMacroLoad_triggered();
     void on_actionMacroRun_triggered ();
     void on_actionMacroClose_triggered ();
@@ -747,12 +733,10 @@ signals:
     void sendPnt (gp_Pnt);
 
 private:
-    //void setMenus ();
     void resetLockouts ();
     void printLockouts ();
     void resetDrawing ();
     void resetProject ();
-    //void getActionRunSetup (bool *, QString *);
 
     Ui::OpenParEMg *ui;
     QString absolutePath;  // to the project
@@ -834,9 +818,6 @@ private:
     // lockouts
     bool projectFileLoaded;  // project setup variable including paths
     bool projectChanged;
-    //bool drawingChanged;
-    //bool boundaryChanged;    // also covers paths since they are both in the boundary database
-    //bool meshChanged;
     bool drawingPlaneShown;
     bool simulationRunning;
     bool simulationStopping;
@@ -869,9 +850,9 @@ private:
     bool restrictToDrawingPlane;
     bool skipDrawingPlaneAxisForm;
     gp_Pnt lastMousePosition;
-    gp_Vec extrusionDirection;   // use (0,0,0) as the "unset" state
-    Polywire *activePolywire;  // when drawing
-    gp_Vec uLocalAxis;  // local axis for transfer to rectangles
+    gp_Vec extrusionDirection;    // use (0,0,0) as the "unset" state
+    Polywire *activePolywire;     // when drawing
+    gp_Vec uLocalAxis;            // local axis for transfer to rectangles
     gp_Pln currentPrivilegedPlane;
     ObjectCounts objectCounts;    // for uniquely numbering objects in their item names
 

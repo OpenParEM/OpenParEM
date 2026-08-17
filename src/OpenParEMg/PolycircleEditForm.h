@@ -47,7 +47,6 @@ public:
 
     void populate (Polycircle *);
     void repopulate ();
-    // void repopulateOffFirstPoint ();
     void reject () override;
 
     void set_conversionFactor (double conversionFactor_) {conversionFactor=conversionFactor_;}

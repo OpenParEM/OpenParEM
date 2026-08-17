@@ -312,7 +312,7 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
 
     if (event->button() == Qt::LeftButton) {
 
-        if (pickFirstVertex /*&& clickPointValid*/) {
+        if (pickFirstVertex) {
             ignoreMouseRelease=true;
             if (owner.IsNull()) {
                 vertexPoint=clickPoint;
@@ -346,8 +346,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
     SetAllowZooming(Standard_True);
     SetAllowPanning(Standard_True);
 
-    //QOpenGLWidget::mouseReleaseEvent(event);
-
     if (view.IsNull()) return;
 
     // pass the mouse release from OCCT to Qt
@@ -365,7 +363,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     // process for vertex click
     if (event->button() == Qt::LeftButton) {
-        if (pickSecondVertex /*&& clickPointValid*/) {
+        if (pickSecondVertex) {
             ignoreMouseRelease=true;  // required
             if (owner.IsNull()) {
                 vertexPoint=clickPoint;
@@ -429,7 +427,7 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     // process for object selection
     if (event->button() == Qt::LeftButton) {
-        if (!ignoreMouseRelease /*&& !pickVertex*/) {
+        if (!ignoreMouseRelease) {
 
             // check for CTRL and SHIFT then select
             bool hasModifier=false;
@@ -487,7 +485,6 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
         }
         updateViewer();
         emit relay->setMenus();
-
     }
 }
 
@@ -611,8 +608,6 @@ void CustomOpenGLWidget::set_gridPlane (gp_Pnt &origin, gp_Dir &normal)
 {
     gp_Ax3 system(origin,normal);
     Handle(Geom_Plane) plane=new Geom_Plane(system);
-    //drawingPlane=plane->Pln();
-    //viewer->SetPrivilegedPlane(drawingPlane.Position());
     gp_Pln barePlane=plane->Pln();
     set_gridPlane(barePlane);
 }

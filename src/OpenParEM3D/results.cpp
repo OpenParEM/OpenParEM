@@ -1486,39 +1486,6 @@ int ResultDatabase::get_lastIteration (double frequency)
    return iteration;
 }
 
-/* delete
-PetscErrorCode ResultDatabase::mixedModeConversion (int iteration, double frequency, BoundaryDatabase *boundaryDatabase, vector<DifferentialPair *> *differentialPairList)
-{
-   PetscErrorCode ierr=0;
-
-   Mat S;
-   ierr=get_S(iteration,frequency,&S,false,true); if (ierr) return 1;
-
-   Mat M;
-   ierr=boundaryDatabase->build_M(&M,differentialPairList,boundaryDatabase); if (ierr) return 2;
-   //MatView(M,PETSC_VIEWER_STDOUT_WORLD);
-
-   // M S M^(-1)
-
-   Mat A;
-   ierr=MatMatMult(M,S,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&A); if (ierr) return 3;
-
-   ierr=MatInvert(&M,0); if (ierr) return 4;
-   //MatView(M,PETSC_VIEWER_STDOUT_WORLD);
-
-   Mat B;
-   ierr=MatMatMult(A,M,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&B); if (ierr) return 5;
-   ierr=MatDestroy(&A); if (ierr) return 6;
-   ierr=MatDestroy(&M); if (ierr) return 7;
-
-   // save it in the S data location
-   ierr=set_S(iteration,frequency,&B); if (ierr) return 8;
-   ierr=MatDestroy(&B); if (ierr) return 9;
-
-   return ierr;
-}
-*/
-
 void ResultDatabase::print ()
 {
    long unsigned int i=0;

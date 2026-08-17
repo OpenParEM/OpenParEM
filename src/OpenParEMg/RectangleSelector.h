@@ -89,7 +89,6 @@ protected:
             if (me && me->button() == Qt::LeftButton && m_isSelecting) {
                 finishSelection(me->pos().x(), me->pos().y());
                 return true;
-                //return false;
             }
             break;
         }

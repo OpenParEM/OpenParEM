@@ -1447,55 +1447,6 @@ void Boundary::collectRadiationCurrents (vector<Current *> *collectedCurrents)
 
 }
 
-/* very slow in MPICH
-void Boundary::collectRadiationCurrents (vector<Current *> *collectedCurrents)
-{
-   PetscMPIInt rank,size;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-   MPI_Comm_size(PETSC_COMM_WORLD, &size);
-
-   if (rank == 0) {
-
-      // collect currents from this rank
-      int i=0;
-      while (i < (int)radiationCurrents.size()) {
-         Current *current=radiationCurrents[i]->clone();
-         collectedCurrents->push_back(current);
-         i++;
-      }
-
-      // collect currents from other ranks
-      i=1;
-      while (i < size) {
-         int count;
-         MPI_Recv(&count,1,MPI_INT,i,10000,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-
-         int j=0;
-         while (j < count) {
-            Current *current=new Current();
-            current->recvFrom(i);
-            collectedCurrents->push_back(current);
-            j++;
-         }
-         i++;
-      }
-   } else {
-      int count=radiationCurrents.size();
-      MPI_Send(&count,1,MPI_INT,0,10000,PETSC_COMM_WORLD);
-
-      // send to rank 0
-      long unsigned int i=0;
-      while (i < radiationCurrents.size()) {
-         radiationCurrents[i]->sendTo(0);
-         i++;
-      }
-   }
-
-   // clear the local currents
-   deleteRadiationCurrents();
-}
-*/
-
 void Boundary::deleteRadiationCurrents ()
 {
    long unsigned int i=0;
@@ -2036,20 +1987,6 @@ bool IntegrationPath::align (string *indent, vector<Path *> *pathList, double *a
                      if (point_comparison(tpk->get_point_value(0),tpj->get_point_value(tpj->get_points_size()-1),1e-12)) match_end_count++;
                      if (point_comparison(tpk->get_point_value(tpk->get_points_size()-1),tpj->get_point_value(0),1e-12)) match_start_count++;
                      if (point_comparison(tpk->get_point_value(tpk->get_points_size()-1),tpj->get_point_value(tpj->get_points_size()-1),1e-12)) match_end_count++;
-/*
-                     if (double_compare(tpk->get_point_x(0),tpj->get_point_x(0),1e-12) &&
-                         double_compare(tpk->get_point_y(0),tpj->get_point_y(0),1e-12) &&
-                         double_compare(tpk->get_point_z(0),tpj->get_point_z(0),1e-12)) match_start_count++;
-                     if (double_compare(tpk->get_point_x(0),tpj->get_point_x(tpj->get_points_size()-1),1e-12) &&
-                         double_compare(tpk->get_point_y(0),tpj->get_point_y(tpj->get_points_size()-1),1e-12) &&
-                         double_compare(tpk->get_point_z(0),tpj->get_point_z(tpj->get_points_size()-1),1e-12)) match_end_count++;
-                     if (double_compare(tpk->get_point_x(tpk->get_points_size()-1),tpj->get_point_x(0),1e-12) &&
-                         double_compare(tpk->get_point_y(tpk->get_points_size()-1),tpj->get_point_y(0),1e-12) &&
-                         double_compare(tpk->get_point_z(tpk->get_points_size()-1),tpj->get_point_z(0),1e-12)) match_start_count++;
-                     if (double_compare(tpk->get_point_x(tpk->get_points_size()-1),tpj->get_point_x(tpj->get_points_size()-1),1e-12) &&
-                         double_compare(tpk->get_point_y(tpk->get_points_size()-1),tpj->get_point_y(tpj->get_points_size()-1),1e-12) &&
-                         double_compare(tpk->get_point_z(tpk->get_points_size()-1),tpj->get_point_z(tpj->get_points_size()-1),1e-12)) match_end_count++;
-*/
                   }
                   k++;
                }
@@ -2214,129 +2151,6 @@ bool IntegrationPath::align (string *indent, vector<Path *> *pathList, double *a
 
    return fail;
 }
-
-/* original all-in-one algorithm
-// for currents, paths must form 1 or more closed loops
-bool IntegrationPath::check_current_paths (string *indent, vector<Path *> *pathList, bool check_closed_loop)
-{
-   bool fail=false;
-
-cout << "using old IntegrationPath::check_current_paths" << endl;
-
-   if (!is_current()) return fail;
-
-   vector<bool> closed;
-   vector<bool> connectedStart;
-   vector<bool> connectedEnd;
-
-   // to keep track of what has been looked at
-   long unsigned int i=0;
-   while (i < pathIndexList.size()) {
-      if ((*pathList)[pathIndexList[i]]->is_closed()) {
-         closed.push_back(true);
-         connectedStart.push_back(true);
-         connectedEnd.push_back(true);
-      } else {
-         closed.push_back(false);
-         connectedStart.push_back(false);
-         connectedEnd.push_back(false);
-      }
-      i++;
-   }
-
-   // line up the ends of the open sections
-   i=0;
-   while (pathIndexList.size() > 0 && i < pathIndexList.size()-1) {
-      if (! closed[i]) {
-
-         long unsigned int j=i+1;
-         while (j < pathIndexList.size()) {
-            if (! closed[j]) {
-
-               // start to start
-               if ((*pathList)[pathIndexList[i]]->get_startPoint()->point_compare((*pathList)[pathIndexList[j]]->get_startPoint())) {
-                  if (! connectedStart[j]) {
-                     connectedStart[i]=true;
-                     connectedStart[j]=true;
-                  } else {
-                     struct point p=(*pathList)[pathIndexList[j]]->get_startPoint()->get_point_value();
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3043: Mode block at line %d topology error at (%g,%g,%g).\n",
-                                                            indent->c_str(),indent->c_str(),startLine,p.x,p.y,p.z);
-                     fail=true;
-                  }
-               }
-
-               // start to end
-               if ((*pathList)[pathIndexList[i]]->get_startPoint()->point_compare((*pathList)[pathIndexList[j]]->get_endPoint())) {
-                  if (! connectedEnd[j]) {
-                     connectedStart[i]=true;
-                     connectedEnd[j]=true;
-                  } else {
-                     struct point p=(*pathList)[pathIndexList[j]]->get_endPoint()->get_point_value();
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3044: Mode block at line %d topology error at (%g,%g,%g).\n",
-                                                            indent->c_str(),indent->c_str(),startLine,p.x,p.y,p.z);
-                     fail=true;
-                  }
-               }
-
-               // end to start
-               if ((*pathList)[pathIndexList[i]]->get_endPoint()->point_compare((*pathList)[pathIndexList[j]]->get_startPoint())) {
-                  if (! connectedStart[j]) {
-                     connectedEnd[i]=true;
-                     connectedStart[j]=true;
-                  } else {
-                     struct point p=(*pathList)[pathIndexList[j]]->get_startPoint()->get_point_value();
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3045: Mode block at line %d topology error at (%g,%g,%g).\n",
-                                                            indent->c_str(),indent->c_str(),startLine,p.x,p.y,p.z);
-                     fail=true;
-                  }
-               }
-
-               // end to end
-               if ((*pathList)[pathIndexList[i]]->get_endPoint()->point_compare((*pathList)[pathIndexList[j]]->get_endPoint())) {
-                  if (! connectedEnd[j]) {
-                     connectedEnd[i]=true;
-                     connectedEnd[j]=true;
-                  } else {
-                     struct point p=(*pathList)[pathIndexList[j]]->get_endPoint()->get_point_value();
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3046: Mode block at line %d topology error at (%g,%g,%g).\n",
-                                                            indent->c_str(),indent->c_str(),startLine,p.x,p.y,p.z);
-                     fail=true;
-                  }
-               }
-
-            }
-            j++;
-         }
-      }
-      i++;
-   }
-
-   // check for dangling ends
-   if (check_closed_loop) {
-      i=0;
-      while (i < pathIndexList.size()) {
-         if (! closed[i]) {
-            if (! connectedStart[i]) {
-               struct point p=(*pathList)[pathIndexList[i]]->get_startPoint()->get_point_value();
-               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3047: Mode block at line %d topology error with dangling point at (%g,%g,%g).\n",
-                                                      indent->c_str(),indent->c_str(),startLine,p.x,p.y,p.z);
-               fail=true;
-            }
-            if (! connectedEnd[i]) {
-               struct point p=(*pathList)[pathIndexList[i]]->get_endPoint()->get_point_value();
-               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3048: Mode block at line %d topology error with dangling point at (%g,%g,%g).\n",
-                                                      indent->c_str(),indent->c_str(),startLine,p.x,p.y,p.z);
-               fail=true;
-            }
-         }
-         i++;
-      }
-   }
-
-   return fail;
-}
-*/
 
 bool IntegrationPath::assignPathIndices (vector<Path *> *pathList)
 {
@@ -7238,7 +7052,7 @@ void comboRefresh (int index, PortItem *portItem, BoundaryItem *boundaryItem, in
 void comboIndexChanged (int index, PortItem *portItem, BoundaryItem *boundaryItem, int type,
                         BaseItem *itemMaterial, BaseItem *itemWaveImpedance)
 {
-    std::cout << "comboIndexChanged  index=" << index << "  type=" << type << std::endl; std::cout.flush();
+    // std::cout << "comboIndexChanged  index=" << index << "  type=" << type << std::endl; std::cout.flush();
 
     ShapeData *newShapeData;
     if (portItem) {

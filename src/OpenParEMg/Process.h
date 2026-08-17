@@ -21,7 +21,6 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
-//#include "Polywire.h"
 #include <QWidget>
 #include <gp_Pnt.hxx>
 #include "ObjectCounts.h"
@@ -44,7 +43,6 @@ signals:
 
 protected:
     bool modified;
-    //std::vector<CustomTreeWidgetItem *> childList;
 };
 
 class Extrude : public Process

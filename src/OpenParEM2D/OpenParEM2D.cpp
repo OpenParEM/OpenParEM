@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
       if (strcmp(argv[1],"-h") == 0) {printHelp=1; retVal=0;}
       else projFile=argv[1];
    }
-   if (printHelp) {help(); /*PetscFinalize()*/ SlepcFinalize();; exit(retVal);}
+   if (printHelp) {help(); SlepcFinalize();; exit(retVal);}
 
    char *baseName=get_project_name(projFile);
    print_copyright_notice ("OpenParEM2D",version_major,version_minor,version_patch);

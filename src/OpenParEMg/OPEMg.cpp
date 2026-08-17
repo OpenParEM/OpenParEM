@@ -118,28 +118,6 @@ bool cstrFromQString (char **aCstr, QString& aQString)
     return false;
 }
 
-// trim and readFileToVector courtesy of ChatGPT
-// Prompt: In c++, I would like a subroutine that reads a text file and puts each line of text into a std::vector<std::string>.
-//         All text at and after the comment characters "//" are omitted. Leading and trailing white space are removed.
-//         Empty lines are ignored. Use while loops instead of for loops.
-
-// Helper function to trim leading and trailing whitespace
-// std::string trim(const std::string& str) {
-//     size_t start = 0;
-//     while (start < str.size() && std::isspace(static_cast<unsigned char>(str[start]))) {
-//         start++;
-//     }
-
-//     if (start == str.size()) return "";
-
-//     size_t end = str.size() - 1;
-//     while (end > start && std::isspace(static_cast<unsigned char>(str[end]))) {
-//         end--;
-//     }
-
-//     return str.substr(start, end - start + 1);
-// }
-
 std::vector<std::string> readFileToVector(const std::string& filename) {
     std::vector<std::string> result;
     std::ifstream file(filename);
@@ -535,8 +513,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
 OpenParEMg::~OpenParEMg ()
 {
-    //std::cout << "OpenParEMg::~OpenParEMg" << std::endl; std::cout.flush();
-
     ui->drawingWindow->shutdown();
 
     freeQActionList();
@@ -668,8 +644,6 @@ int OpenParEMg::check_changed ()
 
 void OpenParEMg::closeWindow_triggered ()
 {
-    //std::cout << "OpenParEMg::closeWindow_triggered" << std::endl; std::cout.flush();
-
     if (lengthInputForm) {delete lengthInputForm; lengthInputForm=nullptr;}
     if (vectorInputForm) {delete vectorInputForm; vectorInputForm=nullptr;}
     if (lengthEditForm) {delete lengthEditForm; lengthEditForm=nullptr;}
@@ -757,7 +731,6 @@ void OpenParEMg::setMenusI (int placeIndex)
     //std::cout << "OpenParEMg::setMenusI  place=" << placeIndex << std::endl; std::cout.flush();
 
     ui->drawingWindow->compactSelectedItems();
-    //ui->drawingWindow->compactVisibleItems();
 
     // debug options
     //itemChangesStack.print();
@@ -825,7 +798,6 @@ void OpenParEMg::setMenusI (int placeIndex)
         ui->actionMaterials->setEnabled(true);
         ui->actionFrequencyPlan->setEnabled(true);
         ui->actionAntennaPatterns->setEnabled(hasRadiationBoundary());
-        //ui->actionRefinement->setEnabled(true);
         if (strcmp(projData.refinement_frequency,"none") == 0) ui->actionRefinement->setEnabled(false);
         else ui->actionRefinement->setEnabled(true);
         ui->actionSimulateOptions->setEnabled(true);
@@ -1141,8 +1113,6 @@ void OpenParEMg::setMenusI (int placeIndex)
 
 void OpenParEMg::enablePortBoundarySelections (BaseItem *baseItem, bool enable)
 {
-    //std::cout << "OpenParEMg::enablePortBoundarySelections  item=" << baseItem->text(0).toStdString() << std::endl; std::cout.flush();
-
     if (!baseItem) return;
 
     bool found=false;
@@ -1214,8 +1184,6 @@ void OpenParEMg::collapseAllItems ()
 
 void OpenParEMg::buildFaceMenu (QMenu &menu)
 {
-    //std::cout  << "OpenParEMg::buildFaceMenu" << std::endl; std::cout.flush();
-
     createPathAction=new QAction("Create Path");
     createPathAction->setToolTip("Create a path from the face.");
     createPortAction=new QAction("Create Port");
@@ -1242,8 +1210,6 @@ void OpenParEMg::cancelMenu ()
 
 void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
 {
-    //std::cout << "OpenParEMg::itemTreeContextMenu_triggered" << std::endl; std::cout.flush();
-
     clickedItem=dynamic_cast<BaseItem *>(ui->drawingItemTree->itemAt(pnt));
     if (!clickedItem) return;
     if (!clickedItem->isSelected()) return;
@@ -1270,8 +1236,6 @@ void OpenParEMg::itemTreeContextMenu_triggered (const QPoint& pnt)
 
 void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 {
-    //std::cout << "OpenParEMg::drawingWindowContextMenu_triggered" << std::endl; std::cout.flush();
-
     QMenu menu(this);
 
     if (activePolywire) {
@@ -1345,7 +1309,7 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
                 if (pathItem && pathItem->is_path()) pathItem->showMenu(&menu);
 
                 // ToDo: convert the remaining items
-                if (/*item->is_path() ||*/ baseItem->is_port() || baseItem->is_boundary() || baseItem->is_integrationPathSegment()) {
+                if (baseItem->is_port() || baseItem->is_boundary() || baseItem->is_integrationPathSegment()) {
                     baseItem->showMenu(&menu);
                     break;
                 }
@@ -1360,8 +1324,6 @@ void OpenParEMg::drawingWindowContextMenu_triggered(const QPoint& pnt)
 
 void OpenParEMg::renamePathItems ()
 {
-    //std::cout << "OpenParEMg::renamePathItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         PathItem *pathItem=dynamic_cast<PathItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1382,8 +1344,6 @@ void OpenParEMg::renamePathItems ()
 
 void OpenParEMg::deletePathItems ()
 {
-    //std::cout << "OpenParEMg::deletePathItems" << std::endl; std::cout.flush();
-
     itemChangesStack.startNew();
 
     long unsigned int i=0;
@@ -1413,8 +1373,6 @@ bool OpenParEMg::isValidDeletePath ()
 
 void OpenParEMg::showDrawingItems ()
 {
-    //std::cout << "OpenParEMg::showDrawingItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1428,8 +1386,6 @@ void OpenParEMg::showDrawingItems ()
 
 void OpenParEMg::hideDrawingItems ()
 {
-    //std::cout << "OpenParEMg::hideDrawingItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1443,8 +1399,6 @@ void OpenParEMg::hideDrawingItems ()
 
 void OpenParEMg::showPathItems ()
 {
-    //std::cout << "OpenParEMg::showPathItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         PathItem *pathItem=dynamic_cast<PathItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1458,8 +1412,6 @@ void OpenParEMg::showPathItems ()
 
 void OpenParEMg::hidePathItems ()
 {
-    //std::cout << "OpenParEMg::hidePathItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         PathItem *pathItem=dynamic_cast<PathItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1473,8 +1425,6 @@ void OpenParEMg::hidePathItems ()
 
 void OpenParEMg::showPortItems ()
 {
-    //std::cout << "OpenParEMg::showPortItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         PortItem *portItem=dynamic_cast<PortItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1488,8 +1438,6 @@ void OpenParEMg::showPortItems ()
 
 void OpenParEMg::hidePortItems ()
 {
-    //std::cout << "OpenParEMg::hidePortItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         PortItem *portItem=dynamic_cast<PortItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1503,8 +1451,6 @@ void OpenParEMg::hidePortItems ()
 
 void OpenParEMg::showModeItems ()
 {
-    //std::cout << "OpenParEMg::showModeItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         ModeItem *modeItem=dynamic_cast<ModeItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1518,8 +1464,6 @@ void OpenParEMg::showModeItems ()
 
 void OpenParEMg::hideModeItems ()
 {
-    //std::cout << "OpenParEMg::hideModeItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         ModeItem *modeItem=dynamic_cast<ModeItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1533,8 +1477,6 @@ void OpenParEMg::hideModeItems ()
 
 void OpenParEMg::showDiffPairItems ()
 {
-    //std::cout << "OpenParEMg::showDiffPairItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1548,8 +1490,6 @@ void OpenParEMg::showDiffPairItems ()
 
 void OpenParEMg::hideDiffPairItems ()
 {
-    //std::cout << "OpenParEMg::hideDiffPairItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         DiffPairItem *diffPairItem=dynamic_cast<DiffPairItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1563,8 +1503,6 @@ void OpenParEMg::hideDiffPairItems ()
 
 void OpenParEMg::showVIItems ()
 {
-    //std::cout << "OpenParEMg::showVIItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         VIItem *viItem=dynamic_cast<VIItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1578,8 +1516,6 @@ void OpenParEMg::showVIItems ()
 
 void OpenParEMg::hideVIItems ()
 {
-    //std::cout << "OpenParEMg::hideVIItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         VIItem *viItem=dynamic_cast<VIItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1593,8 +1529,6 @@ void OpenParEMg::hideVIItems ()
 
 void OpenParEMg::showBoundaryItems ()
 {
-    //std::cout << "OpenParEMg::showBoundaryItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1608,8 +1542,6 @@ void OpenParEMg::showBoundaryItems ()
 
 void OpenParEMg::hideBoundaryItems ()
 {
-    //std::cout << "OpenParEMg::hideBoundaryItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1623,8 +1555,6 @@ void OpenParEMg::hideBoundaryItems ()
 
 void OpenParEMg::showIntegrationPathItems ()
 {
-    //std::cout << "OpenParEMg::showIntegrationPathItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1638,8 +1568,6 @@ void OpenParEMg::showIntegrationPathItems ()
 
 void OpenParEMg::hideIntegrationPathItems ()
 {
-    //std::cout << "OpenParEMg::hideIntegrationPathItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1653,8 +1581,6 @@ void OpenParEMg::hideIntegrationPathItems ()
 
 void OpenParEMg::showMeshItems ()
 {
-    //std::cout << "OpenParEMg::showMeshItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         MeshItem *meshItem=dynamic_cast<MeshItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1668,8 +1594,6 @@ void OpenParEMg::showMeshItems ()
 
 void OpenParEMg::hideMeshItems ()
 {
-    //std::cout << "OpenParEMg::hideMeshItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         MeshItem *meshItem=dynamic_cast<MeshItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1683,8 +1607,6 @@ void OpenParEMg::hideMeshItems ()
 
 void OpenParEMg::insertSelectedPaths ()
 {
-    //std::cout << "OpenParEMg::insertSelectedPaths" << std::endl; std::cout.flush();
-
     itemChangesStack.startNew();
 
     long unsigned int i=0;
@@ -1697,8 +1619,6 @@ void OpenParEMg::insertSelectedPaths ()
 
 void OpenParEMg::unselectPathItems ()
 {
-    //std::cout << "OpenParEMg::unselectPathItems" << std::endl; std::cout.flush();
-
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         PathItem *pathItem=dynamic_cast<PathItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1714,8 +1634,6 @@ void OpenParEMg::unselectPathItems ()
 
 void OpenParEMg::unselectBoundaryItems ()
 {
-    //std::cout << "OpenParEMg::unselectBoundaryItems" << std::endl; std::cout.flush();
-
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1731,8 +1649,6 @@ void OpenParEMg::unselectBoundaryItems ()
 
 void OpenParEMg::renameBoundaryItems ()
 {
-    //std::cout << "OpenParEMg::renameBoundaryItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         BoundaryItem *boundaryItem=dynamic_cast<BoundaryItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1753,8 +1669,6 @@ void OpenParEMg::renameBoundaryItems ()
 
 void OpenParEMg::deleteBoundaryItems ()
 {
-    //std::cout << "OpenParEMg::deleteBoundaryItems" << std::endl; std::cout.flush();
-
     itemChangesStack.startNew();
 
     long unsigned int i=0;
@@ -1772,8 +1686,6 @@ void OpenParEMg::deleteBoundaryItems ()
 
 void OpenParEMg::renameSportNet ()
 {
-    //std::cout << "OpenParEMg::renameSportNet" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         ModeItem *modeItem=dynamic_cast<ModeItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -1791,16 +1703,6 @@ void OpenParEMg::renameSportNet ()
         i++;
     }
 }
-
-// bool is_uniqueItem (std::vector<PortItem *> *portItemList, BaseItem *baseItem)
-// {
-//     long unsigned int i=0;
-//     while (i < portItemList->size()) {
-//         if ((*portItemList)[i] == baseItem) return false;
-//         i++;
-//     }
-//     return true;
-// }
 
 bool OpenParEMg::hasOneSelectedSport ()
 {
@@ -1855,8 +1757,6 @@ bool OpenParEMg::hasCurrent ()
 
 void OpenParEMg::insertIntegrationPath (VIItem *viItem)
 {
-    //std::cout << "OpenParEMg::insertIntegrationPath" << std::endl; std::cout.flush();
-
     if (!viItem) return;
 
     QDoubleValidator doubleValidator;
@@ -1922,8 +1822,6 @@ void OpenParEMg::insertIntegrationPath (VIItem *viItem)
 
 void OpenParEMg::rename_editingFinished ()
 {
-    //std::cout << "OpenParEMg::rename_editingFinished" << std::endl; std::cout.flush();
-
     bool unique=true;
 
     // paths
@@ -1998,8 +1896,6 @@ void OpenParEMg::selectDrawingItem (QString name)
 
 void OpenParEMg::unselectDrawingItems()
 {
-    //std::cout << "OpenParEMg::unselectDrawingItems" << std::endl; std::cout.flush();
-
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -2033,7 +1929,6 @@ void OpenParEMg::renameDrawingItems ()
     while (i < items.count()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(items[i]);
         if (drawingItem) {
-            //drawingItem->expandToItem();
             CustomLineEdit *name=new CustomLineEdit();
             name->setText(drawingItem->text(0));
             originalText=drawingItem->text(0);
@@ -2050,8 +1945,6 @@ void OpenParEMg::renameDrawingItems ()
 
 void OpenParEMg::deleteDrawingItems ()
 {
-    //std::cout << "OpenParEMg::deleteDrawingItems" << std::endl; std::cout.flush();
-
     //activeAction=true;  // no need since there is not a cancel option
     itemChangesStack.startNew();
 
@@ -2115,8 +2008,6 @@ void OpenParEMg::collectChildren (DrawingItem *drawingItem, std::vector<DrawingI
 // delete the item and its children
 void OpenParEMg::deletePlusDrawingItems ()
 {
-    //std::cout << "OpenParEMg::deletePlusDrawingItems" << std::endl; std::cout.flush();
-
     //activeAction=true;  // no need since there is not a cancel option
     itemChangesStack.startNew();
 
@@ -2141,8 +2032,6 @@ void OpenParEMg::deletePlusDrawingItems ()
 
 void OpenParEMg::insertModeItems ()
 {
-    //std::cout << "OpenParEMg::insertModeItems" << std::endl; std::cout.flush();
-
     itemChangesStack.startNew();
 
     long unsigned int i=0;
@@ -2191,8 +2080,6 @@ void OpenParEMg::selectPortItem (QString name)
 
 void OpenParEMg::unselectPortItems()
 {
-    //std::cout << "OpenParEMg::unselectPortItems" << std::endl; std::cout.flush();
-
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         PortItem *portItem=dynamic_cast<PortItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -2234,8 +2121,6 @@ bool OpenParEMg::portNameExists (QString name)
 
 void OpenParEMg::renamePortItems ()
 {
-    //std::cout << "OpenParEMg::renamePortItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         PortItem *portItem=dynamic_cast<PortItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -2256,8 +2141,6 @@ void OpenParEMg::renamePortItems ()
 
 void OpenParEMg::deleteRootPortItems ()
 {
-    //std::cout << "OpenParEMg::deleteRootPortItems" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         RootPortItem *rootPortItem=dynamic_cast<RootPortItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -2279,8 +2162,6 @@ void OpenParEMg::deleteRootPortItems ()
 
 void OpenParEMg::deletePortItems ()
 {
-    //std::cout << "OpenParEMg::deletePortItems" << std::endl; std::cout.flush();
-
     itemChangesStack.startNew();
 
     long unsigned int i=0;
@@ -2298,8 +2179,6 @@ void OpenParEMg::deletePortItems ()
 
 void OpenParEMg::deleteDiffPairItems ()
 {
-    //std::cout << "OpenParEMg::deleteDiffPairItems" << std::endl; std::cout.flush();
-
     itemChangesStack.startNew();
 
     long unsigned int i=0;
@@ -2317,8 +2196,6 @@ void OpenParEMg::deleteDiffPairItems ()
 
 void OpenParEMg::deleteModeItems ()
 {
-    //std::cout << "OpenParEMg::deleteModeItems" << std::endl; std::cout.flush();
-
     itemChangesStack.startNew();
 
     long unsigned int i=0;
@@ -2336,8 +2213,6 @@ void OpenParEMg::deleteModeItems ()
 
 void OpenParEMg::flipSignIntegrationPathItems ()
 {
-    //std::cout << "OpenParEMg::flipSignIntegrationPathItems" << std::endl; std::cout.flush();
-
     itemChangesStack.startNew();
 
     long unsigned int i=0;
@@ -2346,8 +2221,6 @@ void OpenParEMg::flipSignIntegrationPathItems ()
         if (integrationPathItem) integrationPathItem->flipSign();
         i++;
     }
-    // IntegrationPathItem *integrationPathItem=dynamic_cast<IntegrationPathItem *>(clickedItem);
-    // if (integrationPathItem) integrationPathItem->flipSign();
 
     clickedItem=nullptr;
     previousClickedItem=nullptr;
@@ -2357,8 +2230,6 @@ void OpenParEMg::flipSignIntegrationPathItems ()
 
 void OpenParEMg::deleteIntegrationPathItems ()
 {
-    //std::cout << "OpenParEMg::deleteIntegrationPathItems" << std::endl; std::cout.flush();
-
     itemChangesStack.startNew();
 
     long unsigned int i=0;
@@ -2404,8 +2275,6 @@ PortItem* OpenParEMg::get_matchingPortItem (Path *testPath)
 
 void OpenParEMg::createPath ()
 {
-    //std::cout << "OpenParEMg::createPath  NbSelected=" << ui->drawingWindow->NbSelected() << std::endl; std::cout.flush();
-
     int i=0;
     while (i < ui->drawingWindow->NbSelected()) {
         TopoDS_Shape selectedShape=ui->drawingWindow->get_selectedSubshape(i);
@@ -2480,8 +2349,6 @@ double OpenParEMg::getConversionFactor ()
 
 void OpenParEMg::extrudePolywire ()
 {
-    //std::cout << "OpenParEMg::extrudePolywire" << std::endl; std::cout.flush();
-
     startOperation(true);
     activeAction=false;
 
@@ -2501,8 +2368,6 @@ void OpenParEMg::extrudePolywire ()
 
 void OpenParEMg::finishExtrudePolywire ()
 {
-    //std::cout << "OpenParEMg::finishExtrudePolywire" << std::endl; std::cout.flush();
-
     if (abs(length) > 1e-12) {
 
         std::vector<DrawingItem *> selectedItems;
@@ -2532,12 +2397,6 @@ void OpenParEMg::finishExtrudePolywire ()
 // eventually, everything loads and the reprocess completes
 void OpenParEMg::reprocess (BaseItem *baseItem)
 {
-    //std::cout << "OpenParEMg::reprocess  item=" << item << std::endl; std::cout.flush();
-
-    // QString message="OpenparEMg::reprocess  ";
-    // message.append(baseItem->text(0));
-    // {QMessageBox mb; mb.critical(nullptr, "Debug", message);}
-
     bool stop=false;
 
     if (!baseItem) return;
@@ -2822,7 +2681,6 @@ bool OpenParEMg::isValidObjectDelete ()
 
 bool OpenParEMg::isValidObjectEdit ()
 {
-    //std::cout << "OpenParEMg::isValidObjectEdit" << std::endl; std::cout.flush();
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -2842,8 +2700,6 @@ bool OpenParEMg::isValidObjectEdit ()
 
 void OpenParEMg::editObject ()
 {
-    //std::cout << "OpenParEMg::editObject" << std::endl; std::cout.flush();
-
     startOperation(true);
     activeAction=true;
     itemChangesStack.startNew();
@@ -2858,8 +2714,6 @@ void OpenParEMg::editObject ()
 
 void OpenParEMg::finishEditObject (bool cancel)
 {
-    //std::cout << "OpenParEMg::finishEditObject  length=" << length << "  cancel=" << cancel << std::endl; std::cout.flush();
-
     if (cancel) {
         if (lineEdit) {delete lineEdit; lineEdit=nullptr;}
         if (rectangleEdit) {delete rectangleEdit; rectangleEdit=nullptr;}
@@ -2884,8 +2738,6 @@ void OpenParEMg::finishEditObject (bool cancel)
 
 bool OpenParEMg::isValidMergeSolids ()
 {
-    //std::cout << "OpenParEMg::isValidMergeSolids" << std::endl; std::cout.flush();
-
     int solidCount=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -3043,7 +2895,6 @@ void OpenParEMg::finishMergeSolids ()
 
 bool OpenParEMg::isValidSubtractSolids ()
 {
-    //std::cout << "OpenParEMg::isValidSubtractSolids" << std::endl; std::cout.flush();
     return isValidMergeSolids();
 }
 
@@ -3220,8 +3071,6 @@ void OpenParEMg::moveObject ()
 
 void OpenParEMg::finishMoveObject (gp_Pnt p0, gp_Pnt p1)
 {
-    // std::cout << "OpenParEMg::finishMoveObject" << std::endl; std::cout.flush();
-
     // move the objects
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -3229,17 +3078,6 @@ void OpenParEMg::finishMoveObject (gp_Pnt p0, gp_Pnt p1)
         if (drawingItem && drawingItem->is_drawing()) drawingItem->finishMove(p0,p1);
         i++;
     }
-
-    // update the top level
-    // i=0;
-    // while (i < ui->drawingWindow->get_selectedItems_size()) {
-    //     BaseItem *baseItem=ui->drawingWindow->get_selectedItem(i);
-    //     if (baseItem) {
-    //         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
-    //         if (drawingItem && drawingItem->is_drawing()) drawingItem->findTopLevelItem(drawingItem);
-    //     }
-    //     i++;
-    // }
 
     finishOperation(false,250);
 }
@@ -3259,8 +3097,6 @@ bool OpenParEMg::isValidCopy ()
 
 void OpenParEMg::copyDrawingItems ()
 {
-    //std::cout << "OpenParEMg::copyDrawingItems" << std::endl; std::cout.flush();
-
     startOperation(true);
     //activeAction=true;  // no need since there is not a cancel option
     itemChangesStack.startNew();
@@ -3325,8 +3161,6 @@ bool OpenParEMg::isValidObjectStretch ()
 
 void OpenParEMg::stretchObject ()
 {
-    //std::cout << "OpenParEMg::stretchObject" << std::endl; std::cout.flush();
-
     startOperation(false);
     activeAction=true;
     itemChangesStack.startNew();
@@ -3342,8 +3176,6 @@ void OpenParEMg::stretchObject ()
 
 void OpenParEMg::finishStretchObject ()
 {
-    //std::cout << "OpenParEMg::finishStretchObject" << std::endl; std::cout.flush();
-
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(ui->drawingWindow->get_selectedItem(i));
@@ -3437,17 +3269,6 @@ void OpenParEMg::finishInsertPoint (BaseItem *baseItem)
     if (!baseItem) return;
     baseItem->finishInsertPoint();
 }
-
-// void OpenParEMg::finishStretchPoint (BaseItem *baseItem)
-// {
-//     //std::cout << "OpenParEMg::finishStretchPoint" << std::endl; std::cout.flush();
-
-//     if (!baseItem) return;
-//     baseItem->finishStretchPoint();
-//     baseItem->findTopLevelItem(baseItem);
-
-//     finishOperation(false,7);
-// }
 
 void OpenParEMg::cancelInsertPoint ()
 {
@@ -3727,8 +3548,6 @@ bool OpenParEMg::isValidRotateObject ()
 
 void OpenParEMg::rotateObject ()
 {
-    //std::cout << "OpenParEMg::rotateObject" << std::endl; std::cout.flush();
-
     startOperation(true);
     activeAction=true;
     itemChangesStack.startNew();
@@ -3784,8 +3603,6 @@ void OpenParEMg::rotateObject ()
 
 void OpenParEMg::finishRotateObject (double angle_, gp_Pnt startPoint_, gp_Pnt endPoint_)
 {
-    //std::cout << "OpenParEMg::finishRotateObject" << std::endl; std::cout.flush();
-
     std::vector<DrawingItem *> selectedList;
     int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -3813,7 +3630,6 @@ bool OpenParEMg::isValidCreatePortFromFace ()
 
 void OpenParEMg::createPortFromFace ()
 {
-    //std::cout << "OpenParEMg::createPortFromFace" << std::endl; std::cout.flush();
     itemChangesStack.startNew();
     createPathFromFaceN(false);
     createPortFromPathN(false);
@@ -3848,8 +3664,6 @@ void OpenParEMg::createPortFromPath ()
 
 void OpenParEMg::createPortFromPathN (bool startNew)
 {
-    //std::cout << "OpenParEMg::createPortFromPath" << std::endl; std::cout.flush();
-
     if (startNew) itemChangesStack.startNew();
 
     // create list of selected items
@@ -3924,8 +3738,6 @@ void OpenParEMg::createPathFromFace ()
 
 void OpenParEMg::createPathFromFaceN (bool startNew)
 {
-    //std::cout << "OpenParEMg::createPathFromFace" << std::endl; std::cout.flush();
-
     if (startNew) itemChangesStack.startNew();
 
     std::vector<BaseItem *> createdItemsList;
@@ -3984,7 +3796,6 @@ bool OpenParEMg::isValidCreateBoundaryFromFace ()
 
 void OpenParEMg::createBoundaryFromFace ()
 {
-    //std::cout << "OpenParEMg::createBoundaryFromFace" << std::endl; std::cout.flush();
     itemChangesStack.startNew();
     createPathFromFaceN(false);
     createBoundaryFromPathN(false);
@@ -4002,8 +3813,6 @@ void OpenParEMg::createBoundaryFromPath ()
 
 void OpenParEMg::createBoundaryFromPathN (bool startNew)
 {
-    //std::cout << "OpenParEMg::createBoundaryFromPathN" << std::endl; std::cout.flush();
-
     if (startNew) itemChangesStack.startNew();
 
     // create list of selected items
@@ -4130,8 +3939,6 @@ void OpenParEMg::convertDrawingToBoundary ()
 
 bool OpenParEMg::isValidReversePath ()
 {
-    //std::cout << "OpenParEMg::isValidReversePath" << std::endl; std::cout.flush();
-
     int count=0;
     long unsigned int i=0;
     while (i < ui->drawingWindow->get_selectedItems_size()) {
@@ -4185,8 +3992,6 @@ void OpenParEMg::reversePathItems ()
 
 void OpenParEMg::createDiffPairItem ()
 {
-    //std::cout << "OpenParEMg::createDiffPairIte" << std::endl; std::cout.flush();
-
     itemChangesStack.startNew();
 
     // make a list of mode items to process
@@ -4280,8 +4085,6 @@ void OpenParEMg::selectPortCurrentItem (QString name)
 
 void OpenParEMg::renumberDimTag ()
 {
-    //std::cout << "OpenParEMg::renumberDimTag" << std::endl; std::cout.flush();
-
     int count=1;
     int i=0;
     while (i < drawing->childCount()) {
@@ -4308,8 +4111,6 @@ void OpenParEMg::renumberDimTag ()
 
 void OpenParEMg::setMaterials ()
 {
-    //std::cout << "OpenParEMg::setMaterials" << std::endl; std::cout.flush();
-
     int i=0;
     while (i < drawing->childCount()) {
         DrawingItem *child=dynamic_cast<DrawingItem *>(drawing->child(i));
@@ -4342,8 +4143,6 @@ void OpenParEMg::setMaterials ()
 
 void OpenParEMg::assignMaterial ()
 {
-    //std::cout << "OpenParEMg::assignMaterial" << std::endl; std::cout.flush();
-
     // Cannot assign material to existing mesh
     if (mesh->childCount() > 0) {
         QMessageBox::StandardButton reply;
@@ -4631,8 +4430,6 @@ void OpenParEMg::printLockouts ()
 
 void OpenParEMg::resetDrawing ()
 {
-    //std::cout << "OpenParEMg::resetDrawing  drawing=" << &drawing << std::endl; std::cout.flush();
-
     // mesh
     deleteMesh(false);
 
@@ -4681,8 +4478,6 @@ void OpenParEMg::resetDrawing ()
 
 void OpenParEMg::resetProject ()
 {
-    //std::cout << "OpenParEMg::resetProject" << std::endl; std::cout.flush();
-
     if (!projectFileLoaded) return;
 
     // drawing plane
@@ -4795,8 +4590,6 @@ void OpenParEMg::on_actionNew_triggered ()
 
 void OpenParEMg::on_actionClose_triggered()
 {
-    //std::cout << "OpenParEMg::on_actionClose_triggered" << std::endl; std::cout.flush();
-
     int retVal=check_changed();
     if (retVal) {
         if (retVal == QMessageBox::Save) {
@@ -5130,8 +4923,6 @@ void OpenParEMg::on_actionRefinement_triggered ()
 
 void OpenParEMg::on_actionMaterials_triggered  ()
 {
-    //std::cout << "OpenParEMg::on_actionMaterialsEditor_triggered" << std::endl; std::cout.flush();
-
     Materials *localMaterials=new Materials();
     localMaterials->set_projData(&projData);
     localMaterials->setMaterialDatabase(&materialDatabase);
@@ -5146,117 +4937,6 @@ void OpenParEMg::on_actionMaterials_triggered  ()
     }
     setMenusI(49);
 }
-
-
-// int CountSubShapes(const TopoDS_Shape& shape, TopAbs_ShapeEnum type)
-// {
-//     int count = 0;
-
-//     for (TopExp_Explorer exp(shape, type); exp.More(); exp.Next()) {
-//         ++count;
-//     }
-
-//     return count;
-// }
-
-// void ListChildren (const TopoDS_Shape& theShape)
-// {
-//     std::cout << TopAbs::ShapeTypeToString(theShape.ShapeType()) << std::endl;
-
-//     // 3 levels of children
-//     TopoDS_Iterator anIterator(theShape);
-//     for (; anIterator.More(); anIterator.Next()) {
-//         const TopoDS_Shape& aChildShape = anIterator.Value();
-//         std::cout << "   " << TopAbs::ShapeTypeToString(aChildShape.ShapeType()) << std::endl;
-
-//         TopoDS_Iterator anIterator2(aChildShape);
-//         for (; anIterator2.More(); anIterator2.Next()) {
-//             const TopoDS_Shape& aChildShape2 = anIterator2.Value();
-//             std::cout << "      " << TopAbs::ShapeTypeToString(aChildShape2.ShapeType()) << std::endl;
-
-//             TopoDS_Iterator anIterator3(aChildShape2);
-//             for (; anIterator3.More(); anIterator3.Next()) {
-//                 const TopoDS_Shape& aChildShape3 = anIterator3.Value();
-//                 std::cout << "         " << TopAbs::ShapeTypeToString(aChildShape3.ShapeType()) << std::endl;
-//             }
-//         }
-//     }
-//     // std::cout << std::endl;
-
-//     // std::cout << "Faces using TopExp_Explorer:" << std::endl;
-//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_FACE); anExplorer.More(); anExplorer.Next()) {
-//     //     const TopoDS_Face& aFace = TopoDS::Face(anExplorer.Current());
-//     //     std::cout << "  Found a Face" << std::endl;
-//     // }
-
-//     // std::cout << "Solid using TopExp_Explorer:" << std::endl;
-//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_SOLID); anExplorer.More(); anExplorer.Next()) {
-//     //     const TopoDS_Solid& aSolid = TopoDS::Solid(anExplorer.Current());
-//     //     std::cout << "  Found a Solid" << std::endl;
-//     // }
-
-//     // std::cout << "Wire using TopExp_Explorer:" << std::endl;
-//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_WIRE); anExplorer.More(); anExplorer.Next()) {
-//     //     const TopoDS_Wire& aWire = TopoDS::Wire(anExplorer.Current());
-//     //     std::cout << "  Found a Wire" << std::endl;
-//     // }
-
-//     // std::cout << "CompSolid using TopExp_Explorer:" << std::endl;
-//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_COMPSOLID); anExplorer.More(); anExplorer.Next()) {
-//     //     const TopoDS_CompSolid& aCompSolid = TopoDS::CompSolid(anExplorer.Current());
-//     //     std::cout << "  Found a CompSolid" << std::endl;
-//     // }
-
-//     // std::cout << "Compound using TopExp_Explorer:" << std::endl;
-//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_COMPOUND); anExplorer.More(); anExplorer.Next()) {
-//     //     const TopoDS_Compound& aCompound = TopoDS::Compound(anExplorer.Current());
-//     //     std::cout << "  Found a Compound" << std::endl;
-//     // }
-
-//     // std::cout << "Edge using TopExp_Explorer:" << std::endl;
-//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_EDGE); anExplorer.More(); anExplorer.Next()) {
-//     //     const TopoDS_Edge& aEdge = TopoDS::Edge(anExplorer.Current());
-//     //     std::cout << "  Found a Edge" << std::endl;
-//     // }
-
-//     // std::cout << "Shell using TopExp_Explorer:" << std::endl;
-//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_SHELL); anExplorer.More(); anExplorer.Next()) {
-//     //     const TopoDS_Shell& aShell = TopoDS::Shell(anExplorer.Current());
-//     //     std::cout << "  Found a Shell" << std::endl;
-//     // }
-
-//     // std::cout << "Vertex using TopExp_Explorer:" << std::endl;
-//     // for (TopExp_Explorer anExplorer(theShape, TopAbs_VERTEX); anExplorer.More(); anExplorer.Next()) {
-//     //     const TopoDS_Vertex& aVertex = TopoDS::Vertex(anExplorer.Current());
-//     //     std::cout << "  Found a Vertex" << std::endl;
-//     // }
-// }
-
-// void OpenParEMg::shapeCount (TopoDS_Shape shape, int *count)
-// {
-//     TopoDS_Iterator topoIterator(shape);
-
-//     while (topoIterator.More()) {
-//         const TopoDS_Shape& child=topoIterator.Value();
-//         (*count)++;
-//         shapeCount(child,count);
-//         topoIterator.Next();
-//     }
-// }
-
-// void OpenParEMg::insertToMapActivateItem (BaseItem *baseItem)
-// {
-//     //std::cout << "OpenParEMg::addItemWithShape" << std::endl; std::cout.flush();
-
-//     if (!baseItem) return;
-
-//     Handle(AIS_Shape) drawingShape=baseItem->getShape();
-//     ui->drawingWindow->insertItemToMap(drawingShape,baseItem);
-
-//     baseItem->setForeground(0,Qt::gray);
-//     ui->drawingWindow->showItem(baseItem);
-//     ui->drawingWindow->selectItem(baseItem);
-// }
 
 TopoDS_Shape NormalizeCompound (const TopoDS_Shape& shape, BRep_Builder& builder)
 {
@@ -5381,32 +5061,11 @@ bool OpenParEMg::loadStepFile (QString filePath, bool createName)
                 }
             }
 
-            // ??? needed
-            //showRootDrawingItems();
-
         } else retval=true;
     }
     setMenusI(51);
     return retval;
 }
-
-// BaseItem* get_vertexItem (BaseItem *baseItem)
-// {
-//     if (!baseItem) return nullptr;;
-
-//     Handle(AIS_Shape) shape=baseItem->getShape();
-//     if (shape.IsNull()) return nullptr;
-//     if (shape->Shape().ShapeType() == TopAbs_VERTEX) return baseItem;
-
-//     int i=0;
-//     while (i < baseItem->childCount()) {
-//         BaseItem *child=dynamic_cast<BaseItem *>(baseItem->child(i));
-//         if (get_vertexItem(child)) return child;
-//         i++;
-//     }
-
-//     return nullptr;
-// }
 
 bool OpenParEMg::isValidSaveBrepFile ()
 {
@@ -5471,8 +5130,6 @@ bool OpenParEMg::isValidSaveStepFile ()
 
 bool OpenParEMg::saveStepFile (QString filePath)
 {
-    //std::cout << "OpenParEMg::saveStepFile" << std::endl; std::cout.flush();
-
     if (filePath.isEmpty()) return true;
 
     long unsigned int i=0;
@@ -5590,25 +5247,9 @@ void OpenParEMg::increase_depth (DrawingItem *item)
     }
 }
 
-// void OpenParEMg::decrease_depth (DrawingItem *item)
-// {
-//     if (!item) return;
-
-//     item->decrease_depth();
-
-//     int i=0;
-//     while (i < item->childCount()) {
-//         DrawingItem *child=dynamic_cast<DrawingItem *>(item->child(i));
-//         if (child) decrease_depth(child);
-//         i++;
-//     }
-// }
-
 void OpenParEMg::saveItem (std::ofstream *out, BaseItem *baseItem)
 {
     if (!baseItem) return;
-
-    //std::cout << "OpenParEMg::saveItem  item=" << baseItem->text(0).toStdString() << std::endl; std::cout.flush();
 
     RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
     if (rootDrawingItem) {
@@ -5699,8 +5340,6 @@ bool OpenParEMg::getBlockKeywordValue (std::vector<std::string> &inputData, int 
                                        long unsigned int &startBlockIndex, long unsigned int &endBlockIndex,
                                        std::string &keyword, std::string &value)
 {
-    //std::cout << "OpenParEMg::getBlockKeywordValue" << std::endl; std::cout.flush();
-
     int level=0;  // keeping track of levels in the hierarchy
     long unsigned int index=startBlockIndex;
     while (index <= endBlockIndex) {
@@ -5753,8 +5392,6 @@ int OpenParEMg::findEndNextBlock (std::vector<std::string> &inputData, int type,
 bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned int &startBlockIndex,
                            long unsigned int &endBlockIndex, BaseItem *baseParent, bool increaseDepth)
 {
-    //std::cout << "OpenParEMg::loadItem" << "  startBlockIndex=" << startBlockIndex << "  endBlockIndex=" << endBlockIndex << std::endl; std::cout.flush();
-
     int typeStart=findStartNextBlock (inputData,startBlockIndex);
 
     // check to see if done
@@ -5990,8 +5627,6 @@ bool OpenParEMg::saveDrawingFile (QString filename)
 
 bool OpenParEMg::loadDrawingFile ()
 {
-    //std::cout << "OpenParEMg::loadDrawingFile" << std::endl; std::cout.flush();
-
     QString filename=absolutePath;
     filename.append("/").append(projData.project_name);
     filename.append(".opd");
@@ -6549,42 +6184,6 @@ void OpenParEMg::drawMesh ()
                     builder.Add(compound,edge23);
                     builder.Add(compound,edge34);
                     builder.Add(compound,edge42);
-
-                    // skip building the rest of the tetrahedrons
-                    // This code no longer works with rest of this routine.
-
-                    // TopoDS_Wire wire123=BRepBuilderAPI_MakeWire(edge12,edge23,edge13);
-                    // TopoDS_Wire wire134=BRepBuilderAPI_MakeWire(edge13,edge34,edge14);
-                    // TopoDS_Wire wire124=BRepBuilderAPI_MakeWire(edge12,edge42,edge14);
-                    // TopoDS_Wire wire234=BRepBuilderAPI_MakeWire(edge23,edge34,edge42);
-
-                    // if (!wire123.IsNull() && !wire134.IsNull() && !wire124.IsNull() && !wire234.IsNull()) {
-
-                    //     TopoDS_Face face123=BRepBuilderAPI_MakeFace(wire123);
-                    //     TopoDS_Face face134=BRepBuilderAPI_MakeFace(wire134);
-                    //     TopoDS_Face face124=BRepBuilderAPI_MakeFace(wire124);
-                    //     TopoDS_Face face234=BRepBuilderAPI_MakeFace(wire234);
-
-                    //     if (!face123.IsNull() && !face134.IsNull() && !face124.IsNull() && !face234.IsNull()) {
-
-                    //         TopoDS_Compound tetrahedron;
-                    //         BRep_Builder builder;
-                    //         builder.MakeCompound(tetrahedron);
-                    //         builder.Add(tetrahedron,face123);
-                    //         builder.Add(tetrahedron,face134);
-                    //         builder.Add(tetrahedron,face124);
-                    //         builder.Add(tetrahedron,face234);
-
-                    //         Handle(AIS_Shape) shape=new AIS_Shape(tetrahedron);
-                    //         tetrahedronsItem->get_meshEntities()->push_back(shape);
-
-                    //         builder.MakeCompound(compound);
-                    //         builder.Add(compound,face123);
-                    //         builder.Add(compound,face134);
-                    //         builder.Add(compound,face124);
-                    //         builder.Add(compound,face234);
-                    //     }
-                    // }
                 }
 
                 // to prevent the GUI from locking up for large meshes
@@ -6611,19 +6210,6 @@ void OpenParEMg::drawMesh ()
 
         materialList.push_back(name);
         shapeList.push_back(compound);
-
-        // // make the item
-        // MeshItem *groupItem=new MeshItem(this);
-        // groupItem->setText(0,name);
-        // groupItem->set_itemType(3);
-        // groupItem->setForeground(0,Qt::gray);
-        // mesh->addChild(groupItem);
-
-        // Handle(AIS_Shape) newAISshape=new AIS_Shape(compound);
-        // if (!newAISshape.IsNull()) {
-        //     ShapeData *shapeData=groupItem->getShapeData();
-        //     shapeData->setShape(newAISshape);
-        // }
 
         ++pg;
     }
@@ -6942,8 +6528,6 @@ void OpenParEMg::on_actionMeshGenerate_triggered ()
 
     clear_physicalGroupMaterials (&projData);
 
-    //const TopoDS_Shape& finalResult=builder.Shape();
-    //TopExp_Explorer exp(finalResult,TopAbs_SOLID);
     TopExp_Explorer exp(fragments,TopAbs_SOLID);
 
     // create physical groups
@@ -8108,7 +7692,6 @@ void OpenParEMg::on_actionUndo_triggered ()
     itemChangesStack.readNewReverse();
     BaseItem *baseItem=itemChangesStack.getItemReverse();
     while (baseItem) {
-        //baseItem->print_itemType();
         baseItem->undo();
         baseItem=itemChangesStack.getItemReverse();
     }
@@ -8124,7 +7707,6 @@ void OpenParEMg::on_actionRedo_triggered ()
     itemChangesStack.readNewForward();
     BaseItem *baseItem=itemChangesStack.getItemForward();
     while (baseItem) {
-        //baseItem->print_itemType();
         baseItem->redo();
         baseItem=itemChangesStack.getItemForward();
     }

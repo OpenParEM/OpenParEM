@@ -128,7 +128,6 @@ class MaterialsModel : public QAbstractItemModel
     Q_OBJECT
 
 public:
-    //explicit MaterialsModel (const QString &data, QObject *parent = nullptr);
     explicit MaterialsModel (QObject *parent = nullptr);
     ~MaterialsModel();
 
@@ -205,7 +204,6 @@ public slots:
 
 
 private:
-    //void setupModelData(const QStringList &lines, KeywordValueItem *parent);
     KeywordValueItem *rootItem;
     KeywordValueItem *globalItem;
     KeywordValueItem *localItem;
@@ -286,7 +284,6 @@ private:
     QAction *editCopy;
     QAction *editPaste;
     QAction *editAppend;
-    //QAction *editNew;
     QAction *editConvert;
     QAction *editDelete;
 

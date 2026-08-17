@@ -1752,42 +1752,6 @@ long unsigned int BorderDatabase::exists_test_boundary_only(struct EdgeAttribute
    return -1;
 }
 
-/* current
-// for boundaries
-void BorderDatabase::add(struct EdgeAttribute edgeAttribute, int existing_bdr_attribute)
-{
-   PetscMPIInt rank;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-   long unsigned int max=-1;
-   long unsigned int border_index=-1;
-
-   if (existing_bdr_attribute == 1) {
-      // see if it exists already
-      border_index=exists(edgeAttribute);
-      if (border_index == max) {
-         // does not exist
-         // create a new slot
-         Border *border=new Border;
-         border->set(edgeAttribute);
-         borderList.push_back(border);
-         border->set_local_attribute(borderList.size()-1);
-         border->set_global_attribute(borderList.size()-1);
-         border->set_local_rank(rank);
-      } else {
-         // do nothing - already here
-      }
-   } else {
-      // attribute already assigned
-      // save here
-      borderList[existing_bdr_attribute]->set(edgeAttribute);
-      borderList[existing_bdr_attribute]->set_local_attribute(existing_bdr_attribute);
-      borderList[existing_bdr_attribute]->set_global_attribute(existing_bdr_attribute);
-   }
-}
-*/
-
-// prior modified for new data
 long unsigned int BorderDatabase::add(struct EdgeAttribute edgeAttribute, int existing_bdr_attribute)
 {
    PetscMPIInt rank;
@@ -1823,69 +1787,6 @@ long unsigned int BorderDatabase::add(struct EdgeAttribute edgeAttribute, int ex
    return border_index;
 }
 
-/* current
-// for modes
-void BorderDatabase::add(struct EdgeAttribute edgeAttribute, long unsigned int modeNumber, int existing_bdr_attribute)
-{
-   PetscMPIInt rank;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-   long unsigned int max=-1;
-   long unsigned int border_index=-1;
-
-   if (existing_bdr_attribute == 1) {
-      // see if this case exists already
-      border_index=exists(edgeAttribute,modeNumber);
-      if (border_index == max) {
-         // does not exist
-         // see if it exists for other mode numbers
-         border_index=exists_any_mode(edgeAttribute);
-         if (border_index == max) {
-            // does not exist
-            // create a new slot
-            Border *border=new Border;
-            border->set(edgeAttribute,modeNumber);
-            borderList.push_back(border);
-            border->set_local_attribute(borderList.size()-1);
-            border->set_global_attribute(borderList.size()-1);
-            border->set_local_rank(rank);
-         } else {
-            // exists with other mode numbers
-            // save here with new mode number
-            borderList[existing_bdr_attribute]->set(edgeAttribute,modeNumber);
-            borderList[existing_bdr_attribute]->set_local_attribute(existing_bdr_attribute);
-            borderList[existing_bdr_attribute]->set_global_attribute(existing_bdr_attribute);
-         }
-      } else {
-         // exists - do nothing
-      }
-   } else {
-      // attribute already assigned
-
-      // see if the mode space is empty
-      if (borderList[existing_bdr_attribute]->has_mode()) {
-         // something is here
-         // see if this case already exists
-         if (borderList[existing_bdr_attribute]->exists(edgeAttribute,modeNumber)) {
-            // exists - do nothing
-         } else {
-            // save here with new mode
-            borderList[existing_bdr_attribute]->set(edgeAttribute,modeNumber);
-            borderList[existing_bdr_attribute]->set_local_attribute(existing_bdr_attribute);
-            borderList[existing_bdr_attribute]->set_global_attribute(existing_bdr_attribute);
-         }
-      } else {
-         // empty
-         // save here
-         borderList[existing_bdr_attribute]->set(edgeAttribute,modeNumber);
-         borderList[existing_bdr_attribute]->set_local_attribute(existing_bdr_attribute);
-         borderList[existing_bdr_attribute]->set_global_attribute(existing_bdr_attribute);
-      }
-   }
-}
-*/
-
-// prior modified for new data
 // for modes
 long unsigned int BorderDatabase::add(struct EdgeAttribute edgeAttribute, long unsigned int modeNumber, int existing_bdr_attribute)
 {

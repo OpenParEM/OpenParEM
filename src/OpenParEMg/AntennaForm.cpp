@@ -416,7 +416,6 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     container->setAutoFillBackground(true);
     container->setPalette(phiBox->palette());
     layout->addWidget(phiBox);
-    // layout->setAlignment(phiBox,Qt::AlignCenter);
 
     ui->patternTable->setCellWidget(currentRow,3,container);
     connect(phiBox,&QDoubleSpinBox::editingFinished,this,&AntennaForm::phiBox_changed);
@@ -454,7 +453,6 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     container->setAutoFillBackground(true);
     container->setPalette(latitudeBox->palette());
     layout->addWidget(latitudeBox);
-    // layout->setAlignment(latitudeBox,Qt::AlignCenter);
 
     ui->patternTable->setCellWidget(currentRow,4,container);
     connect(latitudeBox,&QDoubleSpinBox::editingFinished,this,&AntennaForm::latitudeBox_changed);
@@ -475,7 +473,6 @@ void AntennaForm::appendPattern (struct inputAntennaPattern *pattern)
     container->setAutoFillBackground(true);
     container->setPalette(rotationBox->palette());
     layout->addWidget(rotationBox);
-    // layout->setAlignment(rotationBox,Qt::AlignCenter);
 
     ui->patternTable->setCellWidget(currentRow,5,container);
     connect(rotationBox,&QDoubleSpinBox::editingFinished,this,&AntennaForm::rotationBox_changed);
