@@ -1533,10 +1533,16 @@ bool MaterialDatabase::findMaterialBlocks()
 // return true on fail
 bool MaterialDatabase::load (const char *path, const char *filename, bool checkInputs, bool isLocal)
 {
-   if (!path) return true;
-   if (!filename) return true;
-   if (strlen(path) == 0) return true;
-   if (strlen(filename) == 0) return true;
+   if (!path || !filename || strlen(path) == 0 || strlen(filename) == 0) {
+      if (isLocal) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1089: Invalid path and/or file name for the local materials database.\n",
+                                                indent.c_str(),indent.c_str());
+      } else {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1089: Invalid path and/or file name for the global materials database.\n",
+                                                indent.c_str(),indent.c_str());
+      }
+      return true;
+   }
 
    // check for path/filename separator
 
@@ -1671,6 +1677,8 @@ bool MaterialDatabase::load_materials (char *global_path, char *global_name, cha
    }
 
    if (!global || !local) return false;
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1093: Unable to load a local or global materials database.\n",indent.c_str());
    return true;
 }
 

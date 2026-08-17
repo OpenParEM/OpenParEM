@@ -493,6 +493,7 @@ int main(int argc, char *argv[])
    if (materialDatabase.load_materials(projData.materials_global_path,projData.materials_global_name,
                                        projData.materials_local_path,projData.materials_local_name,
                                        projData.materials_check_limits)) {
+
       signalFinished(1);
       exit_job_on_error (job_start_time,lockfile,true,2);
    }
