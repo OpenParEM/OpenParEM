@@ -1,0 +1,26 @@
+# highly accurate field results are not feasible with 1st order elements, so the field results are removed
+# equal error limit changed from 1e-5 to 2e-3
+WR90_1_1_0_result_exact,9e+09,1,alpha,lessthan,1e-08
+WR90_1_1_1_result_exact,9e+09,1,beta,equal,0.685407962562495,2e-03
+WR90_1_1_2_result_exact,9e+09,1,real_Z,equal,488.572365707888,2e-03
+WR90_1_1_3_result_exact,9e+09,1,imag_Z,lessthan,1e-08
+WR90_1_2_148_result_exact,9e+09,2,alpha,equal,1735.9644289781,2e-03
+WR90_1_2_149_result_exact,9e+09,2,beta,lessthan,1e-08
+WR90_1_3_286_result_exact,9e+09,3,alpha,equal,2127.7920927848,2e-03
+WR90_1_3_287_result_exact,9e+09,3,beta,lessthan,1e-08
+WR90_1_4_424_result_exact,9e+09,4,alpha,equal,2439.74821862761,2e-03
+WR90_1_4_425_result_exact,9e+09,4,beta,lessthan,1e-08
+WR90_1_5_562_result_exact,9e+09,5,alpha,equal,2439.74821862761,2e-03
+WR90_1_5_563_result_exact,9e+09,5,beta,lessthan,1e-08
+WR90_2_1_674_result_exact,1e+10,1,alpha,lessthan,1e-08
+WR90_2_1_675_result_exact,1e+10,1,beta,equal,0.755406579840748,2e-03
+WR90_2_1_676_result_exact,1e+10,1,real_Z,equal,443.299540513372,2e-03
+WR90_2_1_677_result_exact,1e+10,1,imag_Z,lessthan,1e-08
+WR90_2_2_822_result_exact,1e+10,2,alpha,equal,1543.8726526439,2e-03
+WR90_2_2_823_result_exact,1e+10,2,beta,lessthan,1e-08
+WR90_2_3_960_result_exact,1e+10,3,alpha,equal,1974.20096723255,2e-03
+WR90_2_3_961_result_exact,1e+10,3,beta,lessthan,1e-08
+WR90_2_4_1098_result_exact,1e+10,4,alpha,equal,2307.02007776287,2e-03
+WR90_2_4_1099_result_exact,1e+10,4,beta,lessthan,1e-08
+WR90_2_5_1236_result_exact,1e+10,5,alpha,equal,2307.02007776287,2e-03
+WR90_2_5_1237_result_exact,1e+10,5,beta,lessthan,1e-08

@@ -1,0 +1,9 @@
+# ResultDatabase::save_as_test
+Simonovich_stripline_1_1_0_result,2e+10,1,alpha,equal,56.6682505900062,1e-10
+Simonovich_stripline_1_1_1_result,20000000000,1,beta,equal,1.92836303005291,1e-10
+Simonovich_stripline_1_1_2_result,20000000000,1,real_Z,equal,49.1217410528491,1e-10
+Simonovich_stripline_1_1_3_result,20000000000,1,imag_Z,equal,0.232193922124397,1e-09
+Simonovich_stripline_2_1_4_result,50000000000,1,alpha,equal,133.735178389929,1e-10
+Simonovich_stripline_2_1_5_result,50000000000,1,beta,equal,1.92837502704944,1e-10
+Simonovich_stripline_2_1_6_result,50000000000,1,real_Z,equal,49.1470249082978,1e-10
+Simonovich_stripline_2_1_7_result,50000000000,1,imag_Z,equal,0.232297330953204,1e-10

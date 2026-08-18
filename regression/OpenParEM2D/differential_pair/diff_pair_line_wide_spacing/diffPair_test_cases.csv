@@ -1,0 +1,25 @@
+# ResultDatabase::save_as_test
+diffPair_1_1_0_result,8e+09,1,alpha,lessthan,1e-10
+diffPair_1_2_1_result,8e+09,2,alpha,lessthan,1e-10
+diffPair_1_1_2_result,8e+09,1,beta,equal,2.57535903348385,1e-10
+diffPair_1_2_3_result,8000000000,2,beta,equal,2.54369316331697,1e-10
+diffPair_1_1_4_result,8000000000,1,real_Z,equal,18.1214998311399,1e-10
+diffPair_1_2_5_result,8000000000,2,real_Z,equal,65.5830905611636,1e-08
+diffPair_1_1_6_result,8000000000,1,imag_Z,lessthan,1e-10
+diffPair_1_2_7_result,8000000000,2,imag_Z,lessthan,1e-10
+diffPair_2_1_8_result,52000000000,1,alpha,lessthan,1e-10
+diffPair_2_2_9_result,52000000000,2,alpha,lessthan,1e-10
+diffPair_2_1_10_result,52000000000,1,beta,equal,2.94919136178293,1e-10
+diffPair_2_2_11_result,52000000000,2,beta,equal,2.9477452244571,1e-10
+diffPair_2_1_12_result,52000000000,1,real_Z,equal,50.3685032837818,1e-10
+diffPair_2_2_13_result,52000000000,2,real_Z,equal,51.951112163576,1e-10
+diffPair_2_1_14_result,52000000000,1,imag_Z,lessthan,1e-10
+diffPair_2_2_15_result,52000000000,2,imag_Z,lessthan,1e-10
+diffPair_3_1_16_result,100000000000,1,alpha,lessthan,1e-09
+diffPair_3_2_17_result,100000000000,2,alpha,lessthan,1e-09
+diffPair_3_1_18_result,100000000000,1,beta,equal,3.05540252215303,1e-10
+diffPair_3_2_19_result,100000000000,2,beta,equal,3.05472371320704,1e-10
+diffPair_3_1_20_result,100000000000,1,real_Z,equal,67.9263607894006,1e-09
+diffPair_3_2_21_result,100000000000,2,real_Z,equal,69.4815637433838,1e-10
+diffPair_3_1_22_result,100000000000,1,imag_Z,lessthan,1e-10
+diffPair_3_2_23_result,100000000000,2,imag_Z,lessthan,1e-10
