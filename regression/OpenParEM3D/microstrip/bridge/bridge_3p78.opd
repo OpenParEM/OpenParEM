@@ -10,8 +10,8 @@ Extrude
       width=0.0005
       height=0.001
       isSquare=0
-      tempWidth=0.00122927244294586
-      tempHeight=0.00292563254767752
+      tempWidth=0
+      tempHeight=0
       u=(1,0,0)
       v=(0,1,0)
       normal=(0,0,1)
@@ -28,8 +28,8 @@ Extrude
       width=0.0005
       height=0.001
       isSquare=0
-      tempWidth=0.00122927244294586
-      tempHeight=0.00292563254767752
+      tempWidth=0
+      tempHeight=0
       u=(1,0,0)
       v=(0,1,0)
       normal=(0,0,1)
@@ -39,26 +39,26 @@ EndExtrude
 Subtract
    name=Subtract1
    material=air
-      Extrude
-         name=Extrude3
-         length=0.00022
+   Extrude
+      name=Extrude3
+      length=0.00022
       Rectangle
          name=Rectangle1_copy
          origin=(0,0,0.0001)
          width=0.0005
          height=0.001
          isSquare=0
-         tempWidth=0.00122927244294586
-         tempHeight=0.00292563254767752
+         tempWidth=0
+         tempHeight=0
          u=(1,0,0)
          v=(0,1,0)
          normal=(0,0,1)
          reverse=false
       EndRectangle
-      EndExtrude
-      Extrude
-         name=strip
-         length=2e-05
+   EndExtrude
+   Extrude
+      name=strip
+      length=2e-05
       Rectangle
          name=Rectangle3
          origin=(0.0002,0,0.0001)
@@ -66,75 +66,37 @@ Subtract
          height=0.002317
          isSquare=0
          tempWidth=0
-         tempHeight=0.002317
-         u=(1,0,0)
-         v=(0,1,0)
-         normal=(0,0,1)
-         reverse=false
-      EndRectangle
-      EndExtrude
-EndSubtract
-Subtract
-   name=Subtract2
-   material=air
-      Extrude
-         name=Extrude3_copy
-         length=0.00022
-      Rectangle
-         name=Rectangle1_copy_copy
-         origin=(0,0.001317,0.0001)
-         width=0.0005
-         height=0.001
-         isSquare=0
-         tempWidth=0.00122927244294586
-         tempHeight=0.00292563254767752
-         u=(1,0,0)
-         v=(0,1,0)
-         normal=(0,0,1)
-         reverse=false
-      EndRectangle
-      EndExtrude
-      Extrude
-         name=strip_copy
-         length=2e-05
-      Rectangle
-         name=Rectangle3_copy
-         origin=(0.0002,0,0.0001)
-         width=0.0001
-         height=0.002317
-         isSquare=0
-         tempWidth=0
-         tempHeight=0.002317
-         u=(1,0,0)
-         v=(0,1,0)
-         normal=(0,0,1)
-         reverse=false
-      EndRectangle
-      EndExtrude
-EndSubtract
-Subtract
-   name=Subtract3
-   material=bridge
-      Extrude
-         name=Extrude4
-         length=0.00032
-      Rectangle
-         name=Rectangle2
-         origin=(0,0.001,0)
-         width=0.0005
-         height=0.000317
-         isSquare=0
-         tempWidth=0.0005
          tempHeight=0
          u=(1,0,0)
          v=(0,1,0)
          normal=(0,0,1)
          reverse=false
       EndRectangle
-      EndExtrude
-      Extrude
-         name=strip_copy
-         length=2e-05
+   EndExtrude
+EndSubtract
+Subtract
+   name=Subtract2
+   material=air
+   Extrude
+      name=Extrude3_copy
+      length=0.00022
+      Rectangle
+         name=Rectangle1_copy_copy
+         origin=(0,0.001317,0.0001)
+         width=0.0005
+         height=0.001
+         isSquare=0
+         tempWidth=0
+         tempHeight=0
+         u=(1,0,0)
+         v=(0,1,0)
+         normal=(0,0,1)
+         reverse=false
+      EndRectangle
+   EndExtrude
+   Extrude
+      name=strip_copy
+      length=2e-05
       Rectangle
          name=Rectangle3_copy
          origin=(0.0002,0,0.0001)
@@ -142,13 +104,51 @@ Subtract
          height=0.002317
          isSquare=0
          tempWidth=0
-         tempHeight=0.002317
+         tempHeight=0
          u=(1,0,0)
          v=(0,1,0)
          normal=(0,0,1)
          reverse=false
       EndRectangle
-      EndExtrude
+   EndExtrude
+EndSubtract
+Subtract
+   name=Subtract3
+   material=bridge
+   Extrude
+      name=Extrude4
+      length=0.00032
+      Rectangle
+         name=Rectangle2
+         origin=(0,0.001,0)
+         width=0.0005
+         height=0.000317
+         isSquare=0
+         tempWidth=0
+         tempHeight=0
+         u=(1,0,0)
+         v=(0,1,0)
+         normal=(0,0,1)
+         reverse=false
+      EndRectangle
+   EndExtrude
+   Extrude
+      name=strip_copy
+      length=2e-05
+      Rectangle
+         name=Rectangle3_copy
+         origin=(0.0002,0,0.0001)
+         width=0.0001
+         height=0.002317
+         isSquare=0
+         tempWidth=0
+         tempHeight=0
+         u=(1,0,0)
+         v=(0,1,0)
+         normal=(0,0,1)
+         reverse=false
+      EndRectangle
+   EndExtrude
 EndSubtract
 Rectangle
    name=dummy1
@@ -156,8 +156,8 @@ Rectangle
    width=-5.8972546768396e-05
    height=0.00013593427696573
    isSquare=0
-   tempWidth=-5.8972546768396e-05
-   tempHeight=0.00013593427696573
+   tempWidth=0
+   tempHeight=0
    u=(0,-0,1)
    v=(1,0,-0)
    normal=(0,1,0)
@@ -169,8 +169,8 @@ Rectangle
    width=-5.8972546768396e-05
    height=0.00013593427696573
    isSquare=0
-   tempWidth=-5.8972546768396e-05
-   tempHeight=0.00013593427696573
+   tempWidth=0
+   tempHeight=0
    u=(0,-0,1)
    v=(1,0,-0)
    normal=(0,1,0)

@@ -5,44 +5,44 @@ File
 EndFile
 
 Path
-   name=path
-   point=(0,0.006,0)
-   point=(0.01016,0.006,0)
-   point=(0.01016,-0.01686,0)
-   point=(0,-0.01686,0)
+   name=path1
+   point=(-0.01143,-0.00508,0)
+   point=(0.01143,-0.00508,0)
+   point=(0.01143,0.00508,0)
+   point=(-0.01143,0.00508,0)
    closed=true
-   normal=(-0,-0,-1)
+   normal=(0,0,1)
 EndPath
 
 Path
    name=v1
-   point=(0,-0.00543,0)
-   point=(0.01016,-0.00543,0)
+   point=(0,-0.00508,0)
+   point=(0,0.00508,0)
    closed=false
-   normal=(-0,-0,-1)
+   normal=(0,0,1)
 EndPath
 
 Path
-   name=path_1
-   point=(0.01016,0.006,0.1)
-   point=(0,0.006,0.1)
-   point=(0,-0.01686,0.1)
-   point=(0.01016,-0.01686,0.1)
+   name=path2
+   point=(-0.01143,-0.00508,0.1)
+   point=(0.01143,-0.00508,0.1)
+   point=(0.01143,0.00508,0.1)
+   point=(-0.01143,0.00508,0.1)
    closed=true
-   normal=(-0,0,1)
+   normal=(0,0,1)
 EndPath
 
 Path
    name=v2
-   point=(0,-0.00543,0.1)
-   point=(0.01016,-0.00543,0.1)
+   point=(0,-0.00508,0.1)
+   point=(0,0.00508,0.1)
    closed=false
-   normal=(-0,0,1)
+   normal=(0,0,1)
 EndPath
 
 Port
    name=port1
-   path=path
+   path=path1
    impedance_definition=PV
    impedance_calculation=line
    Line
@@ -58,7 +58,7 @@ EndPort
 
 Port
    name=port2
-   path=path_1
+   path=path2
    impedance_definition=PV
    impedance_calculation=line
    Line

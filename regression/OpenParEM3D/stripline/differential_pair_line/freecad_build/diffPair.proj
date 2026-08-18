@@ -8,7 +8,7 @@
 project.save.fields               false
 mesh.file                         diffPair.msh
 mesh.quality.limit                1e6
-mesh.refinement.fraction          0.002
+mesh.refinement.fraction          0.0025 // 0.002
 fem.order                         4
 port.definition.file              diffPair_ports.txt
 materials.global.path             ../../../../OpenParEM2D/
@@ -20,7 +20,7 @@ refinement.frequency              high
 refinement.iteration.min          4
 refinement.iteration.max          50
 refinement.required.passes        1
-refinement.relative.tolerance     0.002
+refinement.relative.tolerance     0.001
 refinement.absolute.tolerance     1e-7
 refinement.variable               S
 frequency.plan.point              10e9

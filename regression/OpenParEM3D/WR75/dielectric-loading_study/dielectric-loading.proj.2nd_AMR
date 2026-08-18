@@ -37,7 +37,7 @@ solution.iteration.limit       10000
 solution.modes.buffer          10
 solution.accurate.residual     false
 solution.shift.invert          true
-solution.use.initial.guess     true
+solution.initial.guess.level   2
 
 output.show.refining.mesh      false
 output.show.postprocessing     false

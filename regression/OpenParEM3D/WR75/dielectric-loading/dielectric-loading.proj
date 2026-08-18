@@ -67,7 +67,7 @@ reference.impedance 0
 //debug.refine.preconditioner 1
 //gui.units mm
 //gui.grid.size 10
-gui.slot.count 9
+gui.slot.count 12
 //gui.oversubscribe true
 //gui.mesh.scale 1
 //gui.mesh.minSize 0

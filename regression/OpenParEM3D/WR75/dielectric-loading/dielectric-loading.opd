@@ -10,8 +10,8 @@ Extrude
       width=0.01905
       height=0.009525
       isSquare=0
-      tempWidth=0.00249591274397363
-      tempHeight=0.00116581220730904
+      tempWidth=0
+      tempHeight=0
       u=(1,0,0)
       v=(0,1,0)
       normal=(0,0,1)
@@ -28,8 +28,8 @@ Extrude
       width=0.00762
       height=0.008458
       isSquare=0
-      tempWidth=0.0132295024468294
-      tempHeight=0.0133965237754
+      tempWidth=0
+      tempHeight=0
       u=(0,-0,1)
       v=(1,0,-0)
       normal=(0,1,0)

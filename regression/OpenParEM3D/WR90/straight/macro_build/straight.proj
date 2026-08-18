@@ -15,7 +15,7 @@ refinement.frequency none
 //refinement.relative.tolerance 0.02
 //refinement.absolute.tolerance 1e-06
 //refinement.variable SandH
-materials.global.path /home/briany/OpenParEM/regression/OpenParEM2D
+materials.global.path /home/briany/OpenParEM/regression/OpenParEM2D/
 materials.global.name global_materials.txt
 materials.local.path ./
 materials.local.name 
