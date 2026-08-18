@@ -46,7 +46,7 @@ using namespace std;
 using namespace mfem;
 
 int version_major=2;
-int version_minor=1;
+int version_minor=2;
 int version_patch=0;
 
 extern "C" void init_project (struct projectData *);

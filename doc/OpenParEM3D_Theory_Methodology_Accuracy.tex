@@ -645,9 +645,9 @@ Note that AMR uses $\overline{H}$ instead of $\overline{E}$. Since $\overline{H}
 
 \subsection{Convergence Testing}
 
-Convergence testing relies on the absolute error calculated on $\overline{H}$ using \texttt{fem3D::calculateMeshErrors} and on the relative error calculated on the S-parameter matrices $\overline{\overline{S}}_N$ and $\overline{\overline{S}}_{N-1}$ from the $N^{\textnormal{th}}$ and $(N-1)^{\textnormal{th}}$ iterations using the error metric
+Convergence testing relies on the absolute error calculated on $\overline{H}$ using \texttt{fem3D::calculateMeshErrors} and on the relative error calculated on the S-parameter matrices $\overline{\overline{S}}_N$ and $\overline{\overline{S}}_{N-1}$ from the $N^{\textnormal{th}}$ and $(N-1)^{\textnormal{th}}$ iterations using the Frobenius norm as the error metric
 \begin{equation}
-\text{error}=\text{max column norm} \left( \overline{\overline{S}}_N^{-1} \left(\overline{\overline{S}}_N-\overline{\overline{S}}_{N-1} \right) \right)
+\text{error}=\frac{\|\overline{\overline{S}}_N-\overline{\overline{S}}_{N-1}\|}{\|\overline{\overline{S}}\|}
 \end{equation}
 in the method \texttt{ResultDatabase::calculate\_maxRelativeError}.  See "OpenParEM3D\_Users\_Manual.pdf" for a discussion on how to set up convergence using these two metrics.
 

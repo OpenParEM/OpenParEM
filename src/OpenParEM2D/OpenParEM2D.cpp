@@ -55,7 +55,7 @@ using namespace std;
 using namespace mfem;
 
 int version_major=2;
-int version_minor=1;
+int version_minor=2;
 int version_patch=0;
 
 extern "C" int eigensolve (struct projectData *, int, double, int, int, PetscInt *, int, PetscInt *, double **, double **, int *);
