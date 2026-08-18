@@ -1,0 +1,134 @@
+#OpenParEMports 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D/tutorials/monopole_antenna/monopole_antenna.FCStd
+EndFile
+
+Path
+   name=port
+   point=(4.596323321948148e-19,0.00207,-0.02)
+   point=(0.0010350000000000003,0.0017926725858339997,-0.02)
+   point=(0.0017926725858340002,0.0010349999999999995,-0.02)
+   point=(0.00207,-4.596323321948148e-19,-0.02)
+   point=(0.0017926725858339997,-0.0010350000000000003,-0.02)
+   point=(0.0010349999999999995,-0.0017926725858340002,-0.02)
+   point=(-4.596323321948148e-19,-0.00207,-0.02)
+   point=(-0.0010350000000000003,-0.0017926725858339997,-0.02)
+   point=(-0.0017926725858340002,-0.0010349999999999995,-0.02)
+   point=(-0.00207,4.596323321948148e-19,-0.02)
+   point=(-0.0017926725858339997,0.0010350000000000003,-0.02)
+   point=(-0.0010349999999999995,0.0017926725858340002,-0.02)
+   closed=true
+EndPath
+
+Path
+   name=v
+   point=(0.0,0.00207,-0.02)
+   point=(0.0,0.0006,-0.02)
+   closed=false
+EndPath
+
+Path
+   name=front
+   point=(-0.1,-0.1,-0.1)
+   point=(0.1,-0.1,-0.1)
+   point=(0.1,-0.09999999999999996,0.1)
+   point=(-0.1,-0.09999999999999996,0.1)
+   closed=true
+EndPath
+
+Path
+   name=back
+   point=(-0.1,0.1,-0.1)
+   point=(0.1,0.1,-0.1)
+   point=(0.1,0.10000000000000005,0.1)
+   point=(-0.1,0.10000000000000005,0.1)
+   closed=true
+EndPath
+
+Path
+   name=right
+   point=(0.1,-0.1,-0.1)
+   point=(0.1,0.1,-0.1)
+   point=(0.1,0.1,0.1)
+   point=(0.1,-0.1,0.1)
+   closed=true
+EndPath
+
+Path
+   name=left
+   point=(-0.1,-0.10000000000000002,-0.1)
+   point=(-0.1,0.10000000000000005,-0.1)
+   point=(-0.1,0.10000000000000005,0.1)
+   point=(-0.1,-0.10000000000000002,0.1)
+   closed=true
+EndPath
+
+Path
+   name=top
+   point=(-0.1,-0.10000000000000002,0.1)
+   point=(0.1,-0.10000000000000002,0.1)
+   point=(0.1,0.10000000000000005,0.1)
+   point=(-0.1,0.10000000000000005,0.1)
+   closed=true
+EndPath
+
+Path
+   name=bottom
+   point=(-0.1,-0.1,-0.1)
+   point=(0.1,-0.1,-0.1)
+   point=(0.1,0.1,-0.1)
+   point=(-0.1,0.1,-0.1)
+   closed=true
+EndPath
+
+Boundary
+   name=front
+   type=radiation
+   path=+front
+EndBoundary
+
+Boundary
+   name=back
+   type=radiation
+   path=+back
+EndBoundary
+
+Boundary
+   name=left
+   type=radiation
+   path=+left
+EndBoundary
+
+Boundary
+   name=right
+   type=radiation
+   path=+right
+EndBoundary
+
+Boundary
+   name=top
+   type=radiation
+   path=+top
+EndBoundary
+
+Boundary
+   name=bottom
+   type=radiation
+   path=+bottom
+EndBoundary
+
+Port
+   name=in
+   path=+port
+   impedance_definition=PV
+   impedance_calculation=modal
+   Mode
+      Sport=1
+      IntegrationPath
+         type=voltage
+         path=+v
+      EndIntegrationPath
+   EndMode
+EndPort
+

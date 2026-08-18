@@ -1,0 +1,27 @@
+#OpenParEM3Dproject 1.0
+project.save.fields            true // false
+mesh.file                      refined_monopole_antenna.msh // monopole_antenna.msh
+mesh.refinement.fraction       0.001
+mesh.quality.limit             1e4
+mesh.save.refined              false // true
+mesh.order                     4
+port.definition.file           monopole_antenna_ports.txt
+materials.global.path          ./
+materials.global.name          //global_materials.txt
+materials.local.path           ./ 
+materials.local.name           local_materials.txt
+refinement.frequency           none // plan
+refinement.iteration.min       5
+refinement.iteration.max       40
+refinement.required.passes     1
+refinement.relative.tolerance  0.01
+refinement.absolute.tolerance  1e-06
+refinement.variable            S
+//frequency.plan.point.refine    10e9
+//frequency.plan.linear          1e9,10e9,0.1e9
+frequency.plan.point           4.75e9
+reference.impedance            0
+antenna.plot.3D.pattern        q=G
+antenna.plot.2D.pattern        q1=G,plane=xy,latitude=15
+antenna.plot.2D.pattern        q1=G,plane=xz,rotation=180
+
