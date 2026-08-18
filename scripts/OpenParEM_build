@@ -4,6 +4,123 @@
 
 #ToDo: may need to set the environment variable QT_QPA_PLATFORM=xcb to force X11 and avoid issues with Wayland
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+DOWNLOAD_DIR="../external_packages/downloads"
+
+#----------------------------------------------------
+# GNU keyring for verifying GNU packages
+#----------------------------------------------------
+
+# Downloaded from:
+# wget https://ftp.gnu.org/gnu/gnu-keyring.gpg
+
+# Stored as gnu-keyring.gpg in OpenParEM/scripts
+GNU_KEYRING="$SCRIPT_DIR/gnu-keyring.gpg"
+
+#----------------------------------------------------
+# Additional keys
+#----------------------------------------------------
+
+MADLER_KEYRING="$SCRIPT_DIR/madler-keyring.gpg"
+
+#----------------------------------------------------
+# download required packages
+#----------------------------------------------------
+
+DOWNLOAD_DIR="../external_packages/downloads"
+
+download_package_and_verify_sha ()
+{
+    PACKAGE="$1"
+    URL="$2"
+    EXPECTED_SHA256="$3"
+
+    FILE="$DOWNLOAD_DIR/$PACKAGE"
+
+    if [ ! -f "$FILE" ]; then
+        echo "Downloading $PACKAGE ..."
+        wget -O "$FILE" "$URL" || return 1
+    fi
+
+    echo "Verifying SHA-256 for $PACKAGE ..."
+
+    ACTUAL_SHA256=$(sha256sum "$FILE" | awk '{print $1}')
+
+    if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+        echo "ERROR: SHA-256 mismatch for $PACKAGE"
+        echo "Expected: $EXPECTED_SHA256"
+        echo "Actual:   $ACTUAL_SHA256"
+        return 1
+    fi
+
+    echo "SHA-256 OK: $PACKAGE"
+}
+
+download_and_verify_sig ()
+{
+    PACKAGE="$1"
+    URL="$2"
+    SIG_SUFFIX="${3:-sig}"
+    KEYRING="$4"
+
+    FILE="$DOWNLOAD_DIR/$PACKAGE"
+    SIG="$FILE.$SIG_SUFFIX"
+
+    if [ ! -f "$FILE" ]; then
+        echo "Downloading $PACKAGE ..."
+        wget -O "$FILE" "$URL" || return 1
+    fi
+
+    if [ ! -f "$SIG" ]; then
+        echo "Downloading $PACKAGE.$SIG_SUFFIX ..."
+        wget -O "$SIG" "${URL}.$SIG_SUFFIX" || return 1
+    fi
+
+    echo "Verifying $PACKAGE ..."
+    gpgv --keyring "$KEYRING" "$SIG" "$FILE" || return 1
+
+    echo "Signature OK: $PACKAGE"
+}
+
+
+m4="m4-1.4.19.tar.gz"
+download_and_verify_sig "$m4" "https://ftp.gnu.org/gnu/m4/$m4" "sig" "$GNU_KEYRING" || exit 1
+
+bison="bison-3.8.tar.gz"
+download_and_verify_sig "$bison" "https://ftp.gnu.org/gnu/bison/$bison" "sig" "$GNU_KEYRING" || exit 1
+
+zlib="zlib-1.3.1.tar.gz"
+download_and_verify_sig "$zlib" "https://github.com/madler/zlib/releases/download/v1.3.1/$zlib" "asc" "$MADLER_KEYRING" || exit 1
+
+flex="flex-2.6.4.tar.gz"
+flex_sha256="e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995"
+download_package_and_verify_sha "$flex" "https://github.com/westes/flex/releases/download/v2.6.4/$flex" "$flex_sha256" || exit 1
+
+
+
+exit 0
+
+hwloc="hwloc-2.11.2.tar.gz"
+download_and_verify_sig "$hwloc" "https://ftp.gnu.org/gnu/hwloc/$hwloc" || exit 1
+
+libevent="libevent-2.1.12-stable.tar.gz"
+download_and_verify_sig "$libevent" "https://ftp.gnu.org/gnu/libevent/$libevent" || exit 1
+
+pmix="pmix-5.0.7.tar.gz"
+download_and_verify_sig "$pmix" "https://ftp.gnu.org/gnu/pmix/$pmix" || exit 1
+
+prrte="prrte-3.0.9.tar.gz"
+download_and_verify_sig "$prrte" "https://ftp.gnu.org/gnu/prrte/$prrte" || exit 1
+
+
+
+#download_package \
+#    "qt-everywhere-src-6.8.3.tar.xz" \
+#    "https://download.qt.io/official_releases/qt/6.8/6.8.3/single/qt-everywhere-src-6.8.3.tar.xz" \
+#    "cdd3a69967208276bb01af7ace7dba0ba53e679f886a4cbe624225c60fb73f2c" \
+#    || exit 1
+
+
 
 #----------------------------------------------------
 # downloaded packages included with this distribution
@@ -16,14 +133,14 @@ gcc_version="gcc-13.3.0"
 # having to install them with root priviledges, they are compiled here.
 
 # www.gnu.org
-m4="m4-1.4.19.tar.gz"
-bison="bison-3.8.tar.gz"
-zlib="zlib-1.3.1.tar.gz"
-flex="flex-2.6.4.tar.gz"
-hwloc="hwloc-2.11.2.tar.gz"
-libevent="libevent-2.1.12-stable.tar.gz"
-pmix="pmix-5.0.7.tar.gz"
-prrte="prrte-3.0.9.tar.gz"
+#m4="m4-1.4.19.tar.gz"
+#bison="bison-3.8.tar.gz"
+#zlib="zlib-1.3.1.tar.gz"
+#flex="flex-2.6.4.tar.gz"
+#hwloc="hwloc-2.11.2.tar.gz"
+#libevent="libevent-2.1.12-stable.tar.gz"
+#pmix="pmix-5.0.7.tar.gz"
+#prrte="prrte-3.0.9.tar.gz"
 
 # www.open-mpi.org
 openmpi="openmpi-4.1.8.tar.gz"
