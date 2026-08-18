@@ -1,0 +1,7 @@
+# ResultDatabase::save_as_test
+single_1_0_result,12000000000,magS(dB),1,1,lessthan,-50
+single_1_2_result,12000000000,magS(dB),2,1,equal,-0.0166455039576875,5e-02
+single_1_3_result,12000000000,argS(deg),2,1,equal,-113.049336027276,1e-03
+single_1_4_result,12000000000,magS(dB),1,2,equal,-0.0166455039576875,5e-02
+single_1_5_result,12000000000,argS(deg),1,2,equal,-113.049336027276,1e-03
+single_1_6_result,12000000000,magS(dB),2,2,lessthan,-50

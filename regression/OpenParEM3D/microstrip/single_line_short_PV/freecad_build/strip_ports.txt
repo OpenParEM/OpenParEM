@@ -1,0 +1,92 @@
+#OpenParEMports 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D_Sparam_experiment/regression/microstrip/single_line_short_PV/strip.FCStd
+EndFile
+
+Path
+   name=port1
+   point=(-0.009,0.0,0.003)
+   point=(0.009,0.0,0.003)
+   point=(0.009,0.006635,0.003)
+   point=(-0.009,0.006635,0.003)
+   closed=true
+EndPath
+
+Path
+   name=i1
+   point=(-0.0005,0.000635,0.003)
+   point=(0.0005,0.000635,0.003)
+   point=(0.0005,0.0009350000000000001,0.003)
+   point=(-0.0005,0.0009350000000000001,0.003)
+   closed=true
+EndPath
+
+Path
+   name=v1
+   point=(0.0,0.0,0.003)
+   point=(0.0,0.000635,0.003)
+   closed=false
+EndPath
+
+Path
+   name=port2
+   point=(-0.009,-0.0,0.0)
+   point=(0.009,0.0,0.0)
+   point=(0.009,0.006635,0.0)
+   point=(-0.009,0.006635,0.0)
+   closed=true
+EndPath
+
+Path
+   name=i2
+   point=(-0.0005,0.000635,0.0)
+   point=(0.0005,0.000635,0.0)
+   point=(0.0005,0.0009350000000000001,0.0)
+   point=(-0.0005,0.0009350000000000001,0.0)
+   closed=true
+EndPath
+
+Path
+   name=v2
+   point=(0.0,0.0,0.0)
+   point=(0.0,0.000635,0.0)
+   closed=false
+EndPath
+
+Port
+   name=1
+   path=+port1
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=1
+      IntegrationPath
+         type=voltage
+         path=+v1
+      EndIntegrationPath
+      IntegrationPath
+         type=current
+         path=+i1
+      EndIntegrationPath
+   EndLine
+EndPort
+
+Port
+   name=2
+   path=+port2
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=2
+      IntegrationPath
+         type=voltage
+         path=+v2
+      EndIntegrationPath
+      IntegrationPath
+         type=current
+         path=+i2
+      EndIntegrationPath
+   EndLine
+EndPort
+

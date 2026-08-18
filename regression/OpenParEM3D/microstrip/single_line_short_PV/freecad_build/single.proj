@@ -1,0 +1,47 @@
+#OpenParEM3Dproject 1.0
+
+// Regression numbers for alpha and beta generated with the project at
+// OpenParEM2D/regression/single_microstrip.  Some differences are expected
+// since the OpenParEM2D results are perturbational.
+
+// For very short transmission lines like this, if the section is too short
+// then it is always overmeshed.  For this example, 1 mm is always over-meshed
+// for both p and h.
+
+project.save.fields               false
+mesh.file                         strip.msh
+mesh.quality.limit                1e6
+//mesh.refinement.fraction          0.025
+fem.order                         2 
+port.definition.file              strip_ports.txt
+materials.global.path             ../../../../OpenParEM2D/
+materials.global.name             global_materials.txt
+materials.local.path              ./
+materials.local.name              local_materials.txt
+materials.default.boundary        copper
+refinement.frequency              high
+refinement.iteration.min          1
+refinement.iteration.max          50
+refinement.required.passes        1
+refinement.relative.tolerance     0.001
+refinement.absolute.tolerance     1e-7
+refinement.variable               SandH
+frequency.plan.point              12e9
+reference.impedance               0
+touchstone.format                 DB
+solution.temperature              20
+solution.2D.tolerance             1e-10
+solution.3D.tolerance             1e-14
+solution.iteration.limit          10000
+solution.modes.buffer             0
+solution.shift.invert             true
+output.show.refining.mesh         false
+output.show.postprocessing        false
+output.show.iterations            false
+output.show.license               false
+debug.tempfiles.keep              false
+debug.save.port.fields            false
+debug.show.impedance.details      false
+debug.skip.forced.reciprocity     false
+debug.skip.mixed.conversion       false
+test.create.cases                 false
