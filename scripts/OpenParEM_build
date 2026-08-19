@@ -22,6 +22,8 @@ GNU_KEYRING="$SCRIPT_DIR/gnu-keyring.gpg"
 #----------------------------------------------------
 
 MADLER_KEYRING="$SCRIPT_DIR/madler-keyring.gpg"
+AKHUZHIN_KEYRING="$SCRIPT_DIR/akhuzhin-keyring.gpg"
+WLEMBERG_KEYRING="$SCRIPT_DIR/wlemberg-keyring.gpg"
 
 #----------------------------------------------------
 # download required packages
@@ -30,6 +32,34 @@ MADLER_KEYRING="$SCRIPT_DIR/madler-keyring.gpg"
 DOWNLOAD_DIR="../external_packages/downloads"
 
 download_package_and_verify_sha ()
+{
+    PACKAGE="$1"
+    URL="$2"
+    EXPECTED_SHA="$3"
+
+    FILE="$DOWNLOAD_DIR/$PACKAGE"
+
+    if [ ! -f "$FILE" ]; then
+        echo "Downloading $PACKAGE ..."
+        wget -O "$FILE" "$URL" || return 1
+    fi
+
+    echo "Verifying SHA for $PACKAGE ..."
+
+    ACTUAL_SHA=$(shasum "$FILE" | awk '{print $1}')
+
+    if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+        echo "ERROR: SHA mismatch for $PACKAGE"
+        echo "Expected: $EXPECTED_SHA"
+        echo "Actual:   $ACTUAL_SHA"
+        return 1
+    fi
+
+    echo "SHA OK: $PACKAGE"
+    echo ""
+}
+
+download_package_and_verify_sha256 ()
 {
     PACKAGE="$1"
     URL="$2"
@@ -54,73 +84,123 @@ download_package_and_verify_sha ()
     fi
 
     echo "SHA-256 OK: $PACKAGE"
+    echo ""
 }
 
-download_and_verify_sig ()
+download_package_and_verify_sig ()
 {
     PACKAGE="$1"
     URL="$2"
     SIG_SUFFIX="${3:-sig}"
     KEYRING="$4"
+    SITE_SUFFIX="$5"
 
     FILE="$DOWNLOAD_DIR/$PACKAGE"
     SIG="$FILE.$SIG_SUFFIX"
 
     if [ ! -f "$FILE" ]; then
         echo "Downloading $PACKAGE ..."
-        wget -O "$FILE" "$URL" || return 1
+        wget -O "$FILE" "${URL}$SITE_SUFFIX" || return 1
     fi
+
+    echo "List of keys for $KEYRING:"
+    gpg --no-default-keyring \
+        --keyring "$KEYRING" \
+        --list-keys
 
     if [ ! -f "$SIG" ]; then
         echo "Downloading $PACKAGE.$SIG_SUFFIX ..."
-        wget -O "$SIG" "${URL}.$SIG_SUFFIX" || return 1
+        wget -O "$SIG" "${URL}.$SIG_SUFFIX$SITE_SUFFIX" || return 1
     fi
 
     echo "Verifying $PACKAGE ..."
     gpgv --keyring "$KEYRING" "$SIG" "$FILE" || return 1
 
     echo "Signature OK: $PACKAGE"
+    echo ""
 }
 
 
 m4="m4-1.4.19.tar.gz"
-download_and_verify_sig "$m4" "https://ftp.gnu.org/gnu/m4/$m4" "sig" "$GNU_KEYRING" || exit 1
+download_package_and_verify_sig "$m4" "https://ftp.gnu.org/gnu/m4/$m4" "sig" "$GNU_KEYRING" "" || exit 1
 
 bison="bison-3.8.tar.gz"
-download_and_verify_sig "$bison" "https://ftp.gnu.org/gnu/bison/$bison" "sig" "$GNU_KEYRING" || exit 1
+download_package_and_verify_sig "$bison" "https://ftp.gnu.org/gnu/bison/$bison" "sig" "$GNU_KEYRING" "" || exit 1
 
 zlib="zlib-1.3.1.tar.gz"
-download_and_verify_sig "$zlib" "https://github.com/madler/zlib/releases/download/v1.3.1/$zlib" "asc" "$MADLER_KEYRING" || exit 1
+download_package_and_verify_sig "$zlib" "https://github.com/madler/zlib/releases/download/v1.3.1/$zlib" "asc" "$MADLER_KEYRING" "" || exit 1
 
 flex="flex-2.6.4.tar.gz"
 flex_sha256="e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995"
-download_package_and_verify_sha "$flex" "https://github.com/westes/flex/releases/download/v2.6.4/$flex" "$flex_sha256" || exit 1
+download_package_and_verify_sha256 "$flex" "https://github.com/westes/flex/releases/download/v2.6.4/$flex" "$flex_sha256" || exit 1
 
+hwloc="hwloc-2.13.0.tar.gz"
+hwloc_sha256="1514a5253f0a5c23bc006d3bdd30a6f6125c9a8dc9b5fa4984913d1fff45315d"
+download_package_and_verify_sha256 "$hwloc" "https://www.open-mpi.org/software/hwloc/v2.13/downloads/$hwloc" "$hwloc_sha256" || exit 1
 
+libevent="libevent-2.1.13-stable.tar.gz"
+libevent_sha256="f7e9383b8c0baa81b687e5b5eecc01beefaf1b19b64151d95ed61647fe7a315c"
+download_package_and_verify_sha256 "$libevent" "https://github.com/libevent/libevent/releases/download/release-2.1.13-stable/$libevent" "$libevent_sha256" || exit 1
+
+pmix="pmix-5.0.11.tar.gz"
+pmix_sha="a46605489e6f24865bb61efaf02b6730bc9f5e00"
+download_package_and_verify_sha "$pmix" "https://github.com/openpmix/openpmix/releases/download/v5.0.11/$pmix" "$pmix_sha" || exit 1
+
+prrte="prrte-3.0.14.tar.gz"
+prrte_sha="b31c81822ded11d8fb7d339ccc40042f21ef29d7"
+download_package_and_verify_sha "$prrte" "https://github.com/openpmix/prrte/releases/download/v3.0.14/$prrte" "$prrte_sha" || exit 1
+
+openmpi="openmpi-4.1.8.tar.gz"
+openmpi_sha256="fb41086bbed9300baa2f3d7572491facfe5257412fa524ec5a396aa9101d5c62"
+download_package_and_verify_sha256 "$openmpi" "https://download.open-mpi.org/release/open-mpi/v4.1/$openmpi" "$openmpi_sha256" || exit 1
+
+mpich="mpich-4.3.2.tar.gz"
+# self-generated sha256 from a 3-3-2026 download
+mpich_sha256="47d774587a7156a53752218c811c852e70ac44db9c502dc3f399b4cb817e3818"
+download_package_and_verify_sha256 "$mpich" "https://www.mpich.org/static/downloads/4.3.2/$mpich" "$mpich_sha256" || exit 1
+
+hypre_root="v3.1.0.tar.gz"
+hypre="hypre-$hypre_root"
+# self-generated from 8-19-2026 download
+hypre_sha256="a6879ae9375d95c26afd97141d61e7a8092807333bf40cd180b385aed7351b2d"
+download_package_and_verify_sha256 "$hypre" "https://github.com/hypre-space/hypre/archive/refs/tags/$hypre_root" "$hypre_sha256" || exit 1
+
+petsc="petsc-3.25.4.tar.gz"
+# self-generated from 8-19-2026 download
+petsc_sha256="12c990fb39a5764ac8311211d09c01ed80fb983136c75bf7b558312b2509dbbd"
+download_package_and_verify_sha256 "$petsc" "https://web.cels.anl.gov/projects/petsc/download/release-snapshots/$petsc" "$petsc_sha256" || exit 1
+
+mfem_root="v4.9.tar.gz"
+mfem="mfem-$mfem_root"
+# self-generated from 8-19-2026 download
+mfem_sha256="ea3ac13e182c09f05b414b03a9bef7a4da99d45d67ee409112b8f11058447a7c"
+download_package_and_verify_sha256 "$mfem" "https://github.com/mfem/mfem/archive/refs/tags/$mfem_root" "$mfem_sha256" || exit 1
+
+freetype="freetype-2.14.3.tar.gz"
+download_package_and_verify_sig "$freetype" "https://sourceforge.net/projects/freetype/files/freetype2/2.14.3/$freetype" "sig" "$WLEMBERG_KEYRING" "/download" || exit 1
+
+tcl="tcl9.0.4-src.tar.gz"
+# self-generated from 8-19-2026 download
+tcl_sha256="d0aed49230bc02a65c1e0229e65f34590a4b037ec40d546f32573b467f7551ea"
+download_package_and_verify_sha256 "$tcl" "http://prdownloads.sourceforge.net/tcl/$tcl" "$tcl_sha256" || exit 1
+
+tk="tk9.0.4-src.tar.gz"
+# self-generated from 8-19-2026 download
+tk_sha256="d7a146d2917eb8b5cc95276dbf0e3d03c7464d2b19c1675357857c989301dbb4"
+download_package_and_verify_sha256 "$tk" "http://prdownloads.sourceforge.net/tcl/$tk" "$tk_sha256" || exit 1
+
+occt_base="V7_9_3.tar.gz"
+occt="occt-$occt_base"
+# self-generated from 8-19-2026 download
+occt_sha256="5ecf094ec6b12d5413dfb851d8c3590c354058aee556e32e408bdfbf8c357d57"
+download_package_and_verify_sha256 "$occt" "https://github.com/Open-Cascade-SAS/OCCT/archive/refs/tags/$occt_base" "$occt_sha256" || exit 1
+
+gmsh="gmsh-4.15.2-source.tgz"
+# self-generated from 8-19-2026 download
+gmsh_sha256="be3f66f225d27ba9fa014f07e83169285da8a051b0e8ab7103d88066b39bdd3e"
+download_package_and_verify_sha256 "$gmsh" "https://gmsh.info/src/$gmsh" "$gmsh_sha256" || exit 1
 
 exit 0
-
-hwloc="hwloc-2.11.2.tar.gz"
-download_and_verify_sig "$hwloc" "https://ftp.gnu.org/gnu/hwloc/$hwloc" || exit 1
-
-libevent="libevent-2.1.12-stable.tar.gz"
-download_and_verify_sig "$libevent" "https://ftp.gnu.org/gnu/libevent/$libevent" || exit 1
-
-pmix="pmix-5.0.7.tar.gz"
-download_and_verify_sig "$pmix" "https://ftp.gnu.org/gnu/pmix/$pmix" || exit 1
-
-prrte="prrte-3.0.9.tar.gz"
-download_and_verify_sig "$prrte" "https://ftp.gnu.org/gnu/prrte/$prrte" || exit 1
-
-
-
-#download_package \
-#    "qt-everywhere-src-6.8.3.tar.xz" \
-#    "https://download.qt.io/official_releases/qt/6.8/6.8.3/single/qt-everywhere-src-6.8.3.tar.xz" \
-#    "cdd3a69967208276bb01af7ace7dba0ba53e679f886a4cbe624225c60fb73f2c" \
-#    || exit 1
-
-
 
 #----------------------------------------------------
 # downloaded packages included with this distribution
@@ -143,38 +223,38 @@ gcc_version="gcc-13.3.0"
 #prrte="prrte-3.0.9.tar.gz"
 
 # www.open-mpi.org
-openmpi="openmpi-4.1.8.tar.gz"
+#openmpi="openmpi-4.1.8.tar.gz"
 
 # www.mpich.org
-mpich="mpich-4.3.2.tar.gz"
+#mpich="mpich-4.3.2.tar.gz"
 
 # Compile HYPRE separately because PETSc would compile it for complex, which
 # is incompatible with MFEM.
 # https://github.com/hypre-space/hypre
-hypre="hypre-2.32.0.tar.gz"
+#hypre="hypre-2.32.0.tar.gz"
 
 # https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/
-petsc="petsc-3.23.0.tar.gz"
+#petsc="petsc-3.23.0.tar.gz"
 
 # Compile MFEM separately from PETSc to maintain a little more flexibility
 # in using non-released versions of MFEM, if needed.
 # www.mfem.org
-mfem="mfem-4.8.tgz"
+#mfem="mfem-4.8.tgz"
 
 # packages for OpenParEMg
 
 # https://freetype.org
-freetype="freetype-2.13.3.tar.gz"
+#freetype="freetype-2.13.3.tar.gz"
 
 # https://www.tcl-lang.org
-tcl="tcl8.6.16-src.tar.gz"
-tk="tk8.6.16-src.tar.gz"
+#tcl="tcl8.6.16-src.tar.gz"
+#tk="tk8.6.16-src.tar.gz"
 
 #https://dev.opencascade.org/release
-occt="OCCT-7_9_1.tar.gz"
+#occt="OCCT-7_9_1.tar.gz"
 
 #https://gmsh.info/
-gmsh="gmsh-4.14.0-source.tgz"
+#gmsh="gmsh-4.14.0-source.tgz"
 
 #----------------------------------------------------
 # packages downloaded by petsc
