@@ -5,7 +5,7 @@
 #ToDo: may need to set the environment variable QT_QPA_PLATFORM=xcb to force X11 and avoid issues with Wayland
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-DOWNLOAD_DIR="../external_packages/downloads"
+DOWNLOAD_DIR="../external_packages"
 
 #----------------------------------------------------
 # GNU keyring for verifying GNU packages
@@ -28,8 +28,6 @@ WLEMBERG_KEYRING="$SCRIPT_DIR/wlemberg-keyring.gpg"
 #----------------------------------------------------
 # download required packages
 #----------------------------------------------------
-
-DOWNLOAD_DIR="../external_packages/downloads"
 
 download_package_and_verify_sha ()
 {
@@ -103,10 +101,10 @@ download_package_and_verify_sig ()
         wget -O "$FILE" "${URL}$SITE_SUFFIX" || return 1
     fi
 
-    echo "List of keys for $KEYRING:"
-    gpg --no-default-keyring \
-        --keyring "$KEYRING" \
-        --list-keys
+    #echo "List of keys for $KEYRING:"
+    #gpg --no-default-keyring \
+    #    --keyring "$KEYRING" \
+    #    --list-keys
 
     if [ ! -f "$SIG" ]; then
         echo "Downloading $PACKAGE.$SIG_SUFFIX ..."
@@ -120,141 +118,11 @@ download_package_and_verify_sig ()
     echo ""
 }
 
-
-m4="m4-1.4.19.tar.gz"
-download_package_and_verify_sig "$m4" "https://ftp.gnu.org/gnu/m4/$m4" "sig" "$GNU_KEYRING" "" || exit 1
-
-bison="bison-3.8.tar.gz"
-download_package_and_verify_sig "$bison" "https://ftp.gnu.org/gnu/bison/$bison" "sig" "$GNU_KEYRING" "" || exit 1
-
-zlib="zlib-1.3.1.tar.gz"
-download_package_and_verify_sig "$zlib" "https://github.com/madler/zlib/releases/download/v1.3.1/$zlib" "asc" "$MADLER_KEYRING" "" || exit 1
-
-flex="flex-2.6.4.tar.gz"
-flex_sha256="e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995"
-download_package_and_verify_sha256 "$flex" "https://github.com/westes/flex/releases/download/v2.6.4/$flex" "$flex_sha256" || exit 1
-
-hwloc="hwloc-2.13.0.tar.gz"
-hwloc_sha256="1514a5253f0a5c23bc006d3bdd30a6f6125c9a8dc9b5fa4984913d1fff45315d"
-download_package_and_verify_sha256 "$hwloc" "https://www.open-mpi.org/software/hwloc/v2.13/downloads/$hwloc" "$hwloc_sha256" || exit 1
-
-libevent="libevent-2.1.13-stable.tar.gz"
-libevent_sha256="f7e9383b8c0baa81b687e5b5eecc01beefaf1b19b64151d95ed61647fe7a315c"
-download_package_and_verify_sha256 "$libevent" "https://github.com/libevent/libevent/releases/download/release-2.1.13-stable/$libevent" "$libevent_sha256" || exit 1
-
-pmix="pmix-5.0.11.tar.gz"
-pmix_sha="a46605489e6f24865bb61efaf02b6730bc9f5e00"
-download_package_and_verify_sha "$pmix" "https://github.com/openpmix/openpmix/releases/download/v5.0.11/$pmix" "$pmix_sha" || exit 1
-
-prrte="prrte-3.0.14.tar.gz"
-prrte_sha="b31c81822ded11d8fb7d339ccc40042f21ef29d7"
-download_package_and_verify_sha "$prrte" "https://github.com/openpmix/prrte/releases/download/v3.0.14/$prrte" "$prrte_sha" || exit 1
-
-openmpi="openmpi-4.1.8.tar.gz"
-openmpi_sha256="fb41086bbed9300baa2f3d7572491facfe5257412fa524ec5a396aa9101d5c62"
-download_package_and_verify_sha256 "$openmpi" "https://download.open-mpi.org/release/open-mpi/v4.1/$openmpi" "$openmpi_sha256" || exit 1
-
-mpich="mpich-4.3.2.tar.gz"
-# self-generated sha256 from a 3-3-2026 download
-mpich_sha256="47d774587a7156a53752218c811c852e70ac44db9c502dc3f399b4cb817e3818"
-download_package_and_verify_sha256 "$mpich" "https://www.mpich.org/static/downloads/4.3.2/$mpich" "$mpich_sha256" || exit 1
-
-hypre_root="v3.1.0.tar.gz"
-hypre="hypre-$hypre_root"
-# self-generated from 8-19-2026 download
-hypre_sha256="a6879ae9375d95c26afd97141d61e7a8092807333bf40cd180b385aed7351b2d"
-download_package_and_verify_sha256 "$hypre" "https://github.com/hypre-space/hypre/archive/refs/tags/$hypre_root" "$hypre_sha256" || exit 1
-
-petsc="petsc-3.25.4.tar.gz"
-# self-generated from 8-19-2026 download
-petsc_sha256="12c990fb39a5764ac8311211d09c01ed80fb983136c75bf7b558312b2509dbbd"
-download_package_and_verify_sha256 "$petsc" "https://web.cels.anl.gov/projects/petsc/download/release-snapshots/$petsc" "$petsc_sha256" || exit 1
-
-mfem_root="v4.9.tar.gz"
-mfem="mfem-$mfem_root"
-# self-generated from 8-19-2026 download
-mfem_sha256="ea3ac13e182c09f05b414b03a9bef7a4da99d45d67ee409112b8f11058447a7c"
-download_package_and_verify_sha256 "$mfem" "https://github.com/mfem/mfem/archive/refs/tags/$mfem_root" "$mfem_sha256" || exit 1
-
-freetype="freetype-2.14.3.tar.gz"
-download_package_and_verify_sig "$freetype" "https://sourceforge.net/projects/freetype/files/freetype2/2.14.3/$freetype" "sig" "$WLEMBERG_KEYRING" "/download" || exit 1
-
-tcl="tcl9.0.4-src.tar.gz"
-# self-generated from 8-19-2026 download
-tcl_sha256="d0aed49230bc02a65c1e0229e65f34590a4b037ec40d546f32573b467f7551ea"
-download_package_and_verify_sha256 "$tcl" "http://prdownloads.sourceforge.net/tcl/$tcl" "$tcl_sha256" || exit 1
-
-tk="tk9.0.4-src.tar.gz"
-# self-generated from 8-19-2026 download
-tk_sha256="d7a146d2917eb8b5cc95276dbf0e3d03c7464d2b19c1675357857c989301dbb4"
-download_package_and_verify_sha256 "$tk" "http://prdownloads.sourceforge.net/tcl/$tk" "$tk_sha256" || exit 1
-
-occt_base="V7_9_3.tar.gz"
-occt="occt-$occt_base"
-# self-generated from 8-19-2026 download
-occt_sha256="5ecf094ec6b12d5413dfb851d8c3590c354058aee556e32e408bdfbf8c357d57"
-download_package_and_verify_sha256 "$occt" "https://github.com/Open-Cascade-SAS/OCCT/archive/refs/tags/$occt_base" "$occt_sha256" || exit 1
-
-gmsh="gmsh-4.15.2-source.tgz"
-# self-generated from 8-19-2026 download
-gmsh_sha256="be3f66f225d27ba9fa014f07e83169285da8a051b0e8ab7103d88066b39bdd3e"
-download_package_and_verify_sha256 "$gmsh" "https://gmsh.info/src/$gmsh" "$gmsh_sha256" || exit 1
-
-exit 0
-
 #----------------------------------------------------
-# downloaded packages included with this distribution
-#----------------------------------------------------
-
 # local gcc compile version for portable pre-compiled binaries
+#----------------------------------------------------
+
 gcc_version="gcc-13.3.0"
-
-# flex, bison, and Open MPI are not typically installed on Linux systems.  To avoid
-# having to install them with root priviledges, they are compiled here.
-
-# www.gnu.org
-#m4="m4-1.4.19.tar.gz"
-#bison="bison-3.8.tar.gz"
-#zlib="zlib-1.3.1.tar.gz"
-#flex="flex-2.6.4.tar.gz"
-#hwloc="hwloc-2.11.2.tar.gz"
-#libevent="libevent-2.1.12-stable.tar.gz"
-#pmix="pmix-5.0.7.tar.gz"
-#prrte="prrte-3.0.9.tar.gz"
-
-# www.open-mpi.org
-#openmpi="openmpi-4.1.8.tar.gz"
-
-# www.mpich.org
-#mpich="mpich-4.3.2.tar.gz"
-
-# Compile HYPRE separately because PETSc would compile it for complex, which
-# is incompatible with MFEM.
-# https://github.com/hypre-space/hypre
-#hypre="hypre-2.32.0.tar.gz"
-
-# https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/
-#petsc="petsc-3.23.0.tar.gz"
-
-# Compile MFEM separately from PETSc to maintain a little more flexibility
-# in using non-released versions of MFEM, if needed.
-# www.mfem.org
-#mfem="mfem-4.8.tgz"
-
-# packages for OpenParEMg
-
-# https://freetype.org
-#freetype="freetype-2.13.3.tar.gz"
-
-# https://www.tcl-lang.org
-#tcl="tcl8.6.16-src.tar.gz"
-#tk="tk8.6.16-src.tar.gz"
-
-#https://dev.opencascade.org/release
-#occt="OCCT-7_9_1.tar.gz"
-
-#https://gmsh.info/
-#gmsh="gmsh-4.14.0-source.tgz"
 
 #----------------------------------------------------
 # packages downloaded by petsc
@@ -267,6 +135,9 @@ scalapack="https://github.com/Reference-ScaLAPACK/scalapack/archive/v2.2.2.tar.g
 scotch="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.6/scotch-v7.0.6.tar.gz"
 cmake="https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6.tar.gz"
 
+# Compile HYPRE separately because PETSc would compile it for complex, which
+# is incompatible with MFEM.
+
 #----------------------------------------------------
 # packages to install
 #----------------------------------------------------
@@ -276,6 +147,7 @@ with_tcl=1
 with_tk=1
 with_occt=1
 with_gmsh=1
+with_qt=1
 with_m4=1
 with_bison=1
 with_zlib=1
@@ -368,6 +240,15 @@ unpack_and_enter() {
       fi
    fi
 
+   is_tarxz=0
+   if [ "$is_identified" = "0" ]; then
+      FILE_base=${FILE%.tar.xz}
+      if [ "$FILE_base" != "$FILE" ]; then
+         is_tarxz=1
+         is_identified=1
+      fi
+   fi
+
    is_tgz=0
    if [ "$is_identified" = "0" ]; then
       FILE_base=${FILE%.tgz}
@@ -412,14 +293,18 @@ unpack_and_enter() {
    fi
 
    # unpack
+#xxx
+echo "unpacking $FILE"
 
-   if [ "$is_targz" = "1" -o "$is_tgz" = "1" ]; then
+   if [ "$is_targz" = "1" -o "$is_tgz" = "1" -o "$is_tarxz" = "1" ]; then
       tar -xf "$FILE"
       if [ $? -ne 0 ]; then
          echo "ERROR: failure to unpack \"""$FILE""\""
          exit 1
       fi
    fi
+#xxx
+echo "done"
 
    if [ "$is_zip" = "1" ]; then
       unzip "$FILE"
@@ -634,6 +519,7 @@ for arg in "$@"; do
          with_tk=0
          with_occt=0
          with_gmsh=0
+         with_qt=0
          with_m4=0
          with_bison=0
          with_zlib=0
@@ -655,6 +541,7 @@ for arg in "$@"; do
          with_tk=1
          with_occt=1
          with_gmsh=1
+         with_qt=1
          with_m4=1
          with_bison=1
          with_zlib=1
@@ -712,6 +599,13 @@ for arg in "$@"; do
          gmsh=$value
       elif [ "$arg" = "--without-gmsh" ]; then
          with_gmsh=0
+      elif [ "$arg" = "--with-qt" ]; then
+         with_qt=1
+      elif [ "$keyword" = "--with-qt" ]; then
+         with_qt=1
+         qt=$value
+      elif [ "$arg" = "--without-qt" ]; then
+         with_qt=0
       elif [ "$arg" = "--with-m4" ]; then
          with_m4=1
       elif [ "$keyword" = "--with-m4" ]; then
@@ -873,6 +767,7 @@ if [ $print_help -eq 1 ]; then
    echo "  --with-tk[=file]         compile tk using the default distribution or the provided file"
    echo "  --with-occt[=file]       compile occt using the default distribution or the provided file"
    echo "  --with-gmsh[=file]       compile gmsh using the default distribution or the provided file"
+   echo "  --with-qt[=file]         compile qt using the default distribution or the provided file"
    echo "  --with-m4[=file]         compile m4 using the default distribution or the provided file"
    echo "  --without-m4             skip compiling m4"
    echo "  --with-bison[=file]      compile bison using the default distribution or the provided file"
@@ -939,21 +834,23 @@ fi
 
 # GUI options
 
-if [ "$with_gui" = "1" ]; then
-   with_freetype=1
-   with_tcl=1
-   with_tk=1
-   with_occt=1
-   with_gmsh=1
-fi
+#if [ "$with_gui" = "1" ]; then
+#   with_freetype=1
+#   with_tcl=1
+#   with_tk=1
+#   with_occt=1
+#   with_gmsh=1
+#   with_qt=1
+#fi
 
-if [ "$with_gui" = "0" ]; then
-   with_freetype=0
-   with_tcl=0
-   with_tk=0
-   with_occt=0
-   with_gmsh=0
-fi
+#if [ "$with_gui" = "0" ]; then
+#   with_freetype=0
+#   with_tcl=0
+#   with_tk=0
+#   with_occt=0
+#   with_gmsh=0
+#   with_qt=0
+#fi
 
 # show the setup
 
@@ -985,6 +882,12 @@ fi
       echo "with-gmsh=$with_gmsh using $gmsh"
    else
       echo "with-gmsh=$with_gmsh"
+   fi
+
+   if [ "$with_qt" = "1" ]; then
+      echo "with-qt=$with_qt using $qt"
+   else
+      echo "with-qt=$with_qt"
    fi
 
    if [ "$with_m4" = "1" ]; then
@@ -1176,6 +1079,102 @@ if [ "$clean_in_place" = "1" ]; then
    cd "$scripts_dir"
 fi
 
+echo "#----------------------------------------------------"
+echo "# download packages and verify"
+echo "#----------------------------------------------------"
+
+m4="m4-1.4.19.tar.gz"
+download_package_and_verify_sig "$m4" "https://ftp.gnu.org/gnu/m4/$m4" "sig" "$GNU_KEYRING" "" || exit 1
+
+bison="bison-3.8.tar.gz"
+download_package_and_verify_sig "$bison" "https://ftp.gnu.org/gnu/bison/$bison" "sig" "$GNU_KEYRING" "" || exit 1
+
+zlib="zlib-1.3.1.tar.gz"
+download_package_and_verify_sig "$zlib" "https://github.com/madler/zlib/releases/download/v1.3.1/$zlib" "asc" "$MADLER_KEYRING" "" || exit 1
+
+flex="flex-2.6.4.tar.gz"
+flex_sha256="e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995"
+download_package_and_verify_sha256 "$flex" "https://github.com/westes/flex/releases/download/v2.6.4/$flex" "$flex_sha256" || exit 1
+
+hwloc="hwloc-2.13.0.tar.gz"
+hwloc_sha256="1514a5253f0a5c23bc006d3bdd30a6f6125c9a8dc9b5fa4984913d1fff45315d"
+download_package_and_verify_sha256 "$hwloc" "https://www.open-mpi.org/software/hwloc/v2.13/downloads/$hwloc" "$hwloc_sha256" || exit 1
+
+libevent="libevent-2.1.13-stable.tar.gz"
+libevent_sha256="f7e9383b8c0baa81b687e5b5eecc01beefaf1b19b64151d95ed61647fe7a315c"
+download_package_and_verify_sha256 "$libevent" "https://github.com/libevent/libevent/releases/download/release-2.1.13-stable/$libevent" "$libevent_sha256" || exit 1
+
+pmix="pmix-5.0.11.tar.gz"
+pmix_sha="a46605489e6f24865bb61efaf02b6730bc9f5e00"
+download_package_and_verify_sha "$pmix" "https://github.com/openpmix/openpmix/releases/download/v5.0.11/$pmix" "$pmix_sha" || exit 1
+
+prrte="prrte-3.0.14.tar.gz"
+prrte_sha="b31c81822ded11d8fb7d339ccc40042f21ef29d7"
+download_package_and_verify_sha "$prrte" "https://github.com/openpmix/prrte/releases/download/v3.0.14/$prrte" "$prrte_sha" || exit 1
+
+openmpi="openmpi-4.1.8.tar.gz"
+openmpi_sha256="fb41086bbed9300baa2f3d7572491facfe5257412fa524ec5a396aa9101d5c62"
+download_package_and_verify_sha256 "$openmpi" "https://download.open-mpi.org/release/open-mpi/v4.1/$openmpi" "$openmpi_sha256" || exit 1
+
+mpich="mpich-4.3.2.tar.gz"
+# self-generated sha256 from a 3-3-2026 download
+mpich_sha256="47d774587a7156a53752218c811c852e70ac44db9c502dc3f399b4cb817e3818"
+download_package_and_verify_sha256 "$mpich" "https://www.mpich.org/static/downloads/4.3.2/$mpich" "$mpich_sha256" || exit 1
+
+hypre_root="3.1.0.tar.gz"
+hypre="hypre-$hypre_root"
+# self-generated from 8-19-2026 download
+hypre_sha256="a6879ae9375d95c26afd97141d61e7a8092807333bf40cd180b385aed7351b2d"
+download_package_and_verify_sha256 "$hypre" "https://github.com/hypre-space/hypre/archive/refs/tags/v$hypre_root" "$hypre_sha256" || exit 1
+if [ -f "$hypre_root" ]; then
+   mv ../$DOWNLOAD_DIR/$hypre_root ./$DOWNLOAD_DIR/$hypre
+fi
+
+petsc="petsc-3.25.4.tar.gz"
+# self-generated from 8-19-2026 download
+petsc_sha256="12c990fb39a5764ac8311211d09c01ed80fb983136c75bf7b558312b2509dbbd"
+download_package_and_verify_sha256 "$petsc" "https://web.cels.anl.gov/projects/petsc/download/release-snapshots/$petsc" "$petsc_sha256" || exit 1
+
+mfem_root="4.9.tar.gz"
+mfem="mfem-$mfem_root"
+# self-generated from 8-19-2026 download
+mfem_sha256="ea3ac13e182c09f05b414b03a9bef7a4da99d45d67ee409112b8f11058447a7c"
+download_package_and_verify_sha256 "$mfem" "https://github.com/mfem/mfem/archive/refs/tags/v$mfem_root" "$mfem_sha256" || exit 1
+if [ -f "$mfem_root" ]; then
+   mv ../$DOWNLOAD_DIR/$mfem_root ./$DOWNLOAD_DIR/$mfem
+fi
+
+freetype="freetype-2.14.3.tar.gz"
+download_package_and_verify_sig "$freetype" "https://sourceforge.net/projects/freetype/files/freetype2/2.14.3/$freetype" "sig" "$WLEMBERG_KEYRING" "/download" || exit 1
+
+tcl="tcl8.6.16-src.tar.gz"
+# self-generated from 8-19-2026 download
+tcl_sha256="91cb8fa61771c63c262efb553059b7c7ad6757afa5857af6265e4b0bdc2a14a5"
+download_package_and_verify_sha256 "$tcl" "http://prdownloads.sourceforge.net/tcl/$tcl" "$tcl_sha256" || exit 1
+
+tk="tk8.6.16-src.tar.gz"
+# self-generated from 8-19-2026 download
+tk_sha256="be9f94d3575d4b3099d84bc3c10de8994df2d7aa405208173c709cc404a7e5fe"
+download_package_and_verify_sha256 "$tk" "http://prdownloads.sourceforge.net/tcl/$tk" "$tk_sha256" || exit 1
+
+occt_root="7_9_3.tar.gz"
+occt="OCCT-$occt_root"
+# self-generated from 8-19-2026 download
+occt_sha256="5ecf094ec6b12d5413dfb851d8c3590c354058aee556e32e408bdfbf8c357d57"
+download_package_and_verify_sha256 "$occt" "https://github.com/Open-Cascade-SAS/OCCT/archive/refs/tags/V$occt_root" "$occt_sha256" || exit 1
+if [ -f "$occt_root" ]; then
+   mv ../$DOWNLOAD_DIR/$occt_root ./$DOWNLOAD_DIR/$occt
+fi
+
+gmsh="gmsh-4.15.2-source.tgz"
+# self-generated from 8-19-2026 download
+gmsh_sha256="be3f66f225d27ba9fa014f07e83169285da8a051b0e8ab7103d88066b39bdd3e"
+download_package_and_verify_sha256 "$gmsh" "https://gmsh.info/src/$gmsh" "$gmsh_sha256" || exit 1
+
+qt="qt-everywhere-src-6.11.2.tar.xz"
+qt_sha256="6dcfbca271d76a6502741a2c0dc6fc98ef7dd0b7b4cfd0abcebb285a86a26f33"
+download_package_and_verify_sha256 "$qt" "https://download.qt.io/official_releases/qt/6.11/6.11.2/single/$qt" "$qt_sha256" || exit 1
+
 #----------------------------------------------------
 # check for missing sources
 #----------------------------------------------------
@@ -1304,6 +1303,10 @@ if [ "$with_occt" = "1" ]; then
 fi
 
 if [ "$with_gmsh" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_qt" = "1" ]; then
    has_build=1
 fi
 
@@ -1494,8 +1497,9 @@ if [ "$with_tcl" = "1" ]; then
       exit 1
    fi
 
+
    cd ../..
-#   remove_base_directory
+   remove_base_directory
    cd ..
 
    # put a soft link to the versioned tclsh
@@ -1560,7 +1564,7 @@ if [ "$with_tk" = "1" ]; then
    fi
 
    cd ../.. 
-#   remove_base_directory
+   remove_base_directory
    cd .. 
 
    # put a soft link to the versioned wish
@@ -1593,86 +1597,6 @@ if [ "$with_tk" = "1" ]; then
    cd $current_dir
   
 fi
-
-# occt
-if [ "$with_occt" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: occt"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$occt"
-
-   cmake -D INSTALL_SAMPLES=ON -D 3RDPARTY_DIR:PATH="$install_path" -D 3RDPARTY_FREETYPE_DIR:PATH="$install_path" -D 3RDPARTY_TCL_DIR:PATH="$install_path" -D 3RDPARTY_TK_DIR:PATH="$install_path" -D 3RDPARTY_TK_LIBRARY_DIR:FILEPATH="$install_path/lib" -D INSTALL_DIR:PATH="$install_path" . 
-
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: occt failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: occt failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: occt failed to install"
-      exit 1
-   fi
-
-   cd ..
-#   remove_base_directory
-   cd ..
-fi
-
-# gmsh
-if [ "$with_gmsh" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: gmsh"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$gmsh"
-
-   mkdir build
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: gmsh failed to create a build directory"
-      exit 1
-   fi
-
-   cd build
-
-   # EIGEN is enabled; can substitute Blas/Lapack if EIGEN becomes a problem
-   cmake -D CMAKE_INSTALL_PREFIX="$install_path" -D ENABLE_BUILD_SHARED=ON -D ENABLE_DOMHEX=OFF -D ENABLE_EIGEN=ON -D ENABLE_FLTK=OFF -D ENABLE_GETDP=OFF -D ENABLE_GMM=OFF -D ENABLE_GMP=OFF -D ENABLE_KBIPACK=OFF -D ENABLE_MED=OFF -D ENABLE_MMG=OFF -D ENABLE_MPEG_ENCODE=OFF -D ENABLE_ONELAB=OFF -D ENABLE_ONELAB_METAMODEL=OFF -D ENABLE_OPENMP=OFF -D ENABLE_OPTHOM=OFF -D ENABLE_PLUGINS=OFF -D ENABLE_POST=OFF -D ENABLE_QUADMESHINGTOOLS=OFF -D ENABLE_QUADTRI=OFF -D ENABLE_SOLVER=OFF -D ENABLE_TOUCHBAR=OFF -D ENABLE_VOROPP=OFF  ..
-
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: gmsh failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: gmsh failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: gmsh failed to install"
-      exit 1
-   fi
-
-   cd ../..
-#   remove_base_directory
-   cd ..
-fi
-
 
 # m4
 if [ "$with_m4" = "1" ]; then
@@ -2199,6 +2123,133 @@ if [ "$with_mfem" = "1" ]; then
    fi
 
 fi
+
+# occt
+if [ "$with_occt" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: occt"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$occt"
+
+   cmake -D INSTALL_SAMPLES=ON -D 3RDPARTY_DIR:PATH="$install_path" -D 3RDPARTY_FREETYPE_DIR:PATH="$install_path" -D 3RDPARTY_TCL_DIR:PATH="$install_path" -D 3RDPARTY_TK_DIR:PATH="$install_path" -D 3RDPARTY_TK_LIBRARY_DIR:FILEPATH="$install_path/lib" -D INSTALL_DIR:PATH="$install_path" .
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# gmsh
+if [ "$with_gmsh" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: gmsh"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$gmsh"
+
+   mkdir build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to create a build directory"
+      exit 1
+   fi
+
+   cd build
+
+   # EIGEN is enabled; can substitute Blas/Lapack if EIGEN becomes a problem
+   cmake -D CMAKE_INSTALL_PREFIX="$install_path" -D ENABLE_BUILD_SHARED=ON -D ENABLE_DOMHEX=OFF -D ENABLE_EIGEN=ON -D ENABLE_FLTK=OFF -D ENABLE_GETDP=OFF -D ENABLE_GMM=OFF -D ENABLE_GMP=OFF -D ENABLE_KBIPACK=OFF -D ENABLE_MED=OFF -D ENABLE_MMG=OFF -D ENABLE_MPEG_ENCODE=OFF -D ENABLE_ONELAB=OFF -D ENABLE_ONELAB_METAMODEL=OFF -D ENABLE_OPENMP=OFF -D ENABLE_OPTHOM=OFF -D ENABLE_PLUGINS=OFF -D ENABLE_POST=OFF -D ENABLE_QUADMESHINGTOOLS=OFF -D ENABLE_QUADTRI=OFF -D ENABLE_SOLVER=OFF -D ENABLE_TOUCHBAR=OFF -D ENABLE_VOROPP=OFF  ..
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to install"
+      exit 1
+   fi
+
+   cd ../..
+   remove_base_directory
+   cd ..
+fi
+
+
+# qt
+if [ "$with_qt" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: qt"
+   echo "#------------------------------------------------------------------------------------"
+
+pwd
+   cd external_packages
+
+pwd
+   unpack_and_enter "$qt"
+
+pwd
+   mkdir build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to create a build directory"
+      exit 1
+   fi
+
+   cd build
+pwd
+
+   ../configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: qt failed to configure"
+      exit 1
+   fi
+
+   cmake --build . --parallel
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: qt failed to make"
+      exit 1
+   fi
+
+   cmake --install .
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: qt failed to install"
+      exit 1
+   fi
+
+   cd ../..
+   remove_base_directory
+   cd ..
+fi
+
 
 # OpenParEM
 if [ "$with_OpenParEM" = "1" ]; then
