@@ -19,8 +19,10 @@ MADLER_KEYRING="$SCRIPT_DIR/keyrings/madler-keyring.gpg"
 AKHUZHIN_KEYRING="$SCRIPT_DIR/keyrings/akhuzhin-keyring.gpg"
 WLEMBERG_KEYRING="$SCRIPT_DIR/keyrings/wlemberg-keyring.gpg"
 ACOOPERSMITH_KEYRING="$SCRIPT_DIR/keyrings/acoopersmith-keyring.gpg"
+ACOOPERSMITH2_KEYRING="$SCRIPT_DIR/keyrings/acoopersmith2-keyring.gpg"
 MTURNER_KEYRING="$SCRIPT_DIR/keyrings/mturner-keyring.gpg"
 AJACKSON_KEYRING="$SCRIPT_DIR/keyrings/ajackson-keyring.gpg"
+SMCVITTIE_KEYRING="$SCRIPT_DIR/keyrings/smcvittie-keyring.gpg"
 
 #----------------------------------------------------
 # download required packages
@@ -35,7 +37,7 @@ download_package_and_verify_sha ()
     FILE="$DOWNLOAD_DIR/$PACKAGE"
 
     if [ ! -f "$FILE" ]; then
-        echo "Downloading $PACKAGE ..."
+        echo "Downloading package file $PACKAGE ..."
         wget -O "$FILE" "$URL" || return 1
     fi
 
@@ -63,7 +65,7 @@ download_package_and_verify_sha256 ()
     FILE="$DOWNLOAD_DIR/$PACKAGE"
 
     if [ ! -f "$FILE" ]; then
-        echo "Downloading $PACKAGE ..."
+        echo "Downloading package file $PACKAGE ..."
         wget -O "$FILE" "$URL" || return 1
     fi
 
@@ -94,7 +96,7 @@ download_package_and_verify_sig ()
     SIG="$FILE.$SIG_SUFFIX"
 
     if [ ! -f "$FILE" ]; then
-        echo "Downloading $PACKAGE ..."
+        echo "Downloading package file $PACKAGE ..."
         wget -O "$FILE" "${URL}$SITE_SUFFIX" || return 1
     fi
 
@@ -104,7 +106,7 @@ download_package_and_verify_sig ()
     #    --list-keys
 
     if [ ! -f "$SIG" ]; then
-        echo "Downloading $PACKAGE.$SIG_SUFFIX ..."
+        echo "Downloading sig file $PACKAGE.$SIG_SUFFIX ..."
         wget -O "$SIG" "${URL}.$SIG_SUFFIX$SITE_SUFFIX" || return 1
     fi
 
@@ -488,8 +490,7 @@ install_path=$PWD
 cd "$scripts_dir"
 jobs=1
 
-//xxx
-export PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+export PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/lib/x86_64-linux-gnu/pkgconfig:$install_path/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 
 # convenience variable for simplifying command line options
 with_gui=0
@@ -838,7 +839,7 @@ echo "# OpenParEM_build: setup"
 echo "#------------------------------------------------------------------------------------"
 
 export PATH="$install_path/bin:$scripts_dir:$PATH"
-export LD_LIBRARY_PATH=$install_path/lib:$install_path/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$install_path/lib:$install_path/lib64:$install_path/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
 
 echo "scripts_dir=$scripts_dir"
 echo "install_path=$install_path"
@@ -1187,9 +1188,6 @@ if [ -f "$mfem_root" ]; then
    mv ../$DOWNLOAD_DIR/$mfem_root ./$DOWNLOAD_DIR/$mfem
 fi
 
-
-#xxx
-
 libXau="libXau-1.0.12.tar.gz"
 download_package_and_verify_sig "$libXau" "https://www.x.org/archive/individual/lib/$libXau" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
@@ -1230,13 +1228,16 @@ download_package_and_verify_sig "$xcb_util_renderutil" "https://xcb.freedesktop.
 xcb_util_wm="xcb-util-wm-0.4.2.tar.gz"
 download_package_and_verify_sig "$xcb_util_wm" "https://xcb.freedesktop.org/dist/$xcb_util_wm" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
+xcb_util_cursor="xcb-util-cursor-0.1.6.tar.gz"
+download_package_and_verify_sig "$xcb_util_cursor" "https://xcb.freedesktop.org/dist/$xcb_util_cursor" "sig" "$ACOOPERSMITH2_KEYRING" "" || exit 1
+
+xcb_util_errors="xcb-util-errors-1.0.1.tar.gz"
+download_package_and_verify_sig "$xcb_util_errors" "https://xcb.freedesktop.org/dist/$xcb_util_errors" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+
 libxml2="libxml2-v2.15.3.tar.gz"
 # self-generated from 8-20-2026 download
 libxml2_sha256="0da50c1415f4ec0364569d2119b1436ba837b31df44af28569d234272c23cf1f"
 download_package_and_verify_sha256 "$libxml2" "https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.15.3/$libxml2" "$libxml2_sha256" || exit 1
-
-#exit 0
-
 
 xkbcommon="xkbcommon-1.13.2.tar.gz"
 # self-generated from 8-20-2026 download
@@ -1278,6 +1279,9 @@ gmsh="gmsh-4.15.2-source.tgz"
 # self-generated from 8-19-2026 download
 gmsh_sha256="be3f66f225d27ba9fa014f07e83169285da8a051b0e8ab7103d88066b39bdd3e"
 download_package_and_verify_sha256 "$gmsh" "https://gmsh.info/src/$gmsh" "$gmsh_sha256" || exit 1
+
+dbus1="dbus-1.16.2.tar.xz"
+download_package_and_verify_sig "$dbus1" "https://dbus.freedesktop.org/releases/dbus/$dbus1" "asc" "$SMCVITTIE_KEYRING" "" || exit 1
 
 qt="qt-everywhere-src-6.11.2.tar.xz"
 qt_sha256="6dcfbca271d76a6502741a2c0dc6fc98ef7dd0b7b4cfd0abcebb285a86a26f33"
@@ -1447,7 +1451,7 @@ if [ "$precompiled_bin" = "1" ]; then
    cd ../OpenParEM
 fi
 
-# meson an ninja
+# meson and ninja
 if [ "$with_meson" = "1" ]; then
 
    echo "#------------------------------------------------------------------------------------"
@@ -1470,7 +1474,6 @@ if [ "$with_meson" = "1" ]; then
    remove_base_directory
    cd ..
 
-#xxx
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: meson"
    echo "#------------------------------------------------------------------------------------"
@@ -1778,6 +1781,69 @@ if [ "$with_xcb" = "1" ]; then
    cd ..
 
    echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xcb_util_cursor"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xcb_util_cursor
+   package_name=xcb_util_cursor
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xcb_util_errors"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xcb_util_errors
+   package_name=xcb_util_errors
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+
+   echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: libxml2"
    echo "#------------------------------------------------------------------------------------"
 
@@ -1810,7 +1876,7 @@ if [ "$with_xcb" = "1" ]; then
    unpack_and_enter $xkbcommon
    package_name=xkbcommon
 
-   meson setup build --prefix="$install_path" -Denable-wayland=false
+   meson setup build --prefix="$install_path" -Denable-wayland=false -Denable-bash-completion=false
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: xkbcommon failed to setup build"
       exit 1
@@ -1822,12 +1888,16 @@ if [ "$with_xcb" = "1" ]; then
       exit 1
    fi
 
+
    #meson test -C build 
    #if [ $? -ne 0 ]; then
    #   echo "OpenParEM_ERROR: xkbcommon failed to test"
    #   exit 1
    #fi
 
+   cd build
+   meson install
+   cd ..
 
    cd ..
    remove_base_directory
@@ -2644,6 +2714,42 @@ fi
 if [ "$with_qt" = "1" ]; then
 
    echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: dbus-1"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $dbus1
+
+   meson setup build --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: dbus-1 failed to setup build"
+      exit 1
+   fi
+
+   meson compile -C build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: dbus-1 failed to compile"
+      exit 1
+   fi
+
+
+   #meson test -C build
+   #if [ $? -ne 0 ]; then
+   #   echo "OpenParEM_ERROR: dbus-1 failed to test"
+   #   exit 1
+   #fi
+
+   cd build
+   meson install
+   cd ..
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+
+   echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: qt"
    echo "#------------------------------------------------------------------------------------"
 
@@ -2659,6 +2765,7 @@ if [ "$with_qt" = "1" ]; then
 
    cd build
 
+   #../configure --prefix="$install_path" --skip qtconnectivity,qtsensors,qtserialport,qtserialbus,qtpositioning,qtlocation,qtwebengine,qtmultimedia,qtwebsockets,qtsql,qtremoteobjects,qtpurchase,qtquick3d,qtquicktimeline,qtsvg,qtquick3dphysics,qtspeech,qtvirtualkeyboard
    ../configure --prefix="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: qt failed to configure"
@@ -2678,7 +2785,7 @@ if [ "$with_qt" = "1" ]; then
    fi
 
    cd ../..
-//   remove_base_directory
+   remove_base_directory
    cd ..
 fi
 

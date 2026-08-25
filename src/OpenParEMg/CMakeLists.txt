@@ -7,16 +7,16 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD 11)
 
 # for leak detection
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g")
-set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer ")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g")
+#set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer ")
 
 
 add_compile_options (-DHAS_GUI -DHAS_MPI)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Svg Concurrent)
+find_package(Qt6 6.11 REQUIRED COMPONENTS Core Widgets Svg Concurrent)
 find_package(OpenGL REQUIRED) #except QOpenGLWidget, which is handled separately below (include and lib)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} /opt/Qt/6.9.0/gcc_64/include/QtOpenGLWidgets /home/briany/OpenParEM/src/OpenParEM3D /home/briany/OpenParEM/include /home/briany/OpenParEM/lib /home/briany/OpenParEM/src/OpenParEMCommon /home/briany/OpenParEM/include/opencascade /usr/lib/gcc/x86_64-linux-gnu/9/include /usr/include/GL)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} /home/briany/OpenParEM/include/QtOpenGLWidgets /home/briany/OpenParEM/src/OpenParEM3D /home/briany/OpenParEM/include /home/briany/OpenParEM/lib /home/briany/OpenParEM/src/OpenParEMCommon /home/briany/OpenParEM/include/opencascade /usr/lib/gcc/x86_64-linux-gnu/9/include /usr/include/GL)
 
 # Open CASCADE Technology
 set (OpenCASCADE_DIR /home/briany/OpenParEM/lib/cmake/opencascade)
@@ -105,7 +105,7 @@ qt_add_executable(OpenParEMg
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)
-set_target_properties(Qt6OpenGLWidgets PROPERTIES IMPORTED_LOCATION "/opt/Qt/6.9.0/gcc_64/lib/libQt6OpenGLWidgets.so")
+set_target_properties(Qt6OpenGLWidgets PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libQt6OpenGLWidgets.so")
 
 add_library(mfem SHARED IMPORTED)
 set_target_properties(mfem PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libmfem.so")
