@@ -1121,8 +1121,41 @@ cd "$scripts_dir"
 
 if [ "$clean_in_place" = "1" ]; then
    cd ..
-   echo "rm -Rf bin etc include lib lib64 man sbin share"
-   rm -Rf bin etc include lib lib64 man sbin share
+   echo "rm -Rf bin/* etc/* include/* lib/* lib64/* man/* sbin/* share/*"
+   rm -Rf bin/* etc/* include/* lib/* lib64/* man/* sbin/* share/*
+
+   if [ ! -d bin ]; then
+      mkdir bin
+   fi
+
+   if [ ! -d etc ]; then
+      mkdir etc
+   fi
+
+   if [ ! -d include ]; then
+      mkdir include
+   fi
+
+   if [ ! -d lib ]; then
+      mkdir lib 
+   fi
+
+   if [ ! -d lib64 ]; then
+      mkdir lib64
+   fi
+
+   if [ ! -d man ]; then
+      mkdir man 
+   fi
+
+   if [ ! -d sbin ]; then
+      mkdir sbin
+   fi
+
+   if [ ! -d share ]; then
+      mkdir share 
+   fi
+
    cd "$scripts_dir"
 fi
 
@@ -1453,6 +1486,75 @@ if [ "$precompiled_bin" = "1" ]; then
 
    cd ../OpenParEM
 fi
+
+# m4
+if [ "$with_m4" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: m4"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$m4"
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: m4 failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: m4 failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: m4 failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# bison
+if [ "$with_bison" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: bison"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$bison"
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: bison failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: bison failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: bison failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
 
 # meson and ninja
 if [ "$with_meson" = "1" ]; then
@@ -2105,74 +2207,6 @@ if [ "$with_tk" = "1" ]; then
 
    cd $current_dir
   
-fi
-
-# m4
-if [ "$with_m4" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: m4"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$m4"
-
-   ./configure --prefix="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: m4 failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: m4 failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: m4 failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-fi
-
-# bison
-if [ "$with_bison" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: bison"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$bison"
-
-   ./configure --prefix="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: bison failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: bison failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: bison failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
 fi
 
 # zlib
