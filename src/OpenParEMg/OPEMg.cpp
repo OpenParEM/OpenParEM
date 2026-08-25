@@ -504,6 +504,19 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     // default projection to enable reset
     defaultProjection=ui->drawingWindow->getProjection();
 
+    // font
+
+    QFont font=this->font();
+    font.setPointSize(13);
+    this->setFont(font);
+
+    setStyleSheet(
+        "QMenuBar { font-size: 13pt; }"
+        "QMenu { font-size: 13pt; }"
+        "QDialog { font-size: 13pt; }"
+        "QWidget { font-size: 13pt; }"
+    );
+
     setMenus();
 
     close_event=nullptr;

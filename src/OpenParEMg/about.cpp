@@ -27,6 +27,16 @@ About::About(QWidget *parent)
 {
     this->setWindowIcon(QApplication::windowIcon());
     ui->setupUi(this);
+    //ui->textEdit->setFont(QApplication::font());
+    //ui->textEdit->document()->setDefaultFont(QApplication::font());
+
+    QString fontName = QApplication::font().family();
+    int fontSize = QApplication::font().pointSize();
+
+    // Force the size at the style layer to bypass designer overrides
+    ui->textEdit->setStyleSheet(
+        QString("QTextEdit { font-family: '%1'; font-size: %2pt; }").arg(fontName).arg(fontSize)
+        );
 }
 
 About::~About()

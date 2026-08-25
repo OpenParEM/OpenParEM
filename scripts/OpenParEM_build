@@ -411,6 +411,9 @@ wrap_executable() {
          echo 'export PMIX_PREFIX=$OPEM' >> $PROG
       fi
       echo 'export OMP_NUM_THREADS=1' >> $PROG
+      echo 'export QT_QPA_PLATFORM=xcb' >> $PROG
+      echo 'export QT_QPA_PLATFORMTHEME=generic' >> $PROG
+
 
       # create a default log file name if one is not provided
       # default is to remove any exension and add .log (aligned with OpenParEM3D)
