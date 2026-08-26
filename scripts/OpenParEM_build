@@ -458,12 +458,12 @@ wrap_executable() {
 
       if [ "$TEST_REDIRECT" = "1" ]; then
          echo 'if [ "$HASLOGFILE" = "1" ]; then' >> $PROG
-         echo '   $BINPROG "$1" >> "$LOGFILE" 2>&1' >> $PROG
+         echo '   $BINPROG "$@" >> "$LOGFILE" 2>&1' >> $PROG
          echo 'else' >> $PROG
-         echo '   $BINPROG "$1"' >> $PROG
+         echo '   $BINPROG "$@"' >> $PROG
          echo 'fi' >> $PROG
       else
-         echo '$BINPROG "$1"' >> $PROG
+         echo '$BINPROG "$@"' >> $PROG
       fi
 
       chmod u+x $PROG
