@@ -23,6 +23,7 @@ ACOOPERSMITH2_KEYRING="$SCRIPT_DIR/keyrings/acoopersmith2-keyring.gpg"
 MTURNER_KEYRING="$SCRIPT_DIR/keyrings/mturner-keyring.gpg"
 AJACKSON_KEYRING="$SCRIPT_DIR/keyrings/ajackson-keyring.gpg"
 SMCVITTIE_KEYRING="$SCRIPT_DIR/keyrings/smcvittie-keyring.gpg"
+ICUROBOT_KEYRING="$SCRIPT_DIR/keyrings/icurobot-keyring.gpg"
 
 #----------------------------------------------------
 # download required packages
@@ -1319,6 +1320,18 @@ download_package_and_verify_sha256 "$gmsh" "https://gmsh.info/src/$gmsh" "$gmsh_
 dbus1="dbus-1.16.2.tar.xz"
 download_package_and_verify_sig "$dbus1" "https://dbus.freedesktop.org/releases/dbus/$dbus1" "asc" "$SMCVITTIE_KEYRING" "" || exit 1
 
+icu4c="icu4c-78.3-sources.tgz"
+download_package_and_verify_sig "$icu4c" "https://github.com/unicode-org/icu/releases/download/release-78.3/$icu4c" "asc" "$ICUROBOT_KEYRING" "" || exit 1
+cd ../external_packages
+if [ -f icu.tar.gz ]; then
+   rm icu.tar.gz
+fi
+tar -xf icu4c-78.3-sources.tgz
+tar -cf icu.tar icu
+gzip icu.tar
+icu4c="icu.tar.gz"
+cd ../scripts
+
 qt="qt-everywhere-src-6.11.2.tar.xz"
 qt_sha256="6dcfbca271d76a6502741a2c0dc6fc98ef7dd0b7b4cfd0abcebb285a86a26f33"
 download_package_and_verify_sha256 "$qt" "https://download.qt.io/official_releases/qt/6.11/6.11.2/single/$qt" "$qt_sha256" || exit 1
@@ -2005,6 +2018,9 @@ if [ "$with_xcb" = "1" ]; then
    cd ..
 
    cd ..
+#xxx
+echo "OpenParEM_build: xkbcommon"
+pwd
    remove_base_directory
    cd ..
 
@@ -2785,6 +2801,39 @@ if [ "$with_qt" = "1" ]; then
    remove_base_directory
    cd ..
 
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: icu4c"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $icu4c
+
+   cd source
+   chmod +x runConfigureICU configure install-sh
+
+   ./runConfigureICU Linux --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: icu4c failed to configure build"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: icu4c failed to build"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: icu4c failed to install"
+      exit 1
+   fi
+
+   cd ../..
+   remove_base_directory
+   cd ..
+
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: qt"
@@ -2822,7 +2871,8 @@ if [ "$with_qt" = "1" ]; then
    fi
 
    cd ../..
-   remove_base_directory
+#xxx
+#   remove_base_directory
    cd ..
 fi
 
