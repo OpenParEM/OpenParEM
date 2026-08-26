@@ -377,13 +377,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->dataText->setReadOnly(true);
     ui->antennaText->setReadOnly(true);
 
-    QFont monoFont=QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    monoFont.setPointSize(10);
-    ui->logText->setFont(monoFont);
-    ui->iterationsText->setFont(monoFont);
-    ui->dataText->setFont(monoFont);
-    ui->antennaText->setFont(monoFont);
-
     logFilter=new LogViewerFilter(this);
     logFilter->setTextEdit(ui->logText);
     ui->logText->viewport()->installEventFilter(logFilter);
@@ -506,16 +499,33 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     // font
 
-    QFont font=this->font();
-    font.setPointSize(13);
-    this->setFont(font);
+    fontSize=11;
 
-    setStyleSheet(
-        "QMenuBar { font-size: 13pt; }"
-        "QMenu { font-size: 13pt; }"
-        "QDialog { font-size: 13pt; }"
-        "QWidget { font-size: 13pt; }"
-    );
+    QFont font=QApplication::font();
+    font.setPointSize(fontSize);
+    QApplication::setFont(font);
+
+    QString styleText;
+
+    styleText="QMenuBar { font-size: " + QString::number(fontSize) + "pt; }";
+    setStyleSheet(styleText);
+
+    styleText="QMenu { font-size: " + QString::number(fontSize) + "pt; }";
+    setStyleSheet(styleText);
+
+    styleText="QMenuDialog { font-size: " + QString::number(fontSize) + "pt; }";
+    setStyleSheet(styleText);
+
+    styleText="QWidget { font-size: " + QString::number(fontSize) + "pt; }";
+    setStyleSheet(styleText);
+
+    QFont monoFont=QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    monoFont.setPointSize(fontSize);
+    ui->logText->setFont(monoFont);
+    ui->iterationsText->setFont(monoFont);
+    ui->dataText->setFont(monoFont);
+    ui->antennaText->setFont(monoFont);
+
 
     setMenus();
 

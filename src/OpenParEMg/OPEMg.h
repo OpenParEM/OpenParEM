@@ -899,6 +899,9 @@ private:
 
     // view at startup for resetting the view
     V3d_TypeOfOrientation defaultProjection;
+
+    // font
+    int fontSize;
 };
 
 #endif // OPEMG_H

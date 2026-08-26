@@ -20,6 +20,7 @@
 
 #include "about.h"
 #include "ui_about.h"
+#include <qtextobject.h>
 
 About::About(QWidget *parent)
     : QDialog(parent)
@@ -27,16 +28,49 @@ About::About(QWidget *parent)
 {
     this->setWindowIcon(QApplication::windowIcon());
     ui->setupUi(this);
-    //ui->textEdit->setFont(QApplication::font());
-    //ui->textEdit->document()->setDefaultFont(QApplication::font());
 
-    QString fontName = QApplication::font().family();
-    int fontSize = QApplication::font().pointSize();
+    // font scaling courtesy of ChatGPT
 
-    // Force the size at the style layer to bypass designer overrides
-    ui->textEdit->setStyleSheet(
-        QString("QTextEdit { font-family: '%1'; font-size: %2pt; }").arg(fontName).arg(fontSize)
-        );
+    QTextDocument *doc = ui->textEdit->document();
+
+    const double baseSize = 11.0;
+    const double newSize = QApplication::font().pointSizeF();
+    const double scale = newSize / baseSize;
+
+    QTextCursor cursor(doc);
+    cursor.beginEditBlock();
+
+    QTextBlock block = doc->begin();
+
+    while (block.isValid()) {
+        for (QTextBlock::iterator it = block.begin();
+             !it.atEnd(); ++it) {
+
+            QTextFragment fragment = it.fragment();
+
+            if (!fragment.isValid())
+                continue;
+
+            QTextCharFormat format = fragment.charFormat();
+
+            if (format.hasProperty(QTextFormat::FontPointSize)) {
+                double oldSize = format.fontPointSize();
+                format.setFontPointSize(oldSize * scale);
+
+                QTextCursor fragmentCursor(doc);
+                fragmentCursor.setPosition(fragment.position());
+                fragmentCursor.setPosition(
+                    fragment.position() + fragment.length(),
+                    QTextCursor::KeepAnchor);
+
+                fragmentCursor.mergeCharFormat(format);
+            }
+        }
+
+        block = block.next();
+    }
+
+    cursor.endEditBlock();
 }
 
 About::~About()
