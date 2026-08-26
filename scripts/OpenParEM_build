@@ -1122,41 +1122,8 @@ cd "$scripts_dir"
 
 if [ "$clean_in_place" = "1" ]; then
    cd ..
-   echo "rm -Rf bin/* etc/* include/* lib/* lib64/* man/* sbin/* share/*"
-   rm -Rf bin/* etc/* include/* lib/* lib64/* man/* sbin/* share/*
-
-   if [ ! -d bin ]; then
-      mkdir bin
-   fi
-
-   if [ ! -d etc ]; then
-      mkdir etc
-   fi
-
-   if [ ! -d include ]; then
-      mkdir include
-   fi
-
-   if [ ! -d lib ]; then
-      mkdir lib 
-   fi
-
-   if [ ! -d lib64 ]; then
-      mkdir lib64
-   fi
-
-   if [ ! -d man ]; then
-      mkdir man 
-   fi
-
-   if [ ! -d sbin ]; then
-      mkdir sbin
-   fi
-
-   if [ ! -d share ]; then
-      mkdir share 
-   fi
-
+   echo "rm -Rf bin etc include lib lib64 libexec local man sbin share metatypes mkspecs modules phrasebooks plugins qml sbom translations var"
+   rm -Rf bin etc include lib lib64 libexec local man sbin share metatypes mkspecs modules phrasebooks plugins qml sbom translations var
    cd "$scripts_dir"
 fi
 
@@ -2830,6 +2797,9 @@ if [ "$with_qt" = "1" ]; then
       exit 1
    fi
 
+#xxx
+echo "OpenParEM_build: icu4c"
+pwd
    cd ../..
    remove_base_directory
    cd ..
@@ -2871,8 +2841,7 @@ if [ "$with_qt" = "1" ]; then
    fi
 
    cd ../..
-#xxx
-#   remove_base_directory
+   remove_base_directory
    cd ..
 fi
 
