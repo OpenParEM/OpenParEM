@@ -1985,9 +1985,7 @@ if [ "$with_xcb" = "1" ]; then
    cd ..
 
    cd ..
-#xxx
-echo "OpenParEM_build: xkbcommon"
-pwd
+
    remove_base_directory
    cd ..
 
@@ -2779,7 +2777,7 @@ if [ "$with_qt" = "1" ]; then
    cd source
    chmod +x runConfigureICU configure install-sh
 
-   ./runConfigureICU Linux --prefix="$install_path"
+   ./runConfigureICU Linux --prefix="$install_path" --enable-rpath
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: icu4c failed to configure build"
       exit 1
@@ -2797,9 +2795,6 @@ if [ "$with_qt" = "1" ]; then
       exit 1
    fi
 
-#xxx
-echo "OpenParEM_build: icu4c"
-pwd
    cd ../..
    remove_base_directory
    cd ..
@@ -2828,7 +2823,7 @@ pwd
       exit 1
    fi
 
-   cmake --build . --parallel
+   cmake --build . --parallel "$jobs"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: qt failed to make"
       exit 1
