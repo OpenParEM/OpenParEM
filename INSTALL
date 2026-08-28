@@ -2,7 +2,7 @@
 Installing OpenParEM using the package with pre-compiled binaries
 ----------------------------------------------------------------------------------
 
-The pre-compiled binary allows OpenParEM to be run on x86 Linux platforms without
+The pre-compiled binaries allow OpenParEM to be run on x86 Linux platforms without
 installing any additional packages. The installation process is to download and 
 unpack the binary distribution, set the PATH environment variable, then run the 
 test script to ensure successful operation.
@@ -80,8 +80,8 @@ all dependencies so that a single command builds and tests the compiled binary.
 
 The installation process is to download and unpack the source distribution or
 clone the project from GitHub, install any missing compilation tools, run the 
-compilation script, update the PATH environment variable, then run the test script
-to ensure successful operation.
+compilation script and update the PATH environment variable.  Note that the test
+script is run by the build script.
 
 Compilation is verified for the following x86 Linux operating systems:
 
@@ -105,13 +105,8 @@ Required Compilation Tools
 
 The compilation tools make, g++, gfortran, and perl must be installed on the 
 system to complete the installation.  If compiling using a cloned project from
-GitHub, autoconf is also required.  The "which" command can be used to determine
-if a tool is installed.  For example, if the command
-
-   $ which make
-
-returns a path, then make is installed.  If nothing is returned, then it is not
-installed.
+GitHub, autoconf is also required.  The build script tests for the presence
+of the needed tools and reports anything missing.
 
 Missing tools can be installed using the system's package manager.  For Linux 
 versions using the Debian package manager APT (used on Debian, Ubuntu, Linux Mint,
@@ -146,7 +141,7 @@ Note that installing packages requires system-level installation priviledges.
 
 ----------------------------
 Compilation and Installation 
----------------------------
+----------------------------
 
 1. Install source code by either installing the installation package or cloning
    from GitHub.
@@ -172,20 +167,18 @@ Compilation and Installation
 5. Compile and install in the src tree by running the script "OpenParEM_build".
 
    example:
-      $ ./OpenParEM_build --jobs=4 --with-all
+      $ OpenParEM_build --jobs=4 --with-all
 
       The installation directory install_dir=src_dir/OpenParEM and the
-      compilers use 4 processors for faster compilation. All libraries are
-      compiled for maximum compatibility, and testing of OpenParEM primarily uses
-      the --with-all option.  Generally, set the number of jobs equal to the
-      number of high-performance cores on the computer.
+      compilers use 4 processors for faster compilation.  Generally, set jobs to
+      about 1/2 to 2/3 the number of high-performance cores on the system.
 
    example:
-      $ ./OpenParEM_build --jobs=4 
+      $ OpenParEM_build --jobs=4 
 
-      cmake, flex, bison, and Open MPI are not compiled and installed if they are
-      found on the system.  For Open MPI, the development package must be
-      installed in addition to the executable package.
+   cmake, flex, bison, and Open MPI are not compiled if they are found on the
+   For Open MPI, the development package must be installed in addition to the
+   executable package.
 
    Compilation does not require administrator priviledges unless the --prefix
    option below is specified with a location in an area where the user does not
@@ -202,7 +195,7 @@ Compilation and Installation
    by providing the location to the build script with the --prefix option.
 
    example installing in the directory $HOME/local:
-      $ ./OpenParEM_build --jobs=4 --prefix=$HOME/local --with-all
+      $ OpenParEM_build --jobs=4 --prefix=$HOME/local --with-all
 
       In this case, install_dir=$HOME/local.  The directory "local" must
       exist before running the script.
@@ -235,10 +228,40 @@ Compilation and Installation
 
 10. Save the configuration file, exit the text editor, and close the terminal.
 11. Open a new terminal to pick up the new settings.
-13. Test the installation with these commands:
+13. In the output of the build script, look for the tests of OpenParEM2D and
+    OpenParEM3D.  For a successful compilation, the two should be reported with
+    "pass".
+14. To check that the various paths have been set properly, the execution tests
+    can be re-run. 13. Test the installation with these commands:
 
    $ cd src_dir/OpenParEM/scripts
    $ OpenParEM_test
 
    If the two tests pass, then the installation is complete.
+
+----------------------------------------------------------------------------------
+OpenMPI and MPICH
+----------------------------------------------------------------------------------
+
+OpenMPI is used in the pre-compiled binaries and is the default in the build
+script.  MPICH can used instead of OpenMPI by setting the command line switch
+--with-mpich to the build script to compile with MPICH.
+
+   example:
+      $ OpenParEM_build --jobs=4 --with-mpich
+
+----------------------------------------------------------------------------------
+Uninstalling OpenParEM
+----------------------------------------------------------------------------------
+
+1. Remove the FreeCAD and ParaView Python scripts:
+   $ cd install_dir/OpenParEM/scripts
+   $ OpenParEM_build --remove-helper-scripts
+2. Remove OpenParEM:
+   $ cd install_dir
+   $ rm -Rf OpenParEM
+3. In directory $HOME, edit the configuration file for the shell used for
+   command line processing and remove all previous entries made referring to
+   OpenParEM.
+
 

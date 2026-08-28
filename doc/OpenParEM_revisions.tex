@@ -30,14 +30,28 @@
    \includegraphics[width=0.5\textwidth]{figures/logo-crop}
 
    \vspace*{\fill}
-   Copyright \copyright{} 2025 Brian Young. All Rights Reserved.
+   Copyright \copyright{} 2026 Brian Young. All Rights Reserved.
 \end{titlepage}
 
 \begin{itemize}[nosep]
 
-   \item version 1.0.1 [9-18-24]
+   \item version 1.0.1 [9-18-2024]
       \begin{itemize}[nosep]
          \item Initial release.
+      \end{itemize}
+
+   \item version 1.0.2 [9-25-2024]
+      \begin{itemize}[nosep]
+         \item Fixed small memory leak in OpenParEM3D
+         \item Updated installation documentation for Ubuntu 22.04.5 LTS
+         \item Started change log
+      \end{itemize}
+
+   \item version 1.0.3 [10-5-2024]
+      \begin{itemize}[nosep]
+         \item Fixed a memory cleanup error
+         \item Ubuntu 24 now supported
+         \item Updated installation documentation for Ubuntu 24.04.1 LTS
       \end{itemize}
 
    \item version 2.0.0 [3-6-25]
@@ -46,7 +60,7 @@
          \item Upgraded adaptive mesh refinement with a new pre-conditioner.
       \end{itemize}
 
-   \item version 2.1.0 [5-1-25]
+   \item version 2.1.0 [5-1-2025]
       \begin{itemize}[nosep]
          \item Re-organized the code base into a single root directory.
          \item Added a script to enable compiling from a single command and verified on multiple Linux platforms.
@@ -58,6 +72,21 @@
                \item Metis from 4.0.3 to v5.1.0-p12
                \item MFEM from 4.7 to 4.8
             \end{itemize}
+      \end{itemize}
+
+   \item version 2.1.0 [3-20-2025]
+      \begin{itemize}[nosep]
+         \item Updated system calls for improved timing calculations, especially when using Windows WSL2
+         \item Documentation update to include support for Windows WSL2
+      \end{itemize}
+
+   \item version 2.2.0 [9-1-2026]
+      \begin{itemize}[nosep]
+         \item Initial release of OpenParEMg with users manual.
+         \item Numerous small changes to OpenParEM3D and OpenParEM2D to support OpenParEMg
+         \item Update OpenParEM\_build to support OpenParEMg
+         \item Updated the regression suite to run with either OpenParEMg or by script on the FreeCAD/gmsh builds
+         \item Modified OpenParEM\_build to download and verify packages rather than include the packages.  Switched to latest release in most cases.
       \end{itemize}
 
 \end{itemize}

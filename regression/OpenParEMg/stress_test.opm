@@ -224,20 +224,28 @@ For i = 1 To 1000 Step 1
    selectObject M3
    subtractSelectedObjects S1
 
-   fitAll
+   unselectAllObjects
+   drawPolyline PL 4  0.001 0 0  0.0015 0.0005 0  0.002 0 0  0.001 0 0
+   extrudeSelectedObjects E4 0.005
    unselectAllObjects
    selectObject S1
+   selectObject E4
+   subtractSelectedObjects S2
+
+   fitAll
+   unselectAllObjects
+   selectObject S2
    deleteSubtreeSelectedObjects
 EndFor
 undo
 unselectAllObjects
-selectObject S1
+selectObject S2
 For i = 1 To 1000 Step 1
    rotateSelectedObjects 0 0 0 0 1 0 15
    moveSelectedObjects 0 0 0.0005
 EndFor
 unselectAllObjects
-selectObject S1
+selectObject S2
 deleteSubtreeSelectedObjects
 
 # ports and boundaries

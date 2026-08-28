@@ -101,6 +101,7 @@ qt_add_executable(OpenParEMg
     SportNumbers.h SportNumbers.cpp
     MeasureDistanceForm.h MeasureDistanceForm.cpp MeasureDistanceForm.ui
     Macro.h Macro.cpp
+    Configuration.h Configuration.cpp
 
 )
 
@@ -165,8 +166,6 @@ target_link_libraries(OpenParEMg
         petscdm
         petscksp
         gmsh
-
-        #freetype
 )
 
 include(GNUInstallDirs)

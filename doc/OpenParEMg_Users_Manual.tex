@@ -53,6 +53,11 @@ OpenParEMg continues the design philosophy of relatively simple text-based input
 
 Installation and execution instructions are provided in a separate document called \newline"Installation\_Execution.pdf".  The document is available at \texttt{https://openparem.org} and at \newline\texttt{https://github.com/OpenParEM/OpenParEMCommon} in the \texttt{doc} directory.
 
+\section{Configuration File}
+
+On startup, OpenParEMg checks for a file called \texttt{.OpenParEMg} in the user's home directory.  If one is not found, one is created using default parameters.  If one is found, then it is read and the values defined there are assigned.  OpenParEMg does not provide any way to edit this file, but since it is a text file, it can be modified by any available text editor.  Any changes are applied at the next start of OpenParEMg.
+
+The variables in \texttt{.OpenParEMg} allow the setting of the overall GUI font and the font in the logging tabs, the main window height and width, the main window origin, and the default number of cores to use in simulations.  To reset the settings to the defaults, simply delete \texttt{.OpenParEMg}, and the file will be regenerated with the default settings at the next start up of OpenParEMg.
 
 \section{GUI Flow}
 

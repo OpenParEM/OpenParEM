@@ -96,11 +96,9 @@
 #include "../OpenParEM3D/fileCleanup.hpp"
 #include "mpi.h"
 
-
 #include <AIS_Shape.hxx>
 #include <AIS_InteractiveContext.hxx>
 #include <TopoDS_Shape.hxx>
-#include <thread>
 
 std::string trim(const std::string& str);
 bool extractText(const std::string& input, std::string& keyword, std::string& value);
@@ -351,14 +349,15 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->menuRun->setToolTipsVisible(true);
 
     // drawing is always a COMPOUND
-    BRep_Builder builder;
-    TopoDS_Compound compound;
-    builder.MakeCompound(compound);
-    Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-    ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
-    newShapeData->setCreate();
-    newShapeData->setShape(newShape);
-    drawing->addShapeData(newShapeData);
+    //xxx
+    // BRep_Builder builder;
+    // TopoDS_Compound compound;
+    // builder.MakeCompound(compound);
+    // Handle(AIS_Shape) newShape=new AIS_Shape(compound);
+    // ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
+    // newShapeData->setCreate();
+    // newShapeData->setShape(newShape);
+    // drawing->addShapeData(newShapeData);
 
     ui->drawingItemTree->setCurrentItem(nullptr);
 
@@ -492,40 +491,66 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     int locationX=(maxWidth-windowWidth)/2;
     int locationY=(maxHeight-windowHeight)/2;
 
-    this->setGeometry(locationX,locationY,windowWidth,windowHeight);
+    // configuration
 
-    // default projection to enable reset
-    defaultProjection=ui->drawingWindow->getProjection();
+    if (configuration.exists()) {
+        configuration.load();
+    } else {
+        configuration.setMainWindowWidth(windowWidth);
+        configuration.setMainWindowHeight(windowHeight);
+        configuration.setMainWindowOriginX(locationX);
+        configuration.setMainWindowOriginY(locationY);
+        configuration.create();
+    }
+
+    // failsafe
+    if (configuration.getMainWindowWidth() == 0) configuration.setMainWindowWidth(windowWidth);
+    if (configuration.getMainWindowHeight() == 0) configuration.setMainWindowHeight(windowHeight);
+    if (configuration.getMainWindowOriginX() == 0) configuration.setMainWindowOriginX(locationX);
+    if (configuration.getMainWindowOriginY() == 0) configuration.setMainWindowOriginY(locationY);
+
+    // set the window
+    this->setGeometry(configuration.getMainWindowOriginX(),configuration.getMainWindowOriginY(),
+                      configuration.getMainWindowWidth(),configuration.getMainWindowHeight());
 
     // font
 
-    fontSize=11;
-
     QFont font=QApplication::font();
-    font.setPointSize(fontSize);
+    font.setPointSizeF(configuration.getDefaultFontSize());
     QApplication::setFont(font);
 
     QString styleText;
 
-    styleText="QMenuBar { font-size: " + QString::number(fontSize) + "pt; }";
+    styleText="QMenuBar { font-size: " + QString::number(configuration.getDefaultFontSize()) + "pt; }";
     setStyleSheet(styleText);
 
-    styleText="QMenu { font-size: " + QString::number(fontSize) + "pt; }";
+    styleText="QMenu { font-size: " + QString::number(configuration.getDefaultFontSize()) + "pt; }";
     setStyleSheet(styleText);
 
-    styleText="QMenuDialog { font-size: " + QString::number(fontSize) + "pt; }";
+    styleText="QMenuDialog { font-size: " + QString::number(configuration.getDefaultFontSize()) + "pt; }";
     setStyleSheet(styleText);
 
-    styleText="QWidget { font-size: " + QString::number(fontSize) + "pt; }";
+    styleText="QWidget { font-size: " + QString::number(configuration.getDefaultFontSize()) + "pt; }";
     setStyleSheet(styleText);
 
     QFont monoFont=QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    monoFont.setPointSize(fontSize);
-    ui->logText->setFont(monoFont);
-    ui->iterationsText->setFont(monoFont);
-    ui->dataText->setFont(monoFont);
-    ui->antennaText->setFont(monoFont);
+    monoFont.setPointSizeF(configuration.getLogFontSize());
 
+    ui->logText->setFont(monoFont);
+    ui->logText->document()->setDefaultFont(monoFont);
+    ui->iterationsText->setFont(monoFont);
+    ui->iterationsText->document()->setDefaultFont(monoFont);
+    ui->dataText->setFont(monoFont);
+    ui->dataText->document()->setDefaultFont(monoFont);
+    ui->antennaText->setFont(monoFont);
+    ui->antennaText->document()->setDefaultFont(monoFont);
+
+    // overrides to project data
+    defaultData.gui_slot_count=configuration.getDefaultCoreCount();
+    projData.gui_slot_count=configuration.getDefaultCoreCount();
+
+    // default projection to enable reset
+    defaultProjection=ui->drawingWindow->getProjection();
 
     setMenus();
 
@@ -2428,30 +2453,31 @@ void OpenParEMg::reprocess (BaseItem *baseItem)
     bool isDisplayed=false;
     if (baseItem->foreground(0) == Qt::black) isDisplayed=true;
 
-    RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
-    if (rootDrawingItem) {
+    //xxx
+    // RootDrawingItem *rootDrawingItem=dynamic_cast<RootDrawingItem *>(baseItem);
+    // if (rootDrawingItem) {
 
-        TopoDS_Compound compound;
-        BRep_Builder builder;
-        builder.MakeCompound(compound);
+    //     TopoDS_Compound compound;
+    //     BRep_Builder builder;
+    //     builder.MakeCompound(compound);
 
-        // cycle through the top-level children and add to the compound
-        int i=0;
-        while (i < drawing->childCount()) {
-            DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
-            if (drawingItem && !drawingItem->getShape().IsNull()) {
-                builder.Add(compound,drawingItem->getShape()->Shape());
-            }
-            i++;
-        }
+    //     // cycle through the top-level children and add to the compound
+    //     int i=0;
+    //     while (i < drawing->childCount()) {
+    //         DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(drawing->child(i));
+    //         if (drawingItem && !drawingItem->getShape().IsNull()) {
+    //             builder.Add(compound,drawingItem->getShape()->Shape());
+    //         }
+    //         i++;
+    //     }
 
-        Handle(AIS_Shape) newAISshape=new AIS_Shape(compound);
+    //     Handle(AIS_Shape) newAISshape=new AIS_Shape(compound);
 
-        ShapeData *shapeData=baseItem->getShapeData();
-        shapeData->setShape(newAISshape);
+    //     ShapeData *shapeData=baseItem->getShapeData();
+    //     shapeData->setShape(newAISshape);
 
-        return;
-    }
+    //     return;
+    // }
 
     DrawingItem *drawingItem=dynamic_cast<DrawingItem *>(baseItem);
     if (drawingItem && drawingItem->is_drawing()) {
@@ -4464,16 +4490,17 @@ void OpenParEMg::resetDrawing ()
     drawing->reset();
 
     // drawing is always a COMPOUND
-    BRep_Builder builder;
-    TopoDS_Compound compound;
-    builder.MakeCompound(compound);
-    Handle(AIS_Shape) newShape=new AIS_Shape(compound);
+    //xxx
+    // BRep_Builder builder;
+    // TopoDS_Compound compound;
+    // builder.MakeCompound(compound);
+    // Handle(AIS_Shape) newShape=new AIS_Shape(compound);
 
-    ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
-    newShapeData->setCreate();
-    newShapeData->setShape(newShape);
-    drawing->addShapeData(newShapeData);
-    drawing->setModified(false);
+    // ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
+    // newShapeData->setCreate();
+    // newShapeData->setShape(newShape);
+    // drawing->addShapeData(newShapeData);
+    // drawing->setModified(false);
 
     //reset the tracking
     ui->drawingWindow->reset();
@@ -4600,6 +4627,10 @@ void OpenParEMg::on_actionNew_triggered ()
     resetProject();
     init_project (&defaultData);
     init_project (&projData);
+
+    // overrides from the configuration file
+    defaultData.gui_slot_count=configuration.getDefaultCoreCount();
+    projData.gui_slot_count=configuration.getDefaultCoreCount();
 
     setScale();
     scaleFormDefaults();
@@ -7566,7 +7597,6 @@ void OpenParEMg::getPickedVertex (gp_Pnt pnt, bool cancel)
                 PathItem *pathItem=dynamic_cast<PathItem *>(baseItem);
                 polywire=static_cast<Polywire *>(pathItem->getPolywire());
             }
-
 
             if (polywire) {
 

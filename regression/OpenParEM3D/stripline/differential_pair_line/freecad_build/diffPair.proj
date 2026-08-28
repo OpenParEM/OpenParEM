@@ -17,7 +17,7 @@ materials.local.path              ./
 materials.local.name              local_materials.txt
 materials.default.boundary        copper
 refinement.frequency              high
-refinement.iteration.min          4
+refinement.iteration.min          1
 refinement.iteration.max          50
 refinement.required.passes        1
 refinement.relative.tolerance     0.001

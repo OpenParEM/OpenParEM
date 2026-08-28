@@ -1515,7 +1515,8 @@ void DrawingItem::del ()
     mw->itemChangesStack.add(this);
 
     // reset the top-level compound
-    mw->reprocess(mw->drawing);
+    //xxx
+    //mw->reprocess(mw->drawing);
 
    setModified(true);
 }
@@ -2055,6 +2056,13 @@ PathItem::PathItem (OpenParEMg *mw_, BaseItem *parentItem_)
     setForeground(0,Qt::black);
     path=nullptr;
     hasArrows=true;
+
+    p0set=false;
+    p1set=false;
+    enableMove=false;
+    enableStretch=false;
+    enableDeletePoint=false;
+    enableInsertPoint=false;
 
     ShapeData *newShapeData=getShapeData()->copyCreate();
     newShapeData->setCreate();

@@ -166,6 +166,7 @@ with_petsc=1
 with_mfem=1
 with_OpenParEM=1
 with_OpenParEMg=1
+remove_helper_scripts=0
 
 #----------------------------------------------------
 # library types
@@ -496,9 +497,6 @@ jobs=1
 
 export PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/lib/x86_64-linux-gnu/pkgconfig:$install_path/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 
-# convenience variable for simplifying command line options
-with_gui=0
-
 #----------------------------------------------------
 # input processing
 #----------------------------------------------------
@@ -574,7 +572,6 @@ for arg in "$@"; do
       elif [ "$arg" = "--precompiled-bin" ]; then
          precompiled_bin=1
          clean_in_place=1
-
       elif [ "$arg" = "--with-freetype" ]; then
          with_freetype=1
       elif [ "$keyword" = "--with-freetype" ]; then
@@ -737,10 +734,32 @@ for arg in "$@"; do
          with_OpenParEMg=1
       elif [ "$arg" = "--without-OpenParEMg" ]; then
          with_OpenParEMg=0
-      elif [ "$arg" = "--with-gui" ]; then
-         with_gui=1
-      elif [ "$arg" = "--without-gui" ]; then
-         with_gui=0
+      elif [ "$arg" = "--remove-helper-scripts" ]; then
+         with_meson=0
+         with_xcb=0
+         with_freetype=0
+         with_tcl=0
+         with_tk=0
+         with_occt=0
+         with_gmsh=0
+         with_qt=0
+         with_m4=0
+         with_bison=0
+         with_zlib=0
+         with_flex=0
+         with_hwloc=0
+         with_libevent=0
+         with_pmix=0
+         with_prrte=0
+         with_openmpi=0
+         with_mpich=0
+         with_hypre=0
+         with_cmake=0
+         with_petsc=0
+         with_mfem=0
+         with_OpenParEM=0
+         with_OpenParEMg=0
+         remove_helper_scripts=1
       else
          echo "ERROR: unrecognized option ""$arg"
          exit 1
@@ -785,13 +804,10 @@ if [ $print_help -eq 1 ]; then
 #   echo "  --shared                  build using shared libraries. Default is to build static libraries whenever possible"
    echo "  --clean-in-place         remove any prior in-place installation"
    echo "  --with-all               compile everything to minimize potential compatibility issues"
-   echo "  --with-gui               compile the libraries needed for the GUI"
    echo "  --show-setup             show the compilation setup and exit"
    echo ""
    echo "advanced OPTIONS:"
    echo "  --without-all            skip compiling all; generally followed by --with-* options to add back in something to compile"
-#   echo "  --with-gui               compile the libraries needed for the GUI"
-#   echo "  --without-gui            do not compile the libraries needed for the GUI (default)"
    echo "  --with-freetype=file]    compile freetype using the default distribution or the provided file"
    echo "  --with-meson=[file]      compile meson and ninja  using the default distribution or the provided file"     
    echo "  --with-xcb=file]         compile xcb using the default distribution or the provided file"
@@ -832,6 +848,7 @@ if [ $print_help -eq 1 ]; then
    echo "  --without-OpenParEM      skip compiling OpenParEM"
    echo "  --with-OpenParEMg        compile OpenParEMg"
    echo "  --without-OpenParEMg     skip compiling OpenParEMg"
+   echo "  --remove-helper-scripts  remove the FreeCAD and ParaView helper scripts; forces --without-all"
    echo ""
    echo "developer OPTIONS:"
    echo "  --precompiled-bin        compile for a portable pre-compiled binary using a locally compiled version of gcc; forces --clean-in-place"
@@ -865,26 +882,6 @@ if [ "$with_mpich" = "1" ]; then
    with_pmix=0
    with_prrte=0
 fi
-
-# GUI options
-
-#if [ "$with_gui" = "1" ]; then
-#   with_freetype=1
-#   with_tcl=1
-#   with_tk=1
-#   with_occt=1
-#   with_gmsh=1
-#   with_qt=1
-#fi
-
-#if [ "$with_gui" = "0" ]; then
-#   with_freetype=0
-#   with_tcl=0
-#   with_tk=0
-#   with_occt=0
-#   with_gmsh=0
-#   with_qt=0
-#fi
 
 # show the setup
 
@@ -1029,6 +1026,8 @@ fi
 
    echo "with-OpenParEMg=$with_OpenParEMg"
 
+   echo "remove-helper-scripts=$remove_helper_scripts"
+
 if [ "$show_setup" = "1" ]; then
    exit 0
 fi
@@ -1037,84 +1036,101 @@ fi
 # copy Python scripts for FreeCAD and ParaView
 #----------------------------------------------------
 
-echo "#------------------------------------------------------------------------------------"
-echo "# OpenParEM_build: copying FreeCAD and ParaView scripts"
-echo "#------------------------------------------------------------------------------------"
+if [ "$remove_helper_scripts" = "1" ]; then
 
-# FreeCAD
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: removing FreeCAD and ParaView scripts"
+   echo "#------------------------------------------------------------------------------------"
 
-cd $HOME
-if [ ! -d ".FreeCAD" ]; then
-   mkdir ".FreeCAD"
+   # FreeCAD
+
+#   cd $HOME
+#   if [ ".FreeCAD" ]; then
+#
+#   fi
+
+else
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: copying FreeCAD and ParaView scripts"
+   echo "#------------------------------------------------------------------------------------"
+
+   # FreeCAD
+
+   cd $HOME
+   if [ ! -d ".FreeCAD" ]; then
+      mkdir ".FreeCAD"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: failed to create $HOME/.FreeCAD directory"
+         exit 1
+      fi
+   fi
+
+   cd ".FreeCAD"
+
+   if [ ! -d "Macro" ]; then
+      mkdir "Macro"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: failed to create $HOME/.FreeCAD/Macro directory"
+         exit 1
+      fi
+   fi
+
+   cd "$scripts_dir"/FreeCAD
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to create $HOME/.FreeCAD directory"
+      echo "OpenParEM_ERROR: failed to cd to $scripts_dir/FreeCAD"
       exit 1
    fi
-fi
 
-cd ".FreeCAD"
+   echo "copy FreeCAD/OpenParEM2D_save.py to $HOME/.FreeCAD/Macro"
+   cp OpenParEM2D_save.py "$HOME/.FreeCAD/Macro"
 
-if [ ! -d "Macro" ]; then
-   mkdir "Macro"
+   echo "copy FreeCAD/OpenParEM3D_save.py to $HOME/.FreeCAD/Macro"
+   cp OpenParEM3D_save.py "$HOME/.FreeCAD/Macro"
+
+   # ParaView
+
+   cd $HOME
+   if [ ! -d ".config" ]; then
+      mkdir ".config"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: failed to create $HOME/.config directory"
+         exit 1
+      fi
+   fi
+
+   cd ".config"
+
+   if [ ! -d "ParaView" ]; then
+      mkdir "ParaView"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: failed to create $HOME/.config/ParaView directory"
+         exit 1
+      fi
+   fi
+
+   cd "ParaView"
+
+   if [ ! -d "Macros" ]; then
+      mkdir "Macros"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: failed to create $HOME/.config/ParaView/Macros directory"
+         exit 1
+      fi
+   fi
+
+   cd "$scripts_dir"/ParaView
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to create $HOME/.FreeCAD/Macro directory"
+      echo "OpenParEM_ERROR: failed to cd to $scripts_dir/ParaView"
       exit 1
    fi
+
+   echo "copy ParaView/field_plot.py to $HOME/.config/ParaView/Macros"
+   cp field_plot.py "$HOME/.config/ParaView/Macros"
+
+   cd "$scripts_dir"
+
 fi
-
-cd "$scripts_dir"/FreeCAD
-if [ $? -ne 0 ]; then
-   echo "OpenParEM_ERROR: failed to cd to $scripts_dir/FreeCAD"
-   exit 1
-fi
-
-echo "copy FreeCAD/OpenParEM2D_save.py to $HOME/.FreeCAD/Macro"
-cp OpenParEM2D_save.py "$HOME/.FreeCAD/Macro"
-
-echo "copy FreeCAD/OpenParEM3D_save.py to $HOME/.FreeCAD/Macro"
-cp OpenParEM3D_save.py "$HOME/.FreeCAD/Macro"
-
-# ParaView
-
-cd $HOME
-if [ ! -d ".config" ]; then
-   mkdir ".config"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to create $HOME/.config directory"
-      exit 1
-   fi
-fi
-
-cd ".config"
-
-if [ ! -d "ParaView" ]; then
-   mkdir "ParaView"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to create $HOME/.config/ParaView directory"
-      exit 1
-   fi
-fi
-
-cd "ParaView"
-
-if [ ! -d "Macros" ]; then
-   mkdir "Macros"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to create $HOME/.config/ParaView/Macros directory"
-      exit 1
-   fi
-fi
-
-cd "$scripts_dir"/ParaView
-if [ $? -ne 0 ]; then
-   echo "OpenParEM_ERROR: failed to cd to $scripts_dir/ParaView"
-   exit 1
-fi
-
-echo "copy ParaView/field_plot.py to $HOME/.config/ParaView/Macros"
-cp field_plot.py "$HOME/.config/ParaView/Macros"
-
-cd "$scripts_dir"
 
 #----------------------------------------------------
 # clean in place

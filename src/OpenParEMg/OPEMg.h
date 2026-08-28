@@ -30,6 +30,7 @@
 #include <qscrollbar.h>
 #include <qtextobject.h>
 
+#include "Configuration.h"
 #include "LengthInputForm.h"
 #include "LineEditForm.h"
 #include "MeasureDistanceForm.h"
@@ -900,8 +901,8 @@ private:
     // view at startup for resetting the view
     V3d_TypeOfOrientation defaultProjection;
 
-    // font
-    int fontSize;
+    // fonts, window sizes, etc.
+    Configuration configuration;
 };
 
 #endif // OPEMG_H
