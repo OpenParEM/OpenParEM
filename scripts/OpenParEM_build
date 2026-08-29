@@ -1,4 +1,4 @@
-#!/bin/sh
+﻿#!/bin/sh
 
 #ToDo: unset PETSC_DIR, PETSC_ARCH, and SLEPC_DIR
 
@@ -24,9 +24,11 @@ MTURNER_KEYRING="$SCRIPT_DIR/keyrings/mturner-keyring.gpg"
 AJACKSON_KEYRING="$SCRIPT_DIR/keyrings/ajackson-keyring.gpg"
 SMCVITTIE_KEYRING="$SCRIPT_DIR/keyrings/smcvittie-keyring.gpg"
 ICUROBOT_KEYRING="$SCRIPT_DIR/keyrings/icurobot-keyring.gpg"
+BKING_KEYRING="$SCRIPT_DIR/keyrings/bking-keyring.gpg"
 
 #----------------------------------------------------
 # download required packages
+# functions courtesy of ChatGPT
 #----------------------------------------------------
 
 download_package_and_verify_sha ()
@@ -116,6 +118,102 @@ download_package_and_verify_sig ()
 
     echo "Signature OK: $PACKAGE"
     echo ""
+}
+
+download_cmake_and_verify()
+{
+    version="$1"
+    filename="$2"
+    download_dir="$3"
+    keyring="$4"
+
+    base_url="https://cmake.org/files/v${version%.*}"
+
+    sha_file="cmake-${version}-SHA-256.txt"
+    sig_file="${sha_file}.asc"
+
+    archive="${download_dir}/${filename}"
+    sha_path="${download_dir}/${sha_file}"
+    sig_path="${download_dir}/${sig_file}"
+
+    if [ ! -f "$keyring" ]; then
+        echo "ERROR: GPG keyring not found: $keyring" >&2
+        return 1
+    fi
+
+    mkdir -p "$download_dir" || return 1
+
+    if [ -f "$archive" ]; then
+        echo "CMake archive already exists: $archive"
+    else
+        echo "Downloading $filename..."
+
+        if ! wget -q --show-progress -O "$archive" \
+            "${base_url}/${filename}"; then
+            echo "ERROR: Failed to download $filename" >&2
+            rm -f "$archive"
+            return 1
+        fi
+    fi
+
+    if [ -f "$sha_path" ]; then
+        echo "SHA-256 file already exists: $sha_path"
+    else
+        echo "Downloading $sha_file..."
+
+        if ! wget -q --show-progress -O "$sha_path" \
+            "${base_url}/${sha_file}"; then
+            echo "ERROR: Failed to download $sha_file" >&2
+            rm -f "$sha_path"
+            return 1
+        fi
+    fi
+
+    if [ -f "$sig_path" ]; then
+        echo "SHA-256 signature already exists: $sig_path"
+    else
+        echo "Downloading $sig_file..."
+
+        if ! wget -q --show-progress -O "$sig_path" \
+            "${base_url}/${sig_file}"; then
+            echo "ERROR: Failed to download $sig_file" >&2
+            rm -f "$sig_path"
+            return 1
+        fi
+    fi
+
+    echo "Verifying CMake SHA-256 signature..."
+
+    if ! gpg --no-default-keyring \
+        --keyring "$keyring" \
+        --verify "$sig_path" "$sha_path"; then
+        echo "ERROR: CMake SHA-256 signature verification failed" >&2
+        return 1
+    fi
+
+    echo "Verifying CMake archive SHA-256..."
+
+    expected_sha256=$(awk -v file="$filename" \
+        '$2 == file {print $1}' "$sha_path")
+
+    if [ -z "$expected_sha256" ]; then
+        echo "ERROR: Could not find $filename in $sha_file" >&2
+        return 1
+    fi
+
+    actual_sha256=$(sha256sum "$archive" | awk '{print $1}')
+
+    if [ "$actual_sha256" != "$expected_sha256" ]; then
+        echo "ERROR: CMake archive SHA-256 verification failed" >&2
+        echo "Expected: $expected_sha256" >&2
+        echo "Actual:   $actual_sha256" >&2
+        return 1
+    fi
+
+    echo "CMake archive SHA-256 verified."
+    echo "CMake $version download verified successfully."
+
+    return 0
 }
 
 #----------------------------------------------------
@@ -558,7 +656,7 @@ for arg in "$@"; do
          with_pmix=1
          with_prrte=1
          with_openmpi=1
-         with_mpich=0
+         with_mpich=1
          with_hypre=1
          with_cmake=1
          with_petsc=1
@@ -999,6 +1097,12 @@ fi
       echo "with-hypre=$with_hypre"
    fi
 
+   if [ "$with_cmake" = "1" ]; then
+      echo "with-cmake=$with_cmake using $cmake"
+   else
+      echo "with-cmake=$with_cmake"
+   fi
+
    if [ "$with_petsc" = "1" ]; then
       echo "with-petsc=$with_petsc using $petsc"
       echo "   including:"
@@ -1006,12 +1110,6 @@ fi
       echo "      mumps=$mumps"
       echo "      scalapack=$scalapack"
       echo "      scotch=$scotch"
-
-      if [ "$with_cmake" = "1" ]; then
-         echo "   with-cmake=$with_cmake using $cmake"
-      else
-         echo "   with-cmake=$with_cmake"
-      fi
    else
       echo "with-petsc=$with_petsc"
    fi
@@ -1193,6 +1291,10 @@ download_package_and_verify_sha256 "$hypre" "https://github.com/hypre-space/hypr
 if [ -f "$hypre_root" ]; then
    mv ../$DOWNLOAD_DIR/$hypre_root ./$DOWNLOAD_DIR/$hypre
 fi
+
+cmake_version="4.4.3"
+cmake="cmake-4.4.3.tar.gz"
+download_cmake_and_verify "$cmake_version" "$cmake" "$DOWNLOAD_DIR" "$BKING_KEYRING" || exit 1
 
 petsc="petsc-3.25.4.tar.gz"
 # self-generated from 8-19-2026 download
@@ -1401,6 +1503,10 @@ if [ "$with_hypre" = "1" ]; then
    has_build=1
 fi
 
+if [ "$with_cmake" = "1" ]; then
+   has_build=1
+fi
+
 if [ "$with_petsc" = "1" ]; then
    has_build=1
 fi
@@ -1590,9 +1696,740 @@ if [ "$with_meson" = "1" ]; then
    cd ..
    remove_base_directory
    cd ..
+fi
 
 
+# freetype
+if [ "$with_freetype" = "1" ]; then
 
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: freetype"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$freetype"
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: freetype failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: freetype failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: freetype failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# tcl
+if [ "$with_tcl" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: tcl"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$tcl"
+ 
+   cd unix
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to install"
+      exit 1
+   fi
+
+
+   cd ../..
+   remove_base_directory
+   cd ..
+
+   # put a soft link to the versioned tclsh
+
+   current_dir=$PWD
+
+   if [ ! -d $install_path/bin ]; then
+      echo "OpenParEM_ERROR: tcl failed to find install directory"
+      exit 1
+   fi
+
+   cd $install_path/bin
+
+   if [ -f tclsh ]; then
+      rm tclsh
+   fi
+
+   tclsh=`ls tcl*`
+   if [ ! -f "$tclsh" ]; then
+      echo "OpenParEM_ERROR: tcl failed to find tclsh"
+      exit 1
+   fi
+
+   ln -s $tclsh tclsh
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to softlink tclsh"
+      exit 1
+   fi
+
+   cd $current_dir
+fi
+
+# tk
+if [ "$with_tk" = "1" ]; then 
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: tk"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$tk"
+
+   cd unix
+
+   ./configure CPPFLAGS="-I$install_path/include" --prefix="$install_path" --with-tcl=$install_path/lib
+   if [ $? -ne 0 ]; then 
+      echo "OpenParEM_ERROR: tk failed to configure"
+      exit 1  
+   fi
+
+   make -j "$jobs" 
+   if [ $? -ne 0 ]; then 
+      echo "OpenParEM_ERROR: tk failed to make"
+      exit 1  
+   fi
+
+   make install 
+   if [ $? -ne 0 ]; then 
+      echo "OpenParEM_ERROR: tk failed to install"
+      exit 1  
+   fi
+
+   cd ../.. 
+   remove_base_directory
+   cd .. 
+
+   # put a soft link to the versioned wish
+
+   current_dir=$PWD
+
+   if [ ! -d $install_path/bin ]; then
+      echo "OpenParEM_ERROR: tk failed to find install directory"
+      exit 1
+   fi
+
+   cd $install_path/bin
+
+   if [ -f wish ]; then
+      rm wish
+   fi
+
+   wish=`ls wish*`
+   if [ ! -f "$wish" ]; then
+      echo "OpenParEM_ERROR: tk failed to find wish"
+      exit 1
+   fi
+
+   ln -s $wish wish
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tk failed to softlink wish"
+      exit 1
+   fi
+
+   cd $current_dir
+  
+fi
+
+# zlib
+if [ "$with_zlib" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: zlib"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$zlib"
+
+   if [ "$enable_static" = "yes" ]; then 
+      ./configure --static --prefix="$install_path"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: zlib failed to configure"
+         exit 1
+      fi
+   else
+      ./configure --prefix="$install_path"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: zlib failed to configure"
+         exit 1
+      fi
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: zlib failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: zlib failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# flex
+if [ "$with_flex" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: flex"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$flex"
+
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: flex failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: flex failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: flex failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# hwloc
+if [ "$with_hwloc" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: hwloc"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$hwloc"
+
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: hwloc failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: hwloc failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: hwloc failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# libevent
+if [ "$with_libevent" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: libevent"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$libevent"
+
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --disable-openssl
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: libevent failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: libevent failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: libevent failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# pmix
+if [ "$with_pmix" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: pmix"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$pmix"
+
+   ./configure CFLAGS=-fPIC --prefix="$install_path" --enable-mca-no-build=gds-shmem2 --enable-static="$enable_static" --enable-shared="$enable_shared" --with-libevent="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: pmix failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: pmix failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: pmix failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# prrte
+if [ "$with_prrte" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: prrte"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$prrte"
+
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-pmix="$install_path" --with-libevent="$install_path" --with-hwloc="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: prrte failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: prrte failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: prrte failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# openmpi
+if [ "$with_openmpi" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: openmpi"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$openmpi"
+
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-libevent="$install_path" --with-hwloc="$install_path" --with-pmix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: openmpi failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: openmpi failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: openmpi failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+fi
+
+# mpich
+if [ "$with_mpich" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: mpich"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$mpich"
+
+   # The device has a large impact on performance that is hardware dependent.  Experimentation is in order.
+
+   # configure selects the device
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   # <10% slower than with ch3:nemesis on normal run
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" 
+
+   # good on the eigenvalue solve when excessive slots are speccified
+   # but 50% slower on small cases
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:sock
+
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:nemesis
+
+   # not supported
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:nemsis
+
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   # faster than OpenMPI for a small case
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ucx
+
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   # <10% slower than OpenMPI for a small case
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ofi
+
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mpich failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mpich failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mpich failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+fi
+
+# hypre
+if [ "$with_hypre" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: hypre"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$hypre"
+
+   cd src
+
+   ./configure --prefix="$install_path" --enable-shared="$enable_shared"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: hypre failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs" install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: hypre failed to make and install"
+      exit 1
+   fi
+
+   cd ../..
+   remove_base_directory
+   cd ..
+fi
+
+# cmake
+if [ "$with_cmake" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: cmake"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$cmake"
+
+   ./bootstrap --prefix="$install_path" --parallel="$jobs" -- -DCMAKE_USE_OPENSSL=OFF
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: cmake failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: cmake failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: cmake failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+
+# petsc
+if [ "$with_petsc" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: petsc"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$petsc"
+
+   if [ -d linux_complex ]; then
+      rm -Rf linux_complex
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: petsc failed to remove linux_complex"
+         exit 1
+      fi
+   fi
+
+   export CMAKE_POLICY_VERSION_MINIMUM=3.5
+
+   ./configure --prefix="$install_path" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices --download-cmake=no --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" --with-fortran-bindings=1 --COPTFLAGS="-O3" --CXXOPTFLAGS="-O3" --FOPTFLAGS="-O3"
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: petsc failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs" PETSC_DIR="$PWD" PETSC_ARCH=linux_complex all
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: petsc failed to make"
+      exit 1
+   fi
+
+   make PETSC_DIR="$PWD" PETSC_ARCH=linux_complex install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: petsc failed to install"
+      exit 1
+   fi
+
+   make PETSC_DIR="$install_path" PETSC_ARCH="" check
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: petsc failed check"
+      exit 1
+   fi
+
+   make SLEPC_DIR="$install_path" PETSC_DIR="$install_path" PETSC_ARCH="" check
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: slepc failed check"
+      exit 1
+   fi
+
+   unset CMAKE_POLICY_VERSION_MINIMUM
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# mfem
+if [ "$with_mfem" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: mfem"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$mfem"
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mfem failed to configure"
+      exit 1
+   fi
+
+   ENABLE_STATIC=NO
+   if [ "$enable_static" = "yes" ]; then
+      ENABLE_STATIC=YES
+   fi
+
+   ENABLE_SHARED=NO
+   if [ "$enable_shared" = "yes" ]; then
+      ENABLE_SHARED=YES
+   fi
+
+   make parallel -j "$jobs" MFEM_USE_METIS_5=YES MFEM_USE_EXCEPTIONS=YES HYPRE_DIR=$install_path SHARED=$ENABLE_SHARED STATIC=$ENABLE_STATIC
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mfem failed to make"
+      exit 1
+   fi
+
+   make PREFIX="$install_path" install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mfem failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   # comment out some lines that cause compiling issues when using OCCT
+   current_dir=$PWD
+   if [ -f $install_path/include/mfem/linalg/linalg.hpp ]; then
+      cd $install_path/include/mfem/linalg
+      sed -i 's$#include "batched/batched.hpp"$//#include "batched/batched.hpp"$' linalg.hpp
+      sed -i 's$#include "batched/gpu_blas.hpp"$//#include "batched/gpu_blas.hpp"$' linalg.hpp
+      sed -i 's$#include "batched/solver.hpp"$//#include "batched/solver.hpp"$' linalg.hpp
+      cd $current_dir
+   else
+      echo "OpenParEM_ERROR: mfem failed include file edit"
+      exit 1
+   fi
+
+fi
+
+# occt
+if [ "$with_occt" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: occt"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$occt"
+
+   cmake -D INSTALL_SAMPLES=ON -D 3RDPARTY_DIR:PATH="$install_path" -D 3RDPARTY_FREETYPE_DIR:PATH="$install_path" -D 3RDPARTY_TCL_DIR:PATH="$install_path" -D 3RDPARTY_TK_DIR:PATH="$install_path" -D 3RDPARTY_TK_LIBRARY_DIR:FILEPATH="$install_path/lib" -D INSTALL_DIR:PATH="$install_path" .
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# gmsh
+if [ "$with_gmsh" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: gmsh"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$gmsh"
+
+   mkdir build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to create a build directory"
+      exit 1
+   fi
+
+   cd build
+
+   # EIGEN is enabled; can substitute Blas/Lapack if EIGEN becomes a problem
+   cmake -D CMAKE_INSTALL_PREFIX="$install_path" -D ENABLE_BUILD_SHARED=ON -D ENABLE_DOMHEX=OFF -D ENABLE_EIGEN=ON -D ENABLE_FLTK=OFF -D ENABLE_GETDP=OFF -D ENABLE_GMM=OFF -D ENABLE_GMP=OFF -D ENABLE_KBIPACK=OFF -D ENABLE_MED=OFF -D ENABLE_MMG=OFF -D ENABLE_MPEG_ENCODE=OFF -D ENABLE_ONELAB=OFF -D ENABLE_ONELAB_METAMODEL=OFF -D ENABLE_OPENMP=OFF -D ENABLE_OPTHOM=OFF -D ENABLE_PLUGINS=OFF -D ENABLE_POST=OFF -D ENABLE_QUADMESHINGTOOLS=OFF -D ENABLE_QUADTRI=OFF -D ENABLE_SOLVER=OFF -D ENABLE_TOUCHBAR=OFF -D ENABLE_VOROPP=OFF  ..
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to install"
+      exit 1
+   fi
+
+   cd ../..
+   remove_base_directory
+   cd ..
 fi
 
 # xcb
@@ -2038,711 +2875,6 @@ if [ "$with_xcb" = "1" ]; then
 
 
 fi
-
-
-# freetype
-if [ "$with_freetype" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: freetype"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$freetype"
-
-   ./configure --prefix="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: freetype failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: freetype failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: freetype failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-fi
-
-# tcl
-if [ "$with_tcl" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: tcl"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$tcl"
- 
-   cd unix
-
-   ./configure --prefix="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: tcl failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: tcl failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: tcl failed to install"
-      exit 1
-   fi
-
-
-   cd ../..
-   remove_base_directory
-   cd ..
-
-   # put a soft link to the versioned tclsh
-
-   current_dir=$PWD
-
-   if [ ! -d $install_path/bin ]; then
-      echo "OpenParEM_ERROR: tcl failed to find install directory"
-      exit 1
-   fi
-
-   cd $install_path/bin
-
-   if [ -f tclsh ]; then
-      rm tclsh
-   fi
-
-   tclsh=`ls tcl*`
-   if [ ! -f "$tclsh" ]; then
-      echo "OpenParEM_ERROR: tcl failed to find tclsh"
-      exit 1
-   fi
-
-   ln -s $tclsh tclsh
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: tcl failed to softlink tclsh"
-      exit 1
-   fi
-
-   cd $current_dir
-fi
-
-# tk
-if [ "$with_tk" = "1" ]; then 
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: tk"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$tk"
-
-   cd unix
-
-   ./configure CPPFLAGS="-I$install_path/include" --prefix="$install_path" --with-tcl=$install_path/lib
-   if [ $? -ne 0 ]; then 
-      echo "OpenParEM_ERROR: tk failed to configure"
-      exit 1  
-   fi
-
-   make -j "$jobs" 
-   if [ $? -ne 0 ]; then 
-      echo "OpenParEM_ERROR: tk failed to make"
-      exit 1  
-   fi
-
-   make install 
-   if [ $? -ne 0 ]; then 
-      echo "OpenParEM_ERROR: tk failed to install"
-      exit 1  
-   fi
-
-   cd ../.. 
-   remove_base_directory
-   cd .. 
-
-   # put a soft link to the versioned wish
-
-   current_dir=$PWD
-
-   if [ ! -d $install_path/bin ]; then
-      echo "OpenParEM_ERROR: tk failed to find install directory"
-      exit 1
-   fi
-
-   cd $install_path/bin
-
-   if [ -f wish ]; then
-      rm wish
-   fi
-
-   wish=`ls wish*`
-   if [ ! -f "$wish" ]; then
-      echo "OpenParEM_ERROR: tk failed to find wish"
-      exit 1
-   fi
-
-   ln -s $wish wish
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: tk failed to softlink wish"
-      exit 1
-   fi
-
-   cd $current_dir
-  
-fi
-
-# zlib
-if [ "$with_zlib" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: zlib"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$zlib"
-
-   if [ "$enable_static" = "yes" ]; then 
-      ./configure --static --prefix="$install_path"
-      if [ $? -ne 0 ]; then
-         echo "OpenParEM_ERROR: zlib failed to configure"
-         exit 1
-      fi
-   else
-      ./configure --prefix="$install_path"
-      if [ $? -ne 0 ]; then
-         echo "OpenParEM_ERROR: zlib failed to configure"
-         exit 1
-      fi
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: zlib failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: zlib failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-fi
-
-# flex
-if [ "$with_flex" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: flex"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$flex"
-
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: flex failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: flex failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: flex failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-fi
-
-# hwloc
-if [ "$with_hwloc" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: hwloc"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$hwloc"
-
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: hwloc failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: hwloc failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: hwloc failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-fi
-
-# libevent
-if [ "$with_libevent" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: libevent"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$libevent"
-
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --disable-openssl
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: libevent failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: libevent failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: libevent failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-fi
-
-# pmix
-if [ "$with_pmix" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: pmix"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$pmix"
-
-   ./configure CFLAGS=-fPIC --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-libevent="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: pmix failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: pmix failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: pmix failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-fi
-
-# prrte
-if [ "$with_prrte" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: prrte"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$prrte"
-
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-pmix="$install_path" --with-libevent="$install_path" --with-hwloc="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: prrte failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: prrte failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: prrte failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-fi
-
-# openmpi
-if [ "$with_openmpi" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: openmpi"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$openmpi"
-
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-libevent="$install_path" --with-hwloc="$install_path" --with-pmix="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: openmpi failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: openmpi failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: openmpi failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-
-fi
-
-# mpich
-if [ "$with_mpich" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: mpich"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$mpich"
-
-   # The device has a large impact on performance that is hardware dependent.  Experimentation is in order.
-
-   # configure selects the device
-   # extremely slow in eigenvalue solve when excessive slots are specified
-   # <10% slower than with ch3:nemesis on normal run
-   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" 
-
-   # good on the eigenvalue solve when excessive slots are speccified
-   # but 50% slower on small cases
-   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:sock
-
-   # extremely slow in eigenvalue solve when excessive slots are specified
-   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:nemesis
-
-   # not supported
-   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:nemsis
-
-   # extremely slow in eigenvalue solve when excessive slots are specified
-   # faster than OpenMPI for a small case
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ucx
-
-   # extremely slow in eigenvalue solve when excessive slots are specified
-   # <10% slower than OpenMPI for a small case
-   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ofi
-
-
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: mpich failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: mpich failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: mpich failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-
-fi
-
-# hypre
-if [ "$with_hypre" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: hypre"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$hypre"
-
-   cd src
-
-   ./configure --prefix="$install_path" --enable-shared="$enable_shared"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: hypre failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs" install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: hypre failed to make and install"
-      exit 1
-   fi
-
-   cd ../..
-   remove_base_directory
-   cd ..
-fi
-
-# petsc
-if [ "$with_petsc" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: petsc"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$petsc"
-
-   if [ -d linux_complex ]; then
-      rm -Rf linux_complex
-      if [ $? -ne 0 ]; then
-         echo "OpenParEM_ERROR: petsc failed to remove linux_complex"
-         exit 1
-      fi
-   fi
-
-   cmake_option="no"
-   if [ "$with_cmake" = "1" ]; then
-      cmake_option="$cmake"
-   fi
-
-#   mkdir temp_dir
-#   --with-packages-download-dir=temp_dir
-
-   ./configure --prefix="$install_path" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices --download-cmake="$cmake_option" --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" --with-fortran-bindings=1 --COPTFLAGS="-O3" --CXXOPTFLAGS="-O3" --FOPTFLAGS="-O3"
-
-
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: petsc failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs" PETSC_DIR="$PWD" PETSC_ARCH=linux_complex all
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: petsc failed to make"
-      exit 1
-   fi
-
-   make PETSC_DIR="$PWD" PETSC_ARCH=linux_complex install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: petsc failed to install"
-      exit 1
-   fi
-
-   make PETSC_DIR="$install_path" PETSC_ARCH="" check
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: petsc failed check"
-      exit 1
-   fi
-
-   make SLEPC_DIR="$install_path" PETSC_DIR="$install_path" PETSC_ARCH="" check
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: slepc failed check"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-fi
-
-# mfem
-if [ "$with_mfem" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: mfem"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$mfem"
-
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: mfem failed to configure"
-      exit 1
-   fi
-
-   ENABLE_STATIC=NO
-   if [ "$enable_static" = "yes" ]; then
-      ENABLE_STATIC=YES
-   fi
-
-   ENABLE_SHARED=NO
-   if [ "$enable_shared" = "yes" ]; then
-      ENABLE_SHARED=YES
-   fi
-
-   make parallel -j "$jobs" MFEM_USE_METIS_5=YES MFEM_USE_EXCEPTIONS=YES HYPRE_DIR=$install_path SHARED=$ENABLE_SHARED STATIC=$ENABLE_STATIC
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: mfem failed to make"
-      exit 1
-   fi
-
-   make PREFIX="$install_path" install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: mfem failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-
-   # comment out some lines that cause compiling issues when using OCCT
-   current_dir=$PWD
-   if [ -f $install_path/include/mfem/linalg/linalg.hpp ]; then
-      cd $install_path/include/mfem/linalg
-      sed -i 's$#include "batched/batched.hpp"$//#include "batched/batched.hpp"$' linalg.hpp
-      sed -i 's$#include "batched/gpu_blas.hpp"$//#include "batched/gpu_blas.hpp"$' linalg.hpp
-      sed -i 's$#include "batched/solver.hpp"$//#include "batched/solver.hpp"$' linalg.hpp
-      cd $current_dir
-   else
-      echo "OpenParEM_ERROR: mfem failed include file edit"
-      exit 1
-   fi
-
-fi
-
-# occt
-if [ "$with_occt" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: occt"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$occt"
-
-   cmake -D INSTALL_SAMPLES=ON -D 3RDPARTY_DIR:PATH="$install_path" -D 3RDPARTY_FREETYPE_DIR:PATH="$install_path" -D 3RDPARTY_TCL_DIR:PATH="$install_path" -D 3RDPARTY_TK_DIR:PATH="$install_path" -D 3RDPARTY_TK_LIBRARY_DIR:FILEPATH="$install_path/lib" -D INSTALL_DIR:PATH="$install_path" .
-
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: occt failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: occt failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: occt failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-fi
-
-# gmsh
-if [ "$with_gmsh" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: gmsh"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter "$gmsh"
-
-   mkdir build
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: gmsh failed to create a build directory"
-      exit 1
-   fi
-
-   cd build
-
-   # EIGEN is enabled; can substitute Blas/Lapack if EIGEN becomes a problem
-   cmake -D CMAKE_INSTALL_PREFIX="$install_path" -D ENABLE_BUILD_SHARED=ON -D ENABLE_DOMHEX=OFF -D ENABLE_EIGEN=ON -D ENABLE_FLTK=OFF -D ENABLE_GETDP=OFF -D ENABLE_GMM=OFF -D ENABLE_GMP=OFF -D ENABLE_KBIPACK=OFF -D ENABLE_MED=OFF -D ENABLE_MMG=OFF -D ENABLE_MPEG_ENCODE=OFF -D ENABLE_ONELAB=OFF -D ENABLE_ONELAB_METAMODEL=OFF -D ENABLE_OPENMP=OFF -D ENABLE_OPTHOM=OFF -D ENABLE_PLUGINS=OFF -D ENABLE_POST=OFF -D ENABLE_QUADMESHINGTOOLS=OFF -D ENABLE_QUADTRI=OFF -D ENABLE_SOLVER=OFF -D ENABLE_TOUCHBAR=OFF -D ENABLE_VOROPP=OFF  ..
-
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: gmsh failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: gmsh failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: gmsh failed to install"
-      exit 1
-   fi
-
-   cd ../..
-   remove_base_directory
-   cd ..
-fi
-
 
 # qt
 if [ "$with_qt" = "1" ]; then
