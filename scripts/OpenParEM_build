@@ -1812,6 +1812,38 @@ fi
 if [ "$with_tk" = "1" ]; then 
 
    echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: libX11"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $libX11
+   package_name=libX11
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+
+   echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: tk"
    echo "#------------------------------------------------------------------------------------"
 
@@ -2850,38 +2882,6 @@ if [ "$with_xcb" = "1" ]; then
 
    remove_base_directory
    cd ..
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: libX11"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter $libX11
-   package_name=libX11
-
-   ./configure --prefix="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-
 
 fi
 
