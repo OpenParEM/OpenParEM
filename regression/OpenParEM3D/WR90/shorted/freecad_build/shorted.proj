@@ -29,8 +29,8 @@ reference.impedance            0
 solution.temperature           20
 solution.2D.tolerance          1e-14 
 solution.3D.tolerance          1e-14
-solution.iteration.limit       10000
-solution.modes.buffer          5 // 0
+solution.iteration.limit       100000
+solution.modes.buffer          0
 solution.accurate.residual     false
 solution.shift.invert          true
 
