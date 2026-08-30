@@ -1245,6 +1245,15 @@ echo "#----------------------------------------------------"
 echo "# download packages and verify"
 echo "#----------------------------------------------------"
 
+if [ ! -d "$DOWNLOAD_DIR" ]; then
+   mkdir "$DOWNLOAD_DIR"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: failed to create the directory $DOWNLOAD_DIR."
+      exit 1
+   fi
+fi
+
+
 m4="m4-1.4.19.tar.gz"
 download_package_and_verify_sig "$m4" "https://ftp.gnu.org/gnu/m4/$m4" "sig" "$GNU_KEYRING" "" || exit 1
 
