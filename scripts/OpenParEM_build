@@ -3063,7 +3063,7 @@ PY
    fi
 
    cd ../..
-   #remove_base_directory
+   remove_base_directory
    cd ..
 fi
 
