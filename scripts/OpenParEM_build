@@ -20,6 +20,7 @@ AKHUZHIN_KEYRING="$SCRIPT_DIR/keyrings/akhuzhin-keyring.gpg"
 WLEMBERG_KEYRING="$SCRIPT_DIR/keyrings/wlemberg-keyring.gpg"
 ACOOPERSMITH_KEYRING="$SCRIPT_DIR/keyrings/acoopersmith-keyring.gpg"
 ACOOPERSMITH2_KEYRING="$SCRIPT_DIR/keyrings/acoopersmith2-keyring.gpg"
+ACOOPERSMITH3_KEYRING="$SCRIPT_DIR/keyrings/acoopersmith3-keyring.gpg"
 MTURNER_KEYRING="$SCRIPT_DIR/keyrings/mturner-keyring.gpg"
 AJACKSON_KEYRING="$SCRIPT_DIR/keyrings/ajackson-keyring.gpg"
 SMCVITTIE_KEYRING="$SCRIPT_DIR/keyrings/smcvittie-keyring.gpg"
@@ -1418,7 +1419,7 @@ xcb_util_image=xcb-util-image-0.4.1.tar.gz
 download_package_and_verify_sig "$xcb_util_image" "https://xcb.freedesktop.org/dist/$xcb_util_image" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
 xcb_util_keysyms="xcb-util-keysyms-0.4.1.tar.gz"
-download_package_and_verify_sig "$xcb_util_keysyms" "https://xcb.freedesktop.org/dist/$xcb_util_keysims" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig "$xcb_util_keysyms" "https://xcb.freedesktop.org/dist/$xcb_util_keysyms" "sig" "$ACOOPERSMITH3_KEYRING" "" || exit 1
 
 xcb_util_renderutil="xcb-util-renderutil-0.3.10.tar.gz"
 download_package_and_verify_sig "$xcb_util_renderutil" "https://xcb.freedesktop.org/dist/$xcb_util_renderutil" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
