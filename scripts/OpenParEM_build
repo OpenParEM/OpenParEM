@@ -243,7 +243,6 @@ cmake="https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6.t
 #----------------------------------------------------
 
 with_meson=1
-with_xcb=1
 with_freetype=1
 with_tcl=1
 with_tk=1
@@ -614,12 +613,8 @@ for arg in "$@"; do
          install_path=$value
       elif [ "$keyword" = "--jobs" ]; then
          jobs=$value
-#      elif [ "$arg" = "--static" ]; then
-#         enable_static=yes
-#         enable_shared=no
       elif [ "$arg" = "--without-all" ]; then
          with_meson=0
-         with_xcb=0
          with_freetype=0
          with_tcl=0
          with_tk=0
@@ -644,7 +639,6 @@ for arg in "$@"; do
          with_OpenParEMg=0
       elif [ "$arg" = "--with-all" ]; then
          with_meson=1
-         with_xcb=1
          with_freetype=1
          with_tcl=1
          with_tk=1
@@ -676,156 +670,86 @@ for arg in "$@"; do
          clean_in_place=1
       elif [ "$arg" = "--with-freetype" ]; then
          with_freetype=1
-      elif [ "$keyword" = "--with-freetype" ]; then
-         with_freetype=1
-         freetype=$value
       elif [ "$arg" = "--without-freetype" ]; then
          with_freetype=0
       elif [ "$arg" = "--with-meson" ]; then
          with_meson=1
-      elif [ "$keyword" = "--with-meson" ]; then
-         with_meson=1
-         meson=$value
       elif [ "$arg" = "--without-meson" ]; then
          with_meson=0
-      elif [ "$arg" = "--with-xcb" ]; then
-         with_xcb=1
-      elif [ "$keyword" = "--with-xcb" ]; then
-         with_xcb=1
-         xcb=$value
-      elif [ "$arg" = "--without-xcb" ]; then
-         with_xcb=0
       elif [ "$arg" = "--with-tcl" ]; then
          with_tcl=1
-      elif [ "$keyword" = "--with-tcl" ]; then
-         with_tcl=1
-         tcl=$value
       elif [ "$arg" = "--without-tcl" ]; then
          with_tcl=0
       elif [ "$arg" = "--with-tk" ]; then
          with_tk=1
-      elif [ "$keyword" = "--with-tk" ]; then
-         with_tk=1
-         tk=$value
       elif [ "$arg" = "--without-tk" ]; then
          with_tk=0
       elif [ "$arg" = "--with-occt" ]; then
          with_occt=1
-      elif [ "$keyword" = "--with-occt" ]; then
-         with_occt=1
-         occt=$value
       elif [ "$arg" = "--without-occt" ]; then
          with_occt=0
       elif [ "$arg" = "--with-gmsh" ]; then
          with_gmsh=1
-      elif [ "$keyword" = "--with-gmsh" ]; then
-         with_gmsh=1
-         gmsh=$value
       elif [ "$arg" = "--without-gmsh" ]; then
          with_gmsh=0
       elif [ "$arg" = "--with-qt" ]; then
          with_qt=1
-      elif [ "$keyword" = "--with-qt" ]; then
-         with_qt=1
-         qt=$value
       elif [ "$arg" = "--without-qt" ]; then
          with_qt=0
       elif [ "$arg" = "--with-m4" ]; then
          with_m4=1
-      elif [ "$keyword" = "--with-m4" ]; then
-         with_m4=1
-         m4=$value
       elif [ "$arg" = "--without-m4" ]; then
          with_m4=0
       elif [ "$arg" = "--with-bison" ]; then
          with_bison=1
-      elif [ "$keyword" = "--with-bison" ]; then
-         with_bison=1
-         bison=$value
       elif [ "$arg" = "--without-bison" ]; then
          with_bison=0
       elif [ "$arg" = "--with-zlib" ]; then
          with_zlib=1
-      elif [ "$keyword" = "--with-zlib" ]; then
-         with_zlib=1
-         zlib=$value
       elif [ "$arg" = "--without-zlib" ]; then
          with_zlib=0
       elif [ "$arg" = "--with-flex" ]; then
          with_flex=1
-      elif [ "$keyword" = "--with-flex" ]; then
-         with_flex=1
-         flex=$value
       elif [ "$arg" = "--without-flex" ]; then
          with_flex=0
       elif [ "$arg" = "--with-hwloc" ]; then
          with_hwloc=1
-      elif [ "$keyword" = "--with-hwloc" ]; then
-         with_hwloc=1
-         hwloc=$value
       elif [ "$arg" = "--without-hwloc" ]; then
          with_hwloc=0
       elif [ "$arg" = "--with-libevent" ]; then
          with_libevent=1
-      elif [ "$keyword" = "--with-libevent" ]; then
-         with_libevent=1
-         libevent=$value
       elif [ "$arg" = "--without-libevent" ]; then
          with_libevent=0
       elif [ "$arg" = "--with-pmix" ]; then
          with_pmix=1
-      elif [ "$keyword" = "--with-pmix" ]; then
-         with_pmix=1
-         pmix=$value
       elif [ "$arg" = "--without-pmix" ]; then
          with_pmix=0
       elif [ "$arg" = "--with-prrte" ]; then
          with_prrte=1
-      elif [ "$keyword" = "--with-prrte" ]; then
-         with_prrte=1
-         prrte=$value
       elif [ "$arg" = "--without-prrte" ]; then
          with_prrte=0
       elif [ "$arg" = "--with-openmpi" ]; then
          with_openmpi=1
-      elif [ "$keyword" = "--with-openmpi" ]; then
-         with_openmpi=1
-         openmpi=$value
       elif [ "$arg" = "--without-openmpi" ]; then
          with_openmpi=0
       elif [ "$arg" = "--with-mpich" ]; then
          with_mpich=1
-      elif [ "$keyword" = "--with-mpich" ]; then
-         with_mpich=1
-         mpich=$value
       elif [ "$arg" = "--without-mpich" ]; then
          with_mpich=0
       elif [ "$arg" = "--with-hypre" ]; then
          with_hypre=1
-      elif [ "$keyword" = "--with-hypre" ]; then
-         with_hypre=1
-         hypre=$value
       elif [ "$arg" = "--without-hypre" ]; then
          with_hypre=0
       elif [ "$arg" = "--with-cmake" ]; then
          with_cmake=1
-      elif [ "$keyword" = "--with-cmake" ]; then
-         with_cmake=1
-         cmake=$value
       elif [ "$arg" = "--without-cmake" ]; then
          with_cmake=0
       elif [ "$arg" = "--with-petsc" ]; then
          with_petsc=1
-      elif [ "$keyword" = "--with-petsc" ]; then
-         with_petsc=1
-         petsc=$value
       elif [ "$arg" = "--without-petsc" ]; then
          with_petsc=0
       elif [ "$arg" = "--with-mfem" ]; then
          with_mfem=1
-      elif [ "$keyword" = "--with-mfem" ]; then
-         with_mfem=1
-         mfem=$value
       elif [ "$arg" = "--without-mfem" ]; then
          with_mfem=0
       elif [ "$arg" = "--with-OpenParEM" ]; then
@@ -838,7 +762,6 @@ for arg in "$@"; do
          with_OpenParEMg=0
       elif [ "$arg" = "--remove-helper-scripts" ]; then
          with_meson=0
-         with_xcb=0
          with_freetype=0
          with_tcl=0
          with_tk=0
@@ -903,54 +826,60 @@ if [ $print_help -eq 1 ]; then
    echo "  --help or -H             print this help message and exit"
    echo "  --prefix=path            set the install path to the given path.  Default is the current working directory"
    echo "  --jobs=integer           execute make with parallel processing [i.e. make -j integer]. Default=1"
-#   echo "  --shared                  build using shared libraries. Default is to build static libraries whenever possible"
    echo "  --clean-in-place         remove any prior in-place installation"
-   echo "  --with-all               compile everything to minimize potential compatibility issues"
-   echo "  --show-setup             show the compilation setup and exit"
+   echo "  --show-setup             show the compilation setup and exit; forces --without-all"
    echo ""
    echo "advanced OPTIONS:"
+   echo "  --with-all               compile everything to minimize potential compatibility issues"
    echo "  --without-all            skip compiling all; generally followed by --with-* options to add back in something to compile"
-   echo "  --with-freetype=file]    compile freetype using the default distribution or the provided file"
-   echo "  --with-meson=[file]      compile meson and ninja  using the default distribution or the provided file"     
-   echo "  --with-xcb=file]         compile xcb using the default distribution or the provided file"
-   echo "  --with-tcl=file]         compile tcl using the default distribution or the provided file"
-   echo "  --with-tk[=file]         compile tk using the default distribution or the provided file"
-   echo "  --with-occt[=file]       compile occt using the default distribution or the provided file"
-   echo "  --with-gmsh[=file]       compile gmsh using the default distribution or the provided file"
-   echo "  --with-qt[=file]         compile qt using the default distribution or the provided file"
-   echo "  --with-m4[=file]         compile m4 using the default distribution or the provided file"
+   echo "  --with-freetype          compile freetype"
+   echo "  --without-freetype       skip compiling freetype"
+   echo "  --with-meson             compile meson and ninja"  
+   echo "  --without-meson          skip compiliing meson and ninja"
+   echo "  --with-tcl               compile tcl"
+   echo "  --without-tcl            skip compiling tcl"
+   echo "  --with-tk                compile tk plus xorgproto, xcb_proto, libXau, libxcb, xtrans, libX11"
+   echo "  --without-tk             skip compiling tk and dependencies"
+   echo "  --with-occt              compile OCCT plus fontconfig, xext, and glvnd"
+   echo "  --without-occt           skip compiling OCCT and dependencies"
+   echo "  --with-gmsh              compile gmsh"
+   echo "  --without-gmsh           skip compiling gmsh"
+   echo "  --with-qt                compile Qt plus xcb_util, xcb_util_image, xcb_util_keysyms, xcb_util_renderutil, xcb_util_wm,"
+   echo "                                           xcb_util_cursor, xcb_util_errors, libxml2, xkbcommon, dbus-1, and ic4u"
+   echo "  --without-qt             skip compiling Qt and dependencies"
+   echo "  --with-m4                compile m4"
    echo "  --without-m4             skip compiling m4"
-   echo "  --with-bison[=file]      compile bison using the default distribution or the provided file"
+   echo "  --with-bison             compile bison"
    echo "  --without-bison          skip compiling bison"
-   echo "  --with-zlib[=file]       compile libzlib using the default distribution or the provided file"
+   echo "  --with-zlib              compile libzlib"
    echo "  --without-zlib           skip compiling libzlib"
-   echo "  --with-flex[=file]       compile flex using the default distribution or the provided file"
-   echo "  --without-flex           skip compiling flex; flex must be installed on the system"
-   echo "  --with-hwloc[=file]      compile libhwloc using the default distribution or the provided file"
+   echo "  --with-flex              compile flex"
+   echo "  --without-flex           skip compiling flex"
+   echo "  --with-hwloc             compile libhwloc"
    echo "  --without-hwloc          skip compiling libhwloc"
-   echo "  --with-libevent[=file]   compile libevent using the default distribution or the provided file"
+   echo "  --with-libevent          compile libevent"
    echo "  --without-libevent       skip compiling libevent"
-   echo "  --with-pmix[=file]       compile libpmix using the default distribution or the provided file"
+   echo "  --with-pmix              compile libpmix"
    echo "  --without-pmix           skip compiling libpmix"
-   echo "  --with-prrte[=file]      compile libprrte using the default distribution or the provided file"
+   echo "  --with-prrte             compile libprrte"
    echo "  --without-prrte          skip compiling libprrte"
-   echo "  --with-openmpi[=file]    compile OpenMPI and related libraries using the default distribution or the provided file"
-   echo "  --without-openmpi        skip compiling OpenMPI and related libraries; MPI plus development libraries must be installed on the system"
-   echo "  --with-mpich[=file]      compile MPICH and related libraries using the default distribution or the provided file"
-   echo "  --without-mpich          skip compiling MPICH and related libraries; MPI plus development libraries must be installed on the system"
-   echo "  --with-hypre[=file]      compile libHYPRE using the default distribution or the provided file"
+   echo "  --with-openmpi           compile OpenMPI and related libraries"
+   echo "  --without-openmpi        skip compiling OpenMPI"
+   echo "  --with-mpich             compile MPICH"
+   echo "  --without-mpich          skip compiling MPICH"
+   echo "  --with-hypre             compile libHYPRE"
    echo "  --without-hypre          skip compiling libHYPRE"
-   echo "  --with-cmake[=file]      compile cmake during petsc compilation"
-   echo "  --without-cmake          skip compiling cmake: cmake must be installed on the system"
-   echo "  --with-petsc[=file]      compile PETSc and related libraries using the default distribution or the provided file"
-   echo "  --without-petsc          skip compiling PETSc and related libraries"
-   echo "  --with-mfem[=file]       compile libmfem using the default distribution or the provided file"
+   echo "  --with-cmake             compile cmake"
+   echo "  --without-cmake          skip compiling cmake"
+   echo "  --with-petsc             compile PETSc plus SLEPc, Metis, Mumps, Scalapack, Scotch, FBlasLapack, and Fortran bindings"
+   echo "  --without-petsc          skip compiling PETSc and dependencies"
+   echo "  --with-mfem              compile libmfem"
    echo "  --without-mfem           skip compiling libmfem"
    echo "  --with-OpenParEM         compile OpenParEM"
    echo "  --without-OpenParEM      skip compiling OpenParEM"
    echo "  --with-OpenParEMg        compile OpenParEMg"
    echo "  --without-OpenParEMg     skip compiling OpenParEMg"
-   echo "  --remove-helper-scripts  remove the FreeCAD and ParaView helper scripts; forces --without-all"
+   echo "  --remove-helper-scripts  remove the FreeCAD and ParaView helper scripts and the .OpenParEMg configuration file; forces --without-all"
    echo ""
    echo "developer OPTIONS:"
    echo "  --precompiled-bin        compile for a portable pre-compiled binary using a locally compiled version of gcc; forces --clean-in-place"
@@ -987,158 +916,47 @@ fi
 
 # show the setup
 
-   if [ "$with_meson" = "1" ]; then
-      echo "with-meson=$with_meson using $meson"
-   else
-      echo "with-meson=$with_meson"
-   fi
-
-   if [ "$with_xcb" = "1" ]; then
-      echo "with-xcb=$with_xcb using $xcb"
-   else
-      echo "with-xcb=$with_xcb"
-   fi
-
-   if [ "$with_freetype" = "1" ]; then
-      echo "with-freetype=$with_freetype using $freetype"
-   else
-      echo "with-freetype=$with_freetype"
-   fi
-
-   if [ "$with_tcl" = "1" ]; then
-      echo "with-tcl=$with_tcl using $tcl"
-   else
-      echo "with-tcl=$with_tcl"
-   fi
-
-   if [ "$with_tk" = "1" ]; then
-      echo "with-tk=$with_tk using $tk"
-   else
-      echo "with-tk=$with_tk"
-   fi
-
-   if [ "$with_occt" = "1" ]; then
-      echo "with-occt=$with_occt using $occt"
-   else
-      echo "with-occt=$with_occt"
-   fi
-
-   if [ "$with_gmsh" = "1" ]; then
-      echo "with-gmsh=$with_gmsh using $gmsh"
-   else
-      echo "with-gmsh=$with_gmsh"
-   fi
-
-   if [ "$with_qt" = "1" ]; then
-      echo "with-qt=$with_qt using $qt"
-   else
-      echo "with-qt=$with_qt"
-   fi
-
-   if [ "$with_m4" = "1" ]; then
-      echo "with-m4=$with_m4 using $m4"
-   else
-      echo "with-m4=$with_m4"
-   fi
-
-   if [ "$with_bison" = "1" ]; then
-      echo "with-bison=$with_bison using $bison"
-   else
-      echo "with-bison=$with_bison"
-   fi
-
-   if [ "$with_zlib" = "1" ]; then
-      echo "with-zlib=$with_zlib using $zlib"
-   else
-      echo "with-zlib=$with_zlib"
-   fi
-
-   if [ "$with_flex" = "1" ]; then
-      echo "with-flex=$with_flex using $flex"
-   else
-      echo "with-flex=$with_flex"
-   fi
-
-   if [ "$with_hwloc" = "1" ]; then
-      echo "with-hwloc=$with_hwloc using $hwloc"
-   else
-      echo "with-hwloc=$with_hwloc"
-   fi
-
-   if [ "$with_libevent" = "1" ]; then
-      echo "with-libevent=$with_libevent using $libevent"
-   else
-      echo "with-libevent=$with_libevent"
-   fi
-
-   if [ "$with_pmix" = "1" ]; then
-      echo "with-pmix=$with_pmix using $pmix"
-   else
-      echo "with-pmix=$with_pmix"
-   fi
-
-   if [ "$with_prrte" = "1" ]; then
-      echo "with-prrte=$with_prrte using $prrte"
-   else
-      echo "with-prrte=$with_prrte"
-   fi
-
-   if [ "$with_openmpi" = "1" ]; then
-      echo "with-openmpi=$with_openmpi using $openmpi"
-   else
-      echo "with-openmpi=$with_openmpi"
-   fi
-
-   if [ "$with_mpich" = "1" ]; then
-      echo "with-mpich=$with_mpich using $mpich"
-   else
-      echo "with-mpich=$with_mpich"
-   fi
-
-   if [ "$with_hypre" = "1" ]; then
-      echo "with-hypre=$with_hypre using $hypre"
-   else
-      echo "with-hypre=$with_hypre"
-   fi
-
-   if [ "$with_cmake" = "1" ]; then
-      echo "with-cmake=$with_cmake using $cmake"
-   else
-      echo "with-cmake=$with_cmake"
-   fi
-
-   if [ "$with_petsc" = "1" ]; then
-      echo "with-petsc=$with_petsc using $petsc"
-      echo "   including:"
-      echo "      fblaslapack=$fblaslapack"
-      echo "      mumps=$mumps"
-      echo "      scalapack=$scalapack"
-      echo "      scotch=$scotch"
-   else
-      echo "with-petsc=$with_petsc"
-   fi
-
-   if [ "$with_mfem" = "1" ]; then
-      echo "with-mfem=$with_mfem using $mfem"
-   else
-      echo "with-mfem=$with_mfem"
-   fi
-
-   echo "with-OpenParEM=$with_OpenParEM"
-
-   echo "with-OpenParEMg=$with_OpenParEMg"
-
-   echo "remove-helper-scripts=$remove_helper_scripts"
+echo "with-meson=$with_meson"
+echo "with-freetype=$with_freetype"
+echo "with-tcl=$with_tcl"
+echo "with-tk=$with_tk"
+echo "with-occt=$with_occt"
+echo "with-gmsh=$with_gmsh"
+echo "with-qt=$with_qt"
+echo "with-m4=$with_m4"
+echo "with-bison=$with_bison"
+echo "with-zlib=$with_zlib"
+echo "with-flex=$with_flex"
+echo "with-hwloc=$with_hwloc"
+echo "with-libevent=$with_libevent"
+echo "with-pmix=$with_pmix"
+echo "with-prrte=$with_prrte"
+echo "with-openmpi=$with_openmpi"
+echo "with-mpich=$with_mpich"
+echo "with-hypre=$with_hypre"
+echo "with-cmake=$with_cmake"
+echo "with-petsc=$with_petsc"
+echo "with-mfem=$with_mfem"
+echo "with-OpenParEM=$with_OpenParEM"
+echo "with-OpenParEMg=$with_OpenParEMg"
+echo "remove-helper-scripts=$remove_helper_scripts"
 
 if [ "$show_setup" = "1" ]; then
    exit 0
 fi
 
 #----------------------------------------------------
-# copy Python scripts for FreeCAD and ParaView
+# copy/remove Python scripts for FreeCAD and ParaView
 #----------------------------------------------------
 
 if [ "$remove_helper_scripts" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: removing OpenParEMg configuration file"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd $HOME
+   rm -f ".OpenParEMg"
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: removing FreeCAD and ParaView scripts"
@@ -1146,11 +964,40 @@ if [ "$remove_helper_scripts" = "1" ]; then
 
    # FreeCAD
 
-#   cd $HOME
-#   if [ ".FreeCAD" ]; then
-#
-#   fi
+   cd $HOME
+   if [ -d ".FreeCAD" ]; then
+      cd .FreeCAD
+      if [ -d "Macro" ]; then
+         cd Macro
+         rm -f OpenParEM2D_save.py
+         rm -f OpenParEM3D_save.py
+         cd ..
+      fi
+      rmdir "Macro" 2>/dev/null || true
+      cd ..
+   fi
+   rmdir ".FreeCAD" 2>/dev/null || true
 
+   # ParaView
+
+   if [ -d ".config" ]; then
+      cd .config
+      if [ -d "ParaView" ]; then
+         cd ParaView
+         if [ -d "Macros" ]; then
+            cd Macros
+            rm -f field_plot.py
+            cd ..
+         fi
+         rmdir "Macros" 2>/dev/null || true
+         cd ..
+      fi
+      rmdir "ParaView" 2>/dev/null || true
+      cd ..
+   fi
+   rmdir ".config" 2>/dev/null || true
+
+   exit 0
 else
 
    echo "#------------------------------------------------------------------------------------"
@@ -1243,6 +1090,7 @@ if [ "$clean_in_place" = "1" ]; then
    echo "rm -Rf bin etc include lib lib64 libexec local man sbin share metatypes mkspecs modules phrasebooks plugins qml sbom translations var"
    rm -Rf bin etc include lib lib64 libexec local man sbin share metatypes mkspecs modules phrasebooks plugins qml sbom translations var
    cd "$scripts_dir"
+   exit 0
 fi
 
 echo "#----------------------------------------------------"
@@ -1256,7 +1104,6 @@ if [ ! -d "$DOWNLOAD_DIR" ]; then
       exit 1
    fi
 fi
-
 
 m4="m4-1.4.19.tar.gz"
 download_package_and_verify_sig "$m4" "https://ftp.gnu.org/gnu/m4/$m4" "sig" "$GNU_KEYRING" "" || exit 1
@@ -1377,7 +1224,6 @@ download_package_and_verify_sha256 "$fontconfig" "https://www.freedesktop.org/so
 xext="libXext-1.3.7.tar.gz"
 download_package_and_verify_sig "$xext" "https://xorg.freedesktop.org/archive/individual/lib/$xext" "sig" "$ACOOPERSMITH2_KEYRING" "" || exit 1
 
-
 glvnd="libglvnd-1.7.0.tar.gz"
 # self-generated from 8-19-2026 download
 glvnd_sha256="073e7292788d4d3eeb45ea6c7bdcce9bfdb3b3eef8d7dbd47f2f30dce046ef98"
@@ -1460,10 +1306,6 @@ download_package_and_verify_sha256 "$qt" "https://download.qt.io/official_releas
 has_build=0
 
 if [ "$with_meson" = "1" ]; then
-   has_build=1
-fi
-
-if [ "$with_xcb" = "1" ]; then
    has_build=1
 fi
 
@@ -1584,6 +1426,37 @@ which perl > /dev/null 2>&1
 if [ $? -ne 0 ]; then
    echo "ERROR: \"perl\" must be installed on the system to compile OpenParEM"
    missing_requirement=1
+fi
+
+if [ "$with_cmake" = "0" ]; then
+   which cmake > /dev/null 2>&1
+   if [ $? -ne 0 ]; then
+      echo "ERROR: \"cmake\" must be installed on the system to compile OpenParEM"
+      missing_requirement=1
+   fi
+fi
+
+which pkg-config > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"pkg-config\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which autoconf > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"autoconf\" and related package tools must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which python3 > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"python3\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+else
+   if ! python3 -c 'import distutils' 2>/dev/null; then
+      echo "ERROR: \"python3 module distutils\" must be installed on the system to compile OpenParEM"
+      missing_requirement=1
+   fi
 fi
 
 if [ "$missing_requirement" = "1" ]; then
@@ -1938,7 +1811,6 @@ if [ "$with_tk" = "1" ]; then
    unpack_and_enter $libxcb
    package_name=libxcb
 
-   #PKG_CONFIG_PATH="$install_path/share/pkgconfig" ./configure --prefix="$install_path"
    ./configure --prefix="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
@@ -2003,7 +1875,6 @@ if [ "$with_tk" = "1" ]; then
    package_name=libX11
 
    ./configure --prefix="$install_path"
-#PKG_CONFIG_PATH="$install_path/share/pkgconfig" ./configure --prefix="$install_path"
 
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
@@ -2037,10 +1908,7 @@ if [ "$with_tk" = "1" ]; then
 
    cd unix
 
-#   export CPPFLAGS="-I$install_path/include -I$install_path/external_packages/tk8.6.16/xlib/X11"
-#echo ">>>>>> CPPFLAGS=$CPPFLAGS"
-   
-CPPFLAGS="-I$HOME/OpenParEM/external_packages/tk8.6.16/xlib -I$install_path/include" ./configure --prefix="$install_path" --with-tcl=$install_path/lib
+   CPPFLAGS="-I$install_path/include" ./configure --prefix="$install_path" --with-tcl=$install_path/lib
    if [ $? -ne 0 ]; then 
       echo "OpenParEM_ERROR: tk failed to configure"
       exit 1  
@@ -2248,7 +2116,8 @@ if [ "$with_pmix" = "1" ]; then
 
    unpack_and_enter "$pmix"
 
-   ./configure CFLAGS=-fPIC --prefix="$install_path" --enable-mca-no-build=gds-shmem2 --enable-static="$enable_static" --enable-shared="$enable_shared" --with-libevent="$install_path"
+   ./configure CFLAGS=-fPIC --prefix="$install_path" --enable-mca-no-build=gds-shmem2 --enable-static="$enable_static" \
+                            --enable-shared="$enable_shared" --with-libevent="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: pmix failed to configure"
       exit 1
@@ -2282,7 +2151,8 @@ if [ "$with_prrte" = "1" ]; then
 
    unpack_and_enter "$prrte"
 
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-pmix="$install_path" --with-libevent="$install_path" --with-hwloc="$install_path"
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" \
+               --with-pmix="$install_path" --with-libevent="$install_path" --with-hwloc="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: prrte failed to configure"
       exit 1
@@ -2316,7 +2186,8 @@ if [ "$with_openmpi" = "1" ]; then
 
    unpack_and_enter "$openmpi"
 
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-libevent="$install_path" --with-hwloc="$install_path" --with-pmix="$install_path"
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" \
+               --with-libevent="$install_path" --with-hwloc="$install_path" --with-pmix="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: openmpi failed to configure"
       exit 1
@@ -2486,7 +2357,12 @@ if [ "$with_petsc" = "1" ]; then
 
    export CMAKE_POLICY_VERSION_MINIMUM=3.5
 
-   ./configure --prefix="$install_path" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices --download-cmake=no --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" --with-fortran-bindings=1 --COPTFLAGS="-O3" --CXXOPTFLAGS="-O3" --FOPTFLAGS="-O3"
+   ./configure --prefix="$install_path" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" \          
+               --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices \
+               --download-cmake=no --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no \
+               --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" \
+               --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" \
+               --with-fortran-bindings=1 --COPTFLAGS="-O3" --CXXOPTFLAGS="-O3" --FOPTFLAGS="-O3"
 
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: petsc failed to configure"
@@ -2584,7 +2460,6 @@ fi
 # occt
 if [ "$with_occt" = "1" ]; then
 
-
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: fontconfig"
    echo "#------------------------------------------------------------------------------------"
@@ -2593,12 +2468,6 @@ if [ "$with_occt" = "1" ]; then
 
    unpack_and_enter "$fontconfig"
    package_name=fontconfig
-
-#   meson setup build \
-#      --prefix="$install_path" \
-#      -Ddefault_library=static \
-#      -Dtests=disabled \
-#      -Ddoc=disabled
 
    meson setup build \
       --prefix="$install_path" \
@@ -2636,7 +2505,6 @@ if [ "$with_occt" = "1" ]; then
    unpack_and_enter "$xext"
    package_name=xext
 
-#   PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/share/pkgconfig" \
    ./configure --prefix="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
@@ -2675,10 +2543,10 @@ if [ "$with_occt" = "1" ]; then
       exit 1
    fi
 
-export CPPFLAGS="-I$install_path/include"
-export CFLAGS="-I$install_path/include"
-export CXXFLAGS="-I$install_path/include"
-export LDFLAGS="-L$install_path/lib -L$install_path/lib64"
+   export CPPFLAGS="-I$install_path/include"
+   export CFLAGS="-I$install_path/include"
+   export CXXFLAGS="-I$install_path/include"
+   export LDFLAGS="-L$install_path/lib -L$install_path/lib64"
 
    ./configure --prefix="$install_path"
    if [ $? -ne 0 ]; then
@@ -2767,7 +2635,12 @@ if [ "$with_gmsh" = "1" ]; then
    cd build
 
    # EIGEN is enabled; can substitute Blas/Lapack if EIGEN becomes a problem
-   cmake -D CMAKE_INSTALL_PREFIX="$install_path" -D ENABLE_BUILD_SHARED=ON -D ENABLE_DOMHEX=OFF -D ENABLE_EIGEN=ON -D ENABLE_FLTK=OFF -D ENABLE_GETDP=OFF -D ENABLE_GMM=OFF -D ENABLE_GMP=OFF -D ENABLE_KBIPACK=OFF -D ENABLE_MED=OFF -D ENABLE_MMG=OFF -D ENABLE_MPEG_ENCODE=OFF -D ENABLE_ONELAB=OFF -D ENABLE_ONELAB_METAMODEL=OFF -D ENABLE_OPENMP=OFF -D ENABLE_OPTHOM=OFF -D ENABLE_PLUGINS=OFF -D ENABLE_POST=OFF -D ENABLE_QUADMESHINGTOOLS=OFF -D ENABLE_QUADTRI=OFF -D ENABLE_SOLVER=OFF -D ENABLE_TOUCHBAR=OFF -D ENABLE_VOROPP=OFF  ..
+   cmake -D CMAKE_INSTALL_PREFIX="$install_path" -D ENABLE_BUILD_SHARED=ON -D ENABLE_DOMHEX=OFF \
+         -D ENABLE_EIGEN=ON -D ENABLE_FLTK=OFF -D ENABLE_GETDP=OFF -D ENABLE_GMM=OFF -D ENABLE_GMP=OFF \
+         -D ENABLE_KBIPACK=OFF -D ENABLE_MED=OFF -D ENABLE_MMG=OFF -D ENABLE_MPEG_ENCODE=OFF \
+         -D ENABLE_ONELAB=OFF -D ENABLE_ONELAB_METAMODEL=OFF -D ENABLE_OPENMP=OFF -D ENABLE_OPTHOM=OFF \
+         -D ENABLE_PLUGINS=OFF -D ENABLE_POST=OFF -D ENABLE_QUADMESHINGTOOLS=OFF -D ENABLE_QUADTRI=OFF \
+         -D ENABLE_SOLVER=OFF -D ENABLE_TOUCHBAR=OFF -D ENABLE_VOROPP=OFF  ..
 
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: gmsh failed to configure"
@@ -2824,7 +2697,6 @@ if [ "$with_qt" = "1" ]; then
    cd ..
    remove_base_directory
    cd ..
-
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: xcb_util_image"
@@ -3057,13 +2929,6 @@ if [ "$with_qt" = "1" ]; then
       exit 1
    fi
 
-
-   #meson test -C build
-   #if [ $? -ne 0 ]; then
-   #   echo "OpenParEM_ERROR: xkbcommon failed to test"
-   #   exit 1
-   #fi
-
    cd build
    meson install
    cd ..
@@ -3073,7 +2938,6 @@ if [ "$with_qt" = "1" ]; then
    remove_base_directory
    cd ..
 
-
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: dbus-1"
    echo "#------------------------------------------------------------------------------------"
@@ -3082,21 +2946,11 @@ if [ "$with_qt" = "1" ]; then
 
    unpack_and_enter $dbus1
 
-
-echo "=== gdbus-codegen locations ==="
-find "$PWD" -path '*/gdbus-2.0/codegen/utils.py' -print
-echo "================================"
-
    meson setup build --prefix="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: dbus-1 failed to setup build"
       exit 1
    fi
-
-
-echo "=== gdbus-codegen locations ==="
-find "$PWD" -path '*/gdbus-2.0/codegen/utils.py' -print
-echo "================================"
 
    # patch to avoid deprecated distutils 
 
@@ -3125,29 +2979,11 @@ for p in files:
     p.write_text(s)
 PY
 
-
-
-
-
-
-
-
-
    meson compile -C build
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: dbus-1 failed to compile"
       exit 1
    fi
-
-echo "=== gdbus-codegen locations ==="
-find "$PWD" -path '*/gdbus-2.0/codegen/utils.py' -print
-echo "================================"
-
-   #meson test -C build
-   #if [ $? -ne 0 ]; then
-   #   echo "OpenParEM_ERROR: dbus-1 failed to test"
-   #   exit 1
-   #fi
 
    cd build
    meson install
