@@ -25,6 +25,7 @@ AJACKSON_KEYRING="$SCRIPT_DIR/keyrings/ajackson-keyring.gpg"
 SMCVITTIE_KEYRING="$SCRIPT_DIR/keyrings/smcvittie-keyring.gpg"
 ICUROBOT_KEYRING="$SCRIPT_DIR/keyrings/icurobot-keyring.gpg"
 BKING_KEYRING="$SCRIPT_DIR/keyrings/bking-keyring.gpg"
+OFOURDAN_KEYRING="$SCRIPT_DIR/keyrings/ofourdan-keyring.gpg"
 
 #----------------------------------------------------
 # download required packages
@@ -593,7 +594,9 @@ install_path=$PWD
 cd "$scripts_dir"
 jobs=1
 
-export PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/lib/x86_64-linux-gnu/pkgconfig:$install_path/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+#export PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/lib64/pkgconfig:$install_path/lib/x86_64-linux-gnu/pkgconfig:$install_path/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+
+export PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/lib64/pkgconfig:$install_path/lib/x86_64-linux-gnu/pkgconfig:$install_path/share/pkgconfig:$PKG_CONFIG_PATH"
 
 #----------------------------------------------------
 # input processing
@@ -1338,52 +1341,6 @@ meson="meson-1.12.0.tar.gz"
 meson_sha256="88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c"
 download_package_and_verify_sha256 "$meson" "https://github.com/mesonbuild/meson/releases/download/1.12.0/$meson" "$meson_sha256" || exit 1
 
-xcb_proto="xcb-proto-1.17.0.tar.gz"
-download_package_and_verify_sig "$xcb_proto" "https://xorg.freedesktop.org/archive/individual/proto/$xcb_proto" "sig" "$MTURNER_KEYRING" "" || exit 1
-
-libxcb="libxcb-1.17.0.tar.gz"
-download_package_and_verify_sig "$libxcb" "https://www.x.org/archive/individual/lib/$libxcb" "sig" "$MTURNER_KEYRING" "" || exit 1
-
-xcb_util="xcb-util-0.4.1.tar.gz"
-download_package_and_verify_sig "$xcb_util" "https://xcb.freedesktop.org/dist/$xcb_util" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
-
-xcb_util_image=xcb-util-image-0.4.1.tar.gz
-download_package_and_verify_sig "$xcb_util_image" "https://xcb.freedesktop.org/dist/$xcb_util_image" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
-
-xcb_util_keysims="xcb-util-keysyms-0.4.1.tar.gz"
-download_package_and_verify_sig "$xcb_util_keysims" "https://xcb.freedesktop.org/dist/$xcb_util_keysims" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
-
-xcb_util_renderutil="xcb-util-renderutil-0.3.10.tar.gz"
-download_package_and_verify_sig "$xcb_util_renderutil" "https://xcb.freedesktop.org/dist/$xcb_util_renderutil" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
-
-xcb_util_wm="xcb-util-wm-0.4.2.tar.gz"
-download_package_and_verify_sig "$xcb_util_wm" "https://xcb.freedesktop.org/dist/$xcb_util_wm" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
-
-xcb_util_cursor="xcb-util-cursor-0.1.6.tar.gz"
-download_package_and_verify_sig "$xcb_util_cursor" "https://xcb.freedesktop.org/dist/$xcb_util_cursor" "sig" "$ACOOPERSMITH2_KEYRING" "" || exit 1
-
-xcb_util_errors="xcb-util-errors-1.0.1.tar.gz"
-download_package_and_verify_sig "$xcb_util_errors" "https://xcb.freedesktop.org/dist/$xcb_util_errors" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
-
-libxml2="libxml2-v2.15.3.tar.gz"
-# self-generated from 8-20-2026 download
-libxml2_sha256="0da50c1415f4ec0364569d2119b1436ba837b31df44af28569d234272c23cf1f"
-download_package_and_verify_sha256 "$libxml2" "https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.15.3/$libxml2" "$libxml2_sha256" || exit 1
-
-xkbcommon="xkbcommon-1.13.2.tar.gz"
-# self-generated from 8-20-2026 download
-xkbcommon_sha256="acc4d5f7c3cbba5f9f8d08d8bdbeede84ecede46792f47929aa9321873385528"
-download_package_and_verify_sha256 "$xkbcommon" "https://github.com/xkbcommon/libxkbcommon/archive/refs/tags/$xkbcommon" "$xkbcommon_sha256" || exit 1
-cd ../external_packages
-tar -xf xkbcommon-1.13.2.tar.gz
-tar -cf libxkbcommon-xkbcommon-1.13.2.tar.gz libxkbcommon-xkbcommon-1.13.2
-gzip libxkbcommon-xkbcommon-1.13.2.tar.gz
-xkbcommon="libxkbcommon-xkbcommon-1.13.2.tar.gz"
-cd ../scripts
-
-libX11="libX11-1.8.tar.gz"
-download_package_and_verify_sig "$libX11" "https://www.x.org/archive/individual/lib/$libX11" "sig" "$AJACKSON_KEYRING" "" || exit 1
-
 freetype="freetype-2.14.3.tar.gz"
 download_package_and_verify_sig "$freetype" "https://sourceforge.net/projects/freetype/files/freetype2/2.14.3/$freetype" "sig" "$WLEMBERG_KEYRING" "/download" || exit 1
 
@@ -1392,10 +1349,38 @@ tcl="tcl8.6.16-src.tar.gz"
 tcl_sha256="91cb8fa61771c63c262efb553059b7c7ad6757afa5857af6265e4b0bdc2a14a5"
 download_package_and_verify_sha256 "$tcl" "http://prdownloads.sourceforge.net/tcl/$tcl" "$tcl_sha256" || exit 1
 
+xorgproto="xorgproto-2025.1.tar.gz"
+download_package_and_verify_sig "$xorgproto" "https://xorg.freedesktop.org/archive/individual/proto/$xorgproto" "sig" "$OFOURDAN_KEYRING" "" || exit 1
+
+xcb_proto="xcb-proto-1.17.0.tar.gz"
+download_package_and_verify_sig "$xcb_proto" "https://xorg.freedesktop.org/archive/individual/proto/$xcb_proto" "sig" "$MTURNER_KEYRING" "" || exit 1
+
+libxcb="libxcb-1.17.0.tar.gz"
+download_package_and_verify_sig "$libxcb" "https://www.x.org/archive/individual/lib/$libxcb" "sig" "$MTURNER_KEYRING" "" || exit 1
+
+xtrans="xtrans-1.6.0.tar.gz"
+download_package_and_verify_sig "$xtrans" "https://www.x.org/archive/individual/lib/$xtrans" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+   
+libX11="libX11-1.8.tar.gz"
+download_package_and_verify_sig "$libX11" "https://www.x.org/archive/individual/lib/$libX11" "sig" "$AJACKSON_KEYRING" "" || exit 1
+
 tk="tk8.6.16-src.tar.gz"
 # self-generated from 8-19-2026 download
 tk_sha256="be9f94d3575d4b3099d84bc3c10de8994df2d7aa405208173c709cc404a7e5fe"
 download_package_and_verify_sha256 "$tk" "http://prdownloads.sourceforge.net/tcl/$tk" "$tk_sha256" || exit 1
+
+fontconfig="fontconfig-2.16.0.tar.xz"
+fontconfig_sha256="6a33dc555cc9ba8b10caf7695878ef134eeb36d0af366041f639b1da9b6ed220"
+download_package_and_verify_sha256 "$fontconfig" "https://www.freedesktop.org/software/fontconfig/release/$fontconfig" "$fontconfig_sha256" || exit 1
+
+xext="libXext-1.3.7.tar.gz"
+download_package_and_verify_sig "$xext" "https://xorg.freedesktop.org/archive/individual/lib/$xext" "sig" "$ACOOPERSMITH2_KEYRING" "" || exit 1
+
+
+glvnd="libglvnd-1.7.0.tar.gz"
+# self-generated from 8-19-2026 download
+glvnd_sha256="073e7292788d4d3eeb45ea6c7bdcce9bfdb3b3eef8d7dbd47f2f30dce046ef98"
+download_package_and_verify_sha256 "$glvnd" "https://github.com/NVIDIA/libglvnd/archive/refs/tags/v1.7.0.tar.gz" "$glvnd_sha256" || exit 1
 
 occt_root="7_9_3.tar.gz"
 occt="OCCT-$occt_root"
@@ -1424,6 +1409,43 @@ tar -xf icu4c-78.3-sources.tgz
 tar -cf icu.tar icu
 gzip icu.tar
 icu4c="icu.tar.gz"
+cd ../scripts
+
+xcb_util="xcb-util-0.4.1.tar.gz"
+download_package_and_verify_sig "$xcb_util" "https://xcb.freedesktop.org/dist/$xcb_util" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+
+xcb_util_image=xcb-util-image-0.4.1.tar.gz
+download_package_and_verify_sig "$xcb_util_image" "https://xcb.freedesktop.org/dist/$xcb_util_image" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+
+xcb_util_keysyms="xcb-util-keysyms-0.4.1.tar.gz"
+download_package_and_verify_sig "$xcb_util_keysyms" "https://xcb.freedesktop.org/dist/$xcb_util_keysims" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+
+xcb_util_renderutil="xcb-util-renderutil-0.3.10.tar.gz"
+download_package_and_verify_sig "$xcb_util_renderutil" "https://xcb.freedesktop.org/dist/$xcb_util_renderutil" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+
+xcb_util_wm="xcb-util-wm-0.4.2.tar.gz"
+download_package_and_verify_sig "$xcb_util_wm" "https://xcb.freedesktop.org/dist/$xcb_util_wm" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+
+xcb_util_cursor="xcb-util-cursor-0.1.6.tar.gz"
+download_package_and_verify_sig "$xcb_util_cursor" "https://xcb.freedesktop.org/dist/$xcb_util_cursor" "sig" "$ACOOPERSMITH2_KEYRING" "" || exit 1
+
+xcb_util_errors="xcb-util-errors-1.0.1.tar.gz"
+download_package_and_verify_sig "$xcb_util_errors" "https://xcb.freedesktop.org/dist/$xcb_util_errors" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+
+libxml2="libxml2-v2.15.3.tar.gz"
+# self-generated from 8-20-2026 download
+libxml2_sha256="0da50c1415f4ec0364569d2119b1436ba837b31df44af28569d234272c23cf1f"
+download_package_and_verify_sha256 "$libxml2" "https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.15.3/$libxml2" "$libxml2_sha256" || exit 1
+
+xkbcommon="xkbcommon-1.13.2.tar.gz"
+# self-generated from 8-20-2026 download
+xkbcommon_sha256="acc4d5f7c3cbba5f9f8d08d8bdbeede84ecede46792f47929aa9321873385528"
+download_package_and_verify_sha256 "$xkbcommon" "https://github.com/xkbcommon/libxkbcommon/archive/refs/tags/$xkbcommon" "$xkbcommon_sha256" || exit 1
+cd ../external_packages
+tar -xf xkbcommon-1.13.2.tar.gz
+tar -cf libxkbcommon-xkbcommon-1.13.2.tar.gz libxkbcommon-xkbcommon-1.13.2
+gzip libxkbcommon-xkbcommon-1.13.2.tar.gz
+xkbcommon="libxkbcommon-xkbcommon-1.13.2.tar.gz"
 cd ../scripts
 
 qt="qt-everywhere-src-6.11.2.tar.xz"
@@ -1808,8 +1830,167 @@ if [ "$with_tcl" = "1" ]; then
    cd $current_dir
 fi
 
+
 # tk
 if [ "$with_tk" = "1" ]; then 
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xorgproto"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xorgproto
+   package_name=xorgproto
+
+   meson setup build --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   ninja -C build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to build"
+      exit 1
+   fi
+
+   ninja -C build install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xcb_proto"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xcb_proto
+   package_name=xcb_proto
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: libXau"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $libXau
+   package_name=libXau
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: libxcb"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $libxcb
+   package_name=libxcb
+
+   #PKG_CONFIG_PATH="$install_path/share/pkgconfig" ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xtrans"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xtrans
+   package_name=xtrans
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: libX11"
@@ -1821,6 +2002,8 @@ if [ "$with_tk" = "1" ]; then
    package_name=libX11
 
    ./configure --prefix="$install_path"
+#PKG_CONFIG_PATH="$install_path/share/pkgconfig" ./configure --prefix="$install_path"
+
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -1853,7 +2036,10 @@ if [ "$with_tk" = "1" ]; then
 
    cd unix
 
-   ./configure CPPFLAGS="-I$install_path/include" --prefix="$install_path" --with-tcl=$install_path/lib
+#   export CPPFLAGS="-I$install_path/include -I$install_path/external_packages/tk8.6.16/xlib/X11"
+#echo ">>>>>> CPPFLAGS=$CPPFLAGS"
+   
+CPPFLAGS="-I$HOME/OpenParEM/external_packages/tk8.6.16/xlib -I$install_path/include" ./configure --prefix="$install_path" --with-tcl=$install_path/lib
    if [ $? -ne 0 ]; then 
       echo "OpenParEM_ERROR: tk failed to configure"
       exit 1  
@@ -2397,6 +2583,126 @@ fi
 # occt
 if [ "$with_occt" = "1" ]; then
 
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: fontconfig"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$fontconfig"
+   package_name=fontconfig
+
+#   meson setup build \
+#      --prefix="$install_path" \
+#      -Ddefault_library=static \
+#      -Dtests=disabled \
+#      -Ddoc=disabled
+
+   meson setup build \
+      --prefix="$install_path" \
+      -Dtests=disabled \
+      -Ddoc=disabled
+
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to setup build"
+      exit 1
+   fi
+
+   meson compile -C build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to compile"
+      exit 1
+   fi
+
+   meson install -C build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xext"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$xext"
+   package_name=xext
+
+#   PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/share/pkgconfig" \
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+   
+   cd ..
+   remove_base_directory
+   cd ..
+
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: glvnd"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$glvnd"
+   package_name=glvnd
+
+   ./autogen.sh
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to autogen"
+      exit 1
+   fi
+
+export CPPFLAGS="-I$install_path/include"
+export CFLAGS="-I$install_path/include"
+export CXXFLAGS="-I$install_path/include"
+export LDFLAGS="-L$install_path/lib -L$install_path/lib64"
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs" 
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+
+
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: occt"
    echo "#------------------------------------------------------------------------------------"
@@ -2405,7 +2711,18 @@ if [ "$with_occt" = "1" ]; then
 
    unpack_and_enter "$occt"
 
-   cmake -D INSTALL_SAMPLES=ON -D 3RDPARTY_DIR:PATH="$install_path" -D 3RDPARTY_FREETYPE_DIR:PATH="$install_path" -D 3RDPARTY_TCL_DIR:PATH="$install_path" -D 3RDPARTY_TK_DIR:PATH="$install_path" -D 3RDPARTY_TK_LIBRARY_DIR:FILEPATH="$install_path/lib" -D INSTALL_DIR:PATH="$install_path" .
+   cmake \
+   -D INSTALL_SAMPLES=ON \
+   -D CMAKE_LIBRARY_PATH="$install_path/lib64;$install_path/lib" \
+   -D CMAKE_PREFIX_PATH="$install_path" \
+   -D CMAKE_SHARED_LINKER_FLAGS="-L$install_path/lib64 -L$install_path/lib" \
+   -D 3RDPARTY_DIR:PATH="$install_path" \
+   -D 3RDPARTY_FREETYPE_DIR:PATH="$install_path" \
+   -D 3RDPARTY_TCL_DIR:PATH="$install_path" \
+   -D 3RDPARTY_TK_DIR:PATH="$install_path" \
+   -D 3RDPARTY_TK_LIBRARY_DIR:FILEPATH="$install_path/lib" \
+   -D INSTALL_DIR:PATH="$install_path" \
+   .
 
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: occt failed to configure"
@@ -2473,136 +2790,8 @@ if [ "$with_gmsh" = "1" ]; then
    cd ..
 fi
 
-# xcb
-if [ "$with_xcb" = "1" ]; then
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: xcb and dependencies"
-   echo "#------------------------------------------------------------------------------------"
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: libXau"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter $libXau
-   package_name=libXau
-
-   ./configure --prefix="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: libXdmcp"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter $libXdmcp
-   package_name=libXdmcp
-
-   ./configure --prefix="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: xcb_proto"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter $xcb_proto
-   package_name=xcb_proto
-
-   ./configure --prefix="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
-
-   echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: libxcb"
-   echo "#------------------------------------------------------------------------------------"
-
-   cd external_packages
-
-   unpack_and_enter $libxcb
-   package_name=libxcb
-
-   PKG_CONFIG_PATH="$install_path/share/pkgconfig" ./configure --prefix="$install_path"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to configure"
-      exit 1
-   fi
-
-   make -j "$jobs"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to make"
-      exit 1
-   fi
-
-   make install
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: $package_name failed to install"
-      exit 1
-   fi
-
-   cd ..
-   remove_base_directory
-   cd ..
+# qt
+if [ "$with_qt" = "1" ]; then
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: xcb_util"
@@ -2635,6 +2824,7 @@ if [ "$with_xcb" = "1" ]; then
    remove_base_directory
    cd ..
 
+
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: xcb_util_image"
    echo "#------------------------------------------------------------------------------------"
@@ -2644,7 +2834,7 @@ if [ "$with_xcb" = "1" ]; then
    unpack_and_enter $xcb_util_image
    package_name=xcb_util_image
 
-   PKG_CONFIG_PATH="$install_path/lib/pkgconfig" ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -2667,13 +2857,13 @@ if [ "$with_xcb" = "1" ]; then
    cd ..
 
    echo "#------------------------------------------------------------------------------------"
-   echo "# OpenParEM_build: xcb_util_keysims"
+   echo "# OpenParEM_build: xcb_util_keysyms"
    echo "#------------------------------------------------------------------------------------"
-
+   
    cd external_packages
 
-   unpack_and_enter $xcb_util_keysims
-   package_name=xcb_util_keysims
+   unpack_and_enter $xcb_util_keysyms
+   package_name=xcb_util_keysyms
 
    ./configure --prefix="$install_path"
    if [ $? -ne 0 ]; then
@@ -2686,7 +2876,7 @@ if [ "$with_xcb" = "1" ]; then
       echo "OpenParEM_ERROR: $package_name failed to make"
       exit 1
    fi
-
+   
    make install
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to install"
@@ -2821,7 +3011,6 @@ if [ "$with_xcb" = "1" ]; then
    remove_base_directory
    cd ..
 
-
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: libxml2"
    echo "#------------------------------------------------------------------------------------"
@@ -2838,10 +3027,10 @@ if [ "$with_xcb" = "1" ]; then
     -DCMAKE_INSTALL_PREFIX="$install_path" \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=OFF
-
+   
    cmake --build . -j "$jobs"
    cmake --install .
-
+    
    cd ../..
    remove_base_directory
    cd ..
@@ -2868,7 +3057,7 @@ if [ "$with_xcb" = "1" ]; then
    fi
 
 
-   #meson test -C build 
+   #meson test -C build
    #if [ $? -ne 0 ]; then
    #   echo "OpenParEM_ERROR: xkbcommon failed to test"
    #   exit 1
@@ -2883,10 +3072,6 @@ if [ "$with_xcb" = "1" ]; then
    remove_base_directory
    cd ..
 
-fi
-
-# qt
-if [ "$with_qt" = "1" ]; then
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: dbus-1"
@@ -2896,11 +3081,56 @@ if [ "$with_qt" = "1" ]; then
 
    unpack_and_enter $dbus1
 
+
+echo "=== gdbus-codegen locations ==="
+find "$PWD" -path '*/gdbus-2.0/codegen/utils.py' -print
+echo "================================"
+
    meson setup build --prefix="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: dbus-1 failed to setup build"
       exit 1
    fi
+
+
+echo "=== gdbus-codegen locations ==="
+find "$PWD" -path '*/gdbus-2.0/codegen/utils.py' -print
+echo "================================"
+
+   # patch to avoid deprecated distutils 
+
+python3 - <<'PY'
+from pathlib import Path
+
+files = list(Path(".").glob("**/gdbus-2.0/codegen/utils.py"))
+
+if not files:
+    raise SystemExit("ERROR: gdbus-codegen utils.py was not found")
+
+for p in files:
+    print(f"Patching {p}")
+    s = p.read_text()
+
+    s = s.replace(
+        "import distutils.version",
+        "# distutils removed: Python 3.12 no longer provides distutils"
+    )
+
+    s = s.replace(
+        "return (distutils.version.LooseVersion(v), key[1])",
+        "return (tuple(int(x) for x in v.split('.')), key[1])"
+    )
+
+    p.write_text(s)
+PY
+
+
+
+
+
+
+
+
 
    meson compile -C build
    if [ $? -ne 0 ]; then
@@ -2908,6 +3138,9 @@ if [ "$with_qt" = "1" ]; then
       exit 1
    fi
 
+echo "=== gdbus-codegen locations ==="
+find "$PWD" -path '*/gdbus-2.0/codegen/utils.py' -print
+echo "================================"
 
    #meson test -C build
    #if [ $? -ne 0 ]; then
@@ -2974,7 +3207,7 @@ if [ "$with_qt" = "1" ]; then
    cd build
 
    #../configure --prefix="$install_path" --skip qtconnectivity,qtsensors,qtserialport,qtserialbus,qtpositioning,qtlocation,qtwebengine,qtmultimedia,qtwebsockets,qtsql,qtremoteobjects,qtpurchase,qtquick3d,qtquicktimeline,qtsvg,qtquick3dphysics,qtspeech,qtvirtualkeyboard
-   ../configure --prefix="$install_path"
+   ../configure --prefix="$install_path" --skip qtwebengine --openxr=no
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: qt failed to configure"
       exit 1
@@ -2993,7 +3226,7 @@ if [ "$with_qt" = "1" ]; then
    fi
 
    cd ../..
-   remove_base_directory
+   #remove_base_directory
    cd ..
 fi
 
