@@ -2357,12 +2357,7 @@ if [ "$with_petsc" = "1" ]; then
 
    export CMAKE_POLICY_VERSION_MINIMUM=3.5
 
-   ./configure --prefix="$install_path" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" \          
-               --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices \
-               --download-cmake=no --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no \
-               --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" \
-               --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" \
-               --with-fortran-bindings=1 --COPTFLAGS="-O3" --CXXOPTFLAGS="-O3" --FOPTFLAGS="-O3"
+   ./configure --prefix="$install_path" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices --download-cmake=no --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" --with-fortran-bindings=1 --COPTFLAGS="-O3" --CXXOPTFLAGS="-O3" --FOPTFLAGS="-O3"
 
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: petsc failed to configure"
