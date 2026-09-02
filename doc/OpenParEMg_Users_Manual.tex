@@ -975,7 +975,9 @@ EndItem
 \section{Macro File Format Specification}
 \label{sec:macro_file_spec}
 
-A simple macro language is defined to enable stress and regression testing.  The stress and regression tests can be found in \texttt{regression/OpenParEMg}. Given its limited scope, the language is not fully developed and has limited error detection and messages. Any system implementing full automation of OpenParEM3D is expected to use a full-featured programming language to write the necessary text files to develop a complete project.
+A simple macro language is defined to enable stress and regression testing.  The stress and regression tests can be found in \texttt{regression/OpenParEMg}. Given its limited scope, the language is not fully developed and has limited error detection and messaging. Any system implementing full automation of OpenParEM3D is expected instead to use a full-featured programming language to write the necessary text files to develop complete projects.
+
+While a macro is running, the interface is "live", so clicking in the GUI can cause the behavior to change or even for the macro to fail.  For example, if a macro selects two objects for a merge operation, then a click in the drawing area can clear the selection and cause the merge operation to fail, leading the macro to exit with an error message.
 
 \begin{Verbatim}[fontsize=\small]
 #OpenParEMgMacro 1.0 // required in the file

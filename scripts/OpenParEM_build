@@ -3078,8 +3078,18 @@ PY
 
    cd build
 
-   #../configure --prefix="$install_path" --skip qtconnectivity,qtsensors,qtserialport,qtserialbus,qtpositioning,qtlocation,qtwebengine,qtmultimedia,qtwebsockets,qtsql,qtremoteobjects,qtpurchase,qtquick3d,qtquicktimeline,qtsvg,qtquick3dphysics,qtspeech,qtvirtualkeyboard
-   ../configure --prefix="$install_path" --skip qtwebengine --openxr=no
+   #../configure --prefix="$install_path" --skip qtwebengine --openxr=no
+   ../configure --prefix="$install_path" --openxr=no \
+                --skip qtwebengine \
+                --skip qtwebengine \
+                --skip qtmultimedia \
+                --skip qtlocation \
+                --skip qtpositioning \
+                --skip qtconnectivity \
+                --skip qtserialport \
+                --skip qtspeech \
+                --skip qtremoteobjects \
+                --skip qtwayland
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: qt failed to configure"
       exit 1

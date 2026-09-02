@@ -251,10 +251,24 @@ script.  MPICH can used instead of OpenMPI by setting the command line switch
       $ OpenParEM_build --jobs=4 --with-mpich
 
 ----------------------------------------------------------------------------------
+Startup Warnings
+----------------------------------------------------------------------------------
+
+A harmless warning can appear on some systems:
+
+qt.qpa.services: Failed to register with host portal 
+QDBusError("org.freedesktop.DBus.Error.ServiceUnknown", 
+"The name org.freedesktop.portal.Desktop was not provided by any .service files")
+
+If desired, this warning can be eliminated by installing package 
+"xdg-desktop-portal".  For example, on Ubuntu the command is
+   $ sudo apt-get install xdg-desktop-portal
+
+----------------------------------------------------------------------------------
 Uninstalling OpenParEM
 ----------------------------------------------------------------------------------
 
-1. Remove the FreeCAD and ParaView Python scripts:
+1. Remove scripts and helper files:
    $ cd install_dir/OpenParEM/scripts
    $ OpenParEM_build --remove-helper-scripts
 2. Remove OpenParEM:
