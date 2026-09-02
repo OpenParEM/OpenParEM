@@ -1,4 +1,4 @@
-﻿#!/bin/sh
+#!/usr/bin/sh
 
 #ToDo: unset PETSC_DIR, PETSC_ARCH, and SLEPC_DIR
 
