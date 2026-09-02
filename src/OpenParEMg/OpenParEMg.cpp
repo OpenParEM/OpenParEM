@@ -21,13 +21,17 @@
 #include "OPEMg.h"
 
 #include <QApplication>
+#include <QDebug>
+#include <QFile>
+#include <QIcon>
+#include <QPixmap>
 
 int main(int argc, char *argv[])
 {
-
-
     QApplication a(argc, argv);
     OpenParEMg w;
+    w.setWindowIcon(QIcon(":/images/images/logo2.svg"));
+    a.setDesktopFileName("OpenParEMg");
     w.show();
     return a.exec();
 }

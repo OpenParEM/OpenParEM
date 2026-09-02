@@ -289,10 +289,11 @@ fi
 # check for installed tools
 #----------------------------------------------------
 
-which cmake > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-   with_cmake=0
-fi
+# always use cmake compiled from source
+#which cmake > /dev/null 2>&1
+#if [ $? -eq 0 ]; then
+#   with_cmake=0
+#fi
 
 which bison > /dev/null 2>&1
 if [ $? -eq 0 ]; then
@@ -946,7 +947,7 @@ if [ "$show_setup" = "1" ]; then
 fi
 
 #----------------------------------------------------
-# copy/remove Python scripts for FreeCAD and ParaView
+# copy/remove scripts and files
 #----------------------------------------------------
 
 if [ "$remove_helper_scripts" = "1" ]; then
@@ -957,6 +958,22 @@ if [ "$remove_helper_scripts" = "1" ]; then
 
    cd $HOME
    rm -f ".OpenParEMg"
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: removing OpenParEMg Desktop Entry file"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd $HOME
+   if [ -d ".local" ]; then
+      cd .local
+      if [ -d "share" ]; then
+         cd share
+         if [ -d "applications" ]; then
+            cd applications
+            rm -f "OpenParEMg.desktop"
+         fi
+      fi
+   fi
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: removing FreeCAD and ParaView scripts"
@@ -999,6 +1016,34 @@ if [ "$remove_helper_scripts" = "1" ]; then
 
    exit 0
 else
+
+   # Desktop Entry file
+   cd $HOME
+   if [ -d ".local" ]; then
+      cd .local
+      if [ -d "share" ]; then 
+         cd share
+         if [ -d "applications" ]; then
+
+            echo "#------------------------------------------------------------------------------------"
+            echo "# OpenParEM_build: creating Desktop Entry file"
+            echo "#------------------------------------------------------------------------------------"
+
+            cd applications
+            echo "[Desktop Entry]" > OpenParEMg.desktop
+            echo "Type=Application" >> OpenParEMg.desktop
+            echo "Name=OpenParEMg" >> OpenParEMg.desktop
+            echo "Exec=$install_path/bin/OpenParEMg" >> OpenParEMg.desktop
+            echo "Icon=$install_path/src/OpenParEMg/images/logo2.svg" >> OpenParEMg.desktop
+            echo "Terminal=false" >> OpenParEMg.desktop
+            echo "Categories=Development;Engineering;" >> OpenParEMg.desktop
+            echo "StartupWMClass=OpenParEMg" >> OpenParEMg.desktop
+            if [ $? -ne 0 ]; then
+               echo "OpenParEM_WARNING: Failed to register the icon image."
+            fi
+         fi
+      fi
+   fi
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: copying FreeCAD and ParaView scripts"
@@ -2942,7 +2987,7 @@ if [ "$with_qt" = "1" ]; then
       exit 1
    fi
 
-   # patch to avoid deprecated distutils 
+   # patch to avoid deprecated distutils - courtesy of ChatGPT
 
 python3 - <<'PY'
 from pathlib import Path

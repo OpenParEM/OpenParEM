@@ -57,6 +57,7 @@
 #include <BRepAlgoAPI_Common.hxx>
 
 #include <QIcon>
+#include <QDebug>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QDir>
@@ -194,9 +195,6 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     MPI_PORT_COMM=nullptr;
     request=nullptr;
-
-    // load an icon for the window
-    setWindowIcon(QIcon(":/images/images/logo2.svg"));
 
     /////////////////////////////////////////////////////////////////////////////
     // main window setup
