@@ -1452,11 +1452,6 @@ which python3 > /dev/null 2>&1
 if [ $? -ne 0 ]; then
    echo "ERROR: \"python3\" must be installed on the system to compile OpenParEM"
    missing_requirement=1
-else
-   if ! python3 -c 'import distutils' 2>/dev/null; then
-      echo "ERROR: \"python3 module distutils\" must be installed on the system to compile OpenParEM"
-      missing_requirement=1
-   fi
 fi
 
 if [ "$missing_requirement" = "1" ]; then
