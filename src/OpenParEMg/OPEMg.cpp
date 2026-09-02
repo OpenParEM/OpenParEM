@@ -394,6 +394,16 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->antennaText->viewport()->installEventFilter(antennaFilter);
     ui->antennaText->verticalScrollBar()->installEventFilter(antennaFilter);
 
+    logLastPos=0;
+    iterationLastPos=0;
+    dataLastPos=0;
+    antennaLastPos=0;
+
+    logLastChar='\0';
+    iterationsLastChar='\0';
+    dataLastChar='\0';
+    antennaLastChar='\0';
+
     /////////////////////////////////////////////////////////////////////////////
     // context menu for drawingWindow
     /////////////////////////////////////////////////////////////////////////////
