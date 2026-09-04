@@ -77,9 +77,10 @@ std::filesystem::path currentPath;
 MPI_Request request;    // to align with how things are done in OpenParEM3D
 
 void help () {
-   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM2D [-h] filename\n");
+   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM2D [-h] filename [logfile]\n");
    PetscPrintf(PETSC_COMM_WORLD,"       -h          : Print this help text\n");
    PetscPrintf(PETSC_COMM_WORLD,"       filename    : Filename of an OpenParEM setup file.\n");
+   PetscPrintf(PETSC_COMM_WORLD,"       logfile     : Output is redirected to the given file.  Note that the file is appended.\n");
    PetscPrintf(PETSC_COMM_WORLD,"\nOpenParEM2D is a full-wave 2D electromagnetic solver.\n");
    PetscPrintf(PETSC_COMM_WORLD,"Version %d.%d.%d\n",version_major,version_minor,version_patch);
 

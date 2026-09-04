@@ -117,9 +117,10 @@ void get_edgeLengthsPerWavelength (ParMesh *pmesh, double frequency, Vector er, 
 }
 
 void help () {
-   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM3D [-h] filename\n");
+   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM3D [-h] filename [logfile]\n");
    PetscPrintf(PETSC_COMM_WORLD,"       -h          : Print this help text\n");
    PetscPrintf(PETSC_COMM_WORLD,"       filename    : Filename of an OpenParEM setup file.\n");
+   PetscPrintf(PETSC_COMM_WORLD,"       logfile     : Output is redirected to the given file.  Note that the file is over-written.\n");
    PetscPrintf(PETSC_COMM_WORLD,"\nOpenParEM3D is a full-wave 3D electromagnetic solver.\n");
    PetscPrintf(PETSC_COMM_WORLD,"Version %d.%d.%d\n",version_major,version_minor,version_patch);
 
