@@ -286,32 +286,6 @@ if [ ! -f "OpenParEM_build" ]; then
 fi
 
 #----------------------------------------------------
-# check for installed tools
-#----------------------------------------------------
-
-# always use cmake compiled from source
-#which cmake > /dev/null 2>&1
-#if [ $? -eq 0 ]; then
-#   with_cmake=0
-#fi
-
-which bison > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-   with_bison=0
-fi
-
-which flex > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-   with_flex=0
-fi
-
-which mpirun > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-   with_openmpi=0
-   with_mpich=0
-fi
-
-#----------------------------------------------------
 # subroutines
 #----------------------------------------------------
 
@@ -414,7 +388,6 @@ unpack_and_enter() {
       fi
    fi
 
-   # make sure it unpacked
    if [ ! -d "$FILE_base" ]; then
       echo "ERROR: failure to unpack \"""$FILE""\""
       exit 1
@@ -434,147 +407,6 @@ remove_base_directory() {
       echo "ERROR: failed to find directory \"""$FILE_base""\""
       exit 1
    fi
-}
-
-wrap_executable() {
-
-   echo "wrapping $1"
-
-   # executable to wrap
-   PROG=$1
-   BINPROG=$PROG.bin
-
-   # flag for processing for OPENMPI
-   HAS_COMPILED_OPENMPI=$2
-
-   # delete the log file
-   REMOVE_LOGFILE=$3
-
-   # redirect stdout/stderr to a log file
-   TEST_REDIRECT=$4
-
-   cd "$install_path/bin"
-
-      if [ $? -ne 0 ]; then
-         echo "ERROR: failed to change to the bin directory"
-         exit 1
-      fi
-
-      mv $PROG $BINPROG
-      if [ $? -ne 0 ]; then
-         echo "ERROR: failed to move $PROG to $BINPROG"
-         exit 1
-      fi
-
-      echo '#!/bin/sh' > $PROG
-      if [ $? -ne 0 ]; then
-         echo "ERROR: failed to create $PROG"
-         exit 1
-      fi
-
-      echo '' >> $PROG
-      if [ "$TEST_REDIRECT" = "1" ]; then
-         echo "# usage: $PROG [-h|--help] project_name log_file_name" >> $PROG
-         echo '#        project_name is required and requires an extension' >> $PROG
-         echo '#        log_file_name is optional' >> $PROG
-         echo '# ' >> $PROG
-         echo '# Output to the terminal is redirected to a log file, where' >> $PROG
-         echo "# the file name is either log_file_name or $PROG.log if log_file_name is not provided." >> $PROG
-         echo '# ' >> $PROG
-         echo '# If -h or --help are given, then a short help message is printed to the terminal' >> $PROG
-         echo '# followed by immediate exit.' >> $PROG
-      else
-         echo "# usage: $PROG file_name" >> $PROG
-         echo '#        file_name is required' >> $PROG
-      fi
-
-      echo '' >> $PROG
-      echo "BINPROG=$BINPROG" >> $PROG
-      echo 'BINPATH=$(which $BINPROG)' >> $PROG
-      echo 'if [ "$BINPATH" = "" ]; then' >> $PROG
-      echo '   echo "ERROR: Failed to locate $BINPROG."' >> $PROG
-      echo '   exit 1' >> $PROG
-      echo 'fi' >> $PROG
-
-      if [ "$TEST_REDIRECT" = "1" ]; then
-         echo '' >> $PROG
-         echo 'if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then' >> $PROG
-         echo '   $BINPROG "$1"' >> $PROG
-         echo '   exit 0' >> $PROG
-         echo 'fi' >> $PROG
-      fi
-
-      echo 'OPEM=${BINPATH%/bin/$BINPROG}' >> $PROG
-
-      echo '' >> $PROG
-      echo 'export LD_LIBRARY_PATH=$OPEM/lib:$OPEM/lib64:$LD_LIBRARY_PATH' >> $PROG
-      if [ "$HAS_COMPILED_OPENMPI" = "1" ]; then
-         echo 'export OPAL_PREFIX=$OPEM' >> $PROG
-         echo 'export PMIX_PREFIX=$OPEM' >> $PROG
-      fi
-      echo 'export OMP_NUM_THREADS=1' >> $PROG
-      echo 'export QT_QPA_PLATFORM=xcb' >> $PROG
-      echo 'export QT_QPA_PLATFORMTHEME=generic' >> $PROG
-
-
-      # create a default log file name if one is not provided
-      # default is to remove any exension and add .log (aligned with OpenParEM3D)
-      echo '' >> $PROG
-      echo 'if [ "$2" = "" ]; then' >> $PROG
-      echo "   LOGFILE=\`expr \"\$1\" : '\\(.*\\)\\.[^.]*\$'\`.log" >> $PROG
-      echo 'else' >> $PROG
-      echo '   LOGFILE="$2"' >> $PROG
-      echo 'fi' >> $PROG
-      echo '' >> $PROG
-
-
-      echo '' >> $PROG
-      echo 'HASLOGFILE=0' >> $PROG
-      echo 'if [ "$2" != "" ]; then' >> $PROG
-      echo '   HASLOGFILE=1' >> $PROG
-      echo 'fi' >> $PROG
-      echo '' >> $PROG
-
-      if [ "$REMOVE_LOGFILE" = "1" ]; then
-         echo 'if [ -n "$OMPI_COMM_WORLD_RANK" ]; then' >> $PROG
-         echo '     # Open MPI' >> $PROG
-         echo '    RANK=$OMPI_COMM_WORLD_RANK' >> $PROG
-         echo 'elif [ -n "$PMI_RANK" ]; then' >> $PROG
-         echo '    # MPICH, Intel MPI, many PMI-based launchers' >> $PROG
-         echo '    RANK=$PMI_RANK' >> $PROG
-         echo 'elif [ -n "$MPI_RANKID" ]; then' >> $PROG
-         echo '    # Some older MPICH / platform MPI variants' >> $PROG
-         echo '    RANK=$MPI_RANKID' >> $PROG
-         echo 'elif [ -n "$SLURM_PROCID" ]; then' >> $PROG
-         echo '    # Slurm srun' >> $PROG
-         echo '    RANK=$SLURM_PROCID' >> $PROG
-         echo 'else' >> $PROG
-         echo '    RANK=0' >> $PROG
-         echo 'fi' >> $PROG
-         echo '' >> $PROG
-         echo 'if [ "$RANK" = "0" ]; then' >> $PROG
-         echo '   rm -f "$LOGFILE"' >> $PROG
-         echo 'fi' >> $PROG
-         echo '' >> $PROG
-      fi
-
-      if [ "$TEST_REDIRECT" = "1" ]; then
-         echo 'if [ "$HASLOGFILE" = "1" ]; then' >> $PROG
-         echo '   $BINPROG "$@" >> "$LOGFILE" 2>&1' >> $PROG
-         echo 'else' >> $PROG
-         echo '   $BINPROG "$@"' >> $PROG
-         echo 'fi' >> $PROG
-      else
-         echo '$BINPROG "$@"' >> $PROG
-      fi
-
-      chmod u+x $PROG
-      if [ $? -ne 0 ]; then
-         echo "ERROR: failed make $PROG executable"
-         exit 1
-      fi
-
-   cd "$scripts_dir"
 }
 
 #----------------------------------------------------
@@ -1455,6 +1287,12 @@ if [ $? -ne 0 ]; then
    missing_requirement=1
 fi
 
+which cmake > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"cmake\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
 which g++ > /dev/null 2>&1
 if [ $? -ne 0 ]; then
    echo "ERROR: \"g++\" must be installed on the system to compile OpenParEM"
@@ -1473,12 +1311,22 @@ if [ $? -ne 0 ]; then
    missing_requirement=1
 fi
 
-if [ "$with_cmake" = "0" ]; then
-   which cmake > /dev/null 2>&1
-   if [ $? -ne 0 ]; then
-      echo "ERROR: \"cmake\" must be installed on the system to compile OpenParEM"
-      missing_requirement=1
-   fi
+which python3 > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"python3\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which tclsh > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"tclsh\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which wish > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"wish\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
 fi
 
 which pkg-config > /dev/null 2>&1
@@ -1493,11 +1341,12 @@ if [ $? -ne 0 ]; then
    missing_requirement=1
 fi
 
-which python3 > /dev/null 2>&1
+which patchelf > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-   echo "ERROR: \"python3\" must be installed on the system to compile OpenParEM"
+   echo "ERROR: \"patchelf\" must be installed on the system to compile OpenParEM"
    missing_requirement=1
 fi
+
 
 if [ "$missing_requirement" = "1" ]; then
    exit 1
@@ -3189,104 +3038,10 @@ fi
 
 cd scripts
 
-echo "#------------------------------------------------------------------------------------"
-echo "# OpenParEM_build: creating wrappers for executables"
-echo "#------------------------------------------------------------------------------------"
 
-# see if a compiled version of Open MPI exists
-cd "$install_path/bin"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to change to bin directory."
-      exit 1
-   fi
-
-   HAS_ORTERUN=0
-   if [ -f orterun ]; then
-      HAS_ORTERUN=1
-   fi
-
-   HAS_ORTERUNBIN=0
-   if [ -f orterun.bin ]; then
-      HAS_ORTERUNBIN=1
-   fi
-
-   HAS_MPIRUNBIN=0
-   if [ -f mpirun.bin ]; then
-      HAS_MPIRUNBIN=1
-   fi
-
-cd "$scripts_dir"
-
-if [ "$with_OpenParEM" = "1" ]; then
-   #wrap_executable builder $HAS_ORTERUN 0 0
-   wrap_executable OpenParEM2D $HAS_ORTERUN 0 1
-   #wrap_executable process2D $HAS_ORTERUN 0 0
-   #wrap_executable simplify2D $HAS_ORTERUN 0 0
-   wrap_executable OpenParEM3D $HAS_ORTERUN 1 1
-   #wrap_executable process3D $HAS_ORTERUN 0 0
-   #wrap_executable simplify3D $HAS_ORTERUN 0 0
-fi
-
-if [ "$with_OpenParEMg" = "1" ]; then
-   wrap_executable OpenParEMg $HAS_ORTERUN 1 1
-fi
-
-
-# find which MPI library is being used
-HAS_OPENMPI=0
-HAS_MPICH=0
-which mpirun > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-   output=$(mpirun --version 2>/dev/null)
-
-   echo "$output" | grep -qi "Open MPI"
-   if [ $? -eq 0 ]; then
-      HAS_OPENMPI=1
-   fi
-
-   echo "$output" | grep -qi "MPICH"
-   if [ $? -eq 0 ]; then
-      HAS_MPICH=1
-   fi
-fi
-
-# wrapping for OpenMPI
-if [ "$HAS_OPENMPI" = "1" ]; then 
-   if [ "$HAS_ORTERUN" = "1" ]; then
-      if [ "$HAS_ORTERUNBIN" = "0" ]; then
-         wrap_executable orterun $HAS_ORTERUN 0 0
-      fi
-   else
-      cd "$install_path/bin"
-      if [ $? -ne 0 ]; then
-         echo "OpenParEM_ERROR: failed to change to bin directory."
-         exit 1
-      fi
-
-      if [ ! -f orterun ]; then
-
-         rm -f mpirun
-         echo "#!/bin/sh" > mpirun
-         if [ $? -ne 0 ]; then
-            echo "OpenParEM_ERROR: failed to create file mpirun."
-            exit 1
-         fi
-
-         echo 'export OMP_NUM_THREADS=1' >> mpirun
-         echo 'orterun "$@"' >> mpirun
-
-      fi
-
-      cd "$scripts_dir"
-   fi
-fi
-
-# wrapping for MPICH
-if [ "$HAS_MPICH" = "1" ]; then
-   if [ "$HAS_MPIRUNBIN" = "0" ]; then
-      wrap_executable mpirun 0 0 0
-   fi
-fi
+# set RUNPATH for relocatable execution
+cd $install_path/scripts
+./set_relative_runpath.sh $install_path
 
 # finish up with elapsed time
 end_time="$(date -u +%s)"

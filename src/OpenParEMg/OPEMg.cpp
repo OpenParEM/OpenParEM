@@ -196,6 +196,14 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     MPI_PORT_COMM=nullptr;
     request=nullptr;
 
+    projectFileLoaded=false;
+    projectChanged=false;
+    drawingPlaneShown=false;
+    simulationRunning=false;
+    simulationStopping=false;
+    simulationAborting=false;
+    meshingRunning=false;
+
     /////////////////////////////////////////////////////////////////////////////
     // main window setup
     /////////////////////////////////////////////////////////////////////////////
@@ -6316,16 +6324,18 @@ void OpenParEMg::deleteMesh (bool deleteMeshFile)
     int i=0;
     while (i < mesh->childCount()) {
         MeshItem *meshItem=dynamic_cast<MeshItem *>(mesh->child(i));
+        if (meshItem) {
 
-        // remove from tracker
-        ui->drawingWindow->hideItem(meshItem);
-        ui->drawingWindow->unselectItem(meshItem);
+            // remove from tracker
+            ui->drawingWindow->hideItem(meshItem);
+            ui->drawingWindow->unselectItem(meshItem);
 
-        // remove drawing shape
-        ShapeData *shapeData=meshItem->getShapeData();
-        Handle(AIS_Shape) shape=shapeData->getShape();
-        if (!shape.IsNull()) {
-            ui->drawingWindow->deleteShape(shape);
+            // remove drawing shape
+            ShapeData *shapeData=meshItem->getShapeData();
+            Handle(AIS_Shape) shape=shapeData->getShape();
+            if (!shape.IsNull()) {
+                ui->drawingWindow->deleteShape(shape);
+            }
         }
 
         i++;

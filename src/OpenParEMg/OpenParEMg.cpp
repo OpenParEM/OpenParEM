@@ -28,6 +28,9 @@
 
 int main(int argc, char *argv[])
 {
+    qputenv("QT_QPA_PLATFORM","xcb");
+    qputenv("QT_QPA_PLATFORMTHEME","generic");
+
     QApplication a(argc, argv);
     OpenParEMg w;
     w.setWindowIcon(QIcon(":/images/images/logo2.svg"));
