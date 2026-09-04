@@ -276,6 +276,7 @@ int main(int argc, char *argv[])
    PatternDatabase patternDatabase;
    GammaDatabase gammaDatabase;
    vector<DifferentialPair *> aggregateList;
+   bool hasLogFile;
    int gracefulExit=0;
 
    chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
@@ -337,6 +338,8 @@ int main(int argc, char *argv[])
    mfem::ErrorAction(mfem::MFEM_ERROR_THROW);
 
    // parse inputs
+
+   // help
    int retVal=1;
    int printHelp=0;
    if (argc <= 1) printHelp=1;
@@ -345,7 +348,26 @@ int main(int argc, char *argv[])
       else projFile=argv[1];
    }
    if (printHelp) {help(); PetscFinalize(); exit(retVal);}
-   
+ 
+   // log file - redirect stdout if a log name is provided
+   hasLogFile=false;
+   if (argc == 3) {
+      hasLogFile=true;
+      std::ios_base::sync_with_stdio(true);
+
+      std::ofstream clearLog(argv[2],std::ios::trunc);
+      std::FILE* stream=std::freopen(argv[2],"a",stdout);  // append
+      if (stream == nullptr) {
+         if (rank == 0) {
+            std::cout << "ERROR3043: Failed to redirect stdout to log file \"" << argv[2] << "\"." << std::endl;
+         }
+         PetscFinalize();
+         exit(1);
+      }
+   }
+
+   // project kickoff
+ 
    print_copyright_notice ("OpenParEM3D",version_major,version_minor,version_patch);
    char *baseName=get_project_name(projFile);
    lockfile=create_lock_file(baseName);
@@ -475,6 +497,7 @@ int main(int argc, char *argv[])
       signalFinished(1); 
       exit_job_on_error (job_start_time,lockfile,true,3);
    }
+   if (hasLogFile) boundaryDatabase.setHasLogfile();
 
    // boundary and mesh linkage
    checkForAbort();

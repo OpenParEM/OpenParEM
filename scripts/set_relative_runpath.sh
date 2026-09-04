@@ -53,8 +53,8 @@ patch_elf()
     rpath="$2"
 
     if readelf -h "$file" >/dev/null 2>&1; then
-        echo "RUNPATH=$rpath"
-        echo "  $file"
+        #echo "RUNPATH=$rpath"
+        #echo "  $file"
         patchelf --set-rpath "$rpath" "$file" || exit 1
     fi
 }

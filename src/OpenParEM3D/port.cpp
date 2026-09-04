@@ -5775,13 +5775,18 @@ bool Port::solve (struct projectData *projData, string *directory, string *logFi
 
    char *project=(char *)malloc((get_name().length()+7)*sizeof(char));
    sprintf(project,"S%s.proj",get_name().c_str());
-
-   char *logfile=(char *)malloc((logFile->length()+1)*sizeof(char));
-   sprintf(logfile,"%s",logFile->c_str());
-
    argv[0]=project;
-   argv[1]=logfile;
-   argv[2]=nullptr;
+
+   char *logfile=nullptr;
+   if (logFile) {
+      logfile=(char *)malloc((logFile->length()+1)*sizeof(char));
+      sprintf(logfile,"../../%s",logFile->c_str());
+      argv[1]=logfile;
+      argv[2]=nullptr;
+   } else {
+       argv[1]=nullptr;
+       argv[2]=nullptr;
+   }
 
    int *error_codes=(int *)malloc(size*sizeof(int));
 
@@ -8410,20 +8415,6 @@ bool BoundaryDatabase::solvePorts (int fem_order, ParMesh *pmesh, vector<ParSubM
    string logFile=projData->project_name;
    logFile.append(".log");
 
-   // see if a log file is being used
-   int isUsed=0;
-   if (rank == 0) {
-      if (std::filesystem::exists(logFile)) {isUsed=1;}
-      int i=1;
-      while (i < size) {
-         MPI_Send(&isUsed,1,MPI_INT,i,10,PETSC_COMM_WORLD);
-         i++;
-      }
-   } else {
-      MPI_Recv(&isUsed,1,MPI_INT,0,10,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-   }
-   if (!isUsed) logFile="";
-
    // loop over the ports
    long unsigned int i=0;
    while (i < portList.size()) {
@@ -8433,7 +8424,11 @@ bool BoundaryDatabase::solvePorts (int fem_order, ParMesh *pmesh, vector<ParSubM
       //prefix(); PetscPrintf(PETSC_COMM_WORLD,"         ------------------------------------------------------------------------------------------------------------------------------------\n");
 
       // run the 2D simulation
-      if (portList[i]->solve(projData,&tempDirectory,&logFile)) fail=true;
+      if (hasLogFile) {
+         if (portList[i]->solve(projData,&tempDirectory,&logFile)) fail=true;
+      } else {
+          if (portList[i]->solve(projData,&tempDirectory,nullptr)) fail=true;
+      }
 
       // verify that the lock file is removed
       stringstream ssLock;

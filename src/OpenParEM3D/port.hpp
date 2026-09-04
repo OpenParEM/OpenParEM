@@ -813,6 +813,7 @@ class BoundaryDatabase
       std::string drivingSetName="";
       std::vector<Current *> radiationCurrents;     //  Aggregated list from Boundary and copied across ranks
 
+      bool hasLogFile=false;
       bool modified=false;
 
    public:
@@ -933,6 +934,7 @@ class BoundaryDatabase
       Port* get_matchingPort (Path *);
       void renamePath (std::string, std::string);
       void deletePath (Path *);
+      void setHasLogfile () {hasLogFile=true;}
 #ifdef HAS_GUI
       void draw (Relay *, struct projectData *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *, RootBoundaryItem *, MaterialDatabase *);
       PortItem* draw_port (Relay *, Port *, struct projectData *, OpenParEMg *, CustomOpenGLWidget *, QTreeWidget *, RootPathItem *, RootPortItem *, RootBoundaryItem *, MaterialDatabase *);

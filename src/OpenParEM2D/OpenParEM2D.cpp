@@ -455,6 +455,8 @@ int main(int argc, char *argv[])
    mfem::ErrorAction(mfem::MFEM_ERROR_THROW);
 
    // parse inputs
+
+   // help
    int retVal=1;
    int printHelp=0;
    if (argc <= 1) printHelp=1;
@@ -463,6 +465,21 @@ int main(int argc, char *argv[])
       else projFile=argv[1];
    }
    if (printHelp) {help(); SlepcFinalize();; exit(retVal);}
+
+   // log file - redirect stdout if a log name is provided
+   if (argc == 3) {
+      std::ios_base::sync_with_stdio(true);
+      std::FILE* stream=std::freopen(argv[2],"a",stdout);  // append
+      if (stream == nullptr) {
+         if (rank == 0) {
+            std::cout << "ERROR2000: Failed to redirect stdout to log file \"" << argv[2] << "\"." << std::endl;
+         }
+         PetscFinalize();
+         exit(1);
+      }
+   }
+
+   // project kickoff
 
    char *baseName=get_project_name(projFile);
    print_copyright_notice ("OpenParEM2D",version_major,version_minor,version_patch);

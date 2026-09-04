@@ -3038,8 +3038,10 @@ fi
 
 cd scripts
 
+echo "#------------------------------------------------------------------------------------"
+echo "# set RUNPATH for relocatable execution"
+echo "#------------------------------------------------------------------------------------"
 
-# set RUNPATH for relocatable execution
 cd $install_path/scripts
 ./set_relative_runpath.sh $install_path
 
