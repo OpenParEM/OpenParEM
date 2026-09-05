@@ -266,6 +266,7 @@ with_mfem=1
 with_OpenParEM=1
 with_OpenParEMg=1
 remove_helper_scripts=0
+create_binary_distribution=0
 
 #----------------------------------------------------
 # library types
@@ -427,8 +428,6 @@ install_path=$PWD
 cd "$scripts_dir"
 jobs=1
 
-#export PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/lib64/pkgconfig:$install_path/lib/x86_64-linux-gnu/pkgconfig:$install_path/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-
 export PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/lib64/pkgconfig:$install_path/lib/x86_64-linux-gnu/pkgconfig:$install_path/share/pkgconfig:$PKG_CONFIG_PATH"
 
 #----------------------------------------------------
@@ -497,9 +496,6 @@ for arg in "$@"; do
       elif [ "$arg" = "--show-setup" ]; then
          show_setup=1
       elif [ "$arg" = "--clean-in-place" ]; then
-         clean_in_place=1
-      elif [ "$arg" = "--precompiled-bin" ]; then
-         precompiled_bin=1
          clean_in_place=1
       elif [ "$arg" = "--with-freetype" ]; then
          with_freetype=1
@@ -618,6 +614,33 @@ for arg in "$@"; do
          with_OpenParEM=0
          with_OpenParEMg=0
          remove_helper_scripts=1
+         create_binary_distribution=0
+      elif [ "$arg" = "--create-binary-distribution" ]; then
+         with_meson=0
+         with_freetype=0
+         with_tcl=0
+         with_tk=0
+         with_occt=0
+         with_gmsh=0
+         with_qt=0
+         with_m4=0
+         with_bison=0
+         with_zlib=0
+         with_flex=0
+         with_hwloc=0
+         with_libevent=0
+         with_pmix=0
+         with_prrte=0
+         with_openmpi=0
+         with_mpich=0
+         with_hypre=0
+         with_cmake=0
+         with_petsc=0
+         with_mfem=0
+         with_OpenParEM=0
+         with_OpenParEMg=0
+         remove_helper_scripts=0
+         create_binary_distribution=1
       else
          echo "ERROR: unrecognized option ""$arg"
          exit 1
@@ -633,89 +656,87 @@ if [ $print_help -eq 1 ]; then
    echo "Usage: OpenParEM_build [OPTIONS]"
    echo "Builds the OpenParEM distribution when run from the scripts directory."
    echo ""
-   echo "The build tools make, g++, gfortran, and perl must be installed on the system."
+   echo "Any missing build tools such as make are reported then the script exits."
    echo ""
    echo "For an in-place build with the results placed in the distribution tree, execute as"
-   echo "   shell: OpenParEM_build --jobs=N --with-all"
+   echo "   shell: OpenParEM_build --jobs=N"
    echo "If OpenParEM_build has already been run, use the --clean-in-place option to delete"
-   echo "any prior results before compiling."
+   echo "any prior compilation products before re-running to compile."
    echo ""
    echo "For an out-of-place build in a given install directory, execute as"
-   echo "   shell: OpenParEM_build --jobs=N --prefix=install_dir --with-all"
+   echo "   shell: OpenParEM_build --jobs=N --prefix=install_dir"
    echo "where the installation directory must already exist.  Note that there is no option for"
-   echo "deleting prior results on additional build runs."
+   echo "deleting prior compilation results on subseqent compilations.  In this case, simply"
+   echo "delete the install_dir directory."
    echo ""
-   echo "Omit the --with-all option, then if cmake, flex, or bison are found using a search with"
-   echo "the existing PATH, they are compiled and installed from source."
-   echo ""
-   echo "If an MPI development distribution is not found at /usr/bin, /usr/lib, and /usr/include, then"
-   echo "Open MPI is compiled and installed from source. An option can be applied to force the compilation."
-   echo ""
-   echo "After compiling, tests are performed on OpenParEM2D and OpenParEM3D.  If these pass,"
-   echo "then compilation is successful and OpenParEM is ready to use.  However, it is still required"
-   echo "to set the PATH."
+   echo "In general, if a package exists on the system, then using the without-name package skips"
+   echo "compiling the package and the build relies on the normal system-level discovery process"
+   echo "to find and use the package.  Note that for this to work, the development version of"
+   echo "the package may be required."
    echo ""
    echo "common OPTIONS:"
-   echo "  --help or -H             print this help message and exit"
-   echo "  --prefix=path            set the install path to the given path.  Default is the current working directory"
-   echo "  --jobs=integer           execute make with parallel processing [i.e. make -j integer]. Default=1"
-   echo "  --clean-in-place         remove any prior in-place installation"
-   echo "  --show-setup             show the compilation setup and exit; forces --without-all"
+   echo "  --help or -H          print this help message and exit"
+   echo "  --prefix=path         set the install path to the given path.  Default is the current working directory"
+   echo "  --jobs=integer        execute make with parallel processing [i.e. make -j integer]. Default=1"
+   echo "  --show-setup          show the compilation setup and exit; forces --without-all"
    echo ""
    echo "advanced OPTIONS:"
-   echo "  --with-all               compile everything to minimize potential compatibility issues"
-   echo "  --without-all            skip compiling all; generally followed by --with-* options to add back in something to compile"
-   echo "  --with-freetype          compile freetype"
-   echo "  --without-freetype       skip compiling freetype"
-   echo "  --with-meson             compile meson and ninja"  
-   echo "  --without-meson          skip compiliing meson and ninja"
-   echo "  --with-tcl               compile tcl"
-   echo "  --without-tcl            skip compiling tcl"
-   echo "  --with-tk                compile tk plus xorgproto, xcb_proto, libXau, libxcb, xtrans, libX11"
-   echo "  --without-tk             skip compiling tk and dependencies"
-   echo "  --with-occt              compile OCCT plus fontconfig, xext, and glvnd"
-   echo "  --without-occt           skip compiling OCCT and dependencies"
-   echo "  --with-gmsh              compile gmsh"
-   echo "  --without-gmsh           skip compiling gmsh"
-   echo "  --with-qt                compile Qt plus xcb_util, xcb_util_image, xcb_util_keysyms, xcb_util_renderutil, xcb_util_wm,"
-   echo "                                           xcb_util_cursor, xcb_util_errors, libxml2, xkbcommon, dbus-1, and ic4u"
-   echo "  --without-qt             skip compiling Qt and dependencies"
-   echo "  --with-m4                compile m4"
-   echo "  --without-m4             skip compiling m4"
-   echo "  --with-bison             compile bison"
-   echo "  --without-bison          skip compiling bison"
-   echo "  --with-zlib              compile libzlib"
-   echo "  --without-zlib           skip compiling libzlib"
-   echo "  --with-flex              compile flex"
-   echo "  --without-flex           skip compiling flex"
-   echo "  --with-hwloc             compile libhwloc"
-   echo "  --without-hwloc          skip compiling libhwloc"
-   echo "  --with-libevent          compile libevent"
-   echo "  --without-libevent       skip compiling libevent"
-   echo "  --with-pmix              compile libpmix"
-   echo "  --without-pmix           skip compiling libpmix"
-   echo "  --with-prrte             compile libprrte"
-   echo "  --without-prrte          skip compiling libprrte"
-   echo "  --with-openmpi           compile OpenMPI and related libraries"
-   echo "  --without-openmpi        skip compiling OpenMPI"
-   echo "  --with-mpich             compile MPICH"
-   echo "  --without-mpich          skip compiling MPICH"
-   echo "  --with-hypre             compile libHYPRE"
-   echo "  --without-hypre          skip compiling libHYPRE"
-   echo "  --with-cmake             compile cmake"
-   echo "  --without-cmake          skip compiling cmake"
-   echo "  --with-petsc             compile PETSc plus SLEPc, Metis, Mumps, Scalapack, Scotch, FBlasLapack, and Fortran bindings"
-   echo "  --without-petsc          skip compiling PETSc and dependencies"
-   echo "  --with-mfem              compile libmfem"
-   echo "  --without-mfem           skip compiling libmfem"
-   echo "  --with-OpenParEM         compile OpenParEM"
-   echo "  --without-OpenParEM      skip compiling OpenParEM"
-   echo "  --with-OpenParEMg        compile OpenParEMg"
-   echo "  --without-OpenParEMg     skip compiling OpenParEMg"
-   echo "  --remove-helper-scripts  remove the FreeCAD and ParaView helper scripts and the .OpenParEMg configuration file; forces --without-all"
+   echo "  --with-all            compile everything to minimize potential compatibility issues"
+   echo "  --without-all         skip compiling all; generally followed by --with-* options to add back in something to compile"
+   echo "  --with-freetype       compile freetype"
+   echo "  --without-freetype    skip compiling freetype"
+   echo "  --with-meson          compile meson and ninja"  
+   echo "  --without-meson       skip compiliing meson and ninja"
+   echo "  --with-tcl            compile tcl"
+   echo "  --without-tcl         skip compiling tcl"
+   echo "  --with-tk             compile tk plus xorgproto, xcb_proto, libXau, libxcb, xtrans, libX11"
+   echo "  --without-tk          skip compiling tk and dependencies"
+   echo "  --with-occt           compile OCCT plus fontconfig, xext, and glvnd"
+   echo "  --without-occt        skip compiling OCCT and dependencies"
+   echo "  --with-gmsh           compile gmsh"
+   echo "  --without-gmsh        skip compiling gmsh"
+   echo "  --with-qt             compile Qt plus xcb_util, xcb_util_image, xcb_util_keysyms, xcb_util_renderutil, xcb_util_wm,"
+   echo "                                        xcb_util_cursor, xcb_util_errors, libxml2, xkbcommon, dbus-1, and ic4u"
+   echo "  --without-qt          skip compiling Qt and dependencies"
+   echo "  --with-m4             compile m4"
+   echo "  --without-m4          skip compiling m4"
+   echo "  --with-bison          compile bison"
+   echo "  --without-bison       skip compiling bison"
+   echo "  --with-zlib           compile libzlib"
+   echo "  --without-zlib        skip compiling libzlib"
+   echo "  --with-flex           compile flex"
+   echo "  --without-flex        skip compiling flex"
+   echo "  --with-hwloc          compile libhwloc"
+   echo "  --without-hwloc       skip compiling libhwloc"
+   echo "  --with-libevent       compile libevent"
+   echo "  --without-libevent    skip compiling libevent"
+   echo "  --with-pmix           compile libpmix"
+   echo "  --without-pmix        skip compiling libpmix"
+   echo "  --with-prrte          compile libprrte"
+   echo "  --without-prrte       skip compiling libprrte"
+   echo "  --with-openmpi        compile OpenMPI and related libraries"
+   echo "  --without-openmpi     skip compiling OpenMPI"
+   echo "  --with-mpich          compile MPICH"
+   echo "  --without-mpich       skip compiling MPICH"
+   echo "  --with-hypre          compile libHYPRE"
+   echo "  --without-hypre       skip compiling libHYPRE"
+   echo "  --with-cmake          compile cmake"
+   echo "  --without-cmake       skip compiling cmake"
+   echo "  --with-petsc          compile PETSc plus SLEPc, Metis, Mumps, Scalapack, Scotch, FBlasLapack, and Fortran bindings"
+   echo "  --without-petsc       skip compiling PETSc and dependencies"
+   echo "  --with-mfem           compile libmfem"
+   echo "  --without-mfem        skip compiling libmfem"
+   echo "  --with-OpenParEM      compile OpenParEM"
+   echo "  --without-OpenParEM   skip compiling OpenParEM"
+   echo "  --with-OpenParEMg     compile OpenParEMg"
+   echo "  --without-OpenParEMg  skip compiling OpenParEMg"
    echo ""
    echo "developer OPTIONS:"
-   echo "  --precompiled-bin        compile for a portable pre-compiled binary using a locally compiled version of gcc; forces --clean-in-place"
+   echo "  --clean-in-place              remove any prior in-place installation"
+   echo "  --remove-helper-scripts       remove the FreeCAD and ParaView helper scripts and the .OpenParEMg configuration file"
+   echo "                                forces --without-all and cancels --create-binary-distribution"
+   echo "  --create-binary-distribution  create a tar.gz binary distribution"
+   echo "                                forces --without-all and cancels --remove-helper-scripts"
    exit $retval
 fi
 
@@ -773,6 +794,7 @@ echo "with-mfem=$with_mfem"
 echo "with-OpenParEM=$with_OpenParEM"
 echo "with-OpenParEMg=$with_OpenParEMg"
 echo "remove-helper-scripts=$remove_helper_scripts"
+echo "create-binary-distribution=$create_binary_distribution"
 
 if [ "$show_setup" = "1" ]; then
    exit 0
@@ -1287,10 +1309,12 @@ if [ $? -ne 0 ]; then
    missing_requirement=1
 fi
 
+if [ "$with_cmake" = "0" ]; then
 which cmake > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"cmake\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
+   if [ $? -ne 0 ]; then
+      echo "ERROR: \"cmake\" must be installed on the system to compile OpenParEM"
+      missing_requirement=1
+   fi
 fi
 
 which g++ > /dev/null 2>&1
@@ -1317,16 +1341,18 @@ if [ $? -ne 0 ]; then
    missing_requirement=1
 fi
 
-which tclsh > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"tclsh\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
+if [ "$with_tk" = "0" ]; then
+   which tclsh > /dev/null 2>&1
+   if [ $? -ne 0 ]; then
+      echo "ERROR: \"tclsh\" must be installed on the system to compile OpenParEM"
+      missing_requirement=1
+   fi
 
-which wish > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"wish\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
+   which wish > /dev/null 2>&1
+   if [ $? -ne 0 ]; then
+      echo "ERROR: \"wish\" must be installed on the system to compile OpenParEM"
+      missing_requirement=1
+   fi
 fi
 
 which pkg-config > /dev/null 2>&1
@@ -2355,6 +2381,7 @@ if [ "$with_occt" = "1" ]; then
 
    meson setup build \
       --prefix="$install_path" \
+      --libdir="$install_path/lib" \
       -Dtests=disabled \
       -Ddoc=disabled
 
@@ -2801,7 +2828,7 @@ if [ "$with_qt" = "1" ]; then
    unpack_and_enter $xkbcommon
    package_name=xkbcommon
 
-   meson setup build --prefix="$install_path" -Denable-wayland=false -Denable-bash-completion=false
+   meson setup build --prefix="$install_path" --libdir="$install_path/lib" -Denable-wayland=false -Denable-bash-completion=false
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: xkbcommon failed to setup build"
       exit 1
@@ -2830,7 +2857,7 @@ if [ "$with_qt" = "1" ]; then
 
    unpack_and_enter $dbus1
 
-   meson setup build --prefix="$install_path"
+   meson setup build --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: dbus-1 failed to setup build"
       exit 1
@@ -2921,14 +2948,14 @@ PY
 
    mkdir build
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: gmsh failed to create a build directory"
+      echo "OpenParEM_ERROR: qt failed to create a build directory"
       exit 1
    fi
 
    cd build
 
    #../configure --prefix="$install_path" --skip qtwebengine --openxr=no
-   ../configure --prefix="$install_path" --openxr=no \
+   ../configure --prefix="$install_path" --openxr=no --libdir="$install_path/lib" \
                 --skip qtwebengine \
                 --skip qtwebengine \
                 --skip qtmultimedia \
@@ -3044,6 +3071,69 @@ echo "#-------------------------------------------------------------------------
 
 cd $install_path/scripts
 ./set_relative_runpath.sh $install_path
+echo ""
+
+if [ "$create_binary_distribution" = "1" ]; then
+   echo "#------------------------------------------------------------------------------------"
+   echo "# create binary distribution"
+   echo "#------------------------------------------------------------------------------------"
+   echo ""
+
+   cd $install_path/scripts
+   ./find_dependencies ../bin/OpenParEMg $install_path > dependencies.txt
+   ./find_dependencies ../bin/OpenParEM2D $install_path >> dependencies.txt
+   ./find_dependencies ../bin/OpenParEM3D $install_path >> dependencies.txt
+   ./find_dependencies ../bin/process2D $install_path >> dependencies.txt
+   ./find_dependencies ../bin/process3D $install_path >> dependencies.txt
+   ./find_dependencies ../bin/simplify2D $install_path >> dependencies.txt
+   ./find_dependencies ../bin/simplify3D $install_path >> dependencies.txt
+   ./find_dependencies ../bin/builder $install_path >> dependencies.txt
+   ./find_dependencies ../bin/orterun $install_path >> dependencies.txt
+
+   sort -u dependencies.txt > dependencies2.txt
+   sed -i "s|"^$install_path"||" dependencies2.txt
+   sed -i 's/^\///' dependencies2.txt
+
+   echo "bin/OpenParEMg" >> dependencies2.txt
+   echo "bin/OpenParEM2D" >> dependencies2.txt
+   echo "bin/OpenParEM3D" >> dependencies2.txt
+   echo "bin/process2D" >> dependencies2.txt
+   echo "bin/process3D" >> dependencies2.txt
+   echo "bin/simplify2D" >> dependencies2.txt
+   echo "bin/simplify3D" >> dependencies2.txt
+   echo "bin/builder" >> dependencies2.txt
+   echo "bin/orterun" >> dependencies2.txt
+   echo "bin/mpirun" >> dependencies2.txt
+   echo "plugins/platforms/libqxcb.so" >> dependencies2.txt
+   echo "lib/libQt6XcbQpa.so" >> dependencies2.txt
+   echo "lib/libQt6XcbQpa.so.6" >> dependencies2.txt
+   echo "lib/libQt6XcbQpa.so.6.11.2" >> dependencies2.txt
+   echo "lib/libxcb-cursor.so" >> dependencies2.txt
+   echo "lib/libxcb-cursor.so.0" >> dependencies2.txt
+   echo "lib/libxcb-cursor.so.0.0.0" >> dependencies2.txt
+   echo "plugins/xcbglintegrations/libqxcb-egl-integration.so" >> dependencies2.txt
+   echo "plugins/xcbglintegrations/libqxcb-glx-integration.so" >> dependencies2.txt
+   echo "LICENSE" >> dependencies2.txt
+   echo "README.md" >> dependencies2.txt
+
+   cd ..
+   tar -czf build.tar.gz -T scripts/dependencies2.txt regression tutorials doc/*.pdf
+
+   mkdir OpenParEM-2.2.0
+   mv build.tar.gz OpenParEM-2.2.0
+   cd OpenParEM-2.2.0
+   tar -xf build.tar.gz
+   rm -f build.tar.gz
+   cd ..
+   tar -czf OpenParEM-2.2.0.tar.gz OpenParEM-2.2.0
+   rm -Rf OpenParEM-2.2.0
+
+   rm -f scripts/dependencies.txt
+   rm -f scripts/dependencies2.txt
+
+   echo "Created ../OpenParEM-2.2.0.tar.gz"
+   echo ""
+fi
 
 # finish up with elapsed time
 end_time="$(date -u +%s)"
