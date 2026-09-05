@@ -428,7 +428,7 @@ install_path=$PWD
 cd "$scripts_dir"
 jobs=1
 
-export PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/lib64/pkgconfig:$install_path/lib/x86_64-linux-gnu/pkgconfig:$install_path/share/pkgconfig:$PKG_CONFIG_PATH"
+export PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/share/pkgconfig:$PKG_CONFIG_PATH"
 
 #----------------------------------------------------
 # input processing
@@ -745,7 +745,7 @@ echo "# OpenParEM_build: setup"
 echo "#------------------------------------------------------------------------------------"
 
 export PATH="$install_path/bin:$scripts_dir:$PATH"
-export LD_LIBRARY_PATH=$install_path/lib:$install_path/lib64:$install_path/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$install_path/lib:$LD_LIBRARY_PATH
 
 echo "scripts_dir=$scripts_dir"
 echo "install_path=$install_path"
@@ -986,8 +986,8 @@ fi
 
 if [ "$clean_in_place" = "1" ]; then
    cd ..
-   echo "rm -Rf bin etc include lib lib64 libexec local man sbin share metatypes mkspecs modules phrasebooks plugins qml sbom translations var"
-   rm -Rf bin etc include lib lib64 libexec local man sbin share metatypes mkspecs modules phrasebooks plugins qml sbom translations var
+   echo "rm -Rf bin etc include lib libexec local man sbin share metatypes mkspecs modules phrasebooks plugins qml sbom translations var"
+   rm -Rf bin etc include lib libexec local man sbin share metatypes mkspecs modules phrasebooks plugins qml sbom translations var
    cd "$scripts_dir"
    exit 0
 fi
@@ -2457,7 +2457,7 @@ if [ "$with_occt" = "1" ]; then
    export CPPFLAGS="-I$install_path/include"
    export CFLAGS="-I$install_path/include"
    export CXXFLAGS="-I$install_path/include"
-   export LDFLAGS="-L$install_path/lib -L$install_path/lib64"
+   export LDFLAGS="-L$install_path/lib
 
    ./configure --prefix="$install_path"
    if [ $? -ne 0 ]; then
@@ -2493,9 +2493,9 @@ if [ "$with_occt" = "1" ]; then
 
    cmake \
    -D INSTALL_SAMPLES=ON \
-   -D CMAKE_LIBRARY_PATH="$install_path/lib64;$install_path/lib" \
+   -D CMAKE_LIBRARY_PATH="$install_path/lib" \
    -D CMAKE_PREFIX_PATH="$install_path" \
-   -D CMAKE_SHARED_LINKER_FLAGS="-L$install_path/lib64 -L$install_path/lib" \
+   -D CMAKE_SHARED_LINKER_FLAGS="-L$install_path/lib" \
    -D 3RDPARTY_DIR:PATH="$install_path" \
    -D 3RDPARTY_FREETYPE_DIR:PATH="$install_path" \
    -D 3RDPARTY_TCL_DIR:PATH="$install_path" \
