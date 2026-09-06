@@ -5779,7 +5779,7 @@ bool Port::solve (struct projectData *projData, string *directory, string *logFi
 
    char *logfile=nullptr;
    if (logFile) {
-      logfile=(char *)malloc((logFile->length()+1)*sizeof(char));
+      logfile=(char *)malloc((logFile->length()+7)*sizeof(char));
       sprintf(logfile,"../../%s",logFile->c_str());
       argv[1]=logfile;
       argv[2]=nullptr;
