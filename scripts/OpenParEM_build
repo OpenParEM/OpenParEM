@@ -3081,6 +3081,7 @@ if [ "$create_binary_distribution" = "1" ]; then
    echo "#------------------------------------------------------------------------------------"
    echo ""
 
+   echo "Finding dependencies ..."
    cd $install_path/scripts
    ./find_dependencies ../bin/OpenParEMg $install_path > dependencies.txt
    ./find_dependencies ../bin/OpenParEM2D $install_path >> dependencies.txt
@@ -3092,10 +3093,18 @@ if [ "$create_binary_distribution" = "1" ]; then
    ./find_dependencies ../bin/builder $install_path >> dependencies.txt
    ./find_dependencies ../bin/orterun $install_path >> dependencies.txt
 
+   # add in any missed
+   echo "$install_path/lib/libxkbcommon-x11.so" >> dependencies.txt
+   echo "$install_path/lib/libxkbcommon-x11.so.0" >> dependencies.txt
+   echo "$install_path/lib/libxkbcommon-x11.so.0.13.2" >> dependencies.txt
+
+
+   # prep for binaries
    sort -u dependencies.txt > dependencies2.txt
    sed -i "s|"^$install_path"||" dependencies2.txt
    sed -i 's/^\///' dependencies2.txt
 
+   echo "Adding binaries, plugins, and scripts ..."
    echo "bin/OpenParEMg" >> dependencies2.txt
    echo "bin/OpenParEM2D" >> dependencies2.txt
    echo "bin/OpenParEM3D" >> dependencies2.txt
@@ -3117,9 +3126,20 @@ if [ "$create_binary_distribution" = "1" ]; then
    echo "plugins/xcbglintegrations/libqxcb-glx-integration.so" >> dependencies2.txt
    echo "LICENSE" >> dependencies2.txt
    echo "README.md" >> dependencies2.txt
+   echo "scripts/FreeCAD/OpenParEM2D_save.py" >> dependencies2.txt
+   echo "scripts/FreeCAD/OpenParEM3D_save.py" >> dependencies2.txt
+   echo "scripts/OpenParEM2D_test" >> dependencies2.txt
+   echo "scripts/OpenParEM3D_test" >> dependencies2.txt
+   echo "scripts/OpenParEM_build" >> dependencies2.txt
+   echo "scripts/OpenParEM_test" >> dependencies2.txt
+   echo "scripts/process2D.sh" >> dependencies2.txt
+   echo "scripts/process3D.sh" >> dependencies2.txt
+   echo "scripts/proj_search" >> dependencies2.txt
+   echo "scripts/regression" >> dependencies2.txt
 
+   echo "Creating tar file ...
    cd ..
-   tar -czf build.tar.gz -T scripts/dependencies2.txt regression tutorials doc/*.pdf
+   tar -czf build.tar.gz -T scripts/dependencies2.txt scripts regression tutorials doc/*.pdf
 
    mkdir OpenParEM-2.2.0
    mv build.tar.gz OpenParEM-2.2.0
@@ -3133,7 +3153,7 @@ if [ "$create_binary_distribution" = "1" ]; then
    rm -f scripts/dependencies.txt
    rm -f scripts/dependencies2.txt
 
-   echo "Created ../OpenParEM-2.2.0.tar.gz"
+   echo "Done. Created ../OpenParEM-2.2.0.tar.gz"
    echo ""
 fi
 
