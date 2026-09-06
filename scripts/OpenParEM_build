@@ -1297,7 +1297,9 @@ if [ "$with_OpenParEMg" = "1" ]; then
 fi
 
 if [ "$has_build" = "0" ]; then
-   exit 0
+   if [ "$create_binary_distribution" = "0" ]; then
+      exit 0
+   fi
 fi
 
 
@@ -2457,7 +2459,7 @@ if [ "$with_occt" = "1" ]; then
    export CPPFLAGS="-I$install_path/include"
    export CFLAGS="-I$install_path/include"
    export CXXFLAGS="-I$install_path/include"
-   export LDFLAGS="-L$install_path/lib
+   export LDFLAGS="-L$install_path/lib"
 
    ./configure --prefix="$install_path"
    if [ $? -ne 0 ]; then
