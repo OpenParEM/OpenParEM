@@ -17,7 +17,7 @@ refinement.relative.tolerance 0.01
 //refinement.variable SandH
 materials.global.path ./
 materials.global.name 
-materials.local.path /home/briany/OpenParEM/tutorials/OpenParEM3D/monopole_antenna/OpenParEMg
+materials.local.path ./
 materials.local.name local_materials.txt
 materials.default.boundary PEC
 //materials.check.limits true

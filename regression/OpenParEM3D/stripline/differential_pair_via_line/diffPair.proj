@@ -17,7 +17,7 @@ refinement.absolute.tolerance 1e-07
 refinement.variable S
 materials.global.path ../../../OpenParEM2D/
 materials.global.name global_materials.txt
-materials.local.path /home/briany/OpenParEM/regression/OpenParEM3D/stripline/differential_pair_line/freecad_build
+materials.local.path ./freecad_build
 materials.local.name local_materials.txt
 materials.default.boundary copper
 //materials.check.limits true

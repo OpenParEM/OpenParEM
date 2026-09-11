@@ -15,9 +15,9 @@ port.definition.file square-planar_12GHz_fill_ports.txt
 refinement.relative.tolerance 0.01
 //refinement.absolute.tolerance 1e-06
 refinement.variable S
-materials.global.path /home/briany/OpenParEM/regression/OpenParEM2D
+materials.global.path ../../../OpenParEM2D
 materials.global.name global_materials.txt
-materials.local.path /home/briany/OpenParEM/regression/OpenParEM3D/antenna/square_monopole_study
+materials.local.path ./
 materials.local.name local_materials.txt
 materials.default.boundary brass
 //materials.check.limits true

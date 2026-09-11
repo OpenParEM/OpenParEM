@@ -15,9 +15,9 @@ refinement.iteration.max 30
 refinement.relative.tolerance 0.001
 refinement.absolute.tolerance 5e-08
 //refinement.variable SandH
-materials.global.path /home/briany/OpenParEM/regression/OpenParEM2D
+materials.global.path ../../../OpenParEM2D
 materials.global.name global_materials.txt
-materials.local.path /home/briany/OpenParEM/regression/OpenParEM3D/WR75/dielectric-loading/freecad_build
+materials.local.path ./freecad_build
 materials.local.name local_materials.txt
 materials.default.boundary PEC
 //materials.check.limits true

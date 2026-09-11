@@ -15,7 +15,7 @@ refinement.iteration.max 50
 refinement.relative.tolerance 1e-12
 //refinement.absolute.tolerance 1e-06
 refinement.variable SorH
-materials.global.path /home/briany/OpenParEM/regression/OpenParEM2D
+materials.global.path ../../../OpenParEM2D
 materials.global.name global_materials.txt
 materials.local.path ./
 materials.local.name 

@@ -1377,12 +1377,14 @@ void Materials::openAction_triggered ()
             // break up the returned filename
 
             QFileInfo fileInfo(testMaterialsFile);
+            QDir baseDir(absolutePath);
+            QString relativePath=baseDir.relativeFilePath(fileInfo.path());
 
             if (materials_local_path) {free(materials_local_path); materials_local_path=nullptr;}
-            materials_local_path=allocCopyConstString(fileInfo.absolutePath().toUtf8().constData());
+            materials_local_path=allocCopyConstString(relativePath.toStdString().c_str());
 
             if (materials_local_name) {free(materials_local_name); materials_local_name=nullptr;}
-            materials_local_name=allocCopyConstString(fileInfo.fileName().toUtf8().constData());
+            materials_local_name=allocCopyConstString(fileInfo.fileName().toStdString().c_str());
 
             // load
             if (localMaterialDatabase) {delete localMaterialDatabase; localMaterialDatabase=nullptr;}
@@ -1404,12 +1406,14 @@ void Materials::openAction_triggered ()
             // break up the returned filename
 
             QFileInfo fileInfo(testMaterialsFile);
+            QDir baseDir(absolutePath);
+            QString relativePath=baseDir.relativeFilePath(fileInfo.path());
 
             if (materials_global_path) {free(materials_global_path); materials_global_path=nullptr;}
-            materials_global_path=allocCopyConstString(fileInfo.absolutePath().toUtf8().constData());
+            materials_global_path=allocCopyConstString(relativePath.toStdString().c_str());
 
             if (materials_global_name) {free(materials_global_name); materials_global_name=nullptr;}
-            materials_global_name=allocCopyConstString(fileInfo.fileName().toUtf8().constData());
+            materials_global_name=allocCopyConstString(fileInfo.fileName().toStdString().c_str());
 
             // load
             if (localMaterialDatabase) {delete localMaterialDatabase; localMaterialDatabase=nullptr;}

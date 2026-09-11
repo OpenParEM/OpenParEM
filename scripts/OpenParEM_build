@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/bin/sh
 
 #ToDo: unset PETSC_DIR, PETSC_ARCH, and SLEPC_DIR
 
@@ -3094,10 +3094,41 @@ if [ "$create_binary_distribution" = "1" ]; then
    ./find_dependencies ../bin/orterun $install_path >> dependencies.txt
 
    # add in any missed
+
    echo "$install_path/lib/libxkbcommon-x11.so" >> dependencies.txt
    echo "$install_path/lib/libxkbcommon-x11.so.0" >> dependencies.txt
    echo "$install_path/lib/libxkbcommon-x11.so.0.13.2" >> dependencies.txt
 
+   echo "$install_path/lib/libxcb-icccm.so" >> dependencies.txt
+   echo "$install_path/lib/libxcb-icccm.so.4" >> dependencies.txt
+   echo "$install_path/lib/libxcb-icccm.so.4.0.0" >> dependencies.txt
+
+   echo "$install_path/lib/libxcb-image.so" >> dependencies.txt
+   echo "$install_path/lib/libxcb-image.so.0" >> dependencies.txt
+   echo "$install_path/lib/libxcb-image.so.0.0.0" >> dependencies.txt
+
+   echo "$install_path/lib/libxcb-keysyms.so" >> dependencies.txt
+   echo "$install_path/lib/libxcb-keysyms.so.1" >> dependencies.txt
+   echo "$install_path/lib/libxcb-keysyms.so.1.0.0" >> dependencies.txt
+
+   echo "$install_path/lib/libxcb-render.so" >> dependencies.txt
+   echo "$install_path/lib/libxcb-render.so.0.0.0" >> dependencies.txt
+   echo "$install_path/lib/libxcb-render-util.so.0" >> dependencies.txt
+   echo "$install_path/lib/libxcb-render.so.0" >> dependencies.txt
+   echo "$install_path/lib/libxcb-render-util.so" >> dependencies.txt
+   echo "$install_path/lib/libxcb-render-util.so.0.0.0" >> dependencies.txt
+
+   echo "$install_path/lib/libxcb-shape.so" >> dependencies.txt
+   echo "$install_path/lib/libxcb-shape.so.0" >> dependencies.txt
+   echo "$install_path/lib/libxcb-shape.so.0.0.0" >> dependencies.txt
+
+   echo "$install_path/lib/libxcb-xkb.so" >> dependencies.txt
+   echo "$install_path/lib/libxcb-xkb.so.1" >> dependencies.txt
+   echo "$install_path/lib/libxcb-xkb.so.1.0.0" >> dependencies.txt
+
+   echo "$install_path/lib/libxcb-util.so" >> dependencies.txt
+   echo "$install_path/lib/libxcb-util.so.1" >> dependencies.txt
+   echo "$install_path/lib/libxcb-util.so.1.0.0" >> dependencies.txt
 
    # prep for binaries
    sort -u dependencies.txt > dependencies2.txt
@@ -3137,7 +3168,7 @@ if [ "$create_binary_distribution" = "1" ]; then
    echo "scripts/proj_search" >> dependencies2.txt
    echo "scripts/regression" >> dependencies2.txt
 
-   echo "Creating tar file ...
+   echo "Creating tar file ..."
    cd ..
    tar -czf build.tar.gz -T scripts/dependencies2.txt scripts regression tutorials doc/*.pdf
 
