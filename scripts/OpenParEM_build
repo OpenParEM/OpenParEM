@@ -27,6 +27,7 @@ SMCVITTIE_KEYRING="$SCRIPT_DIR/keyrings/smcvittie-keyring.gpg"
 ICUROBOT_KEYRING="$SCRIPT_DIR/keyrings/icurobot-keyring.gpg"
 BKING_KEYRING="$SCRIPT_DIR/keyrings/bking-keyring.gpg"
 OFOURDAN_KEYRING="$SCRIPT_DIR/keyrings/ofourdan-keyring.gpg"
+SUDALTSOV_KEYRING="$SCRIPT_DIR/keyrings/sudaltsov-keyring.gpg"
 
 #----------------------------------------------------
 # download required packages
@@ -428,7 +429,11 @@ install_path=$PWD
 cd "$scripts_dir"
 jobs=1
 
-export PKG_CONFIG_PATH="$install_path/lib/pkgconfig:$install_path/share/pkgconfig:$PKG_CONFIG_PATH"
+# for self-contained build
+export PKG_CONFIG_LIBDIR="$install_path/lib/pkgconfig:$install_path/share/pkgconfig:$PKG_CONFIG_PATH"
+export PATH="$install_path/bin:$PATH"
+export PKG_CONFIG_PATH=
+export CMAKE_PREFIX_PATH="$install_path"
 
 #----------------------------------------------------
 # input processing
@@ -696,7 +701,7 @@ if [ $print_help -eq 1 ]; then
    echo "  --with-gmsh           compile gmsh"
    echo "  --without-gmsh        skip compiling gmsh"
    echo "  --with-qt             compile Qt plus xcb_util, xcb_util_image, xcb_util_keysyms, xcb_util_renderutil, xcb_util_wm,"
-   echo "                                        xcb_util_cursor, xcb_util_errors, libxml2, xkbcommon, dbus-1, and ic4u"
+   echo "                                        xcb_util_cursor, xcb_util_errors, libxml2, xkeyboard-config, xkbcommon, dbus-1, and ic4u"
    echo "  --without-qt          skip compiling Qt and dependencies"
    echo "  --with-m4             compile m4"
    echo "  --without-m4          skip compiling m4"
@@ -1182,6 +1187,9 @@ libxml2="libxml2-v2.15.3.tar.gz"
 # self-generated from 8-20-2026 download
 libxml2_sha256="0da50c1415f4ec0364569d2119b1436ba837b31df44af28569d234272c23cf1f"
 download_package_and_verify_sha256 "$libxml2" "https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.15.3/$libxml2" "$libxml2_sha256" || exit 1
+
+xkbd_config="xkeyboard-config-2.48.tar.xz"
+download_package_and_verify_sig "$xkbd_config" "https://xorg.freedesktop.org/archive/individual/data/xkeyboard-config/$xkbd_config" "sig" "$SUDALTSOV_KEYRING" "" || exit 1
 
 xkbcommon="xkbcommon-1.13.2.tar.gz"
 # self-generated from 8-20-2026 download
@@ -2812,12 +2820,39 @@ if [ "$with_qt" = "1" ]; then
    cmake .. \
     -DCMAKE_INSTALL_PREFIX="$install_path" \
     -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=OFF
    
    cmake --build . -j "$jobs"
    cmake --install .
     
    cd ../..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xkeyboard_config"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xkbd_config
+
+   meson setup build --prefix="$install_path" --libdir="$install_path/lib"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: xkeyboard_config failed to setup build"
+      exit 1
+   fi
+
+   meson compile -C build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: xkeyboard_config failed to compile"
+      exit 1
+   fi
+
+   cd build
+   meson install
+   cd ..
+
+   cd ..
    remove_base_directory
    cd ..
 
@@ -2828,7 +2863,6 @@ if [ "$with_qt" = "1" ]; then
    cd external_packages
 
    unpack_and_enter $xkbcommon
-   package_name=xkbcommon
 
    meson setup build --prefix="$install_path" --libdir="$install_path/lib" -Denable-wayland=false -Denable-bash-completion=false
    if [ $? -ne 0 ]; then
@@ -2847,7 +2881,6 @@ if [ "$with_qt" = "1" ]; then
    cd ..
 
    cd ..
-
    remove_base_directory
    cd ..
 
