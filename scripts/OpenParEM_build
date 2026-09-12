@@ -3130,6 +3130,10 @@ if [ "$create_binary_distribution" = "1" ]; then
    echo "$install_path/lib/libxcb-util.so.1" >> dependencies.txt
    echo "$install_path/lib/libxcb-util.so.1.0.0" >> dependencies.txt
 
+   echo "$install_path/lib/libxkbregistry.so" >> dependencies.txt
+   echo "$install_path/lib/libxkbregistry.so.0" >> dependencies.txt
+   echo "$install_path/lib/libxkbregistry.so.0.13.2" >> dependencies.txt
+
    # prep for binaries
    sort -u dependencies.txt > dependencies2.txt
    sed -i "s|"^$install_path"||" dependencies2.txt
@@ -3172,6 +3176,9 @@ if [ "$create_binary_distribution" = "1" ]; then
    cd ..
    tar -czf build.tar.gz -T scripts/dependencies2.txt scripts regression tutorials doc/*.pdf
 
+   if [ -d "OpenParEM-2.2.0" ]; then
+      rm -Rf OpenParEM-2.2.0
+   fi
    mkdir OpenParEM-2.2.0
    mv build.tar.gz OpenParEM-2.2.0
    cd OpenParEM-2.2.0
