@@ -231,9 +231,9 @@ gcc_version="gcc-13.3.0"
 
 fblaslapack="https://bitbucket.org/petsc/pkg-fblaslapack/get/v3.4.2-p3.tar.gz"
 metis="https://bitbucket.org/petsc/pkg-metis/get/v5.1.0-p12.tar.gz"
-mumps="https://web.cels.anl.gov/projects/petsc/download/externalpackages/MUMPS_5.7.3.tar.gz"
-scalapack="https://github.com/Reference-ScaLAPACK/scalapack/archive/v2.2.2.tar.gz"
-scotch="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.6/scotch-v7.0.6.tar.gz"
+mumps="https://web.cels.anl.gov/projects/petsc/download/externalpackages/MUMPS_5.9.1.tar.gz"
+scalapack="https://github.com/Reference-ScaLAPACK/scalapack/archive/v2.2.3.tar.gz"
+scotch="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.6/scotch-v7.0.13.tar.gz"
 cmake="https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6.tar.gz"
 
 # Compile HYPRE separately because PETSc would compile it for complex, which
@@ -1009,7 +1009,7 @@ if [ ! -d "$DOWNLOAD_DIR" ]; then
    fi
 fi
 
-m4="m4-1.4.19.tar.gz"
+m4="m4-1.4.21.tar.gz"
 download_package_and_verify_sig "$m4" "https://ftp.gnu.org/gnu/m4/$m4" "sig" "$GNU_KEYRING" "" || exit 1
 
 bison="bison-3.8.tar.gz"
@@ -1060,9 +1060,9 @@ cmake_version="4.4.3"
 cmake="cmake-4.4.3.tar.gz"
 download_cmake_and_verify "$cmake_version" "$cmake" "$DOWNLOAD_DIR" "$BKING_KEYRING" || exit 1
 
-petsc="petsc-3.25.4.tar.gz"
-# self-generated from 8-19-2026 download
-petsc_sha256="12c990fb39a5764ac8311211d09c01ed80fb983136c75bf7b558312b2509dbbd"
+petsc="petsc-3.25.5.tar.gz"
+# self-generated from 9-13-2026 download
+petsc_sha256="6d61c472db39006d261542d1a42f1fa6c52d6e89f9e77041386189aa8c24b490"
 download_package_and_verify_sha256 "$petsc" "https://web.cels.anl.gov/projects/petsc/download/release-snapshots/$petsc" "$petsc_sha256" || exit 1
 
 mfem_root="4.9.tar.gz"
@@ -1116,9 +1116,9 @@ download_package_and_verify_sig "$xtrans" "https://www.x.org/archive/individual/
 libX11="libX11-1.8.tar.gz"
 download_package_and_verify_sig "$libX11" "https://www.x.org/archive/individual/lib/$libX11" "sig" "$AJACKSON_KEYRING" "" || exit 1
 
-tk="tk8.6.16-src.tar.gz"
-# self-generated from 8-19-2026 download
-tk_sha256="be9f94d3575d4b3099d84bc3c10de8994df2d7aa405208173c709cc404a7e5fe"
+tk="tk8.6.18-src.tar.gz"
+# self-generated from 9-13-2026 download
+tk_sha256="95cd528a80f5e4bdb557af9b14a7197d6860793a3894e25e7c9fad2ed05d4c3c"
 download_package_and_verify_sha256 "$tk" "http://prdownloads.sourceforge.net/tcl/$tk" "$tk_sha256" || exit 1
 
 fontconfig="fontconfig-2.16.0.tar.xz"
@@ -1158,7 +1158,8 @@ if [ -f icu.tar.gz ]; then
 fi
 tar -xf icu4c-78.3-sources.tgz
 tar -cf icu.tar icu
-gzip icu.tar
+gzip -f icu.tar
+rm -Rf icu
 icu4c="icu.tar.gz"
 cd ../scripts
 
@@ -1197,8 +1198,9 @@ xkbcommon_sha256="acc4d5f7c3cbba5f9f8d08d8bdbeede84ecede46792f47929aa93218733855
 download_package_and_verify_sha256 "$xkbcommon" "https://github.com/xkbcommon/libxkbcommon/archive/refs/tags/$xkbcommon" "$xkbcommon_sha256" || exit 1
 cd ../external_packages
 tar -xf xkbcommon-1.13.2.tar.gz
-tar -cf libxkbcommon-xkbcommon-1.13.2.tar.gz libxkbcommon-xkbcommon-1.13.2
-gzip libxkbcommon-xkbcommon-1.13.2.tar.gz
+tar -cf libxkbcommon-xkbcommon-1.13.2.tar libxkbcommon-xkbcommon-1.13.2
+gzip -f libxkbcommon-xkbcommon-1.13.2.tar
+rm -Rf libxkbcommon-xkbcommon-1.13.2
 xkbcommon="libxkbcommon-xkbcommon-1.13.2.tar.gz"
 cd ../scripts
 
@@ -1373,7 +1375,25 @@ fi
 
 which autoconf > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-   echo "ERROR: \"autoconf\" and related package tools must be installed on the system to compile OpenParEM"
+   echo "ERROR: \"autoconf\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which libtool > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"libtool\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which aclocal > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"aclocal\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which automake > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"automake\" must be installed on the system to compile OpenParEM"
    missing_requirement=1
 fi
 
@@ -2282,7 +2302,7 @@ if [ "$with_petsc" = "1" ]; then
 
    export CMAKE_POLICY_VERSION_MINIMUM=3.5
 
-   ./configure --prefix="$install_path" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices --download-cmake=no --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" --with-fortran-bindings=1 --COPTFLAGS="-O3" --CXXOPTFLAGS="-O3" --FOPTFLAGS="-O3"
+   ./configure --prefix="$install_path" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices --download-cmake=no --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" --with-fortran-bindings=1 --COPTFLAGS="-O3 -std=gnu89 -fcommon -D_DEFAULT_SOURCE" --CXXOPTFLAGS="-O3 -std=c++11" --FOPTFLAGS="-O3 -fallow-argument-mismatch"
 
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: petsc failed to configure"

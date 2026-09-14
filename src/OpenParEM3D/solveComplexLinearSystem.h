@@ -31,8 +31,8 @@
 #define lapack_int int
 #define lapack_complex_double double complex
 
-double lapack_complex_double_real ();
-double lapack_complex_double_imag ();
+double lapack_complex_double_real (lapack_complex_double);
+double lapack_complex_double_imag (lapack_complex_double);
 
 //double* allocReaddof (char *, char *, size_t *);
 //void printdof (double *, size_t);

@@ -33,7 +33,7 @@
 #define lapack_complex_double double complex
 
 void prefix ();
-double lapack_complex_double_real ();
-double lapack_complex_double_imag ();
+double lapack_complex_double_real (lapack_complex_double);
+double lapack_complex_double_imag (lapack_complex_double);
 
 #endif
