@@ -1,9 +1,11 @@
 #!/bin/sh
 
-#ToDo: unset PETSC_DIR, PETSC_ARCH, and SLEPC_DIR
+# unset some variables that would interfere with this build
+unset PETSC_DIR
+unset PETSC_ARCH
+unset SLEPC_DIR
 
-#ToDo: may need to set the environment variable QT_QPA_PLATFORM=xcb to force X11 and avoid issues with Wayland
-
+# locations
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 DOWNLOAD_DIR="../external_packages"
 
@@ -434,6 +436,7 @@ export PKG_CONFIG_LIBDIR="$install_path/lib/pkgconfig:$install_path/share/pkgcon
 export PATH="$install_path/bin:$PATH"
 export PKG_CONFIG_PATH=
 export CMAKE_PREFIX_PATH="$install_path"
+export CPPFLAGS="-I$install_path/include":$CPPFLAGS
 
 #----------------------------------------------------
 # input processing
@@ -2484,16 +2487,6 @@ if [ "$with_occt" = "1" ]; then
       exit 1
    fi
 
-   save_CPPFLAGS="$CPPFLAGS"
-   save_CFLAGS="$CFLAGS"
-   save_CXXFLAGS="$CXXFLAGS"
-   save_LDFLAGS="$LDFLAGS"
-
-   export CPPFLAGS="-I$install_path/include"
-   export CFLAGS="-I$install_path/include"
-   export CXXFLAGS="-I$install_path/include"
-   export LDFLAGS="-L$install_path/lib"
-
    ./configure --prefix="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
@@ -2515,11 +2508,6 @@ if [ "$with_occt" = "1" ]; then
    cd ..
    remove_base_directory
    cd ..
-
-   export CPPFLAGS="$save_CPPFLAGS"
-   export CFLAGS="$save_CFLAGS"
-   export CXXFLAGS="$save_CXXFLAGS"
-   export LDFLAGS="$save_LDFLAGS"
 
 
    echo "#------------------------------------------------------------------------------------"
@@ -3059,12 +3047,6 @@ if [ "$with_OpenParEM" = "1" ]; then
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: OpenParEM"
    echo "#------------------------------------------------------------------------------------"
-
-#xxx
-   export CPPFLAGS="-I$install_path/include"
-   export CFLAGS="-I$install_path/include"
-   export CXXFLAGS="-I$install_path/include"
-   export LDFLAGS="-L$install_path/lib"
 
    cd src
 
