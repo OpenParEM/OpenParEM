@@ -2487,7 +2487,7 @@ if [ "$with_occt" = "1" ]; then
       exit 1
    fi
 
-   ./configure --prefix="$install_path"
+   CPPFLAGS="-I$install_path/include" ./configure --prefix="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
