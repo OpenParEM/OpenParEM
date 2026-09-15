@@ -3133,7 +3133,6 @@ if [ "$create_binary_distribution" = "1" ]; then
    echo "Simulation cleanup ..."
    project_cleanup ../regression
    project_cleanup ../tutorials
-   echo ""
 
    echo "Finding dependencies ..."
    cd $install_path/scripts
@@ -3244,6 +3243,7 @@ if [ "$create_binary_distribution" = "1" ]; then
 
    rm -f scripts/dependencies.txt
    rm -f scripts/dependencies2.txt
+   echo ""
 
    echo "Done. Created ../OpenParEM-2.2.0.tar.gz"
    echo ""
