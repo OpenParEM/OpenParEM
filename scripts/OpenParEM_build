@@ -3131,6 +3131,11 @@ if [ "$create_binary_distribution" = "1" ]; then
    echo "#------------------------------------------------------------------------------------"
    echo ""
 
+   echo "Simulation cleanup ..."
+   project_cleanup ../regression
+   project_cleanup ../tutorials
+   echo ""
+
    echo "Finding dependencies ..."
    cd $install_path/scripts
    ./find_dependencies ../bin/OpenParEMg $install_path > dependencies.txt
