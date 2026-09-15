@@ -3123,7 +3123,6 @@ echo "#-------------------------------------------------------------------------
 
 cd $install_path/scripts
 ./set_relative_runpath.sh $install_path
-echo ""
 
 if [ "$create_binary_distribution" = "1" ]; then
    echo "#------------------------------------------------------------------------------------"
