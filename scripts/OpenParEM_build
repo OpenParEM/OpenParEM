@@ -3134,6 +3134,14 @@ if [ "$create_binary_distribution" = "1" ]; then
    project_cleanup ../regression
    project_cleanup ../tutorials
 
+   echo "Regression log file cleanup ..."
+   rm -f ../builder/*.archive
+   rm -f ../builder/*.current
+   rm -f ../OpenParEM2D/*.archive
+   rm -f ../OpenParEM2D/*.current
+   rm -f ../OpenParEM3D/*.archive
+   rm -f ../OpenParEM3D/*.current
+
    echo "Finding dependencies ..."
    cd $install_path/scripts
    ./find_dependencies ../bin/OpenParEMg $install_path > dependencies.txt
