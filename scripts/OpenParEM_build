@@ -3123,6 +3123,7 @@ echo "#-------------------------------------------------------------------------
 
 cd $install_path/scripts
 ./set_relative_runpath.sh $install_path
+echo ""
 
 if [ "$create_binary_distribution" = "1" ]; then
    echo "#------------------------------------------------------------------------------------"
@@ -3135,12 +3136,12 @@ if [ "$create_binary_distribution" = "1" ]; then
    project_cleanup ../tutorials
 
    echo "Regression log file cleanup ..."
-   rm -f ../builder/*.archive
-   rm -f ../builder/*.current
-   rm -f ../OpenParEM2D/*.archive
-   rm -f ../OpenParEM2D/*.current
-   rm -f ../OpenParEM3D/*.archive
-   rm -f ../OpenParEM3D/*.current
+   rm -f ../regression/builder/*.archive
+   rm -f ../regression/builder/*.current
+   rm -f ../regression/OpenParEM2D/*.archive
+   rm -f ../regression/OpenParEM2D/*.current
+   rm -f ../regression/OpenParEM3D/*.archive
+   rm -f ../regression/OpenParEM3D/*.current
 
    echo "Finding dependencies ..."
    cd $install_path/scripts
