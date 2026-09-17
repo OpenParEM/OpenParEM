@@ -9,6 +9,111 @@ unset SLEPC_DIR
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 DOWNLOAD_DIR="../external_packages"
 
+echo "#----------------------------------------------------"
+echo "# check for installed build tools"
+echo "#----------------------------------------------------"
+
+missing_requirement=0
+
+which make > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"make\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+if [ "$with_cmake" = "0" ]; then
+which cmake > /dev/null 2>&1
+   if [ $? -ne 0 ]; then
+      echo "ERROR: \"cmake\" must be installed on the system to compile OpenParEM"
+      missing_requirement=1
+   fi
+fi
+
+which g++ > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"g++\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which gfortran > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"gfortran\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which perl > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"perl\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which python3 > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"python3\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+if [ "$with_tk" = "0" ]; then
+   which tclsh > /dev/null 2>&1
+   if [ $? -ne 0 ]; then
+      echo "ERROR: \"tclsh\" must be installed on the system to compile OpenParEM"
+      missing_requirement=1
+   fi
+
+   which wish > /dev/null 2>&1
+   if [ $? -ne 0 ]; then
+      echo "ERROR: \"wish\" must be installed on the system to compile OpenParEM"
+      missing_requirement=1
+   fi
+fi
+
+which pkg-config > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"pkg-config\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+   
+which autoconf > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"autoconf\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1 
+fi
+   
+which libtool > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"libtool\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+   
+which aclocal > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"aclocal\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which automake > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"automake\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which patchelf > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"patchelf\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which shasum > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"shasum\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+if [ "$missing_requirement" = "1" ]; then
+   exit 1
+fi
+
 #----------------------------------------------------
 # GNU keyring for verifying GNU packages
 #----------------------------------------------------
@@ -31,10 +136,11 @@ BKING_KEYRING="$SCRIPT_DIR/keyrings/bking-keyring.gpg"
 OFOURDAN_KEYRING="$SCRIPT_DIR/keyrings/ofourdan-keyring.gpg"
 SUDALTSOV_KEYRING="$SCRIPT_DIR/keyrings/sudaltsov-keyring.gpg"
 
-#----------------------------------------------------
-# download required packages
+echo "#----------------------------------------------------"
+echo "# download required packages"
+echo "#----------------------------------------------------"
+
 # functions courtesy of ChatGPT
-#----------------------------------------------------
 
 download_package_and_verify_sha ()
 {
@@ -437,6 +543,10 @@ export PATH="$install_path/bin:$PATH"
 export PKG_CONFIG_PATH=
 export CMAKE_PREFIX_PATH="$install_path"
 export CPPFLAGS="-I$install_path/include":$CPPFLAGS
+
+# for gpg to avoid use-keyboxd
+export GNUPGHOME="$install_path/scripts/keyrings"
+
 
 #----------------------------------------------------
 # input processing
@@ -1211,9 +1321,9 @@ qt="qt-everywhere-src-6.11.2.tar.xz"
 qt_sha256="6dcfbca271d76a6502741a2c0dc6fc98ef7dd0b7b4cfd0abcebb285a86a26f33"
 download_package_and_verify_sha256 "$qt" "https://download.qt.io/official_releases/qt/6.11/6.11.2/single/$qt" "$qt_sha256" || exit 1
 
-#----------------------------------------------------
-# check for installed build tools
-#----------------------------------------------------
+echo "#----------------------------------------------------"
+echo "# check for build items"
+echo "#----------------------------------------------------"
 
 has_build=0
 
@@ -1313,102 +1423,6 @@ if [ "$has_build" = "0" ]; then
    if [ "$create_binary_distribution" = "0" ]; then
       exit 0
    fi
-fi
-
-
-missing_requirement=0
-
-which make > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"make\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-if [ "$with_cmake" = "0" ]; then
-which cmake > /dev/null 2>&1
-   if [ $? -ne 0 ]; then
-      echo "ERROR: \"cmake\" must be installed on the system to compile OpenParEM"
-      missing_requirement=1
-   fi
-fi
-
-which g++ > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"g++\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-which gfortran > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"gfortran\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-which perl > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"perl\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-which python3 > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"python3\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-if [ "$with_tk" = "0" ]; then
-   which tclsh > /dev/null 2>&1
-   if [ $? -ne 0 ]; then
-      echo "ERROR: \"tclsh\" must be installed on the system to compile OpenParEM"
-      missing_requirement=1
-   fi
-
-   which wish > /dev/null 2>&1
-   if [ $? -ne 0 ]; then
-      echo "ERROR: \"wish\" must be installed on the system to compile OpenParEM"
-      missing_requirement=1
-   fi
-fi
-
-which pkg-config > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"pkg-config\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-which autoconf > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"autoconf\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-which libtool > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"libtool\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-which aclocal > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"aclocal\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-which automake > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"automake\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-which patchelf > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"patchelf\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-
-if [ "$missing_requirement" = "1" ]; then
-   exit 1
 fi
 
 #----------------------------------------------------
@@ -2573,7 +2587,8 @@ if [ "$with_gmsh" = "1" ]; then
    cd build
 
    # EIGEN is enabled; can substitute Blas/Lapack if EIGEN becomes a problem
-   cmake -D CMAKE_INSTALL_PREFIX="$install_path" -D ENABLE_BUILD_SHARED=ON -D ENABLE_DOMHEX=OFF \
+   cmake -D CMAKE_INSTALL_PREFIX="$install_path" -D CMAKE_INSTALL_LIBDIR=lib \
+         -D ENABLE_BUILD_SHARED=ON -D ENABLE_DOMHEX=OFF \
          -D ENABLE_EIGEN=ON -D ENABLE_FLTK=OFF -D ENABLE_GETDP=OFF -D ENABLE_GMM=OFF -D ENABLE_GMP=OFF \
          -D ENABLE_KBIPACK=OFF -D ENABLE_MED=OFF -D ENABLE_MMG=OFF -D ENABLE_MPEG_ENCODE=OFF \
          -D ENABLE_ONELAB=OFF -D ENABLE_ONELAB_METAMODEL=OFF -D ENABLE_OPENMP=OFF -D ENABLE_OPTHOM=OFF \
@@ -2836,6 +2851,7 @@ if [ "$with_qt" = "1" ]; then
 
    cmake .. \
     -DCMAKE_INSTALL_PREFIX="$install_path" \
+    -DCMAKE_INSTALL_LIBDIR=lib \
     -DCMAKE_BUILD_TYPE=Release \
    
    cmake --build . -j "$jobs"
@@ -3108,7 +3124,7 @@ if [ "$with_OpenParEMg" = "1" ]; then
          -DCMAKE_PREFIX_PATH="$install_path" \
          || exit 1
 
-   cmake --build "$APP_BUILD" -j"$NPROC" || exit 1
+   cmake --build "$APP_BUILD" --verbose -j"$NPROC" || exit 1
 
    cmake --install "$APP_BUILD" || exit 1
 

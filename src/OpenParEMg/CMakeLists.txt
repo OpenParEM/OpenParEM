@@ -16,11 +16,11 @@ add_compile_options (-DHAS_GUI -DHAS_MPI)
 find_package(Qt6 6.11 REQUIRED COMPONENTS Core Widgets Svg Concurrent)
 find_package(OpenGL REQUIRED) #except QOpenGLWidget, which is handled separately below (include and lib)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} /home/briany/OpenParEM/include/QtOpenGLWidgets /home/briany/OpenParEM/src/OpenParEM3D /home/briany/OpenParEM/include /home/briany/OpenParEM/lib /home/briany/OpenParEM/src/OpenParEMCommon /home/briany/OpenParEM/include/opencascade /usr/lib/gcc/x86_64-linux-gnu/9/include /usr/include/GL)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ../../include/QtOpenGLWidgets ../../src/OpenParEM3D ../../include ../../lib ../../src/OpenParEMCommon ../../include/opencascade /usr/lib/gcc/x86_64-linux-gnu/9/include /usr/include/GL)
 
 # Open CASCADE Technology
-set (OpenCASCADE_DIR /home/briany/OpenParEM/lib/cmake/opencascade)
-find_package(OpenCASCADE REQUIRED NO_DEFAULT_PATH)
+set (OpenCASCADE_DIR ../../lib/cmake/opencascade)
+find_package(OpenCASCADE REQUIRED)
 if(OpenCASCADE_FOUND)
   message (STATUS "Using OpenCASCADE from \"${OpenCASCADE_DIR}\"" )
   INCLUDE_DIRECTORIES(${OpenCASCADE_INCLUDE_DIR})
@@ -106,37 +106,37 @@ qt_add_executable(OpenParEMg
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)
-set_target_properties(Qt6OpenGLWidgets PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libQt6OpenGLWidgets.so")
+set_target_properties(Qt6OpenGLWidgets PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../lib/libQt6OpenGLWidgets.so")
 
 add_library(mfem SHARED IMPORTED)
-set_target_properties(mfem PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libmfem.so")
+set_target_properties(mfem PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../lib/libmfem.so")
 
 add_library(petscdm SHARED IMPORTED)
-set_target_properties(petscdm PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libpetscdm.so")
+set_target_properties(petscdm PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../lib/libpetscdm.so")
 
 add_library(petscksp SHARED IMPORTED)
-set_target_properties(petscksp PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libpetscksp.so")
+set_target_properties(petscksp PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../lib/libpetscksp.so")
 
 add_library(petscmat SHARED IMPORTED)
-set_target_properties(petscmat PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libpetscmat.so")
+set_target_properties(petscmat PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../lib/libpetscmat.so")
 
 add_library(petscsnes SHARED IMPORTED)
-set_target_properties(petscsnes PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libpetscsnes.so")
+set_target_properties(petscsnes PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../lib/libpetscsnes.so")
 
 add_library(petscsys SHARED IMPORTED)
-set_target_properties(petscsys PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libpetscsys.so")
+set_target_properties(petscsys PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../lib/libpetscsys.so")
 
 add_library(petsctao SHARED IMPORTED)
-set_target_properties(petsctao PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libpetsctao.so")
+set_target_properties(petsctao PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../lib/libpetsctao.so")
 
 add_library(petscts SHARED IMPORTED)
-set_target_properties(petscts PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libpetscts.so")
+set_target_properties(petscts PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../lib/libpetscts.so")
 
 add_library(petscvec SHARED IMPORTED)
-set_target_properties(petscvec PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libpetscvec.so")
+set_target_properties(petscvec PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../lib/libpetscvec.so")
 
 add_library(gmsh SHARED IMPORTED)
-set_target_properties(gmsh PROPERTIES IMPORTED_LOCATION "/home/briany/OpenParEM/lib/libgmsh.so")
+set_target_properties(gmsh PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_LIST_DIR}/../../lib/libgmsh.so")
 
 # OpenMPI
 set(MPI_LIBS mpi_mpifh  mpi  mpi_usempif08  mpi_usempi_ignore_tkr)

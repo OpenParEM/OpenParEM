@@ -6,191 +6,191 @@
 /* define if the compiler supports basic C++17 syntax */
 #undef HAVE_CXX17
 
-/* Define to 1 if you have the `getcwd' function. */
+/* Define to 1 if you have the 'getcwd' function. */
 #undef HAVE_GETCWD
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the `c' library (-lc). */
+/* Define to 1 if you have the 'c' library (-lc). */
 #undef HAVE_LIBC
 
-/* Define to 1 if you have the `cmumps' library (-lcmumps). */
+/* Define to 1 if you have the 'cmumps' library (-lcmumps). */
 #undef HAVE_LIBCMUMPS
 
-/* Define to 1 if you have the `dl' library (-ldl). */
+/* Define to 1 if you have the 'dl' library (-ldl). */
 #undef HAVE_LIBDL
 
-/* Define to 1 if you have the `dmumps' library (-ldmumps). */
+/* Define to 1 if you have the 'dmumps' library (-ldmumps). */
 #undef HAVE_LIBDMUMPS
 
-/* Define to 1 if you have the `esmumps' library (-lesmumps). */
+/* Define to 1 if you have the 'esmumps' library (-lesmumps). */
 #undef HAVE_LIBESMUMPS
 
-/* Define to 1 if you have the `fblas' library (-lfblas). */
+/* Define to 1 if you have the 'fblas' library (-lfblas). */
 #undef HAVE_LIBFBLAS
 
-/* Define to 1 if you have the `flapack' library (-lflapack). */
+/* Define to 1 if you have the 'flapack' library (-lflapack). */
 #undef HAVE_LIBFLAPACK
 
-/* Define to 1 if you have the `fmpich' library (-lfmpich). */
+/* Define to 1 if you have the 'fmpich' library (-lfmpich). */
 #undef HAVE_LIBFMPICH
 
-/* Define to 1 if you have the `gfortran' library (-lgfortran). */
+/* Define to 1 if you have the 'gfortran' library (-lgfortran). */
 #undef HAVE_LIBGFORTRAN
 
-/* Define to 1 if you have the `HYPRE' library (-lHYPRE). */
+/* Define to 1 if you have the 'HYPRE' library (-lHYPRE). */
 #undef HAVE_LIBHYPRE
 
-/* Define to 1 if you have the `m' library (-lm). */
+/* Define to 1 if you have the 'm' library (-lm). */
 #undef HAVE_LIBM
 
-/* Define to 1 if you have the `metis' library (-lmetis). */
+/* Define to 1 if you have the 'metis' library (-lmetis). */
 #undef HAVE_LIBMETIS
 
 /* Set to 1 when libmfem is found */
 #undef HAVE_LIBMFEM
 
-/* Define to 1 if you have the `mpi' library (-lmpi). */
+/* Define to 1 if you have the 'mpi' library (-lmpi). */
 #undef HAVE_LIBMPI
 
-/* Define to 1 if you have the `mpich' library (-lmpich). */
+/* Define to 1 if you have the 'mpich' library (-lmpich). */
 #undef HAVE_LIBMPICH
 
-/* Define to 1 if you have the `mpichcxx' library (-lmpichcxx). */
+/* Define to 1 if you have the 'mpichcxx' library (-lmpichcxx). */
 #undef HAVE_LIBMPICHCXX
 
-/* Define to 1 if you have the `mpichf90' library (-lmpichf90). */
+/* Define to 1 if you have the 'mpichf90' library (-lmpichf90). */
 #undef HAVE_LIBMPICHF90
 
-/* Define to 1 if you have the `mpicxx' library (-lmpicxx). */
+/* Define to 1 if you have the 'mpicxx' library (-lmpicxx). */
 #undef HAVE_LIBMPICXX
 
-/* Define to 1 if you have the `mpifort' library (-lmpifort). */
+/* Define to 1 if you have the 'mpifort' library (-lmpifort). */
 #undef HAVE_LIBMPIFORT
 
-/* Define to 1 if you have the `mpi_mpifh' library (-lmpi_mpifh). */
+/* Define to 1 if you have the 'mpi_mpifh' library (-lmpi_mpifh). */
 #undef HAVE_LIBMPI_MPIFH
 
-/* Define to 1 if you have the `mpi_usempif08' library (-lmpi_usempif08). */
+/* Define to 1 if you have the 'mpi_usempif08' library (-lmpi_usempif08). */
 #undef HAVE_LIBMPI_USEMPIF08
 
-/* Define to 1 if you have the `mpi_usempi_ignore_tkr' library
+/* Define to 1 if you have the 'mpi_usempi_ignore_tkr' library
    (-lmpi_usempi_ignore_tkr). */
 #undef HAVE_LIBMPI_USEMPI_IGNORE_TKR
 
-/* Define to 1 if you have the `mumps_common' library (-lmumps_common). */
+/* Define to 1 if you have the 'mumps_common' library (-lmumps_common). */
 #undef HAVE_LIBMUMPS_COMMON
 
-/* Define to 1 if you have the `open-pal' library (-lopen-pal). */
+/* Define to 1 if you have the 'open-pal' library (-lopen-pal). */
 #undef HAVE_LIBOPEN_PAL
 
-/* Define to 1 if you have the `open-rte' library (-lopen-rte). */
+/* Define to 1 if you have the 'open-rte' library (-lopen-rte). */
 #undef HAVE_LIBOPEN_RTE
 
-/* Define to 1 if you have the `petscdm' library (-lpetscdm). */
+/* Define to 1 if you have the 'petscdm' library (-lpetscdm). */
 #undef HAVE_LIBPETSCDM
 
-/* Define to 1 if you have the `petscksp' library (-lpetscksp). */
+/* Define to 1 if you have the 'petscksp' library (-lpetscksp). */
 #undef HAVE_LIBPETSCKSP
 
-/* Define to 1 if you have the `petscmat' library (-lpetscmat). */
+/* Define to 1 if you have the 'petscmat' library (-lpetscmat). */
 #undef HAVE_LIBPETSCMAT
 
-/* Define to 1 if you have the `petscsnes' library (-lpetscsnes). */
+/* Define to 1 if you have the 'petscsnes' library (-lpetscsnes). */
 #undef HAVE_LIBPETSCSNES
 
-/* Define to 1 if you have the `petscsys' library (-lpetscsys). */
+/* Define to 1 if you have the 'petscsys' library (-lpetscsys). */
 #undef HAVE_LIBPETSCSYS
 
-/* Define to 1 if you have the `petsctao' library (-lpetsctao). */
+/* Define to 1 if you have the 'petsctao' library (-lpetsctao). */
 #undef HAVE_LIBPETSCTAO
 
-/* Define to 1 if you have the `petscts' library (-lpetscts). */
+/* Define to 1 if you have the 'petscts' library (-lpetscts). */
 #undef HAVE_LIBPETSCTS
 
-/* Define to 1 if you have the `petscvec' library (-lpetscvec). */
+/* Define to 1 if you have the 'petscvec' library (-lpetscvec). */
 #undef HAVE_LIBPETSCVEC
 
-/* Define to 1 if you have the `pord' library (-lpord). */
+/* Define to 1 if you have the 'pord' library (-lpord). */
 #undef HAVE_LIBPORD
 
-/* Define to 1 if you have the `ptesmumps' library (-lptesmumps). */
+/* Define to 1 if you have the 'ptesmumps' library (-lptesmumps). */
 #undef HAVE_LIBPTESMUMPS
 
-/* Define to 1 if you have the `pthread' library (-lpthread). */
+/* Define to 1 if you have the 'pthread' library (-lpthread). */
 #undef HAVE_LIBPTHREAD
 
-/* Define to 1 if you have the `ptscotch' library (-lptscotch). */
+/* Define to 1 if you have the 'ptscotch' library (-lptscotch). */
 #undef HAVE_LIBPTSCOTCH
 
-/* Define to 1 if you have the `ptscotcherr' library (-lptscotcherr). */
+/* Define to 1 if you have the 'ptscotcherr' library (-lptscotcherr). */
 #undef HAVE_LIBPTSCOTCHERR
 
-/* Define to 1 if you have the `ptscotcherrexit' library (-lptscotcherrexit).
+/* Define to 1 if you have the 'ptscotcherrexit' library (-lptscotcherrexit).
    */
 #undef HAVE_LIBPTSCOTCHERREXIT
 
-/* Define to 1 if you have the `quadmath' library (-lquadmath). */
+/* Define to 1 if you have the 'quadmath' library (-lquadmath). */
 #undef HAVE_LIBQUADMATH
 
-/* Define to 1 if you have the `rt' library (-lrt). */
+/* Define to 1 if you have the 'rt' library (-lrt). */
 #undef HAVE_LIBRT
 
-/* Define to 1 if you have the `scalapack' library (-lscalapack). */
+/* Define to 1 if you have the 'scalapack' library (-lscalapack). */
 #undef HAVE_LIBSCALAPACK
 
-/* Define to 1 if you have the `scotch' library (-lscotch). */
+/* Define to 1 if you have the 'scotch' library (-lscotch). */
 #undef HAVE_LIBSCOTCH
 
-/* Define to 1 if you have the `scotcherr' library (-lscotcherr). */
+/* Define to 1 if you have the 'scotcherr' library (-lscotcherr). */
 #undef HAVE_LIBSCOTCHERR
 
-/* Define to 1 if you have the `slepceps' library (-lslepceps). */
+/* Define to 1 if you have the 'slepceps' library (-lslepceps). */
 #undef HAVE_LIBSLEPCEPS
 
-/* Define to 1 if you have the `slepclme' library (-lslepclme). */
+/* Define to 1 if you have the 'slepclme' library (-lslepclme). */
 #undef HAVE_LIBSLEPCLME
 
-/* Define to 1 if you have the `slepcmfn' library (-lslepcmfn). */
+/* Define to 1 if you have the 'slepcmfn' library (-lslepcmfn). */
 #undef HAVE_LIBSLEPCMFN
 
-/* Define to 1 if you have the `slepcnep' library (-lslepcnep). */
+/* Define to 1 if you have the 'slepcnep' library (-lslepcnep). */
 #undef HAVE_LIBSLEPCNEP
 
-/* Define to 1 if you have the `slepcpep' library (-lslepcpep). */
+/* Define to 1 if you have the 'slepcpep' library (-lslepcpep). */
 #undef HAVE_LIBSLEPCPEP
 
-/* Define to 1 if you have the `slepcsvd' library (-lslepcsvd). */
+/* Define to 1 if you have the 'slepcsvd' library (-lslepcsvd). */
 #undef HAVE_LIBSLEPCSVD
 
-/* Define to 1 if you have the `slepcsys' library (-lslepcsys). */
+/* Define to 1 if you have the 'slepcsys' library (-lslepcsys). */
 #undef HAVE_LIBSLEPCSYS
 
-/* Define to 1 if you have the `smumps' library (-lsmumps). */
+/* Define to 1 if you have the 'smumps' library (-lsmumps). */
 #undef HAVE_LIBSMUMPS
 
 /* Set to 1 when libstdc++ is found */
 #undef HAVE_LIBSTDC__
 
-/* Define to 1 if you have the `util' library (-lutil). */
+/* Define to 1 if you have the 'util' library (-lutil). */
 #undef HAVE_LIBUTIL
 
-/* Define to 1 if you have the `zmumps' library (-lzmumps). */
+/* Define to 1 if you have the 'zmumps' library (-lzmumps). */
 #undef HAVE_LIBZMUMPS
 
-/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
+/* Define to 1 if your system has a GNU libc compatible 'malloc' function, and
    to 0 otherwise. */
 #undef HAVE_MALLOC
 
-/* Define to 1 if you have the `pow' function. */
+/* Define to 1 if you have the 'pow' function. */
 #undef HAVE_POW
 
-/* Define to 1 if your system has a GNU libc compatible `realloc' function,
+/* Define to 1 if your system has a GNU libc compatible 'realloc' function,
    and to 0 otherwise. */
 #undef HAVE_REALLOC
 
-/* Define to 1 if you have the `sqrt' function. */
+/* Define to 1 if you have the 'sqrt' function. */
 #undef HAVE_SQRT
 
 /* Define to 1 if you have the <stddef.h> header file. */
@@ -205,7 +205,7 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Define to 1 if you have the `strdup' function. */
+/* Define to 1 if you have the 'strdup' function. */
 #undef HAVE_STRDUP
 
 /* Define to 1 if you have the <strings.h> header file. */
@@ -214,7 +214,7 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if you have the `strtoull' function. */
+/* Define to 1 if you have the 'strtoull' function. */
 #undef HAVE_STRTOULL
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
@@ -226,7 +226,7 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to 1 if the system has the type `_Bool'. */
+/* Define to 1 if the system has the type '_Bool'. */
 #undef HAVE__BOOL
 
 /* Name of package */
@@ -250,7 +250,7 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
@@ -264,5 +264,5 @@
 /* Define to rpl_realloc if the replacement function should be used. */
 #undef realloc
 
-/* Define to `unsigned int' if <sys/types.h> does not define. */
+/* Define as 'unsigned int' if <stddef.h> doesn't define. */
 #undef size_t
