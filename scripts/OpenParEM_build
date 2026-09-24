@@ -53,6 +53,25 @@ if [ $? -ne 0 ]; then
    missing_requirement=1
 fi
 
+has_python3p10=0
+which python3.10 > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+   has_python3p10=1
+fi
+
+has_python3p11=0
+which python3.11 > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+   has_python3p11=1
+fi
+
+if [ "$has_python3p10" = "1" ]; then
+   if [ "$has_python3p11" = "0" ]; then
+      echo "ERROR: python3.10 is not supported.  See the installation guide on installing python3.11."
+      missing_requirement=1
+   fi
+fi
+
 if [ "$with_tk" = "0" ]; then
    which tclsh > /dev/null 2>&1
    if [ $? -ne 0 ]; then
@@ -2869,6 +2888,15 @@ if [ "$with_qt" = "1" ]; then
 
    unpack_and_enter $xkbd_config
 
+   if [ "$has_python3p11" = "1" ]; then
+
+      python3.11 -m venv ~/venvs/xkeyboard-config
+      . "$HOME/venvs/xkeyboard-config/bin/activate"
+
+      python -m pip install --upgrade pip
+      python -m pip install meson
+   fi
+
    meson setup build --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: xkeyboard_config failed to setup build"
@@ -2884,6 +2912,10 @@ if [ "$with_qt" = "1" ]; then
    cd build
    meson install
    cd ..
+
+   if type deactivate >/dev/null 2>&1; then
+      deactivate
+   fi
 
    cd ..
    remove_base_directory

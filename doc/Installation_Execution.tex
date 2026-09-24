@@ -88,7 +88,21 @@ $ OpenParEM_test
 
 \section{Compiling from Source}
 
-OpenParEM can be compiled for Linux-based operating systems and does not require administrator priviledges if the needed build tools make, cmake, g++, gfortran, perl, python3, tcl/tk, pkg-config, autoconf, and patchelf are already installed.  If cloning the project from GitHub, then autoconf is also required.  When compiling, OpenMPI is the default, but MPICH can be used instead with a command-line switch.
+OpenParEM can be compiled for Linux-based operating systems and does not require administrator priviledges if the needed build tools make, g++, gfortran, perl, python3, pkg-config, autoconf, automake, libtool, patchelf, and shasum are already installed.  When compiling, OpenMPI is the default, but MPICH can be used instead with a command-line switch.  Note that when installing libtool, two packages are required to be installed: libtool and libtool-bin.  The build script \texttt{OpenParEM_build} checks for the availability of the required tools, and if any are missing, then it lists the needed tools and exits.  Any missing tools should be installed with the operating system's package manager, then \texttt{OpenParEM_build} can be re-run.  If all required tools are found, then the script proceeds.
+
+\subsection{Ubuntu 22}
+
+The library \texttt{xkeyboard-config} requires Python 3.11, but due to its age, Ubuntu 22 uses Python 3.10.  To compile OpenParEM in Ubuntu 22 requires using Python 3.11 for compiling \texttt{xkeyboard-confg}.  Python 3.11 must be installed on the system, but it must no be installed for general system use to keep from breaking other applications.  The OpenParEM build script uses the installed Python 3.11 version in a virtual environment to avoid installing it for general use.
+
+To install Python 3.11, issue the following command (requires root priviledge):
+\begin{itemize}[nosep]
+   \item $ sudo apt install software-properties-common
+   \item $ sudo add-apt-repository ppa:deadsnakes/ppa
+   \item $ sudo apt update
+   \item $ sudo apt install python3.11 python3.11-dev python3.11-venv
+\end{itemize}
+
+During execution, \texttt{OpenParEM_build} checks for the presence of Python 3.10, and if it finds it, it checks for the availability of python3.11.  If it finds it, processing continues, otherwise an error is printed.  Note that this simple check is not intended to cover any of the many possible corner cases: it is just here to get Ubuntu 22 to compile.
 
 \subsection{Using a Downloaded Package}
 
