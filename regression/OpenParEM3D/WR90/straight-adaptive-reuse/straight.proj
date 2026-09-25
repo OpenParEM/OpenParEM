@@ -2,7 +2,7 @@
 //Commented lines show either unspecified inputs that utilize the default values or specified inputs that match the default values.
 //project.calculate.poynting false
 //project.save.fields false
-mesh.file /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-adaptive-reuse/refined_straight.msh
+mesh.file refined_straight.msh
 //mesh.save.refined false
 //mesh.refinement.fraction 0.005
 mesh.quality.limit 1000000000
@@ -65,7 +65,7 @@ solution.iteration.limit 10000
 //debug.refine.preconditioner 1
 //gui.units mm
 //gui.grid.size 10
-gui.slot.count 12
+gui.slot.count 6
 //gui.oversubscribe true
 gui.mesh.scale 0.9
 //gui.mesh.minSize 0
