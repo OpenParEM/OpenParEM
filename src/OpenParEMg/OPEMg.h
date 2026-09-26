@@ -356,6 +356,9 @@ class OpenParEMg : public QMainWindow
 
     friend class Macro;
 
+protected:
+    void showEvent(QShowEvent *event) override;
+
 public:
     OpenParEMg (QWidget *parent = nullptr);
     ~OpenParEMg ();
@@ -512,6 +515,8 @@ public:
     void clonePathData ();
 
 private slots:
+
+    void applyStartupGeometry();
 
     void onMenuAboutToShow ();
 

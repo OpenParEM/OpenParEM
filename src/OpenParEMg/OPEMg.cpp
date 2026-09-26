@@ -193,6 +193,10 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     // start
     ui->setupUi(this);
 
+    if (ui->drawingWindow) {
+        ui->drawingWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    }
+
     MPI_PORT_COMM=nullptr;
     request=nullptr;
 
@@ -493,16 +497,13 @@ OpenParEMg::OpenParEMg (QWidget *parent)
 
     // set the starting window size
 
-    int windowWidth=1510;
-    int windowHeight=900;
-
     QScreen *screen=QGuiApplication::primaryScreen();
     QSize maxAvailableSize=screen->availableSize();
     int maxWidth=maxAvailableSize.width();
     int maxHeight=maxAvailableSize.height();
 
-    if (windowWidth > maxWidth) windowWidth=maxWidth;
-    if (windowHeight > maxHeight) windowHeight=maxHeight;
+    int windowWidth=maxWidth*2/3;
+    int windowHeight=maxHeight*2/3;
 
     int locationX=(maxWidth-windowWidth)/2;
     int locationY=(maxHeight-windowHeight)/2;
@@ -520,14 +521,14 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     }
 
     // failsafe
-    if (configuration.getMainWindowWidth() == 0) configuration.setMainWindowWidth(windowWidth);
-    if (configuration.getMainWindowHeight() == 0) configuration.setMainWindowHeight(windowHeight);
-    if (configuration.getMainWindowOriginX() == 0) configuration.setMainWindowOriginX(locationX);
-    if (configuration.getMainWindowOriginY() == 0) configuration.setMainWindowOriginY(locationY);
+    if (configuration.getMainWindowWidth() < 0) configuration.setMainWindowWidth(windowWidth);
+    if (configuration.getMainWindowHeight() < 0) configuration.setMainWindowHeight(windowHeight);
+    if (configuration.getMainWindowOriginX() < 0) configuration.setMainWindowOriginX(locationX);
+    if (configuration.getMainWindowOriginY() < 0) configuration.setMainWindowOriginY(locationY);
 
-    // set the window
-    this->setGeometry(configuration.getMainWindowOriginX(),configuration.getMainWindowOriginY(),
-                      configuration.getMainWindowWidth(),configuration.getMainWindowHeight());
+    // set the window - deferred to applyStartupGeometry
+    //this->setGeometry(configuration.getMainWindowOriginX(),configuration.getMainWindowOriginY(),
+    //                  configuration.getMainWindowWidth(),configuration.getMainWindowHeight());
 
     // font
 
@@ -592,6 +593,33 @@ OpenParEMg::~OpenParEMg ()
     PetscFinalize();
 
     delete ui;
+}
+
+void OpenParEMg::showEvent(QShowEvent *event) 
+{
+    QMainWindow::showEvent(event);
+   
+    static bool isInitialShow = true;
+    if (isInitialShow) {
+        isInitialShow = false;
+        QMetaObject::invokeMethod(this, "applyStartupGeometry", Qt::QueuedConnection);
+    }
+}
+
+void OpenParEMg::applyStartupGeometry()
+{
+    // clear any cached layout restrictions
+    this->setMinimumSize(0, 0);
+    this->setMaximumSize(16777215, 16777215); // Qt's default max window limit
+
+    // set size
+    this->setGeometry(configuration.getMainWindowOriginX(),configuration.getMainWindowOriginY(),
+                      configuration.getMainWindowWidth(),configuration.getMainWindowHeight());
+
+    // update render engine
+    if (this->centralWidget()) {
+        this->centralWidget()->update();    
+    }
 }
 
 void OpenParEMg::updateViewer ()

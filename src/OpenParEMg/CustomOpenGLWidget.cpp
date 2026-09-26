@@ -33,6 +33,7 @@
 #include <QWidget>
 #include <QResizeEvent>
 #include <QColorSpace>
+#include <QOpenGLContext>
 
 #include <V3d_View.hxx>
 #include <TopoDS_Shape.hxx>
@@ -140,39 +141,66 @@ void CustomOpenGLWidget::initializeGL ()
     view->SetWindow (aspectNeutralWindow,(Aspect_RenderingContext) glXGetCurrentContext());
 }
 
-void CustomOpenGLWidget::paintGL ()
+// courtesy of Google AI
+void CustomOpenGLWidget::resizeGL(int w, int h)
 {
-    if (view->Window().IsNull()) return;
+    QOpenGLWidget::resizeGL(w, h);
 
-    // wrap frame buffer
-    const Handle(OpenGl_Context)& sharedContext=graphicDriver->GetSharedContext();
-    Handle(OpenGl_FrameBuffer) defaultFrameBuffer=sharedContext->DefaultFrameBuffer();
+    if (view.IsNull() || view->Window().IsNull()) return;
+
+    Handle(Aspect_NeutralWindow) aspectNeutralWindow = Handle(Aspect_NeutralWindow)::DownCast(view->Window());
+    if (!aspectNeutralWindow.IsNull()) {
+        // Fetch physical framebuffer boundaries using Qt's context pixel scale
+        int fboWidth  = w * this->devicePixelRatioF();
+        int fboHeight = h * this->devicePixelRatioF();
+
+        // Push sizing strictly down to the aspect adapter wrapper
+        aspectNeutralWindow->SetSize(fboWidth, fboHeight);
+        
+        // Signal OpenCASCADE that the layout requires modification
+        view->MustBeResized(); 
+    }
+}
+
+// courtesy of Google AI
+void CustomOpenGLWidget::paintGL()
+{
+    // 1. Guard against rendering uninitialized states
+    if (view.IsNull() || view->Window().IsNull()) return;
+
+    // 2. Wrap and synchronize the active Qt Framebuffer Object context
+    const Handle(OpenGl_Context)& sharedContext = graphicDriver->GetSharedContext();
+    Handle(OpenGl_FrameBuffer) defaultFrameBuffer = sharedContext->DefaultFrameBuffer();
     if (defaultFrameBuffer.IsNull()) {
-        defaultFrameBuffer=new OpenGl_FrameBuffer();
+        defaultFrameBuffer = new OpenGl_FrameBuffer();
         sharedContext->SetDefaultFrameBuffer(defaultFrameBuffer);
     }
+    
+    // Bind the wrapper layer to match Qt's current physical canvas dimensions
     defaultFrameBuffer->InitWrapper(sharedContext);
 
-    // handle re-sizing of the window
+    // 3. Extract the active geometric state parameters
+    Handle(Aspect_NeutralWindow) aspectNeutralWindow = Handle(Aspect_NeutralWindow)::DownCast(view->Window());
+    
+    int oldX = 0, oldY = 0;
+    aspectNeutralWindow->Size(oldX, oldY);
 
-    Handle(Aspect_NeutralWindow) aspectNeutralWindow=Handle(Aspect_NeutralWindow)::DownCast(view->Window());
-    Graphic3d_Vec2i viewSizeOld;
-    aspectNeutralWindow->Size(viewSizeOld.x(),viewSizeOld.y());
+    int viewSizeNewX = defaultFrameBuffer->GetVPSizeX();
+    int viewSizeNewY = defaultFrameBuffer->GetVPSizeY();
 
-    Graphic3d_Vec2i viewSizeNew(defaultFrameBuffer->GetVPSizeX(),defaultFrameBuffer->GetVPSizeY());
-
-    if (viewSizeNew != viewSizeOld) {
-        aspectNeutralWindow->SetSize(viewSizeNew.x(),viewSizeNew.y());
+    // 4. Runtime resizing safety net: If dimensions ever drift, force an alignment
+    if (viewSizeNewX != oldX || viewSizeNewY != oldY) {
+        glViewport(0, 0, viewSizeNewX, viewSizeNewY);
+        aspectNeutralWindow->SetSize(viewSizeNewX, viewSizeNewY);
         view->MustBeResized();
-        view->Invalidate();
     }
 
-    // display the orientation cube
-    viewerContext->Display(viewCube,0,0,false);
-
-    // flush and redraw
-    view->InvalidateImmediate();
-    FlushViewEvents (viewerContext,view,true);
+    // 5. Update overlays and execute the final redraw
+    viewerContext->Display(viewCube, 0, 0, false);
+    view->Redraw();
+    
+    // Process view events (pan, zoom, rotate interaction states) cleanly
+    FlushViewEvents(viewerContext, view, true);
 }
 
 void CustomOpenGLWidget::updateViewer ()

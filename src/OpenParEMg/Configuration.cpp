@@ -32,10 +32,10 @@ Configuration::Configuration()
     // set defaults
     defaultFontSize=10.5;
     logFontSize=9.5;
-    mainWindowWidth=0;    // application chooses
-    mainWindowHeight=0;   // application chooses
-    mainWindowOriginX=0;  // application chooses
-    mainWindowOriginY=0;  // application chooses
+    mainWindowWidth=-1;    // application chooses
+    mainWindowHeight=-1;   // application chooses
+    mainWindowOriginX=-1;  // application chooses
+    mainWindowOriginY=-1;  // application chooses
     defaultCoreCount=5;
 
 }

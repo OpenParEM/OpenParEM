@@ -423,9 +423,11 @@ public:
         doneCurrent();
     }
 
-protected:
+//protected:
+public:
     void initializeGL () override;
     void paintGL () override;
+    void resizeGL (int, int) override;
 
 private:
     Handle(Aspect_DisplayConnection) displayConnection;
