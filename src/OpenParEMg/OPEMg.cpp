@@ -5522,6 +5522,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
         ShapeData *shapeData=newDrawingItem->getShapeData();
         shapeData->setPolywire(polywire);
         newDrawingItem->setText(0,QString::fromStdString(name));
+        newDrawingItem->setTip();
         shapeData->set_name(newDrawingItem->text(0));
 
         DrawingItem *parentItem=dynamic_cast<DrawingItem *>(baseParent);
@@ -5643,6 +5644,8 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             if (baseParent->is_rootDrawing()) ui->drawingWindow->showItem(newDrawingItem);
         }
 
+        newDrawingItem->setTip();
+
         startBlockIndex=endBlockIndex;
     }
 
@@ -5665,6 +5668,7 @@ bool OpenParEMg::loadItem (std::vector<std::string> &inputData, long unsigned in
             ShapeData *shapeData=newItem->getShapeData();
             shapeData->setPolywire(polywire);
             shapeData->setShape(aisShape);
+            newItem->setTip();
 
             // name
             long unsigned int localStartBlockIndex=startBlockIndex+1;
