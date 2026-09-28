@@ -3098,6 +3098,12 @@ if [ "$with_OpenParEM" = "1" ]; then
 
    cd src
 
+   ./autogen.sh
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: OpenParEM failed to autogen"
+      exit 1
+   fi 
+
    make clean
    if [ $? -ne 0 ]; then
       echo "OpenParEM_INFO: OpenParEM failed to make clean"
