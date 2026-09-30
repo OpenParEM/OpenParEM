@@ -2903,6 +2903,9 @@ if [ "$with_qt" = "1" ]; then
       exit 1
    fi
 
+   # Skip building documention to support compiling on OpenSuse 16
+   sed -i 's/if xsltproc\.found()/if false/' meson.build
+
    meson compile -C build
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: xkeyboard_config failed to compile"
