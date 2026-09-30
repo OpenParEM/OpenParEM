@@ -215,13 +215,24 @@ void CustomOpenGLWidget::clearDrawing ()
     viewerContext->UpdateCurrentViewer();
 }
 
-void CustomOpenGLWidget::wheelEvent (QWheelEvent* event)
+void CustomOpenGLWidget::wheelEvent(QWheelEvent* event)
 {
     QOpenGLWidget::wheelEvent(event);
-    if (view.IsNull()) return;
+    if (view.IsNull())
+        return;
 
-    const Graphic3d_Vec2i position(Graphic3d_Vec2d(event->position().x(),event->position().y()));
-    if (UpdateZoom(Aspect_ScrollDelta(position,double(event->angleDelta().y())/8.0))) updateViewer();
+    // scale the position
+    const qreal dpr = devicePixelRatioF();
+    QPointF p = event->position();
+    const Graphic3d_Vec2i position(qRound(p.x()*dpr),qRound(p.y()*dpr));
+
+    if (UpdateZoom(
+            Aspect_ScrollDelta(
+                position,
+                double(event->angleDelta().y()) / 8.0)))
+    {
+        updateViewer();
+    }
 }
 
 void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
@@ -315,25 +326,27 @@ void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
     if (view.IsNull()) return;
     ignoreMouseRelease=false;
 
+    // scale the position
+    const qreal dpr = devicePixelRatioF();
+    QPointF p = event->position();
+    const Graphic3d_Vec2i position(qRound(p.x()*dpr),qRound(p.y()*dpr));
+
     // pass the mouse press from OCCT to Qt
     bool passClick=true;
     if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;         // a popup menu will appear
     if (event->button() == Qt::RightButton && (pickFirstVertex || pickSecondVertex)) passClick=false;   // prevent right-click from zooming
     if (passClick) {
-        const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
+        const Graphic3d_Vec2i  point(position.x(),position.y());
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
         if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
     }
 
-    // point click position
-    QPointF pos=event->position();
-
     // get a gp_Pnt
     clickPointValid=false;
     if (viewer->IsGridActive() && snapToGrid) {
-        if (!pixelToSnappedGrid(pos.x(),pos.y(),gridSpacing,clickPoint)) clickPointValid=true;
+        if (!pixelToSnappedGrid(position.x(),position.y(),gridSpacing,clickPoint)) clickPointValid=true;
     } else {
-        if (!PixelToPointOnPlane(pos.x(),pos.y(),clickPoint)) clickPointValid=true;
+        if (!PixelToPointOnPlane(position.x(),position.y(),clickPoint)) clickPointValid=true;
     }
 
     Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
@@ -376,11 +389,16 @@ void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
 
     if (view.IsNull()) return;
 
+    // scale the position
+    const qreal dpr = devicePixelRatioF();
+    QPointF p = event->position();
+    const Graphic3d_Vec2i position(qRound(p.x()*dpr),qRound(p.y()*dpr));
+
     // pass the mouse release from OCCT to Qt
     bool passClick=true;
     if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
     if (passClick) {
-        const Graphic3d_Vec2i  point(event->pos().x(),event->pos().y());
+        const Graphic3d_Vec2i  point(position.x(),position.y());
         const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
         if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
     }
@@ -534,9 +552,14 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
     // set the pixel tolerance to a loose setting so that mousing around can find the needed edge
     viewerContext->SetPixelTolerance(10);
 
+    // scale the position
+    const qreal dpr = devicePixelRatioF();
+    QPointF p = event->position();
+    const Graphic3d_Vec2i position(qRound(p.x()*dpr),qRound(p.y()*dpr));
+
     // mouse position
     Standard_Real x,y,z;
-    view->Convert(event->pos().x(),event->pos().y(),x,y,z);
+    view->Convert(position.x(),position.y(),x,y,z);
     gp_Pnt mousePosition(x,y,z);
 
     if (viewerContext->HasDetected()) {
@@ -603,12 +626,12 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
     }
 
     // for rubberband
-    if (!PixelToPointOnPlane (event->pos().x(),event->pos().y(),mousePosition)) {
+
+    if (!PixelToPointOnPlane (position.x(),position.y(),mousePosition)) {
         emit relay->getCurrentMousePosition(mousePosition);
     }
 
     // pass the mouse position from OCCT to Qt
-    const Graphic3d_Vec2i position(event->pos().x(),event->pos().y());
     if (UpdateMousePosition(position,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
                                      OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateViewer();
 
