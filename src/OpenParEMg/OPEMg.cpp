@@ -566,6 +566,10 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     defaultData.gui_slot_count=configuration.getDefaultCoreCount();
     projData.gui_slot_count=configuration.getDefaultCoreCount();
 
+    // selection point highlighting and picking
+    ui->drawingWindow->setSelectionTolerance(configuration.getSelectionTolerance());
+    ui->drawingWindow->setSelectionDrawRadius(configuration.getSelectionDrawRadius());
+
     // default projection to enable reset
     defaultProjection=ui->drawingWindow->getProjection();
 

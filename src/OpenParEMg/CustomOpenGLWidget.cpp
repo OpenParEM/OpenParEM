@@ -123,8 +123,8 @@ CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (the
     isSingleSelection=false;
     isSetToPlane=false;
 
-    // set a default so that all bare vertices highlight with a yellow plus sign
-    viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
+    // set a default so that all bare vertices highlight with a yellow plus sign - moved to setSelectionRadius
+    //viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
 
     viewerContext->SetAutoActivateSelection(Standard_False);
 }

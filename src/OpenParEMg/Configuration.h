@@ -51,6 +51,12 @@ public:
     void setDefaultCoreCount (int);
     int getDefaultCoreCount ();
 
+    void setSelectionTolerance (int);
+    int getSelectionTolerance ();
+
+    void setSelectionDrawRadius (double);
+    double getSelectionDrawRadius ();
+
     bool exists ();
     bool create ();
     bool load ();
@@ -64,6 +70,8 @@ private:
     int mainWindowOriginX;
     int mainWindowOriginY;
     int defaultCoreCount;
+    double selectionTolerance;       // for vertices
+    double selectionDrawRadius;
 
     QString filePath;
 };

@@ -46,6 +46,13 @@
 #include <V3d_View.hxx>
 #include <Prs3d_PointAspect.hxx>
 
+
+#include <Prs3d_Drawer.hxx>
+#include <Prs3d_PointAspect.hxx>
+#include <Aspect_TypeOfMarker.hxx>
+#include <Quantity_Color.hxx>
+#include <Quantity_NameOfColor.hxx>
+
 class CustomOpenGLWidget : public QOpenGLWidget, public AIS_ViewController
 {
     Q_OBJECT
@@ -53,6 +60,32 @@ public:
     CustomOpenGLWidget (QWidget *parent = nullptr);
 
     void audit () {drawingTracker->audit();}
+
+    void setSelectionTolerance (int tolerance) {viewerContext->SetPixelTolerance(tolerance);}
+
+    void setSelectionDrawRadius (double radius)
+    {
+        // highlight point
+
+        Handle(Prs3d_Drawer) hoverStyle=viewerContext->HighlightStyle(Prs3d_TypeOfHighlight_LocalDynamic);
+
+        Handle(Prs3d_PointAspect) pointAspect=new Prs3d_PointAspect(
+            Aspect_TOM_O,Quantity_NOC_CYAN,radius);
+        hoverStyle->SetPointAspect(pointAspect);
+        viewerContext->SetHighlightStyle(Prs3d_TypeOfHighlight_LocalDynamic,hoverStyle);
+
+        // selected point - may not be doing anything
+
+        Handle(Prs3d_Drawer) selectStyle=viewerContext->HighlightStyle(Prs3d_TypeOfHighlight_LocalSelected);
+
+        Handle(Prs3d_PointAspect) clickedPointAspect=new Prs3d_PointAspect(
+            Aspect_TOM_O,Quantity_NOC_YELLOW,radius);
+        selectStyle->SetPointAspect(clickedPointAspect);
+        viewerContext->SetHighlightStyle(Prs3d_TypeOfHighlight_LocalSelected, selectStyle);
+
+        // set a default so that all bare vertices highlight with a yellow plus sign
+        viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,radius));
+    }
 
     void set_wireframe (bool state)
     {

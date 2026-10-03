@@ -37,7 +37,8 @@ Configuration::Configuration()
     mainWindowOriginX=-1;  // application chooses
     mainWindowOriginY=-1;  // application chooses
     defaultCoreCount=5;
-
+    selectionTolerance=10;
+    selectionDrawRadius=10;
 }
 
 void Configuration::setDefaultFontSize (double defaultFontSize_) {defaultFontSize=defaultFontSize_;}
@@ -61,6 +62,12 @@ int Configuration::getMainWindowOriginY () {return mainWindowOriginY;}
 void Configuration::setDefaultCoreCount (int defaultCoreCount_) {defaultCoreCount=defaultCoreCount_;}
 int Configuration::getDefaultCoreCount () {return defaultCoreCount;}
 
+void Configuration::setSelectionTolerance (int selectionTolerance_) {selectionTolerance=selectionTolerance_;}
+int Configuration::getSelectionTolerance () {return selectionTolerance;}
+
+void Configuration::setSelectionDrawRadius (double selectionDrawRadius_) {selectionDrawRadius=selectionDrawRadius_;}
+double Configuration::getSelectionDrawRadius () {return selectionDrawRadius;}
+
 bool Configuration::exists ()
 {
     if (QFile::exists(filePath)) return true;
@@ -80,6 +87,8 @@ bool Configuration::create ()
     out << "mainWindowOriginX=" << QString::number(mainWindowOriginX) << "\n";
     out << "mainWindowOriginY=" << QString::number(mainWindowOriginY) << "\n";
     out << "defaultCoreCount=" << QString::number(defaultCoreCount) << "\n";
+    out << "selectionTolerance=" << QString::number(selectionTolerance) << "\n";
+    out << "selectionDrawRadius=" << QString::number(selectionDrawRadius) << "\n";
 
     file.close();
 
@@ -119,6 +128,8 @@ bool Configuration::load ()
             if (keyword.compare("mainWindowOriginX") == 0) {mainWindowOriginX=value.toInt();}
             if (keyword.compare("mainWindowOriginY") == 0) {mainWindowOriginY=value.toInt();}
             if (keyword.compare("defaultCoreCount") == 0) {defaultCoreCount=value.toInt();}
+            if (keyword.compare("selectionTolerance") == 0) {selectionTolerance=value.toInt();}
+            if (keyword.compare("selectionDrawRadius") == 0) {selectionDrawRadius=value.toDouble();}
         } else {
             std::cout << "Unrecognized line in .OpenParEMg:" << line.toStdString() << std::endl;
         }
@@ -138,5 +149,6 @@ void Configuration::print ()
     std::cout << "   mainWindowOriginX=" << mainWindowOriginX << std::endl;
     std::cout << "   mainWindowOriginY=" << mainWindowOriginY << std::endl;
     std::cout << "   defaultCoreCount=" << defaultCoreCount << std::endl;
-
+    std::cout << "   selectionTolerance=" << selectionTolerance << std::endl;
+    std::cout << "   selectionDrawRadius=" << selectionDrawRadius << std::endl;
 }
