@@ -2168,7 +2168,8 @@ if [ "$with_openmpi" = "1" ]; then
    unpack_and_enter "$openmpi"
 
    ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" \
-               --with-libevent="$install_path" --with-hwloc="$install_path" --with-pmix="$install_path"
+               --with-libevent="$install_path" --with-hwloc="$install_path" --with-pmix="$install_path" \
+               --disable-wrapper-rpath --disable-wrapper-runpath --enable-mpirun-prefix-by-default
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: openmpi failed to configure"
       exit 1
@@ -3188,112 +3189,42 @@ if [ "$create_binary_distribution" = "1" ]; then
    echo "#------------------------------------------------------------------------------------"
    echo ""
 
+   cd ..
+
    echo "Simulation cleanup ..."
-   project_cleanup ../regression
-   project_cleanup ../tutorials
+   project_cleanup regression
+   project_cleanup tutorials
 
    echo "Regression log file cleanup ..."
-   rm -f ../regression/builder/*.archive
-   rm -f ../regression/builder/*.current
-   rm -f ../regression/OpenParEM2D/*.archive
-   rm -f ../regression/OpenParEM2D/*.current
-   rm -f ../regression/OpenParEM3D/*.archive
-   rm -f ../regression/OpenParEM3D/*.current
+   rm -f regression/builder/*.archive
+   rm -f regression/builder/*.current
+   rm -f regression/OpenParEM2D/*.archive
+   rm -f regression/OpenParEM2D/*.current
+   rm -f regression/OpenParEM3D/*.archive
+   rm -f regression/OpenParEM3D/*.current
 
-   echo "Finding dependencies ..."
-   cd $install_path/scripts
-   ./find_dependencies ../bin/OpenParEMg $install_path > dependencies.txt
-   ./find_dependencies ../bin/OpenParEM2D $install_path >> dependencies.txt
-   ./find_dependencies ../bin/OpenParEM3D $install_path >> dependencies.txt
-   ./find_dependencies ../bin/process2D $install_path >> dependencies.txt
-   ./find_dependencies ../bin/process3D $install_path >> dependencies.txt
-   ./find_dependencies ../bin/simplify2D $install_path >> dependencies.txt
-   ./find_dependencies ../bin/simplify3D $install_path >> dependencies.txt
-   ./find_dependencies ../bin/builder $install_path >> dependencies.txt
-   ./find_dependencies ../bin/orterun $install_path >> dependencies.txt
-
-   # add in any missed
-
-   echo "$install_path/lib/libxkbcommon-x11.so" >> dependencies.txt
-   echo "$install_path/lib/libxkbcommon-x11.so.0" >> dependencies.txt
-   echo "$install_path/lib/libxkbcommon-x11.so.0.13.2" >> dependencies.txt
-
-   echo "$install_path/lib/libxcb-icccm.so" >> dependencies.txt
-   echo "$install_path/lib/libxcb-icccm.so.4" >> dependencies.txt
-   echo "$install_path/lib/libxcb-icccm.so.4.0.0" >> dependencies.txt
-
-   echo "$install_path/lib/libxcb-image.so" >> dependencies.txt
-   echo "$install_path/lib/libxcb-image.so.0" >> dependencies.txt
-   echo "$install_path/lib/libxcb-image.so.0.0.0" >> dependencies.txt
-
-   echo "$install_path/lib/libxcb-keysyms.so" >> dependencies.txt
-   echo "$install_path/lib/libxcb-keysyms.so.1" >> dependencies.txt
-   echo "$install_path/lib/libxcb-keysyms.so.1.0.0" >> dependencies.txt
-
-   echo "$install_path/lib/libxcb-render.so" >> dependencies.txt
-   echo "$install_path/lib/libxcb-render.so.0.0.0" >> dependencies.txt
-   echo "$install_path/lib/libxcb-render-util.so.0" >> dependencies.txt
-   echo "$install_path/lib/libxcb-render.so.0" >> dependencies.txt
-   echo "$install_path/lib/libxcb-render-util.so" >> dependencies.txt
-   echo "$install_path/lib/libxcb-render-util.so.0.0.0" >> dependencies.txt
-
-   echo "$install_path/lib/libxcb-shape.so" >> dependencies.txt
-   echo "$install_path/lib/libxcb-shape.so.0" >> dependencies.txt
-   echo "$install_path/lib/libxcb-shape.so.0.0.0" >> dependencies.txt
-
-   echo "$install_path/lib/libxcb-xkb.so" >> dependencies.txt
-   echo "$install_path/lib/libxcb-xkb.so.1" >> dependencies.txt
-   echo "$install_path/lib/libxcb-xkb.so.1.0.0" >> dependencies.txt
-
-   echo "$install_path/lib/libxcb-util.so" >> dependencies.txt
-   echo "$install_path/lib/libxcb-util.so.1" >> dependencies.txt
-   echo "$install_path/lib/libxcb-util.so.1.0.0" >> dependencies.txt
-
-   echo "$install_path/lib/libxkbregistry.so" >> dependencies.txt
-   echo "$install_path/lib/libxkbregistry.so.0" >> dependencies.txt
-   echo "$install_path/lib/libxkbregistry.so.0.13.2" >> dependencies.txt
-
-   # prep for binaries
-   sort -u dependencies.txt > dependencies2.txt
-   sed -i "s|"^$install_path"||" dependencies2.txt
-   sed -i 's/^\///' dependencies2.txt
-
-   echo "Adding binaries, plugins, and scripts ..."
-   echo "bin/OpenParEMg" >> dependencies2.txt
-   echo "bin/OpenParEM2D" >> dependencies2.txt
-   echo "bin/OpenParEM3D" >> dependencies2.txt
-   echo "bin/process2D" >> dependencies2.txt
-   echo "bin/process3D" >> dependencies2.txt
-   echo "bin/simplify2D" >> dependencies2.txt
-   echo "bin/simplify3D" >> dependencies2.txt
-   echo "bin/builder" >> dependencies2.txt
-   echo "bin/orterun" >> dependencies2.txt
-   echo "bin/mpirun" >> dependencies2.txt
-   echo "plugins/platforms/libqxcb.so" >> dependencies2.txt
-   echo "lib/libQt6XcbQpa.so" >> dependencies2.txt
-   echo "lib/libQt6XcbQpa.so.6" >> dependencies2.txt
-   echo "lib/libQt6XcbQpa.so.6.11.2" >> dependencies2.txt
-   echo "lib/libxcb-cursor.so" >> dependencies2.txt
-   echo "lib/libxcb-cursor.so.0" >> dependencies2.txt
-   echo "lib/libxcb-cursor.so.0.0.0" >> dependencies2.txt
-   echo "plugins/xcbglintegrations/libqxcb-egl-integration.so" >> dependencies2.txt
-   echo "plugins/xcbglintegrations/libqxcb-glx-integration.so" >> dependencies2.txt
-   echo "LICENSE" >> dependencies2.txt
-   echo "README.md" >> dependencies2.txt
-   echo "scripts/FreeCAD/OpenParEM2D_save.py" >> dependencies2.txt
-   echo "scripts/FreeCAD/OpenParEM3D_save.py" >> dependencies2.txt
-   echo "scripts/OpenParEM2D_test" >> dependencies2.txt
-   echo "scripts/OpenParEM3D_test" >> dependencies2.txt
-   echo "scripts/OpenParEM_build" >> dependencies2.txt
-   echo "scripts/OpenParEM_test" >> dependencies2.txt
-   echo "scripts/process2D.sh" >> dependencies2.txt
-   echo "scripts/process3D.sh" >> dependencies2.txt
-   echo "scripts/proj_search" >> dependencies2.txt
-   echo "scripts/regression" >> dependencies2.txt
+   echo "Listing binaries ..."
+   echo "bin/OpenParEMg" > dependencies.txt
+   echo "bin/OpenParEM2D" >> dependencies.txt
+   echo "bin/OpenParEM3D" >> dependencies.txt
+   echo "bin/process2D" >> dependencies.txt
+   echo "bin/process3D" >> dependencies.txt
+   echo "bin/simplify2D" >> dependencies.txt
+   echo "bin/simplify3D" >> dependencies.txt
+   echo "bin/builder" >> dependencies.txt
+   echo "bin/ortecc" >> dependencies.txt
+   echo "bin/orte-clean" >> dependencies.txt
+   echo "bin/orted" >> dependencies.txt
+   echo "bin/orte-info" >> dependencies.txt
+   echo "bin/orterun" >> dependencies.txt
+   echo "bin/orte-server" >> dependencies.txt
+   echo "bin/opal_wrapper" >> dependencies.txt
+   echo "bin/mpirun" >> dependencies.txt
+   echo "LICENSE" >> dependencies.txt
+   echo "README.md" >> dependencies.txt
 
    echo "Creating tar file ..."
-   cd ..
-   tar -czf build.tar.gz -T scripts/dependencies2.txt scripts regression tutorials doc/*.pdf
+   tar -czf build.tar.gz -T dependencies.txt scripts share lib plugins etc var regression tutorials doc/*.pdf
 
    if [ -d "OpenParEM-2.2.0" ]; then
       rm -Rf OpenParEM-2.2.0
@@ -3307,8 +3238,7 @@ if [ "$create_binary_distribution" = "1" ]; then
    tar -czf OpenParEM-2.2.0.tar.gz OpenParEM-2.2.0
    rm -Rf OpenParEM-2.2.0
 
-   rm -f scripts/dependencies.txt
-   rm -f scripts/dependencies2.txt
+   rm -f dependencies.txt
    echo ""
 
    echo "Done. Created ../OpenParEM-2.2.0.tar.gz"

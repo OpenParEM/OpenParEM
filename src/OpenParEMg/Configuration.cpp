@@ -37,8 +37,8 @@ Configuration::Configuration()
     mainWindowOriginX=-1;  // application chooses
     mainWindowOriginY=-1;  // application chooses
     defaultCoreCount=5;
-    selectionTolerance=10;
-    selectionDrawRadius=10;
+    selectionTolerance=3;
+    selectionDrawRadius=3;
 }
 
 void Configuration::setDefaultFontSize (double defaultFontSize_) {defaultFontSize=defaultFontSize_;}
