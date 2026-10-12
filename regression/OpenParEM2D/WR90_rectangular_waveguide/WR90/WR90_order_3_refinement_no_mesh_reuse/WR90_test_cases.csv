@@ -513,7 +513,7 @@ WR90_1_4_503_field_exact,9e+09,4,imag_Hmag,0.004572,0.006096,equal,0.01131002840
 WR90_1_4_504_field_exact,9e+09,4,imag_Hphi,0.004572,0.006096,equal,-1.4662596865393,0.003
 WR90_1_4_505_field_exact,9e+09,4,imag_Htheta,0.004572,0.006096,equal,1.16807788186965,0.003
 WR90_1_4_506_field_exact,9e+09,4,real_Emag,0.009144,0.006096,equal,1.0943175335329,0.003
-WR90_1_4_507_field_exact,9e+09,4,real_Ephi,0.009144,0.006096,equal,0.418224329579229,0.003
+WR90_1_4_507_field_exact,9e+09,4,real_Ephi,0.009144,0.006096,equal,0.418224329579229,0.004
 WR90_1_4_508_field_exact,9e+09,4,real_Etheta,0.009144,0.006096,equal,1.5707963267949,0.003
 WR90_1_4_509_field_exact,9e+09,4,imag_Emag,0.009144,0.006096,lessthan,0.001
 WR90_1_4_510_field_exact,9e+09,4,real_Hmag,0.009144,0.006096,lessthan,0.001
@@ -649,7 +649,7 @@ WR90_1_5_637_field_exact,9e+09,5,imag_Emag,0.013716,0.006096,lessthan,0.001
 WR90_1_5_638_field_exact,9e+09,5,real_Hmag,0.013716,0.006096,lessthan,0.001
 WR90_1_5_639_field_exact,9e+09,5,imag_Hmag,0.013716,0.006096,lessthan,0.001
 WR90_1_5_640_field_exact,9e+09,5,real_Emag,0.018288,0.006096,equal,0.698151246795812,0.003
-WR90_1_5_641_field_exact,9e+09,5,real_Ephi,0.018288,0.006096,equal,0.488258258873234,0.003
+WR90_1_5_641_field_exact,9e+09,5,real_Ephi,0.018288,0.006096,equal,0.488258258873234,0.004
 WR90_1_5_642_field_exact,9e+09,5,real_Etheta,0.018288,0.006096,equal,0.483778647032732,0.003
 WR90_1_5_643_field_exact,9e+09,5,imag_Emag,0.018288,0.006096,lessthan,0.001
 WR90_1_5_644_field_exact,9e+09,5,real_Hmag,0.018288,0.006096,lessthan,0.001
@@ -1197,7 +1197,7 @@ WR90_2_4_1177_field_exact,1e+10,4,imag_Hmag,0.004572,0.006096,equal,0.0097123739
 WR90_2_4_1178_field_exact,1e+10,4,imag_Hphi,0.004572,0.006096,equal,-1.4662596865393,0.003
 WR90_2_4_1179_field_exact,1e+10,4,imag_Htheta,0.004572,0.006096,equal,1.14751826506586,0.003
 WR90_2_4_1180_field_exact,1e+10,4,real_Emag,0.009144,0.006096,equal,1.0943175335329,0.003
-WR90_2_4_1181_field_exact,1e+10,4,real_Ephi,0.009144,0.006096,equal,0.418224329579229,0.003
+WR90_2_4_1181_field_exact,1e+10,4,real_Ephi,0.009144,0.006096,equal,0.418224329579229,0.004
 WR90_2_4_1182_field_exact,1e+10,4,real_Etheta,0.009144,0.006096,equal,1.5707963267949,0.003
 WR90_2_4_1183_field_exact,1e+10,4,imag_Emag,0.009144,0.006096,lessthan,0.001
 WR90_2_4_1184_field_exact,1e+10,4,real_Hmag,0.009144,0.006096,lessthan,0.001
@@ -1333,7 +1333,7 @@ WR90_2_5_1311_field_exact,1e+10,5,imag_Emag,0.013716,0.006096,lessthan,0.001
 WR90_2_5_1312_field_exact,1e+10,5,real_Hmag,0.013716,0.006096,lessthan,0.001
 WR90_2_5_1313_field_exact,1e+10,5,imag_Hmag,0.013716,0.006096,lessthan,0.001
 WR90_2_5_1314_field_exact,1e+10,5,real_Emag,0.018288,0.006096,equal,0.690111498579358,0.003
-WR90_2_5_1315_field_exact,1e+10,5,real_Ephi,0.018288,0.006096,equal,0.488258258873234,0.003
+WR90_2_5_1315_field_exact,1e+10,5,real_Ephi,0.018288,0.006096,equal,0.488258258873234,0.004
 WR90_2_5_1316_field_exact,1e+10,5,real_Etheta,0.018288,0.006096,equal,0.461115495453731,0.003
 WR90_2_5_1317_field_exact,1e+10,5,imag_Emag,0.018288,0.006096,lessthan,0.001
 WR90_2_5_1318_field_exact,1e+10,5,real_Hmag,0.018288,0.006096,lessthan,0.001

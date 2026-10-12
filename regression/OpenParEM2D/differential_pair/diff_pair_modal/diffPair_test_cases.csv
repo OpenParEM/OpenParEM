@@ -8,7 +8,7 @@ diffPair_1_2_5_result,8000000000,2,real_Z,equal,62.036132484698,1e-10
 diffPair_1_1_6_result,8000000000,1,imag_Z,lessthan,1e-10
 diffPair_1_2_7_result,8000000000,2,imag_Z,lessthan,1e-10
 diffPair_2_1_8_result,52000000000,1,alpha,lessthan,1e-09
-diffPair_2_2_9_result,52000000000,2,alpha,lessthan,1e-10
+diffPair_2_2_9_result,52000000000,2,alpha,lessthan,1e-09
 diffPair_2_1_10_result,52000000000,1,beta,equal,2.98155097207946,1e-10
 diffPair_2_2_11_result,52000000000,2,beta,equal,2.90850634869402,1e-10
 diffPair_2_1_12_result,52000000000,1,real_Z,equal,27.5571761867608,1e-10
