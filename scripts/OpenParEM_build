@@ -1207,10 +1207,10 @@ if [ -f "$mfem_root" ]; then
 fi
 
 libXau="libXau-1.0.12.tar.gz"
-download_package_and_verify_sig "$libXau" "https://www.x.org/archive/individual/lib/$libXau" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig "$libXau" "https://xorg.freedesktop.org/archive/individual/lib/$libXau" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
 libXdmcp="libXdmcp-1.1.5.tar.gz"
-download_package_and_verify_sig "$libXdmcp" "https://www.x.org/archive/individual/lib/$libXdmcp" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig "$libXdmcp" "https://xorg.freedesktop.org/archive/individual/lib/$libXdmcp" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
 ninja_root="1.13.2.tar.gz"
 ninja="ninja-$ninja_root"
@@ -1240,13 +1240,13 @@ xcb_proto="xcb-proto-1.17.0.tar.gz"
 download_package_and_verify_sig "$xcb_proto" "https://xorg.freedesktop.org/archive/individual/proto/$xcb_proto" "sig" "$MTURNER_KEYRING" "" || exit 1
 
 libxcb="libxcb-1.17.0.tar.gz"
-download_package_and_verify_sig "$libxcb" "https://www.x.org/archive/individual/lib/$libxcb" "sig" "$MTURNER_KEYRING" "" || exit 1
+download_package_and_verify_sig "$libxcb" "https://xorg.freedesktop.org/archive/individual/lib/$libxcb" "sig" "$MTURNER_KEYRING" "" || exit 1
 
 xtrans="xtrans-1.6.0.tar.gz"
-download_package_and_verify_sig "$xtrans" "https://www.x.org/archive/individual/lib/$xtrans" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig "$xtrans" "https://xorg.freedesktop.org/archive/individual/lib/$xtrans" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
    
 libX11="libX11-1.8.tar.gz"
-download_package_and_verify_sig "$libX11" "https://www.x.org/archive/individual/lib/$libX11" "sig" "$AJACKSON_KEYRING" "" || exit 1
+download_package_and_verify_sig "$libX11" "https://xorg.freedesktop.org/archive/individual/lib/$libX11" "sig" "$AJACKSON_KEYRING" "" || exit 1
 
 tk="tk8.6.18-src.tar.gz"
 # self-generated from 9-13-2026 download
