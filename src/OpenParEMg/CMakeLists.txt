@@ -148,11 +148,22 @@ set_target_properties(petscvec PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PRE
 add_library(gmsh SHARED IMPORTED)
 set_target_properties(gmsh PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libgmsh.so")
 
-# OpenMPI
-set(MPI_LIBS mpi_mpifh  mpi  mpi_usempif08  mpi_usempi_ignore_tkr)
+# Select MPI implementation (default: OpenMPI)
 
-# MPICH
-#set (MPI_LIBS mpi mpich mpicxx mpichcxx mpifort mpichf90 fmpich)
+set(MPI_IMPLEMENTATION "OpenMPI" CACHE STRING "MPI implementation to use")
+
+if(MPI_IMPLEMENTATION STREQUAL "OpenMPI")
+    set(MPI_LIBS mpi_mpifh mpi mpi_usempif08 mpi_usempi_ignore_tkr)
+
+elseif(MPI_IMPLEMENTATION STREQUAL "MPICH")
+    set(MPI_LIBS mpi mpich mpicxx mpichcxx mpifort mpichf90 fmpich)
+
+else()
+    message(FATAL_ERROR "Unsupported MPI implementation: ${MPI_IMPLEMENTATION}")
+endif()
+
+message(STATUS "MPI implementation: ${MPI_IMPLEMENTATION}")
+message(STATUS "MPI libraries: ${MPI_LIBS}")
 
 target_link_libraries(OpenParEMg
     PRIVATE

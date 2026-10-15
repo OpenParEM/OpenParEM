@@ -3160,11 +3160,17 @@ if [ "$with_OpenParEMg" = "1" ]; then
    APP_SOURCE="$SCRIPT_DIR/../src/OpenParEMg"
    APP_BUILD="$SCRIPT_DIR/../src/OpenParEMg/build2"
 
+   MPI_IMPL="OpenMPI"
+   if [ "$with_mpich" = "1" ]; then
+      MPI_IMPL="MPICH"
+   fi
+
    cmake -S "$APP_SOURCE" \
          -B "$APP_BUILD" \
          -DCMAKE_BUILD_TYPE=Release \
          -DCMAKE_INSTALL_PREFIX="$install_path" \
          -DCMAKE_PREFIX_PATH="$install_path" \
+         -DMPI_IMPLEMENTATION="${MPI_IMPL}" \
          || exit 1
 
    cmake --build "$APP_BUILD" --verbose -j"$NPROC" || exit 1
