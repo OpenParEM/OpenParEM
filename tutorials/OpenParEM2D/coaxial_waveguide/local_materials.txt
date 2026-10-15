@@ -1,6 +1,7 @@
 #OpenParEMmaterials 1.0
 Material
    name=PTFE
+   type=dielectric
    Temperature
       temperature=any
       Frequency
@@ -17,6 +18,7 @@ Material
 EndMaterial
 Material
    name=copper
+   type=conductor
    Temperature
       temperature=20
       Frequency

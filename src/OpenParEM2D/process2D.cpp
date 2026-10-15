@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    process2D - processor to automation of regression testing of OpenParEM2D//
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -525,6 +525,7 @@ bool TestCaseDatabase::loadTestCases (const char *filename)
             }
          }
       }
+      inFile.close();
    } else {
       cout << "ERROR2221: Unable to open file \"" << filename << "\" for reading." << endl;
       return true;
@@ -1129,6 +1130,7 @@ bool EMfieldDatabase::loadEMfields (const char *filename)
             }
          }
       }
+      inFile.close();
    } else {
       cout << "ERROR2225: Unable to open file \"" << filename << "\" for reading." << endl;
       return true;

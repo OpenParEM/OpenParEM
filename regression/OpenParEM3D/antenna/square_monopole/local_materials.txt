@@ -2,6 +2,7 @@
 
 Material
    name=teflon
+   type=dielectric
    Temperature
       temperature=any
       Frequency

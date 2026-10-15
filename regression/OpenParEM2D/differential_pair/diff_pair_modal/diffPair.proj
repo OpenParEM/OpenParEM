@@ -3,9 +3,9 @@
 project.save.fields                false
 
 mesh.file                          ./diffPair.msh
-mesh.order                         3
 mesh.uniform_refinement.count      0
 mesh.refinement.fraction           0.01
+fem.order                          3
 
 mode.definition.file               diffPair_modes.txt
 
@@ -35,7 +35,7 @@ solution.impedance.definition      PI
 solution.impedance.calculation     modal
 solution.accurate.residual         false
 solution.shift.invert              true
-solution.use.initial.guess         true
+//solution.initial.guess.level       1
 
 output.show.refining.mesh          false
 output.show.postprocessing         false

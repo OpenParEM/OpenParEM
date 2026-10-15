@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -19,6 +19,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "path.hpp"
+
+#ifdef HAS_GUI
+#include <AIS_Shape.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Face.hxx>
+#include <TopTools_IndexedMapOfShape.hxx>
+#include <TopExp.hxx>
+#include <BRepTools.hxx>
+#include <BRepTools_WireExplorer.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
+#include "CustomOpenGLWidget.h"
+#include <BRepBuilderAPI_MakeFace.hxx>
+#endif
 
 // angle between lines ptc,pt1 and ptc,pt2 (always positive)
 double angle_between_two_lines (struct point ptc, struct point pt1, struct point pt2)
@@ -426,9 +441,10 @@ void test_is_point_on_line ()
   if (!test_is_point_on_line (3, 2, 3, x1, y1, z1, x2, y2, z2, tolerance))                      PetscPrintf(PETSC_COMM_WORLD,"%d pass\n",i); else PetscPrintf(PETSC_COMM_WORLD,"%d FAIL\n",i); i++;
   if (!test_is_point_on_line (1e-7, 2, 1e-7, x1, y1, z1, x2, y2, z2, tolerance))                PetscPrintf(PETSC_COMM_WORLD,"%d pass\n",i); else PetscPrintf(PETSC_COMM_WORLD,"%d FAIL\n",i); i++;
   if (!test_is_point_on_line (-1e7, 2, -1e-7, x1, y1, z1, x2, y2, z2, tolerance))               PetscPrintf(PETSC_COMM_WORLD,"%d pass\n",i); else PetscPrintf(PETSC_COMM_WORLD,"%d FAIL\n",i); i++;
+
 }
 
-bool mergePaths (vector<Path *> *pathList, vector<long unsigned int> *pathIndexList, vector<bool> *reverseList, string boundaryType, string boundaryName, Path **mergedPath, double tol)
+bool mergePaths (std::vector<Path *> *pathList, std::vector<long unsigned int> *pathIndexList, std::vector<bool> *reverseList, std::string boundaryType, std::string boundaryName, Path **mergedPath, double tol)
 {
    bool fail=false;
    long unsigned int i;
@@ -553,6 +569,15 @@ Path::Path(int startLine_, int endLine_)
    name.set_upperLimit(0);
    name.set_checkLimits(false);
 
+   // normal
+   normal.push_alias("normal");
+   normal.set_loaded(false);
+   normal.set_positive_required(false);
+   normal.set_non_negative_required(false);
+   normal.set_lowerLimit(0);
+   normal.set_upperLimit(0);
+   normal.set_checkLimits(false);
+
    // closed
    closed.push_alias("closed");
    closed.set_loaded(false);
@@ -572,10 +597,14 @@ Path::Path(int startLine_, int endLine_)
    cos_phi_=cos(phi);
    sin_phi_=sin(phi);
 
-   hasNormal=false;
-   normal.dim=3; normal.x=-2; normal.y=-2; normal.z=-2;
-
    hasOutput=false;
+   modified=true;
+   isUsed=true;
+
+#if HAS_GUI
+   item=nullptr;
+   portItem=nullptr;
+#endif
 }
 
 struct point Path::get_point_value (long unsigned int i)
@@ -608,7 +637,7 @@ bool Path::compare (long unsigned int i, keywordPair test_point)
    return point_comparison(a,b,tol);
 }
 
-void Path::print (string indent)
+void Path::print (std::string indent)
 {
    int dim=0;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sPath %p\n",indent.c_str(),this);
@@ -622,6 +651,8 @@ void Path::print (string indent)
    }
    if (closed.get_bool_value()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   closed=true\n",indent.c_str());}
    else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   closed=false\n",indent.c_str());}
+   if (normal.is_loaded()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   normal=(%g,%g%g)\n",indent.c_str(),
+                            normal.get_point_value().x,normal.get_point_value().y,normal.get_point_value().z);}
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   tol=%g\n",indent.c_str(),tol);
    if (rotated) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   rotated=true\n",indent.c_str());}
    else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   rotated=false\n",indent.c_str());}
@@ -637,40 +668,76 @@ void Path::print (string indent)
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   ymin=%g\n",indent.c_str(),ymin);
    if (dim == 3) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   zmax=%g\n",indent.c_str(),zmax);}
    if (dim == 3) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   zmin=%g\n",indent.c_str(),zmin);}
-   if (hasNormal) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   hasNormal=true\n",indent.c_str());}
-   else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   hasNormal=false\n",indent.c_str());}
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   normal.x=%g\n",indent.c_str(),normal.x);
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   normal.y=%g\n",indent.c_str(),normal.y);
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   normal.z=%g\n",indent.c_str(),normal.z);
    if (hasOutput) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   hasOutput=true\n",indent.c_str());}
    else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   hasOutput=false\n",indent.c_str());}
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndPath\n",indent.c_str());
 }
 
-bool Path::output (ofstream *out, int force_dim)
+void Path::save (std::ofstream *out)
+{
+    if (!isUsed) return;
+
+    PetscMPIInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    modified=false;
+    if (rank != 0) return;
+
+    int dim=0;
+    *out << "Path" << std::endl;
+    *out << "   name=" << get_name() << std::endl;
+    *out << std::setprecision(15);
+    long unsigned int i=0;
+    while (i < points.size()) {
+        struct point p=points[i]->get_point_value();
+        if (p.dim == 2) {*out << "   point=(" << p.x << "," << p.y << ")" << std::endl;}
+        if (p.dim == 3) {*out << "   point=(" << p.x << "," << p.y << "," << p.z << ")" << std::endl;}
+        i++;
+    }
+    if (closed.get_bool_value()) {*out << "   closed=true" << std::endl;}
+    else {*out << "   closed=false" << std::endl;}
+
+    if (normal.is_loaded()) {
+        if (normal.get_point_value_dim() == 2) {
+            *out << "   normal=(" << normal.get_point_value().x << ","
+                                  << normal.get_point_value().y << ")" << std::endl;
+        }
+        if (normal.get_point_value_dim() == 3) {
+            *out << "   normal=(" << normal.get_point_value().x << ","
+                                  << normal.get_point_value().y << ","
+                                  << normal.get_point_value().z << ")" << std::endl;
+        }
+    }
+
+    *out << "EndPath" << std::endl;
+    *out << std::endl;
+}
+
+bool Path::output (std::ofstream *out, int force_dim)
 {
    if (hasOutput) return false;
+   if (!isUsed) return true;
 
-   *out << "Path" << endl;
-   *out << "   name=" << get_name() << endl;
+   *out << "Path" << std::endl;
+   *out << "   name=" << get_name() << std::endl;
    long unsigned int i=0;
    while (i < points.size()) {
       struct point p=points[i]->get_point_value();
-      if (force_dim == 2) {*out << setprecision(16) << "   point=(" << p.x << "," << p.y << ")" << endl;}
-      if (force_dim == 3) {*out << setprecision(16) << "   point=(" << p.x << "," << p.y << "," << p.z << ")" << endl;}
+      if (force_dim == 2) {*out << std::setprecision(16) << "   point=(" << p.x << "," << p.y << ")" << std::endl;}
+      if (force_dim == 3) {*out << std::setprecision(16) << "   point=(" << p.x << "," << p.y << "," << p.z << ")" << std::endl;}
       i++;
    }
-   if (closed.get_bool_value()) *out << "   closed=true" << endl;
-   else *out << "   closed=false" << endl;
+   if (closed.get_bool_value()) *out << "   closed=true" << std::endl;
+   else *out << "   closed=false" << std::endl;
 
-   *out << "EndPath" << endl;
+   *out << "EndPath" << std::endl;
 
    hasOutput=true;
 
    return true;
 }
 
-bool Path::load(int dim, string *indent, inputFile *inputs)
+bool Path::load(int dim, std::string *indent, inputFile *inputs)
 {
    bool fail=false;
 
@@ -678,7 +745,7 @@ bool Path::load(int dim, string *indent, inputFile *inputs)
    int stopLineNumber=inputs->get_previous_lineNumber(endLine);
    while (lineNumber <= stopLineNumber) {
 
-      string token,value,line;
+      std::string token,value,line;
       line=inputs->get_line(lineNumber);
       get_token_pair(&line,&token,&value,&lineNumber,*indent);
 
@@ -723,6 +790,13 @@ bool Path::load(int dim, string *indent, inputFile *inputs)
          if (closed.loadBool(&token, &value, lineNumber)) fail=true;
       }
 
+      if (normal.match_alias(&token)) {
+          normal.set_value(value);
+          normal.set_lineNumber(lineNumber);
+          normal.loadPoint(dim,&token,&value,lineNumber);
+          recognized++;
+      }
+
       // should recognize one keyword
       if (recognized != 1) {
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1098: Unrecognized keyword at line %d.\n",indent->c_str(),indent->c_str(),lineNumber);
@@ -732,12 +806,15 @@ bool Path::load(int dim, string *indent, inputFile *inputs)
    }
 
    calculateBoundingBox();
-   calculateNormal();
+
+   if (!normal.is_loaded()) {
+      calculateNormal();
+   }
 
    return fail;
 }
 
-bool Path::checkBoundingBox(Vector *lowerLeft, Vector *upperRight, string *indent, double tol)
+bool Path::checkBoundingBox(mfem::Vector *lowerLeft, mfem::Vector *upperRight, std::string *indent, double tol)
 {
    bool fail=false;
 
@@ -783,7 +860,7 @@ bool Path::inBlock (int lineNumber)
    return false;
 }
 
-bool Path::check(string *indent)
+bool Path::check(std::string *indent)
 {
    bool fail=false;
 
@@ -839,11 +916,11 @@ double Path::sum_of_angles (struct point pt)
    double theta1=0;
    long unsigned int i=0;
    while (i < points.size()-1) {
-      theta1+=signed_angle_between_two_lines (pt,points[i]->get_point_value(),points[i+1]->get_point_value(),normal);
+      theta1+=signed_angle_between_two_lines (pt,points[i]->get_point_value(),points[i+1]->get_point_value(),normal.get_point_value());
       i++;
    }
    if (is_closed()) {
-      theta1+=signed_angle_between_two_lines (pt,points[i]->get_point_value(),points[0]->get_point_value(),normal);
+      theta1+=signed_angle_between_two_lines (pt,points[i]->get_point_value(),points[0]->get_point_value(),normal.get_point_value());
    }
    return theta1;
 }
@@ -853,7 +930,7 @@ double Path::sum_of_angles (struct point pt)
 void Path::subdivide (Path *test)
 {
    bool modified=false;
-   vector<keywordPair *> newPoints;
+   std::vector<keywordPair *> newPoints;
 
    if (points.size() == 0) return;
    if (test->points.size() == 0) return;
@@ -881,12 +958,12 @@ void Path::subdivide (Path *test)
 
                // maintain ordering along the line
                if (points[i]->get_point_distance(test->points[j]) < points[i]->get_point_distance(test->points[j+1])) {
-                  if (! points[points.size()-1]->is_close_point (test->points[j])) {
+                  if (! points[points.size()-1]->is_close_point (test->points[j],1e-12)) {
                      newPoints.push_back(test->points[j]->clone());
                   }
                   newPoints.push_back(test->points[j+1]->clone());
                } else {
-                  if (! points[points.size()-1]->is_close_point (test->points[j+1])) {
+                  if (! points[points.size()-1]->is_close_point (test->points[j+1],1e-12)) {
                      newPoints.push_back(test->points[j+1]->clone());
                   }
                   newPoints.push_back(test->points[j]->clone());
@@ -941,6 +1018,7 @@ void Path::subdivide (Path *test)
 Path* Path::clone()
 {
    Path *newPath=new Path(startLine,endLine);
+
    newPath->name=name;
    newPath->closed=closed;
    newPath->tol=tol;
@@ -957,8 +1035,7 @@ Path* Path::clone()
    newPath->ymin=ymin;
    newPath->zmax=zmax;
    newPath->zmin=zmin;
-   newPath->hasNormal=hasNormal;
-   newPath->normal=point_copy(normal);;
+   newPath->normal=normal;
 
    long unsigned int i=0;
    while (i < points.size()) {
@@ -992,7 +1069,7 @@ void Path::calculateBoundingBox()
    }
 }
 
-// calculate a normal to the path
+// calculate a normal_pnt to the path
 // assumes that the path is planar
 bool Path::calculateNormal ()
 {
@@ -1051,16 +1128,15 @@ bool Path::calculateNormal ()
    pt1=point_subtraction(pt1,ptc);
    pt2=point_subtraction(pt2,ptc);
 
-   normal=point_normalize(point_cross_product(pt2,pt1));
-
-   hasNormal=true;
+   normal.set_point_value(point_normalize(point_cross_product(pt2,pt1)));
+   normal.set_loaded(true);
 
    return false;
 }
 
 Path* Path::rotateToXYplane ()
 {
-   if (!hasNormal) {
+    if (!normal.is_loaded()) {
       return nullptr;
    }
 
@@ -1077,12 +1153,12 @@ Path* Path::rotateToXYplane ()
    // rotation angles
 
    // phi
-   rotated->phi=-atan2(rotated->normal.y,rotated->normal.x);
+   rotated->phi=-atan2(rotated->normal.get_point_value().y,rotated->normal.get_point_value().x);
 
    // theta
    struct point pt0; pt0.dim=3; pt0.x=0; pt0.y=0; pt0.z=0;
    struct point ptz; ptz.dim=3; ptz.x=0; ptz.y=0; ptz.z=1;
-   rotated->theta=-angle_between_two_lines(pt0,rotated->normal,ptz);
+   rotated->theta=-angle_between_two_lines(pt0,rotated->normal.get_point_value(),ptz);
 
    // pre-calculation
    rotated->cos_theta_=cos(rotated->theta);
@@ -1325,6 +1401,8 @@ bool Path::is_path_overlap (Path *test)
 
 bool Path::is_path_inside (Path *test)
 {
+    if (!test) return false;
+
    // check for points inside the path
    long unsigned int i=0;
    while (i < test->points.size()) {
@@ -1357,7 +1435,7 @@ bool Path::is_path_inside (Path *test)
 void Path::test_is_point_inside_m ()
 {
    double xt,yt,zt;
-   string expected="";
+   std::string expected="";
 
    if (points.size() < 3) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Path::test_is_point_inside was passed a point or a line.\n");
@@ -1366,138 +1444,138 @@ void Path::test_is_point_inside_m ()
 
    xt=1; yt=0.5; zt=3; expected="inside";
    struct point p; p.dim=3; p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1; yt=1; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1; yt=1.5; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=3; yt=1.5; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2; yt=1.001; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0.5; yt=1.5; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2; yt=2; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0.5; yt=2; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1; yt=2; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=-1; yt=0; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1; yt=0; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2; yt=0.9999; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=3.00001; yt=2; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=3; yt=2.0001; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=3; yt=1.9999; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2.9999; yt=2; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.5; yt=1.5; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.5; yt=1.4999; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.5; yt=1.50001; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2; yt=-1; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2; yt=-1.0001; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=3; yt=0.0001; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=3; yt=-0.0001; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2.5; yt=1.5; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2.4999; yt=1.5; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2.50001; yt=1.5; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=3.75; yt=1; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 }
 
 // Assumes the path:
@@ -1518,7 +1596,7 @@ void Path::test_is_point_inside_m ()
 void Path::test_is_point_inside_mr ()
 {
    double xt,yt,zt;
-   string expected="";
+   std::string expected="";
 
    if (points.size() < 3) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Path::test_is_point_inside was passed a point or a line.\n");
@@ -1527,138 +1605,138 @@ void Path::test_is_point_inside_mr ()
 
    xt=0.5; yt=3; zt=1; expected="inside";
    struct point p; p.dim=3; p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1; yt=3; zt=1; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.5; yt=3; zt=1; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.5; yt=3; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.001; yt=3; zt=2; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.5; yt=3; zt=0.5; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2; yt=3; zt=2; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2; yt=3; zt=0.5; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2; yt=3; zt=1; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0; yt=3; zt=-1; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0; yt=3; zt=1; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0.9999; yt=3; zt=2; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2; yt=3; zt=3.00001; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2.0001; yt=3; zt=3; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.9999; yt=3; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=2; yt=3; zt=2.99999; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.5; yt=3; zt=1.5; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.4999; yt=3; zt=1.5; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.50001; yt=3; zt=1.5; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=-1; yt=3; zt=2; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=-1.0001; yt=3; zt=2; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0.0001; yt=3; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=-0.0001; yt=3; zt=3; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.5; yt=3; zt=2.5; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.5; yt=3; zt=2.49999; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1.5; yt=3; zt=2.50001; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=1; yt=3; zt=3.75; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 }
 
 // Assumes the path:
@@ -1676,7 +1754,7 @@ void Path::test_is_point_inside_mr ()
 void Path::test_is_point_inside_sqr2 ()
 {
    double xt,yt,zt;
-   string expected="";
+   std::string expected="";
 
    if (points.size() < 3) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Path::test_is_point_inside was passed a point or a line.\n");
@@ -1685,79 +1763,106 @@ void Path::test_is_point_inside_sqr2 ()
 
    xt=0.0245190528383291; yt=2.04903810567666; zt=1.14054445662277; expected="inside";
    struct point p; p.dim=3; p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0.182695714594112; yt=1.36739142918822; zt=1.04922111837855; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=-0.130804723234483; yt=2.71839055353103; zt=1.23022068054996; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0.399519052838329; yt=1.79903810567666; zt=0.924038105676658; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=-0.350480947161671; yt=2.29903810567666; zt=1.35705080756888; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=-0.191987298107781; yt=1.61602540378444; zt=1.26554445662277; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0.241025403784439; yt=2.48205080756888; zt=1.01554445662277; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=-0.555157171088858; yt=1.86968565782228; zt=1.47522068054995; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0.604195276765517; yt=2.22839055353103; zt=0.80586823269558; expected="inside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0.182579689190327; yt=1.36515937838065; zt=1.04928810567666; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0.620355530803361; yt=2.24071106160672; zt=0.796538105676658; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=-0.425480947161671; yt=2.34903810567666; zt=1.4003520777581; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=0.245355530803361; yt=2.49071106160672; zt=1.01304445662277; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 
    xt=-0.0334936490538903; yt=0.933012701892219; zt=1.17403810567666; expected="outside";
    p.x=xt; p.y=yt; p.z=zt;
-   if (is_point_inside (p)) cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << endl;
-   else cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << endl;
+   if (is_point_inside (p)) std::cout << "(" << xt << "," << yt << "," << zt << ") is inside, expected=" << expected << std::endl;
+   else std::cout << "(" << xt << "," << yt << "," << zt << ") is outside, expected=" << expected << std::endl;
 }
 
-bool Path::snapToMeshBoundary (Mesh *mesh)
+// return true if there is a snap
+bool Path::snapToPoint (struct point p)
 {
+    double tol=1e-08;
+
+    // nothing to do
+    if (points.size() == 0) return false;
+
+    // check for dimensional alignment
+    if (p.dim != points[0]->get_point_value_dim()) {
+        prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Path::snapToPoint passed mismatched dimensions.\n");
+        return false;
+    }
+
+    long unsigned int i=0;
+    while (i < points.size()) {
+        if (points[i]->is_close_point(p,tol)) {
+            points[i]->set_point_value(p);
+            return true;
+        }
+        i++;
+    }
+
+    return false;
+}
+
+bool Path::snapToMeshBoundary (mfem::Mesh *mesh)
+{
+   double tol=1e-08;
    bool fail=false;
-   DenseMatrix pointMat(3,3);
+   mfem::DenseMatrix pointMat(3,3);
 
    // nothing to do
    if (points.size() == 0) return false;
@@ -1773,21 +1878,21 @@ bool Path::snapToMeshBoundary (Mesh *mesh)
       bool found_point=false;
       int j=0;
       while (j < mesh->GetNBE()) {
-         if (mesh->GetBdrElementType(j) == Element::TRIANGLE) {
+         if (mesh->GetBdrElementType(j) == mfem::Element::TRIANGLE) {
             mesh->GetBdrPointMatrix(j,pointMat);
             struct point p1; p1.dim=3; p1.x=pointMat.Elem(0,0); p1.y=pointMat.Elem(1,0); p1.z=pointMat.Elem(2,0);
             struct point p2; p2.dim=3; p2.x=pointMat.Elem(0,1); p2.y=pointMat.Elem(1,1); p2.z=pointMat.Elem(2,1);
             struct point p3; p3.dim=3; p3.x=pointMat.Elem(0,2); p3.y=pointMat.Elem(1,2); p3.z=pointMat.Elem(2,2);
 
-            if (points[i]->is_close_point(p1)) {
+            if (points[i]->is_close_point(p1,tol)) {
                points[i]->set_point_value(p1);
                found_point=true;
                break;
-            } else if (points[i]->is_close_point(p2)) {
+            } else if (points[i]->is_close_point(p2,tol)) {
                points[i]->set_point_value(p2);
                found_point=true;
                break;
-            } else if (points[i]->is_close_point(p3)) {
+            } else if (points[i]->is_close_point(p3,tol)) {
                points[i]->set_point_value(p3);
                found_point=true;
                break;
@@ -1795,7 +1900,9 @@ bool Path::snapToMeshBoundary (Mesh *mesh)
          }
          j++;
       }
-      if (!found_point) fail=true;
+      if (!found_point) {
+         fail=true;
+      }
       i++;
    }
 
@@ -1808,7 +1915,8 @@ double Path::area ()
    bool allocatedPath=false;
    double area=0;
 
-   if (points.size() == 0) return DBL_MAX;
+   if (points.size() == 0) return 0;
+   if (points.size() == 2) return 0;
 
    int dim=points[0]->get_point_value().dim;
    if (dim == 2) path=this;
@@ -1845,7 +1953,7 @@ double Path::area ()
 
 void Path::reverseOrder ()
 {
-   vector<keywordPair *> reversed_points;
+   std::vector<keywordPair *> reversed_points;
 
    long unsigned int i=0;
    while (i < points.size()) {
@@ -1952,6 +2060,262 @@ struct point Path::getInsidePoint ()
    // should not get to here
    return error_point;
 }
+
+void Path::assignPathNormal (struct point normal_)
+{
+    if (normal.is_loaded()) return;
+    normal.set_point_value(normal_);
+    normal.set_loaded(true);
+}
+
+#ifdef HAS_GUI
+
+void Path::set_normal (gp_Vec a)
+{
+    normal.set_point_value(a.X(),a.Y(),a.Z());
+    normal.set_point_value_dim(3);
+    normal.set_loaded(true);
+}
+
+TopoDS_Wire Path::create_TopoDS_Wire ()
+{
+    BRepBuilderAPI_MakeWire wireBuilder;
+
+    if (points.size() < 2) return TopoDS_Wire(); // null wire
+
+    gp_Pnt v1(points[0]->get_point_value().x,points[0]->get_point_value().y,points[0]->get_point_value().z);
+    gp_Pnt v2;
+    long unsigned int i=0;
+    while (i < points.size()-1) {
+        v2.SetCoord(points[i+1]->get_point_value().x,points[i+1]->get_point_value().y,points[i+1]->get_point_value().z);
+        wireBuilder.Add(BRepBuilderAPI_MakeEdge(v1,v2));
+        v1=v2;
+        i++;
+    }
+
+    if (is_closed()) {
+        gp_Pnt v2(points[0]->get_point_value().x,points[0]->get_point_value().y,points[0]->get_point_value().z);
+        wireBuilder.Add(BRepBuilderAPI_MakeEdge(v1,v2));
+    }
+
+    if (!wireBuilder.IsDone()) return TopoDS_Wire();
+
+    return wireBuilder.Wire();
+}
+
+// create path from face
+void Path::addFacePoints (TopoDS_Face face)
+{
+    TopTools_MapOfShape seen;
+    std::vector<TopoDS_Vertex> orderedVertices;
+
+    TopoDS_Wire outerWire=BRepTools::OuterWire(face);
+    BRepTools_WireExplorer wireExplorer(outerWire,face);
+
+    while (wireExplorer.More()) {
+        TopoDS_Vertex vertex=wireExplorer.CurrentVertex();
+
+        // avoid duplicates from shared edges / seam edges
+        if (!seen.Contains(vertex)) {
+            seen.Add(vertex);
+            orderedVertices.push_back(vertex);
+        }
+
+        wireExplorer.Next();
+    }
+
+    long unsigned int i=0;
+    while (i < orderedVertices.size()) {
+        gp_Pnt pnt=BRep_Tool::Pnt(orderedVertices[i]);
+
+        keywordPair *point=new keywordPair();
+        point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
+
+        points.push_back(point);
+
+        i++;
+    }
+
+    set_closed(true);
+    calculateNormal();
+}
+
+// create path from wire
+void Path::addWirePoints (TopoDS_Wire wire)
+{
+    std::vector<TopoDS_Vertex> vertices;
+    TopoDS_Vertex lastVertex;
+
+    // get the vertices from the wire
+    for (TopExp_Explorer exp(wire, TopAbs_EDGE); exp.More(); exp.Next()) {
+        TopoDS_Edge edge=TopoDS::Edge(exp.Current());
+        TopoDS_Vertex v1,v2;
+        TopExp::Vertices(edge,v1,v2);
+
+        if (vertices.empty()) {
+            vertices.push_back(v1);
+            vertices.push_back(v2);
+            lastVertex=v2;
+        } else {
+            if (!v1.IsSame(lastVertex)) vertices.push_back(v1);
+            vertices.push_back(v2);
+            lastVertex=v2;
+        }
+    }
+
+    // convert to keyword pairs for the path
+
+    set_closed(wire.Closed());
+    long unsigned int upperLimit=vertices.size();
+    if (is_closed()) upperLimit--;
+
+    long unsigned int i=0;
+    while (i < upperLimit) {
+        gp_Pnt pnt=BRep_Tool::Pnt(vertices[i]);
+        keywordPair *point=new keywordPair();
+
+        point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
+        points.push_back(point);
+
+        i++;
+    }
+}
+
+// create path from edge
+void Path::addEdgePoints (TopoDS_Edge edge)
+{
+    TopoDS_Vertex v1,v2;
+    TopExp::Vertices(edge,v1,v2);
+
+    // v1
+    gp_Pnt pnt=BRep_Tool::Pnt(v1);
+    keywordPair *point=new keywordPair();
+    point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
+    points.push_back(point);
+
+    // v2
+    pnt=BRep_Tool::Pnt(v2);
+    point=new keywordPair();
+    point->set_point_value(pnt.X(),pnt.Y(),pnt.Z());
+    points.push_back(point);
+}
+
+void Path::fill_wire_item (PathItem *item)
+{
+    if (!item) return;
+
+    item->setPath(this);
+    item->setText(0,QString::fromStdString(get_name()));
+
+    TopoDS_Wire wire=create_TopoDS_Wire();
+    Handle(AIS_Shape) shape=new AIS_Shape(wire);
+    ShapeData *shapeData=item->getShapeData();
+    shapeData->setCreate();
+    shapeData->setShape(shape);
+    shapeData->set_name(item->text(0));
+}
+
+void Path::create_wire_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
+{
+    item=new PathItem(mw,parentItem);
+    ShapeData *newShapeData=item->getShapeData()->copyCreate();
+    newShapeData->setCreate();
+    item->addShapeData(newShapeData);
+    fill_wire_item(item);
+    parentItem->addChild(item);
+}
+
+void Path::create_polywire_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
+{
+    item=new PathItem(mw,parentItem);
+
+    if (points.size() < 2) {
+        // not a valid line
+        return;
+    } else if (points.size() == 2) {
+        Line *line=new Line();
+
+        long unsigned int i=0;
+        while (i < points.size()) {
+            gp_Pnt pnt(points[i]->get_point_value().x,
+                       points[i]->get_point_value().y,
+                       points[i]->get_point_value().z);
+            line->addPoint(pnt);
+            i++;
+        }
+
+        if (normal.is_loaded()) {
+            line->setNormal(normal.get_point_value());
+            line->setHasArrows(true);
+        }
+
+        ShapeData *newShapeData=item->getShapeData()->copyCreate();
+        newShapeData->setCreate();
+        newShapeData->setPolywire(line);
+        newShapeData->setShape(line->get_AIS_Shape());
+        item->addShapeData(newShapeData);
+    } else {
+        Polyline *polyline=new Polyline();
+
+        long unsigned int i=0;
+        while (i < points.size()) {
+            gp_Pnt pnt(points[i]->get_point_value().x,
+                       points[i]->get_point_value().y,
+                       points[i]->get_point_value().z);
+            polyline->addPoint(pnt);
+            i++;
+        }
+
+        if (is_closed()) {
+            polyline->close();
+        }
+
+        if (normal.is_loaded()) {
+            polyline->setNormal(normal.get_point_value());
+            polyline->setHasArrows(true);
+        }
+
+        ShapeData *newShapeData=item->getShapeData()->copyCreate();
+        newShapeData->setCreate();
+        newShapeData->setPolywire(polyline);
+        newShapeData->setShape(polyline->get_AIS_Shape());
+        item->addShapeData(newShapeData);
+    }
+
+    // save the path to the item for cross referencing
+    item->setPath(this);
+
+    // name
+    item->setText(0,QString::fromStdString(get_name()));
+    item->getShapeData()->set_name(item->text(0));
+
+    parentItem->addChild(item);
+    item->setParentItem(parentItem);
+}
+
+void Path::create_face_item (OpenParEMg *mw, CustomOpenGLWidget *drawingWindow, RootPathItem *parentItem)
+{
+    item=new PathItem(mw,parentItem);
+    item->setPath(this);
+    item->setText(0,QString::fromStdString(get_name()));
+
+    TopoDS_Wire wire=create_TopoDS_Wire();
+    if (!wire.IsNull()) {
+        BRepBuilderAPI_MakeFace faceMaker(wire);
+        if (faceMaker.IsDone()) {
+            TopoDS_Face face=faceMaker.Face();
+            Handle(AIS_Shape) shape=new AIS_Shape(face);
+            ShapeData *newShapeData=item->getShapeData()->copyCreate();
+            newShapeData->setCreate();
+            newShapeData->setShape(shape);
+            newShapeData->set_name(item->text(0));
+            item->addShapeData(newShapeData);
+            parentItem->addChild(item);
+        }
+    }
+}
+
+#endif
 
 Path::~Path ()
 {

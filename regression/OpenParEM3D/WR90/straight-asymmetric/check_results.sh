@@ -1,0 +1,1 @@
+freecad_build/check_results.sh

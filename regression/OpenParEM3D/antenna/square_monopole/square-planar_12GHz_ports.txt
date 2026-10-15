@@ -1,0 +1,154 @@
+#OpenParEMports 1.0
+
+File
+   name=generated_by_OpenParEMg
+EndFile
+
+Path
+   name=path1
+   point=(0.00382486126459673,0.00158430940999147,-0.0008)
+   point=(0.00414,0,-0.0008)
+   point=(0.00382486126459673,-0.00158430940999147,-0.0008)
+   point=(0.00292742207411231,-0.00292742207411231,-0.0008)
+   point=(0.00158430940999147,-0.00382486126459673,-0.0008)
+   point=(-9.1926466438963e-19,-0.00414,-0.0008)
+   point=(-0.00158430940999147,-0.00382486126459673,-0.0008)
+   point=(-0.00292742207411231,-0.00292742207411231,-0.0008)
+   point=(-0.00382486126459673,-0.00158430940999147,-0.0008)
+   point=(-0.00414,5.07003774847004e-19,-0.0008)
+   point=(-0.00382486126459673,0.00158430940999147,-0.0008)
+   point=(-0.00292742207411231,0.00292742207411231,-0.0008)
+   point=(-0.00158430940999147,0.00382486126459673,-0.0008)
+   point=(4.59632332194815e-19,0.00414,-0.0008)
+   point=(0.00158430940999147,0.00382486126459673,-0.0008)
+   point=(0.00292742207411231,0.00292742207411231,-0.0008)
+   closed=true
+   normal=(0,0,-1)
+EndPath
+
+Path
+   name=v1
+   point=(0.00158430940999147,-0.00382486126459673,-0.0008)
+   point=(0.000459220118838108,-0.00110865543901354,-0.0008)
+   closed=false
+   normal=(0,0,-1)
+EndPath
+
+Path
+   name=path2
+   point=(0.15,0.15,0.19)
+   point=(0.15,0.15,-0.11)
+   point=(-0.15,0.15,-0.11)
+   point=(-0.15,0.15,0.19)
+   closed=true
+   normal=(0,1,-0)
+EndPath
+
+Path
+   name=path3
+   point=(-0.15,0.15,0.19)
+   point=(-0.15,0.15,-0.11)
+   point=(-0.15,-0.15,-0.11)
+   point=(-0.15,-0.15,0.19)
+   closed=true
+   normal=(-1,0,0)
+EndPath
+
+Path
+   name=path4
+   point=(0.15,-0.15,-0.11)
+   point=(-0.15,-0.15,-0.11)
+   point=(-0.15,0.15,-0.11)
+   point=(0.15,0.15,-0.11)
+   closed=true
+   normal=(0,0,-1)
+EndPath
+
+Path
+   name=path5
+   point=(-0.15,-0.15,0.19)
+   point=(-0.15,-0.15,-0.11)
+   point=(0.15,-0.15,-0.11)
+   point=(0.15,-0.15,0.19)
+   closed=true
+   normal=(0,-1,0)
+EndPath
+
+Path
+   name=path6
+   point=(-0.15,-0.15,0.19)
+   point=(0.15,-0.15,0.19)
+   point=(0.15,0.15,0.19)
+   point=(-0.15,0.15,0.19)
+   closed=true
+   normal=(0,-0,1)
+EndPath
+
+Path
+   name=path7
+   point=(0.15,-0.15,0.19)
+   point=(0.15,-0.15,-0.11)
+   point=(0.15,0.15,-0.11)
+   point=(0.15,0.15,0.19)
+   closed=true
+   normal=(1,0,0)
+EndPath
+
+Boundary
+   name=boundary1
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path2
+EndBoundary
+
+Boundary
+   name=boundary2
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path3
+EndBoundary
+
+Boundary
+   name=boundary3
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path4
+EndBoundary
+
+Boundary
+   name=boundary4
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path5
+EndBoundary
+
+Boundary
+   name=boundary5
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path6
+EndBoundary
+
+Boundary
+   name=boundary6
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path7
+EndBoundary
+
+Port
+   name=port1
+   path=path1
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      net=net1
+      Sport=1
+      IntegrationPath
+         type=voltage
+         scale=1
+         path=+v1
+      EndIntegrationPath
+   EndLine
+EndPort
+

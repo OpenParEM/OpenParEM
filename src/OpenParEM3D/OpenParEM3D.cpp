@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -29,6 +29,7 @@
 #include <chrono>
 #include <unistd.h>
 #include <HYPRE.h>
+#include <csignal>
 #include "port.hpp"
 #include "fem3D.hpp"
 #include "results.hpp"
@@ -39,12 +40,13 @@
 #include "license.hpp"
 #include "mesh.hpp"
 #include "petscErrorHandler.hpp"
+#include "fileCleanup.hpp"
 
 using namespace std;
 using namespace mfem;
 
 int version_major=2;
-int version_minor=1;
+int version_minor=2;
 int version_patch=0;
 
 extern "C" void init_project (struct projectData *);
@@ -58,6 +60,16 @@ extern "C" void prefix ();
 extern "C" char* get_prefix_text ();
 extern "C" void set_prefix_text (char *);
 
+extern "C" void checkForAbort();
+extern "C" int checkForStop();
+
+// globals to work with the signal handler
+extern "C" char *lockfile;
+std::filesystem::path currentPath;
+
+// globals to work with the abort handler
+extern "C" MPI_Request abortRequest;
+extern "C" MPI_Request stopRequest;
 
 double edgeLength (double *a, double *b)
 {
@@ -105,11 +117,18 @@ void get_edgeLengthsPerWavelength (ParMesh *pmesh, double frequency, Vector er, 
 }
 
 void help () {
-   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM3D [-h] filename\n");
+   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM3D [-h] filename [logfile]\n");
    PetscPrintf(PETSC_COMM_WORLD,"       -h          : Print this help text\n");
    PetscPrintf(PETSC_COMM_WORLD,"       filename    : Filename of an OpenParEM setup file.\n");
+   PetscPrintf(PETSC_COMM_WORLD,"       logfile     : Output is redirected to the given file.  Note that the file is over-written.\n");
    PetscPrintf(PETSC_COMM_WORLD,"\nOpenParEM3D is a full-wave 3D electromagnetic solver.\n");
    PetscPrintf(PETSC_COMM_WORLD,"Version %d.%d.%d\n",version_major,version_minor,version_patch);
+
+   // get the MPI version
+   char version_string[MPI_MAX_LIBRARY_VERSION_STRING];
+   int resultlen;
+   MPI_Get_library_version(version_string, &resultlen);
+   PetscPrintf(PETSC_COMM_WORLD,"%s\n",version_string);
 }
 
 bool print_mesh_quality_message (ParMesh *pmesh, struct projectData *projData)
@@ -144,6 +163,38 @@ void isOpenParEM2Dreachable ()
    MPI_Barrier(PETSC_COMM_WORLD);
 }
 
+// status: 0 normal completion; 1 error
+void signalFinished (int status)
+{
+   PetscMPIInt rank;
+   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+
+   MPI_Comm parent; 
+   MPI_Comm_get_parent(&parent);
+
+   if (parent == MPI_COMM_NULL) return; 
+   if (rank == 0) { 
+
+      // send signal that the simulation is finished
+      //std::cout << "OpenParEM3D send 310000" << std::endl; std::cout.flush();
+      MPI_Send(&status,1,MPI_INT,0,310000,parent);
+      //std::cout << "OpenParEM3D send 320000" << std::endl; std::cout.flush();
+      MPI_Send(&status,1,MPI_INT,0,320000,parent);
+
+      // GUI must unblock these two signals
+      //std::cout << "OpenParEM3D wait for 300000" << std::endl; std::cout.flush();
+      MPI_Wait(&stopRequest,MPI_STATUS_IGNORE);
+      //std::cout << "OpenParEM3D wait for 300001" << std::endl; std::cout.flush();
+      MPI_Wait(&abortRequest,MPI_STATUS_IGNORE);
+
+      //std::cout << "OpenParEM3D free stopRequest" << std::endl; std::cout.flush();
+      MPI_Request_free(&stopRequest);
+      //std::cout << "OpenParEM3D free abortRequest" << std::endl; std::cout.flush();
+      MPI_Request_free(&abortRequest);
+      //std::cout << "OpenParEM3D return from signalFinished" << std::endl; std::cout.flush();
+   }
+}
+
 void load_project_file (const char *projFile, struct projectData *defaultData, struct projectData *projData,
                         char *lockfile, chrono::steady_clock::time_point job_start_time)
 {
@@ -155,39 +206,10 @@ void load_project_file (const char *projFile, struct projectData *defaultData, s
    if (load_project_file (projFile,projData,"   ")) {
       MPI_Bcast (&(projData->debug_show_project),1,MPI_INT,0,PETSC_COMM_WORLD);
       if (projData->debug_show_project) {print_project (projData,defaultData,"      ");}
-      exit_job_on_error (job_start_time,lockfile,true);
+      signalFinished(1); 
+      exit_job_on_error (job_start_time,lockfile,true,3);
    }
    if (projData->debug_show_project) {print_project (projData,defaultData,"      ");}
-}
-
-void delete_stale_files (const char *baseName, int portCount)
-{
-   PetscMPIInt rank;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-   if (rank == 0) {
-      stringstream ss;
-      ss << ".s" << portCount << "p";
-
-      delete_file(baseName,"","_results.csv");
-      delete_file(baseName,"","_FarField_results.csv");
-      delete_file(baseName,"","_FarField.csv");
-      delete_file(baseName,"","_results.txt");
-      delete_file(baseName,"","_iterations.txt");
-      delete_file(baseName,"","_prototype_test_cases.csv");
-      delete_file(baseName,"","_fields.csv");
-      delete_file(baseName,"","_attributes.csv");
-      delete_file(baseName,"",ss.str().c_str());
-      delete_file(baseName,"temp_","");
-      delete_file(baseName,"ParaView_","");
-      delete_file(baseName,"ParaView_","_FarField");
-      delete_file(baseName,"Report_","_FarField");
-      delete_file(baseName,"ParaView_2D_port_","");
-      delete_file(baseName,"ParaView_3D_port_","");
-      delete_file(baseName,"ParaView_modal_2D_","");
-      delete_file(baseName,"ParaView_solution_2D_","");
-   }
-   MPI_Barrier(PETSC_COMM_WORLD);
 }
 
 bool saveSerialMesh (struct projectData *projData, MeshMaterialList *meshMaterials, ParMesh *pmesh)
@@ -200,15 +222,44 @@ bool saveSerialMesh (struct projectData *projData, MeshMaterialList *meshMateria
 
    Mesh mesh=pmesh->GetSerialMesh(0);
    if (rank == 0) {
-      mesh.Save(ssMesh.str());
+
+      // native MFEM mesh format
+      //mesh.Save(ssMesh.str());
+
+      // gmsh format
+      if (!WriteGmsh22(mesh,ssMesh.str(),meshMaterials->getMaterialNames())) {
+         return true;
+      }
    }
 
-   stringstream ssRegions;
-   ssRegions << "materials_for_refined_" << projData->mesh_file;
-   bool retval=meshMaterials->saveRegionsFile (ssRegions.str().c_str());
-   if (retval) return true;
+   // required materials output when using the native MFEM mesh format
+   //stringstream ssRegions;
+   //ssRegions << "materials_for_refined_" << projData->mesh_file;
+   //bool retval=meshMaterials->saveRegionsFile (ssRegions.str().c_str());
+   //if (retval) return true;
 
    return false;
+}
+
+PetscErrorCode petscErrorHandler(MPI_Comm comm, int line, const char *file, const char *func,
+                                 PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx)
+{
+    // 55 PETSc out of memory
+    // 76 MUMPS out of memory
+
+    // out of memory
+    if (n == 55 || n == 76) {
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3252: Out of memory. %s bytes.\n",mess);
+    }
+
+    // details for potential future enhancement
+    //fprintf(stderr, "A PETSc Error occurred in function %s at line %d in file %s\n", func, line, file);
+    //fprintf(stderr, "Error code: %d, Message: %s\n", n, mess);
+
+    // optional call to the default PETSc error handler
+    //PetscTraceBackErrorHandler(comm, line, file, func, n, p, mess, ctx);
+
+    return 1;
 }
 
 int main(int argc, char *argv[])
@@ -226,77 +277,198 @@ int main(int argc, char *argv[])
    PatternDatabase patternDatabase;
    GammaDatabase gammaDatabase;
    vector<DifferentialPair *> aggregateList;
+   bool hasLogFile;
+   int gracefulExit=0;
+
+   chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
+   currentPath=std::filesystem::current_path();
 
    // Initialize Petsc and MPI
+
    PetscInitializeNoArguments();
+
    PetscMPIInt size,rank;
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
+   MPI_Comm parent;
+   MPI_Comm_get_parent (&parent);
+
    MPI_Barrier(PETSC_COMM_WORLD);
+
+   // look for a stop signal
+   int stopSignal;
+   if (parent != MPI_COMM_NULL && rank == 0) { 
+      MPI_Irecv(&stopSignal,1,MPI_INT,0,300000,parent,&stopRequest);
+   }
+
+   // look for an abort signal
+   int abortSignal;
+   if (parent != MPI_COMM_NULL && rank == 0) {
+      MPI_Irecv(&abortSignal,1,MPI_INT,0,300001,parent,&abortRequest);
+   }
 
    prefix_text=(char *)malloc(256*sizeof(char));
    snprintf(prefix_text,256,"%s","");
    set_prefix_text(prefix_text);
 
+   // get the working directory
+   if (parent != MPI_COMM_NULL) {
+      int length;
+      MPI_Recv(&length,1,MPI_INT,0,10,parent,MPI_STATUS_IGNORE);
+
+      char *workingDir=(char *)malloc((length+1)*sizeof(char));
+      MPI_Recv(workingDir,length,MPI_CHAR,0,11,parent,MPI_STATUS_IGNORE);
+      workingDir[length]='\0';
+
+      if (workingDir) {
+         if (chdir(workingDir) != 0) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3248: Failed to change to the working directory \"%s\".\n",workingDir);
+            signalFinished(1);
+            exit_job_on_error (job_start_time,lockfile,true,2);
+         }
+         free(workingDir);
+      }
+   }
+
    // trap PETSc errors to enable graceful exit, primarily for out-of-memory errors
    struct applicationContext appCtx;
-   PetscPushErrorHandler(errorHandler,(struct applicationContext *) &appCtx);
+   PetscErrorCode ierr = PetscPushErrorHandler(petscErrorHandler, NULL); CHKERRQ(ierr);
 
-   chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
+   // MFEM error handling supporting try/catch
+   mfem::ErrorAction(mfem::MFEM_ERROR_THROW);
 
    // parse inputs
+
+   // help
+   int retVal=1;
    int printHelp=0;
    if (argc <= 1) printHelp=1;
    else {
-      if (strcmp(argv[1],"-h") == 0) printHelp=1;
+      if (strcmp(argv[1],"-h") == 0) {printHelp=1; retVal=0;}
       else projFile=argv[1];
    }
-   if (printHelp) {help(); PetscFinalize(); exit(1);}
-   
+   if (printHelp) {help(); PetscFinalize(); exit(retVal);}
+ 
+   // log file - redirect stdout if a log name is provided
+   hasLogFile=false;
+   if (argc == 3) {
+      hasLogFile=true;
+      std::ios_base::sync_with_stdio(true);
+
+      std::ofstream clearLog(argv[2],std::ios::trunc);
+      std::FILE* stream=std::freopen(argv[2],"a",stdout);  // append
+      if (stream == nullptr) {
+         if (rank == 0) {
+            std::cout << "ERROR3043: Failed to redirect stdout to log file \"" << argv[2] << "\"." << std::endl;
+         }
+         PetscFinalize();
+         exit(1);
+      }
+   }
+
+   // project kickoff
+ 
    print_copyright_notice ("OpenParEM3D",version_major,version_minor,version_patch);
    char *baseName=get_project_name(projFile);
-   char *lockfile=create_lock_file(baseName);
+   lockfile=create_lock_file(baseName);
    isOpenParEM2Dreachable();
 
    appCtx.job_start_time=job_start_time;
    appCtx.lockfile=lockfile;
+   appCtx.tool=3; // for OpenParEM3D
 
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Setting up ...\n");
 
    // project
+   checkForAbort();
    load_project_file(projFile,&defaultData,&projData,lockfile,job_start_time);
    projData.version_major=version_major;
    projData.version_minor=version_minor;
    projData.version_patch=version_patch;
-   if (projData.output_show_license) {print_license(); exit_job_on_error (job_start_time,lockfile,true);}
+   if (projData.output_show_license) {
+      print_license();
+      signalFinished(0);
+      exit_job (job_start_time,lockfile,true,3);
+   }
    show_memory (projData.debug_show_memory, "   ");
+
+   // frequency scaling for outputs
+   resultDatabase.set_frequencyScale(&projData);
 
    // materials
    if (materialDatabase.load_materials(projData.materials_global_path,projData.materials_global_name,
                                        projData.materials_local_path,projData.materials_local_name,
-                                       projData.materials_check_limits)) exit_job_on_error (job_start_time,lockfile,true);
+                                       projData.materials_check_limits)) {
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
    if (projData.debug_show_materials) {materialDatabase.print("   ");}
 
    // mesh
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Loading mesh and assigning materials ...\n");
+
+   checkForAbort();
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   loading mesh file \"%s\"\n",projData.mesh_file);
    if (!projData.materials_check_limits) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Skipping limit checks on material values\n");}
-   if (meshMaterials.load(projData.mesh_file,3)) exit_job_on_error (job_start_time,lockfile,true);
+   if (meshMaterials.load(projData.mesh_file,3)) {
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
    //meshMaterials.print();
-   Mesh mesh(projData.mesh_file, 1, 1);
+
+   Mesh mesh;
+   std::ifstream inputFile(projData.mesh_file);
+   if (inputFile.is_open()) {
+      try {
+         mesh.Load(inputFile,1,1);
+      } catch (const std::exception& e) {
+         inputFile.close();
+         PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+         MPI_Barrier(PETSC_COMM_WORLD);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3247: Failed to load the mesh.\n");
+         signalFinished(1);
+         exit_job_on_error (job_start_time,lockfile,true,3);
+      }
+      inputFile.close();
+   } else {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3251: Failed to open the mesh file for reading.\n");
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
+
    //   mesh.ScaleElements(0.001);    // hard coded for now to convert from mm to m.  - ToDo - Generalize, but ScaleElements may be broken.
    int dim=mesh.Dimension();
-   if (! (dim == 3)) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3011: Mesh must be 3-dimensional.\n"); exit_job_on_error (job_start_time,lockfile,true);}
+   if (! (dim == 3)) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3011: Mesh must be 3-dimensional.\n");
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
    reset_attributes(&mesh,nullptr,&meshMaterials);
 
    // boundaries
 
-   if (boundaryDatabase.load(projData.port_definition_file,projData.solution_check_closed_loop)) exit_job_on_error (job_start_time,lockfile,true);
-   if (boundaryDatabase.checkSportNumbering()) exit_job_on_error (job_start_time,lockfile,true);
+   checkForAbort();
+   if (boundaryDatabase.load(projData.port_definition_file,projData.solution_check_closed_loop)) {
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
+   if (boundaryDatabase.checkSportNumbering()) {
+      signalFinished(1); 
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
    boundaryDatabase.assignAttributes(&mesh);
-   if (boundaryDatabase.snapToMeshBoundary(&mesh)) exit_job_on_error (job_start_time,lockfile,true);
-   if (boundaryDatabase.check_overlaps()) exit_job_on_error (job_start_time,lockfile,true);
-   if (boundaryDatabase.alignRadiationNormals()) exit_job_on_error (job_start_time,lockfile,true);
+   if (boundaryDatabase.snapToMeshBoundary(&mesh)) {
+      signalFinished(1); 
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
+   if (boundaryDatabase.check_overlaps()) {
+      signalFinished(1); 
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
+   if (boundaryDatabase.alignRadiationNormals()) {
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
    boundaryDatabase.set2DModeNumbers();
    boundaryDatabase.aggregateDifferentialPairList(&aggregateList);
 
@@ -308,7 +480,8 @@ int main(int argc, char *argv[])
 
    if (!boundaryDatabase.hasRadiationBoundary() && projData.inputAntennaPatternsCount > 0) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3012: A radiation boundary is not specified, but an antenna plot pattern is defined.\n");
-      exit_job_on_error (job_start_time,lockfile,true);
+      signalFinished(1); 
+      exit_job_on_error (job_start_time,lockfile,true,3);
    }
 
    // clean up from any prior run
@@ -316,15 +489,27 @@ int main(int argc, char *argv[])
 
    // scale checks for basic error detection
    ParMesh *pmesh=nullptr;
-   if (check_field_points (projFile,&mesh,pmesh,projData.mesh_order,3,
+   if (check_field_points (projFile,&mesh,pmesh,projData.fem_order,3,
                            projData.field_points_count,projData.field_points_x,projData.field_points_y,projData.field_points_z)) {
-      exit_job_on_error (job_start_time,lockfile,true);
+      signalFinished(1); 
+      exit_job_on_error (job_start_time,lockfile,true,3);
    }
-   if (boundaryDatabase.check_scale(&mesh,projData.mesh_order)) exit_job_on_error (job_start_time,lockfile,true);
+   if (boundaryDatabase.check_scale(&mesh,projData.fem_order)) {
+      signalFinished(1); 
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
+   if (hasLogFile) boundaryDatabase.setHasLogfile();
 
    // boundary and mesh linkage
-   if (boundaryDatabase.createDefaultBoundary(&projData,&mesh,&materialDatabase,&boundaryDatabase)) exit_job_on_error (job_start_time,lockfile,true);
-   if (boundaryDatabase.markMeshBoundaries (&mesh)) exit_job_on_error (job_start_time,lockfile,true);
+   checkForAbort();
+   if (boundaryDatabase.createDefaultBoundary(&projData,&mesh,&materialDatabase,&boundaryDatabase)) {
+      signalFinished(1); 
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
+   if (boundaryDatabase.markMeshBoundaries (&mesh)) {
+      signalFinished(1); 
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
    if (projData.debug_show_port_definitions) boundaryDatabase.print();
 
    // mesh and mesh materials consistency check
@@ -332,7 +517,8 @@ int main(int argc, char *argv[])
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3068: Mesh file \"%s\" does not include the correct number of regions for material definitions.\n",projData.mesh_file);
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"       The $PhysicalNames block should have %d entries, but only %d were found\n.",
                                            mesh.attributes.Max()+1,meshMaterials.size()+1);
-      exit_job_on_error (job_start_time,lockfile,true);
+      signalFinished(1); 
+      exit_job_on_error (job_start_time,lockfile,true,3);
    }
 
    // vectors to hold material properties per distinct material region
@@ -348,8 +534,11 @@ int main(int argc, char *argv[])
    show_memory (projData.debug_show_memory,"");
 
    // set up the frequency plan
-   if (frequencyPlan.assemble(projData.refinement_frequency,projData.inputFrequencyPlansCount,projData.inputFrequencyPlans))
-       exit_job_on_error (job_start_time,lockfile,true);
+   checkForAbort();
+   if (frequencyPlan.assemble(projData.refinement_frequency,projData.inputFrequencyPlansCount,projData.inputFrequencyPlans)) {
+      signalFinished(1); 
+      exit_job_on_error (job_start_time,lockfile,true,3);
+   }
    if (projData.debug_show_frequency_plan) frequencyPlan.print();
    double lastFrequency=0;
 
@@ -366,8 +555,9 @@ int main(int argc, char *argv[])
    int meshSize=0;
    while ((frequencyPlanPoint=frequencyPlan.get_frequency(projData.refinement_frequency,&frequency,&refineMesh,&restartMesh,&meshSize))) {
 
+      checkForAbort();
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"*******************************************************************************************************************************************************\n");
-      prefix(); PetscPrintf(PETSC_COMM_WORLD," Frequency: %g\n",frequency);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD," Frequency: %.15g\n",frequency);
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"*******************************************************************************************************************************************************\n");
 
       double ko=2*M_PI*frequency*sqrt(4.0e-7*M_PI*eps0);
@@ -388,11 +578,13 @@ int main(int argc, char *argv[])
 
       if (! pmesh) {
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: pmesh is not defined.\n");
-         exit_job_on_error (job_start_time,lockfile,true);
+         signalFinished(1); 
+         exit_job_on_error (job_start_time,lockfile,true,3);
       }
 
       // create frequency-dependent material constants for integration across the finite-element space
 
+      checkForAbort();
       int j=0;
       while (j < pmesh->attributes.Max()) {
          Material *useMaterial=materialDatabase.get(meshMaterials.get_name(meshMaterials.get_index(j)));
@@ -401,7 +593,10 @@ int main(int argc, char *argv[])
 
             // permittivity
             complex<double> e=useMaterial->get_eps(projData.solution_temperature,frequency,materialDatabase.get_tol(),materialDatabase.get_indent());
-            if (e == complex<double>(-DBL_MAX,0)) exit_job_on_error (job_start_time,lockfile,true);
+            if (e == complex<double>(-DBL_MAX,0)) {
+               signalFinished(1); 
+               exit_job_on_error (job_start_time,lockfile,true,3);
+            }
 
             Negko2ReRelativePermittivity[j]=-ko*ko*real(e)/eps0;
             Negko2ImRelativePermittivity[j]=-ko*ko*imag(e)/eps0;
@@ -413,7 +608,10 @@ int main(int argc, char *argv[])
 
             // permeability
             double mu=useMaterial->get_mu(projData.solution_temperature,frequency,materialDatabase.get_tol(),materialDatabase.get_indent());
-            if (mu == -DBL_MAX) exit_job_on_error (job_start_time,lockfile,true);
+            if (mu == -DBL_MAX) {
+               signalFinished(1); 
+               exit_job_on_error (job_start_time,lockfile,true,3);
+            }
 
             InvMur[j]=1.0/(mu/(4e-7*M_PI));
             InvOmegaMu[j]=1.0/(2*M_PI*frequency*mu);    // 1/(w*permeability)
@@ -423,7 +621,8 @@ int main(int argc, char *argv[])
          } else {
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3013: Material \"%s\" for region %d is not present in the material database.\n",
                                          meshMaterials.get_name(j).c_str(),j+1);
-            exit_job_on_error (job_start_time,lockfile,true);
+            signalFinished(1); 
+            exit_job_on_error (job_start_time,lockfile,true,3);
          }
 
          j++;
@@ -442,6 +641,7 @@ int main(int argc, char *argv[])
       bool iterate=true;
       while (iterate) {
 
+         checkForAbort();
          iterate=refineMesh;
  
          if (iterate) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Iteration %d ...\n",iteration+1);}
@@ -449,7 +649,10 @@ int main(int argc, char *argv[])
 
          chrono::steady_clock::time_point fem_setup_start_time=chrono::steady_clock::now();
 
-         if (print_mesh_quality_message (pmesh,&projData)) exit_job_on_error (job_start_time,lockfile,true);
+         if (print_mesh_quality_message (pmesh,&projData)) {
+            signalFinished(1); 
+            exit_job_on_error (job_start_time,lockfile,true,3);
+         }
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"      mesh size: %d\n",getGlobalNE(pmesh));
 
          double shortestPerWavelength=-1;
@@ -462,15 +665,17 @@ int main(int argc, char *argv[])
                                                 global_shortestPerWavelength,global_longestPerWavelength);
 
          // solve the 2D ports
+         checkForAbort();
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"      solving 2D ports ...\n");
-
          if (boundaryDatabase.solve2Dports(pmesh,&parSubMeshesPort,&projData,frequency,&meshMaterials,&gammaDatabase)) {
-            exit_job_on_error (job_start_time,lockfile,true);
+            signalFinished(1); 
+            exit_job_on_error (job_start_time,lockfile,true,3);
          }
 
          // save the propagation constant to use as an initial guess in OpenParEM2D
          boundaryDatabase.populateGamma(frequency,&gammaDatabase);
 
+         checkForAbort();
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"      building finite element spaces ...\n");
          fem3D *fem=new fem3D();
          fem->set_data(&pmesh,&projData,frequency);
@@ -487,6 +692,7 @@ int main(int argc, char *argv[])
 
          Result *result=new Result();
          result->set("S",frequency,shortestPerWavelength,longestPerWavelength,iteration,pmesh);
+         result->set_fem_setup_time(elapsed_time(fem_setup_start_time,fem_setup_end_time));
          resultDatabase.push(result);
 
          // loop through the driving sets
@@ -496,6 +702,7 @@ int main(int argc, char *argv[])
          resultDatabase.set_SportCount(SportCount);
          while (drivingSet <= SportCount) {
 
+            checkForAbort();
             chrono::steady_clock::time_point solve_start_time=chrono::steady_clock::now();
 
             stringstream setname;
@@ -505,7 +712,8 @@ int main(int argc, char *argv[])
             if (fem->solve(&boundaryDatabase,&materialDatabase,projData.solution_temperature,
                 &neg_ko2_Re_er,&neg_ko2_Im_er,&Inv_mur,&Inv_w_mu,
                 drivingSet,true,projData.solution_check_homogeneous,"   ")) {
-               exit_job_on_error (job_start_time,lockfile,true);
+               signalFinished(1); 
+               exit_job_on_error (job_start_time,lockfile,true,3);
             }
             result->set_matrixSize(fem->get_matrixSize());
             result->set_sparseWidth(fem->get_sparseWidth());
@@ -513,24 +721,27 @@ int main(int argc, char *argv[])
             boundaryDatabase.transfer_3Dsolution_3Dgrids_to_2Dgrids(fem);
             boundaryDatabase.save2DSolutionParaView(&parSubMeshesPort,&projData,frequency,drivingSet,false);
 
+            checkForAbort();
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"         post-processing ...\n");
             boundaryDatabase.calculateSplits();
             complex<double> acceptedPower=0;
             if(boundaryDatabase.calculateAcceptedPower(drivingSet,&acceptedPower)) {
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"            ASSERT: failure in calculating accepted power\n");
-               exit_job_on_error (job_start_time,lockfile,true);
+               signalFinished(1); 
+               exit_job_on_error (job_start_time,lockfile,true,3);
             }
 
             chrono::steady_clock::time_point solve_end_time=chrono::steady_clock::now();
             result->set_solve_time(elapsed_time(solve_start_time,solve_end_time));
-            result->set_fem_setup_time(elapsed_time(fem_setup_start_time,fem_setup_end_time));
 
             if (iterate) {
+               checkForAbort();
                chrono::steady_clock::time_point mesh_error_start_time=chrono::steady_clock::now();
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"         calculating mesh errors ...\n");
                double maxMeshError;
                if (fem->calculateMeshErrors(&projData,&boundaryDatabase,&Inv_mur,&maxMeshError)) {
-                  exit_job_on_error (job_start_time,lockfile,true);
+                  signalFinished(1); 
+                  exit_job_on_error (job_start_time,lockfile,true,3);
                }
                result->set_maxAbsoluteError(maxMeshError);
                chrono::steady_clock::time_point mesh_error_end_time=chrono::steady_clock::now();
@@ -540,6 +751,7 @@ int main(int argc, char *argv[])
             if (saveFieldsHeader) {fem->saveFieldValuesHeader(&projData); saveFieldsHeader=false;}
             fem->saveFieldValues(&projData,pmesh,iteration,drivingSet);
 
+            checkForAbort();
             chrono::steady_clock::time_point radiation_start_time=chrono::steady_clock::now();
             if (projData.inputAntennaPatternsCount > 0) {
                result->set_hasRadiation(true);
@@ -555,9 +767,11 @@ int main(int argc, char *argv[])
          }
 
          // calculate S-parameters
+         checkForAbort();
          if(boundaryDatabase.calculateS(result)) {
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"            ERROR3189: failed to calculate S-parameters.\n");
-            exit_job_on_error (job_start_time,lockfile,true);
+            signalFinished(1); 
+            exit_job_on_error (job_start_time,lockfile,true,3);
          }
 
          // force the matrix to be reciprocal
@@ -566,14 +780,17 @@ int main(int argc, char *argv[])
          }
 
          // S-parameter renormalization
+         checkForAbort();
          if (projData.reference_impedance > 0) {
             PetscPrintf (PETSC_COMM_WORLD,"         renormalizing S-parameters ...\n");
             if (boundaryDatabase.has_Ti() && boundaryDatabase.has_Tv()) {
                // If single-ended, then this operation does a renormalization identical to the method in ResultDatabase::renormalize called below.
                // If modal, then this operation converts modal S-parameters to single-ended S-parameters.
                fem->build_Mc_Ms(projData.reference_impedance,&boundaryDatabase,&aggregateList,0);
-               if (result->SparameterConversion(&boundaryDatabase,fem->get_Mc(),fem->get_Ms(),fem->get_SportZoList()))
-                  exit_job_on_error (job_start_time,lockfile,true);
+               if (result->SparameterConversion(&boundaryDatabase,fem->get_Mc(),fem->get_Ms(),fem->get_SportZoList())) {
+                  signalFinished(1); 
+                  exit_job_on_error (job_start_time,lockfile,true,3);
+               }
             } else {
                // Performs renormalization without doing any recombinations of ports.
                if (result->renormalize(projData.reference_impedance)) cout << "ASSERT: renomalization failed." << endl;
@@ -583,12 +800,15 @@ int main(int argc, char *argv[])
             if (aggregateList.size() > 0 && !projData.debug_skip_mixed_conversion) {
                PetscPrintf (PETSC_COMM_WORLD,"         mixed-mode conversion on S-parameters ...\n");
                fem->build_Mc_Ms(projData.reference_impedance,&boundaryDatabase,&aggregateList,1);
-               if (result->SparameterConversion(&boundaryDatabase,fem->get_Mc(),fem->get_Ms(),fem->get_SportZoList()))
-                  exit_job_on_error (job_start_time,lockfile,true);
+               if (result->SparameterConversion(&boundaryDatabase,fem->get_Mc(),fem->get_Ms(),fem->get_SportZoList())) {
+                  signalFinished(1); 
+                  exit_job_on_error (job_start_time,lockfile,true,3);
+               }
             }
          }
 
          if (iterate) {
+            checkForAbort();
             chrono::steady_clock::time_point refine_start_time=chrono::steady_clock::now();
 
             // mark as having iterations
@@ -619,12 +839,16 @@ int main(int argc, char *argv[])
 
             // refine
             if (iterate) {
+               checkForAbort();
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"         refining mesh ...\n");
                fem->refineMesh();
 
                if (projData.mesh_save_refined) {
                   prefix(); PetscPrintf(PETSC_COMM_WORLD,"         saving refined mesh ...\n");
-                  if (saveSerialMesh(&projData,&meshMaterials,pmesh)) exit_job_on_error (job_start_time,lockfile,true);
+                  if (saveSerialMesh(&projData,&meshMaterials,pmesh)) {
+                     signalFinished(1); 
+                     exit_job_on_error (job_start_time,lockfile,true,3);
+                  }
                }
             }
 
@@ -632,16 +856,19 @@ int main(int argc, char *argv[])
             resultDatabase.set_refine_time(elapsed_time(refine_start_time,refine_end_time),frequency,iteration+1);
          }
 
+         checkForAbort();
          resultDatabase.save(&projData);
          resultDatabase.saveFormatted(&projData);
          resultDatabase.saveCSV (&projData,&boundaryDatabase,&aggregateList,true);
          resultDatabase.saveTouchstone (&projData,&boundaryDatabase,&aggregateList);
 
          // calculate antenna metrics
+         checkForAbort();
          patternDatabase.calculateIsotropicGain(frequency,iteration);
          patternDatabase.calculateDirectivity(frequency,iteration);
          patternDatabase.calculateRadiationEfficiency(frequency,iteration);
 
+         checkForAbort();
          patternDatabase.saveCSV(&projData,resultDatabase.get_unique_frequencies(),SportCount,true);
          patternDatabase.saveParaView(&projData,frequency,iteration);
          patternDatabase.save(&projData);
@@ -650,11 +877,15 @@ int main(int argc, char *argv[])
          delete fem; fem=nullptr;
          boundaryDatabase.reset();
 
-        // for benchmarking
-        //chrono::steady_clock::time_point iteration_end_time=chrono::steady_clock::now();
-        //if (rank == 0) cout << "CUMMULATIVETIME," << iteration+1 << "," << elapsed_time(job_start_time,iteration_end_time) << endl;
+         // for benchmarking
+         //chrono::steady_clock::time_point iteration_end_time=chrono::steady_clock::now();
+         //if (rank == 0) cout << "CUMMULATIVETIME," << iteration+1 << "," << elapsed_time(job_start_time,iteration_end_time) << endl;
 
          ++iteration;
+
+         // check for signaled stop
+         gracefulExit=checkForStop();
+         if (gracefulExit) break;
       }
 
       // keep track of mesh sizes to check whether a frequency needs to be recalculated due to refinement at another frequency
@@ -662,9 +893,11 @@ int main(int argc, char *argv[])
       frequencyPlanPoint->set_meshSize(meshSize);
 
       lastFrequency=frequency;
+      if (gracefulExit) break;
    }
 
    // save the results as test cases
+   checkForAbort();
    if (projData.test_create_cases) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"Generating test cases ...\n");
       int casenumber=0;
@@ -677,12 +910,14 @@ int main(int argc, char *argv[])
    }
 
    // print convergence status
+   checkForAbort();
    if (resultDatabase.hasRefinement()) {
       if (resultDatabase.isAllConverged()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"Converged\n");}
       else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"NOT CONVERGED\n");}
    }
 
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job Complete\n");
+   if (gracefulExit) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job Stopped\n");}
+   else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job Complete\n");}
 
    if (rank == 0) {
       stringstream ss;
@@ -692,23 +927,49 @@ int main(int argc, char *argv[])
       }
    }
 
+   checkForAbort();
    write_attributes (baseName,pmesh);
    delete pmesh;
 
    chrono::steady_clock::time_point job_end_time=chrono::steady_clock::now();
    resultDatabase.set_solve_time(elapsed_time(job_start_time,job_end_time));
+   checkForAbort();
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",resultDatabase.get_solve_time());
+
    resultDatabase.save(&projData);
-
    free_project (&projData);
-
    show_memory (projData.debug_show_memory, "");
+
+   PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+   MPI_Barrier(PETSC_COMM_WORLD);
 
    remove_lock_file(lockfile);
 
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",resultDatabase.get_solve_time());
+   if (parent != MPI_COMM_NULL) {
 
+      if (rank == 0) {
+         // send signal that the simulation is finished
+         int signal;
+         MPI_Send(&signal,1,MPI_INT,0,310000,parent);
+
+         // send status signal
+         int retval=0;
+         MPI_Send(&retval,1,MPI_INT,0,320000,parent);
+
+         // GUI must unblock these two signals
+         MPI_Wait(&stopRequest,MPI_STATUS_IGNORE);
+         MPI_Wait(&abortRequest,MPI_STATUS_IGNORE);
+
+         MPI_Request_free(&stopRequest);
+         MPI_Request_free(&abortRequest);
+      }
+
+      MPI_Comm_disconnect(&parent);
+   }
+
+   MPI_Barrier(PETSC_COMM_WORLD);
    PetscFinalize();
 
-   exit(0);
+   return 0;
 }
 

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -23,17 +23,28 @@
 
 #include "mfem.hpp"
 #include <fstream>
-#include <iostream>
-#include <sstream>
 #include <string>
-#include <limits>
-#include "petscsys.h"
+#include <quadmath.h>
 #include "keywordPair.hpp"
 #include "misc.hpp"
-#include "prefix.h"
 
-using namespace std;
-using namespace mfem;
+#ifdef HAS_GUI
+#include <AIS_Shape.hxx>
+#include <BRep_Tool.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
+#include <gp_Pnt.hxx>
+#include <TopoDS_Wire.hxx>
+//#include "CustomOpenGLWidget.h"
+//#include "CustomTreeWidgetItem.h"
+
+class OpenParEMg;
+class CustomOpenGLWidget;
+class BaseItem;
+class RootPathItem;
+class PathItem;
+class PortItem;
+
+#endif
 
 struct point point_copy (struct point);
 struct point point_subtraction (struct point, struct point);
@@ -52,11 +63,12 @@ class Path {
       int startLine;
       int endLine;
       keywordPair name;
-      vector<keywordPair *> points;
-      keywordPair closed;
-      double tol=1e-11; // 1e-11
-      bool hasNormal;
-      struct point normal;
+      std::vector<keywordPair *> points;
+      keywordPair closed;  // indicates whether the path is closed
+      keywordPair normal;  // optional on input - normal to the path for drawing arrows; generated as needed
+      double tol=1e-11;
+      //bool hasNormal;
+      //struct point normal_pnt;  // ToDo: replace with the keywordPair normal
       bool rotated;        // true if this path is rotated parallel to the x-y plane
       double theta;        // angle from z-axis to the normal vector of the plane in which the path sits
       double phi;          // rotation from the x-axis in the x-y plane to the normal vector of the plane
@@ -68,14 +80,22 @@ class Path {
       double ymax,ymin;
       double zmax,zmin;
       bool hasOutput;
+      bool modified;
+      bool isUsed;         // allows the GUI to mark a path as no longer used so that it does not get written to the path file
+      #ifdef HAS_GUI
+      PathItem *item;      // tree item for this path
+      PortItem *portItem;  // valid port for this path
+      #endif
    public:
       Path (int, int);
       ~Path ();
-      bool load (int, string *, inputFile *);
+      bool load (int, std::string *, inputFile *);
       bool inBlock (int);
-      bool check (string *);
-      bool checkBoundingBox (Vector *, Vector *, string *, double);
-      string get_name () {return name.get_value();}
+      bool check (std::string *);
+      //bool checkBoundingBox (Vector *, Vector *, string *, double);
+      bool checkBoundingBox (mfem::Vector *, mfem::Vector *, std::string *, double);
+      std::string get_name () {return name.get_value();}
+      bool has_name (std::string name_) {if (get_name().compare(name_) == 0) return true; return false;}
       bool name_is_loaded () {return name.is_loaded();}
       int get_name_lineNumber () {return name.get_lineNumber();}
       bool get_closed () {return closed.get_bool_value();}
@@ -90,11 +110,14 @@ class Path {
       void push_point (keywordPair *point) {points.push_back(point);}
       void pop_point () {points.pop_back();}
       bool compare (long unsigned int i, keywordPair test_point);
+      void set_unmodified () {modified=false;}
       void set_closed (bool value) {closed.set_bool_value(value); closed.set_loaded(true);}
       bool is_closed () {return closed.get_bool_value();}
-      void set_name (string name_) {name.set_value(name_); name.set_loaded(true);}
+      void set_name (std::string name_) {name.set_value(name_); name.set_keyword("name"); name.set_lineNumber(0); name.set_loaded(true);}
       void set_hasOutput () {hasOutput=true;}
       void unset_hasOutput () {hasOutput=false;}
+      bool is_modified () {return modified;}
+      void set_modified () {modified=true;}
       keywordPair* get_startPoint () {return points[0];}
       keywordPair* get_endPoint () {if (closed.get_bool_value()) return points[0]; return points[points.size()-1];}
       long unsigned int is_segmentOnLine (struct point, struct point);
@@ -103,8 +126,8 @@ class Path {
       void subdivide (Path *);
       double sum_of_angles (struct point);
       bool calculateNormal ();
-      struct point get_normal () {return normal;}
-      void set_normal (struct point normal_) {normal=point_copy(normal_);}
+      struct point get_normal () {return normal.get_point_value();}
+      void set_normal (struct point normal_) {normal.set_point_value(normal_); normal.set_loaded(true);}
       bool is_rotated () {return rotated;}
       Path* rotateToXYplane ();
       void rotatePoint (double *, double *, double *, bool);
@@ -121,16 +144,35 @@ class Path {
       void test_is_point_inside_sqr2 ();
       Path* clone ();
       void calculateBoundingBox ();
-      void print (string);
-      bool output (ofstream *, int);
-      bool snapToMeshBoundary (Mesh *);
+      void print (std::string);
+      void save (std::ofstream *);
+      bool output (std::ofstream *, int);
+      bool snapToPoint (struct point);
+      bool snapToMeshBoundary (mfem::Mesh *);
       double area ();
       void reverseOrder ();
       bool lineIntersects (struct point, struct point);
       struct point getInsidePoint ();
+      void assignPathNormal (struct point);
+      void setIsUsed (bool isUsed_) {isUsed=isUsed_;}
+      bool getIsUsed () {return isUsed;}
+#ifdef HAS_GUI
+      void set_normal (gp_Vec);
+      void fill_wire_item (PathItem *);
+      void create_wire_item (OpenParEMg *, CustomOpenGLWidget *, RootPathItem *);
+      void create_polywire_item (OpenParEMg *, CustomOpenGLWidget *, RootPathItem *);
+      void create_face_item (OpenParEMg *, CustomOpenGLWidget *, RootPathItem *);
+      PathItem* get_item () {return item;}
+      void set_portItem (PortItem *portItem_) {portItem=portItem_;}
+      PortItem* get_portItem () {return portItem;}
+      TopoDS_Wire create_TopoDS_Wire ();
+      void addFacePoints (TopoDS_Face);
+      void addWirePoints (TopoDS_Wire);
+      void addEdgePoints (TopoDS_Edge);
+#endif
 };
 
-bool mergePaths (vector<Path *> *, vector<long unsigned int> *, vector<bool> *, string, string, Path **, double);
+bool mergePaths (std::vector<Path *> *, std::vector<long unsigned int> *, std::vector<bool> *, std::string, std::string, Path **, double);
 
 #endif
 

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -28,17 +28,20 @@
 #include <vector>
 #include <cfloat>
 #include <chrono>
-#include "petscsys.h"
+//#include "petscsys.h"
 #include "prefix.h"
 
 using namespace std;
 
 extern "C" void prefix ();
 
-void exit_job_on_error (chrono::steady_clock::time_point, const char *, bool);
+void exit_job_base (chrono::steady_clock::time_point, const char *, bool, int, int);
+void exit_job_on_error (chrono::steady_clock::time_point, const char *, bool, int);
+void exit_job (chrono::steady_clock::time_point, const char *, bool, int);
 char* create_lock_file (const char *);
-void remove_lock_file (const char *);
+extern "C" void remove_lock_file (const char *);
 void delete_file (const char *, string, string);
+bool exists_file (const char *, string, string);
 double elapsed_time (chrono::steady_clock::time_point, chrono::steady_clock::time_point);
 
 #endif

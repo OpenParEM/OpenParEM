@@ -1,0 +1,174 @@
+#OpenParEMgDrawing 1.0
+
+Extrude
+   name=Extrude1
+   material=substrate
+   length=0.000254
+   Rectangle
+      name=Rectangle3
+      origin=(0,0.001778,-0.000254)
+      width=0.002
+      height=-0.001778
+      isSquare=0
+      tempWidth=0
+      tempHeight=0
+      u=(1,0,0)
+      v=(0,1,0)
+      normal=(0,0,1)
+      reverse=false
+   EndRectangle
+EndExtrude
+Extrude
+   name=Extrude2
+   material=air
+   length=0.003429
+   Rectangle
+      name=Rectangle3_copy
+      origin=(0,0.001778,-0.003683)
+      width=0.002
+      height=-0.001778
+      isSquare=0
+      tempWidth=0
+      tempHeight=0
+      u=(1,0,0)
+      v=(0,1,0)
+      normal=(0,0,1)
+      reverse=false
+   EndRectangle
+EndExtrude
+Subtract
+   name=Subtract1
+   material=air
+   Extrude
+      name=Extrude3
+      length=0.003429
+      Rectangle
+         name=Rectangle3_copy
+         origin=(0,0.001778,0)
+         width=0.002
+         height=-0.001778
+         isSquare=0
+         tempWidth=0
+         tempHeight=0
+         u=(1,0,0)
+         v=(0,1,0)
+         normal=(0,0,1)
+         reverse=false
+      EndRectangle
+   EndExtrude
+   Merge
+      name=Merge1
+      Extrude
+         name=Extrude4
+         length=1.25e-05
+         Rectangle
+            name=Rectangle2
+            origin=(0,0.000889,0)
+            width=0.001575
+            height=0.000889
+            isSquare=0
+            tempWidth=0
+            tempHeight=0
+            u=(1,0,0)
+            v=(0,1,0)
+            normal=(0,0,1)
+            reverse=false
+         EndRectangle
+      EndExtrude
+      Extrude
+         name=Extrude5
+         length=1.25e-05
+         Rectangle
+            name=Rectangle1
+            origin=(0,0,0)
+            width=0.001875
+            height=0.000889
+            isSquare=0
+            tempWidth=0
+            tempHeight=0
+            u=(1,0,0)
+            v=(0,1,0)
+            normal=(0,0,1)
+            reverse=false
+         EndRectangle
+      EndExtrude
+   EndMerge
+EndSubtract
+Rectangle
+   name=dummy1
+   origin=(0.002,0,0)
+   width=-1.25e-05
+   height=-0.000125
+   isSquare=0
+   tempWidth=0
+   tempHeight=0
+   u=(0,-0,-1)
+   v=(1,0,0)
+   normal=(0,-1,0)
+   reverse=false
+EndRectangle
+Rectangle
+   name=dummy2
+   origin=(0.002,0,3e-05)
+   width=4.83425910174664e-05
+   height=-0.000136898338529353
+   isSquare=0
+   tempWidth=0
+   tempHeight=0
+   u=(0,-0,-1)
+   v=(1,0,0)
+   normal=(0,-1,0)
+   reverse=false
+EndRectangle
+Rectangle
+   name=dummy3
+   origin=(0.002,0,-4.25137221866906e-05)
+   width=-9.77784932705036e-05
+   height=-0.000164247502979513
+   isSquare=0
+   tempWidth=0
+   tempHeight=0
+   u=(0,-0,-1)
+   v=(1,0,0)
+   normal=(0,-1,0)
+   reverse=false
+EndRectangle
+Rectangle
+   name=dummy4
+   origin=(0.002,0.001778,0)
+   width=1.25e-05
+   height=-0.000425
+   isSquare=0
+   tempWidth=0
+   tempHeight=0
+   u=(0,-0,1)
+   v=(1,0,-0)
+   normal=(0,1,0)
+   reverse=false
+EndRectangle
+Rectangle
+   name=dummy5
+   origin=(0.002,0.001778,-2.4013218931604e-05)
+   width=5.88084961526816e-05
+   height=-0.000456996804433146
+   isSquare=0
+   tempWidth=0
+   tempHeight=0
+   u=(0,-0,1)
+   v=(1,0,-0)
+   normal=(0,1,0)
+   reverse=false
+EndRectangle
+Rectangle
+   name=dummy6
+   origin=(0.002,0.001778,-5.83743714298645e-05)
+   width=0.000124626643354657
+   height=-0.000493513283367848
+   isSquare=0
+   tempWidth=0
+   tempHeight=0
+   u=(0,-0,1)
+   v=(1,0,-0)
+   normal=(0,1,0)
+   reverse=false
+EndRectangle

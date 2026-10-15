@@ -1,117 +1,131 @@
 #OpenParEMports 1.0
 
 File
-   name=/home/briany/Desktop/OpenParEM3D_Sparam_experiment/regression/stripline/differential_pair_via_rot1_line/diffPair.FCStd
+   name=generated_by_OpenParEMg
 EndFile
 
 Path
-   name=i22
-   point=(0.00015,-0.09989999999999988,4.995)
-   point=(0.00014454016855,-0.09989999999999988,4.995015)
-   point=(5.5459553514000014e-05,-0.09989999999999988,4.995015)
-   point=(5.000000000000002e-05,-0.09989999999999988,4.995)
+   name=path1
+   point=(0.0013,2.22044604925031e-20,0.0002)
+   point=(0.0013,2.22044604925031e-20,0)
+   point=(0,0,0)
+   point=(0,2.22044604925031e-20,0.0002)
    closed=true
-EndPath
-
-Path
-   name=i21
-   point=(-5e-05,-0.09989999999999988,4.995)
-   point=(-5.545983145000001e-05,-0.09989999999999988,4.995015)
-   point=(-0.000144540446486,-0.09989999999999988,4.995015)
-   point=(-0.00015,-0.09989999999999988,4.995)
-   closed=true
-EndPath
-
-Path
-   name=i11
-   point=(-0.00015,-0.10189999999999966,4.995)
-   point=(-0.000144540446486,-0.10189999999999966,4.995015)
-   point=(-5.5459831449999994e-05,-0.10189999999999966,4.995015)
-   point=(-4.9999999999999996e-05,-0.10189999999999966,4.995)
-   closed=true
-EndPath
-
-Path
-   name=i12
-   point=(5e-05,-0.10189999999999966,4.995)
-   point=(5.5459553514e-05,-0.10189999999999966,4.995015)
-   point=(0.00014454016855,-0.10189999999999966,4.995015)
-   point=(0.00015,-0.10189999999999966,4.995)
-   closed=true
-EndPath
-
-Path
-   name=port1
-   point=(-0.00065,-0.10189999999999966,4.9949)
-   point=(0.00065,-0.10189999999999966,4.9949)
-   point=(0.00065,-0.10189999999999966,4.995100000000001)
-   point=(-0.00065,-0.10189999999999966,4.995100000000001)
-   closed=true
+   normal=(-0,-1,-0)
 EndPath
 
 Path
    name=v11
-   point=(-9.999999999999999e-05,-0.10189999999999966,4.9949)
-   point=(-0.00010000000000010001,-0.10189999999999966,4.995)
+   point=(0.00075,0,0)
+   point=(0.00075,0,0.0001)
    closed=false
+   normal=(-0,-1,-0)
 EndPath
 
 Path
    name=v12
-   point=(9.999999999999999e-05,-0.10189999999999966,4.9949)
-   point=(9.999999999987796e-05,-0.10189999999999966,4.995)
+   point=(0.00055,0,0)
+   point=(0.00055,0,0.0001)
    closed=false
+   normal=(-0,-1,-0)
 EndPath
 
 Path
-   name=port2
-   point=(-0.00065,-0.09989999999999988,4.9949)
-   point=(-0.00065,-0.09989999999999988,4.995100000000001)
-   point=(0.00065,-0.09989999999999988,4.995100000000001)
-   point=(0.00065,-0.09989999999999988,4.9949)
+   name=path2
+   point=(0,-0.002,0.0002)
+   point=(0,-0.002,2.16840434497101e-19)
+   point=(0.0013,-0.002,2.22044604925032e-19)
+   point=(0.0013,-0.002,0.0002)
    closed=true
-EndPath
-
-Path
-   name=v21
-   point=(-9.999999999999999e-05,-0.09989999999999988,4.9949)
-   point=(-0.0001000000000001,-0.0999,4.995)
-   closed=false
+   normal=(-0,-1,-0)
 EndPath
 
 Path
    name=v22
-   point=(9.999999999999999e-05,-0.09989999999999988,4.9949)
-   point=(9.99999999999e-05,-0.0999,4.995)
+   point=(0.00055,-0.002,2.16840434497101e-19)
+   point=(0.00055,-0.002,0.0001)
    closed=false
+   normal=(-0,-1,-0)
+EndPath
+
+Path
+   name=v21
+   point=(0.00075,-0.002,2.16840434497101e-19)
+   point=(0.00075,-0.002,0.0001)
+   closed=false
+   normal=(-0,-1,-0)
+EndPath
+
+Path
+   name=i11
+   point=(0.0008,1.11022302462516e-20,0.0001)
+   point=(0.0007945401685505,1.27675647831893e-20,0.000115)
+   point=(0.0007054598314495,1.27675647831893e-20,0.000115)
+   point=(0.0007,1.11022302462516e-20,0.0001)
+   closed=true
+   normal=(-0,-1,-0)
+EndPath
+
+Path
+   name=i12
+   point=(0.0006,1.11022302462516e-20,0.0001)
+   point=(0.0005945401685505,1.27675647831893e-20,0.000115)
+   point=(0.0005054598314495,1.27675647831893e-20,0.000115)
+   point=(0.0005,1.11022302462516e-20,0.0001)
+   closed=true
+   normal=(-0,-1,-0)
+EndPath
+
+Path
+   name=i22
+   point=(0.0006,-0.002,0.0001)
+   point=(0.0005945401685505,-0.002,0.000115)
+   point=(0.0005054598314495,-0.002,0.000115)
+   point=(0.0005,-0.002,0.0001)
+   closed=true
+   normal=(0,-1,0)
+EndPath
+
+Path
+   name=i21
+   point=(0.0008,-0.002,0.0001)
+   point=(0.0007945401685505,-0.002,0.000115)
+   point=(0.0007054598314495,-0.002,0.000115)
+   point=(0.0007,-0.002,0.0001)
+   closed=true
+   normal=(-0,-1,-0)
 EndPath
 
 Port
-   name=in
-   path=+port1
+   name=port1
+   path=path1
    impedance_definition=PV
    impedance_calculation=line
    Line
+      net=net2
       Sport=1
-      net=in1
       IntegrationPath
          type=voltage
+         scale=1
          path=+v11
       EndIntegrationPath
       IntegrationPath
          type=current
+         scale=1
          path=+i11
       EndIntegrationPath
    EndLine
    Line
+      net=net3
       Sport=2
-      net=in2
       IntegrationPath
          type=voltage
+         scale=1
          path=+v12
       EndIntegrationPath
       IntegrationPath
          type=current
+         scale=1
          path=+i12
       EndIntegrationPath
    EndLine
@@ -122,31 +136,35 @@ Port
 EndPort
 
 Port
-   name=out
-   path=+port2
+   name=port2
+   path=path2
    impedance_definition=PV
    impedance_calculation=line
    Line
+      net=net4
       Sport=3
-      net=out3
       IntegrationPath
          type=voltage
+         scale=1
          path=+v21
       EndIntegrationPath
       IntegrationPath
          type=current
+         scale=1
          path=+i21
       EndIntegrationPath
    EndLine
    Line
+      net=net5
       Sport=4
-      net=out4
       IntegrationPath
          type=voltage
+         scale=1
          path=+v22
       EndIntegrationPath
       IntegrationPath
          type=current
+         scale=1
          path=+i22
       EndIntegrationPath
    EndLine
@@ -155,3 +173,4 @@ Port
       Sport_N=4
    EndDifferentialPair
 EndPort
+

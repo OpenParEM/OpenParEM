@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -200,8 +200,6 @@ PetscErrorCode hypre_ParCSRMatrixToMat (hypre_ParCSRMatrix *a, Mat *A, PetscInt 
          ierr=MatMPIAIJSetPreallocation(*A,sparseWidth,NULL,sparseWidth,NULL); if (ierr) return ierr;
       }
 
-      // ToDo: running out of memory fails here with a non-graceful exit
-      //       Figure out how to turn an out-of-memory error into a graceful exit.
       ierr=MatZeroEntries(*A); if (ierr) return ierr;
    }
 

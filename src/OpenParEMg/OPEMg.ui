@@ -1,0 +1,782 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>OpenParEMg</class>
+ <widget class="QMainWindow" name="OpenParEMg">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1401</width>
+    <height>904</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>OpenParEMg</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>:/images/images/logo.png</normaloff>:/images/images/logo.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+      <property name="childrenCollapsible">
+       <bool>false</bool>
+      </property>
+      <widget class="QTreeWidget" name="drawingItemTree">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <column>
+        <property name="text">
+         <string notr="true">1</string>
+        </property>
+       </column>
+      </widget>
+      <widget class="QTabWidget" name="tabs">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <widget class="QWidget" name="drawingTab">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>1</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <attribute name="title">
+         <string>Drawing</string>
+        </attribute>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="CustomOpenGLWidget" name="drawingWindow">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>1</horstretch>
+             <verstretch>1</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="toolTip">
+            <string/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="logTab">
+        <attribute name="title">
+         <string>Log</string>
+        </attribute>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QPlainTextEdit" name="logText">
+           <property name="acceptDrops">
+            <bool>false</bool>
+           </property>
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="undoRedoEnabled">
+            <bool>false</bool>
+           </property>
+           <property name="lineWrapMode">
+            <enum>QPlainTextEdit::LineWrapMode::NoWrap</enum>
+           </property>
+           <property name="textInteractionFlags">
+            <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="iteratonsTab">
+        <attribute name="title">
+         <string>Iterations</string>
+        </attribute>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QPlainTextEdit" name="iterationsText">
+           <property name="acceptDrops">
+            <bool>false</bool>
+           </property>
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="undoRedoEnabled">
+            <bool>false</bool>
+           </property>
+           <property name="lineWrapMode">
+            <enum>QPlainTextEdit::LineWrapMode::NoWrap</enum>
+           </property>
+           <property name="textInteractionFlags">
+            <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="dataTab">
+        <attribute name="title">
+         <string>S-Parameter Results</string>
+        </attribute>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <item>
+          <widget class="QPlainTextEdit" name="dataText">
+           <property name="acceptDrops">
+            <bool>false</bool>
+           </property>
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="undoRedoEnabled">
+            <bool>false</bool>
+           </property>
+           <property name="lineWrapMode">
+            <enum>QPlainTextEdit::LineWrapMode::NoWrap</enum>
+           </property>
+           <property name="textInteractionFlags">
+            <set>Qt::TextInteractionFlag::TextSelectableByKeyboard|Qt::TextInteractionFlag::TextSelectableByMouse</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="antennaTab">
+        <attribute name="title">
+         <string>Antenna Results</string>
+        </attribute>
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <item>
+          <widget class="QPlainTextEdit" name="antennaText"/>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1401</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <widget class="QMenu" name="menuImport">
+     <property name="title">
+      <string>Import</string>
+     </property>
+     <addaction name="actionImportBrep"/>
+     <addaction name="actionImportStep"/>
+    </widget>
+    <widget class="QMenu" name="menuExport">
+     <property name="title">
+      <string>Export</string>
+     </property>
+     <addaction name="actionExportBrep"/>
+     <addaction name="actionExportStep"/>
+    </widget>
+    <addaction name="actionNew"/>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSaveAs"/>
+    <addaction name="actionClose"/>
+    <addaction name="menuImport"/>
+    <addaction name="menuExport"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuMesh">
+    <property name="title">
+     <string>Mesh</string>
+    </property>
+    <addaction name="actionMeshOptions"/>
+    <addaction name="actionMeshGenerate"/>
+    <addaction name="actionMeshLoad"/>
+    <addaction name="actionMeshSave"/>
+    <addaction name="actionMeshSaveAs"/>
+    <addaction name="actionMeshDelete"/>
+   </widget>
+   <widget class="QMenu" name="menuSimulate">
+    <property name="title">
+     <string>Simulation Setup</string>
+    </property>
+    <addaction name="actionSimulateOptions"/>
+    <addaction name="actionMaterials"/>
+    <addaction name="actionFrequencyPlan"/>
+    <addaction name="actionRefinement"/>
+    <addaction name="actionAntennaPatterns"/>
+   </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+    <addaction name="actionLicense"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <widget class="QMenu" name="actionMenuSelection">
+     <property name="title">
+      <string>Selection ...</string>
+     </property>
+     <addaction name="actionShape"/>
+     <addaction name="actionVertex"/>
+     <addaction name="actionEdge"/>
+     <addaction name="actionWire"/>
+     <addaction name="actionFace"/>
+     <addaction name="actionShell"/>
+     <addaction name="actionSolid"/>
+    </widget>
+    <addaction name="actionFitSelected"/>
+    <addaction name="actionFitAll"/>
+    <addaction name="actionMenuSelection"/>
+    <addaction name="actionUnselectAll"/>
+    <addaction name="actionShowAll"/>
+    <addaction name="actionHideAll"/>
+    <addaction name="actionWireframe"/>
+   </widget>
+   <widget class="QMenu" name="menuRun">
+    <property name="title">
+     <string>Run</string>
+    </property>
+    <addaction name="actionRun"/>
+    <addaction name="actionStop"/>
+    <addaction name="actionAbort"/>
+    <addaction name="actionAbortAndExit"/>
+   </widget>
+   <widget class="QMenu" name="menuDraw">
+    <property name="title">
+     <string>Draw</string>
+    </property>
+    <widget class="QMenu" name="menuDrawing_Plane">
+     <property name="title">
+      <string>Drawing Plane</string>
+     </property>
+     <addaction name="actionDrawingPlaneShow"/>
+     <addaction name="actionDrawingPlaneHide"/>
+     <addaction name="actionDrawingPlaneSnapToGrid"/>
+     <addaction name="actionDrawingPlaneSetToFace"/>
+     <addaction name="actionDrawingPlaneSetToFaceAxis"/>
+     <addaction name="actionDrawingSetPlaneToXY"/>
+     <addaction name="actionDrawingSetPlaneToXZ"/>
+     <addaction name="actionDrawingSetPlaneToYZ"/>
+    </widget>
+    <addaction name="actionUndo"/>
+    <addaction name="actionRedo"/>
+    <addaction name="separator"/>
+    <addaction name="actionDrawLine"/>
+    <addaction name="actionDrawPolyline"/>
+    <addaction name="actionDrawPolycircle"/>
+    <addaction name="actionDrawRectangle"/>
+    <addaction name="separator"/>
+    <addaction name="menuDrawing_Plane"/>
+    <addaction name="actionPreferences"/>
+   </widget>
+   <widget class="QMenu" name="menuSelect">
+    <property name="title">
+     <string>Select</string>
+    </property>
+    <addaction name="actionSelectFace"/>
+    <addaction name="actionSelectWithBox2"/>
+   </widget>
+   <widget class="QMenu" name="menuToos">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <widget class="QMenu" name="menuMacro">
+     <property name="title">
+      <string>Macro ...</string>
+     </property>
+     <addaction name="actionMacroLoad"/>
+     <addaction name="actionMacroRun"/>
+     <addaction name="actionMacroStop"/>
+     <addaction name="actionMacroClose"/>
+    </widget>
+    <addaction name="actionMeasure"/>
+    <addaction name="menuMacro"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menuSelect"/>
+   <addaction name="menuDraw"/>
+   <addaction name="menuMesh"/>
+   <addaction name="menuSimulate"/>
+   <addaction name="menuRun"/>
+   <addaction name="menuToos"/>
+   <addaction name="menuAbout"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionOpen">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentOpen"/>
+   </property>
+   <property name="text">
+    <string>Open ...</string>
+   </property>
+  </action>
+  <action name="actionNew">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentNew"/>
+   </property>
+   <property name="text">
+    <string>New</string>
+   </property>
+  </action>
+  <action name="actionMeshOptions">
+   <property name="text">
+    <string>Options ...</string>
+   </property>
+  </action>
+  <action name="actionSimulateOptions">
+   <property name="text">
+    <string>Options ...</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::HelpAbout"/>
+   </property>
+   <property name="text">
+    <string>About ...</string>
+   </property>
+  </action>
+  <action name="actionLicense">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::HelpFaq"/>
+   </property>
+   <property name="text">
+    <string>License ...</string>
+   </property>
+  </action>
+  <action name="actionFrequencyPlan">
+   <property name="text">
+    <string>Frequency Plan ...</string>
+   </property>
+  </action>
+  <action name="actionSaveAs">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSaveAs"/>
+   </property>
+   <property name="text">
+    <string>Save As ...</string>
+   </property>
+  </action>
+  <action name="actionRefinement">
+   <property name="text">
+    <string>Refinement ...</string>
+   </property>
+  </action>
+  <action name="actionMaterialsEditor">
+   <property name="text">
+    <string>Materials Editor ...</string>
+   </property>
+  </action>
+  <action name="actionImportBrep">
+   <property name="text">
+    <string>Brep ...</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ApplicationExit"/>
+   </property>
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionSelectMaterialsDatabase">
+   <property name="text">
+    <string>Select Database ...</string>
+   </property>
+  </action>
+  <action name="actionFitSelected">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::AddressBookNew"/>
+   </property>
+   <property name="text">
+    <string>Fit Selected</string>
+   </property>
+  </action>
+  <action name="actionFitAll">
+   <property name="text">
+    <string>Fit All</string>
+   </property>
+  </action>
+  <action name="actionVertex">
+   <property name="text">
+    <string>Vertex</string>
+   </property>
+  </action>
+  <action name="actionFace">
+   <property name="text">
+    <string>Face</string>
+   </property>
+  </action>
+  <action name="actionShell">
+   <property name="text">
+    <string>Shell</string>
+   </property>
+   <property name="toolTip">
+    <string>Shell</string>
+   </property>
+  </action>
+  <action name="actionEdge">
+   <property name="text">
+    <string>Edge</string>
+   </property>
+  </action>
+  <action name="actionShape">
+   <property name="text">
+    <string>Shape</string>
+   </property>
+  </action>
+  <action name="actionSolid">
+   <property name="text">
+    <string>Solid</string>
+   </property>
+  </action>
+  <action name="actionWire">
+   <property name="text">
+    <string>Wire</string>
+   </property>
+  </action>
+  <action name="actionHideAll">
+   <property name="text">
+    <string>Hide All</string>
+   </property>
+  </action>
+  <action name="actionUnselectAll">
+   <property name="text">
+    <string>Unselect All</string>
+   </property>
+  </action>
+  <action name="actionMeshGenerate">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::MediaPlaybackStart"/>
+   </property>
+   <property name="text">
+    <string>Generate</string>
+   </property>
+   <property name="toolTip">
+    <string>Generate Mesh</string>
+   </property>
+  </action>
+  <action name="actionMeshSave">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSave"/>
+   </property>
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+  <action name="actionMeshDelete">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditDelete"/>
+   </property>
+   <property name="text">
+    <string>Delete</string>
+   </property>
+  </action>
+  <action name="actionWireframe">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Wireframe</string>
+   </property>
+  </action>
+  <action name="actionMeshLoad">
+   <property name="text">
+    <string>Load ...</string>
+   </property>
+  </action>
+  <action name="actionRun">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::MediaPlaybackStart"/>
+   </property>
+   <property name="text">
+    <string>Run</string>
+   </property>
+   <property name="toolTip">
+    <string>Run</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::MediaPlaybackStop"/>
+   </property>
+   <property name="text">
+    <string>Stop</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop OpenParEM3D after the completion of the current S-parameter calculation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="actionAbort">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ProcessStop"/>
+   </property>
+   <property name="text">
+    <string>Abort</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop OpenParEM3D at the next available stopping point.  Results consistency are not not guaranteed.  GUI continues running.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="actionImportStep">
+   <property name="text">
+    <string>STEP ...</string>
+   </property>
+  </action>
+  <action name="actionDrawingPlaneShow">
+   <property name="text">
+    <string>Show</string>
+   </property>
+  </action>
+  <action name="actionDrawingPlaneHide">
+   <property name="text">
+    <string>Hide</string>
+   </property>
+  </action>
+  <action name="actionDrawingPlaneSnapToGrid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Snap To Grid</string>
+   </property>
+  </action>
+  <action name="actionDrawingPlaneSetToFace">
+   <property name="text">
+    <string>Set to Face</string>
+   </property>
+   <property name="toolTip">
+    <string>Set the drawing plane to the selected face.</string>
+   </property>
+  </action>
+  <action name="actionExportStep">
+   <property name="text">
+    <string>STEP ...</string>
+   </property>
+  </action>
+  <action name="actionSelectWithBox">
+   <property name="text">
+    <string>Select with Box</string>
+   </property>
+  </action>
+  <action name="actionMeshSaveAs">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSaveAs"/>
+   </property>
+   <property name="text">
+    <string>Save As ...</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSave"/>
+   </property>
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+  <action name="actionAbortAndExit">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ProcessStop"/>
+   </property>
+   <property name="text">
+    <string>Abort and Exit</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Abort OpenParEM3D and exit the GUI.  Results consistency are not guaranteed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="actionClose">
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </action>
+  <action name="actionShowAll">
+   <property name="text">
+    <string>Show All</string>
+   </property>
+  </action>
+  <action name="actionDrawLine">
+   <property name="text">
+    <string>line</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw a line between two points.</string>
+   </property>
+  </action>
+  <action name="actionDrawPolyline">
+   <property name="text">
+    <string>polyline</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw a polyline.  Close it to obtain a polygon.</string>
+   </property>
+  </action>
+  <action name="actionMaterialsOptions">
+   <property name="text">
+    <string>Options ...</string>
+   </property>
+  </action>
+  <action name="actionDrawRectangle">
+   <property name="text">
+    <string>rectangle</string>
+   </property>
+  </action>
+  <action name="actionDrawPolycircle">
+   <property name="text">
+    <string>polycircle</string>
+   </property>
+  </action>
+  <action name="actionDrawingSetPlaneToXY">
+   <property name="text">
+    <string>Set to XY Plane</string>
+   </property>
+   <property name="toolTip">
+    <string>Set the drawing plane to the x-y plane.</string>
+   </property>
+  </action>
+  <action name="actionDrawingSetPlaneToXZ">
+   <property name="text">
+    <string>Set to XZ Plane</string>
+   </property>
+   <property name="toolTip">
+    <string>Set the drawing plane to the x-z plane.</string>
+   </property>
+  </action>
+  <action name="actionDrawingSetPlaneToYZ">
+   <property name="text">
+    <string>Set to YZ Plane</string>
+   </property>
+   <property name="toolTip">
+    <string>Set the drawing plane to hte y-z plane.</string>
+   </property>
+  </action>
+  <action name="actionDrawingPlaneSetToFaceAxis">
+   <property name="text">
+    <string>Set to Face with Axis</string>
+   </property>
+  </action>
+  <action name="actionSelectFace">
+   <property name="text">
+    <string>Face</string>
+   </property>
+  </action>
+  <action name="actionSelectWithBox2">
+   <property name="text">
+    <string>Select with Box</string>
+   </property>
+  </action>
+  <action name="actionUndo">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditUndo"/>
+   </property>
+   <property name="text">
+    <string>Undo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Z</string>
+   </property>
+  </action>
+  <action name="actionRedo">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditRedo"/>
+   </property>
+   <property name="text">
+    <string>Redo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Y</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string>Preferences ...</string>
+   </property>
+  </action>
+  <action name="actionExportBrep">
+   <property name="text">
+    <string>BRep ...</string>
+   </property>
+  </action>
+  <action name="actionMaterials">
+   <property name="text">
+    <string>Materials ...</string>
+   </property>
+  </action>
+  <action name="actionAntennaPatterns">
+   <property name="text">
+    <string>Antenna Patterns ...</string>
+   </property>
+  </action>
+  <action name="actionMeasure">
+   <property name="text">
+    <string>Measure ...</string>
+   </property>
+  </action>
+  <action name="actionMacroLoad">
+   <property name="text">
+    <string>Load ...</string>
+   </property>
+  </action>
+  <action name="actionMacroRun">
+   <property name="text">
+    <string>Run</string>
+   </property>
+  </action>
+  <action name="actionMacroClose">
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </action>
+  <action name="actionMacroStop">
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CustomOpenGLWidget</class>
+   <extends>QOpenGLWidget</extends>
+   <header>CustomOpenGLWidget.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

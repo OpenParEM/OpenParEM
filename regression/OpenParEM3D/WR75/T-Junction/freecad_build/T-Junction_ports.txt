@@ -1,0 +1,96 @@
+#OpenParEMports 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D/regression/WR75/T-Junction/T-Junction.FCStd
+EndFile
+
+Path
+   name=1
+   point=(0.009525,0.03476,0.05524)
+   point=(-0.009525,0.03476,0.05524)
+   point=(-0.009525,0.03476,0.06476)
+   point=(0.009525,0.03476,0.06476)
+   closed=true
+EndPath
+
+Path
+   name=V1
+   point=(0.0,0.03476,0.05524)
+   point=(0.0,0.03476,0.06476)
+   closed=false
+EndPath
+
+Path
+   name=2
+   point=(-0.009525,0.0,0.09)
+   point=(0.009525,0.0,0.09)
+   point=(0.009525,0.00476,0.09)
+   point=(-0.009525,0.00476,0.09)
+   closed=true
+EndPath
+
+Path
+   name=V2
+   point=(0.0,0.0,0.0900000000000034)
+   point=(0.0,0.00476,0.09)
+   closed=false
+EndPath
+
+Path
+   name=3
+   point=(-0.009525,0.0,0.03)
+   point=(-0.009524999999999999,0.00476,0.03)
+   point=(0.009525000000000002,0.004759999999999996,0.03)
+   point=(0.009525,-4.229949723821847e-18,0.03)
+   closed=true
+EndPath
+
+Path
+   name=V3
+   point=(0.0,0.0,0.0300000000000011)
+   point=(0.0,0.00476,0.0300000000000011)
+   closed=false
+EndPath
+
+Port
+   name=1
+   path=+1
+   impedance_definition=PV
+   impedance_calculation=modal
+   Mode
+      Sport=1
+      IntegrationPath
+         type=voltage
+         path=+V1
+      EndIntegrationPath
+   EndMode
+EndPort
+
+Port
+   name=2
+   path=+2
+   impedance_definition=PV
+   impedance_calculation=modal
+   Mode
+      Sport=2
+      IntegrationPath
+         type=voltage
+         path=+V2
+      EndIntegrationPath
+   EndMode
+EndPort
+
+Port
+   name=3
+   path=+3
+   impedance_definition=PV
+   impedance_calculation=modal
+   Mode
+      Sport=3
+      IntegrationPath
+         type=voltage
+         path=+V3
+      EndIntegrationPath
+   EndMode
+EndPort
+

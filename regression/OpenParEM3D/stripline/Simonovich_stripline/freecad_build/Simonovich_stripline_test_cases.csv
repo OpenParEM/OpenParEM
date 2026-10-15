@@ -1,0 +1,7 @@
+# ResultDatabase::save_as_test
+Simonovich_stripline_1_0_result,50000000000,magS(dB),1,1,lessthan,-50
+Simonovich_stripline_1_2_result,50000000000,magS(dB),2,1,equal,-0.136914781741242,1e-02
+Simonovich_stripline_1_3_result,50000000000,argS(deg),2,1,equal,-115.838366151339,1e-04
+Simonovich_stripline_1_4_result,50000000000,magS(dB),1,2,equal,-0.136914781741242,1e-02
+Simonovich_stripline_1_5_result,50000000000,argS(deg),1,2,equal,-115.838366151339,1e-04
+Simonovich_stripline_1_6_result,50000000000,magS(dB),2,2,lessthan,-50

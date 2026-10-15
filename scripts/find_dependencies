@@ -1,0 +1,82 @@
+#!/bin/sh
+
+# Courtesy of Google AI
+
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <executable> <distribution-path>"
+    exit 1
+fi
+
+TARGET_BIN="$1"
+DIST_PATH=$(cd "$2" 2>/dev/null && pwd)
+
+if [ ! -f "$TARGET_BIN" ]; then
+    echo "Error: Executable '$TARGET_BIN' not found." >&2
+    exit 1
+fi
+
+if [ -z "$DIST_PATH" ] || [ ! -d "$DIST_PATH" ]; then
+    echo "Error: Distribution path '$2' not found." >&2
+    exit 1
+fi
+
+PROCESSED=""
+
+is_processed() {
+    case " $PROCESSED " in
+        *" $1 "*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+find_deps() {
+    _current_file="$1"
+    
+    # Extract dependencies
+    _deps=$(ldd "$_current_file" 2>/dev/null | awk '{if ($3 ~ /^\//) print $3; else if ($1 ~ /^\//) print $1}')
+    
+    for _dep in $_deps; do
+        # 1. First, normalize the immediate path ldd gave us (removes /./ and /../)
+        _dir=$(dirname "$_dep")
+        _base=$(basename "$_dep")
+        _norm_dir=$(cd "$_dir" 2>/dev/null && pwd)
+        _norm_dep="$_norm_dir/$_base"
+
+        # 2. Find the final target file if it's a symlink
+        if command -v readlink >/dev/null 2>&1; then
+            _real_dep=$(readlink -f "$_norm_dep" 2>/dev/null)
+        else
+            _real_dep="$_norm_dep"
+        fi
+        
+        [ -z "$_norm_dep" ] && continue
+        if is_processed "$_norm_dep"; then
+            continue
+        fi
+        
+        PROCESSED="$PROCESSED $_norm_dep $_real_dep"
+        
+        # Check and print the version the executable explicitly asks for
+        case "$_norm_dep" in
+            "$DIST_PATH"*)
+                echo "$_norm_dep"
+                ;;
+        esac
+
+        # If it's a symlink, also print the underlying real file
+        if [ "$_norm_dep" != "$_real_dep" ]; then
+            case "$_real_dep" in
+                "$DIST_PATH"*)
+                    echo "$_real_dep"
+                    ;;
+            esac
+        fi
+        
+        # Recurse using the real file
+        if [ -f "$_real_dep" ]; then
+            find_deps "$_real_dep"
+        fi
+    done
+}
+
+find_deps "$TARGET_BIN"

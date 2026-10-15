@@ -1,0 +1,54 @@
+#OpenParEM3Dproject 1.0
+
+project.save.fields            false
+
+mesh.file                      straight-loaded.msh
+mesh.quality.limit             1e6
+
+fem.order                      3
+
+port.definition.file           straight-loaded_ports.txt
+
+materials.global.path          ../../../../OpenParEM2D/
+materials.global.name          global_materials.txt
+materials.local.path           ./
+materials.local.name           local_materials.txt
+materials.check.limits         true
+
+refinement.frequency           high
+refinement.iteration.min       1 
+refinement.iteration.max       50
+refinement.required.passes     1
+refinement.relative.tolerance  0.1
+refinement.absolute.tolerance  1e-7
+refinement.variable            SandH
+
+frequency.plan.point           8300000000
+
+reference.impedance            0
+
+solution.temperature           20
+solution.2D.tolerance          1e-14 
+solution.3D.tolerance          1e-14
+solution.iteration.limit       10000
+solution.modes.buffer          0
+solution.accurate.residual     false
+solution.shift.invert          true
+
+output.show.refining.mesh      false
+output.show.postprocessing     false
+output.show.iterations         false
+
+test.create.cases              false
+test.show.detailed.cases       false
+
+debug.show.memory              false
+debug.show.project             false
+debug.show.frequency.plan      false
+debug.show.materials           false
+debug.show.port.definitions    false
+debug.show.impedance.details   false
+debug.save.port.fields         false
+debug.tempfiles.keep           false
+
+

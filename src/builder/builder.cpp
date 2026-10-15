@@ -1799,7 +1799,7 @@ bool write_OpenParEM2D_proj_text (string indent, string name, int mode_count, st
       proj << "project.save.fields               true" << endl;
       proj << endl;
       proj << "mesh.file                         " << name << ".msh" << endl;
-      proj << "mesh.order                        4" << endl;
+      proj << "fem.order                         4" << endl;
       proj << endl;
       if (impedance_calculation.compare("modal") == 0) {
          proj << "mode.definition.file              " << name << "_modes.txt" << endl;
@@ -1830,7 +1830,7 @@ bool write_OpenParEM2D_proj_text (string indent, string name, int mode_count, st
       proj << "solution.impedance.definition     " << impedance_definition << endl;
       proj << "solution.impedance.calculation    " << impedance_calculation << endl;
       proj << "solution.shift.invert             true" << endl;
-      proj << "solution.use.initial.guess        true" << endl;
+      proj << "solution.initial.guess.level      2" << endl;
       proj << endl;
       proj << "output.show.refining.mesh         false" << endl;
       proj << "output.show.postprocessing        false" << endl;
@@ -1872,7 +1872,7 @@ bool write_OpenParEM3D_proj_text (string indent, string name, keywordPair *defau
       proj << "mesh.file                         " << name << ".msh" << endl;
       proj << "//mesh.quality.limit                1e6" << endl;
       proj << "//mesh.refinement.fraction          0.025" << endl;
-      proj << "mesh.order                        4" << endl;
+      proj << "fem.order                         4" << endl;
       proj << "port.definition.file              " << name << "_ports.txt" << endl;
       proj << "materials.global.path             " << endl;
       proj << "materials.global.name             " << endl;
@@ -1897,7 +1897,7 @@ bool write_OpenParEM3D_proj_text (string indent, string name, keywordPair *defau
       proj << "solution.iteration.limit          10000" << endl;
       proj << "solution.modes.buffer             0" << endl;
       proj << "solution.shift.invert             true" << endl;
-      proj << "solution.use.initial.guess        true" << endl;
+      proj << "solution.initial.guess.level      2" << endl;
       proj << "output.show.refining.mesh         false" << endl;
       proj << "output.show.postprocessing        false" << endl;
       proj << "output.show.iterations            false" << endl;

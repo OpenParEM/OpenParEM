@@ -5,7 +5,7 @@
 project.save.fields               true
 
 mesh.file                         WR90.msh
-mesh.order                        4
+fem.order                         4
 
 mode.definition.file              WR90_modes.txt
 
@@ -31,7 +31,7 @@ solution.modes.buffer             0
 solution.impedance.definition     PV
 solution.impedance.calculation    modal
 solution.shift.invert             true
-solution.use.initial.guess        true
+solution.initial.guess.level      2
 
 output.show.refining.mesh         false
 output.show.postprocessing        false

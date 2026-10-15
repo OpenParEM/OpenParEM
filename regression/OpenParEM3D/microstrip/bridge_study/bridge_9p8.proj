@@ -6,7 +6,7 @@ mesh.file                      bridge.msh
 mesh.quality.limit             1e6
 mesh.refinement.fraction       0.0025
 
-mesh.order                     5
+fem.order                      5
 
 port.definition.file           bridge_ports.txt
 
@@ -37,7 +37,6 @@ solution.iteration.limit       10000
 solution.modes.buffer          0
 solution.accurate.residual     false
 solution.shift.invert          true
-solution.use.initial.guess     true
 
 output.show.refining.mesh      false
 output.show.postprocessing     false

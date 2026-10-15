@@ -1,0 +1,208 @@
+cmake_minimum_required(VERSION 3.19)
+project(OpenParEMg LANGUAGES C CXX)
+
+set(CMAKE_VERBOSE_MAKEFILE 1)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_C_STANDARD 11)
+
+# for leak detection
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g")
+#set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer ")
+
+
+add_compile_options (-DHAS_GUI -DHAS_MPI)
+
+find_package(Qt6 6.11 REQUIRED COMPONENTS Core Widgets Svg Concurrent)
+find_package(OpenGL REQUIRED) #except QOpenGLWidget, which is handled separately below (include and lib)
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_INSTALL_PREFIX}/include/QtOpenGLWidgets
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/OpenParEM3D
+    ${CMAKE_INSTALL_PREFIX}/include
+    ${CMAKE_INSTALL_PREFIX}/lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/OpenParEMCommon
+    ${CMAKE_INSTALL_PREFIX}/include/opencascade
+    /usr/lib/gcc/x86_64-linux-gnu/9/include
+    /usr/include/GL
+)
+
+# Open CASCADE Technology
+set (OpenCASCADE_DIR ../../lib/cmake/opencascade)
+find_package(OpenCASCADE REQUIRED)
+if(OpenCASCADE_FOUND)
+  message (STATUS "Using OpenCASCADE from \"${OpenCASCADE_DIR}\"" )
+  INCLUDE_DIRECTORIES(${OpenCASCADE_INCLUDE_DIR})
+  LINK_DIRECTORIES(${OpenCASCADE_LIBRARY_DIR})
+else()
+  message(WARNING "Could not find OpenCASCADE, please set OpenCASCADE_DIR variable." )
+  set(OCCT_LIBRARY_DIR)
+  set(OCCT_BIN_DIR)
+endif()
+
+set(OpenCASCADE_LIBS TKRWMesh TKDEGLTF TKDEOBJ TKDEPLY TKBinXCAF TKBin TKBinL TKOpenGl TKXCAF TKVCAF TKCAF TKV3d TKHLR TKMesh TKService TKShHealing TKPrim TKTopAlgo TKGeomAlgo TKBRep TKDESTEP TKGeomBase TKG3d TKG2d TKMath TKLCAF TKCDF TKernel)
+
+qt_standard_project_setup()
+
+qt_add_executable(OpenParEMg
+    WIN32 MACOSX_BUNDLE
+    OpenParEMg.cpp
+    OPEMg.cpp
+    OPEMg.h
+    OPEMg.ui
+    ../OpenParEM3D/project.c
+    ../OpenParEM3D/project.h
+    ../OpenParEMCommon/prefix.c
+    ../OpenParEMCommon/prefix.h
+
+    MeshOptions.h MeshOptions.cpp MeshOptions.ui
+
+    SimulateOptions.h SimulateOptions.cpp SimulateOptions.ui
+    license.h license.cpp license.ui
+    ../OpenParEMCommon/LICENSE
+    CustomLineEdit.h
+    FrequencyPlanG.h FrequencyPlanG.cpp FrequencyPlanG.ui
+    FrequencyView.h FrequencyView.cpp FrequencyView.ui
+    ../OpenParEMCommon/frequencyPlan.hpp
+    ../OpenParEMCommon/frequencyPlan.cpp
+    Refinement.h Refinement.cpp Refinement.ui
+    Materials.h Materials.cpp Materials.ui
+    ../OpenParEMCommon/OpenParEMmaterials.cpp ../OpenParEMCommon/OpenParEMmaterials.hpp
+    ../OpenParEMCommon/misc.cpp ../OpenParEMCommon/misc.hpp
+    ../OpenParEMCommon/keywordPair.cpp ../OpenParEMCommon/keywordPair.hpp
+    ../OpenParEMCommon/fem.cpp ../OpenParEMCommon/fem.hpp
+    ../OpenParEMCommon/jobrelated.cpp ../OpenParEMCommon/jobrelated.hpp
+    CustomOpenGLWidget.h CustomOpenGLWidget.cpp
+    ../OpenParEMCommon/path.cpp ../OpenParEMCommon/path.hpp
+    ../OpenParEM3D/port.cpp ../OpenParEM3D/port.hpp
+    ../OpenParEMCommon/Zsolve.c ../OpenParEMCommon/Zsolve.h
+    ../OpenParEMCommon/sourcefile.cpp ../OpenParEMCommon/sourcefile.hpp
+    ../OpenParEM3D/pattern.cpp ../OpenParEM3D/pattern.hpp
+    ../OpenParEM3D/fileCleanup.hpp ../OpenParEM3D/fileCleanup.cpp
+    ../OpenParEMCommon/mesh.cpp ../OpenParEMCommon/mesh.hpp
+
+    CustomComboBox.h
+
+    OcctQtTools.h
+    CustomTreeWidgetItem.h
+    MaterialSelection.h MaterialSelection.cpp MaterialSelection.ui
+    RectangleSelector.h
+    ItemTracking.h
+    about.h about.cpp about.ui
+    CustomSpinBox.h
+    logo.qrc
+    Relay.h Relay.cpp
+    PolygonSelection.h PolygonSelection.cpp
+
+    LengthInputForm.h LengthInputForm.cpp LengthInputForm.ui
+    Polywire.h Polywire.cpp
+    RectangleEditForm.h RectangleEditForm.cpp RectangleEditForm.ui
+    Process.h Process.cpp
+    PolycircleEditForm.h PolycircleEditForm.cpp PolycircleEditForm.ui
+    RotateInputForm.h RotateInputForm.cpp RotateInputForm.ui
+    VectorInputForm.h VectorInputForm.cpp VectorInputForm.ui
+    LineEditForm.h LineEditForm.cpp LineEditForm.ui
+    ObjectCounts.h
+    DrawingPreferences.h DrawingPreferences.cpp DrawingPreferences.ui
+    CustomTreeWidgetItem.cpp
+    AntennaForm.h AntennaForm.cpp AntennaForm.ui
+
+    SportNumbers.h SportNumbers.cpp
+    MeasureDistanceForm.h MeasureDistanceForm.cpp MeasureDistanceForm.ui
+    Macro.h Macro.cpp
+    Configuration.h Configuration.cpp
+
+)
+
+add_library(Qt6OpenGLWidgets SHARED IMPORTED)
+set_target_properties(Qt6OpenGLWidgets PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libQt6OpenGLWidgets.so")
+
+add_library(mfem SHARED IMPORTED)
+set_target_properties(mfem PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libmfem.so")
+
+add_library(petscdm SHARED IMPORTED)
+set_target_properties(petscdm PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libpetscdm.so")
+
+add_library(petscksp SHARED IMPORTED)
+set_target_properties(petscksp PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libpetscksp.so")
+
+add_library(petscmat SHARED IMPORTED)
+set_target_properties(petscmat PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libpetscmat.so")
+
+add_library(petscsnes SHARED IMPORTED)
+set_target_properties(petscsnes PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libpetscsnes.so")
+
+add_library(petscsys SHARED IMPORTED)
+set_target_properties(petscsys PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libpetscsys.so")
+
+add_library(petsctao SHARED IMPORTED)
+set_target_properties(petsctao PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libpetsctao.so")
+
+add_library(petscts SHARED IMPORTED)
+set_target_properties(petscts PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libpetscts.so")
+
+add_library(petscvec SHARED IMPORTED)
+set_target_properties(petscvec PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libpetscvec.so")
+
+add_library(gmsh SHARED IMPORTED)
+set_target_properties(gmsh PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib/libgmsh.so")
+
+# Select MPI implementation (default: OpenMPI)
+
+set(MPI_IMPLEMENTATION "OpenMPI" CACHE STRING "MPI implementation to use")
+
+if(MPI_IMPLEMENTATION STREQUAL "OpenMPI")
+    set(MPI_LIBS mpi_mpifh mpi mpi_usempif08 mpi_usempi_ignore_tkr)
+
+elseif(MPI_IMPLEMENTATION STREQUAL "MPICH")
+    set(MPI_LIBS mpi mpich mpicxx mpichcxx mpifort mpichf90 fmpich)
+
+else()
+    message(FATAL_ERROR "Unsupported MPI implementation: ${MPI_IMPLEMENTATION}")
+endif()
+
+message(STATUS "MPI implementation: ${MPI_IMPLEMENTATION}")
+message(STATUS "MPI libraries: ${MPI_LIBS}")
+
+target_link_libraries(OpenParEMg
+    PRIVATE
+        Qt::Core
+        Qt::Widgets
+        Qt6::Svg
+        Qt6::Concurrent
+        ${OpenCASCADE_LIBS}
+        ${PETSC_LIBS}
+        ${MPI_LIBS}
+        Qt6OpenGLWidgets
+        mfem
+        petscsys
+        petscvec
+        petscmat
+        petscdm
+        petscksp
+        petscsnes
+        petsctao
+        petscts
+        petscdm
+        petscksp
+        gmsh
+)
+
+include(GNUInstallDirs)
+
+qt_add_resources(app_resources logo.qrc)
+target_sources(OpenParEMg PRIVATE ${app_resources})
+
+install(TARGETS OpenParEMg
+    BUNDLE  DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+qt_generate_deploy_app_script(
+    TARGET OpenParEMg
+    OUTPUT_SCRIPT deploy_script
+    NO_UNSUPPORTED_PLATFORM_ERROR
+)
+install(SCRIPT ${deploy_script})

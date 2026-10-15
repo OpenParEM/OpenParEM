@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -33,7 +33,7 @@ int loadDataLine (FILE *, struct dataTriplet *, int);
 int loadDataFileStats (const char *, char *, char *, PetscInt *, PetscInt *, PetscInt *);
 int loadDataFile (const char *, char *, char *, Mat *, PetscInt, PetscInt, int, int, double, PetscMPIInt);
 int Hsetup (struct projectData *, Mat *, Mat *, Mat *, Mat *, Mat *, PetscMPIInt);
-int Hsolve (struct projectData *, Mat *, Mat *, Mat *, Mat *, Mat *, PetscInt, PetscInt, Vec *, PetscScalar *, Vec *, PetscMPIInt);
+int Hsolve (struct projectData *, Mat *, Mat *, Mat *, Mat *, Mat *, PetscInt, PetscInt, Vec *, PetscScalar *, Vec *);
 
 #endif
 

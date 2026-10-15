@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -168,14 +168,14 @@ void Result::save (ostream *out, struct projectData *projData, int SportCount)
 }
 
 void Result::saveFormatted (ostream *out, double solveElapsedTime, double meshErrorTime, double femSetupTime,
-                            double refineTime, double radiationTime, double *priorFrequency)
+                            double refineTime, double radiationTime, double *priorFrequency, double frequencyScale)
 {
    int rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
    if (rank == 0) {
       if (double_compare(frequency,*priorFrequency,1e-12)) *out << setw(15) << "";
-      else *out << setw(15) << frequency;
+      else *out << setw(15) << setprecision(15) << frequency*frequencyScale;
 
       *out << setw(12) << iteration;
       *out << setw(12) << meshSize;
@@ -205,7 +205,7 @@ void Result::saveFormatted (ostream *out, double solveElapsedTime, double meshEr
    }
 }
 
-void Result::saveCSV (ostream *out, struct projectData *projData, double scale)
+void Result::saveCSV (ostream *out, struct projectData *projData, double frequencyScale)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -215,7 +215,7 @@ void Result::saveCSV (ostream *out, struct projectData *projData, double scale)
    int numSport=m;
 
    if (rank == 0) *out << setprecision(15);
-   if (rank == 0) *out << frequency*scale;
+   if (rank == 0) *out << frequency*frequencyScale;
 
    int i=0;
    while (i < numSport) {
@@ -629,12 +629,21 @@ PetscErrorCode Result::SparameterConversion (BoundaryDatabase *boundaryDatabase,
 
 Result::~Result ()
 {
-   if (S) {MatDestroy(S); S=nullptr;}
+   //Cannot perform MPI in a destructor if PETSCFinalize has been called.
+   //if (S) {MatDestroy(S); S=nullptr;}
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------
 // ResultDatabase
 //---------------------------------------------------------------------------------------------------------------------------------
+
+void ResultDatabase::set_frequencyScale (struct projectData *projData)
+{
+      if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) frequencyScale=1;
+      if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) frequencyScale=1e-3;
+      if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) frequencyScale=1e-6;
+      if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) frequencyScale=1e-9;
+}
 
 // result given iteration
 Result* ResultDatabase::get_Result (double frequency, int iteration)
@@ -708,19 +717,15 @@ void ResultDatabase::push (Result *result)
          }
       }
    }
-
 }
 
+// Error = ||Sn-Sn-1||/||Sn|| using the Frobenius norm.
+// More standard calculation
 double ResultDatabase::calculate_maxRelativeError (struct projectData *projData, double frequency, int iteration)
 {
    PetscErrorCode ierr=0;
+   PetscReal normN,normNmNm1;
    double maxRelativeError=-1;
-
-   //PetscPrintf (PETSC_COMM_WORLD,"MatInvert Testing:\n");
-   //ierr=MatInvertTest (5); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
-   //ierr=MatInvertTest (10); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
-   //ierr=MatInvertTest (20); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
-   //ierr=MatInvertTest (30); if (ierr) PetscPrintf (PETSC_COMM_WORLD,"MatInverseTest ierr=%d\n",ierr);
 
    if (iteration > 1) {
 
@@ -732,47 +737,35 @@ double ResultDatabase::calculate_maxRelativeError (struct projectData *projData,
          Mat *S;
          S=result->get_S();
 
-         Mat Scurrent;
-         ierr=MatConvert(*S,MATSAME,MAT_INITIAL_MATRIX,&Scurrent); if (ierr) return ierr;
+         Mat SN;
+         ierr=MatConvert(*S,MATSAME,MAT_INITIAL_MATRIX,&SN); if (ierr) return ierr;
 
-         // prior iteration - to become difference
+         ierr=MatNorm(SN,NORM_FROBENIUS,&normN); if (ierr) return ierr;
 
-         result=get_Result(frequency,iteration-1);
+         // prior iteration
+ 
+         result=get_Result(frequency,iteration-1); 
          S=result->get_S();
+
+         // difference, saved in difference
 
          Mat difference;
          ierr=MatConvert(*S,MATSAME,MAT_INITIAL_MATRIX,&difference); if (ierr) return ierr;
 
-         // difference
-         ierr=MatAXPY(difference,-1,Scurrent,SAME_NONZERO_PATTERN);
+         ierr=MatAXPY(difference,-1,SN,SAME_NONZERO_PATTERN); if (ierr) return ierr;
+         ierr=MatNorm(difference,NORM_FROBENIUS,&normNmNm1); if (ierr) return ierr;
 
-         ierr=MatInvert(&Scurrent,0); if (ierr) return maxRelativeError;
-     
-         Mat error;  
-         ierr=MatMatMult(Scurrent,difference,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&error); if (ierr) return maxRelativeError;
-         MatDestroy(&Scurrent);
+         maxRelativeError=normNmNm1/normN;
+
+         MatDestroy(&SN);
          MatDestroy(&difference);
 
-         PetscReal *norms=(PetscReal *) malloc(SportCount*sizeof(PetscReal));
-         if (norms) {
-            ierr=MatGetColumnNorms(error,NORM_2,norms); if (ierr) return maxRelativeError;
-
-            int i=0;
-            while (i < SportCount) {
-               if (norms[i] > maxRelativeError) maxRelativeError=norms[i];
-               i++;
-            }
-
-            free(norms);
-         }
-
-         MatDestroy(&error);
       }
-
    }
 
    return maxRelativeError;
 }
+
 
 double ResultDatabase::calculate_maxAbsoluteError (struct projectData *projData, double frequency, int iteration)
 {
@@ -944,7 +937,6 @@ void ResultDatabase::saveCSV (ostream *out, struct projectData *projData,
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   double scale=1;
    int portCount=boundaryDatabase->get_SportCount();
 
    // Sport information
@@ -1000,7 +992,7 @@ void ResultDatabase::saveCSV (ostream *out, struct projectData *projData,
       *out << "#OpenParEM3D " << projData->version_major << "." << projData->version_minor << "." << projData->version_patch << endl;
       *out << "#Touchstone format," << projData->touchstone_format << endl;
       *out << "#frequency unit," << projData->touchstone_frequency_unit << endl;
-      *out << "#number of frequencies," << unique_frequencies.size() << endl;
+      //*out << "#number of frequencies," << unique_frequencies.size() << endl;
       *out << "#number of ports," << portCount << endl;
 
       j=0;
@@ -1011,10 +1003,10 @@ void ResultDatabase::saveCSV (ostream *out, struct projectData *projData,
 
       if (allIterations) *out << "#prior iterations pre-pended by #" << endl;
 
-      if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) {*out << "#Frequency(Hz)"; scale=1;}
-      if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) {*out << "#Frequency(kHz)"; scale=1e-3;}
-      if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) {*out << "#Frequency(MHz)"; scale=1e-6;}
-      if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) {*out << "#Frequency(GHz)"; scale=1e-9;}
+      if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) {*out << "#Frequency(Hz)";}
+      if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) {*out << "#Frequency(kHz)";}
+      if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) {*out << "#Frequency(MHz)";}
+      if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) {*out << "#Frequency(GHz)";}
 
       int col=0;
       while (col < portCount) {
@@ -1042,7 +1034,7 @@ void ResultDatabase::saveCSV (ostream *out, struct projectData *projData,
       while (k <= lastIteration) {
          if (k != lastIteration) *out << "#";
          Result *result=get_Result(unique_frequencies[i],k);
-         if (result) result->saveCSV(out,projData,scale);
+         if (result) result->saveCSV(out,projData,frequencyScale);
          k++;
       }
 
@@ -1055,7 +1047,6 @@ void ResultDatabase::saveCSV (ostream *out, struct projectData *projData,
 bool ResultDatabase::saveTouchstone (struct projectData *projData, BoundaryDatabase *boundaryDatabase, vector<DifferentialPair *> *aggregateList)
 {
    bool fail=false;
-   double scale=1;
    int rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
@@ -1094,10 +1085,6 @@ bool ResultDatabase::saveTouchstone (struct projectData *projData, BoundaryDatab
    // common operations between formats
 
    int portCount=boundaryDatabase->get_SportCount();
-   if (strcmp(projData->touchstone_frequency_unit,"Hz") == 0) scale=1;
-   if (strcmp(projData->touchstone_frequency_unit,"kHz") == 0) scale=1e-3;
-   if (strcmp(projData->touchstone_frequency_unit,"MHz") == 0) scale=1e-6;
-   if (strcmp(projData->touchstone_frequency_unit,"GHz") == 0) scale=1e-9;
 
    stringstream ss;
    ss << projData->project_name << ".s" << portCount << "p";
@@ -1160,7 +1147,7 @@ bool ResultDatabase::saveTouchstone (struct projectData *projData, BoundaryDatab
          int lastIteration=get_lastIteration(unique_frequencies[k]);
 
          out << setprecision(15);
-         out << unique_frequencies[k]*scale;
+         out << unique_frequencies[k]*frequencyScale;
 
          Result *result=get_Result(unique_frequencies[k],lastIteration);
 
@@ -1323,7 +1310,7 @@ bool ResultDatabase::saveTouchstone (struct projectData *projData, BoundaryDatab
          int lastIteration=get_lastIteration(unique_frequencies[k]);
 
          if (rank == 0) out << setprecision(15);
-         if (rank == 0) out << unique_frequencies[k]*scale;
+         if (rank == 0) out << unique_frequencies[k]*frequencyScale;
 
          Result *result=get_Result(unique_frequencies[k],lastIteration);
 
@@ -1438,8 +1425,12 @@ void ResultDatabase::saveFormatted (ostream *out)
         << setw(17) << "-----------------"
         << endl;
 
-   *out << setw(15) << "frequency"
-        << setw(12) << "iteration"
+   if (double_compare(frequencyScale,1,1e-12)) *out << setw(15) << "frequency, Hz";
+   if (double_compare(frequencyScale,1e-3,1e-12)) *out << setw(15) << "frequency, kHz";
+   if (double_compare(frequencyScale,1e-6,1e-12)) *out << setw(15) << "frequency, MHz";
+   if (double_compare(frequencyScale,1e-9,1e-12)) *out << setw(15) << "frequency, GHz";
+  
+   *out << setw(12) << "iteration"
         << setw(12) << "mesh size"
         << setw(12) << "DOF count"
         << setw(12) << "setup,s"
@@ -1475,7 +1466,7 @@ void ResultDatabase::saveFormatted (ostream *out)
       refine=results[i]->get_refine_time();
       meshError=results[i]->get_mesh_error_time();
       radiation=results[i]->get_radiation_time();
-      results[i]->saveFormatted(out,solveElapsed,meshError,femSetup,refine,radiation,&priorFrequency);
+      results[i]->saveFormatted(out,solveElapsed,meshError,femSetup,refine,radiation,&priorFrequency,frequencyScale);
       i++;
    }
 }
@@ -1494,39 +1485,6 @@ int ResultDatabase::get_lastIteration (double frequency)
    }
    return iteration;
 }
-
-/* delete
-PetscErrorCode ResultDatabase::mixedModeConversion (int iteration, double frequency, BoundaryDatabase *boundaryDatabase, vector<DifferentialPair *> *differentialPairList)
-{
-   PetscErrorCode ierr=0;
-
-   Mat S;
-   ierr=get_S(iteration,frequency,&S,false,true); if (ierr) return 1;
-
-   Mat M;
-   ierr=boundaryDatabase->build_M(&M,differentialPairList,boundaryDatabase); if (ierr) return 2;
-   //MatView(M,PETSC_VIEWER_STDOUT_WORLD);
-
-   // M S M^(-1)
-
-   Mat A;
-   ierr=MatMatMult(M,S,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&A); if (ierr) return 3;
-
-   ierr=MatInvert(&M,0); if (ierr) return 4;
-   //MatView(M,PETSC_VIEWER_STDOUT_WORLD);
-
-   Mat B;
-   ierr=MatMatMult(A,M,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&B); if (ierr) return 5;
-   ierr=MatDestroy(&A); if (ierr) return 6;
-   ierr=MatDestroy(&M); if (ierr) return 7;
-
-   // save it in the S data location
-   ierr=set_S(iteration,frequency,&B); if (ierr) return 8;
-   ierr=MatDestroy(&B); if (ierr) return 9;
-
-   return ierr;
-}
-*/
 
 void ResultDatabase::print ()
 {

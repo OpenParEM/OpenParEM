@@ -1,0 +1,66 @@
+#OpenParEMports 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D/regression/WR90/straight-steps/straight-steps.FCStd
+EndFile
+
+Path
+   name=port1
+   point=(-0.01143,-0.00508,0.05)
+   point=(0.01143,-0.00508,0.05)
+   point=(0.01143,0.00508,0.05)
+   point=(-0.01143,0.00508,0.05)
+   closed=true
+EndPath
+
+Path
+   name=v1
+   point=(0.0,-0.0050800000000004,0.0499999999999972)
+   point=(-1.8e-15,0.0050799999999995,0.0499999999999972)
+   closed=false
+EndPath
+
+Path
+   name=port2
+   point=(-0.011430000000000004,-0.005080000000000002,-0.07500000000000004)
+   point=(-0.011430000000000003,0.005080000000000002,-0.07500000000000004)
+   point=(0.011430000000000006,0.005079999999999997,-0.07500000000000004)
+   point=(0.011430000000000004,-0.005080000000000007,-0.07500000000000004)
+   closed=true
+EndPath
+
+Path
+   name=v2
+   point=(0.0,-0.005080000000000005,-0.07500000000000004)
+   point=(-1.7763568394002503e-15,0.005079999999999529,-0.07500000000000284)
+   closed=false
+EndPath
+
+Port
+   name=1
+   path=+port1
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=1
+      IntegrationPath
+         type=voltage
+         path=+v1
+      EndIntegrationPath
+   EndLine
+EndPort
+
+Port
+   name=2
+   path=+port2
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=2
+      IntegrationPath
+         type=voltage
+         path=+v2
+      EndIntegrationPath
+   EndLine
+EndPort
+

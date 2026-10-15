@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -23,6 +23,7 @@
 #define RESULTS_H
 
 #include "mfem.hpp"
+#include <quadmath.h>
 #include "petscsys.h"
 #include <petsc.h>
 #include <fstream>
@@ -102,7 +103,7 @@ class Result
       bool is_type_Z () {if (type.compare("Z") == 0) return true; return false;}
       bool extractS (string, string, int);
       void save (ostream *, struct projectData *, int);
-      void saveFormatted (ostream *, double, double, double, double, double, double *);
+      void saveFormatted (ostream *, double, double, double, double, double, double *, double);
       void saveCSV (ostream *, struct projectData *, double);
       void save_result_component (ofstream *, const char *, int, int *, const char *, long unsigned int);
       bool get_isRefined () {return isRefined;}
@@ -136,10 +137,12 @@ class ResultDatabase
       int SportCount;
       double solve_time=0;
       double tol=1e-12;
+      double frequencyScale=1;
    public:
-      ResultDatabase(){}
-      ~ResultDatabase();
-      void push(Result *);
+      ResultDatabase () {}
+      ~ResultDatabase ();
+      void set_frequencyScale (struct projectData *);
+      void push (Result *);
       Result* get_Result (double, int);
       Result* get_Result (double);
       vector<double>* get_unique_frequencies () {return &unique_frequencies;}

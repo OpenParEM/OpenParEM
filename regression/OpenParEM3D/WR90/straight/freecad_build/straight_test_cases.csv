@@ -1,0 +1,25 @@
+# ResultDatabase::save_as_test
+straight_1_0_result,9000000000,magS(dB),1,1,lessthan,-110
+straight_1_2a_result,9000000000,magS(dB),2,1,lessthan,0
+straight_1_2_result,9000000000,magS(dB),2,1,greaterthan,-1e-06
+straight_1_3_result,9000000000,argS(deg),2,1,equal,-20.753057470156,1e-05
+straight_2_4_result,9999999999,magS(dB),1,1,lessthan,-110
+straight_2_6_result,9999999999,magS(dB),2,1,lessthan,0
+straight_2_6a_result,9999999999,magS(dB),2,1,greaterthan,-1e-05
+straight_2_7_result,9999999999,argS(deg),2,1,equal,172.884555839391,1e-05
+straight_3_8_result,11000000000,magS(dB),1,1,lessthan,-110
+straight_3_10_result,11000000000,magS(dB),2,1,lessthan,0
+straight_3_10a_result,11000000000,magS(dB),2,1,greaterthan,-1e-05
+straight_3_11_result,11000000000,argS(deg),2,1,equal,18.9349879099391,1e-05
+straight_1_12a_result,9000000000,magS(dB),1,2,lessthan,0
+straight_1_12_result,9000000000,magS(dB),1,2,greaterthan,-1e-06
+straight_1_13_result,9000000000,argS(deg),1,2,equal,-20.753057470156,1e-05
+straight_1_14_result,9000000000,magS(dB),2,2,lessthan,-110
+straight_2_16_result,9999999999,magS(dB),1,2,lessthan,0
+straight_2_16a_result,9999999999,magS(dB),1,2,greaterthan,-1e-05
+straight_2_17_result,9999999999,argS(deg),1,2,equal,172.884555839391,1e-05
+straight_2_18_result,9999999999,magS(dB),2,2,lessthan,-110
+straight_3_20_result,11000000000,magS(dB),1,2,lessthan,0
+straight_3_20a_result,11000000000,magS(dB),1,2,greaterthan,-1e-05
+straight_3_21_result,11000000000,argS(deg),1,2,equal,18.9349879099391,1e-05
+straight_3_22_result,11000000000,magS(dB),2,2,lessthan,-110

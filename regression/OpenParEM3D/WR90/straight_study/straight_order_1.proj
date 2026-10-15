@@ -4,8 +4,8 @@ project.save.fields            false
 
 mesh.file                      straight.msh
 
-mesh.order                     1
 mesh.quality.limit             1e6
+fem.order                      1
 
 port.definition.file           straight_ports.txt
 
@@ -34,7 +34,6 @@ solution.iteration.limit       10000
 solution.modes.buffer          0
 solution.accurate.residual     false
 solution.shift.invert          true
-solution.use.initial.guess     true
 
 output.show.refining.mesh      false
 output.show.postprocessing     false

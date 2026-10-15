@@ -2,6 +2,7 @@
 
 Material
    name=fill
+   type=dielectric
    Temperature
       temperature=any
       Frequency

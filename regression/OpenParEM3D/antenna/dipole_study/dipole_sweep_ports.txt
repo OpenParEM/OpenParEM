@@ -1,0 +1,142 @@
+#OpenParEMports 1.0
+
+File
+   name=generated_by_OpenParEMg
+EndFile
+
+Path
+   name=path1
+   point=(-7.5e-05,-4.5e-05,-0.000125)
+   point=(-7.5e-05,-4.5e-05,2.49999999999999e-05)
+   point=(7.5e-05,-4.5e-05,2.49999999999999e-05)
+   point=(7.5e-05,-4.5e-05,-0.000125)
+   closed=true
+   normal=(-0,1,0)
+EndPath
+
+Path
+   name=v1
+   point=(-1.35525271560688e-20,-4.5e-05,-8.00000000000003e-05)
+   point=(6.7762635780344e-21,-4.5e-05,-2e-05)
+   closed=false
+   normal=(-0,1,0)
+EndPath
+
+Path
+   name=path2
+   point=(-0.015,-0.015,0.01495)
+   point=(-0.015,-0.015,-0.01505)
+   point=(0.015,-0.015,-0.01505)
+   point=(0.015,-0.015,0.01495)
+   closed=true
+   normal=(0,-1,0)
+EndPath
+
+Path
+   name=path3
+   point=(0.015,-0.015,0.01495)
+   point=(0.015,-0.015,-0.01505)
+   point=(0.015,0.015,-0.01505)
+   point=(0.015,0.015,0.01495)
+   closed=true
+   normal=(1,0,0)
+EndPath
+
+Path
+   name=path4
+   point=(-0.015,-0.015,0.01495)
+   point=(0.015,-0.015,0.01495)
+   point=(0.015,0.015,0.01495)
+   point=(-0.015,0.015,0.01495)
+   closed=true
+   normal=(0,-0,1)
+EndPath
+
+Path
+   name=path5
+   point=(0.015,0.015,0.01495)
+   point=(0.015,0.015,-0.01505)
+   point=(-0.015,0.015,-0.01505)
+   point=(-0.015,0.015,0.01495)
+   closed=true
+   normal=(0,1,-0)
+EndPath
+
+Path
+   name=path6
+   point=(-0.015,0.015,0.01495)
+   point=(-0.015,0.015,-0.01505)
+   point=(-0.015,-0.015,-0.01505)
+   point=(-0.015,-0.015,0.01495)
+   closed=true
+   normal=(-1,0,0)
+EndPath
+
+Path
+   name=path7
+   point=(0.015,-0.015,-0.01505)
+   point=(-0.015,-0.015,-0.01505)
+   point=(-0.015,0.015,-0.01505)
+   point=(0.015,0.015,-0.01505)
+   closed=true
+   normal=(0,0,-1)
+EndPath
+
+Boundary
+   name=boundary1
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path2
+EndBoundary
+
+Boundary
+   name=boundary2
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path3
+EndBoundary
+
+Boundary
+   name=boundary3
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path4
+EndBoundary
+
+Boundary
+   name=boundary4
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path5
+EndBoundary
+
+Boundary
+   name=boundary5
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path6
+EndBoundary
+
+Boundary
+   name=boundary6
+   type=radiation
+   wave_impedance=376.730313462204
+   path=path7
+EndBoundary
+
+Port
+   name=port1
+   path=path1
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      net=net1
+      Sport=1
+      IntegrationPath
+         type=voltage
+         scale=1
+         path=+v1
+      EndIntegrationPath
+   EndLine
+EndPort
+

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -29,8 +29,7 @@
 #include <vector>
 #include "inputFrequency.h"
 #include "prefix.h"
-
-using namespace std;
+#include <quadmath.h>
 
 extern "C" void prefix ();
 
@@ -65,13 +64,15 @@ class FrequencyPlanPoint {
 
 class FrequencyPlan {
    private:
-      vector<FrequencyPlanPoint *> planList;
+      std::vector<FrequencyPlanPoint *> planList;
       int refinedCount;
       bool hasRefined;
    public:
       ~FrequencyPlan ();
       bool assemble (char *, unsigned long int, struct inputFrequencyPlan *);
       FrequencyPlanPoint* get_frequency (char *, double *, bool *, bool *, int *);
+      long unsigned int get_plan_size () {return planList.size();}
+      FrequencyPlanPoint* get_frequency (long unsigned int i) {return planList[i];}
       bool is_refining ();
       void sort ();
       void eliminateDuplicates ();

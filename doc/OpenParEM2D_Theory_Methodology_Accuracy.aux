@@ -1,0 +1,155 @@
+\relax 
+\citation{MFEM}
+\citation{MFEMweb}
+\citation{Lee}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Theory and Mapping to MFEM}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Wave Equation}{2}{}\protected@file@percent }
+\newlabel{eq:faraday}{{1}{2}}
+\newlabel{eq:ampere}{{2}{2}}
+\newlabel{eq:ampere2}{{3}{2}}
+\newlabel{eq:wave_equation}{{5}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Galerkin's Procedure}{2}{}\protected@file@percent }
+\citation{Lee}
+\citation{Lee}
+\newlabel{eq:weak_form}{{9}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Specialization for Transmission Lines and Waveguides}{3}{}\protected@file@percent }
+\newlabel{sec:specialization}{{2.3}{3}}
+\newlabel{eq:transverse1}{{12}{3}}
+\newlabel{eq:longitudinal1}{{13}{3}}
+\newlabel{eq:transverse2}{{14}{3}}
+\newlabel{eq:longitudinal2}{{15}{3}}
+\citation{Lee}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Building the Eigenvalue Problem}{4}{}\protected@file@percent }
+\newlabel{eq:eigen1}{{20}{4}}
+\citation{Lee}
+\citation{SLEPc}
+\newlabel{eq:eigen2}{{24}{5}}
+\newlabel{eq:eigen}{{25}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Boundary Conditions}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Calculating $\overline  {H}$ from $\overline  {E}$}{5}{}\protected@file@percent }
+\newlabel{sec:HfromE}{{28}{5}}
+\citation{PETSc}
+\newlabel{eq:Ht1}{{29}{6}}
+\newlabel{eq:Hz1}{{30}{6}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.6.1}$\overline  {H}_t$}{6}{}\protected@file@percent }
+\newlabel{eq:Ht2}{{31}{6}}
+\newlabel{eq:Ht3}{{34}{6}}
+\newlabel{eq:Ht6}{{38}{6}}
+\newlabel{eq:Htlinearalgebra}{{39}{6}}
+\citation{Pozar}
+\citation{Dmitriev-Zdorov}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.6.2}$H_z\hat  {z}$}{7}{}\protected@file@percent }
+\newlabel{eq:Hzlinearalgebra}{{43}{7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.7}Conductor Loss Adder}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.8}$\overline  {\overline  {T}}_v$ and $\overline  {\overline  {T}}_i$}{7}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces A multiconductor transmission line with two conductors.\relax }}{8}{}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:multimode}{{1}{8}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Adaptive Mesh Refinement}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Data Structures and Algorithm Notes}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Data Structures}{9}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Primary Data Structures\relax }}{9}{}\protected@file@percent }
+\newlabel{table:data_structures}{{1}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Internal File Transfers}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}DOFs and Boundary Identification}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Parallel Processing with MPI}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.4.1}c and c++}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.4.2}PETSc and SLEPc}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.4.3}MFEM}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Accuracy Demonstrations}{11}{}\protected@file@percent }
+\newlabel{sec:accuracy}{{5}{11}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Lossless WR90 Waveguide}{12}{}\protected@file@percent }
+\newlabel{sec:WR90_lossless}{{5.1}{12}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces $\gamma $ for the first 5 modes of the lossless WR90 rectangular waveguide.\relax }}{12}{}\protected@file@percent }
+\newlabel{fig:WR90_gamma}{{2}{12}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Error in $\gamma $ for the first 5 modes of the lossless WR90 rectangular waveguide.\relax }}{12}{}\protected@file@percent }
+\newlabel{fig:WR90_gamma_error}{{3}{12}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Impedance and error for the dominant mode of the lossless WR90 rectangular waveguide.\relax }}{13}{}\protected@file@percent }
+\newlabel{fig:WR90_impedance}{{4}{13}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Field plot for the dominant mode of the lossless WR90 rectangular waveguide.\relax }}{13}{}\protected@file@percent }
+\newlabel{fig:WR90_mode_1}{{5}{13}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Longitudinal power flow for the 4$^{\textnormal  {th}}$ mode of the lossless WR90 rectangular waveguide.\relax }}{13}{}\protected@file@percent }
+\newlabel{fig:WR90_mode_4_Pz}{{6}{13}}
+\citation{Ramo}
+\citation{Harrington}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Lossy WR90 Waveguide}{14}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces $\gamma $ for the dominant mode of the lossy WR90 rectangular waveguide.\relax }}{14}{}\protected@file@percent }
+\newlabel{fig:WR90_lossy_gamma}{{7}{14}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Error in $\gamma $ for the dominant mode of the lossy WR90 rectangular waveguide.\relax }}{14}{}\protected@file@percent }
+\newlabel{fig:WR90_lossy_gamma_error}{{8}{14}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Partially-Filled Rectangular Waveguide}{14}{}\protected@file@percent }
+\citation{Harrington}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces A partially-filled waveguide for analysis.\relax }}{15}{}\protected@file@percent }
+\newlabel{fig:partial_drawing}{{9}{15}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces $\gamma $ for the first 5 modes of the partially filled rectangular waveguide.\relax }}{15}{}\protected@file@percent }
+\newlabel{fig:partial_gamma}{{10}{15}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Error in $\gamma $ for the first 5 modes of the partially filled rectangular waveguide.\relax }}{15}{}\protected@file@percent }
+\newlabel{fig:partial_gamma_error}{{11}{15}}
+\citation{FreeCAD}
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Computed solutions for the dominant mode at 10 GHz.\relax }}{16}{}\protected@file@percent }
+\newlabel{fig:partial_field_power}{{12}{16}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Coaxial Waveguide}{16}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces Field plot for the coaxial waveguide at 1 GHz.\relax }}{16}{}\protected@file@percent }
+\newlabel{fig:coax_field}{{13}{16}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces Real power flow for the coaxial waveguide at 1 GHz.\relax }}{17}{}\protected@file@percent }
+\newlabel{fig:coax_Pz}{{14}{17}}
+\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces Error vs. exact values for the coaxial waveguide.\relax }}{17}{}\protected@file@percent }
+\newlabel{fig:coax_results}{{15}{17}}
+\citation{Olyslager}
+\citation{gmsh}
+\citation{gmshweb}
+\citation{Olyslager}
+\citation{Olyslager}
+\citation{Olyslager}
+\citation{Olyslager}
+\citation{Olyslager}
+\@writefile{lof}{\contentsline {figure}{\numberline {16}{\ignorespaces Zoom with re scale of the power flow from Fig.\nobreakspace  {}14\hbox {} near the center conductor.\relax }}{18}{}\protected@file@percent }
+\newlabel{fig:coax_Pz_zoom}{{16}{18}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Coupled Microstrip}{18}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {17}{\ignorespaces Initial mesh before adaptive refinement.\relax }}{18}{}\protected@file@percent }
+\newlabel{fig:diffpair_initial_mesh}{{17}{18}}
+\@writefile{lof}{\contentsline {figure}{\numberline {18}{\ignorespaces Final mesh after adaptive refinement.\relax }}{18}{}\protected@file@percent }
+\newlabel{fig:diffpair_optimized_mesh}{{18}{18}}
+\@writefile{lof}{\contentsline {figure}{\numberline {19}{\ignorespaces Even mode results for the coupled microstrip from Fig. 8 in \cite  {Olyslager}.\relax }}{19}{}\protected@file@percent }
+\newlabel{fig:diffpair_even}{{19}{19}}
+\@writefile{lof}{\contentsline {figure}{\numberline {20}{\ignorespaces odd mode results for the coupled microstrip from Fig. 8 in \cite  {Olyslager}.\relax }}{19}{}\protected@file@percent }
+\newlabel{fig:diffpair_odd}{{20}{19}}
+\@writefile{lof}{\contentsline {figure}{\numberline {21}{\ignorespaces Plot of the even mode fields.\relax }}{19}{}\protected@file@percent }
+\newlabel{fig:diffpair_even_plot}{{21}{19}}
+\citation{Simonovich}
+\@writefile{lof}{\contentsline {figure}{\numberline {22}{\ignorespaces Plot of the odd mode fields.\relax }}{20}{}\protected@file@percent }
+\newlabel{fig:diffpair_odd_plot}{{22}{20}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Lossy Stripline}{20}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {23}{\ignorespaces Initial mesh.\relax }}{20}{}\protected@file@percent }
+\newlabel{fig:stripline_initial_mesh}{{23}{20}}
+\@writefile{lof}{\contentsline {figure}{\numberline {24}{\ignorespaces Final optimized mesh.\relax }}{20}{}\protected@file@percent }
+\newlabel{fig:stripline_final_mesh}{{24}{20}}
+\@writefile{lof}{\contentsline {figure}{\numberline {25}{\ignorespaces Zoom of the final optimized mesh around the trace.\relax }}{20}{}\protected@file@percent }
+\newlabel{fig:stripline_mesh_zoom1}{{25}{20}}
+\citation{Simonovich}
+\citation{Simonovich}
+\citation{Simonovich}
+\@writefile{lof}{\contentsline {figure}{\numberline {26}{\ignorespaces Zoom of the final optimized mesh around the left side trace corners.\relax }}{21}{}\protected@file@percent }
+\newlabel{fig:stripline_mesh_zoom2}{{26}{21}}
+\@writefile{lof}{\contentsline {figure}{\numberline {27}{\ignorespaces Attenuation results for the case from Fig. 16 in \cite  {Simonovich}.\relax }}{21}{}\protected@file@percent }
+\newlabel{fig:stripline_results}{{27}{21}}
+\bibcite{MFEM}{1}
+\bibcite{MFEMweb}{2}
+\bibcite{Lee}{3}
+\bibcite{SLEPc}{4}
+\bibcite{PETSc}{5}
+\bibcite{Pozar}{6}
+\bibcite{Dmitriev-Zdorov}{7}
+\bibcite{Ramo}{8}
+\bibcite{Harrington}{9}
+\bibcite{FreeCAD}{10}
+\@writefile{lof}{\contentsline {figure}{\numberline {28}{\ignorespaces Error plot for attenuation.\relax }}{22}{}\protected@file@percent }
+\newlabel{fig:stripline_error}{{28}{22}}
+\@writefile{lof}{\contentsline {figure}{\numberline {29}{\ignorespaces Field plot at 50 GHz.\relax }}{22}{}\protected@file@percent }
+\newlabel{fig:stripline_plot}{{29}{22}}
+\bibcite{Olyslager}{11}
+\bibcite{gmsh}{12}
+\bibcite{gmshweb}{13}
+\bibcite{Simonovich}{14}
+\gdef \@abspage@last{24}

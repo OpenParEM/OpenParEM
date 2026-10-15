@@ -1,0 +1,74 @@
+#OpenParEMports 1.0
+
+File
+   name=generated_by_OpenParEMg
+EndFile
+
+Path
+   name=path1
+   point=(0.05,0,0.1)
+   point=(0.07286,0,0.1)
+   point=(0.07286,0.01016,0.1)
+   point=(0.05,0.01016,0.1)
+   closed=true
+   normal=(0,-0,1)
+EndPath
+
+Path
+   name=v1
+   point=(0.06143,0,0.1)
+   point=(0.06143,0.01016,0.1)
+   closed=false
+   normal=(0,-0,1)
+EndPath
+
+Path
+   name=path2
+   point=(0.05,0,0)
+   point=(0.07286,0,0)
+   point=(0.07286,0.01016,0)
+   point=(0.05,0.01016,0)
+   closed=true
+   normal=(0,-0,1)
+EndPath
+
+Path
+   name=v2
+   point=(0.06143,0,0)
+   point=(0.06143,0.01016,0)
+   closed=false
+   normal=(0,-0,1)
+EndPath
+
+Port
+   name=port1
+   path=path1
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      net=net1
+      Sport=1
+      IntegrationPath
+         type=voltage
+         scale=1
+         path=+v1
+      EndIntegrationPath
+   EndLine
+EndPort
+
+Port
+   name=port2
+   path=path2
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      net=net2
+      Sport=2
+      IntegrationPath
+         type=voltage
+         scale=1
+         path=+v2
+      EndIntegrationPath
+   EndLine
+EndPort
+

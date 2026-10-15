@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    simplify3D - simplifies project files for OpenParEM3D input decks       //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -54,7 +54,7 @@ int main (int argc, char *argv[])
 
    init_project (&projData);
    if (load_project_file (projFile, &projData, "")) {
-      cout << "ERROR2274: Failed to load project file \"" << projFile << "\" for reading." << endl;
+      cout << "ERROR3245: Failed to load project file \"" << projFile << "\" for reading." << endl;
       exit(1);
    }
    print_project (&projData,&defaultData,"");

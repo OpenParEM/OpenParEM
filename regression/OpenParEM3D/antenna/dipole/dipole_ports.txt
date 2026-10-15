@@ -1,138 +1,141 @@
 #OpenParEMports 1.0
 
 File
-   name=/home/briany/Desktop/OpenParEM3D/regression/antenna/test_dipole_study/dipole.FCStd
+   name=generated_by_OpenParEMg
 EndFile
 
 Path
-   name=front
-   point=(-0.03,-0.03,-0.03)
-   point=(0.03,-0.03,-0.03)
-   point=(0.03,-0.029999999999999985,0.03)
-   point=(-0.03,-0.029999999999999985,0.03)
+   name=path1
+   point=(-7.5e-05,-4.5e-05,-0.000125)
+   point=(-7.5e-05,-4.5e-05,2.49999999999999e-05)
+   point=(7.5e-05,-4.5e-05,2.49999999999999e-05)
+   point=(7.5e-05,-4.5e-05,-0.000125)
    closed=true
+   normal=(-0,1,0)
 EndPath
 
 Path
-   name=back
-   point=(-0.03,0.03,-0.03)
-   point=(0.03,0.03,-0.03)
-   point=(0.03,0.030000000000000013,0.03)
-   point=(-0.03,0.030000000000000013,0.03)
-   closed=true
-EndPath
-
-Path
-   name=right
-   point=(0.03,-0.03,-0.03)
-   point=(0.03,0.03,-0.03)
-   point=(0.03,0.03,0.03)
-   point=(0.03,-0.03,0.03)
-   closed=true
-EndPath
-
-Path
-   name=left
-   point=(-0.03,-0.03,-0.03)
-   point=(-0.03,0.03,-0.03)
-   point=(-0.03,0.03,0.03)
-   point=(-0.03,-0.03,0.03)
-   closed=true
-EndPath
-
-Path
-   name=top
-   point=(-0.03,-0.03,0.03)
-   point=(0.03,-0.03,0.03)
-   point=(0.03,0.03,0.03)
-   point=(-0.03,0.03,0.03)
-   closed=true
-EndPath
-
-Path
-   name=bottom
-   point=(-0.03,-0.03,-0.03)
-   point=(0.03,-0.03,-0.03)
-   point=(0.03,0.03,-0.03)
-   point=(-0.03,0.03,-0.03)
-   closed=true
-EndPath
-
-Path
-   name=port
-   point=(-7.5e-05,-4.5e-05,-7.5e-05)
-   point=(7.5e-05,-4.5e-05,-7.5e-05)
-   point=(7.5e-05,-4.499999999999997e-05,7.5e-05)
-   point=(-7.5e-05,-4.499999999999997e-05,7.5e-05)
-   closed=true
-EndPath
-
-Path
-   name=v
-   point=(0.0,-4.500000000000337e-05,-2.9999999999998778e-05)
-   point=(-6.938470387433601e-18,-4.500000000000337e-05,3.000000000000226e-05)
+   name=v1
+   point=(-1.35525271560688e-20,-4.5e-05,-8.00000000000003e-05)
+   point=(6.7762635780344e-21,-4.5e-05,-2e-05)
    closed=false
+   normal=(-0,1,0)
 EndPath
 
 Path
-   name=i
-   point=(-4.500000000000002e-05,-4.500000000000001e-05,-5e-05)
-   point=(4.500000000000002e-05,-4.500000000000001e-05,-5e-05)
-   point=(4.500000000000002e-05,-4.5e-05,-3e-05)
-   point=(-4.500000000000002e-05,-4.5e-05,-3e-05)
+   name=path2
+   point=(-0.015,-0.015,0.01495)
+   point=(-0.015,-0.015,-0.01505)
+   point=(0.015,-0.015,-0.01505)
+   point=(0.015,-0.015,0.01495)
    closed=true
+   normal=(0,-1,0)
+EndPath
+
+Path
+   name=path3
+   point=(0.015,-0.015,0.01495)
+   point=(0.015,-0.015,-0.01505)
+   point=(0.015,0.015,-0.01505)
+   point=(0.015,0.015,0.01495)
+   closed=true
+   normal=(1,0,0)
+EndPath
+
+Path
+   name=path4
+   point=(-0.015,-0.015,0.01495)
+   point=(0.015,-0.015,0.01495)
+   point=(0.015,0.015,0.01495)
+   point=(-0.015,0.015,0.01495)
+   closed=true
+   normal=(0,-0,1)
+EndPath
+
+Path
+   name=path5
+   point=(0.015,0.015,0.01495)
+   point=(0.015,0.015,-0.01505)
+   point=(-0.015,0.015,-0.01505)
+   point=(-0.015,0.015,0.01495)
+   closed=true
+   normal=(0,1,-0)
+EndPath
+
+Path
+   name=path6
+   point=(-0.015,0.015,0.01495)
+   point=(-0.015,0.015,-0.01505)
+   point=(-0.015,-0.015,-0.01505)
+   point=(-0.015,-0.015,0.01495)
+   closed=true
+   normal=(-1,0,0)
+EndPath
+
+Path
+   name=path7
+   point=(0.015,-0.015,-0.01505)
+   point=(-0.015,-0.015,-0.01505)
+   point=(-0.015,0.015,-0.01505)
+   point=(0.015,0.015,-0.01505)
+   closed=true
+   normal=(0,0,-1)
 EndPath
 
 Boundary
-   name=front
+   name=boundary1
    type=radiation
-   path=+front
+   wave_impedance=376.730313462204
+   path=path2
 EndBoundary
 
 Boundary
-   name=back
+   name=boundary2
    type=radiation
-   path=+back
+   wave_impedance=376.730313462204
+   path=path3
 EndBoundary
 
 Boundary
-   name=left
+   name=boundary3
    type=radiation
-   path=+left
+   wave_impedance=376.730313462204
+   path=path4
 EndBoundary
 
 Boundary
-   name=right
+   name=boundary4
    type=radiation
-   path=+right
+   wave_impedance=376.730313462204
+   path=path5
 EndBoundary
 
 Boundary
-   name=top
+   name=boundary5
    type=radiation
-   path=+top
+   wave_impedance=376.730313462204
+   path=path6
 EndBoundary
 
 Boundary
-   name=bottom
+   name=boundary6
    type=radiation
-   path=+bottom
+   wave_impedance=376.730313462204
+   path=path7
 EndBoundary
 
 Port
-   name=in
-   path=+port
+   name=port1
+   path=path1
    impedance_definition=PV
    impedance_calculation=line
    Line
+      net=net1
       Sport=1
       IntegrationPath
          type=voltage
-         path=+v
-      EndIntegrationPath
-      IntegrationPath
-         type=current
-         path=+i
+         scale=1
+         path=+v1
       EndIntegrationPath
    EndLine
 EndPort

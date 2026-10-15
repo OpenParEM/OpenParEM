@@ -1,0 +1,8 @@
+# ResultDatabase::save_as_test
+straight-loaded_1_0_result,8300000000,magS(dB),1,1,lessthan,-80
+straight-loaded_1_2_result,8300000000,magS(dB),2,1,equal,-0.0118530342978776,1e-03
+straight-loaded_1_3_result,8300000000,argS(deg),2,1,equal,-50.9115059369885,1e-04
+straight-loaded_1_4_result,8300000000,magS(dB),1,2,equal,-0.0118530342978776,1e-03
+straight-loaded_1_5_result,8300000000,argS(deg),1,2,equal,-50.9115059369885,1e-04
+straight-loaded_1_6_result,8300000000,magS(dB),2,2,lessthan,-80
+

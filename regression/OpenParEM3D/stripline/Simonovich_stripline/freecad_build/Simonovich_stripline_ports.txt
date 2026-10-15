@@ -1,0 +1,214 @@
+#OpenParEMports 1.0
+
+// Control
+//   build=Simonovich_stripline
+//   check_limits=true
+// EndControl
+// Strip
+//    name=Simonovich_stripline
+//    use_symmetry=false
+//    upper_material=prepreg
+//    upper_thickness=0.000301
+//    lower_material=core
+//    lower_thickness=0.0003048
+//    left_side_gap=0.001
+//    right_side_gap=0.001
+//    trace_thickness=3.175e-05
+//    trace_width=0.0002794
+//    trace_etch_angle=60
+//    default_conductor_material=PEC
+//    trace_material_bottom=copper_core
+//    trace_material_top=copper_prepreg
+//    trace_material_sides=copper_prepreg
+//    upper_groundplane_material=copper_prepreg
+//    lower_groundplane_material=copper_core
+//    length=0.001
+// EndStrip
+
+File
+   name=generated_by_builder
+EndFile
+
+Path
+   name=V1
+   point=(0,0,0)
+   point=(0,0.0003048,0)
+   closed=false
+EndPath
+
+Path
+   name=V2
+   point=(0,0,0.001)
+   point=(0,0.0003048,0.001)
+   closed=false
+EndPath
+
+Path
+   name=I1
+   point=(-0.0001397,0.0003048,0)
+   point=(-0.000121369128953229,0.00033655,0)
+   point=(0.000121369128953229,0.00033655,0)
+   point=(0.0001397,0.0003048,0)
+   closed=true
+EndPath
+
+Path
+   name=I2
+   point=(-0.0001397,0.0003048,0.001)
+   point=(0.0001397,0.0003048,0.001)
+   point=(0.000121369128953229,0.00033655,0.001)
+   point=(-0.000121369128953229,0.00033655,0.001)
+   closed=true
+EndPath
+
+Path
+   name=port1
+   point=(-0.0011397,0,0)
+   point=(-0.0011397,0.0006058,0)
+   point=(0.0011397,0.0006058,0)
+   point=(0.0011397,0,0)
+   closed=true
+EndPath
+
+Path
+   name=port2
+   point=(-0.0011397,0,0.001)
+   point=(-0.0011397,0.0006058,0.001)
+   point=(0.0011397,0.0006058,0.001)
+   point=(0.0011397,0,0.001)
+   closed=true
+EndPath
+
+Port
+   name=1
+   path=+port1
+      impedance_definition=PI
+      impedance_calculation=line
+   Line
+      Sport=1
+      net=in
+      IntegrationPath
+         type=voltage
+         path=+V1
+      EndIntegrationPath
+      IntegrationPath
+         type=current
+         path=+I1
+      EndIntegrationPath
+   EndLine
+EndPort
+
+Port
+   name=2
+   path=+port2
+      impedance_definition=PI
+      impedance_calculation=line
+   Line
+      Sport=2
+      net=out
+      IntegrationPath
+         type=voltage
+         path=+V2
+      EndIntegrationPath
+      IntegrationPath
+         type=current
+         path=+I2
+      EndIntegrationPath
+   EndLine
+EndPort
+
+Path
+   name=trace_top
+   point=(-0.000121369128953229,0.00033655,0)
+   point=(-0.000121369128953229,0.00033655,0.001)
+   point=(0.000121369128953229,0.00033655,0.001)
+   point=(0.000121369128953229,0.00033655,0)
+   closed=true
+EndPath
+
+Boundary
+   name=trace_top
+   type=surface_impedance
+   material=copper_prepreg
+   path=trace_top
+EndBoundary
+
+Path
+   name=trace_bottom
+   point=(-0.0001397,0.0003048,0)
+   point=(-0.0001397,0.0003048,0.001)
+   point=(0.0001397,0.0003048,0.001)
+   point=(0.0001397,0.0003048,0)
+   closed=true
+EndPath
+
+Boundary
+   name=trace_bottom
+   type=surface_impedance
+   material=copper_core
+   path=trace_bottom
+EndBoundary
+
+Path
+   name=trace_left
+   point=(-0.0001397,0.0003048,0)
+   point=(-0.0001397,0.0003048,0.001)
+   point=(-0.000121369128953229,0.00033655,0.001)
+   point=(-0.000121369128953229,0.00033655,0)
+   closed=true
+EndPath
+
+Boundary
+   name=trace_left
+   type=surface_impedance
+   material=copper_prepreg
+   path=trace_left
+EndBoundary
+
+Path
+   name=trace_right
+   point=(0.0001397,0.0003048,0)
+   point=(0.0001397,0.0003048,0.001)
+   point=(0.000121369128953229,0.00033655,0.001)
+   point=(0.000121369128953229,0.00033655,0)
+   closed=true
+EndPath
+
+Boundary
+   name=trace_right
+   type=surface_impedance
+   material=copper_prepreg
+   path=trace_right
+EndBoundary
+
+Path
+   name=ground_plane
+   point=(-0.0011397,0,0)
+   point=(-0.0011397,0,0.001)
+   point=(0.0011397,0,0.001)
+   point=(0.0011397,0,0)
+   closed=true
+EndPath
+
+Boundary
+   name=ground_plane
+   type=surface_impedance
+   material=copper_core
+   path=ground_plane
+EndBoundary
+
+Path
+   name=upper_groundplane
+   point=(-0.0011397,0.0006058,0)
+   point=(-0.0011397,0.0006058,0.001)
+   point=(0.0011397,0.0006058,0.001)
+   point=(0.0011397,0.0006058,0)
+   closed=true
+EndPath
+
+Boundary
+   name=upper_groundplane
+   type=surface_impedance
+   material=copper_prepreg
+   path=upper_groundplane
+EndBoundary

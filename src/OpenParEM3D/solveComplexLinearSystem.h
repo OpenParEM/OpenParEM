@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -31,8 +31,8 @@
 #define lapack_int int
 #define lapack_complex_double double complex
 
-double lapack_complex_double_real ();
-double lapack_complex_double_imag ();
+double lapack_complex_double_real (lapack_complex_double);
+double lapack_complex_double_imag (lapack_complex_double);
 
 //double* allocReaddof (char *, char *, size_t *);
 //void printdof (double *, size_t);
@@ -51,6 +51,8 @@ void matrixScale (lapack_complex_double *, lapack_complex_double *, lapack_int);
 void matrixCopy (lapack_complex_double *, lapack_complex_double *, lapack_int);
 int matrixInverse(lapack_complex_double *, lapack_int);
 void matrixMultiply(lapack_complex_double *, lapack_complex_double *, lapack_int);
+
+void remove_lock_file (const char *);
 
 #endif
 

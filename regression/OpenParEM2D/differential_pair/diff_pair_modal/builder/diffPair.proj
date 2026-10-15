@@ -5,7 +5,7 @@
 project.save.fields               true
 
 mesh.file                         diffPair.msh
-mesh.order                        4
+fem.order                         4
 
 mode.definition.file              diffPair_modes.txt
 
@@ -31,7 +31,6 @@ solution.modes.buffer             0
 solution.impedance.definition     PI
 solution.impedance.calculation    modal
 solution.shift.invert             true
-solution.use.initial.guess        true
 
 output.show.refining.mesh         false
 output.show.postprocessing        false

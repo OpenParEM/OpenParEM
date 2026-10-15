@@ -1,40 +1,356 @@
 #!/bin/sh
 
+# unset some variables that would interfere with this build
+unset PETSC_DIR
+unset PETSC_ARCH
+unset SLEPC_DIR
+
+# locations
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+DOWNLOAD_DIR="../external_packages"
+
+echo "#----------------------------------------------------"
+echo "# check for installed build tools"
+echo "#----------------------------------------------------"
+
+missing_requirement=0
+
+which make > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"make\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+if [ "$with_cmake" = "0" ]; then
+which cmake > /dev/null 2>&1
+   if [ $? -ne 0 ]; then
+      echo "ERROR: \"cmake\" must be installed on the system to compile OpenParEM"
+      missing_requirement=1
+   fi
+fi
+
+which g++ > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"g++\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which gfortran > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"gfortran\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which perl > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"perl\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which python3 > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"python3\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+has_python3p10=0
+which python3.10 > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+   has_python3p10=1
+fi
+
+has_python3p11=0
+which python3.11 > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+   has_python3p11=1
+fi
+
+if [ "$has_python3p10" = "1" ]; then
+   if [ "$has_python3p11" = "0" ]; then
+      echo "ERROR: python3.10 is not supported.  See the installation guide on installing python3.11."
+      missing_requirement=1
+   fi
+fi
+
+if [ "$with_tk" = "0" ]; then
+   which tclsh > /dev/null 2>&1
+   if [ $? -ne 0 ]; then
+      echo "ERROR: \"tclsh\" must be installed on the system to compile OpenParEM"
+      missing_requirement=1
+   fi
+
+   which wish > /dev/null 2>&1
+   if [ $? -ne 0 ]; then
+      echo "ERROR: \"wish\" must be installed on the system to compile OpenParEM"
+      missing_requirement=1
+   fi
+fi
+
+which pkg-config > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"pkg-config\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+   
+which autoconf > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"autoconf\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1 
+fi
+   
+which libtool > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"libtool\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+   
+which aclocal > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"aclocal\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which automake > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"automake\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which patchelf > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"patchelf\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+which shasum > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: \"shasum\" must be installed on the system to compile OpenParEM"
+   missing_requirement=1
+fi
+
+if [ "$missing_requirement" = "1" ]; then
+   exit 1
+fi
+
 #----------------------------------------------------
-# downloaded packages included with this distribution
+# GNU keyring for verifying GNU packages
 #----------------------------------------------------
 
+# GNU_KEYRING downloaded from:
+# wget https://ftp.gnu.org/gnu/gnu-keyring.gpg
+
+GNU_KEYRING="$SCRIPT_DIR/keyrings/gnu-keyring.gpg"
+MADLER_KEYRING="$SCRIPT_DIR/keyrings/madler-keyring.gpg"
+AKHUZHIN_KEYRING="$SCRIPT_DIR/keyrings/akhuzhin-keyring.gpg"
+WLEMBERG_KEYRING="$SCRIPT_DIR/keyrings/wlemberg-keyring.gpg"
+ACOOPERSMITH_KEYRING="$SCRIPT_DIR/keyrings/acoopersmith-keyring.gpg"
+ACOOPERSMITH2_KEYRING="$SCRIPT_DIR/keyrings/acoopersmith2-keyring.gpg"
+ACOOPERSMITH3_KEYRING="$SCRIPT_DIR/keyrings/acoopersmith3-keyring.gpg"
+MTURNER_KEYRING="$SCRIPT_DIR/keyrings/mturner-keyring.gpg"
+AJACKSON_KEYRING="$SCRIPT_DIR/keyrings/ajackson-keyring.gpg"
+SMCVITTIE_KEYRING="$SCRIPT_DIR/keyrings/smcvittie-keyring.gpg"
+ICUROBOT_KEYRING="$SCRIPT_DIR/keyrings/icurobot-keyring.gpg"
+BKING_KEYRING="$SCRIPT_DIR/keyrings/bking-keyring.gpg"
+OFOURDAN_KEYRING="$SCRIPT_DIR/keyrings/ofourdan-keyring.gpg"
+SUDALTSOV_KEYRING="$SCRIPT_DIR/keyrings/sudaltsov-keyring.gpg"
+
+echo "#----------------------------------------------------"
+echo "# download required packages"
+echo "#----------------------------------------------------"
+
+# functions courtesy of ChatGPT
+
+download_package_and_verify_sha ()
+{
+    PACKAGE="$1"
+    URL="$2"
+    EXPECTED_SHA="$3"
+
+    FILE="$DOWNLOAD_DIR/$PACKAGE"
+
+    if [ ! -f "$FILE" ]; then
+        echo "Downloading package file $PACKAGE ..."
+        wget -O "$FILE" "$URL" || return 1
+    fi
+
+    echo "Verifying SHA for $PACKAGE ..."
+
+    ACTUAL_SHA=$(shasum "$FILE" | awk '{print $1}')
+
+    if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+        echo "ERROR: SHA mismatch for $PACKAGE"
+        echo "Expected: $EXPECTED_SHA"
+        echo "Actual:   $ACTUAL_SHA"
+        return 1
+    fi
+
+    echo "SHA OK: $PACKAGE"
+    echo ""
+}
+
+download_package_and_verify_sha256 ()
+{
+    PACKAGE="$1"
+    URL="$2"
+    EXPECTED_SHA256="$3"
+
+    FILE="$DOWNLOAD_DIR/$PACKAGE"
+
+    if [ ! -f "$FILE" ]; then
+        echo "Downloading package file $PACKAGE ..."
+        wget -O "$FILE" "$URL" || return 1
+    fi
+
+    echo "Verifying SHA-256 for $PACKAGE ..."
+
+    ACTUAL_SHA256=$(sha256sum "$FILE" | awk '{print $1}')
+
+    if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+        echo "ERROR: SHA-256 mismatch for $PACKAGE"
+        echo "Expected: $EXPECTED_SHA256"
+        echo "Actual:   $ACTUAL_SHA256"
+        return 1
+    fi
+
+    echo "SHA-256 OK: $PACKAGE"
+    echo ""
+}
+
+download_package_and_verify_sig ()
+{
+    PACKAGE="$1"
+    URL="$2"
+    SIG_SUFFIX="${3:-sig}"
+    KEYRING="$4"
+    SITE_SUFFIX="$5"
+
+    FILE="$DOWNLOAD_DIR/$PACKAGE"
+    SIG="$FILE.$SIG_SUFFIX"
+
+    if [ ! -f "$FILE" ]; then
+        echo "Downloading package file $PACKAGE ..."
+        wget -O "$FILE" "${URL}$SITE_SUFFIX" || return 1
+    fi
+
+    #echo "List of keys for $KEYRING:"
+    #gpg --no-default-keyring \
+    #    --keyring "$KEYRING" \
+    #    --list-keys
+
+    if [ ! -f "$SIG" ]; then
+        echo "Downloading sig file $PACKAGE.$SIG_SUFFIX ..."
+        wget -O "$SIG" "${URL}.$SIG_SUFFIX$SITE_SUFFIX" || return 1
+    fi
+
+    echo "Verifying $PACKAGE ..."
+    gpgv --keyring "$KEYRING" "$SIG" "$FILE" || return 1
+
+    echo "Signature OK: $PACKAGE"
+    echo ""
+}
+
+download_cmake_and_verify()
+{
+    version="$1"
+    filename="$2"
+    download_dir="$3"
+    keyring="$4"
+
+    base_url="https://cmake.org/files/v${version%.*}"
+
+    sha_file="cmake-${version}-SHA-256.txt"
+    sig_file="${sha_file}.asc"
+
+    archive="${download_dir}/${filename}"
+    sha_path="${download_dir}/${sha_file}"
+    sig_path="${download_dir}/${sig_file}"
+
+    if [ ! -f "$keyring" ]; then
+        echo "ERROR: GPG keyring not found: $keyring" >&2
+        return 1
+    fi
+
+    mkdir -p "$download_dir" || return 1
+
+    if [ -f "$archive" ]; then
+        echo "CMake archive already exists: $archive"
+    else
+        echo "Downloading $filename..."
+
+        if ! wget -q --show-progress -O "$archive" \
+            "${base_url}/${filename}"; then
+            echo "ERROR: Failed to download $filename" >&2
+            rm -f "$archive"
+            return 1
+        fi
+    fi
+
+    if [ -f "$sha_path" ]; then
+        echo "SHA-256 file already exists: $sha_path"
+    else
+        echo "Downloading $sha_file..."
+
+        if ! wget -q --show-progress -O "$sha_path" \
+            "${base_url}/${sha_file}"; then
+            echo "ERROR: Failed to download $sha_file" >&2
+            rm -f "$sha_path"
+            return 1
+        fi
+    fi
+
+    if [ -f "$sig_path" ]; then
+        echo "SHA-256 signature already exists: $sig_path"
+    else
+        echo "Downloading $sig_file..."
+
+        if ! wget -q --show-progress -O "$sig_path" \
+            "${base_url}/${sig_file}"; then
+            echo "ERROR: Failed to download $sig_file" >&2
+            rm -f "$sig_path"
+            return 1
+        fi
+    fi
+
+    echo "Verifying CMake SHA-256 signature..."
+
+    if ! gpg --no-default-keyring \
+        --keyring "$keyring" \
+        --verify "$sig_path" "$sha_path"; then
+        echo "ERROR: CMake SHA-256 signature verification failed" >&2
+        return 1
+    fi
+
+    echo "Verifying CMake archive SHA-256..."
+
+    expected_sha256=$(awk -v file="$filename" \
+        '$2 == file {print $1}' "$sha_path")
+
+    if [ -z "$expected_sha256" ]; then
+        echo "ERROR: Could not find $filename in $sha_file" >&2
+        return 1
+    fi
+
+    actual_sha256=$(sha256sum "$archive" | awk '{print $1}')
+
+    if [ "$actual_sha256" != "$expected_sha256" ]; then
+        echo "ERROR: CMake archive SHA-256 verification failed" >&2
+        echo "Expected: $expected_sha256" >&2
+        echo "Actual:   $actual_sha256" >&2
+        return 1
+    fi
+
+    echo "CMake archive SHA-256 verified."
+    echo "CMake $version download verified successfully."
+
+    return 0
+}
+
+#----------------------------------------------------
 # local gcc compile version for portable pre-compiled binaries
+#----------------------------------------------------
+
 gcc_version="gcc-13.3.0"
-
-# flex, bison, and Open MPI are not typically installed on Linux systems.  To avoid
-# having to install them with root priviledges, they are compiled here.
-
-# www.gnu.org
-m4="m4-1.4.19.tar.gz"
-bison="bison-3.8.tar.gz"
-zlib="zlib-1.3.1.tar.gz"
-flex="flex-2.6.4.tar.gz"
-hwloc="hwloc-2.11.2.tar.gz"
-libevent="libevent-2.1.12-stable.tar.gz"
-pmix="pmix-5.0.7.tar.gz"
-prrte="prrte-3.0.9.tar.gz"
-
-# www.open-mpi.org
-openmpi="openmpi-4.1.8.tar.gz"
-
-# Compile HYPRE separately because PETSc would compile it for complex, which
-# is incompatible with MFEM.
-# https://github.com/hypre-space/hypre
-hypre="hypre-2.32.0.tar.gz"
-
-# https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/
-petsc="petsc-3.23.0.tar.gz"
-
-# Compile MFEM separately from PETSc to maintain a little more flexibility
-# in using non-released versions of MFEM, if needed.
-# www.mfem.org
-mfem="mfem-4.8.tgz"
 
 #----------------------------------------------------
 # packages downloaded by petsc
@@ -42,15 +358,25 @@ mfem="mfem-4.8.tgz"
 
 fblaslapack="https://bitbucket.org/petsc/pkg-fblaslapack/get/v3.4.2-p3.tar.gz"
 metis="https://bitbucket.org/petsc/pkg-metis/get/v5.1.0-p12.tar.gz"
-mumps="https://web.cels.anl.gov/projects/petsc/download/externalpackages/MUMPS_5.7.3.tar.gz"
-scalapack="https://github.com/Reference-ScaLAPACK/scalapack/archive/v2.2.2.tar.gz"
-scotch="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.6/scotch-v7.0.6.tar.gz"
+mumps="https://web.cels.anl.gov/projects/petsc/download/externalpackages/MUMPS_5.9.1.tar.gz"
+scalapack="https://github.com/Reference-ScaLAPACK/scalapack/archive/v2.2.3.tar.gz"
+scotch="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.6/scotch-v7.0.13.tar.gz"
 cmake="https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6.tar.gz"
+
+# Compile HYPRE separately because PETSc would compile it for complex, which
+# is incompatible with MFEM.
 
 #----------------------------------------------------
 # packages to install
 #----------------------------------------------------
 
+with_meson=1
+with_freetype=1
+with_tcl=1
+with_tk=1
+with_occt=1
+with_gmsh=1
+with_qt=1
 with_m4=1
 with_bison=1
 with_zlib=1
@@ -60,11 +386,15 @@ with_libevent=1
 with_pmix=1
 with_prrte=1
 with_openmpi=1
+with_mpich=0
 with_hypre=1
 with_cmake=1
 with_petsc=1
 with_mfem=1
 with_OpenParEM=1
+with_OpenParEMg=1
+remove_helper_scripts=0
+create_binary_distribution=0
 
 #----------------------------------------------------
 # library types
@@ -82,30 +412,6 @@ enable_shared=yes
 if [ ! -f "OpenParEM_build" ]; then
    echo "ERROR: OpenParEM_build must be run from the scripts directory"
    exit 1
-fi
-
-#----------------------------------------------------
-# check for installed tools
-#----------------------------------------------------
-
-which cmake > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-   with_cmake=0
-fi
-
-which bison > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-   with_bison=0
-fi
-
-which flex > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-   with_flex=0
-fi
-
-which mpirun > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-   with_openmpi=0
 fi
 
 #----------------------------------------------------
@@ -141,6 +447,15 @@ unpack_and_enter() {
       fi
    fi
 
+   is_tarxz=0
+   if [ "$is_identified" = "0" ]; then
+      FILE_base=${FILE%.tar.xz}
+      if [ "$FILE_base" != "$FILE" ]; then
+         is_tarxz=1
+         is_identified=1
+      fi
+   fi
+
    is_tgz=0
    if [ "$is_identified" = "0" ]; then
       FILE_base=${FILE%.tgz}
@@ -164,6 +479,18 @@ unpack_and_enter() {
       exit 1
    fi
 
+   # tcl and tk add "-src" to the tarball name that must be removed to get the correct base name
+
+   prefix=`echo $FILE_base | cut -c1-3`
+   if [ "$prefix" = "tcl" ]; then
+      FILE_base=${FILE_base%-src}
+   fi
+
+   prefix=`echo $FILE_base | cut -c1-2`
+   if [ "$prefix" = "tk" ]; then
+      FILE_base=${FILE_base%-src}
+   fi
+
    # remove any previously unpacked instance
    if [ -d "$FILE_base" ]; then
       rm -Rf "$FILE_base"
@@ -174,7 +501,7 @@ unpack_and_enter() {
 
    # unpack
 
-   if [ "$is_targz" = "1" -o "$is_tgz" = "1" ]; then
+   if [ "$is_targz" = "1" -o "$is_tgz" = "1" -o "$is_tarxz" = "1" ]; then
       tar -xf "$FILE"
       if [ $? -ne 0 ]; then
          echo "ERROR: failure to unpack \"""$FILE""\""
@@ -190,7 +517,6 @@ unpack_and_enter() {
       fi
    fi
 
-   # make sure it unpacked
    if [ ! -d "$FILE_base" ]; then
       echo "ERROR: failure to unpack \"""$FILE""\""
       exit 1
@@ -288,6 +614,10 @@ install_path=$PWD
 cd "$scripts_dir"
 jobs=1
 
+# for gpg to avoid use-keyboxd
+export GNUPGHOME="$install_path/scripts/keyrings"
+
+
 #----------------------------------------------------
 # input processing
 #----------------------------------------------------
@@ -303,10 +633,14 @@ for arg in "$@"; do
          install_path=$value
       elif [ "$keyword" = "--jobs" ]; then
          jobs=$value
-#      elif [ "$arg" = "--static" ]; then
-#         enable_static=yes
-#         enable_shared=no
       elif [ "$arg" = "--without-all" ]; then
+         with_meson=0
+         with_freetype=0
+         with_tcl=0
+         with_tk=0
+         with_occt=0
+         with_gmsh=0
+         with_qt=0
          with_m4=0
          with_bison=0
          with_zlib=0
@@ -316,12 +650,21 @@ for arg in "$@"; do
          with_pmix=0
          with_prrte=0
          with_openmpi=0
+         with_mpich=0
          with_hypre=0
          with_cmake=0
          with_petsc=0
          with_mfem=0
          with_OpenParEM=0
+         with_OpenParEMg=0
       elif [ "$arg" = "--with-all" ]; then
+         with_meson=1
+         with_freetype=1
+         with_tcl=1
+         with_tk=1
+         with_occt=1
+         with_gmsh=1
+         with_qt=1
          with_m4=1
          with_bison=1
          with_zlib=1
@@ -331,113 +674,161 @@ for arg in "$@"; do
          with_pmix=1
          with_prrte=1
          with_openmpi=1
+         with_mpich=1
          with_hypre=1
          with_cmake=1
          with_petsc=1
          with_mfem=1
          with_OpenParEM=1
+         with_OpenParEMg=1
       elif [ "$arg" = "--show-setup" ]; then
          show_setup=1
       elif [ "$arg" = "--clean-in-place" ]; then
          clean_in_place=1
-      elif [ "$arg" = "--precompiled-bin" ]; then
-         precompiled_bin=1
-         clean_in_place=1
+      elif [ "$arg" = "--with-freetype" ]; then
+         with_freetype=1
+      elif [ "$arg" = "--without-freetype" ]; then
+         with_freetype=0
+      elif [ "$arg" = "--with-meson" ]; then
+         with_meson=1
+      elif [ "$arg" = "--without-meson" ]; then
+         with_meson=0
+      elif [ "$arg" = "--with-tcl" ]; then
+         with_tcl=1
+      elif [ "$arg" = "--without-tcl" ]; then
+         with_tcl=0
+      elif [ "$arg" = "--with-tk" ]; then
+         with_tk=1
+      elif [ "$arg" = "--without-tk" ]; then
+         with_tk=0
+      elif [ "$arg" = "--with-occt" ]; then
+         with_occt=1
+      elif [ "$arg" = "--without-occt" ]; then
+         with_occt=0
+      elif [ "$arg" = "--with-gmsh" ]; then
+         with_gmsh=1
+      elif [ "$arg" = "--without-gmsh" ]; then
+         with_gmsh=0
+      elif [ "$arg" = "--with-qt" ]; then
+         with_qt=1
+      elif [ "$arg" = "--without-qt" ]; then
+         with_qt=0
       elif [ "$arg" = "--with-m4" ]; then
          with_m4=1
-      elif [ "$keyword" = "--with-m4" ]; then
-         with_m4=1
-         m4=$value
       elif [ "$arg" = "--without-m4" ]; then
          with_m4=0
       elif [ "$arg" = "--with-bison" ]; then
          with_bison=1
-      elif [ "$keyword" = "--with-bison" ]; then
-         with_bison=1
-         bison=$value
       elif [ "$arg" = "--without-bison" ]; then
          with_bison=0
       elif [ "$arg" = "--with-zlib" ]; then
          with_zlib=1
-      elif [ "$keyword" = "--with-zlib" ]; then
-         with_zlib=1
-         zlib=$value
       elif [ "$arg" = "--without-zlib" ]; then
          with_zlib=0
       elif [ "$arg" = "--with-flex" ]; then
          with_flex=1
-      elif [ "$keyword" = "--with-flex" ]; then
-         with_flex=1
-         flex=$value
       elif [ "$arg" = "--without-flex" ]; then
          with_flex=0
       elif [ "$arg" = "--with-hwloc" ]; then
          with_hwloc=1
-      elif [ "$keyword" = "--with-hwloc" ]; then
-         with_hwloc=1
-         hwloc=$value
       elif [ "$arg" = "--without-hwloc" ]; then
          with_hwloc=0
       elif [ "$arg" = "--with-libevent" ]; then
          with_libevent=1
-      elif [ "$keyword" = "--with-libevent" ]; then
-         with_libevent=1
-         libevent=$value
       elif [ "$arg" = "--without-libevent" ]; then
          with_libevent=0
       elif [ "$arg" = "--with-pmix" ]; then
          with_pmix=1
-      elif [ "$keyword" = "--with-pmix" ]; then
-         with_pmix=1
-         pmix=$value
       elif [ "$arg" = "--without-pmix" ]; then
          with_pmix=0
       elif [ "$arg" = "--with-prrte" ]; then
          with_prrte=1
-      elif [ "$keyword" = "--with-prrte" ]; then
-         with_prrte=1
-         prrte=$value
       elif [ "$arg" = "--without-prrte" ]; then
          with_prrte=0
       elif [ "$arg" = "--with-openmpi" ]; then
          with_openmpi=1
-      elif [ "$keyword" = "--with-openmpi" ]; then
-         with_openmpi=1
-         openmpi=$value
       elif [ "$arg" = "--without-openmpi" ]; then
          with_openmpi=0
+      elif [ "$arg" = "--with-mpich" ]; then
+         with_mpich=1
+      elif [ "$arg" = "--without-mpich" ]; then
+         with_mpich=0
       elif [ "$arg" = "--with-hypre" ]; then
          with_hypre=1
-      elif [ "$keyword" = "--with-hypre" ]; then
-         with_hypre=1
-         hypre=$value
       elif [ "$arg" = "--without-hypre" ]; then
          with_hypre=0
       elif [ "$arg" = "--with-cmake" ]; then
          with_cmake=1
-      elif [ "$keyword" = "--with-cmake" ]; then
-         with_cmake=1
-         cmake=$value
       elif [ "$arg" = "--without-cmake" ]; then
          with_cmake=0
       elif [ "$arg" = "--with-petsc" ]; then
          with_petsc=1
-      elif [ "$keyword" = "--with-petsc" ]; then
-         with_petsc=1
-         petsc=$value
       elif [ "$arg" = "--without-petsc" ]; then
          with_petsc=0
       elif [ "$arg" = "--with-mfem" ]; then
          with_mfem=1
-      elif [ "$keyword" = "--with-mfem" ]; then
-         with_mfem=1
-         mfem=$value
       elif [ "$arg" = "--without-mfem" ]; then
          with_mfem=0
       elif [ "$arg" = "--with-OpenParEM" ]; then
          with_OpenParEM=1
       elif [ "$arg" = "--without-OpenParEM" ]; then
          with_OpenParEM=0
+      elif [ "$arg" = "--with-OpenParEMg" ]; then
+         with_OpenParEMg=1
+      elif [ "$arg" = "--without-OpenParEMg" ]; then
+         with_OpenParEMg=0
+      elif [ "$arg" = "--remove-helper-scripts" ]; then
+         with_meson=0
+         with_freetype=0
+         with_tcl=0
+         with_tk=0
+         with_occt=0
+         with_gmsh=0
+         with_qt=0
+         with_m4=0
+         with_bison=0
+         with_zlib=0
+         with_flex=0
+         with_hwloc=0
+         with_libevent=0
+         with_pmix=0
+         with_prrte=0
+         with_openmpi=0
+         with_mpich=0
+         with_hypre=0
+         with_cmake=0
+         with_petsc=0
+         with_mfem=0
+         with_OpenParEM=0
+         with_OpenParEMg=0
+         remove_helper_scripts=1
+         create_binary_distribution=0
+      elif [ "$arg" = "--create-binary-distribution" ]; then
+         with_meson=0
+         with_freetype=0
+         with_tcl=0
+         with_tk=0
+         with_occt=0
+         with_gmsh=0
+         with_qt=0
+         with_m4=0
+         with_bison=0
+         with_zlib=0
+         with_flex=0
+         with_hwloc=0
+         with_libevent=0
+         with_pmix=0
+         with_prrte=0
+         with_openmpi=0
+         with_mpich=0
+         with_hypre=0
+         with_cmake=0
+         with_petsc=0
+         with_mfem=0
+         with_OpenParEM=0
+         with_OpenParEMg=0
+         remove_helper_scripts=0
+         create_binary_distribution=1
       else
          echo "ERROR: unrecognized option ""$arg"
          exit 1
@@ -453,258 +844,337 @@ if [ $print_help -eq 1 ]; then
    echo "Usage: OpenParEM_build [OPTIONS]"
    echo "Builds the OpenParEM distribution when run from the scripts directory."
    echo ""
-   echo "The build tools make, g++, gfortran, and perl must be installed on the system."
+   echo "Any missing build tools such as make are reported then the script exits."
    echo ""
    echo "For an in-place build with the results placed in the distribution tree, execute as"
-   echo "   shell: OpenParEM_build --jobs=N --with-all"
+   echo "   shell: OpenParEM_build --jobs=N"
    echo "If OpenParEM_build has already been run, use the --clean-in-place option to delete"
-   echo "any prior results before compiling."
+   echo "any prior compilation products before re-running to compile."
    echo ""
    echo "For an out-of-place build in a given install directory, execute as"
-   echo "   shell: OpenParEM_build --jobs=N --prefix=install_dir --with-all"
+   echo "   shell: OpenParEM_build --jobs=N --prefix=install_dir"
    echo "where the installation directory must already exist.  Note that there is no option for"
-   echo "deleting prior results on additional build runs."
+   echo "deleting prior compilation results on subseqent compilations.  In this case, simply"
+   echo "delete the install_dir directory."
    echo ""
-   echo "Omit the --with-all option, then if cmake, flex, or bison are found using a search with"
-   echo "the existing PATH, they are compiled and installed from source."
-   echo ""
-   echo "If an MPI development distribution is not found at /usr/bin, /usr/lib, and /usr/include, then"
-   echo "Open MPI is compiled and installed from source. An option can be applied to force the compilation."
-   echo ""
-   echo "After compiling, tests are performed on OpenParEM2D and OpenParEM3D.  If these pass,"
-   echo "then compilation is successful and OpenParEM is ready to use.  However, it is still required"
-   echo "to set the PATH."
+   echo "In general, if a package exists on the system, then using the without-name package skips"
+   echo "compiling the package and the build relies on the normal system-level discovery process"
+   echo "to find and use the package.  Note that for this to work, the development version of"
+   echo "the package may be required."
    echo ""
    echo "common OPTIONS:"
-   echo "  --help or -H             print this help message and exit"
-   echo "  --prefix=path            set the install path to the given path.  Default is the current working directory"
-   echo "  --jobs=integer           execute make with parallel processing [i.e. make -j integer]. Default=1"
-#   echo "  --shared                  build using shared libraries. Default is to build static libraries whenever possible"
-   echo "  --clean-in-place         remove any prior in-place installation"
-   echo "  --with-all               compile everything to minimize potential compatibility issues"
-   echo "  --show-setup             show the compilation setup and exit"
+   echo "  --help or -H          print this help message and exit"
+   echo "  --prefix=path         set the install path to the given path.  Default is the current working directory"
+   echo "  --jobs=integer        execute make with parallel processing [i.e. make -j integer]. Default=1"
+   echo "  --show-setup          show the compilation setup and exit; forces --without-all"
    echo ""
    echo "advanced OPTIONS:"
-   echo "  --without-all            skip compiling all; generally followed by --with-* options to add back in something to compile"
-   echo "  --with-m4[=file]         compile m4 using the default distribution or the provided file"
-   echo "  --without-m4             skip compiling m4"
-   echo "  --with-bison[=file]      compile bison using the default distribution or the provided file"
-   echo "  --without-bison          skip compiling bison"
-   echo "  --with-zlib[=file]       compile libzlib using the default distribution or the provided file"
-   echo "  --without-zlib           skip compiling libzlib"
-   echo "  --with-flex[=file]       compile flex using the default distribution or the provided file"
-   echo "  --without-flex           skip compiling flex; flex must be installed on the system"
-   echo "  --with-hwloc[=file]      compile libhwloc using the default distribution or the provided file"
-   echo "  --without-hwloc          skip compiling libhwloc"
-   echo "  --with-libevent[=file]   compile libevent using the default distribution or the provided file"
-   echo "  --without-libevent       skip compiling libevent"
-   echo "  --with-pmix[=file]       compile libpmix using the default distribution or the provided file"
-   echo "  --without-pmix           skip compiling libpmix"
-   echo "  --with-prrte[=file]      compile libprrte using the default distribution or the provided file"
-   echo "  --without-prrte          skip compiling libprrte"
-   echo "  --with-openmpi[=file]    compile OpenMPI and related libraries using the default distribution or the provided file"
-   echo "  --without-openmpi        skip compiling OpenMPI and related libraries; MPI plus development libraries must be installed on the system"
-   echo "  --with-hypre[=file]      compile libHYPRE using the default distribution or the provided file"
-   echo "  --without-hypre          skip compiling libHYPRE"
-   echo "  --with-cmake[=file]      compile cmake during petsc compilation"
-   echo "  --without-cmake          skip compiling cmake: cmake must be installed on the system"
-   echo "  --with-petsc[=file]      compile PETSc and related libraries using the default distribution or the provided file"
-   echo "  --without-petsc          skip compiling PETSc and related libraries"
-   echo "  --with-mfem[=file]       compile libmfem using the default distribution or the provided file"
-   echo "  --without-mfem           skip compiling libmfem"
-   echo "  --with-OpenParEM         compile OpenParEM"
-   echo "  --without-OpenParEM      skip compiling OpenParEM"
+   echo "  --with-all            compile everything to minimize potential compatibility issues"
+   echo "  --without-all         skip compiling all; generally followed by --with-* options to add back in something to compile"
+   echo "  --with-freetype       compile freetype"
+   echo "  --without-freetype    skip compiling freetype"
+   echo "  --with-meson          compile meson and ninja"  
+   echo "  --without-meson       skip compiliing meson and ninja"
+   echo "  --with-tcl            compile tcl"
+   echo "  --without-tcl         skip compiling tcl"
+   echo "  --with-tk             compile tk plus xorgproto, xcb_proto, libXau, libxcb, xtrans, libX11"
+   echo "  --without-tk          skip compiling tk and dependencies"
+   echo "  --with-occt           compile OCCT plus fontconfig, xext, and glvnd"
+   echo "  --without-occt        skip compiling OCCT and dependencies"
+   echo "  --with-gmsh           compile gmsh"
+   echo "  --without-gmsh        skip compiling gmsh"
+   echo "  --with-qt             compile Qt plus xcb_util, xcb_util_image, xcb_util_keysyms, xcb_util_renderutil, xcb_util_wm,"
+   echo "                                        xcb_util_cursor, xcb_util_errors, libxml2, xkeyboard-config, xkbcommon, dbus-1, and ic4u"
+   echo "  --without-qt          skip compiling Qt and dependencies"
+   echo "  --with-m4             compile m4"
+   echo "  --without-m4          skip compiling m4"
+   echo "  --with-bison          compile bison"
+   echo "  --without-bison       skip compiling bison"
+   echo "  --with-zlib           compile libzlib"
+   echo "  --without-zlib        skip compiling libzlib"
+   echo "  --with-flex           compile flex"
+   echo "  --without-flex        skip compiling flex"
+   echo "  --with-hwloc          compile libhwloc"
+   echo "  --without-hwloc       skip compiling libhwloc"
+   echo "  --with-libevent       compile libevent"
+   echo "  --without-libevent    skip compiling libevent"
+   echo "  --with-pmix           compile libpmix"
+   echo "  --without-pmix        skip compiling libpmix"
+   echo "  --with-prrte          compile libprrte"
+   echo "  --without-prrte       skip compiling libprrte"
+   echo "  --with-openmpi        compile OpenMPI and related libraries"
+   echo "  --without-openmpi     skip compiling OpenMPI"
+   echo "  --with-mpich          compile MPICH"
+   echo "  --without-mpich       skip compiling MPICH"
+   echo "  --with-hypre          compile libHYPRE"
+   echo "  --without-hypre       skip compiling libHYPRE"
+   echo "  --with-cmake          compile cmake"
+   echo "  --without-cmake       skip compiling cmake"
+   echo "  --with-petsc          compile PETSc plus SLEPc, Metis, Mumps, Scalapack, Scotch, FBlasLapack, and Fortran bindings"
+   echo "  --without-petsc       skip compiling PETSc and dependencies"
+   echo "  --with-mfem           compile libmfem"
+   echo "  --without-mfem        skip compiling libmfem"
+   echo "  --with-OpenParEM      compile OpenParEM"
+   echo "  --without-OpenParEM   skip compiling OpenParEM"
+   echo "  --with-OpenParEMg     compile OpenParEMg"
+   echo "  --without-OpenParEMg  skip compiling OpenParEMg"
    echo ""
    echo "developer OPTIONS:"
-   echo "  --precompiled-bin        compile for a portable pre-compiled binary using a locally compiled version of gcc; forces --clean-in-place"
+   echo "  --clean-in-place              remove any prior in-place installation"
+   echo "  --remove-helper-scripts       remove the FreeCAD and ParaView helper scripts and the .OpenParEMg configuration file"
+   echo "                                forces --without-all and cancels --create-binary-distribution"
+   echo "  --create-binary-distribution  create a tar.gz binary distribution"
+   echo "                                forces --without-all and cancels --remove-helper-scripts"
    exit $retval
 fi
+
+# for self-contained build
+export PKG_CONFIG_LIBDIR="$install_path/lib/pkgconfig:$install_path/share/pkgconfig:$PKG_CONFIG_PATH"
+export PATH="$install_path/bin:$PATH"
+export PKG_CONFIG_PATH=
+export CMAKE_PREFIX_PATH="$install_path"
+export CPPFLAGS="-I$install_path/include":$CPPFLAGS
+
 
 echo "#------------------------------------------------------------------------------------"
 echo "# OpenParEM_build: setup"
 echo "#------------------------------------------------------------------------------------"
 
 export PATH="$install_path/bin:$scripts_dir:$PATH"
-export LD_LIBRARY_PATH=$install_path/lib:$install_path/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$install_path/lib:$LD_LIBRARY_PATH
 
 echo "scripts_dir=$scripts_dir"
 echo "install_path=$install_path"
 echo "PATH=$PATH"
 echo "jobs=$jobs"
 
+# override openmpi
+if [ "$with_openmpi" = "1" ] && [ "$with_mpich" = "1" ]; then
+   echo "Overriding OpenMPI with MPICH"
+   with_openmpi=0
+fi
+
+# do not compile things that are only needed by openmpi
+if [ "$with_mpich" = "1" ]; then
+   with_m4=0
+   with_zlib=0
+   with_hwloc=0
+   with_libevent=0
+   with_pmix=0
+   with_prrte=0
+fi
+
 # show the setup
 
-   if [ "$with_m4" = "1" ]; then
-      echo "with-m4=$with_m4 using $m4"
-   else
-      echo "with-m4=$with_m4"
-   fi
-
-   if [ "$with_bison" = "1" ]; then
-      echo "with-bison=$with_bison using $bison"
-   else
-      echo "with-bison=$with_bison"
-   fi
-
-   if [ "$with_zlib" = "1" ]; then
-      echo "with-zlib=$with_zlib using $zlib"
-   else
-      echo "with-zlib=$with_zlib"
-   fi
-
-   if [ "$with_flex" = "1" ]; then
-      echo "with-flex=$with_flex using $flex"
-   else
-      echo "with-flex=$with_flex"
-   fi
-
-   if [ "$with_hwloc" = "1" ]; then
-      echo "with-hwloc=$with_hwloc using $hwloc"
-   else
-      echo "with-hwloc=$with_hwloc"
-   fi
-
-   if [ "$with_libevent" = "1" ]; then
-      echo "with-libevent=$with_libevent using $libevent"
-   else
-      echo "with-libevent=$with_libevent"
-   fi
-
-   if [ "$with_pmix" = "1" ]; then
-      echo "with-pmix=$with_pmix using $pmix"
-   else
-      echo "with-pmix=$with_pmix"
-   fi
-
-   if [ "$with_prrte" = "1" ]; then
-      echo "with-prrte=$with_prrte using $prrte"
-   else
-      echo "with-prrte=$with_prrte"
-   fi
-
-   if [ "$with_openmpi" = "1" ]; then
-      echo "with-openmpi=$with_openmpi using $openmpi"
-   else
-      echo "with-openmpi=$with_openmpi"
-   fi
-
-   if [ "$with_hypre" = "1" ]; then
-      echo "with-hypre=$with_hypre using $hypre"
-   else
-      echo "with-hypre=$with_hypre"
-   fi
-
-   if [ "$with_petsc" = "1" ]; then
-      echo "with-petsc=$with_petsc using $petsc"
-      echo "   including:"
-      echo "      fblaslapack=$fblaslapack"
-      echo "      mumps=$mumps"
-      echo "      scalapack=$scalapack"
-      echo "      scotch=$scotch"
-
-      if [ "$with_cmake" = "1" ]; then
-         echo "   with-cmake=$with_cmake using $cmake"
-      else
-         echo "   with-cmake=$with_cmake"
-      fi
-   else
-      echo "with-petsc=$with_petsc"
-   fi
-
-   if [ "$with_mfem" = "1" ]; then
-      echo "with-mfem=$with_mfem using $mfem"
-   else
-      echo "with-mfem=$with_mfem"
-   fi
-
-   echo "with-OpenParEM=$with_OpenParEM"
+echo "with-meson=$with_meson"
+echo "with-freetype=$with_freetype"
+echo "with-tcl=$with_tcl"
+echo "with-tk=$with_tk"
+echo "with-occt=$with_occt"
+echo "with-gmsh=$with_gmsh"
+echo "with-qt=$with_qt"
+echo "with-m4=$with_m4"
+echo "with-bison=$with_bison"
+echo "with-zlib=$with_zlib"
+echo "with-flex=$with_flex"
+echo "with-hwloc=$with_hwloc"
+echo "with-libevent=$with_libevent"
+echo "with-pmix=$with_pmix"
+echo "with-prrte=$with_prrte"
+echo "with-openmpi=$with_openmpi"
+echo "with-mpich=$with_mpich"
+echo "with-hypre=$with_hypre"
+echo "with-cmake=$with_cmake"
+echo "with-petsc=$with_petsc"
+echo "with-mfem=$with_mfem"
+echo "with-OpenParEM=$with_OpenParEM"
+echo "with-OpenParEMg=$with_OpenParEMg"
+echo "remove-helper-scripts=$remove_helper_scripts"
+echo "create-binary-distribution=$create_binary_distribution"
 
 if [ "$show_setup" = "1" ]; then
    exit 0
 fi
 
 #----------------------------------------------------
-# copy Python scripts for FreeCAD and ParaView
+# copy/remove scripts and files
 #----------------------------------------------------
 
-echo "#------------------------------------------------------------------------------------"
-echo "# OpenParEM_build: copying FreeCAD and ParaView scripts"
-echo "#------------------------------------------------------------------------------------"
+if [ "$remove_helper_scripts" = "1" ]; then
 
-# FreeCAD
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: removing OpenParEMg configuration file"
+   echo "#------------------------------------------------------------------------------------"
 
-cd $HOME
-if [ ! -d ".FreeCAD" ]; then
-   mkdir ".FreeCAD"
+   cd $HOME
+   rm -f ".OpenParEMg"
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: removing OpenParEMg Desktop Entry file"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd $HOME
+   if [ -d ".local" ]; then
+      cd .local
+      if [ -d "share" ]; then
+         cd share
+         if [ -d "applications" ]; then
+            cd applications
+            rm -f "OpenParEMg.desktop"
+         fi
+      fi
+   fi
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: removing FreeCAD and ParaView scripts"
+   echo "#------------------------------------------------------------------------------------"
+
+   # FreeCAD
+
+   cd $HOME
+   if [ -d ".FreeCAD" ]; then
+      cd .FreeCAD
+      if [ -d "Macro" ]; then
+         cd Macro
+         rm -f OpenParEM2D_save.py
+         rm -f OpenParEM3D_save.py
+         cd ..
+      fi
+      rmdir "Macro" 2>/dev/null || true
+      cd ..
+   fi
+   rmdir ".FreeCAD" 2>/dev/null || true
+
+   # ParaView
+
+   if [ -d ".config" ]; then
+      cd .config
+      if [ -d "ParaView" ]; then
+         cd ParaView
+         if [ -d "Macros" ]; then
+            cd Macros
+            rm -f field_plot.py
+            cd ..
+         fi
+         rmdir "Macros" 2>/dev/null || true
+         cd ..
+      fi
+      rmdir "ParaView" 2>/dev/null || true
+      cd ..
+   fi
+   rmdir ".config" 2>/dev/null || true
+
+   exit 0
+else
+
+   # Desktop Entry file
+   cd $HOME
+   if [ -d ".local" ]; then
+      cd .local
+      if [ -d "share" ]; then 
+         cd share
+         if [ -d "applications" ]; then
+
+            echo "#------------------------------------------------------------------------------------"
+            echo "# OpenParEM_build: creating Desktop Entry file"
+            echo "#------------------------------------------------------------------------------------"
+
+            cd applications
+            echo "[Desktop Entry]" > OpenParEMg.desktop
+            echo "Type=Application" >> OpenParEMg.desktop
+            echo "Name=OpenParEMg" >> OpenParEMg.desktop
+            echo "Exec=$install_path/bin/OpenParEMg" >> OpenParEMg.desktop
+            echo "Icon=$install_path/src/OpenParEMg/images/logo2.svg" >> OpenParEMg.desktop
+            echo "Terminal=false" >> OpenParEMg.desktop
+            echo "Categories=Development;Engineering;" >> OpenParEMg.desktop
+            echo "StartupWMClass=OpenParEMg" >> OpenParEMg.desktop
+            if [ $? -ne 0 ]; then
+               echo "OpenParEM_WARNING: Failed to register the icon image."
+            fi
+         fi
+      fi
+   fi
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: copying FreeCAD and ParaView scripts"
+   echo "#------------------------------------------------------------------------------------"
+
+   # FreeCAD
+
+   cd $HOME
+   if [ ! -d ".FreeCAD" ]; then
+      mkdir ".FreeCAD"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: failed to create $HOME/.FreeCAD directory"
+         exit 1
+      fi
+   fi
+
+   cd ".FreeCAD"
+
+   if [ ! -d "Macro" ]; then
+      mkdir "Macro"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: failed to create $HOME/.FreeCAD/Macro directory"
+         exit 1
+      fi
+   fi
+
+   cd "$scripts_dir"/FreeCAD
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to create $HOME/.FreeCAD directory"
+      echo "OpenParEM_ERROR: failed to cd to $scripts_dir/FreeCAD"
       exit 1
    fi
-fi
 
-cd ".FreeCAD"
+   echo "copy FreeCAD/OpenParEM2D_save.py to $HOME/.FreeCAD/Macro"
+   cp OpenParEM2D_save.py "$HOME/.FreeCAD/Macro"
 
-if [ ! -d "Macro" ]; then
-   mkdir "Macro"
+   echo "copy FreeCAD/OpenParEM3D_save.py to $HOME/.FreeCAD/Macro"
+   cp OpenParEM3D_save.py "$HOME/.FreeCAD/Macro"
+
+   # ParaView
+
+   cd $HOME
+   if [ ! -d ".config" ]; then
+      mkdir ".config"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: failed to create $HOME/.config directory"
+         exit 1
+      fi
+   fi
+
+   cd ".config"
+
+   if [ ! -d "ParaView" ]; then
+      mkdir "ParaView"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: failed to create $HOME/.config/ParaView directory"
+         exit 1
+      fi
+   fi
+
+   cd "ParaView"
+
+   if [ ! -d "Macros" ]; then
+      mkdir "Macros"
+      if [ $? -ne 0 ]; then
+         echo "OpenParEM_ERROR: failed to create $HOME/.config/ParaView/Macros directory"
+         exit 1
+      fi
+   fi
+
+   cd "$scripts_dir"/ParaView
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to create $HOME/.FreeCAD/Macro directory"
+      echo "OpenParEM_ERROR: failed to cd to $scripts_dir/ParaView"
       exit 1
    fi
+
+   echo "copy ParaView/field_plot.py to $HOME/.config/ParaView/Macros"
+   cp field_plot.py "$HOME/.config/ParaView/Macros"
+
+   cd "$scripts_dir"
+
 fi
-
-cd "$scripts_dir"/FreeCAD
-if [ $? -ne 0 ]; then
-   echo "OpenParEM_ERROR: failed to cd to $scripts_dir/FreeCAD"
-   exit 1
-fi
-
-echo "copy FreeCAD/OpenParEM2D_save.py to $HOME/.FreeCAD/Macro"
-cp OpenParEM2D_save.py "$HOME/.FreeCAD/Macro"
-
-echo "copy FreeCAD/OpenParEM3D_save.py to $HOME/.FreeCAD/Macro"
-cp OpenParEM3D_save.py "$HOME/.FreeCAD/Macro"
-
-# ParaView
-
-cd $HOME
-if [ ! -d ".config" ]; then
-   mkdir ".config"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to create $HOME/.config directory"
-      exit 1
-   fi
-fi
-
-cd ".config"
-
-if [ ! -d "ParaView" ]; then
-   mkdir "ParaView"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to create $HOME/.config/ParaView directory"
-      exit 1
-   fi
-fi
-
-cd "ParaView"
-
-if [ ! -d "Macros" ]; then
-   mkdir "Macros"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to create $HOME/.config/ParaView/Macros directory"
-      exit 1
-   fi
-fi
-
-cd "$scripts_dir"/ParaView
-if [ $? -ne 0 ]; then
-   echo "OpenParEM_ERROR: failed to cd to $scripts_dir/ParaView"
-   exit 1
-fi
-
-echo "copy ParaView/field_plot.py to $HOME/.config/ParaView/Macros"
-cp field_plot.py "$HOME/.config/ParaView/Macros"
-
-cd "$scripts_dir"
 
 #----------------------------------------------------
 # clean in place
@@ -712,91 +1182,256 @@ cd "$scripts_dir"
 
 if [ "$clean_in_place" = "1" ]; then
    cd ..
-   echo "rm -Rf bin etc include lib lib64 man sbin share"
-   rm -Rf bin etc include lib lib64 man sbin share
+   echo "rm -Rf bin etc include lib libexec local man sbin share metatypes mkspecs modules phrasebooks plugins qml sbom translations var"
+   rm -Rf bin etc include lib libexec local man sbin share metatypes mkspecs modules phrasebooks plugins qml sbom translations var
    cd "$scripts_dir"
+   exit 0
 fi
 
-#----------------------------------------------------
-# check for missing sources
-#----------------------------------------------------
+echo "#----------------------------------------------------"
+echo "# download packages and verify"
+echo "#----------------------------------------------------"
 
-missing_sources=0
-
-if [ "$with_m4" = "1" -a ! -f "../external_packages/$m4" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: m4 compile requested but the file ../external_packages/$m4 is missing."
+if [ ! -d "$DOWNLOAD_DIR" ]; then
+   mkdir "$DOWNLOAD_DIR"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: failed to create the directory $DOWNLOAD_DIR."
+      exit 1
+   fi
 fi
 
-if [ "$with_bison" = "1" -a ! -f "../external_packages/$bison" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: bison compile requested but the file ../external_packages/$bison is missing."
+m4="m4-1.4.21.tar.gz"
+download_package_and_verify_sig "$m4" "https://ftp.gnu.org/gnu/m4/$m4" "sig" "$GNU_KEYRING" "" || exit 1
+
+bison="bison-3.8.tar.gz"
+download_package_and_verify_sig "$bison" "https://ftp.gnu.org/gnu/bison/$bison" "sig" "$GNU_KEYRING" "" || exit 1
+
+zlib="zlib-1.3.1.tar.gz"
+download_package_and_verify_sig "$zlib" "https://github.com/madler/zlib/releases/download/v1.3.1/$zlib" "asc" "$MADLER_KEYRING" "" || exit 1
+
+flex="flex-2.6.4.tar.gz"
+flex_sha256="e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995"
+download_package_and_verify_sha256 "$flex" "https://github.com/westes/flex/releases/download/v2.6.4/$flex" "$flex_sha256" || exit 1
+
+hwloc="hwloc-2.13.0.tar.gz"
+hwloc_sha256="1514a5253f0a5c23bc006d3bdd30a6f6125c9a8dc9b5fa4984913d1fff45315d"
+download_package_and_verify_sha256 "$hwloc" "https://www.open-mpi.org/software/hwloc/v2.13/downloads/$hwloc" "$hwloc_sha256" || exit 1
+
+libevent="libevent-2.1.13-stable.tar.gz"
+libevent_sha256="f7e9383b8c0baa81b687e5b5eecc01beefaf1b19b64151d95ed61647fe7a315c"
+download_package_and_verify_sha256 "$libevent" "https://github.com/libevent/libevent/releases/download/release-2.1.13-stable/$libevent" "$libevent_sha256" || exit 1
+
+pmix="pmix-5.0.11.tar.gz"
+pmix_sha="a46605489e6f24865bb61efaf02b6730bc9f5e00"
+download_package_and_verify_sha "$pmix" "https://github.com/openpmix/openpmix/releases/download/v5.0.11/$pmix" "$pmix_sha" || exit 1
+
+prrte="prrte-3.0.14.tar.gz"
+prrte_sha="b31c81822ded11d8fb7d339ccc40042f21ef29d7"
+download_package_and_verify_sha "$prrte" "https://github.com/openpmix/prrte/releases/download/v3.0.14/$prrte" "$prrte_sha" || exit 1
+
+openmpi="openmpi-4.1.8.tar.gz"
+openmpi_sha256="fb41086bbed9300baa2f3d7572491facfe5257412fa524ec5a396aa9101d5c62"
+download_package_and_verify_sha256 "$openmpi" "https://download.open-mpi.org/release/open-mpi/v4.1/$openmpi" "$openmpi_sha256" || exit 1
+
+mpich="mpich-4.3.2.tar.gz"
+# self-generated sha256 from a 3-3-2026 download
+mpich_sha256="47d774587a7156a53752218c811c852e70ac44db9c502dc3f399b4cb817e3818"
+download_package_and_verify_sha256 "$mpich" "https://www.mpich.org/static/downloads/4.3.2/$mpich" "$mpich_sha256" || exit 1
+
+hypre_root="3.1.0.tar.gz"
+hypre="hypre-$hypre_root"
+# self-generated from 8-19-2026 download
+hypre_sha256="a6879ae9375d95c26afd97141d61e7a8092807333bf40cd180b385aed7351b2d"
+download_package_and_verify_sha256 "$hypre" "https://github.com/hypre-space/hypre/archive/refs/tags/v$hypre_root" "$hypre_sha256" || exit 1
+if [ -f "$hypre_root" ]; then
+   mv ../$DOWNLOAD_DIR/$hypre_root ./$DOWNLOAD_DIR/$hypre
 fi
 
-if [ "$with_zlib" = "1" -a ! -f "../external_packages/$zlib" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: zlib compile requested but the file ../external_packages/$zlib is missing."
+cmake_version="4.4.3"
+cmake="cmake-4.4.3.tar.gz"
+download_cmake_and_verify "$cmake_version" "$cmake" "$DOWNLOAD_DIR" "$BKING_KEYRING" || exit 1
+
+petsc="petsc-3.25.5.tar.gz"
+# self-generated from 9-13-2026 download
+petsc_sha256="6d61c472db39006d261542d1a42f1fa6c52d6e89f9e77041386189aa8c24b490"
+download_package_and_verify_sha256 "$petsc" "https://web.cels.anl.gov/projects/petsc/download/release-snapshots/$petsc" "$petsc_sha256" || exit 1
+
+mfem_root="4.9.tar.gz"
+mfem="mfem-$mfem_root"
+# self-generated from 8-19-2026 download
+mfem_sha256="ea3ac13e182c09f05b414b03a9bef7a4da99d45d67ee409112b8f11058447a7c"
+download_package_and_verify_sha256 "$mfem" "https://github.com/mfem/mfem/archive/refs/tags/v$mfem_root" "$mfem_sha256" || exit 1
+if [ -f "$mfem_root" ]; then
+   mv ../$DOWNLOAD_DIR/$mfem_root ./$DOWNLOAD_DIR/$mfem
 fi
 
-if [ "$with_flex" = "1" -a ! -f "../external_packages/$flex" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: flex compile requested but the file ../external_packages/$flex is missing."
+libXau="libXau-1.0.12.tar.gz"
+download_package_and_verify_sig "$libXau" "https://xorg.freedesktop.org/archive/individual/lib/$libXau" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+
+libXdmcp="libXdmcp-1.1.5.tar.gz"
+download_package_and_verify_sig "$libXdmcp" "https://xorg.freedesktop.org/archive/individual/lib/$libXdmcp" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+
+ninja_root="1.13.2.tar.gz"
+ninja="ninja-$ninja_root"
+# self-generated from 8-20-2026 download
+ninja_sha256="974d6b2f4eeefa25625d34da3cb36bdcebe7fbce40f4c16ac0835fd1c0cbae17"
+download_package_and_verify_sha256 "$ninja" "https://github.com/ninja-build/ninja/archive/refs/tags/v$ninja_root" "$ninja_sha256" || exit 1
+if [ -f "$ninja_root" ]; then
+   mv ../$DOWNLOAD_DIR/$ninja_root ./$DOWNLOAD_DIR/$ninja
 fi
 
-if [ "$with_hwloc" = "1" -a ! -f "../external_packages/$hwloc" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: hwloc compile requested but the file ../external_packages/$hwloc is missing."
+meson="meson-1.12.0.tar.gz"
+meson_sha256="88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c"
+download_package_and_verify_sha256 "$meson" "https://github.com/mesonbuild/meson/releases/download/1.12.0/$meson" "$meson_sha256" || exit 1
+
+freetype="freetype-2.14.3.tar.gz"
+download_package_and_verify_sig "$freetype" "https://sourceforge.net/projects/freetype/files/freetype2/2.14.3/$freetype" "sig" "$WLEMBERG_KEYRING" "/download" || exit 1
+
+tcl="tcl8.6.16-src.tar.gz"
+# self-generated from 8-19-2026 download
+tcl_sha256="91cb8fa61771c63c262efb553059b7c7ad6757afa5857af6265e4b0bdc2a14a5"
+download_package_and_verify_sha256 "$tcl" "http://prdownloads.sourceforge.net/tcl/$tcl" "$tcl_sha256" || exit 1
+
+xorgproto="xorgproto-2025.1.tar.gz"
+download_package_and_verify_sig "$xorgproto" "https://xorg.freedesktop.org/archive/individual/proto/$xorgproto" "sig" "$OFOURDAN_KEYRING" "" || exit 1
+
+xcb_proto="xcb-proto-1.17.0.tar.gz"
+download_package_and_verify_sig "$xcb_proto" "https://xorg.freedesktop.org/archive/individual/proto/$xcb_proto" "sig" "$MTURNER_KEYRING" "" || exit 1
+
+libxcb="libxcb-1.17.0.tar.gz"
+download_package_and_verify_sig "$libxcb" "https://xorg.freedesktop.org/archive/individual/lib/$libxcb" "sig" "$MTURNER_KEYRING" "" || exit 1
+
+xtrans="xtrans-1.6.0.tar.gz"
+download_package_and_verify_sig "$xtrans" "https://xorg.freedesktop.org/archive/individual/lib/$xtrans" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+   
+libX11="libX11-1.8.tar.gz"
+download_package_and_verify_sig "$libX11" "https://xorg.freedesktop.org/archive/individual/lib/$libX11" "sig" "$AJACKSON_KEYRING" "" || exit 1
+
+tk="tk8.6.18-src.tar.gz"
+# self-generated from 9-13-2026 download
+tk_sha256="95cd528a80f5e4bdb557af9b14a7197d6860793a3894e25e7c9fad2ed05d4c3c"
+download_package_and_verify_sha256 "$tk" "http://prdownloads.sourceforge.net/tcl/$tk" "$tk_sha256" || exit 1
+
+fontconfig="fontconfig-2.16.0.tar.xz"
+fontconfig_sha256="6a33dc555cc9ba8b10caf7695878ef134eeb36d0af366041f639b1da9b6ed220"
+download_package_and_verify_sha256 "$fontconfig" "https://www.freedesktop.org/software/fontconfig/release/$fontconfig" "$fontconfig_sha256" || exit 1
+
+xext="libXext-1.3.7.tar.gz"
+download_package_and_verify_sig "$xext" "https://xorg.freedesktop.org/archive/individual/lib/$xext" "sig" "$ACOOPERSMITH2_KEYRING" "" || exit 1
+
+glvnd="libglvnd-1.7.0.tar.gz"
+# self-generated from 8-19-2026 download
+glvnd_sha256="073e7292788d4d3eeb45ea6c7bdcce9bfdb3b3eef8d7dbd47f2f30dce046ef98"
+download_package_and_verify_sha256 "$glvnd" "https://github.com/NVIDIA/libglvnd/archive/refs/tags/v1.7.0.tar.gz" "$glvnd_sha256" || exit 1
+
+occt_root="7_9_3.tar.gz"
+occt="OCCT-$occt_root"
+# self-generated from 8-19-2026 download
+occt_sha256="5ecf094ec6b12d5413dfb851d8c3590c354058aee556e32e408bdfbf8c357d57"
+download_package_and_verify_sha256 "$occt" "https://github.com/Open-Cascade-SAS/OCCT/archive/refs/tags/V$occt_root" "$occt_sha256" || exit 1
+if [ -f "$occt_root" ]; then
+   mv ../$DOWNLOAD_DIR/$occt_root ./$DOWNLOAD_DIR/$occt
 fi
 
-if [ "$with_libevent" = "1" -a ! -f "../external_packages/$libevent" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: libevent compile requested but the file ../external_packages/$libevent is missing."
-fi
+gmsh="gmsh-4.15.2-source.tgz"
+# self-generated from 8-19-2026 download
+gmsh_sha256="be3f66f225d27ba9fa014f07e83169285da8a051b0e8ab7103d88066b39bdd3e"
+download_package_and_verify_sha256 "$gmsh" "https://gmsh.info/src/$gmsh" "$gmsh_sha256" || exit 1
 
-if [ "$with_pmix" = "1" -a ! -f "../external_packages/$pmix" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: pmix compile requested but the file ../external_packages/$pmix is missing."
-fi
+dbus1="dbus-1.16.2.tar.xz"
+download_package_and_verify_sig "$dbus1" "https://dbus.freedesktop.org/releases/dbus/$dbus1" "asc" "$SMCVITTIE_KEYRING" "" || exit 1
 
-if [ "$with_prrte" = "1" -a ! -f "../external_packages/$prrte" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: prrte compile requested but the file ../external_packages/$prrte is missing."
+icu4c="icu4c-78.3-sources.tgz"
+download_package_and_verify_sig "$icu4c" "https://github.com/unicode-org/icu/releases/download/release-78.3/$icu4c" "asc" "$ICUROBOT_KEYRING" "" || exit 1
+cd ../external_packages
+if [ -f icu.tar.gz ]; then
+   rm icu.tar.gz
 fi
+tar -xf icu4c-78.3-sources.tgz
+tar -cf icu.tar icu
+gzip -f icu.tar
+rm -Rf icu
+icu4c="icu.tar.gz"
+cd ../scripts
 
-if [ "$with_openmpi" = "1" -a ! -f "../external_packages/$openmpi" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: openmpi compile requested but the file ../external_packages/$openmpi is missing."
-fi
+xcb_util="xcb-util-0.4.1.tar.gz"
+download_package_and_verify_sig "$xcb_util" "https://xcb.freedesktop.org/dist/$xcb_util" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
-if [ "$with_hypre" = "1" -a ! -f "../external_packages/$hypre" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: hypre compile requested but the file ../external_packages/$hypre is missing."
-fi
+xcb_util_image=xcb-util-image-0.4.1.tar.gz
+download_package_and_verify_sig "$xcb_util_image" "https://xcb.freedesktop.org/dist/$xcb_util_image" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
-if [ "$with_petsc" = "1" -a ! -f "../external_packages/$petsc" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: petsc compile requested but the file ../external_packages/$petsc is missing."
-fi
+xcb_util_keysyms="xcb-util-keysyms-0.4.1.tar.gz"
+download_package_and_verify_sig "$xcb_util_keysyms" "https://xcb.freedesktop.org/dist/$xcb_util_keysyms" "sig" "$ACOOPERSMITH3_KEYRING" "" || exit 1
 
-if [ "$with_mfem" = "1" -a ! -f "../external_packages/$mfem" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: mfem compile requested but the file ../external_packages/$mfem is missing."
-fi
+xcb_util_renderutil="xcb-util-renderutil-0.3.10.tar.gz"
+download_package_and_verify_sig "$xcb_util_renderutil" "https://xcb.freedesktop.org/dist/$xcb_util_renderutil" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
-if [ "$with_OpenParEM" = "1" -a ! -d "../src" ]; then
-   missing_sources=1
-   echo "OpenParEM_ERROR: mfem compile requested but the ../src directory is missing."
-fi
+xcb_util_wm="xcb-util-wm-0.4.2.tar.gz"
+download_package_and_verify_sig "$xcb_util_wm" "https://xcb.freedesktop.org/dist/$xcb_util_wm" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
-if [ "$missing_sources" = "1" ]; then
-   exit 1
-fi
+xcb_util_cursor="xcb-util-cursor-0.1.6.tar.gz"
+download_package_and_verify_sig "$xcb_util_cursor" "https://xcb.freedesktop.org/dist/$xcb_util_cursor" "sig" "$ACOOPERSMITH2_KEYRING" "" || exit 1
 
-#----------------------------------------------------
-# check for installed build tools
-#----------------------------------------------------
+xcb_util_errors="xcb-util-errors-1.0.1.tar.gz"
+download_package_and_verify_sig "$xcb_util_errors" "https://xcb.freedesktop.org/dist/$xcb_util_errors" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+
+libxml2="libxml2-v2.15.3.tar.gz"
+# self-generated from 8-20-2026 download
+libxml2_sha256="0da50c1415f4ec0364569d2119b1436ba837b31df44af28569d234272c23cf1f"
+download_package_and_verify_sha256 "$libxml2" "https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.15.3/$libxml2" "$libxml2_sha256" || exit 1
+
+xkbd_config="xkeyboard-config-2.48.tar.xz"
+download_package_and_verify_sig "$xkbd_config" "https://xorg.freedesktop.org/archive/individual/data/xkeyboard-config/$xkbd_config" "sig" "$SUDALTSOV_KEYRING" "" || exit 1
+
+xkbcommon="xkbcommon-1.13.2.tar.gz"
+# self-generated from 8-20-2026 download
+xkbcommon_sha256="acc4d5f7c3cbba5f9f8d08d8bdbeede84ecede46792f47929aa9321873385528"
+download_package_and_verify_sha256 "$xkbcommon" "https://github.com/xkbcommon/libxkbcommon/archive/refs/tags/$xkbcommon" "$xkbcommon_sha256" || exit 1
+cd ../external_packages
+tar -xf xkbcommon-1.13.2.tar.gz
+tar -cf libxkbcommon-xkbcommon-1.13.2.tar libxkbcommon-xkbcommon-1.13.2
+gzip -f libxkbcommon-xkbcommon-1.13.2.tar
+rm -Rf libxkbcommon-xkbcommon-1.13.2
+xkbcommon="libxkbcommon-xkbcommon-1.13.2.tar.gz"
+cd ../scripts
+
+qt="qt-everywhere-src-6.11.2.tar.xz"
+qt_sha256="6dcfbca271d76a6502741a2c0dc6fc98ef7dd0b7b4cfd0abcebb285a86a26f33"
+download_package_and_verify_sha256 "$qt" "https://download.qt.io/official_releases/qt/6.11/6.11.2/single/$qt" "$qt_sha256" || exit 1
+
+echo "#----------------------------------------------------"
+echo "# check for build items"
+echo "#----------------------------------------------------"
 
 has_build=0
+
+if [ "$with_meson" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_freetype" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_tcl" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_tk" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_occt" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_gmsh" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_qt" = "1" ]; then
+   has_build=1
+fi
 
 if [ "$with_m4" = "1" ]; then
    has_build=1
@@ -834,7 +1469,15 @@ if [ "$with_openmpi" = "1" ]; then
    has_build=1
 fi
 
+if [ "$with_mpich" = "1" ]; then
+   has_build=1
+fi
+
 if [ "$with_hypre" = "1" ]; then
+   has_build=1
+fi
+
+if [ "$with_cmake" = "1" ]; then
    has_build=1
 fi
 
@@ -850,39 +1493,14 @@ if [ "$with_OpenParEM" = "1" ]; then
    has_build=1
 fi
 
+if [ "$with_OpenParEMg" = "1" ]; then
+   has_build=1
+fi
+
 if [ "$has_build" = "0" ]; then
-   exit 0
-fi
-
-
-missing_requirement=0
-
-which make > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"make\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-which g++ > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"g++\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-which gfortran > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"gfortran\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-which perl > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-   echo "ERROR: \"perl\" must be installed on the system to compile OpenParEM"
-   missing_requirement=1
-fi
-
-if [ "$missing_requirement" = "1" ]; then
-   exit 1
+   if [ "$create_binary_distribution" = "0" ]; then
+      exit 0
+   fi
 fi
 
 #----------------------------------------------------
@@ -941,7 +1559,7 @@ if [ "$with_m4" = "1" ]; then
 
    make install
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: ERROR: m4 failed to install"
+      echo "OpenParEM_ERROR: m4 failed to install"
       exit 1
    fi
 
@@ -975,13 +1593,412 @@ if [ "$with_bison" = "1" ]; then
 
    make install
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: ERROR: bison failed to install"
+      echo "OpenParEM_ERROR: bison failed to install"
       exit 1
    fi
 
    cd ..
    remove_base_directory
    cd ..
+fi
+
+
+# meson and ninja
+if [ "$with_meson" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: ninja"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $ninja
+
+   ./configure.py --bootstrap
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: ninja failed to build"
+      exit 1
+   fi
+
+   cp ninja "$install_path/bin"
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: meson"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $meson
+
+   python3 packaging/create_zipapp.py --outfile="$install_path/bin/meson" --interpreter='/usr/bin/env python3'
+
+   chmod +x "$install_path/bin/meson"
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+
+# freetype
+if [ "$with_freetype" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: freetype"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$freetype"
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: freetype failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: freetype failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: freetype failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# tcl
+if [ "$with_tcl" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: tcl"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$tcl"
+ 
+   cd unix
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to install"
+      exit 1
+   fi
+
+
+   cd ../..
+   remove_base_directory
+   cd ..
+
+   # put a soft link to the versioned tclsh
+
+   current_dir=$PWD
+
+   if [ ! -d $install_path/bin ]; then
+      echo "OpenParEM_ERROR: tcl failed to find install directory"
+      exit 1
+   fi
+
+   cd $install_path/bin
+
+   if [ -f tclsh ]; then
+      rm tclsh
+   fi
+
+   tclsh=`ls tcl*`
+   if [ ! -f "$tclsh" ]; then
+      echo "OpenParEM_ERROR: tcl failed to find tclsh"
+      exit 1
+   fi
+
+   ln -s $tclsh tclsh
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tcl failed to softlink tclsh"
+      exit 1
+   fi
+
+   cd $current_dir
+fi
+
+
+# tk
+if [ "$with_tk" = "1" ]; then 
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xorgproto"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xorgproto
+   package_name=xorgproto
+
+   meson setup build --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   ninja -C build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to build"
+      exit 1
+   fi
+
+   ninja -C build install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xcb_proto"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xcb_proto
+   package_name=xcb_proto
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: libXau"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $libXau
+   package_name=libXau
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: libxcb"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $libxcb
+   package_name=libxcb
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xtrans"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xtrans
+   package_name=xtrans
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: libX11"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $libX11
+   package_name=libX11
+
+   ./configure --prefix="$install_path"
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: tk"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$tk"
+
+   cd unix
+
+   CPPFLAGS="-I$install_path/include" ./configure --prefix="$install_path" --with-tcl=$install_path/lib
+   if [ $? -ne 0 ]; then 
+      echo "OpenParEM_ERROR: tk failed to configure"
+      exit 1  
+   fi
+
+   make -j "$jobs" 
+   if [ $? -ne 0 ]; then 
+      echo "OpenParEM_ERROR: tk failed to make"
+      exit 1  
+   fi
+
+   make install 
+   if [ $? -ne 0 ]; then 
+      echo "OpenParEM_ERROR: tk failed to install"
+      exit 1  
+   fi
+
+   cd ../.. 
+   remove_base_directory
+   cd .. 
+
+   # put a soft link to the versioned wish
+
+   current_dir=$PWD
+
+   if [ ! -d $install_path/bin ]; then
+      echo "OpenParEM_ERROR: tk failed to find install directory"
+      exit 1
+   fi
+
+   cd $install_path/bin
+
+   if [ -f wish ]; then
+      rm wish
+   fi
+
+   wish=`ls wish*`
+   if [ ! -f "$wish" ]; then
+      echo "OpenParEM_ERROR: tk failed to find wish"
+      exit 1
+   fi
+
+   ln -s $wish wish
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: tk failed to softlink wish"
+      exit 1
+   fi
+
+   cd $current_dir
+  
 fi
 
 # zlib
@@ -1017,7 +2034,7 @@ if [ "$with_zlib" = "1" ]; then
 
    make install
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: ERROR: zlib failed to install"
+      echo "OpenParEM_ERROR: zlib failed to install"
       exit 1
    fi
 
@@ -1051,7 +2068,7 @@ if [ "$with_flex" = "1" ]; then
 
    make install
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: ERROR: flex failed to install"
+      echo "OpenParEM_ERROR: flex failed to install"
       exit 1
    fi
 
@@ -1085,7 +2102,7 @@ if [ "$with_hwloc" = "1" ]; then
 
    make install
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: ERROR: hwloc failed to install"
+      echo "OpenParEM_ERROR: hwloc failed to install"
       exit 1
    fi
 
@@ -1139,7 +2156,8 @@ if [ "$with_pmix" = "1" ]; then
 
    unpack_and_enter "$pmix"
 
-   ./configure CFLAGS=-fPIC --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-libevent="$install_path"
+   ./configure CFLAGS=-fPIC --prefix="$install_path" --enable-mca-no-build=gds-shmem2 --enable-static="$enable_static" \
+                            --enable-shared="$enable_shared" --with-libevent="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: pmix failed to configure"
       exit 1
@@ -1173,7 +2191,8 @@ if [ "$with_prrte" = "1" ]; then
 
    unpack_and_enter "$prrte"
 
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-pmix="$install_path" --with-libevent="$install_path" --with-hwloc="$install_path"
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" \
+               --with-pmix="$install_path" --with-libevent="$install_path" --with-hwloc="$install_path"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: prrte failed to configure"
       exit 1
@@ -1207,7 +2226,9 @@ if [ "$with_openmpi" = "1" ]; then
 
    unpack_and_enter "$openmpi"
 
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-libevent="$install_path" --with-hwloc="$install_path" --with-pmix="$install_path"
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" \
+               --with-libevent="$install_path" --with-hwloc="$install_path" --with-pmix="$install_path" \
+               --disable-wrapper-rpath --disable-wrapper-runpath --enable-mpirun-prefix-by-default
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: openmpi failed to configure"
       exit 1
@@ -1222,6 +2243,66 @@ if [ "$with_openmpi" = "1" ]; then
    make install
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: openmpi failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+fi
+
+# mpich
+if [ "$with_mpich" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: mpich"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$mpich"
+
+   # The device has a large impact on performance that is hardware dependent.  Experimentation is in order.
+
+   # configure selects the device
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   # <10% slower than with ch3:nemesis on normal run
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" 
+
+   # good on the eigenvalue solve when excessive slots are speccified
+   # but 50% slower on small cases
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:sock
+
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:nemesis
+
+   # not supported
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:nemsis
+
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   # faster than OpenMPI for a small case
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ucx
+
+   # extremely slow in eigenvalue solve when excessive slots are specified
+   # <10% slower than OpenMPI for a small case
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ofi
+
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mpich failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mpich failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: mpich failed to install"
       exit 1
    fi
 
@@ -1261,6 +2342,41 @@ if [ "$with_hypre" = "1" ]; then
    cd ..
 fi
 
+# cmake
+if [ "$with_cmake" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: cmake"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$cmake"
+
+   ./bootstrap --prefix="$install_path" --parallel="$jobs" -- -DCMAKE_USE_OPENSSL=OFF
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: cmake failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: cmake failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: cmake failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+
 # petsc
 if [ "$with_petsc" = "1" ]; then
 
@@ -1280,16 +2396,9 @@ if [ "$with_petsc" = "1" ]; then
       fi
    fi
 
-   cmake_option="no"
-   if [ "$with_cmake" = "1" ]; then
-      cmake_option="$cmake"
-   fi
+   export CMAKE_POLICY_VERSION_MINIMUM=3.5
 
-#   mkdir temp_dir
-#   --with-packages-download-dir=temp_dir
-
-   ./configure --prefix="$install_path" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices --download-cmake="$cmake_option" --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" --with-fortran-bindings=1 --COPTFLAGS="-O3" --CXXOPTFLAGS="-O3" --FOPTFLAGS="-O3"
-
+   ./configure --prefix="$install_path" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices --download-cmake=no --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" --with-fortran-bindings=1 --COPTFLAGS="-O3 -std=gnu89 -fcommon -D_DEFAULT_SOURCE" --CXXOPTFLAGS="-O3 -std=c++11" --FOPTFLAGS="-O3 -fallow-argument-mismatch"
 
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: petsc failed to configure"
@@ -1319,6 +2428,8 @@ if [ "$with_petsc" = "1" ]; then
       echo "OpenParEM_ERROR: slepc failed check"
       exit 1
    fi
+
+   unset CMAKE_POLICY_VERSION_MINIMUM
 
    cd ..
    remove_base_directory
@@ -1351,7 +2462,7 @@ if [ "$with_mfem" = "1" ]; then
       ENABLE_SHARED=YES
    fi
 
-   make parallel -j "$jobs" MFEM_USE_METIS_5=YES HYPRE_DIR=$install_path SHARED=$ENABLE_SHARED STATIC=$ENABLE_STATIC
+   make parallel -j "$jobs" MFEM_USE_METIS_5=YES MFEM_USE_EXCEPTIONS=YES HYPRE_DIR=$install_path SHARED=$ENABLE_SHARED STATIC=$ENABLE_STATIC
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: mfem failed to make"
       exit 1
@@ -1366,7 +2477,680 @@ if [ "$with_mfem" = "1" ]; then
    cd ..
    remove_base_directory
    cd ..
+
+   # comment out some lines that cause compiling issues when using OCCT
+   current_dir=$PWD
+   if [ -f $install_path/include/mfem/linalg/linalg.hpp ]; then
+      cd $install_path/include/mfem/linalg
+      sed -i 's$#include "batched/batched.hpp"$//#include "batched/batched.hpp"$' linalg.hpp
+      sed -i 's$#include "batched/gpu_blas.hpp"$//#include "batched/gpu_blas.hpp"$' linalg.hpp
+      sed -i 's$#include "batched/solver.hpp"$//#include "batched/solver.hpp"$' linalg.hpp
+      cd $current_dir
+   else
+      echo "OpenParEM_ERROR: mfem failed include file edit"
+      exit 1
+   fi
+
 fi
+
+# occt
+if [ "$with_occt" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: fontconfig"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$fontconfig"
+   package_name=fontconfig
+
+   meson setup build \
+      --prefix="$install_path" \
+      --libdir="$install_path/lib" \
+      -Dtests=disabled \
+      -Ddoc=disabled
+
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to setup build"
+      exit 1
+   fi
+
+   meson compile -C build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to compile"
+      exit 1
+   fi
+
+   meson install -C build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xext"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$xext"
+   package_name=xext
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+   
+   cd ..
+   remove_base_directory
+   cd ..
+
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: glvnd"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$glvnd"
+   package_name=glvnd
+
+   ./autogen.sh
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to autogen"
+      exit 1
+   fi
+
+   CPPFLAGS="-I$install_path/include" ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs" 
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: occt"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$occt"
+
+   cmake \
+   -D INSTALL_SAMPLES=ON \
+   -D CMAKE_LIBRARY_PATH="$install_path/lib" \
+   -D CMAKE_PREFIX_PATH="$install_path" \
+   -D CMAKE_SHARED_LINKER_FLAGS="-L$install_path/lib" \
+   -D 3RDPARTY_DIR:PATH="$install_path" \
+   -D 3RDPARTY_FREETYPE_DIR:PATH="$install_path" \
+   -D 3RDPARTY_TCL_DIR:PATH="$install_path" \
+   -D 3RDPARTY_TK_DIR:PATH="$install_path" \
+   -D 3RDPARTY_TK_LIBRARY_DIR:FILEPATH="$install_path/lib" \
+   -D INSTALL_DIR:PATH="$install_path" \
+   .
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: occt failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+fi
+
+# gmsh
+if [ "$with_gmsh" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: gmsh"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$gmsh"
+
+   mkdir build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to create a build directory"
+      exit 1
+   fi
+
+   cd build
+
+   # EIGEN is enabled; can substitute Blas/Lapack if EIGEN becomes a problem
+   cmake -D CMAKE_INSTALL_PREFIX="$install_path" -D CMAKE_INSTALL_LIBDIR=lib \
+         -D ENABLE_BUILD_SHARED=ON -D ENABLE_DOMHEX=OFF \
+         -D ENABLE_EIGEN=ON -D ENABLE_FLTK=OFF -D ENABLE_GETDP=OFF -D ENABLE_GMM=OFF -D ENABLE_GMP=OFF \
+         -D ENABLE_KBIPACK=OFF -D ENABLE_MED=OFF -D ENABLE_MMG=OFF -D ENABLE_MPEG_ENCODE=OFF \
+         -D ENABLE_ONELAB=OFF -D ENABLE_ONELAB_METAMODEL=OFF -D ENABLE_OPENMP=OFF -D ENABLE_OPTHOM=OFF \
+         -D ENABLE_PLUGINS=OFF -D ENABLE_POST=OFF -D ENABLE_QUADMESHINGTOOLS=OFF -D ENABLE_QUADTRI=OFF \
+         -D ENABLE_SOLVER=OFF -D ENABLE_TOUCHBAR=OFF -D ENABLE_VOROPP=OFF  ..
+
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: gmsh failed to install"
+      exit 1
+   fi
+
+   cd ../..
+   remove_base_directory
+   cd ..
+fi
+
+# qt
+if [ "$with_qt" = "1" ]; then
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xcb_util"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xcb_util
+   package_name=xcb_util
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xcb_util_image"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xcb_util_image
+   package_name=xcb_util_image
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xcb_util_keysyms"
+   echo "#------------------------------------------------------------------------------------"
+   
+   cd external_packages
+
+   unpack_and_enter $xcb_util_keysyms
+   package_name=xcb_util_keysyms
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+   
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xcb_util_renderutil"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xcb_util_renderutil
+   package_name=xcb_util_renderutil
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xcb_util_wm"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xcb_util_wm
+   package_name=xcb_util_wm
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xcb_util_cursor"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xcb_util_cursor
+   package_name=xcb_util_cursor
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xcb_util_errors"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xcb_util_errors
+   package_name=xcb_util_errors
+
+   ./configure --prefix="$install_path"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to configure"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to make"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: $package_name failed to install"
+      exit 1
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: libxml2"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $libxml2
+   package_name=libxml2
+
+   mkdir build
+   cd build
+
+   cmake .. \
+    -DCMAKE_INSTALL_PREFIX="$install_path" \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DCMAKE_BUILD_TYPE=Release \
+   
+   cmake --build . -j "$jobs"
+   cmake --install .
+    
+   cd ../..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xkeyboard_config"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xkbd_config
+
+   if [ "$has_python3p11" = "1" ]; then
+
+      python3.11 -m venv ~/venvs/xkeyboard-config
+      . "$HOME/venvs/xkeyboard-config/bin/activate"
+
+      python -m pip install --upgrade pip
+      python -m pip install meson
+   fi
+
+   meson setup build --prefix="$install_path" --libdir="$install_path/lib"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: xkeyboard_config failed to setup build"
+      exit 1
+   fi
+
+   # Skip building documention to support compiling on OpenSuse 16
+   sed -i 's/if xsltproc\.found()/if false/' meson.build
+
+   meson compile -C build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: xkeyboard_config failed to compile"
+      exit 1
+   fi
+
+   cd build
+   meson install
+   cd ..
+
+   if type deactivate >/dev/null 2>&1; then
+      deactivate
+   fi
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: xkbcommon"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $xkbcommon
+
+   meson setup build --prefix="$install_path" --libdir="$install_path/lib" -Denable-wayland=false -Denable-bash-completion=false
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: xkbcommon failed to setup build"
+      exit 1
+   fi
+
+   meson compile -C build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: xkbcommon failed to compile"
+      exit 1
+   fi
+
+   cd build
+   meson install
+   cd ..
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: dbus-1"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $dbus1
+
+   meson setup build --prefix="$install_path" --libdir="$install_path/lib"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: dbus-1 failed to setup build"
+      exit 1
+   fi
+
+   # patch to avoid deprecated distutils - courtesy of ChatGPT
+
+python3 - <<'PY'
+from pathlib import Path
+
+files = list(Path(".").glob("**/gdbus-2.0/codegen/utils.py"))
+
+if not files:
+    raise SystemExit("ERROR: gdbus-codegen utils.py was not found")
+
+for p in files:
+    print(f"Patching {p}")
+    s = p.read_text()
+
+    s = s.replace(
+        "import distutils.version",
+        "# distutils removed: Python 3.12 no longer provides distutils"
+    )
+
+    s = s.replace(
+        "return (distutils.version.LooseVersion(v), key[1])",
+        "return (tuple(int(x) for x in v.split('.')), key[1])"
+    )
+
+    p.write_text(s)
+PY
+
+   meson compile -C build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: dbus-1 failed to compile"
+      exit 1
+   fi
+
+   cd build
+   meson install
+   cd ..
+
+   cd ..
+   remove_base_directory
+   cd ..
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: icu4c"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter $icu4c
+
+   cd source
+   chmod +x runConfigureICU configure install-sh
+
+   ./runConfigureICU Linux --prefix="$install_path" --enable-rpath
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: icu4c failed to configure build"
+      exit 1
+   fi
+
+   make -j "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: icu4c failed to build"
+      exit 1
+   fi
+
+   make install
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: icu4c failed to install"
+      exit 1
+   fi
+
+   cd ../..
+   remove_base_directory
+   cd ..
+
+
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: qt"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd external_packages
+
+   unpack_and_enter "$qt"
+
+   mkdir build
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: qt failed to create a build directory"
+      exit 1
+   fi
+
+   cd build
+
+   #../configure --prefix="$install_path" --skip qtwebengine --openxr=no
+   ../configure --prefix="$install_path" --openxr=no --libdir="$install_path/lib" \
+                --skip qtwebengine \
+                --skip qtwebengine \
+                --skip qtmultimedia \
+                --skip qtlocation \
+                --skip qtpositioning \
+                --skip qtconnectivity \
+                --skip qtserialport \
+                --skip qtspeech \
+                --skip qtremoteobjects \
+                --skip qtwayland
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: qt failed to configure"
+      exit 1
+   fi
+
+   cmake --build . --parallel "$jobs"
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: qt failed to make"
+      exit 1
+   fi
+
+   cmake --install .
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: qt failed to install"
+      exit 1
+   fi
+
+   cd ../..
+   remove_base_directory
+   cd ..
+fi
+
 
 # OpenParEM
 if [ "$with_OpenParEM" = "1" ]; then
@@ -1376,6 +3160,12 @@ if [ "$with_OpenParEM" = "1" ]; then
    echo "#------------------------------------------------------------------------------------"
 
    cd src
+
+   ./autogen.sh
+   if [ $? -ne 0 ]; then
+      echo "OpenParEM_ERROR: OpenParEM failed to autogen"
+      exit 1
+   fi 
 
    make clean
    if [ $? -ne 0 ]; then
@@ -1409,46 +3199,46 @@ if [ "$with_OpenParEM" = "1" ]; then
    cd ..
 fi
 
-cd scripts
+# OpenParEMg
+if [ "$with_OpenParEMg" = "1" ]; then
 
-echo "#------------------------------------------------------------------------------------"
-echo "# OpenParEM_build: creating wrappers for executables"
-echo "#------------------------------------------------------------------------------------"
+   echo "#------------------------------------------------------------------------------------"
+   echo "# OpenParEM_build: OpenParEMg"
+   echo "#------------------------------------------------------------------------------------"
+
+   cd src/OpenParEMg
 
 # see if a compiled version of Open MPI exists
 cd "$install_path/bin"
    if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to change to bin directory."
+      echo "OpenParEM_ERROR: OpenParEMg failed to create a build directory"
       exit 1
    fi
 
-   HAS_ORTERUN=0
-   if [ -f orterun ]; then
-      HAS_ORTERUN=1
-   fi
+   APP_SOURCE="$SCRIPT_DIR/../src/OpenParEMg"
+   APP_BUILD="$SCRIPT_DIR/../src/OpenParEMg/build2"
 
-   HAS_ORTERUNBIN=0
-   if [ -f orterun.bin ]; then
-      HAS_ORTERUNBIN=1
+   MPI_IMPL="OpenMPI"
+   if [ "$with_mpich" = "1" ]; then
+      MPI_IMPL="MPICH"
    fi
 
 cd "$scripts_dir"
 
+   cmake --build "$APP_BUILD" --verbose -j"$NPROC" || exit 1
 
-if [ "$with_OpenParEM" = "1" ]; then
-   wrap_executable builder $HAS_ORTERUN
-   wrap_executable OpenParEM2D $HAS_ORTERUN
-   wrap_executable process2D $HAS_ORTERUN
-   wrap_executable simplify2D $HAS_ORTERUN
-   wrap_executable OpenParEM3D $HAS_ORTERUN
-   wrap_executable process3D $HAS_ORTERUN
-   wrap_executable simplify3D $HAS_ORTERUN
+   cmake --install "$APP_BUILD" || exit 1
+
+   cd ../..
 fi
 
-if [ "$HAS_ORTERUN" = "1" ]; then
-   if [ "$HAS_ORTERUNBIN" = "0" ]; then
-      wrap_executable orterun $HAS_ORTERUN
-   fi
+cd scripts
+
+
+if [ "$(pwd)" = "$install_path/scripts" ]; then
+   echo "#------------------------------------------------------------------------------------"
+   echo "# skipping copying scripts"
+   echo "#------------------------------------------------------------------------------------"
 else
    cd "$install_path/bin"
    if [ $? -ne 0 ]; then
@@ -1456,19 +3246,80 @@ else
       exit 1
    fi
 
-   if [ ! -f orterun ]; then
+   rm -Rf "$install_path/scripts"
+   cp -R ../scripts "$install_path"
 
-      rm -f mpirun
-      echo "#!/bin/sh" > mpirun
-      if [ $? -ne 0 ]; then
-         echo "OpenParEM_ERROR: failed to create file mpirun."
-         exit 1
-      fi
 
-      echo 'export OMP_NUM_THREADS=1' >> mpirun
-      echo 'orterun "$@"' >> mpirun
+   echo "#------------------------------------------------------------------------------------"
+   echo "# copying docs"
+   echo "#------------------------------------------------------------------------------------"
 
+   cp ../docs/*.pdf "$install_path/docs"
+fi
+
+echo "#------------------------------------------------------------------------------------"
+echo "# set RUNPATH for relocatable execution"
+echo "#------------------------------------------------------------------------------------"
+
+./set_relative_runpath.sh $install_path
+
+if [ "$create_binary_distribution" = "1" ]; then
+   echo "#------------------------------------------------------------------------------------"
+   echo "# create binary distribution"
+   echo "#------------------------------------------------------------------------------------"
+   echo ""
+
+   cd ..
+
+   echo "Simulation cleanup ..."
+   project_cleanup regression
+   project_cleanup tutorials
+
+   echo "Regression log file cleanup ..."
+   rm -f regression/builder/*.archive
+   rm -f regression/builder/*.current
+   rm -f regression/OpenParEM2D/*.archive
+   rm -f regression/OpenParEM2D/*.current
+   rm -f regression/OpenParEM3D/*.archive
+   rm -f regression/OpenParEM3D/*.current
+
+   echo "Listing binaries ..."
+   echo "bin/OpenParEMg" > dependencies.txt
+   echo "bin/OpenParEM2D" >> dependencies.txt
+   echo "bin/OpenParEM3D" >> dependencies.txt
+   echo "bin/process2D" >> dependencies.txt
+   echo "bin/process3D" >> dependencies.txt
+   echo "bin/simplify2D" >> dependencies.txt
+   echo "bin/simplify3D" >> dependencies.txt
+   echo "bin/builder" >> dependencies.txt
+   echo "bin/ortecc" >> dependencies.txt
+   echo "bin/orte-clean" >> dependencies.txt
+   echo "bin/orted" >> dependencies.txt
+   echo "bin/orte-info" >> dependencies.txt
+   echo "bin/orterun" >> dependencies.txt
+   echo "bin/orte-server" >> dependencies.txt
+   echo "bin/opal_wrapper" >> dependencies.txt
+   echo "bin/mpirun" >> dependencies.txt
+   echo "LICENSE" >> dependencies.txt
+   echo "README.md" >> dependencies.txt
+
+   echo "Creating tar file ..."
+   tar -czf build.tar.gz -T dependencies.txt scripts share lib plugins etc var regression tutorials doc/*.pdf
+
+   if [ -d "OpenParEM-2.2.0" ]; then
+      rm -Rf OpenParEM-2.2.0
    fi
+   mkdir OpenParEM-2.2.0
+   mv build.tar.gz OpenParEM-2.2.0
+   cd OpenParEM-2.2.0
+   tar -xf build.tar.gz
+   rm -f build.tar.gz
+   cd ..
+   tar -czf OpenParEM-2.2.0-bin.tar.gz OpenParEM-2.2.0
+   rm -Rf OpenParEM-2.2.0
+
+   rm -f dependencies.txt
+   echo ""
 
    cd "$scripts_dir"
 fi

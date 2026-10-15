@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -34,6 +34,7 @@ struct applicationContext {
    chrono::steady_clock::time_point job_start_time;
    const char *lockfile;
    char *prefix_text;
+   int tool;      // 2 for OpenParEM2D, 3 for OpenParEM3D
 };
 
 #endif

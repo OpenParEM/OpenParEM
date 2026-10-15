@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "OpenParEMmaterials.hpp"
+#include <cstring>
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +91,7 @@ Frequency::Frequency (int startLine_, int endLine_, bool checkLimits_)
    Rz.set_checkLimits(checkLimits_);
 }
 
-void Frequency::print (string indent)
+void Frequency::print (std::string indent)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%sFrequency\n",startLine,indent.c_str(),indent.c_str());
 
@@ -126,14 +127,14 @@ void Frequency::print (string indent)
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%sEndFrequency\n",endLine,indent.c_str(),indent.c_str());
 }
 
-bool Frequency::load (string *indent, inputFile *inputs)
+bool Frequency::load (std::string *indent, inputFile *inputs)
 {
    bool fail=false;
 
    int lineNumber=inputs->get_next_lineNumber(startLine);
    int stopLineNumber=inputs->get_previous_lineNumber(endLine);
    while (lineNumber <= stopLineNumber) {
-      string token,value,line;
+      std::string token,value,line;
       line=inputs->get_line(lineNumber);
       get_token_pair(&line,&token,&value,&lineNumber,indent->c_str());
 
@@ -193,7 +194,7 @@ bool Frequency::inFrequencyBlock (int lineNumber)
    return false;
 }
 
-bool Frequency::check (string indent)
+bool Frequency::check (std::string indent)
 {
    bool fail=false;
 
@@ -223,6 +224,62 @@ bool Frequency::check (string indent)
    }
 
    return fail;
+}
+
+void Frequency::set_freespace ()
+{
+    frequency.set_keyword("frequency");
+    frequency.set_value("any");
+    frequency.set_loaded(true);
+    frequency.set_lineNumber(0);
+
+    relative_permittivity.set_keyword("relative_permittivity");
+    relative_permittivity.set_dbl_value(1);
+    relative_permittivity.set_loaded(true);
+    relative_permittivity.set_lineNumber(0);
+
+    relative_permeability.set_keyword("relative_permeability");
+    relative_permeability.set_dbl_value(1);
+    relative_permeability.set_loaded(true);
+    relative_permeability.set_lineNumber(0);
+
+    loss.set_keyword("tand");
+    loss.set_dbl_value(0);
+    loss.set_loaded(true);
+    loss.set_lineNumber(0);
+
+    Rz.set_keyword("Rz");
+    Rz.set_dbl_value(0);
+    Rz.set_loaded(true);
+    Rz.set_lineNumber(0);
+}
+
+void Frequency::set_copper ()
+{
+    frequency.set_keyword("frequency");
+    frequency.set_value("any");
+    frequency.set_loaded(true);
+    frequency.set_lineNumber(0);
+
+    relative_permittivity.set_keyword("relative_permittivity");
+    relative_permittivity.set_dbl_value(1);
+    relative_permittivity.set_loaded(true);
+    relative_permittivity.set_lineNumber(0);
+
+    relative_permeability.set_keyword("relative_permeability");
+    relative_permeability.set_dbl_value(1);
+    relative_permeability.set_loaded(true);
+    relative_permeability.set_lineNumber(0);
+
+    loss.set_keyword("conductivity");
+    loss.set_dbl_value(5.813e7);
+    loss.set_loaded(true);
+    loss.set_lineNumber(0);
+
+    Rz.set_keyword("Rz");
+    Rz.set_dbl_value(0);
+    Rz.set_loaded(true);
+    Rz.set_lineNumber(0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -314,7 +371,7 @@ Temperature::Temperature (int startLine_, int endLine_, bool checkLimits_)
    loss.set_checkLimits(checkLimits_);
 }
 
-void Temperature::print (string indent)
+void Temperature::print (std::string indent)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %sTemperature\n",startLine,indent.c_str());
 
@@ -399,7 +456,7 @@ bool Temperature::inFrequencyBlocks(int lineNumber)
    return false;
 }
 
-bool Temperature::load(string *indent, inputFile *inputs, bool checkInputs)
+bool Temperature::load(std::string *indent, inputFile *inputs, bool checkInputs)
 {
    bool fail=false;
 
@@ -420,7 +477,7 @@ bool Temperature::load(string *indent, inputFile *inputs, bool checkInputs)
    while (lineNumber <= stopLineNumber) {
 
       if (!inFrequencyBlocks(lineNumber)) {
-         string token,value,line; 
+         std::string token,value,line;
          line=inputs->get_line(lineNumber);
          get_token_pair(&line,&token,&value,&lineNumber,*indent);
 
@@ -504,7 +561,7 @@ bool Temperature::inTemperatureBlock (int lineNumber)
    return false;
 }
 
-bool Temperature::check(string indent)
+bool Temperature::check(std::string indent)
 {
    bool fail=false;
 
@@ -597,11 +654,11 @@ bool Temperature::check(string indent)
    return fail;
 }
 
-complex<double> Temperature::get_eps(double frequency_, double tolerance, string indent)
+std::complex<double> Temperature::get_eps(double frequency_, double tolerance, std::string indent)
 {
    double eps;
    double loss_;
-   complex<double> complex_eps=complex<double>(-DBL_MAX,0);
+   std::complex<double> complex_eps=std::complex<double>(-DBL_MAX,0);
    double eps0=8.8541878176e-12;
 
    double freq_low=0;         // for linear interpolation - extrapolation is not supported
@@ -669,9 +726,9 @@ complex<double> Temperature::get_eps(double frequency_, double tolerance, string
          if (frequencyList[i]->get_loss()->get_keyword().compare("loss_tangent") == 0 ||
              frequencyList[i]->get_loss()->get_keyword().compare("tand") == 0 || 
              frequencyList[i]->get_loss()->get_keyword().compare("tandel") == 0) {
-            complex_eps=complex<double>(eps*eps0,-loss_*eps*eps0);            // loss tangent
+            complex_eps=std::complex<double>(eps*eps0,-loss_*eps*eps0);            // loss tangent
          } else {
-            complex_eps=complex<double>(eps*eps0,-loss_/(2*M_PI*frequency_)); // conductivity
+            complex_eps=std::complex<double>(eps*eps0,-loss_/(2*M_PI*frequency_)); // conductivity
          }
       }
 
@@ -692,12 +749,12 @@ complex<double> Temperature::get_eps(double frequency_, double tolerance, string
          sigma=loss_;                              // conductivity
       }
 
-      complex<double> t1=complex<double>(pow(10,m1.get_dbl_value()),2*M_PI*frequency_);
-      complex<double> t2=complex<double>(pow(10,m2.get_dbl_value()),2*M_PI*frequency_);
-      complex<double> denom=complex<double>(log(10),0);
-      complex<double> conductivity_term=complex<double>(0,-sigma/(2*M_PI*frequency_));
-      complex<double> infinity_term=complex<double>(er_infinity.get_dbl_value()*eps0,0);
-      complex<double> delta_term=complex<double>(delta_er.get_dbl_value()*eps0/(m2.get_dbl_value()-m1.get_dbl_value()),0);
+      std::complex<double> t1=std::complex<double>(pow(10,m1.get_dbl_value()),2*M_PI*frequency_);
+      std::complex<double> t2=std::complex<double>(pow(10,m2.get_dbl_value()),2*M_PI*frequency_);
+      std::complex<double> denom=std::complex<double>(log(10),0);
+      std::complex<double> conductivity_term=std::complex<double>(0,-sigma/(2*M_PI*frequency_));
+      std::complex<double> infinity_term=std::complex<double>(er_infinity.get_dbl_value()*eps0,0);
+      std::complex<double> delta_term=std::complex<double>(delta_er.get_dbl_value()*eps0/(m2.get_dbl_value()-m1.get_dbl_value()),0);
 
       complex_eps=infinity_term+delta_term*log(t2/t1)/denom+conductivity_term;
    }
@@ -705,7 +762,7 @@ complex<double> Temperature::get_eps(double frequency_, double tolerance, string
    return complex_eps;
 }
 
-double Temperature::get_mu(double frequency_, double tolerance, string indent)
+double Temperature::get_mu(double frequency_, double tolerance, std::string indent)
 {
    double mu=-DBL_MAX;
 
@@ -774,13 +831,13 @@ double Temperature::get_mu(double frequency_, double tolerance, string indent)
    return mu;
 }
 
-double Temperature::get_Rs(double frequency_, double tolerance, string indent)
+double Temperature::get_Rs(double frequency_, double tolerance, std::string indent)
 {
    double Rs=-DBL_MAX;
    double loss_;
    double mur_;
    double Rz_;
-   string loss_tangent="loss_tangent";
+   std::string loss_tangent="loss_tangent";
 
    double freq_low=0;         // for linear interpolation - extrapolation is not supported
    double loss_low;           // ToDo - replace with spline interpolation or
@@ -883,11 +940,74 @@ double Temperature::get_Rs(double frequency_, double tolerance, string indent)
    return Rs;
 }
 
+void Temperature::set_freespace ()
+{
+    Frequency *newFrequency=new Frequency(0,0,false);
+    newFrequency->set_freespace();
+    frequencyList.push_back(newFrequency);
+
+    temperature.set_keyword("temperature");
+    temperature.set_value("any");
+    temperature.set_loaded(true);
+    temperature.set_lineNumber(0);
+}
+
+void Temperature::set_FR4 ()
+{
+    temperature.set_keyword("temperature");
+    temperature.set_value("any");
+    temperature.set_loaded(true);
+    temperature.set_lineNumber(0);
+
+    er_infinity.set_keyword("er_infinity");
+    er_infinity.set_dbl_value(4.27);
+    er_infinity.set_loaded(true);
+    er_infinity.set_lineNumber(0);
+
+    delta_er.set_keyword("delta_er");
+    delta_er.set_dbl_value(1.12);
+    delta_er.set_loaded(true);
+    delta_er.set_lineNumber(0);
+
+    m1.set_keyword("m1");
+    m1.set_dbl_value(4);
+    m1.set_loaded(true);
+    m1.set_lineNumber(0);
+
+    m2.set_keyword("m2");
+    m2.set_dbl_value(12);
+    m2.set_loaded(true);
+    m2.set_lineNumber(0);
+
+    relative_permeability.set_keyword("mur");
+    relative_permeability.set_dbl_value(1);
+    relative_permeability.set_loaded(true);
+    relative_permeability.set_lineNumber(0);
+
+    loss.set_keyword("conductivity");
+    loss.set_dbl_value(8e-11);
+    loss.set_loaded(true);
+    loss.set_lineNumber(0);
+}
+
+void Temperature::set_copper ()
+{
+    Frequency *newFrequency=new Frequency(0,0,false);
+    newFrequency->set_copper();
+    frequencyList.push_back(newFrequency);
+
+    temperature.set_keyword("temperature");
+    temperature.set_value("");
+    temperature.set_dbl_value(20);
+    temperature.set_loaded(true);
+    temperature.set_lineNumber(0);
+}
+
 Temperature::~Temperature()
 {
    long unsigned int i=0;
    while (i < frequencyList.size()) {
-      delete frequencyList[i];
+      if (frequencyList[i]) {delete frequencyList[i]; frequencyList[i]=nullptr;}
       i++;
    }
 }
@@ -902,7 +1022,7 @@ Source::Source (int startLine_, int endLine_)
    endLine=endLine_;
 }
 
-void Source::print(string indent)
+void Source::print(std::string indent)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %sSource\n",startLine,indent.c_str());
 
@@ -934,6 +1054,29 @@ bool Source::inSourceBlock (int lineNumber)
    return false;
 }
 
+void Source::set_freespace ()
+{
+    lineNumberList.push_back(0);
+    lineList.push_back("physics definition");
+}
+
+void Source::set_FR4 ()
+{
+    lineNumberList.push_back(0);
+    lineNumberList.push_back(0);
+    lineNumberList.push_back(0);
+
+    lineList.push_back("A.R. Djordjevi, R.M Biljie, V.D. Likar-Dmiljanic, T.K. Sarkar,");
+    lineList.push_back("\"Wideband Frequency-Domain Characterization of FR-4 and Time-Domain Causality,\"");
+    lineList.push_back("IEEE Trans. Electromagnetic Compatibility, Nov. 2001, pp. 662-667.");
+}
+
+void Source::set_copper ()
+{
+    lineNumberList.push_back(0);
+    lineList.push_back("David M. Pozar, \"Microwave Engineering,\" Addison-Wesley Publishing Company, 1990, p.714.");
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Material
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -951,16 +1094,31 @@ Material::Material (int startLine_, int endLine_)
    name.set_lowerLimit(0);
    name.set_upperLimit(0);
    name.set_checkLimits(false);
+
+   type.push_alias("type");
+   type.set_loaded(false);
+   type.set_positive_required(false);
+   type.set_non_negative_required(false);
+   type.set_lowerLimit(0);
+   type.set_upperLimit(0);
+   type.set_checkLimits(false);
 }
 
-void Material::print(string indent)
+void Material::print(std::string indent)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: Material",startLine);
    if (merged) PetscPrintf(PETSC_COMM_WORLD,"(merged)");
    PetscPrintf(PETSC_COMM_WORLD,"\n");
 
+   if (isLocal) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: isLocal=true\n",name.get_lineNumber());}
+   else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: isLocal=false\n",name.get_lineNumber());}
+
    if (name.is_loaded()) {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s\n",name.get_lineNumber(),indent.c_str(),name.get_value().c_str());
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s\n",name.get_lineNumber(),indent.c_str(),name.get_value().c_str());
+   }
+
+   if (type.is_loaded()) {
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: %s%s\n",type.get_lineNumber(),indent.c_str(),type.get_value().c_str());
    }
 
    long unsigned int i=0;
@@ -976,6 +1134,18 @@ void Material::print(string indent)
    }
 
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%d: EndMaterial\n",endLine);
+}
+
+bool Material::is_conductor ()
+{
+    if (type.get_value().compare("conductor") == 0) return true;
+    return false;
+}
+
+bool Material::is_dielectric ()
+{
+    if (type.get_value().compare("dielectric") == 0) return true;
+    return false;
 }
 
 bool Material::findTemperatureBlocks(inputFile *inputs, bool checkLimits)
@@ -1042,9 +1212,10 @@ bool Material::inSourceBlocks(int lineNumber)
    return false;
 }
 
-bool Material::load(string *indent, inputFile *inputs, bool checkInputs)
+bool Material::load(std::string *indent, inputFile *inputs, bool checkInputs, bool isLocal_)
 {
    bool fail=false;
+   isLocal=isLocal_;
 
    // Temperature blocks
    if (findTemperatureBlocks(inputs, checkInputs)) fail=true;
@@ -1071,14 +1242,14 @@ bool Material::load(string *indent, inputFile *inputs, bool checkInputs)
    while (lineNumber <= stopLineNumber) {
 
       if (!inTemperatureBlocks(lineNumber) && !inSourceBlocks(lineNumber)) {
-         string token,value,line;
+         std::string token,value,line;
          line=inputs->get_line(lineNumber);
          get_token_pair(&line,&token,&value,&lineNumber,*indent);
 
          int recognized=0;
          if (name.match_alias(&token)) {
             if (name.is_loaded()) {
-               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1074: Duplicate entry at line %d for previous entry at line %d.\n",
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1134: Duplicate entry at line %d for previous entry at line %d.\n",
                                                       indent->c_str(),lineNumber,name.get_lineNumber());
                fail=true;
             } else {
@@ -1088,6 +1259,20 @@ bool Material::load(string *indent, inputFile *inputs, bool checkInputs)
                name.set_loaded(true);
             }
             recognized++;
+         }
+
+         if (type.match_alias(&token)) {
+             if (type.is_loaded()) {
+                 prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1074: Duplicate entry at line %d for previous entry at line %d.\n",
+                             indent->c_str(),lineNumber,type.get_lineNumber());
+                 fail=true;
+             } else {
+                 type.set_keyword(token);
+                 type.set_value(value);
+                 type.set_lineNumber(lineNumber);
+                 type.set_loaded(true);
+             }
+             recognized++;
          }
 
          // should recognize one keyword
@@ -1102,18 +1287,28 @@ bool Material::load(string *indent, inputFile *inputs, bool checkInputs)
    return fail;
 }
 
-bool Material::check(string indent)
+bool Material::check(std::string indent)
 {
    bool fail=false;
 
    if (name.is_loaded()) {
       if (name.get_value().compare("") == 0) {
-         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1080: name is blank at line %d.\n",indent.c_str(),name.get_lineNumber());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1135: name is blank at line %d.\n",indent.c_str(),name.get_lineNumber());
          fail=true;
       }
    } else {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1081: Material block at line %d must specify a name.\n",indent.c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1131: Material block at line %d must specify a name.\n",indent.c_str(),startLine);
       fail=true;
+   }
+
+   if (type.is_loaded()) {
+       if (type.get_value().compare("conductor") != 0 && type.get_value().compare("dielectric") != 0) {
+           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1080: type must be \"conductor\" or \"dielectric\" at line %d.\n",indent.c_str(),type.get_lineNumber());
+           fail=true;
+       }
+   } else {
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1081: Material block at line %d must specify a type.\n",indent.c_str(),startLine);
+       fail=true;
    }
 
    // no Temperature blocks
@@ -1171,7 +1366,7 @@ bool Material::check(string indent)
 
 // Find the temperature block matching the given temperature.
 // Do not interpolate or extrapolate.
-Temperature* Material::get_temperature(double temperature_, double tolerance, string indent)
+Temperature* Material::get_temperature(double temperature_, double tolerance, std::string indent)
 {
    long unsigned int i=0;
    while (i < temperatureList.size()) {
@@ -1195,10 +1390,10 @@ Temperature* Material::get_temperature(double temperature_, double tolerance, st
    return nullptr;
 }
 
-complex<double> Material::get_eps(double temperature_, double frequency, double tolerance, string indent)
+std::complex<double> Material::get_eps(double temperature_, double frequency, double tolerance, std::string indent)
 {
    Temperature *temperature;
-   complex<double> complex_eps=complex<double>(-DBL_MAX,0);
+   std::complex<double> complex_eps=std::complex<double>(-DBL_MAX,0);
 
    temperature=get_temperature(temperature_, tolerance, indent);
    if (temperature) complex_eps=temperature->get_eps(frequency, tolerance, indent);
@@ -1206,7 +1401,7 @@ complex<double> Material::get_eps(double temperature_, double frequency, double 
    return complex_eps;
 }
 
-double Material::get_mu(double temperature_, double frequency, double tolerance, string indent)
+double Material::get_mu(double temperature_, double frequency, double tolerance, std::string indent)
 {
    Temperature *temperature;
    double mu=-DBL_MAX;
@@ -1217,7 +1412,7 @@ double Material::get_mu(double temperature_, double frequency, double tolerance,
    return mu;
 }
 
-double Material::get_Rs(double temperature_, double frequency, double tolerance, string indent)
+double Material::get_Rs(double temperature_, double frequency, double tolerance, std::string indent)
 {
    Temperature *temperature;
    double Rs=-DBL_MAX;
@@ -1232,15 +1427,78 @@ Material::~Material ()
 {
    long unsigned int i=0;
    while (i < temperatureList.size()) {
-      delete temperatureList[i];
+       if (temperatureList[i]) {delete temperatureList[i]; temperatureList[i]=nullptr;}
       i++;
    }
 
    i=0;
    while (i < sourceList.size()) {
-      delete sourceList[i];
+       if (sourceList[i]) {delete sourceList[i]; sourceList[i]=nullptr;}
       i++;
    }
+}
+
+void Material::set_freespace ()
+{
+    name.set_keyword("name");
+    name.set_value("freespace");
+    name.set_loaded(true);
+    name.set_lineNumber(0);
+
+    type.set_keyword("type");
+    type.set_value("dielectric");
+    type.set_loaded(true);
+    type.set_lineNumber(0);
+
+    Temperature* newTemperature=new Temperature(0,0,false);
+    newTemperature->set_freespace();
+    temperatureList.push_back(newTemperature);
+
+    Source* newSource=new Source(0,0);
+    newSource->set_freespace();
+    sourceList.push_back(newSource);
+}
+
+void Material::set_FR4 ()
+{
+    name.set_keyword("name");
+    name.set_value("FR4");
+    name.set_loaded(true);
+    name.set_lineNumber(0);
+
+    type.set_keyword("type");
+    type.set_value("dielectric");
+    type.set_loaded(true);
+    type.set_lineNumber(0);
+
+    Temperature* newTemperature=new Temperature(0,0,false);
+    newTemperature->set_FR4();
+    temperatureList.push_back(newTemperature);
+
+    Source* newSource=new Source(0,0);
+    newSource->set_FR4();
+    sourceList.push_back(newSource);
+}
+
+void Material::set_copper ()
+{
+    name.set_keyword("name");
+    name.set_value("copper");
+    name.set_loaded(true);
+    name.set_lineNumber(0);
+
+    type.set_keyword("type");
+    type.set_value("conductor");
+    type.set_loaded(true);
+    type.set_lineNumber(0);
+
+    Temperature* newTemperature=new Temperature(0,0,false);
+    newTemperature->set_copper();
+    temperatureList.push_back(newTemperature);
+
+    Source* newSource=new Source(0,0);
+    newSource->set_copper();
+    sourceList.push_back(newSource);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1273,12 +1531,46 @@ bool MaterialDatabase::findMaterialBlocks()
 }
 
 // return true on fail
-bool MaterialDatabase::load(const char *path, const char *filename, bool checkInputs)
+bool MaterialDatabase::load (const char *path, const char *filename, bool checkInputs, bool isLocal)
 {
+   if (!path || !filename || strlen(path) == 0 || strlen(filename) == 0) {
+      if (isLocal) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1089: Invalid path and/or file name for the local materials database.\n",
+                                                indent.c_str(),indent.c_str());
+      } else {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1132: Invalid path and/or file name for the global materials database.\n",
+                                                indent.c_str(),indent.c_str());
+      }
+      return true;
+   }
+
+   // check for path/filename separator
+
+   bool pathHasSeparator=false;
+   if (path[strlen(path)-1] == '/') pathHasSeparator=true;
+
+   bool filenameHasSeparator=false;
+   if (filename[0] == '/') filenameHasSeparator=true;
+
    // assemble the full path name
-   char *fullPathName=(char *)malloc((strlen(path)+strlen(filename)+1)*sizeof(char));
-   if (!fullPathName) return 1;
-   sprintf (fullPathName,"%s%s",path,filename);
+
+   char *fullPathName=nullptr;
+   fullPathName=(char *)malloc((strlen(path)+strlen(filename)+2)*sizeof(char));
+   if (!fullPathName) return true;
+
+   if (pathHasSeparator) {
+      if (filenameHasSeparator) {
+         sprintf (fullPathName,"%s%s",path,filename);
+      } else {
+         sprintf (fullPathName,"%s%s",path,filename);
+      }
+   } else {
+      if (filenameHasSeparator) {
+         sprintf (fullPathName,"%s%s",path,filename);
+      } else {
+         sprintf (fullPathName,"%s/%s",path,filename);
+      }
+   }
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sloading materials file \"%s\"\n",indent.c_str(),fullPathName);
  
    bool fail=false;
@@ -1287,7 +1579,7 @@ bool MaterialDatabase::load(const char *path, const char *filename, bool checkIn
    inputs.createCrossReference();
 
    if (inputs.checkVersion(version_name, version_value)) {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1089: Version mismatch.  Expecting the first line to be: %s %s\n",
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR1133: Version mismatch.  Expecting the first line to be: %s %s\n",
                                              indent.c_str(),indent.c_str(),version_name.c_str(),version_value.c_str());
       return true;
    }
@@ -1298,7 +1590,7 @@ bool MaterialDatabase::load(const char *path, const char *filename, bool checkIn
 
    long unsigned int i=0;
    while (i < materialList.size()) {
-      if (materialList[i]->load(&indent, &inputs, checkInputs)) fail=true;
+      if (materialList[i]->load(&indent, &inputs, checkInputs,isLocal)) fail=true;
       i++;
    }
 
@@ -1312,17 +1604,22 @@ bool MaterialDatabase::load(const char *path, const char *filename, bool checkIn
    return fail;
 };
 
-Material* MaterialDatabase::get(string name)
+Material* MaterialDatabase::get(std::string name)
 {
+    // remove any uniqueification that may have been applied
+    size_t pos=name.rfind("_OPEM_RESERVED_");
+    std::string strippedName=name.substr(0,pos);
+
    long unsigned int i=0;
    while (i < materialList.size()) {
-      if (materialList[i]->get_name()->get_value().compare(name) == 0) return materialList[i];
+      //if (materialList[i]->get_name()->get_value().compare(name) == 0) return materialList[i];
+       if (materialList[i]->get_name()->get_value().compare(strippedName) == 0) return materialList[i];
       i++;
    }
    return nullptr;
 }
 
-void MaterialDatabase::print(string indent)
+void MaterialDatabase::print(std::string indent)
 {
    long unsigned int i=0;
    while (i < materialList.size()) {
@@ -1366,13 +1663,13 @@ bool MaterialDatabase::load_materials (char *global_path, char *global_name, cha
 {
    bool global=true;
    if (strlen(global_name) != 0) {
-      global=load(global_path,global_name,check_limits);
+      global=load(global_path,global_name,check_limits,false);
    }
 
    bool local=true;
    MaterialDatabase localMaterialDatabase;
    if (strlen(local_name) != 0) {
-      local=localMaterialDatabase.load(local_path,local_name,check_limits);
+      local=localMaterialDatabase.load(local_path,local_name,check_limits,true);
    }
 
    if (!local) {
@@ -1380,11 +1677,13 @@ bool MaterialDatabase::load_materials (char *global_path, char *global_name, cha
    }
 
    if (!global || !local) return false;
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sERROR1040: Unable to load a local or global materials database.\n",indent.c_str());
    return true;
 }
 
 // MaterialDatabase takes ownership of the contents of db
-bool MaterialDatabase::merge(MaterialDatabase *db, string indent)
+bool MaterialDatabase::merge(MaterialDatabase *db, std::string indent)
 {
    // checks for nothing to do
    if (!db) return false;
@@ -1434,15 +1733,22 @@ bool MaterialDatabase::merge(MaterialDatabase *db, string indent)
    return 0;
 }
 
+void MaterialDatabase::clear ()
+{
+    long unsigned int i=0;
+    while (i < materialList.size()) {
+        if (materialList[i]) {delete materialList[i]; materialList[i]=nullptr;}
+        i++;
+    }
+    materialList.clear();
+    isTransferred=false;
+    inputs.clear();
+}
+
 MaterialDatabase::~MaterialDatabase()
 {
    if (isTransferred) return;
-
-   long unsigned int i=0;
-   while (i < materialList.size()) {
-      delete materialList[i];
-      i++;
-   }
+   clear();
 }
 
 

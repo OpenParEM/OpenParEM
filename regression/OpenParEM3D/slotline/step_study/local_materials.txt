@@ -2,6 +2,7 @@
 
 Material
    name=substrate
+   type=dielectric
    Temperature
       temperature=any
       Frequency

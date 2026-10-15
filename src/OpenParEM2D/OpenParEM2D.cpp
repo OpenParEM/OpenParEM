@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -39,6 +39,7 @@
 #include <string>
 #include <chrono>
 #include <unistd.h>
+#include <csignal>
 #include "modes.hpp"
 #include "results.hpp"
 #include "convergence.hpp"
@@ -54,10 +55,10 @@ using namespace std;
 using namespace mfem;
 
 int version_major=2;
-int version_minor=1;
+int version_minor=2;
 int version_patch=0;
 
-extern "C" int eigensolve (struct projectData *, int, double, int, PetscInt *, int, PetscInt *, double **, double **, int *, PetscMPIInt);
+extern "C" int eigensolve (struct projectData *, int, double, int, int, PetscInt *, int, PetscInt *, double **, double **, int *);
 extern "C" void init_project (struct projectData *);
 extern "C" int load_project_file(const char*, projectData*, const char*);
 extern "C" void print_project (struct projectData *, struct projectData *, const char *indent);
@@ -70,12 +71,24 @@ extern "C" void prefix ();
 extern "C" char* get_prefix_text ();
 extern "C" void set_prefix_text (char *);
 
+// globals to work with signal handlers
+char *lockfile;
+std::filesystem::path currentPath;
+MPI_Request request;    // to align with how things are done in OpenParEM3D
+
 void help () {
-   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM2D [-h] filename\n");
+   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM2D [-h] filename [logfile]\n");
    PetscPrintf(PETSC_COMM_WORLD,"       -h          : Print this help text\n");
    PetscPrintf(PETSC_COMM_WORLD,"       filename    : Filename of an OpenParEM setup file.\n");
+   PetscPrintf(PETSC_COMM_WORLD,"       logfile     : Output is redirected to the given file.  Note that the file is appended.\n");
    PetscPrintf(PETSC_COMM_WORLD,"\nOpenParEM2D is a full-wave 2D electromagnetic solver.\n");
    PetscPrintf(PETSC_COMM_WORLD,"Version %d.%d.%d\n",version_major,version_minor,version_patch);
+
+   // get the MPI version
+   char version_string[MPI_MAX_LIBRARY_VERSION_STRING];
+   int resultlen;
+   MPI_Get_library_version(version_string, &resultlen);
+   PetscPrintf(PETSC_COMM_WORLD,"%s\n",version_string);
 }
 
 // load the mesh - either serial or parallel
@@ -236,6 +249,34 @@ void show_memory (int show, string space)
    }
 }
 
+void signalFinished (int status)
+{
+   PetscMPIInt rank;
+   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+
+   MPI_Comm parent;
+   MPI_Comm_get_parent(&parent);
+
+   MPI_Barrier(PETSC_COMM_WORLD);
+
+   if (parent != MPI_COMM_NULL) {
+      PetscSynchronizedFlush(parent,PETSC_STDOUT);
+
+      // send signal that the simulation is finished
+      //std::cout << "OpenParEM2D send 100000" << std::endl; std::cout.flush();
+      MPI_Send(&status,1,MPI_INT,rank,100000,parent);
+
+      // OpenParEM3D must unblock this signal
+      if (rank == 0) {
+         //std::cout << "OpenParEM2D wait 200000" << std::endl; std::cout.flush();
+         MPI_Wait(&request,MPI_STATUS_IGNORE);
+         //std::cout << "OpenParEM2D free request" << std::endl; std::cout.flush();
+         MPI_Request_free(&request);
+      }
+   }
+   //std::cout << "OpenParEM2D return signalFinished" << std::endl; std::cout.flush();
+}
+
 void load_project_file (const char *projFile, struct projectData *defaultData, struct projectData *projData, char *lockfile, chrono::steady_clock::time_point job_start_time)
 {
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"   loading project file \"%s\"\n",projFile);
@@ -245,7 +286,8 @@ void load_project_file (const char *projFile, struct projectData *defaultData, s
 
    if (load_project_file (projFile,projData,"   ")) {
       if (projData->debug_show_project) {print_project (projData,defaultData,"      ");}
-      exit_job_on_error (job_start_time,lockfile,true);
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,2);
    }
    if (projData->debug_show_project) {print_project (projData,defaultData,"      ");}
 }
@@ -288,10 +330,58 @@ char* create_temp_directory (struct projectData *projData, chrono::steady_clock:
 
    MPI_Bcast(&is_created,1,MPI_INT,0,PETSC_COMM_WORLD);
    if (! is_created) {
-         exit_job_on_error (job_start_time,lockfile,true);
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,2);
    }
 
    return tempdir;
+}
+
+void clearLists (double **alphaList, double **betaList, int size)
+{
+   if (*alphaList == nullptr) return;
+   if (*betaList == nullptr) return;
+
+   int i=0;
+   while (i < size) {
+      (*alphaList)[i]=0;
+      (*betaList)[i]=0;
+      i++;
+   }
+}
+
+void resetLists (double **alphaList, double **betaList, int size, double initial_alpha, double initial_beta)
+{
+   if (*alphaList == nullptr) return;
+   if (*betaList == nullptr) return;
+
+   clearLists(alphaList,betaList,size);
+   if (size > 0) {
+      (*alphaList)[0]=initial_alpha;
+      (*betaList)[0]=initial_beta;
+   }
+}
+
+PetscErrorCode petscErrorHandler (MPI_Comm comm, int line, const char *file, const char *func,
+                                  PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx)
+{
+    // 55 PETSc out of memory
+    // 76 MUMPS out of memory
+
+    // out of memory
+    if (n == 55 || n == 76) {
+       //prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2252: Out of memory. %s bytes.\n",mess);
+       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2280: Out of memory.\n");
+    }
+
+    // details for potential future enhancement
+    //fprintf(stderr, "A PETSc Error occurred in function %s at line %d in file %s\n", func, line, file);
+    //fprintf(stderr, "Error code: %d, Message: %s\n", n, mess);
+
+    // optional call to the default PETSc error handler
+    //PetscTraceBackErrorHandler(comm, line, file, func, n, p, mess, ctx);
+
+    return 1;
 }
 
 int main(int argc, char *argv[])
@@ -299,6 +389,7 @@ int main(int argc, char *argv[])
    double eps0=8.8541878176e-12;
    const char *projFile;
    char* prefix_text;
+   bool gracefulExit=false;
    struct projectData projData,defaultData;
    BoundaryDatabase boundaryDatabase;
    BorderDatabase borderDatabase;
@@ -310,43 +401,95 @@ int main(int argc, char *argv[])
    MaterialDatabase localMaterialDatabase;
    MaterialDatabase materialDatabase;
 
+   chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
+
+   currentPath=std::filesystem::current_path();
+
    // Initialize Petsc and MPI
    SlepcInitializeNoArguments();
+
    PetscMPIInt size,rank;
    MPI_Comm_size(PETSC_COMM_WORLD, &size);
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   MPI_Barrier(PETSC_COMM_WORLD);
-
    MPI_Comm parent;
    MPI_Comm_get_parent (&parent);
+
+   MPI_Barrier(PETSC_COMM_WORLD);
+
+   // look for a stop signal
+   int signal;
+   if (parent != MPI_COMM_NULL && rank == 0) {
+      MPI_Irecv(&signal,1,MPI_INT,0,200000,parent,&request);
+   }
+
+   // set the indent characters
    prefix_text=(char *)malloc(256*sizeof(char));
    if (parent == MPI_COMM_NULL) snprintf(prefix_text,256,"%s","");
    else snprintf(prefix_text,256,"%s","         | ");
    set_prefix_text(prefix_text);
 
+   // get the working directory
+   if (parent != MPI_COMM_NULL) {
+      int length;
+      MPI_Recv(&length,1,MPI_INT,0,10,parent,MPI_STATUS_IGNORE);
+
+      char *workingDir=(char *)malloc((length+1)*sizeof(char));
+      MPI_Recv(workingDir,length,MPI_CHAR,0,11,parent,MPI_STATUS_IGNORE);
+      workingDir[length]='\0';
+
+      if (workingDir) {
+         if (chdir(workingDir) != 0) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2277: Failed to change to the working directory \"%s\".\n",workingDir);
+            signalFinished(1);
+            exit_job_on_error (job_start_time,lockfile,true,2);
+         }
+         free(workingDir);
+      }
+   }
+
    // trap PETSc errors to enable graceful exit, primarily for out-of-memory errors
    struct applicationContext appCtx;
-   PetscPushErrorHandler(errorHandler,(struct applicationContext *) &appCtx);
+   PetscPushErrorHandler(petscErrorHandler, NULL);
 
-   chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
+   // MFEM error handling supporting try/catch
+   mfem::ErrorAction(mfem::MFEM_ERROR_THROW);
 
    // parse inputs
+
+   // help
+   int retVal=1;
    int printHelp=0;
    if (argc <= 1) printHelp=1;
    else {
-      if (strcmp(argv[1],"-h") == 0) printHelp=1;
+      if (strcmp(argv[1],"-h") == 0) {printHelp=1; retVal=0;}
       else projFile=argv[1];
    }
-   if (printHelp) {help(); /*PetscFinalize()*/ SlepcFinalize();; exit(1);}
+   if (printHelp) {help(); SlepcFinalize();; exit(retVal);}
+
+   // log file - redirect stdout if a log name is provided
+   if (argc == 3) {
+      std::ios_base::sync_with_stdio(true);
+      std::FILE* stream=std::freopen(argv[2],"a",stdout);  // append
+      if (stream == nullptr) {
+         if (rank == 0) {
+            std::cout << "ERROR2000: Failed to redirect stdout to log file \"" << argv[2] << "\"." << std::endl;
+         }
+         PetscFinalize();
+         exit(1);
+      }
+   }
+
+   // project kickoff
 
    char *baseName=get_project_name(projFile);
    print_copyright_notice ("OpenParEM2D",version_major,version_minor,version_patch);
-   char *lockfile=create_lock_file(baseName);
+   lockfile=create_lock_file(baseName);
 
    appCtx.job_start_time=job_start_time;
    appCtx.lockfile=lockfile;
    appCtx.prefix_text=strdup(get_prefix_text());
+   appCtx.tool=2; // for OpenParEM2D
 
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"Setting up ...\n");
 
@@ -357,28 +500,42 @@ int main(int argc, char *argv[])
    projData.version_patch=version_patch;
    delete_stale_files(baseName);
    char *tempdir=create_temp_directory(&projData,job_start_time,lockfile);
-   if (projData.output_show_license) {print_license(); exit_job_on_error (job_start_time,lockfile,true);}
+   if (projData.output_show_license) {
+      print_license();
+      signalFinished(0);
+      exit_job (job_start_time,lockfile,true,2);
+   }
    show_memory (projData.debug_show_memory, "   "); 
 
    // materials
    if (materialDatabase.load_materials(projData.materials_global_path,projData.materials_global_name,
                                        projData.materials_local_path,projData.materials_local_name,
-                                       projData.materials_check_limits)) exit_job_on_error (job_start_time,lockfile,true);
+                                       projData.materials_check_limits)) {
+
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,2);
+   }
    if (projData.debug_show_materials) {materialDatabase.print("   ");}
 
    show_memory (projData.debug_show_memory, "   ");
 
    // get the boundary database indicating impedance integration paths and boundary conditions
-   if (boundaryDatabase.load(projData.mode_definition_file,projData.solution_check_closed_loop)) exit_job_on_error (job_start_time,lockfile,true);
+   if (boundaryDatabase.load(projData.mode_definition_file,projData.solution_check_closed_loop)) {
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,2);
+   }
    if (projData.debug_show_mode_definitions) boundaryDatabase.print();
 
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Loading mesh and assigning materials ...\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   loading mesh and assigning materials ...\n");
    if (!projData.materials_check_limits) {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"    Skipping limit checks on material values\n");
    }
 
    // get the mapping from the region number to the material name
-   if (meshMaterials.load(projData.mesh_file,2)) exit_job_on_error (job_start_time,lockfile,true);
+   if (meshMaterials.load(projData.mesh_file,2)) {
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,2);
+   }
    //meshMaterials.print();
 
    // load the mesh - either serial or parallel 
@@ -386,15 +543,26 @@ int main(int argc, char *argv[])
    Mesh *mesh=nullptr;
    ParMesh *pmesh=nullptr;
    MeshMaterialList *p=&meshMaterials;
-   if (load_mesh (&projData,&mesh,&pmesh,&p,&dim)) exit_job_on_error (job_start_time,lockfile,true);
-   if (! (dim == 2)) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2211: Mesh must be 2-dimensional.\n"); exit_job_on_error (job_start_time,lockfile,true);}
+   if (load_mesh (&projData,&mesh,&pmesh,&p,&dim)) {
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,2);
+   }
+   if (! (dim == 2)) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2211: Mesh must be 2-dimensional.\n");
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,2);
+   }
 
    // check field points paths for scale
-   if (check_field_points (projFile,mesh,pmesh,projData.mesh_order,2,
+   if (check_field_points (projFile,mesh,pmesh,projData.fem_order,2,
                            projData.field_points_count,projData.field_points_x,projData.field_points_y,nullptr)) {
-      exit_job_on_error (job_start_time,lockfile,true);
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,2);
    }
-   if (boundaryDatabase.check_scale(mesh,pmesh,projData.mesh_order)) exit_job_on_error (job_start_time,lockfile,true);
+   if (boundaryDatabase.check_scale(mesh,pmesh,projData.fem_order)) {
+      signalFinished(1);
+      exit_job_on_error (job_start_time,lockfile,true,2);
+   }
 
    // mark the boundaries
    boundaryDatabase.mark_boundaries (mesh,pmesh,&borderDatabase);
@@ -426,19 +594,25 @@ int main(int argc, char *argv[])
    //   prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2212: Mesh file \"%s\" does not include the correct number of regions for material definitions.\n",projData.mesh_file);
    //   prefix(); PetscPrintf(PETSC_COMM_WORLD,"       The $PhysicalNames block should have %d entries, but %d were found.\n",
    //                                        attributes_max+1,meshMaterials.size()+1);
-   //   exit_job_on_error (job_start_time,lockfile,true);
+   //   signalFinished(1);
+   //   exit_job_on_error (job_start_time,lockfile,true,2);
    //}
 
-   double *alphaList=(double *)malloc (projData.solution_modes*sizeof(double));
-   double *betaList=(double *)malloc (projData.solution_modes*sizeof(double));
+   // create space for alpha and beta solutions, clear, and set initial value (if available)
+   int listSize=projData.solution_modes;
+   double *alphaList=(double *)malloc (listSize*sizeof(double));
+   double *betaList=(double *)malloc (listSize*sizeof(double));
+   resetLists(&alphaList,&betaList,listSize,projData.solution_initial_alpha,projData.solution_initial_beta);
 
    // loop for all frequencies
 
    show_memory (projData.debug_show_memory, "");
 
    // set up the frequency plan
-   if (frequencyPlan.assemble(projData.refinement_frequency,projData.inputFrequencyPlansCount,projData.inputFrequencyPlans))
-        exit_job_on_error (job_start_time,lockfile,true);
+   if (frequencyPlan.assemble(projData.refinement_frequency,projData.inputFrequencyPlansCount,projData.inputFrequencyPlans)) {
+      signalFinished(1);
+     exit_job_on_error (job_start_time,lockfile,true,2);
+   }
    if (projData.debug_show_frequency_plan) frequencyPlan.print();
    double lastFrequency=0;  // for scaling the initial guess
 
@@ -447,9 +621,6 @@ int main(int argc, char *argv[])
    if (! frequencyPlan.is_refining() && mesh) {
       pmesh=new ParMesh(MPI_COMM_WORLD,*mesh);
    }
-   // starting use_initial_guess state
-   int use_initial_guess=0;
-   if (projData.solution_initial_alpha > 0 || projData.solution_initial_beta > 0) use_initial_guess=1;
 
    // loop
    FrequencyPlanPoint *frequencyPlanPoint;
@@ -463,9 +634,7 @@ int main(int argc, char *argv[])
       double ko=2*M_PI*frequency*sqrt(4.0e-7*M_PI*eps0);
       double ko2=pow(ko,2);
 
-      // for initial guess scaling with frequency
       if (lastFrequency == 0) lastFrequency=frequency;
-      double betaScale=frequency/lastFrequency;
 
       // set up pmesh when using adaptive mesh refinement
       if (refineMesh && restartMesh) {
@@ -473,8 +642,8 @@ int main(int argc, char *argv[])
          if (mesh) pmesh=new ParMesh(MPI_COMM_WORLD,*mesh);
          else pmesh=new ParMesh(*restart_pmesh);
 
-         // new mesh means that the existing solution is invalid unless an initial guess has been provided
-         if (projData.solution_initial_alpha == 0 && projData.solution_initial_beta == 0) use_initial_guess=0;
+//         // new mesh means that the existing solution is invalid unless an initial guess has been provided
+//         if (projData.solution_initial_alpha == 0 && projData.solution_initial_beta == 0) use_initial_guess=0;
       }
 
       if (refineMesh) {
@@ -484,7 +653,8 @@ int main(int argc, char *argv[])
 
       if (!pmesh) {
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2213: Setup is inconsistent leading to undefined internal mesh definition.\n");
-         exit_job_on_error (job_start_time,lockfile,true);
+         signalFinished(1);
+         exit_job_on_error (job_start_time,lockfile,true,2);
       }
 
       int j=0;
@@ -496,14 +666,20 @@ int main(int argc, char *argv[])
 
             // permittivity
             complex<double> e=useMaterial->get_eps(projData.solution_temperature,frequency,materialDatabase.get_tol(),materialDatabase.get_indent());
-            if (e == complex<double>(-DBL_MAX,0)) exit_job_on_error (job_start_time,lockfile,true);
+            if (e == complex<double>(-DBL_MAX,0)) {
+               signalFinished(1);
+               exit_job_on_error (job_start_time,lockfile,true,2);
+            }
 
             ko2RePermittivity[j]=ko2*real(e)/eps0;
             ko2ImPermittivity[j]=ko2*imag(e)/eps0;
 
             // permeability
             double mu=useMaterial->get_mu(projData.solution_temperature,frequency,materialDatabase.get_tol(),materialDatabase.get_indent());
-            if (mu == -DBL_MAX) exit_job_on_error (job_start_time,lockfile,true);
+            if (mu == -DBL_MAX) {
+               signalFinished(1);
+               exit_job_on_error (job_start_time,lockfile,true,2);
+            }
 
             InvPermeability[j]=1.0/(mu/(4e-7*M_PI));    // 1/relative permeability
             InvOmegaMu[j]=1.0/(2*M_PI*frequency*mu);    // 1/(w*permeability)
@@ -514,7 +690,8 @@ int main(int argc, char *argv[])
          } else {
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2214: Material \"%s\" for region %d is not present in the material database.\n",
                                          meshMaterials.get_name(j).c_str(),j+1);
-            exit_job_on_error (job_start_time,lockfile,true);
+            signalFinished(1);
+            exit_job_on_error (job_start_time,lockfile,true,2);
          }
 
          j++;
@@ -552,38 +729,141 @@ int main(int argc, char *argv[])
          if (kappa_max < 5) {PetscPrintf(PETSC_COMM_WORLD," < target: 5\n");}
          else {PetscPrintf(PETSC_COMM_WORLD," > target: 5\n");}
 
-         // create the finite element spaces and matrices on the parallel mesh
-         fem2D *fem=new fem2D(&projData,pmesh,projData.mesh_order,frequency,iteration,&ko2Re_e,&ko2Im_e,&Inv_mu,&w_mu,tempdir);
-         //fem->dumpDof2DData();
+         // initial guess and order ramping order ramping
 
-         // scale beta to approximate the change due to a shift in frequency
-         if (use_initial_guess && projData.solution_active_mode_count > 0) {
-            betaList[0]*=betaScale*2;  // align with similar option in OpenParEM3D
-            betaScale=1;                      // will update when the frequency changes
+         // 0 - use no initial guess or order ramping
+         // 1 - use prior solution as initial guess with frequency scaling (used in version 2.1 and earlier)
+         // 2 - level 1 plus plus order ramping on the first iteration (default)
+         // 3 - use order ramping for every solution without using any prior solution
+
+         double initialGuessFactor=2; // tuned by trial-and-error
+         bool apply_order_ramping=false;
+         int use_initial_guess=0;
+         if (projData.solution_initial_guess_level == 0) {
+            clearLists(&alphaList,&betaList,listSize);
+         } else if (projData.solution_initial_guess_level == 1) {
+            if (listSize > 0) {
+               if (betaList[0] != 0) use_initial_guess=1;
+               if (iteration == 0) betaList[0]*=frequency/lastFrequency*initialGuessFactor;
+               else betaList[0]*=initialGuessFactor;
+            }
+         } else if (projData.solution_initial_guess_level == 2) {
+            if (listSize > 0) {
+               if (betaList[0] != 0) use_initial_guess=1;
+               if (iteration == 0) betaList[0]*=frequency/lastFrequency*initialGuessFactor;
+               else betaList[0]*=initialGuessFactor;
+            }
+            if (iteration == 0) apply_order_ramping=true;
+         } else if (projData.solution_initial_guess_level == 3) {
+            clearLists(&alphaList,&betaList,listSize);
+            apply_order_ramping=true;
          }
+
+         // no point of order ramping for first order elements
+         if (projData.fem_order == 1) apply_order_ramping=false;
+
+         // order ramping
+         if (apply_order_ramping) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"      Using finite element order ramping ...\n");
+
+            int order=1;
+            while (order < projData.fem_order) {
+
+               // create the finite element spaces and matrices on the parallel mesh
+               bool error=false;
+               fem2D *fem=new fem2D(&projData,pmesh,order,frequency,iteration,&ko2Re_e,&ko2Im_e,&Inv_mu,&w_mu,tempdir,&error);
+               if (error) {
+                  signalFinished(1);
+                  exit_job_on_error (job_start_time,lockfile,true,2);
+               }
+
+               // solve the eigenvalue problem, Ax=kBx
+               int matrixSize=-1;
+               PetscInt *ess_tdof_ND=fem->get_ess_tdof_ND(&boundaryDatabase,&borderDatabase);
+               PetscInt *ess_tdof_H1=fem->get_ess_tdof_H1(&boundaryDatabase,&borderDatabase);
+
+ 
+               if (projData.debug_skip_solve) {
+                  use_initial_guess=0;
+                  listSize=projData.solution_active_mode_count;
+                  clearLists(&alphaList,&betaList,listSize);
+                  break;
+               } else {
+                  gracefulExit=eigensolve (&projData,use_initial_guess,frequency,order,
+                                           fem->get_ess_tdof_size_ND(),ess_tdof_ND,
+                                           fem->get_ess_tdof_size_H1(),ess_tdof_H1,
+                                           &alphaList,&betaList,&matrixSize);
+                  if (gracefulExit) {  // failed to run
+                     signalFinished(1);
+                     exit_job_on_error (job_start_time,lockfile,true,2);
+                     //use_initial_guess=0;
+                     //listSize=projData.solution_active_mode_count;
+                     //clearLists(&alphaList,&betaList,listSize);
+                     //break;
+                  } else {
+                     use_initial_guess=1;  // solution is available
+                     listSize=projData.solution_active_mode_count;
+                     if (listSize > 0) betaList[0]*=initialGuessFactor;
+                  }
+
+               }
+
+               delete fem;
+               if (ess_tdof_ND) {PetscFree(ess_tdof_ND); ess_tdof_ND=nullptr;}
+               if (ess_tdof_H1) {PetscFree(ess_tdof_H1); ess_tdof_H1=nullptr;}
+
+               if (gracefulExit) break;
+               order++;
+            }
+         }
+         if (gracefulExit) break;
+
+         // create the finite element spaces and matrices on the parallel mesh
+         bool error=false;
+         fem2D *fem=new fem2D(&projData,pmesh,projData.fem_order,frequency,iteration,&ko2Re_e,&ko2Im_e,&Inv_mu,&w_mu,tempdir,&error);
+         if (error) {
+            signalFinished(1);
+            exit_job_on_error (job_start_time,lockfile,true,2);
+         }
+         //fem->dumpDof2DData();
 
          // solve the eigenvalue problem, Ax=kBx
          int matrixSize=-1;
          PetscInt *ess_tdof_ND=fem->get_ess_tdof_ND(&boundaryDatabase,&borderDatabase);
          PetscInt *ess_tdof_H1=fem->get_ess_tdof_H1(&boundaryDatabase,&borderDatabase);
-         if (projData.debug_skip_solve || eigensolve (&projData,use_initial_guess,frequency,
-                                                      fem->get_ess_tdof_size_ND(),ess_tdof_ND,
-                                                      fem->get_ess_tdof_size_H1(),ess_tdof_H1,
-                                                      &alphaList,&betaList,&matrixSize,rank) != 0) 
-         {
-            // failed or canceled - stop iterating
+
+
+         if (projData.debug_skip_solve) {
             iterate=false;
          } else {
+            gracefulExit=eigensolve (&projData,use_initial_guess,frequency,projData.fem_order,
+                                     fem->get_ess_tdof_size_ND(),ess_tdof_ND,
+                                     fem->get_ess_tdof_size_H1(),ess_tdof_H1,
+                                     &alphaList,&betaList,&matrixSize);
+            if (gracefulExit) {
+               //break;
+               signalFinished(1);
+               exit_job_on_error (job_start_time,lockfile,true,2);
+            }
 
             // process the eigenvalue solutions
             fem->set_t_size();
             fem->set_z_size();
-            if (fem->buildFields(alphaList,betaList)) exit_job_on_error (job_start_time,lockfile,true);
+            if (fem->buildFields(alphaList,betaList)) {
+               signalFinished(1);
+               exit_job_on_error (job_start_time,lockfile,true,2);
+            }
             fem->sort();
             fem->calculateVandI(&boundaryDatabase,&borderDatabase);
-            if (fem->calculateModalVandI()) exit_job_on_error (job_start_time,lockfile,true);
+            if (fem->calculateModalVandI()) {
+               signalFinished(1);
+               exit_job_on_error (job_start_time,lockfile,true,2);
+            }
             fem->calculateImpedance(&boundaryDatabase,&borderDatabase);
-            if (fem->calculatePerturbationalLoss(&boundaryDatabase,&borderDatabase,&materialDatabase)) exit_job_on_error (job_start_time,lockfile,true);
+            if (fem->calculatePerturbationalLoss(&boundaryDatabase,&borderDatabase,&materialDatabase)) {
+               signalFinished(1);
+               exit_job_on_error (job_start_time,lockfile,true,2);
+            }
             fem->calculateFieldPoints(&fieldPointDatabase);
             fem->saveTiTv();
             fem->saveParaView();
@@ -601,7 +881,8 @@ int main(int argc, char *argv[])
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"           - reduce solution.tolerance\n");
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"           - decrease mesh.order\b");
                prefix(); PetscPrintf(PETSC_COMM_WORLD,"           - apply uniform mesh refinement by setting mesh.uniform_refinement.count\n");
-               exit_job_on_error (job_start_time,lockfile,true);
+               signalFinished(1);
+               exit_job_on_error (job_start_time,lockfile,true,2);
             }
 
             // print a summary to the console
@@ -620,7 +901,7 @@ int main(int argc, char *argv[])
             }
 
             // write the fields as the initial guess for the next calculation
-            if (projData.solution_use_initial_guess) fem->writeInitialGuess();
+            if (use_initial_guess) fem->writeInitialGuess();
 
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"      Finished\n");
 
@@ -631,6 +912,8 @@ int main(int argc, char *argv[])
             result->set_end_refine_time(iteration_end_time);
          }
 
+         listSize=projData.solution_active_mode_count;
+
          if (ess_tdof_ND) {PetscFree(ess_tdof_ND); ess_tdof_ND=nullptr;}
          if (ess_tdof_H1) {PetscFree(ess_tdof_H1); ess_tdof_H1=nullptr;}
 
@@ -640,13 +923,33 @@ int main(int argc, char *argv[])
          // save the results to a results csv file
          if (rank == 0) resultDatabase.save(&projData,baseName);
 
-         // initial guess
-         if (projData.solution_use_initial_guess) use_initial_guess=1;
-
          delete fem;
          ++iteration;
 
          if (iteration == projData.refinement_iteration_max) iterate=false;
+
+         // check for signaled stop
+         if (parent != MPI_COMM_NULL) {
+            if (rank == 0) {
+               // look for a non-blocking message to stop
+               int test;
+               MPI_Test(&request,&test,MPI_STATUS_IGNORE);
+
+               // send a blocking message to the other ranks
+               int i=1;
+               while (i < size) {
+                  MPI_Send(&test,1,MPI_INT,i,200002,PETSC_COMM_WORLD);
+                  i++;
+               }
+               if (test) gracefulExit=true;
+            } else {
+               int test;
+               MPI_Recv(&test,1,MPI_INT,0,200002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+               if (test) gracefulExit=true;
+            }
+         }
+
+         if (gracefulExit) break; 
       }
 
       if (refineMesh && convergenceDatabase->is_converged()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Converged\n");}
@@ -658,6 +961,7 @@ int main(int argc, char *argv[])
 
       delete convergenceDatabase;
       lastFrequency=frequency;
+      if (gracefulExit) break;
    }
 
    // save the results and field point data as test cases
@@ -691,15 +995,25 @@ int main(int argc, char *argv[])
 
    show_memory (projData.debug_show_memory, "");
 
+   PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+   MPI_Barrier(PETSC_COMM_WORLD);
+
    remove_lock_file (lockfile);
 
-   // notifiy the barrier and send the exit code in case OpenParEM2D was spawned by OpenParEM3D
    if (parent != MPI_COMM_NULL) {
-      MPI_Barrier(parent);
-      int retval[1]={0};
-      MPI_Send(retval,1,MPI_INT,0,0,parent);
+      PetscSynchronizedFlush(parent,PETSC_STDOUT);
+      int retval=0;
+      MPI_Send(&retval,1,MPI_INT,rank,100000,parent);
+
+      if (rank == 0) {
+         MPI_Wait(&request,MPI_STATUS_IGNORE);
+         MPI_Request_free(&request);
+      }
+
+      MPI_Comm_disconnect(&parent);
    }
 
+   MPI_Barrier(PETSC_COMM_WORLD);
    SlepcFinalize();
 
    return 0;

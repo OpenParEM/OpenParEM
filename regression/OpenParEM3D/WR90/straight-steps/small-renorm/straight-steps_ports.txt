@@ -1,47 +1,52 @@
 #OpenParEMports 1.0
 
 File
-   name=/home/briany/Desktop/OpenParEM3D/regression/WR90/straight-steps/straight-steps.FCStd
+   name=generated_by_OpenParEMg
 EndFile
 
 Path
-   name=port1
-   point=(-0.01143,-0.00508,0.05)
-   point=(0.01143,-0.00508,0.05)
-   point=(0.01143,0.00508,0.05)
-   point=(-0.01143,0.00508,0.05)
+   name=path1
+   point=(0.02286,0,0)
+   point=(0,0,0)
+   point=(0,0.01016,0)
+   point=(0.02286,0.01016,0)
    closed=true
+   normal=(0,0,-1)
 EndPath
 
 Path
    name=v1
-   point=(0.0,-0.0050800000000004,0.0499999999999972)
-   point=(-1.8e-15,0.0050799999999995,0.0499999999999972)
+   point=(0.01143,0.01016,0)
+   point=(0.01143,0,0)
    closed=false
+   normal=(0,0,-1)
 EndPath
 
 Path
-   name=port2
-   point=(-0.011430000000000004,-0.005080000000000002,-0.07500000000000004)
-   point=(-0.011430000000000003,0.005080000000000002,-0.07500000000000004)
-   point=(0.011430000000000006,0.005079999999999997,-0.07500000000000004)
-   point=(0.011430000000000004,-0.005080000000000007,-0.07500000000000004)
+   name=path2
+   point=(0,0,0.125)
+   point=(0.02286,0,0.125)
+   point=(0.02286,0.01016,0.125)
+   point=(0,0.01016,0.125)
    closed=true
+   normal=(0,-0,1)
 EndPath
 
 Path
    name=v2
-   point=(0.0,-0.005080000000000005,-0.07500000000000004)
-   point=(-1.7763568394002503e-15,0.005079999999999529,-0.07500000000000284)
+   point=(0.01143,0.01016,0.125)
+   point=(0.01143,0,0.125)
    closed=false
+   normal=(0,-0,1)
 EndPath
 
 Port
-   name=1
-   path=+port1
+   name=port1
+   path=path1
    impedance_definition=PV
    impedance_calculation=line
    Line
+      net=net1
       Sport=1
       IntegrationPath
          type=voltage
@@ -51,11 +56,12 @@ Port
 EndPort
 
 Port
-   name=2
-   path=+port2
+   name=port2
+   path=path2
    impedance_definition=PV
    impedance_calculation=line
    Line
+      net=net2
       Sport=2
       IntegrationPath
          type=voltage

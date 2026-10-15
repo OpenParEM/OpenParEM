@@ -1,0 +1,141 @@
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//    OpenParEMg - A GUI for OpenParEM3D                                      //
+//    Copyright (C) 2026 Brian Young                                          //
+//                                                                            //
+//    This program is free software: you can redistribute it and/or modify    //
+//    it under the terms of the GNU General Public License as published by    //
+//    the Free Software Foundation, either version 3 of the License, or       //
+//    (at your option) any later version.                                     //
+//                                                                            //
+//    This program is distributed in the hope that it will be useful,         //
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of          //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           //
+//    GNU General Public License for more details.                            //
+//                                                                            //
+//    You should have received a copy of the GNU General Public License       //
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.   //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+#include "PolygonSelection.h"
+#include <TopoDS.hxx>
+#include <TopoDS_Vertex.hxx>
+#include <gce_MakePln.hxx>
+#include <StdSelect_BRepOwner.hxx>
+#include <BRep_Tool.hxx>
+#include <TopExp.hxx>
+
+
+bool IsPointOnPlane (const gp_Pln& plane, const gp_Pnt& p, Standard_Real tol = Precision::Confusion())
+{
+    return plane.Distance(p) <= tol;
+}
+
+gp_Pnt2d ProjectToPlane2d (const gp_Pln& plane, const gp_Pnt& p)
+{
+    const gp_Ax3& ax = plane.Position();
+    gp_Vec v(ax.Location(), p);
+
+    return gp_Pnt2d(v.Dot(ax.XDirection()),v.Dot(ax.YDirection()));
+}
+
+bool IsPointOnSegment2d (const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b, Standard_Real tol)
+{
+    gp_Vec2d ap(a, p);
+    gp_Vec2d ab(a, b);
+
+    Standard_Real cross = ap.Crossed(ab);
+    if (Abs(cross) > tol) return false;
+
+    Standard_Real dot = ap.Dot(ab);
+    if (dot < -tol || dot > ab.SquareMagnitude() + tol) return false;
+
+    return true;
+}
+
+bool IsPointInsideOrOnPolygon2d (const gp_Pnt2d& p, const std::vector<gp_Pnt2d>& poly, Standard_Real tol = Precision::Confusion())
+{
+    const int n = static_cast<int>(poly.size());
+    if (n < 3) return false;
+
+    bool inside = false;
+
+    int i = 0;
+    int j = n - 1;
+
+    while (i < n)
+    {
+        const gp_Pnt2d& pi = poly[i];
+        const gp_Pnt2d& pj = poly[j];
+
+        // --- Boundary test ---
+        if (IsPointOnSegment2d(p, pi, pj, tol))
+            return true;
+
+        // --- Ray casting test ---
+        const bool intersect =
+            ((pi.Y() > p.Y()) != (pj.Y() > p.Y())) &&
+            (p.X() < (pj.X() - pi.X()) *
+                             (p.Y() - pi.Y()) /
+                             (pj.Y() - pi.Y()) + pi.X());
+
+        if (intersect)
+            inside = !inside;
+
+        j = i;
+        ++i;
+    }
+
+    return inside;
+}
+
+Standard_Boolean VertexFilter::IsOk (const Handle(SelectMgr_EntityOwner)& theOwner) const
+{
+    Handle(StdSelect_BRepOwner) aBRepOwner = Handle(StdSelect_BRepOwner)::DownCast(theOwner);
+    if (aBRepOwner.IsNull() || !aBRepOwner->HasShape()) return Standard_False;
+
+    const TopoDS_Shape& aShape=aBRepOwner->Shape();
+
+    // vertices
+    if (aShape.ShapeType() == TopAbs_VERTEX) {
+
+        // get the vertex
+        const TopoDS_Vertex vertex=TopoDS::Vertex(aShape);
+        const gp_Pnt pnt=BRep_Tool::Pnt(vertex);
+
+        // see if it is on the plane
+        if (!IsPointOnPlane(plane,pnt)) return Standard_False;
+
+        // get a 2D point on the plane
+        gp_Pnt2d pnt2D=ProjectToPlane2d(plane,pnt);
+
+        // see if the point is in or on the polygon
+        if (IsPointInsideOrOnPolygon2d(pnt2D,outline2D)) return Standard_True;
+    }
+
+    // edges
+    if (aShape.ShapeType() == TopAbs_EDGE) {
+        TopoDS_Vertex v1,v2;
+        TopExp::Vertices(TopoDS::Edge(aShape),v1,v2);
+
+        // first point
+        gp_Pnt p1=BRep_Tool::Pnt(v1);
+        if (!IsPointOnPlane(plane,p1)) return Standard_False;
+
+        // second point
+        gp_Pnt p2=BRep_Tool::Pnt(v2);
+        if (!IsPointOnPlane(plane,p2)) return Standard_False;
+
+        // midpoint
+        gp_Pnt pntmid((p1.X()+p2.X())/2.0,(p1.Y()+p2.Y())/2.0,(p1.Z()+p2.Z())/2.0);
+
+        // get a 2D point on the plane
+        gp_Pnt2d pntmid2D=ProjectToPlane2d(plane,pntmid);
+
+        // see if the point is in or on the polygon
+        if (IsPointInsideOrOnPolygon2d(pntmid2D,outline2D)) return Standard_True;
+    }
+
+    return Standard_False;
+}

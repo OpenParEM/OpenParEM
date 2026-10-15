@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -21,11 +21,11 @@
 #include "fem.hpp"
 
 // allocates memory that must be freed later
-bool loadData (ifstream *eVecFile, double **eVecRe, double **eVecIm, size_t *vectorSize, char *filename)
+bool loadData (std::ifstream *eVecFile, double **eVecRe, double **eVecIm, size_t *vectorSize, char *filename)
 {
-   string line;
+   std::string line;
    int lineNumber=0;
-   vector<string> tokens;
+   std::vector<std::string> tokens;
    bool foundVec=false,foundEndVec=false;
    size_t allocated,length,blockSize=256;
 

@@ -1,0 +1,52 @@
+\contentsline {section}{\numberline {1}Introduction}{3}{}%
+\contentsline {section}{\numberline {2}Theory and Mapping to MFEM}{3}{}%
+\contentsline {subsection}{\numberline {2.1}Wave Equation}{3}{}%
+\contentsline {subsection}{\numberline {2.2}Galerkin's Procedure}{3}{}%
+\contentsline {subsection}{\numberline {2.3}Boundary Conditions}{4}{}%
+\contentsline {subsubsection}{\numberline {2.3.1}PMC}{4}{}%
+\contentsline {subsubsection}{\numberline {2.3.2}PEC}{4}{}%
+\contentsline {subsubsection}{\numberline {2.3.3}Surface Impedance}{4}{}%
+\contentsline {subsubsection}{\numberline {2.3.4}Radiation}{5}{}%
+\contentsline {subsubsection}{\numberline {2.3.5}Port}{5}{}%
+\contentsline {subsection}{\numberline {2.4}Calculating $\overline {H}$ from $\overline {E}$}{7}{}%
+\contentsline {subsection}{\numberline {2.5}Construction and Solution of the $\overline {\overline {A}}\,\overline {x}=\overline {b}$ Problem}{7}{}%
+\contentsline {subsubsection}{\numberline {2.5.1}Building $\overline {\overline {A}}$}{7}{}%
+\contentsline {subsubsection}{\numberline {2.5.2}PEC Boundary}{8}{}%
+\contentsline {subsubsection}{\numberline {2.5.3}Driving Port Boundary}{8}{}%
+\contentsline {subsubsection}{\numberline {2.5.4}Solution}{8}{}%
+\contentsline {subsubsection}{\numberline {2.5.5}H Field}{8}{}%
+\contentsline {subsection}{\numberline {2.6}Far Field Calculation}{8}{}%
+\contentsline {subsubsection}{\numberline {2.6.1}Surface Currents}{9}{}%
+\contentsline {subsubsection}{\numberline {2.6.2}Far Fields}{9}{}%
+\contentsline {subsubsection}{\numberline {2.6.3}Accepted Power}{9}{}%
+\contentsline {subsubsection}{\numberline {2.6.4}Derived Quantities}{10}{}%
+\contentsline {section}{\numberline {3}S-parameter Calculation}{10}{}%
+\contentsline {subsection}{\numberline {3.1}$b_i$ and $a_i$}{10}{}%
+\contentsline {subsection}{\numberline {3.2}$\textnormal {C}_{i}^{+}$ and $\textnormal {C}_{i}^{-}$}{11}{}%
+\contentsline {subsection}{\numberline {3.3}Solving for $\overline {\overline {S}}$}{12}{}%
+\contentsline {subsection}{\numberline {3.4}Driving Sets}{13}{}%
+\contentsline {subsubsection}{\numberline {3.4.1}Driving set \texttt {single}}{13}{}%
+\contentsline {subsubsection}{\numberline {3.4.2}Driving set \texttt {multiple}}{13}{}%
+\contentsline {subsubsection}{\numberline {3.4.3}Driving set \texttt {single-ended}}{14}{}%
+\contentsline {subsection}{\numberline {3.5}Renormalization}{14}{}%
+\contentsline {subsubsection}{\numberline {3.5.1}Modal Setup}{15}{}%
+\contentsline {subsubsection}{\numberline {3.5.2}Line Setup}{15}{}%
+\contentsline {subsection}{\numberline {3.6}Mixed-Mode Conversion}{15}{}%
+\contentsline {section}{\numberline {4}Adaptive Mesh Refinement}{16}{}%
+\contentsline {subsection}{\numberline {4.1}Convergence Testing}{17}{}%
+\contentsline {section}{\numberline {5}Data Structures and Algorithm Notes}{17}{}%
+\contentsline {subsection}{\numberline {5.1}Data Structures}{17}{}%
+\contentsline {subsection}{\numberline {5.2}Boundary and Port Identification and Port Meshes}{17}{}%
+\contentsline {subsection}{\numberline {5.3}Port Fields}{18}{}%
+\contentsline {subsection}{\numberline {5.4}Parallel Processing with MPI}{18}{}%
+\contentsline {section}{\numberline {6}Accuracy Demonstrations}{18}{}%
+\contentsline {subsection}{\numberline {6.1}Microstrip Bandpass Filter}{18}{}%
+\contentsline {subsection}{\numberline {6.2}Square Monopole Antenna}{24}{}%
+\contentsline {subsection}{\numberline {6.3}Microstrip Bridge}{26}{}%
+\contentsline {subsection}{\numberline {6.4}Slotline Step}{27}{}%
+\contentsline {subsection}{\numberline {6.5}Waveguide T-Junction}{29}{}%
+\contentsline {subsection}{\numberline {6.6}WR75 Puck Discontinuity}{30}{}%
+\contentsline {subsection}{\numberline {6.7}Lossy Stripline}{31}{}%
+\contentsline {subsection}{\numberline {6.8}Lossless WR90 Rectangular Waveguide}{32}{}%
+\contentsline {subsection}{\numberline {6.9}Dipole Antenna}{35}{}%
+\contentsline {subsection}{\numberline {6.10}Patch Antenna}{38}{}%

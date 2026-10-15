@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -19,6 +19,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "solveComplexLinearSystem.h"
+
+// globals for handling abortRequest
+MPI_Request abortRequest,stopRequest;
+char *lockfile;
 
 double current_residual;
 
@@ -48,6 +52,112 @@ void showReason (KSPConvergedReason reason) {
 
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"\n");
 }
+
+void checkForAbort ()
+{
+   int abortExit=0;
+
+   PetscMPIInt size,rank;
+   MPI_Comm_size(PETSC_COMM_WORLD, &size);
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+   MPI_Comm parent;
+   MPI_Comm_get_parent (&parent);
+
+   if (parent != MPI_COMM_NULL) {
+      if (rank == 0) {
+         // look for a non-blocking message to abort
+         int test;
+         MPI_Test(&abortRequest,&test,MPI_STATUS_IGNORE);
+
+         // send a blocking message to the other ranks
+         int i=1;
+         while (i < size) {
+             MPI_Send(&test,1,MPI_INT,i,300002,PETSC_COMM_WORLD);
+            i++;
+         }
+         if (test) abortExit=1;
+      } else {
+         int test;
+         MPI_Recv(&test,1,MPI_INT,0,300002,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+         if (test) abortExit=1;
+      }
+
+      if (abortExit) {
+         remove_lock_file(lockfile);
+
+         if (rank == 0) {
+            // send signal that the simulation is finished
+            int signal;
+            MPI_Send(&signal,1,MPI_INT,0,310000,parent);
+
+            // send status signal
+            int retval=1;
+            MPI_Send(&retval,1,MPI_INT,0,320000,parent);
+
+            MPI_Wait(&stopRequest,MPI_STATUS_IGNORE);
+
+            MPI_Request_free(&abortRequest);
+            MPI_Request_free(&stopRequest);
+         }
+
+         //MPI_Comm_disconnect(&parent);
+
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job aborted.\n");
+
+         MPI_Barrier(PETSC_COMM_WORLD);
+         PetscFinalize();
+
+         exit (0);
+      }
+   }
+
+   return;
+}
+
+int checkForStop ()
+{
+   int gracefulExit=0;
+
+   PetscMPIInt size,rank;
+   MPI_Comm_size(PETSC_COMM_WORLD, &size);
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+   MPI_Comm parent;
+   MPI_Comm_get_parent (&parent);
+
+   if (parent != MPI_COMM_NULL) {
+      if (rank == 0) {
+         // look for a non-blocking message to stop
+         int test;
+         MPI_Test(&stopRequest,&test,MPI_STATUS_IGNORE);
+
+         // send a blocking message to the other ranks
+         int i=1;
+         while (i < size) {
+            MPI_Send(&test,1,MPI_INT,i,300003,PETSC_COMM_WORLD);
+            i++;
+         }
+         if (test) gracefulExit=1;
+      } else {
+         int test;
+         MPI_Recv(&test,1,MPI_INT,0,300003,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+         if (test) gracefulExit=1;
+      }
+   }
+
+   return gracefulExit;
+}
+
+// Custom convergence routine to enable early exit after after the current iteration
+PetscErrorCode OPEMKSPConverged(KSP ksp, PetscInt it, PetscReal rnorm, KSPConvergedReason *reason, void *ctx)
+{
+    PetscErrorCode ierr;
+    ierr=KSPConvergedDefault(ksp,it,rnorm,reason,ctx);
+    checkForAbort();
+    return ierr;
+}
+
 
 PetscErrorCode monitorEM3D(KSP ksp, PetscInt its, PetscReal residual, void *vf)
 {
@@ -133,6 +243,7 @@ PetscErrorCode solveComplexLinearSystem (const char *directory, struct projectDa
    i=0;
    while (i < 5) {
 
+      // KSP setup
       ierr=KSPCreate(PETSC_COMM_WORLD, &ksp); if (ierr) return 12;
       ierr=KSPSetType(ksp,KSPGMRES); if (ierr) return 13;
       ierr=KSPSetOperators(ksp,*A,*A); if (ierr) return 14;
@@ -140,6 +251,12 @@ PetscErrorCode solveComplexLinearSystem (const char *directory, struct projectDa
       ierr=PCFactorSetShiftType(pc,MAT_SHIFT_NONZERO); if (ierr) return 16;
       ierr=KSPSetFromOptions(ksp); if (ierr) return 17;
 
+      // set a custom convergence test to enable early exit
+      void *default_conv_ctx = NULL;
+      ierr = KSPConvergedDefaultCreate(&default_conv_ctx); CHKERRQ(ierr);
+      ierr = KSPSetConvergenceTest(ksp,OPEMKSPConverged,default_conv_ctx,KSPConvergedDefaultDestroy); if (ierr) return 18;
+
+      // set tolerances
       maxits=projData->solution_iteration_limit;       // PETSc default = 1e4
       rtol=projData->solution_3D_tolerance;            // PETSc default = 1e-5
       //atol=projData->solution_3D_tolerance;          // PETSC default = 1e-50
@@ -575,128 +692,4 @@ PetscErrorCode MatInvertTest (int n)
 
    return ierr;
 }
-
-
-/*
-PetscErrorCode MatInvert (Mat *A, int isDiagonal)
-{
-   PetscErrorCode ierr=0;
-   PetscInt m,n,i,j,high,low;
-   //PetscScalar det,A11,A12,A21,A22;
-   PetscScalar value,*idx;
-   KSP ksp;
-   PC pc;
-   Mat Ap,Ai;
-   Vec b,x;
-
-   if (A == NULL) return 1;
-
-   ierr=MatGetSize(*A,&m,&n); if (ierr) return 2;
-   if (m != n) return 3;
-
-   if (isDiagonal || m == 1) {
-
-      ierr=MatGetOwnershipRange(*A,&low,&high); if (ierr) return 4;
-
-      ierr=PetscMalloc((high-low)*sizeof(PetscScalar),&idx);  if (ierr) return 5;
-      i=low;
-      while (i < high) {
-         ierr=MatGetValue(*A,i,i,&value); if (ierr) return 6;
-         idx[i-low]=value;
-         i++;
-      }
-
-      i=low;
-      while (i < high) {
-         ierr=MatSetValue(*A,i,i,1/idx[i-low],INSERT_VALUES); if (ierr) return 7;
-         i++;
-      }
-
-      ierr=PetscFree(idx); if (ierr) return 8;
-
-// ToDo: parallelize the m=2 case
-//   } else if (m == 2) {
-//
-//      // analytic inversion
-//
-//      ierr=MatGetValue(*A,0,0,&A11); if (ierr) return 9;
-//      ierr=MatGetValue(*A,0,1,&A12); if (ierr) return 10;
-//      ierr=MatGetValue(*A,1,0,&A21); if (ierr) return 11;
-//      ierr=MatGetValue(*A,1,1,&A22); if (ierr) return 12;
-//
-//      det=A11*A22-A21*A12;
-//      if (det == 0) return 13;
-//
-//      ierr=MatSetValue(*A,0,0,A22/det,INSERT_VALUES); if (ierr) return 14;
-//      ierr=MatSetValue(*A,0,1,-A12/det,INSERT_VALUES); if (ierr) return 15;
-//      ierr=MatSetValue(*A,1,0,-A21/det,INSERT_VALUES); if (ierr) return 16;
-//      ierr=MatSetValue(*A,1,1,A11/det,INSERT_VALUES); if (ierr) return 17;
-//
-   } else {
-
-      // iterative inversion: inefficient, but ok for usage here with small S-parameter matrices
-
-      ierr=KSPCreate(PETSC_COMM_WORLD, &ksp); if (ierr) return 18;
-      ierr=KSPSetType(ksp,KSPGMRES); if (ierr) return 19;
-      ierr=KSPGetPC(ksp,&pc); if (ierr) return 20;
-      ierr=PCSetType(pc,PCLU); if (ierr) return 21;                    // works fine, but a little slower
-
-      ierr=MatDuplicate(*A,MAT_DO_NOT_COPY_VALUES,&Ap); if (ierr) return 23;
-      ierr=MatDuplicate(*A,MAT_DO_NOT_COPY_VALUES,&Ai); if (ierr) return 24;
-      ierr=MatCreateVecs(*A,NULL,&x); if (ierr) return 25;
-      ierr=MatCreateVecs(*A,NULL,&b); if (ierr) return 26;
-
-      ierr=VecGetOwnershipRange(b,&low,&high); if (ierr) return 30;
-
-      i=0;
-      while (i < m) {
-
-         ierr=MatCopy(*A,Ap,SAME_NONZERO_PATTERN); if (ierr) return 27;
-         ierr=KSPSetOperators(ksp,Ap,Ap); if (ierr) return 28;
-
-         ierr=VecZeroEntries(b); if (ierr) return 29;
-
-         if (i >= low && i < high) {
-            ierr=VecSetValue(b,i,1,INSERT_VALUES); if (ierr) return 31;
-         }
-
-         ierr=VecAssemblyBegin(b); if (ierr) return 32;
-         ierr=VecAssemblyEnd(b); if (ierr) return 33;
-
-         ierr=VecAssemblyBegin(x); if (ierr) return 34;
-         ierr=VecAssemblyEnd(x); if (ierr) return 35;
-
-         ierr=KSPSolve(ksp,b,x); if (ierr) return 36;
-
-         j=0;
-         while (j < m) {
-            if (j >= low && j < high) {
-               ierr=VecGetValues(x,1,&j,&value); if (ierr) return 37;
-               ierr=MatSetValue(Ai,j,i,value,INSERT_VALUES); if (ierr) return 38;
-            }
-            j++;
-         }
-
-         i++;
-      }
-
-      ierr=KSPDestroy(&ksp); if (ierr) return 39;
-
-      ierr=MatAssemblyBegin(Ai,MAT_FINAL_ASSEMBLY); if (ierr) return 40;
-      ierr=MatAssemblyEnd(Ai,MAT_FINAL_ASSEMBLY); if (ierr) return 41;
-   
-      ierr=MatCopy(Ai,*A,SAME_NONZERO_PATTERN); if (ierr) return 42;
-
-      ierr=MatDestroy(&Ap); if (ierr) return 43;
-      ierr=MatDestroy(&Ai); if (ierr) return 44;
-      ierr=VecDestroy(&x); if (ierr) return 45;
-      ierr=VecDestroy(&b); if (ierr) return 46;
-   }
-
-   ierr=MatAssemblyBegin(*A,MAT_FINAL_ASSEMBLY); if (ierr) return 47;
-   ierr=MatAssemblyEnd(*A,MAT_FINAL_ASSEMBLY); if (ierr) return 48;
-
-   return ierr;
-}
-*/
 

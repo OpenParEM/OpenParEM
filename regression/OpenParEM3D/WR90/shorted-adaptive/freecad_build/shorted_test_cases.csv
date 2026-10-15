@@ -1,0 +1,10 @@
+# ResultDatabase::save_as_test
+shorted_1_0_result,9000000000,magS(dB),1,1,lessthan,1e-12
+shorted_1_0a_result,9000000000,magS(dB),1,1,greaterthan,-1e-12
+shorted_1_1_result,9000000000,argS(deg),1,1,equal,159.246942529844,1e-05
+shorted_2_2_result,9999999999,magS(dB),1,1,lessthan,1e-12
+shorted_2_2a_result,9999999999,magS(dB),1,1,greaterthan,-1e-12
+shorted_2_3_result,9999999999,argS(deg),1,1,equal,-7.11544416060951,1e-03
+shorted_3_4_result,11000000000,magS(dB),1,1,lessthan,1e-12
+shorted_3_4a_result,11000000000,magS(dB),1,1,greaterthan,-1e-12
+shorted_3_5_result,11000000000,argS(deg),1,1,equal,-161.065012090061,1e-04

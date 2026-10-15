@@ -1,65 +1,73 @@
 #OpenParEMports 1.0
 
 File
-   name=/home/briany/Desktop/OpenParEM3D/regression/slotline/step/step2.FCStd
+   name=generated_by_OpenParEMg
 EndFile
 
 Path
-   name=1
-   point=(0.0,0.0,-0.003429)
-   point=(0.002,0.0,-0.003429)
-   point=(0.002,1.5791812302268227e-18,0.003683)
-   point=(0.0,1.5791812302268227e-18,0.003683)
+   name=path1
+   point=(0,0,0.003429)
+   point=(0,0,-0.003683)
+   point=(0.002,0,-0.003683)
+   point=(0.002,0,0.003429)
    closed=true
+   normal=(0,-1,0)
 EndPath
 
 Path
-   name=V1
-   point=(0.001875,0.0,0.000254)
-   point=(0.002,0.0,0.000254)
+   name=v1
+   point=(0.002,0,0)
+   point=(0.001875,0,0)
    closed=false
+   normal=(0,-1,0)
 EndPath
 
 Path
-   name=2
-   point=(0.002,0.001778,-0.003429)
-   point=(0.0,0.001778,-0.003429)
-   point=(0.0,0.0017780000000000016,0.003683)
-   point=(0.002,0.0017780000000000016,0.003683)
+   name=path2
+   point=(0.002,0.001778,0.003429)
+   point=(0.002,0.001778,-0.003683)
+   point=(0,0.001778,-0.003683)
+   point=(0,0.001778,0.003429)
    closed=true
+   normal=(0,1,0)
 EndPath
 
 Path
-   name=V2
-   point=(0.001575,0.001778,0.000254)
-   point=(0.002,0.001778,0.000254)
+   name=v2
+   point=(0.002,0.001778,0)
+   point=(0.001575,0.001778,0)
    closed=false
+   normal=(0,1,0)
 EndPath
 
 Port
-   name=1
-   path=+1
+   name=port1
+   path=path1
    impedance_definition=PV
    impedance_calculation=modal
    Mode
+      net=net1
       Sport=1
       IntegrationPath
          type=voltage
-         path=+V1
+         scale=1
+         path=+v1
       EndIntegrationPath
    EndMode
 EndPort
 
 Port
-   name=2
-   path=+2
+   name=port2
+   path=path2
    impedance_definition=PV
    impedance_calculation=modal
    Mode
+      net=net2
       Sport=2
       IntegrationPath
          type=voltage
-         path=+V2
+         scale=1
+         path=+v2
       EndIntegrationPath
    EndMode
 EndPort

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -20,11 +20,17 @@
 
 #include "fem2D.hpp"
 
-void saveMat (ParBilinearForm &blf, string name, string directory, char *uniquifier, bool transpose) {
+bool saveMat (ParBilinearForm &blf, string name, string directory, char *uniquifier, bool transpose) {
    stringstream ss;
    ss << directory << "/" << name << "." << uniquifier;
 
-   HypreParMatrix *mat=blf.ParallelAssemble();
+   HypreParMatrix *mat;
+   try {
+      mat=blf.ParallelAssemble();
+   } catch (const std::exception& e) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2009: Out of memory in assembling finite-element matrix.\n"); 
+      return true;
+   }
    if (transpose) {
       HypreParMatrix *matT=mat->Transpose();
       delete mat;
@@ -32,13 +38,20 @@ void saveMat (ParBilinearForm &blf, string name, string directory, char *uniquif
    }
    mat->Print(ss.str().c_str());
    delete mat;
+   return false;
 }
 
-void saveMat (ParMixedBilinearForm &blf, string name, string directory, char *uniquifier, bool transpose) {
+bool saveMat (ParMixedBilinearForm &blf, string name, string directory, char *uniquifier, bool transpose) {
    stringstream ss;
    ss << directory << "/" << name << "." << uniquifier;
 
-   HypreParMatrix *mat=blf.ParallelAssemble();
+   HypreParMatrix *mat;
+   try {
+      mat=blf.ParallelAssemble();
+   } catch (const std::exception& e) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2010: Out of memory in assembling finite-element matrix.\n");
+      return true;
+   }
    if (transpose) {
       HypreParMatrix *matT=mat->Transpose();
       delete mat;
@@ -46,6 +59,7 @@ void saveMat (ParMixedBilinearForm &blf, string name, string directory, char *un
    }
    mat->Print(ss.str().c_str());
    delete mat;
+   return false;
 }
 
 int GetGlobalNE (ParMesh *pmesh)
@@ -1090,13 +1104,15 @@ Vector* getGlobalVector (HypreParVector *a)
          MPI_Recv(&low,1,MPI_INT,i,100,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
          MPI_Recv(&high,1,MPI_INT,i,101,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
+         double *pack=(double *)malloc((high-low)*sizeof(double));
+         MPI_Recv(pack,high-low,MPI_DOUBLE,i,102,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
          int j=low;
          while (j < high) {
-            double data;
-            MPI_Recv(&data,1,MPI_DOUBLE,i,102,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-            b->Elem(j)=data;
+            b->Elem(j)=pack[j-low];
             j++;
          }
+         if (pack) free(pack);
+
          i++;
       }
    } else {
@@ -1105,12 +1121,14 @@ Vector* getGlobalVector (HypreParVector *a)
       MPI_Send(&low,1,MPI_INT,0,100,PETSC_COMM_WORLD);
       MPI_Send(&high,1,MPI_INT,0,101,PETSC_COMM_WORLD);
 
+      double *pack=(double *)malloc((high-low)*sizeof(double));
       int j=low;
       while (j < high) {
-         double data=a->Elem(j-low);
-         MPI_Send(&data,1,MPI_DOUBLE,0,102,PETSC_COMM_WORLD);
+         pack[j-low]=a->Elem(j-low);
          j++;
       }
+      MPI_Send(pack,high-low,MPI_DOUBLE,0,102,PETSC_COMM_WORLD);
+      if (pack) free(pack);
    }
 
    // distribute
@@ -1118,22 +1136,25 @@ Vector* getGlobalVector (HypreParVector *a)
    if (rank == 0) {
       int i=1;
       while (i < size) {
+         double *pack=(double *)malloc(b->Size()*sizeof(double));
          int j=0;
          while (j < b->Size()) {
-            double data=b->Elem(j);
-            MPI_Send(&data,1,MPI_DOUBLE,i,103,PETSC_COMM_WORLD);
+            pack[j]=b->Elem(j);
             j++;
          }
+         MPI_Send(pack,b->Size(),MPI_DOUBLE,i,103,PETSC_COMM_WORLD);
+         if (pack) free(pack);
          i++;
       }
    } else {
+      double *pack=(double *)malloc(b->Size()*sizeof(double));
+      MPI_Recv(pack,b->Size(),MPI_DOUBLE,0,103,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       int i=0;
       while (i < b->Size()) {
-         double data;
-         MPI_Recv(&data,1,MPI_DOUBLE,0,103,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-         b->Elem(i)=data;
+         b->Elem(i)=pack[i];
          i++;
       }
+      if (pack) free(pack);
    } 
 
    return b;
@@ -1525,52 +1546,6 @@ void Mode::calculateCurrents (fem2D *fem, BoundaryDatabase *boundaryDatabase, Bo
    }
 }
 
-/*
-void Mode::fillTi (fem2D *fem)
-{
-   int n=fem->projData->solution_modes;
-
-   // identity matrix for modal setup and for setups with no current defined
-   matrixSetValue(fem->Ti,modeNumber+modeNumber*n,1,0);
-
-   // overwrite with full matrix data for line setups
-   if (is_line_impedance(fem->projData->solution_impedance_calculation)) {
-
-      validCurrent=true;
-      long unsigned int k=0;
-      while (k < current.size()) {
-         if (current[k] == complex<double>(DBL_MAX,DBL_MAX)) {validCurrent=false; break;}
-         k++;
-      }
-
-      if (validCurrent) {
-         complex<double> return_current=0;
-         complex<double> temp_mode_current=0;
-
-         long unsigned int k=0;
-         while (k < current.size()) {
-            double sign=-1;
-            if (real(current[k]) >= 0) sign=1;
-            matrixSetValue(fem->Ti,modeNumber+k*n,sign,0);
-
-            temp_mode_current+=sign*current[k];
-            return_current+=current[k];
-
-            k++;
-         }
-
-         // scale to account for the return current
-         complex<double> scale=0.5*(abs(temp_mode_current)+abs(return_current))/abs(temp_mode_current);
-         k=0;
-         while (k < current.size()) {
-            matrixScaleValue(fem->Ti,modeNumber+k*n,real(scale),imag(scale));
-            k++;
-         }
-      }
-   }
-}
-*/
-
 void Mode::flipFieldSign ()
 {
    fields->flipSign();
@@ -1788,19 +1763,6 @@ bool Mode::calculateModalVoltage (fem2D *fem)
    return fail;
 }
 
-/*
-void Mode::checkModalSigns ()
-{
-   if (validCurrent && real(mode_current) < 0) {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"            INFO: Path defined for current for Mode %ld is reversed, producing negative mode current.\n",modeNumber+1);
-   }
-
-   if (validVoltage && real(mode_voltage) < 0) {
-      prefix(); PetscPrintf(PETSC_COMM_WORLD,"            INFO: Path defined for voltage for Mode %ld is reversed, producing negative mode voltage.\n",modeNumber+1);
-   }
-}
-*/
-
 void Mode::calculateImpedance (fem2D *fem)
 {
    if (fem->projData->debug_show_impedance_details) {
@@ -1974,19 +1936,6 @@ void ModeDatabase::calculateVandI (fem2D *fem, BoundaryDatabase *boundaryDatabas
    }
 }
 
-/*
-void ModeDatabase::fillTi (fem2D *fem)
-{
-   long unsigned int n=fem->projData->solution_active_mode_count;
-
-   long unsigned int i=0;
-   while (i < n) {
-      modeList[i]->fillTi(fem);
-      i++;
-   }
-}
-*/
-
 bool ModeDatabase::calculateModalVandI (fem2D *fem)
 {
    long unsigned int i=0;
@@ -2003,17 +1952,6 @@ bool ModeDatabase::calculateModalVandI (fem2D *fem)
 
    return false;
 }
-
-/*
-void ModeDatabase::checkModalSigns (fem2D *fem)
-{
-   long unsigned int i=0;
-   while (i < (long unsigned int)fem->projData->solution_active_mode_count) {
-      modeList[i]->checkModalSigns();
-      i++;
-   }
-}
-*/
 
 void ModeDatabase::calculateImpedance (fem2D *fem, BoundaryDatabase *boundaryDatabase, BorderDatabase *borderDatabase)
 {
@@ -2167,7 +2105,8 @@ ModeDatabase::~ModeDatabase()
 fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double frequency_, int iteration_,
              PWConstCoefficient *ko2Re_e, PWConstCoefficient *ko2Im_e, PWConstCoefficient *Inv_mu, // for E-field
              PWConstCoefficient *w_mu,                                                             // for H-field
-             string temporaryDirectory_) 
+             string temporaryDirectory_,
+             bool *error) 
 {
    projData=projData_;
    pmesh=pmesh_;
@@ -2221,7 +2160,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Tt_mur.AddDomainIntegrator(new VectorFEMassIntegrator (*Inv_mu));
    Tt_mur.Assemble();
    Tt_mur.Finalize();
-   saveMat (Tt_mur,"Tt_mur_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Tt_mur,"Tt_mur_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // instance with ko^2*Re(er)
 
@@ -2229,7 +2168,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Tt_eps_re.AddDomainIntegrator(new VectorFEMassIntegrator (*ko2Re_e));
    Tt_eps_re.Assemble();
    Tt_eps_re.Finalize();
-   saveMat (Tt_eps_re,"Tt_eps_re_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Tt_eps_re,"Tt_eps_re_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // instance with ko^2*Im(er)
 
@@ -2237,7 +2176,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Tt_eps_im.AddDomainIntegrator(new VectorFEMassIntegrator (*ko2Im_e));
    Tt_eps_im.Assemble();
    Tt_eps_im.Finalize();
-   saveMat (Tt_eps_im,"Tt_eps_im_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Tt_eps_im,"Tt_eps_im_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // G
 
@@ -2245,7 +2184,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    G.AddDomainIntegrator(new MixedVectorGradientIntegrator(*Inv_mu));
    G.Assemble();
    G.Finalize();
-   saveMat (G,"G_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (G,"G_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // GT - transpose of G
 
@@ -2254,7 +2193,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    GT.AddDomainIntegrator(new MixedVectorGradientIntegrator(*Inv_mu));
    GT.Assemble();
    GT.Finalize();
-   saveMat (GT,"GT_mat",temporaryDirectory,projData->project_name,true);
+   if (saveMat (GT,"GT_mat",temporaryDirectory,projData->project_name,true)) {*error=true; return;}
 
    // Sz
 
@@ -2262,7 +2201,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Sz.AddDomainIntegrator(new DiffusionIntegrator (*Inv_mu));
    Sz.Assemble();
    Sz.Finalize();
-   saveMat (Sz,"Sz_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Sz,"Sz_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // Tz
 
@@ -2272,7 +2211,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Tz_eps_re.AddDomainIntegrator(new MassIntegrator (*ko2Re_e));
    Tz_eps_re.Assemble();
    Tz_eps_re.Finalize();
-   saveMat (Tz_eps_re,"Tz_eps_re_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Tz_eps_re,"Tz_eps_re_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // instance with ko^2*Im(er)
 
@@ -2280,7 +2219,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Tz_eps_im.AddDomainIntegrator(new MassIntegrator (*ko2Im_e));
    Tz_eps_im.Assemble();
    Tz_eps_im.Finalize();
-   saveMat (Tz_eps_im,"Tz_eps_im_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Tz_eps_im,"Tz_eps_im_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // St
 
@@ -2288,7 +2227,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    St.AddDomainIntegrator(new CurlCurlIntegrator (*Inv_mu));
    St.Assemble();
    St.Finalize();
-   saveMat (St,"St_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (St,"St_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    //*****************************************************************************************************
    // matrices for the solution of the H-field
@@ -2300,7 +2239,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Mt.AddDomainIntegrator(new VectorFEMassIntegrator(*w_mu));
    Mt.Assemble();
    Mt.Finalize();
-   saveMat (Mt,"Mt_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Mt,"Mt_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // for cross product with zHat
    DenseMatrix *m=new DenseMatrix(2,2);
@@ -2315,7 +2254,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Cz.AddDomainIntegrator(new MixedVectorGradientIntegrator(*mmat));
    Cz.Assemble();
    Cz.Finalize();
-   saveMat (Cz,"Cz_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Cz,"Cz_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // Zt
 
@@ -2323,7 +2262,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Zt.AddDomainIntegrator(new VectorFEMassIntegrator(*mmat));
    Zt.Assemble();
    Zt.Finalize();
-   saveMat (Zt,"Zt_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Zt,"Zt_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // clean up for zHat x vector
    delete mmat;
@@ -2335,7 +2274,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Mz.AddDomainIntegrator(new MassIntegrator(*w_mu));
    Mz.Assemble();
    Mz.Finalize();
-   saveMat (Mz,"Mz_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Mz,"Mz_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
    // Ct
 
@@ -2343,7 +2282,7 @@ fem2D::fem2D(struct projectData *projData_, ParMesh *pmesh_, int order_, double 
    Ct.AddDomainIntegrator(new MixedScalarCurlIntegrator());
    Ct.Assemble();
    Ct.Finalize();
-   saveMat (Ct,"Ct_mat",temporaryDirectory,projData->project_name,false);
+   if (saveMat (Ct,"Ct_mat",temporaryDirectory,projData->project_name,false)) {*error=true; return;}
 
 }
 
@@ -2440,27 +2379,6 @@ bool fem2D::buildFields (double *alpha, double *beta)
    return modeDatabase.buildFields(this,alpha,beta);
 }
 
-/*
-void fem2D::buildTiTv ()
-{
-   if (is_line_impedance(fem->projData->solution_impedance_calculation)) {
-
-      int n=projData->solution_modes;
-
-      if (Ti) free(Ti);
-      Ti=(lapack_complex_double *) malloc(n*n*sizeof(lapack_complex_double));
-      matrixZero(Ti,n);
-      modeDatabase.fillTi(this);
-
-      if (Tv) {free(Tv); Tv=nullptr;}
-      Tv=matrixClone(Ti,n);
-      matrixConjugate(Tv,n);
-      matrixInverse(Tv,n);  
-      matrixTranspose(Tv,n);
-   }
-}
-*/
-
 bool fem2D::saveTiTv ()
 {
    PetscMPIInt rank;
@@ -2526,40 +2444,6 @@ bool fem2D::calculateModalVandI ()
    if (modeDatabase.calculateModalVandI(this)) return true;
    return false;
 }
-
-/*
-void fem2D::setPolarity ()
-{
-   int n=projData->solution_modes;
-
-   // make the first column positive
-   if (Tv) {
-      int i=0;
-      while (i < n) {
-         if (matrixGetRealValue(Tv,i) < 0) {
-            modeDatabase.get_mode(i)->flipFieldSign();
-         }
-         i++;
-      }
-   } else {
-      if (Ti) {
-         int i=0;
-         while (i < n) {
-            if (matrixGetRealValue(Ti,i) < 0) {
-               modeDatabase.get_mode(i)->flipFieldSign();
-            }
-            i++;
-         }
-      }
-   }
-
-   // rebuild
-   buildTiTv();
-   calculateModalVandI();
-
-   modeDatabase.checkModalSigns(this);
-}
-*/
 
 void fem2D::calculateImpedance (BoundaryDatabase *boundaryDatabase, BorderDatabase *borderDatabase)
 {

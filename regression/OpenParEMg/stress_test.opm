@@ -1,0 +1,333 @@
+#OpenParEMgMacro 1.0
+
+For i = 1 To 1000 Step 1
+   newProject /home/briany/OpenParEM/regression/OpenParEMg junk
+   closeProject
+EndFor
+
+newProject /home/briany/OpenParEM/regression/OpenParEMg junk
+
+# circle and rectangle
+For i = 1 To 1000 Step 1
+   setDrawingPlaneToXZ
+   setDrawingPlaneToXY 
+   drawPolycircle PC1 0 0 0    0 0.001 0
+   setDrawingPlaneToYZ
+   drawPolycircle PC2 0 0 0    0 0.001 0
+   setDrawingPlaneToXZ
+   drawPolycircle PC3 0 0 0   0 0 0.001
+
+   setDrawingPlane 0 0 0   1 0 0   0 0 1  # XY
+   drawRectangle R1 -0.001 -0.001 0   0.001 0.001 0
+
+   setDrawingPlane 0 0 0   1 0 0   0 1 0  # XZ
+   drawRectangle R2 -0.001 0 -0.001   0.001 0 0.001
+
+   setDrawingPlane 0 0 0   0 1 0   1 0 0  # YZ
+   drawRectangle R3 0 -0.001 -0.001   0 0.001 0.001 
+
+   unselectAllObjects
+   selectObject PC1
+   selectObject PC2
+   selectObject PC3
+   selectObject R1
+   selectObject R2
+   selectObject R3
+   deleteSelectedObjects
+EndFor
+
+# set drawing plane
+For i = 1 To 1000 Step 1
+   setDrawingPlaneToXY
+   drawLine L1  0 0 0   0.003 0.001 0
+   undo
+   undo
+   redo
+   redo
+   drawLine L2  0.001 0.004 0   0.005 0.002 0
+
+   setDrawingPlaneToYZ
+   drawLine L3  0 -0.002 0.000  0 0.001 0.003
+   unselectAllObjects
+   selectObject L3
+   deleteSelectedObjects
+   undo
+
+   unselectAllObjects
+   selectObject L1
+   selectObject L2
+   selectObject L3
+   deleteSelectedObjects
+EndFor
+
+# copy
+For i = 1 To 1000 Step 1
+   setDrawingPlaneToXY
+   drawRectangle R1  0 0 0   0.003 0.001 0
+   extrudeSelectedObjects E1 0.003
+
+   unselectAllObjects
+   selectObject E1
+   copySelectedObjects
+
+   unselectAllObjects
+   selectObject E1
+   deleteSelectedObjects
+   selectObject R1
+   deleteSelectedObjects
+
+   undo
+   undo
+   undo
+   undo
+   redo
+   redo
+   redo
+   redo
+
+   unselectAllObjects
+   selectObject E1_copy
+   deleteSubtreeSelectedObjects
+   undo
+   redo
+EndFor
+
+# drawing plane
+For i = 1 To 1000 Step 1
+   setDrawingPlaneToXY
+   drawRectangle newRectangle 0 0 0   0.005 0.010 0
+   undo
+   redo
+   unselectAllObjects
+   selectObject newRectangle
+   deleteSelectedObjects
+   undo
+   setDrawingPlane  0 0.001 0   1 0 0   0 1 0  # offset XZ
+   drawRectangle newRectangle2  0.001 0.001 0.001  0.002 0.001 0.003
+   undo
+   redo
+   selectObject newRectangle
+   selectObject newRectangle2
+   deleteSelectedObjects
+EndFor
+
+# undo/redo
+setDrawingPlaneToXY
+drawRectangle newRectangle1 0 0 0 0.001 0.002 0 
+drawRectangle newRectangle2 0.001 0.002 0 0.002 0.003 0
+For i = 1 To 1000 Step 1
+   undo
+   undo
+   undo
+   undo
+   redo
+   redo
+   redo
+   redo
+EndFor
+selectObject newRectangle1
+selectObject newRectangle2
+deleteSelectedObjects
+
+# extrusion, merge, subtract
+setDrawingPlaneToXY
+For i = 1 To 1000 Step 1
+   drawRectangle newRectangle 0 0 0   0.005 0.010 0 
+   drawRectangle newRectangle1 0.001 0.001 0  0.007 0.009 0
+   unselectAllObjects
+   selectObject newRectangle
+   selectObject newRectangle1
+   extrudeSelectedObjects newExtrude 0.005
+   unselectAllObjects
+   selectObject newExtrude
+   mergeSelectedObjects newMerged
+   fitAll
+   undo
+   undo
+   unselectAllObjects
+   selectObject newExtrude
+   subtractSelectedObjects newSubtracted
+   unselectAllObjects
+   selectObject newSubtracted
+   deleteSelectedObjects
+   selectObject newExtrude
+   deleteSelectedObjects
+   selectObject newRectangle
+   selectObject newRectangle1
+   deleteSelectedObjects
+EndFor
+
+# convert to polylines
+For i = 1 To 1000 Step 1
+   setDrawingPlaneToXY
+   drawRectangle L1 0 0 0   0.003 0.001 0
+   drawRectangle L2  0.003 0 0  0.004 0.003 0
+
+   unselectAllObjects
+   selectObject L1
+   selectObject L2
+   convertSelectedObjectsToPolylines
+
+   selectObject L1
+   selectObject L2
+   deleteSubtreeSelectedObjects
+EndFor
+
+# draw polylines; convert to paths
+For i = 1 To 1000 Step 1
+   setDrawingPlaneToXY
+   drawPolyline L1 3  0 0 0   0.003 0.001 0   0.001 0.003 0
+   drawPolyline L2 4  0 0 0   0.003 0.001 0   0.001 0.003 0   0 0 0
+
+   unselectAllObjects
+   selectObject L1
+   selectObject L2
+   convertSelectedObjectsToPaths
+
+   undo
+   selectObject L1
+   selectObject L2
+   deleteSubtreeSelectedObjects
+EndFor
+
+# complex object
+setDrawingPlaneToXY
+For i = 1 To 1000 Step 1
+   drawRectangle R1  0 0 0   0.003 0.001 0
+   extrudeSelectedObjects E1 0.005
+   unselectAllObjects
+   drawPolycircle PC1  0 0.001 0  0 0 0
+   drawPolycircle PC2  0.003 0.001 0  0.003 0 0
+   unselectAllObjects
+   selectObject PC1
+   selectObject PC2
+   extrudeSelectedObjects E2 0.0025
+   mergeSelectedObjects M1
+   unselectAllObjects
+   selectObject M1
+   moveSelectedObjects 0 0 0.00125
+   unselectAllObjects
+   selectObject E1
+   selectObject M1
+   mergeSelectedObjects M2
+
+   unselectAllObjects
+   drawPolycircle PC3  0 0.001 0  0 0.0005 0
+   drawPolycircle PC4  0.003 0.001 0  0.003 0.0005 0
+   unselectAllObjects
+   selectObject PC3
+   selectObject PC4
+   extrudeSelectedObjects E3 0.005
+   mergeSelectedObjects M3
+   unselectAllObjects
+   selectObject M2
+   selectObject M3
+   subtractSelectedObjects S1
+
+   unselectAllObjects
+   drawPolyline PL 4  0.001 0 0  0.0015 0.0005 0  0.002 0 0  0.001 0 0
+   extrudeSelectedObjects E4 0.005
+   unselectAllObjects
+   selectObject S1
+   selectObject E4
+   subtractSelectedObjects S2
+
+   fitAll
+   unselectAllObjects
+   selectObject S2
+   deleteSubtreeSelectedObjects
+EndFor
+undo
+unselectAllObjects
+selectObject S2
+For i = 1 To 1000 Step 1
+   rotateSelectedObjects 0 0 0 0 1 0 15
+   moveSelectedObjects 0 0 0.0005
+EndFor
+unselectAllObjects
+selectObject S2
+deleteSubtreeSelectedObjects
+
+# ports and boundaries
+For i = 1 To 1000 Step 1
+   setDrawingPlaneToXY
+   drawRectangle R1 0 0 0 0.001 0.001 0
+   drawRectangle R2 0.002 0 0  0.003 0.002 0
+
+   unselectAllObjects
+   selectObject R1
+   selectObject R2
+   convertSelectedObjectsToPorts
+
+   undo
+
+   unselectAllObjects
+   selectObject R1
+   selectObject R2
+   convertSelectedObjectsToBoundaries
+
+   undo
+
+   selectObject R1
+   selectObject R2
+   deleteSelectedObjects
+EndFor
+
+# ports with integration paths
+forceCloseProject
+For i = 1 To 1000 Step 1
+   newProject /home/briany/OpenParEM/regression/OpenParEMg junk
+
+   setDrawingPlaneToXY
+   drawRectangle R1 0 0 0 0.001 0.001 0
+   drawRectangle R2 0 0.002 0 0.001 0.003 0
+
+   unselectAllObjects
+   selectObject R1
+   selectObject R2
+   convertSelectedObjectsToPorts
+
+   # port1
+   unselectAllObjects
+   selectPortVoltageObject port1
+
+   drawPortIntegrationLine 0.0005 0 0  0.0005 0.001 0
+
+   unselectAllObjects
+   selectPortCurrentObject port1
+
+   drawPortIntegrationPolyline 5 0.0005 0 0  0.0005 0.001 0  0.0004 0.001 0 0.0004 0 0 0.0005 0 0
+
+   # port2
+   unselectAllObjects
+   selectPortVoltageObject port2
+
+   drawPortIntegrationLine 0.0005 0.002 0  0.0005 0.003 0
+
+   unselectAllObjects
+   selectPortCurrentObject port2
+
+   drawPortIntegrationPolyline 5 0.0005 0.002 0  0.0005 0.003 0  0.0004 0.003 0 0.0004 0.002 0 0.0005 0.002 0
+
+   unselectAllPorts
+   selectPort port1
+   selectPort port2
+   deleteSelectedPorts
+
+   unselectAllPaths
+   selectPath path1
+   selectPath path2
+   selectPath v1
+   selectPath v2
+   selectPath i1
+   selectPath i2
+   deleteSelectedPaths
+
+   unselectAllObjects
+   selectObject R1
+   selectObject R2
+   deleteSelectedObjects
+
+   forceCloseProject
+EndFor
+

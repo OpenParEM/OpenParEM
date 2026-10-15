@@ -1,0 +1,104 @@
+#OpenParEMports 1.0
+
+File
+   name=generated_by_OpenParEMg
+EndFile
+
+Path
+   name=path1
+   point=(0,0.006635,0.003)
+   point=(0.018,0.006635,0.003)
+   point=(0.018,0,0.003)
+   point=(0,0,0.003)
+   closed=true
+   normal=(0,0,1)
+EndPath
+
+Path
+   name=v1
+   point=(0.009,0,0.003)
+   point=(0.009,0.000635,0.003)
+   closed=false
+   normal=(0,0,1)
+EndPath
+
+Path
+   name=i1
+   point=(0.0085,0.000635,0.003)
+   point=(0.0085,0.000935,0.003)
+   point=(0.0095,0.000935,0.003)
+   point=(0.0095,0.000635,0.003)
+   closed=true
+   normal=(0,0,1)
+EndPath
+
+Path
+   name=path2
+   point=(0.018,0.006635,0)
+   point=(0,0.006635,0)
+   point=(0,0,0)
+   point=(0.018,0,0)
+   closed=true
+   normal=(0,0,1)
+EndPath
+
+Path
+   name=v2
+   point=(0.009,0,0)
+   point=(0.009,0.000635,0)
+   closed=false
+   normal=(0,0,1)
+EndPath
+
+Path
+   name=i2
+   point=(0.0095,0.000635,0)
+   point=(0.0095,0.000935,0)
+   point=(0.0085,0.000935,0)
+   point=(0.0085,0.000635,0)
+   closed=true
+   normal=(0,0,1)
+EndPath
+
+Port
+   name=port1
+   path=path1
+   impedance_definition=PI
+   impedance_calculation=line
+   Line
+      net=net1
+      Sport=1
+      IntegrationPath
+         type=voltage
+         scale=1
+         path=+v1
+      EndIntegrationPath
+      IntegrationPath
+         type=current
+         scale=1
+         path=+i1
+      EndIntegrationPath
+   EndLine
+EndPort
+
+Port
+   name=port2
+   path=path2
+   impedance_definition=PI
+   impedance_calculation=line
+   Line
+      net=net2
+      Sport=2
+      IntegrationPath
+         type=voltage
+         scale=1
+         path=+v2
+      EndIntegrationPath
+      IntegrationPath
+         type=current
+         scale=1
+         path=+i2
+      EndIntegrationPath
+   EndLine
+EndPort
+

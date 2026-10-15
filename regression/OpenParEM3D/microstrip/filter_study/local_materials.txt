@@ -2,6 +2,7 @@
 
 Material
    name=RO4003C
+   type=dielectric
    Temperature
       temperature=any
       Frequency

@@ -1,0 +1,713 @@
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//    OpenParEMg - A GUI for OpenParEM3D                                      //
+//    Copyright (C) 2026 Brian Young                                          //
+//                                                                            //
+//    This program is free software: you can redistribute it and/or modify    //
+//    it under the terms of the GNU General Public License as published by    //
+//    the Free Software Foundation, either version 3 of the License, or       //
+//    (at your option) any later version.                                     //
+//                                                                            //
+//    This program is distributed in the hope that it will be useful,         //
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of          //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           //
+//    GNU General Public License for more details.                            //
+//                                                                            //
+//    You should have received a copy of the GNU General Public License       //
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.   //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+#include "CustomOpenGLWidget.h"
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeVertex.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
+#include <Geom_Plane.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Edge.hxx>
+#include <TopoDS_Face.hxx>
+#include <TopoDS_Vertex.hxx>
+#include <GL/glx.h>
+#include "OcctQtTools.h"
+
+#include <QWidget>
+#include <QResizeEvent>
+#include <QColorSpace>
+#include <QOpenGLContext>
+
+#include <V3d_View.hxx>
+#include <TopoDS_Shape.hxx>
+#include <AIS_Shape.hxx>
+#include <BRep_Tool.hxx>
+#include <BRepTools.hxx>
+#include <TopoDS_Face.hxx>
+#include "Aspect_NeutralWindow.hxx"
+#include <OpenGl_FrameBuffer.hxx>
+#include <V3d_RectangularGrid.hxx>
+
+#include <V3d_View.hxx>
+#include <gp_Pln.hxx>
+#include <gp_Lin.hxx>
+#include <gp_Pnt.hxx>
+#include <gp_Dir.hxx>
+#include <IntAna_IntConicQuad.hxx>
+#include <Standard_Boolean.hxx>
+#include <StdSelect_BRepOwner.hxx>
+#include <TopExp.hxx>
+#include <Geom_CartesianPoint.hxx>
+#include <Prs3d_Drawer.hxx>
+#include <Prs3d_PointAspect.hxx>
+#include <Graphic3d_AspectMarker3d.hxx>
+
+CustomOpenGLWidget::CustomOpenGLWidget (QWidget* theParent) : QOpenGLWidget (theParent)
+{
+    // debug
+    showTracking=false;
+
+    // settings
+    setMouseTracking(true);
+    setBackgroundRole(QPalette::NoRole);
+    setFocusPolicy(Qt::StrongFocus);
+    setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
+
+    // displacy connection
+    displayConnection=new Aspect_DisplayConnection();
+
+    // graphics driver
+    graphicDriver=new OpenGl_GraphicDriver(displayConnection);
+    graphicDriver->ChangeOptions().buffersNoSwap=true;
+    graphicDriver->ChangeOptions().useSystemBuffer=false;
+
+    // 3D viewer
+    viewer=new V3d_Viewer(graphicDriver);
+    viewer->SetDefaultBackgroundColor(Quantity_NOC_BLACK);
+    viewer->SetDefaultLights();
+    viewer->SetLightOn();
+
+    // AIS context
+    viewerContext=new AIS_InteractiveContext(viewer);
+
+    // item tracking
+    drawingTracker=new ItemTracker(viewerContext);
+
+    // create an orientation cube for the display
+    viewCube=new AIS_ViewCube();
+    viewCube->SetViewAnimation(myViewAnimation);
+    viewCube->SetFixedAnimationLoop(false);
+    viewCube->SetAutoStartAnimation(true);
+    viewCube->TransformPersistence()->SetOffset2d(Graphic3d_Vec2i(100, 150));
+    viewCube->SetDuration(0.0);  // snaps to face views when clicking the cube
+
+    // viewer
+    view=viewer->CreateView();
+    view->SetImmediateUpdate(Standard_False);
+    view->ChangeRenderingParams().NbMsaaSamples=4;
+    view->ChangeRenderingParams().ToShowStats=false;
+
+    // drawing plane
+    drawingPlaneOrigin.SetCoord(0,0,0);
+    drawingPlane.SetLocation(drawingPlaneOrigin);
+
+    drawingPlaneDirection.SetCoord(0,0,1);
+    drawingPlaneAxis.SetDirection(drawingPlaneDirection);
+    drawingPlane.SetAxis(drawingPlaneAxis);
+
+    snapToGrid=false;
+    viewer->SetGridEcho(Standard_False);
+
+    rectSelect=nullptr;
+    pickFirstVertex=false;
+    pickSecondVertex=false;
+
+    isSubshapeSelection=false;
+    isSingleSelection=false;
+    isSetToPlane=false;
+
+    // set a default so that all bare vertices highlight with a yellow plus sign - moved to setSelectionRadius
+    //viewerContext->DefaultDrawer()->SetPointAspect(new Prs3d_PointAspect(Aspect_TOM_PLUS,Quantity_NOC_YELLOW1,2));
+
+    viewerContext->SetAutoActivateSelection(Standard_False);
+}
+
+void CustomOpenGLWidget::initializeGL ()
+{
+    const QRect viewGeometry=rect();
+    const Graphic3d_Vec2i viewSize(viewGeometry.right()-viewGeometry.left(),viewGeometry.bottom()-viewGeometry.top());
+
+    Handle(Aspect_NeutralWindow) aspectNeutralWindow=new Aspect_NeutralWindow();
+    Aspect_Drawable nativeWindow=(Aspect_Drawable)winId();
+    aspectNeutralWindow->SetNativeHandle(nativeWindow);
+    aspectNeutralWindow->SetSize (viewSize.x(),viewSize.y());
+    view->SetWindow (aspectNeutralWindow,(Aspect_RenderingContext) glXGetCurrentContext());
+}
+
+// courtesy of Google AI
+void CustomOpenGLWidget::resizeGL(int w, int h)
+{
+    QOpenGLWidget::resizeGL(w, h);
+
+    if (view.IsNull() || view->Window().IsNull()) return;
+
+    Handle(Aspect_NeutralWindow) aspectNeutralWindow = Handle(Aspect_NeutralWindow)::DownCast(view->Window());
+    if (!aspectNeutralWindow.IsNull()) {
+        // Fetch physical framebuffer boundaries using Qt's context pixel scale
+        int fboWidth  = w * this->devicePixelRatioF();
+        int fboHeight = h * this->devicePixelRatioF();
+
+        // Push sizing strictly down to the aspect adapter wrapper
+        aspectNeutralWindow->SetSize(fboWidth, fboHeight);
+        
+        // Signal OpenCASCADE that the layout requires modification
+        view->MustBeResized(); 
+    }
+}
+
+// courtesy of Google AI
+void CustomOpenGLWidget::paintGL()
+{
+    // 1. Guard against rendering uninitialized states
+    if (view.IsNull() || view->Window().IsNull()) return;
+
+    // 2. Wrap and synchronize the active Qt Framebuffer Object context
+    const Handle(OpenGl_Context)& sharedContext = graphicDriver->GetSharedContext();
+    Handle(OpenGl_FrameBuffer) defaultFrameBuffer = sharedContext->DefaultFrameBuffer();
+    if (defaultFrameBuffer.IsNull()) {
+        defaultFrameBuffer = new OpenGl_FrameBuffer();
+        sharedContext->SetDefaultFrameBuffer(defaultFrameBuffer);
+    }
+    
+    // Bind the wrapper layer to match Qt's current physical canvas dimensions
+    defaultFrameBuffer->InitWrapper(sharedContext);
+
+    // 3. Extract the active geometric state parameters
+    Handle(Aspect_NeutralWindow) aspectNeutralWindow = Handle(Aspect_NeutralWindow)::DownCast(view->Window());
+    
+    int oldX = 0, oldY = 0;
+    aspectNeutralWindow->Size(oldX, oldY);
+
+    int viewSizeNewX = defaultFrameBuffer->GetVPSizeX();
+    int viewSizeNewY = defaultFrameBuffer->GetVPSizeY();
+
+    // 4. Runtime resizing safety net: If dimensions ever drift, force an alignment
+    if (viewSizeNewX != oldX || viewSizeNewY != oldY) {
+        glViewport(0, 0, viewSizeNewX, viewSizeNewY);
+        aspectNeutralWindow->SetSize(viewSizeNewX, viewSizeNewY);
+        view->MustBeResized();
+    }
+
+    // 5. Update overlays and execute the final redraw
+    viewerContext->Display(viewCube, 0, 0, false);
+    view->Redraw();
+    
+    // Process view events (pan, zoom, rotate interaction states) cleanly
+    FlushViewEvents(viewerContext, view, true);
+}
+
+void CustomOpenGLWidget::updateViewer ()
+{
+    viewerContext->UpdateCurrentViewer();
+    repaint();
+}
+
+void CustomOpenGLWidget::clearDrawing ()
+{
+    viewerContext->RemoveAll(false);
+    viewerContext->UpdateCurrentViewer();
+}
+
+void CustomOpenGLWidget::wheelEvent(QWheelEvent* event)
+{
+    QOpenGLWidget::wheelEvent(event);
+    if (view.IsNull())
+        return;
+
+    // scale the position
+    const qreal dpr = devicePixelRatioF();
+    QPointF p = event->position();
+    const Graphic3d_Vec2i position(qRound(p.x()*dpr),qRound(p.y()*dpr));
+
+    if (UpdateZoom(
+            Aspect_ScrollDelta(
+                position,
+                double(event->angleDelta().y()) / 8.0)))
+    {
+        updateViewer();
+    }
+}
+
+void CustomOpenGLWidget::keyPressEvent (QKeyEvent* event)
+{
+    if (view.IsNull()) return;
+
+    // define hot keys for specific functionality
+    const Aspect_VKey aKey=OcctQtTools::qtKey2VKey(event->key());
+    switch (aKey)
+    {
+        case Aspect_VKey_Escape: {
+            finishPickVertex(true);
+        }
+
+        // case Aspect_VKey_F: {
+        //     view->FitAll(0.01, false);
+        //     update();
+        //     return;
+        // }
+    }
+
+    QOpenGLWidget::keyPressEvent(event);
+}
+
+bool CustomOpenGLWidget::PixelToPointOnPlane (const Standard_Integer xPix, const Standard_Integer yPix, gp_Pnt& thePoint3D)
+{
+    Standard_Real Xv,Yv,Zv;
+    Standard_Real Vx,Vy,Vz;
+
+    view->ConvertWithProj(xPix,yPix,Xv,Yv,Zv,Vx,Vy,Vz);
+
+    gp_Pnt eyePnt(Xv,Yv,Zv);
+    gp_Dir viewDir(Vx,Vy,Vz);
+    gp_Lin viewRay(eyePnt,viewDir);
+
+    IntAna_IntConicQuad intersector(viewRay, drawingPlane, Precision::Confusion());
+
+    if (intersector.IsDone() && !intersector.IsParallel() && intersector.NbPoints() > 0) {
+        thePoint3D=intersector.Point(1);
+        return false;
+    }
+
+    return true;
+}
+
+// vertex draw or pick
+void CustomOpenGLWidget::finishPickVertex (bool cancel)
+{
+    // remove temporaryVertex
+    if (!temporaryVertex.IsNull()) {
+       viewerContext->Remove(temporaryVertex,Standard_True);
+       temporaryVertex.Nullify();
+    }
+
+    emit relay->getPickedVertex(vertexPoint,cancel);
+}
+
+// courtesy of ChatGPT with flipped return values
+bool CustomOpenGLWidget::pixelToSnappedGrid (int px, int py, Standard_Real gridSpacing, gp_Pnt& snappedPoint)
+{
+    gp_Pnt point;
+
+    // First get the unsnapped point on the drawing plane.
+    if (PixelToPointOnPlane(px, py, point)) return false;
+
+    // Coordinates relative to the drawing plane.
+    gp_Vec delta(drawingPlane.Location(), point);
+
+    Standard_Real u =
+        delta.Dot(gp_Vec(drawingPlane.XAxis().Direction()));
+
+    Standard_Real v =
+        delta.Dot(gp_Vec(drawingPlane.YAxis().Direction()));
+
+    // Snap in the plane's local coordinate system.
+    u = std::round(u / gridSpacing) * gridSpacing;
+    v = std::round(v / gridSpacing) * gridSpacing;
+
+    // Convert the snapped coordinates back to 3D.
+    gp_Vec offset =
+        gp_Vec(drawingPlane.XAxis().Direction()) * u +
+        gp_Vec(drawingPlane.YAxis().Direction()) * v;
+
+    snappedPoint = drawingPlane.Location().Translated(offset);
+
+    return false;
+}
+
+void CustomOpenGLWidget::mousePressEvent (QMouseEvent* event)
+{
+    if (view.IsNull()) return;
+    ignoreMouseRelease=false;
+
+    // scale the position
+    const qreal dpr = devicePixelRatioF();
+    QPointF p = event->position();
+    const Graphic3d_Vec2i position(qRound(p.x()*dpr),qRound(p.y()*dpr));
+
+    // pass the mouse press from OCCT to Qt
+    bool passClick=true;
+    if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;         // a popup menu will appear
+    if (event->button() == Qt::RightButton && (pickFirstVertex || pickSecondVertex)) passClick=false;   // prevent right-click from zooming
+    if (passClick) {
+        const Graphic3d_Vec2i  point(position.x(),position.y());
+        const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
+        if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
+    }
+
+    // get a gp_Pnt
+    clickPointValid=false;
+    if (viewer->IsGridActive() && snapToGrid) {
+        if (!pixelToSnappedGrid(position.x(),position.y(),gridSpacing,clickPoint)) clickPointValid=true;
+    } else {
+        if (!PixelToPointOnPlane(position.x(),position.y(),clickPoint)) clickPointValid=true;
+    }
+
+    Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
+
+    if (event->button() == Qt::LeftButton) {
+
+        if (pickFirstVertex) {
+            ignoreMouseRelease=true;
+            if (owner.IsNull()) {
+                vertexPoint=clickPoint;
+                finishPickVertex(false);
+                return;
+            } else {
+                Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
+                if (!brepOwner.IsNull()) {
+                    TopoDS_Shape shape = brepOwner->Shape();
+                    if (!shape.IsNull()) {
+                        if (shape.ShapeType() == TopAbs_VERTEX) {
+                            TopoDS_Vertex vertex=TopoDS::Vertex(shape);
+                            gp_Pnt pnt=BRep_Tool::Pnt(vertex);
+                            if (!vertex.IsNull()) {
+                                vertexPoint=pnt;
+                                finishPickVertex(false);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void CustomOpenGLWidget::mouseReleaseEvent (QMouseEvent* event)
+{
+    // re-enable view rotation that is disabled when using a selection box
+    SetAllowRotation(Standard_True);
+    SetAllowZooming(Standard_True);
+    SetAllowPanning(Standard_True);
+
+    if (view.IsNull()) return;
+
+    // scale the position
+    const qreal dpr = devicePixelRatioF();
+    QPointF p = event->position();
+    const Graphic3d_Vec2i position(qRound(p.x()*dpr),qRound(p.y()*dpr));
+
+    // pass the mouse release from OCCT to Qt
+    bool passClick=true;
+    if (event->button() == Qt::RightButton && viewerContext->NbSelected() > 0) passClick=false;  // a popup menu will appear
+    if (passClick) {
+        const Graphic3d_Vec2i  point(position.x(),position.y());
+        const Aspect_VKeyFlags flags=OcctQtTools::qtMouseModifiers2VKeys(event->modifiers());
+        if (UpdateMouseButtons(point,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),flags,false)) updateViewer();
+    }
+
+    if (ignoreMouseRelease) return;
+
+    Handle(SelectMgr_EntityOwner) owner=viewerContext->DetectedOwner();
+
+    // process for vertex click
+    if (event->button() == Qt::LeftButton) {
+        if (pickSecondVertex) {
+            ignoreMouseRelease=true;  // required
+            if (owner.IsNull()) {
+                vertexPoint=clickPoint;
+                finishPickVertex(false);
+            } else {
+                Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
+                if (!brepOwner.IsNull()) {
+                    TopoDS_Shape shape=brepOwner->Shape();
+                    if (!shape.IsNull()) {
+                        if (shape.ShapeType() == TopAbs_VERTEX) {
+                            TopoDS_Vertex vertex=TopoDS::Vertex(shape);
+                            gp_Pnt pnt=BRep_Tool::Pnt(vertex);
+                            if (!vertex.IsNull()) {
+                                vertexPoint=pnt;
+                                finishPickVertex(false);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // process for selection on edges, faces, etc; selection filter set in OPEMg determines selection
+    if (isSubshapeSelection && event->button() == Qt::LeftButton) {
+        if (!owner.IsNull()) {
+            Handle(StdSelect_BRepOwner) brepOwner=Handle(StdSelect_BRepOwner)::DownCast(owner);
+            if (!brepOwner.IsNull()) {
+                TopoDS_Shape shape=brepOwner->Shape();
+                if (!shape.IsNull()) {
+                    if (event->button() == Qt::LeftButton) {
+                        AIS_SelectionScheme scheme;
+
+                        if (event->modifiers() & Qt::ControlModifier) {
+                            if (isSingleSelection) scheme=AIS_SelectionScheme_Replace;
+                            else scheme=AIS_SelectionScheme_Add;
+                        } else if (event->modifiers() & Qt::ShiftModifier) {
+                            if (isSingleSelection) scheme=AIS_SelectionScheme_Replace;
+                            else scheme=AIS_SelectionScheme_Add;
+                        } else {
+                            scheme=AIS_SelectionScheme_Replace;
+                        }
+
+                        viewerContext->SelectDetected(scheme);
+
+                        if (isSetToPlane) {
+                            isSubshapeSelection=false;
+                            isSingleSelection=false;
+                            isSetToPlane=false;
+                            emit relay->startPlaneSetToFace();
+                            return;
+                        }
+
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    // process for object selection
+    if (event->button() == Qt::LeftButton) {
+        if (!ignoreMouseRelease) {
+
+            // check for CTRL and SHIFT then select
+            bool hasModifier=false;
+            if (event->button() == Qt::LeftButton) {
+                AIS_SelectionScheme scheme;
+
+                if (event->modifiers() & Qt::ControlModifier) {
+                    hasModifier=true;
+                    scheme=AIS_SelectionScheme_Add;
+                } else if (event->modifiers() & Qt::ShiftModifier) {
+                    hasModifier=true;
+                    scheme=AIS_SelectionScheme_Add;
+                } else {
+                    scheme=AIS_SelectionScheme_Replace;
+                }
+
+                viewerContext->SelectDetected(scheme);
+            }
+
+            // clear or add to item tracking
+            Handle(AIS_InteractiveObject) anIO=getLastSelected();
+            if (anIO.IsNull()) {
+                emit relay->clearTreeSelection();
+            } else {
+
+                // *** important GUI functionality ***
+                // cross select into the tree menu from selected item in the drawing window
+                if (hasModifier) {
+
+                    // make a list of the selected shapes to enable clearing the tree of stale selects
+                    std::vector<Handle(AIS_Shape)> shapeList;
+                    for (viewerContext->InitSelected(); viewerContext->MoreSelected(); viewerContext->NextSelected()) {
+                        Handle(AIS_InteractiveObject) object=viewerContext->SelectedInteractive();
+                        Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(object);
+                        if (!shape.IsNull()) {shapeList.push_back(shape);}
+                    }
+
+                    // clear the tree
+                    emit relay->clearTreeSelection();
+
+                    // add to the selection database
+                    long unsigned int i=0;
+                    while (i < shapeList.size()) {
+                        drawingTracker->selectItemShape(shapeList[i]);
+                        i++;
+                    }
+                } else {
+                    Handle(AIS_Shape) shape=Handle(AIS_Shape)::DownCast(anIO);
+                    if (!shape.IsNull()) {
+                        emit relay->clearTreeSelection();
+                        drawingTracker->selectItemShape(shape);
+                    }
+                }
+            }
+        }
+        updateViewer();
+        emit relay->setMenus();
+    }
+}
+
+Handle(AIS_InteractiveObject) CustomOpenGLWidget::getLastSelected ()
+{
+    Handle(AIS_InteractiveObject) io;
+    viewerContext->InitSelected();
+    while (viewerContext->MoreSelected()) {
+        io=viewerContext->SelectedInteractive();
+        viewerContext->NextSelected();
+    }
+    return io;
+}
+
+void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
+{
+    if (view.IsNull()) return;
+
+    // set the pixel tolerance to a loose setting so that mousing around can find the needed edge
+    viewerContext->SetPixelTolerance(10);
+
+    // scale the position
+    const qreal dpr = devicePixelRatioF();
+    QPointF p = event->position();
+    const Graphic3d_Vec2i position(qRound(p.x()*dpr),qRound(p.y()*dpr));
+
+    // mouse position
+    Standard_Real x,y,z;
+    view->Convert(position.x(),position.y(),x,y,z);
+    gp_Pnt mousePosition(x,y,z);
+
+    if (viewerContext->HasDetected()) {
+
+        // closest mid point
+        gp_Pnt midPoint(0,0,0);
+
+        // double distance
+        double distance=1e30;
+
+        // iterate over detected edges
+        viewerContext->InitDetected();
+        while (viewerContext->MoreDetected())
+        {
+            Handle(SelectMgr_EntityOwner) anOwner = viewerContext->DetectedOwner();
+            Handle(StdSelect_BRepOwner) aBRepOwner = Handle(StdSelect_BRepOwner)::DownCast(anOwner);
+            if (!aBRepOwner.IsNull()) {
+
+                TopoDS_Shape detectedShape = aBRepOwner->Shape();
+
+                // create a temporary vertex at the mid point
+                if (detectedShape.ShapeType() == TopAbs_EDGE) {
+
+                    // get the mid point
+                    const TopoDS_Edge& edge=TopoDS::Edge(detectedShape);
+                    TopoDS_Vertex v1=TopExp::FirstVertex(edge);
+                    const gp_Pnt pnt1=BRep_Tool::Pnt(v1);
+                    TopoDS_Vertex v2=TopExp::LastVertex(edge);
+                    const gp_Pnt pnt2=BRep_Tool::Pnt(v2);
+                    gp_Pnt pntmid((pnt1.X()+pnt2.X())/2.0,(pnt1.Y()+pnt2.Y())/2.0,(pnt1.Z()+pnt2.Z())/2.0);
+
+
+                    double testDistance=pntmid.Distance(mousePosition);
+                    if (testDistance < distance) {
+                        distance=testDistance;
+                        midPoint=pntmid;
+                    }
+                }
+            }
+            viewerContext->NextDetected();
+        }
+
+        // clean up
+        if (!temporaryVertex.IsNull()) {
+            viewerContext->Remove(temporaryVertex,Standard_True);
+            temporaryVertex.Nullify();
+        }
+
+        // create vertex - must activate for selection since SetAutoActivateSelection is set to false in the constructor
+        TopoDS_Vertex newVertex=BRepBuilderAPI_MakeVertex(midPoint);
+        temporaryVertex=new AIS_Shape(newVertex);
+        temporaryVertex->SetZLayer(Graphic3d_ZLayerId_Top);
+        viewerContext->Display(temporaryVertex,Standard_False);
+        viewerContext->Load(temporaryVertex);
+        viewerContext->Activate(temporaryVertex,0,Standard_True);
+        viewerContext->UpdateCurrentViewer();
+
+    } else {
+        // remove the temporary vertex
+        if (!temporaryVertex.IsNull()) {
+            viewerContext->Remove(temporaryVertex,Standard_True);
+            temporaryVertex.Nullify();
+        }
+    }
+
+    // for rubberband
+
+    if (!PixelToPointOnPlane (position.x(),position.y(),mousePosition)) {
+        emit relay->getCurrentMousePosition(mousePosition);
+    }
+
+    // pass the mouse position from OCCT to Qt
+    if (UpdateMousePosition(position,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
+                                     OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateViewer();
+
+    // put the tolerance back to the default
+    viewerContext->SetPixelTolerance(2);
+}
+
+void CustomOpenGLWidget::set_gridPlane (TopoDS_Face &face)
+{
+    if (!face.IsNull()) {
+
+        // plane
+        Handle(Geom_Surface) surface=BRep_Tool::Surface(face);
+        Handle(Geom_Plane) plane=Handle(Geom_Plane)::DownCast(surface);
+
+        // set
+        gp_Pnt origin=plane->Location();
+        gp_Dir axis=plane->Axis().Direction();
+
+        set_gridPlane(origin,axis);
+    }
+}
+
+void CustomOpenGLWidget::set_gridPlane (gp_Pnt &origin, gp_Dir &normal)
+{
+    gp_Ax3 system(origin,normal);
+    Handle(Geom_Plane) plane=new Geom_Plane(system);
+    gp_Pln barePlane=plane->Pln();
+    set_gridPlane(barePlane);
+}
+
+void CustomOpenGLWidget::set_gridPlane (gp_Pln &plane)
+{
+    drawingPlane=plane;
+    viewer->SetPrivilegedPlane(drawingPlane.Position());
+}
+
+void CustomOpenGLWidget::showGrid (Standard_Real xOrigin, Standard_Real yOrigin,
+                                  Standard_Real xStep, Standard_Real yStep, Standard_Real rotationAngle,
+                                  Standard_Real xSize, Standard_Real ySize, Standard_Real offset)
+{
+    viewer->SetRectangularGridValues(xOrigin,yOrigin,xStep,yStep,rotationAngle);
+    viewer->SetRectangularGridGraphicValues(xSize,ySize,offset);
+    viewer->ActivateGrid(Aspect_GT_Rectangular,Aspect_GDM_Lines);
+}
+
+void CustomOpenGLWidget::hideGrid ()
+{
+    viewer->DeactivateGrid();
+}
+
+void CustomOpenGLWidget::selectRectangle ()
+{
+    // disable view rotation while selecting
+    SetAllowRotation(Standard_False);  // works
+    SetAllowZooming(Standard_False);   // drawing box is not shown, but it is functional: bug in OCCT?
+    SetAllowPanning(Standard_False);   // drawing box is not shown, but it is functional: bug in OCCT?
+
+    if (rectSelect) delete rectSelect;
+    rectSelect=new RectangleSelector(viewerContext,view,this);
+
+    connect(rectSelect,&RectangleSelector::selectionFinished,this,&CustomOpenGLWidget::endSelectRectangle);
+}
+
+void CustomOpenGLWidget::endSelectRectangle ()
+{
+    viewerContext->InitSelected();
+    while (viewerContext->MoreSelected()) {
+        Handle(AIS_InteractiveObject) anIO = viewerContext->SelectedInteractive();
+        Handle(AIS_Shape) shape = Handle(AIS_Shape)::DownCast(anIO);
+        drawingTracker->selectItemShape(shape);
+        viewerContext->NextSelected();
+    }
+
+    if (rectSelect) delete rectSelect;
+    rectSelect=nullptr;
+    updateViewer();
+}
+

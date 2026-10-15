@@ -2,6 +2,7 @@
 
 Material
    name=alumina
+   type=dielectric
    Temperature
       temperature=any
       Frequency

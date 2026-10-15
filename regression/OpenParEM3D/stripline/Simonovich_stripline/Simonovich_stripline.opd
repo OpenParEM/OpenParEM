@@ -1,0 +1,107 @@
+#OpenParEMgDrawing 1.0
+
+Extrude
+   name=lower
+   material=core
+   length=0.001
+   Rectangle
+      name=Rectangle6_copy
+      origin=(0.00486,0,0)
+      width=-0.0099994
+      height=0.0003048
+      isSquare=0
+      tempWidth=0
+      tempHeight=0
+      u=(1,0,0)
+      v=(0,1,0)
+      normal=(0,0,1)
+      reverse=false
+   EndRectangle
+EndExtrude
+Subtract
+   name=upper
+   material=prepreg
+   Extrude
+      name=Extrude3
+      length=0.001
+      Rectangle
+         name=Rectangle6
+         origin=(0.00486,-0.000301,0)
+         width=-0.0099994
+         height=0.000301
+         isSquare=0
+         tempWidth=0
+         tempHeight=0
+         u=(1,0,0)
+         v=(0,1,0)
+         normal=(0,0,1)
+         reverse=false
+      EndRectangle
+   EndExtrude
+   Extrude
+      name=Extrude2
+      length=0.001
+      Polyline
+         name=Polyline1
+         point=(0,0,0)
+         point=(-1.833e-05,-3.175e-05,0)
+         point=(-0.00026107,-3.175e-05,0)
+         point=(-0.0002794,0,0)
+         point=(0,0,0)
+         normal=(0,0,1)
+         reverse=false
+      EndPolyline
+   EndExtrude
+EndSubtract
+Rectangle
+   name=dummy1
+   origin=(3.5e-05,-5.5e-05,0.001)
+   width=0.00035
+   height=9e-05
+   isSquare=0
+   tempWidth=0
+   tempHeight=0
+   u=(-1,0,0)
+   v=(0,1,-0)
+   normal=(-0,-0,-1)
+   reverse=false
+EndRectangle
+Rectangle
+   name=dummy2
+   origin=(8.5e-05,-8.5e-05,0.001)
+   width=0.00045
+   height=0.00015
+   isSquare=0
+   tempWidth=0
+   tempHeight=0
+   u=(-1,0,0)
+   v=(0,1,-0)
+   normal=(-0,-0,-1)
+   reverse=false
+EndRectangle
+Rectangle
+   name=dummy3
+   origin=(3.5e-05,-5.50000000000001e-05,0)
+   width=0.00035
+   height=9e-05
+   isSquare=0
+   tempWidth=0
+   tempHeight=0
+   u=(-1,0,0)
+   v=(0,1,-0)
+   normal=(-0,-0,-1)
+   reverse=false
+EndRectangle
+Rectangle
+   name=dummy4xxxxxxxxxx
+   origin=(8.5e-05,-8.50000000000001e-05,0)
+   width=0.00045
+   height=0.00015
+   isSquare=0
+   tempWidth=0
+   tempHeight=0
+   u=(-1,0,0)
+   v=(0,1,-0)
+   normal=(-0,-0,-1)
+   reverse=false
+EndRectangle

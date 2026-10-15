@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -32,5 +32,7 @@ char* get_prefix_text ()
    return prefix_text;
 }
 
-void prefix () {PetscPrintf(PETSC_COMM_WORLD,"%s",prefix_text);}
+void prefix () {
+    PetscPrintf(PETSC_COMM_WORLD,"%s",prefix_text);
+}
 

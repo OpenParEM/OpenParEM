@@ -1,0 +1,38 @@
+#OpenParEMgDrawing 1.0
+
+Extrude
+   name=Extrude1
+   material=teflon
+   length=0.1
+   Rectangle
+      name=Rectangle2
+      origin=(0.01043,0,0)
+      width=0.002
+      height=0.01016
+      isSquare=0
+      tempWidth=0
+      tempHeight=0
+      u=(1,0,0)
+      v=(0,1,0)
+      normal=(0,0,1)
+      reverse=false
+   EndRectangle
+EndExtrude
+Extrude
+   name=Extrude2
+   material=air
+   length=0.1
+   Rectangle
+      name=Rectangle1
+      origin=(0,0,0)
+      width=0.02286
+      height=0.01016
+      isSquare=0
+      tempWidth=0
+      tempHeight=0
+      u=(1,0,0)
+      v=(0,1,0)
+      normal=(0,0,1)
+      reverse=false
+   EndRectangle
+EndExtrude

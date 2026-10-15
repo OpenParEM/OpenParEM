@@ -6,6 +6,9 @@ AC_CONFIG_HEADERS([OpenParEMCommon/config.h])
 AC_PROG_RANLIB()
 AM_PROG_AR()
 
+# Compile with MPI
+AC_DEFINE_UNQUOTED([HAS_MPI], [1], [Set to 1 for MPI])
+
 # Checks for programs.
 AC_PROG_CXX(mpicxx)
 AC_PROG_CC(mpicc)
@@ -28,23 +31,97 @@ AC_CHECK_LIB([dl], [dlvsym], ,AC_MSG_ERROR([cannot link to libdl; check config.l
 # Paths
 #LDFLAGS="$LDFLAGS -L${prefix}/lib -L/usr/lib/x86_64-linux-gnu"
 LDFLAGS="$LDFLAGS -L${prefix}/lib -L${prefix}/lib64"
-CXXFLAGS="$CXXFLAGS -I${prefix}/include" 
-CFLAGS="$CFLAGS -I${prefix}/include"
+CXXFLAGS="$CXXFLAGS -DHAS_MPI -I${prefix}/include" 
+CFLAGS="$CFLAGS -DHAS_MPI -I${prefix}/include"
 
 AC_CHECK_LIB([util], [openpty], ,AC_MSG_ERROR([cannot link to libutil; check config.log]))
 
-AC_CHECK_LIB([z], [deflateInit_], ,AC_MSG_ERROR([cannot link to libz; check config.log]))
-AC_CHECK_LIB([event], [event_config_new], ,AC_MSG_ERROR([cannot link to libevent; check config.log]))
-AC_CHECK_LIB([hwloc], [hwloc_obj_type_snprintf], ,AC_MSG_ERROR([cannot link to libhwloc; check config.log]))
-AC_CHECK_LIB([event_pthreads], [evthread_use_pthreads], ,AC_MSG_ERROR([cannot link to libevent_pthreads; check config.log]))
-AC_CHECK_LIB([pmix], [PMIx_Info_load], ,AC_MSG_ERROR([cannot link to libpmix; check config.log]))
-AC_CHECK_LIB([open-pal], [opal_event_alloc], ,AC_MSG_ERROR([cannot link to libopen-pal; check config.log]))
-AC_CHECK_LIB([open-rte], [orte_util_print_name_args], ,AC_MSG_ERROR([cannot link to libopen-rte; check config.log]))
 
-AC_CHECK_LIB([mpi], [MPI_Init], ,AC_MSG_ERROR([cannot link to libmpi; check config.log]))
-AC_CHECK_LIB([mpi_mpifh], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_mpifh; check config.log]))
-AC_CHECK_LIB([mpi_usempif08], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_usempif08; check config.log]))
-AC_CHECK_LIB([mpi_usempi_ignore_tkr], [mpi_init_], ,AC_MSG_ERROR([cannot link to libmpi_usempi_ignore_tkr; check config.log]))
+# OpenMPI
+
+have_open_pal=yes
+AC_CHECK_LIB([open-pal], [opal_event_alloc], , [have_open_pal=no])
+have_open_rte=yes
+AC_CHECK_LIB([open-rte], [orte_util_print_name_args], , [have_open_rte=no])
+
+have_mpi=yes
+AC_CHECK_LIB([mpi], [MPI_Init], , [have_mpi=no])
+have_mpifh=yes
+AC_CHECK_LIB([mpi_mpifh], [mpi_init_], , [have_mpifh=no])
+have_mpi_usempif08=yes
+AC_CHECK_LIB([mpi_usempif08], [mpi_init_], , [have_mpi_usempif08=no])
+have_mpi_usempi_ignore_tkr=yes
+AC_CHECK_LIB([mpi_usempi_ignore_tkr], [mpi_init_], , [have_mpi_usempi_ignore_tkr=no])
+
+have_openmpi=yes
+if test "$have_open_pal" = "no"; then
+   have_openmpi=no
+fi
+if test "$have_open_rte" = "no"; then
+   have_openmpi=no
+fi
+if test "$have_mpi" = "no"; then
+   have_openmpi=no
+fi
+if test "$have_mpifh" = "no"; then
+   have_openmpi=no
+fi
+if test "$have_mpi_usempif08" = "no"; then
+   have_openmpi=no
+fi
+if test "$have_mpi_usempi_ignore_tkr" = "no"; then
+   have_openmpi=no
+fi
+
+
+# MPICH
+
+# Check C library variants
+#AC_CHECK_LIB([mpi], [MPI_Init], [have_mpi=yes], [have_mpi=no])
+have_mpich=yes
+AC_CHECK_LIB([mpich], [MPI_Init], , [have_mpich=no])
+
+# Check C++ library variants
+have_mpicxx=yes
+AC_CHECK_LIB([mpicxx], [MPI_Init], , [have_mpicxx=no])
+have_mpichcxx=yes
+AC_CHECK_LIB([mpichcxx], [MPI_Init], , [have_mpichcxx=no])
+
+# Check Fortran libraries
+have_mpifort=yes
+AC_CHECK_LIB([mpifort], [MPI_Init], , [have_mpifort=no])
+have_mpichf90=yes
+AC_CHECK_LIB([mpichf90], [MPI_Init], , [have_mpichf90=no])
+have_fmpich=yes
+AC_CHECK_LIB([fmpich], [MPI_Init], , [have_fmpich=no])
+
+have_mpich=yes
+if test "$have_mpi" = "no"; then
+   have_mpich=no
+fi
+if test "$have_mpich" = "no"; then
+   have_mpich=no
+fi
+if test "$have_mpicxx" = "no"; then
+   have_mpich=no
+fi
+if test "$have_mpichcxx" = "no"; then
+   have_mpich=no
+fi
+if test "$have_mpifort" = "no"; then
+   have_mpich=no
+fi
+if test "$have_mpichf90" = "no"; then
+   have_mpich=no
+fi
+if test "$have_fmpich" = "no"; then
+   have_mpich=no
+fi
+
+if test "$have_openmpi" = "no" && test "$have_mpich" = "no"; then
+   AC_MSG_ERROR([cannot find OpenMPI or MPICH library; check config.log])
+fi
+
 
 AC_CHECK_LIB([metis], [METIS_PartGraphKway], ,AC_MSG_ERROR([cannot link to libmetis; check config.log]))
 AC_CHECK_LIB([HYPRE], [hypre_ParCSRMatrixCreate], ,AC_MSG_ERROR([cannot link to libHYPRE; check config.log]))
@@ -115,7 +192,8 @@ AC_LANG([C])
 
 AC_LANG([C++])
 LDFLAGS="$LDFLAGS -L$PWD/OpenParEMCommon"
-LIBS="$LIBS -lOpenParEMCommon -lpetscsys -ldl -lmpi_mpifh -lgfortran -lquadmath"
+#LIBS="$LIBS -lOpenParEMCommon -lpetscsys -ldl -lmpi_mpifh -lgfortran -lquadmath"
+LIBS="$LIBS -lOpenParEMCommon -lpetscsys -ldl -lgfortran -lquadmath"
 AC_LANG([C])
 
 # Checks for header files.

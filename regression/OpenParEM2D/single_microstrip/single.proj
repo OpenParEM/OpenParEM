@@ -3,7 +3,7 @@
 project.save.fields               false
 
 mesh.file                         single.msh
-mesh.order                        4
+fem.order                         4
 
 mode.definition.file              single_lines.txt
 
@@ -29,7 +29,7 @@ solution.modes.buffer             0
 solution.impedance.definition     PI
 solution.impedance.calculation    line
 solution.shift.invert             true
-solution.use.initial.guess        true
+solution.initial.guess.level      2
 
 output.show.refining.mesh         false
 output.show.postprocessing        false

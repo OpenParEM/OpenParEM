@@ -3,8 +3,8 @@
 project.save.fields               false
 
 mesh.file                         ../partially_filled_waveguide.msh
-mesh.order                        5
 mesh.uniform_refinement.count     0
+fem.order                         5
 
 mode.definition.file                    
 
@@ -32,7 +32,6 @@ solution.impedance.definition     none
 solution.impedance.calculation    modal
 solution.accurate.residual        false
 solution.shift.invert             true
-solution.use.initial.guess        true
 
 output.show.refining.mesh         false
 output.show.postprocessing        false

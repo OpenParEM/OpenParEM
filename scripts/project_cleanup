@@ -1,21 +1,25 @@
-cd $1
-pwd
-rm -f -v *_attributes.csv
-rm -f -v *_iterations.txt
-rm -f -v *_results.csv
-rm -f -v *.log
-rm -f -v *_results.txt
-rm -f -v *.s1p
-rm -f -v *.s2p
-rm -f -v *.s3p
-rm -f -v *.s4p
-rm -f -v *_test_results.csv
-rm -f -v .*.lock
-rm -f -v *.FCBak
-rm -f -v *_prototype_test_cases.csv
-rm -f -v *.bak
-rm -f -v *.FCStd1
-rm -f -v *.orig
-rm -f -v *_test.proj
-rm -f -v junk
-rm -Rf temp_*
+#!/bin/sh
+
+find $1 -name "*_attributes.csv" -print | xargs /bin/rm -rf
+find $1 -name "*_iterations.txt" -print | xargs /bin/rm -rf
+find $1 -name "*_results.csv" -print | xargs /bin/rm -rf
+find $1 -name "*.log" -print | xargs /bin/rm -rf
+find $1 -name "*_results.txt" -print | xargs /bin/rm -rf
+find $1 -name "*.s1p" -print | xargs /bin/rm -rf
+find $1 -name "*.s2p" -print | xargs /bin/rm -rf
+find $1 -name "*.s3p" -print | xargs /bin/rm -rf
+find $1 -name "*.s4p" -print | xargs /bin/rm -rf
+find $1 -name "*_test_results.csv" -print | xargs /bin/rm -rf
+find $1 -name ".*.lock" -print | xargs /bin/rm -rf
+find $1 -name "*.FCBak" -print | xargs /bin/rm -rf
+find $1 -name "*_prototype_test_cases.csv" -print | xargs /bin/rm -rf
+find $1 -name "*.bak" -print | xargs /bin/rm -rf
+find $1 -name "*.FCStd1" -print | xargs /bin/rm -rf
+find $1 -name "*.orig" -print | xargs /bin/rm -rf
+find $1 -name "*_test.proj" -print | xargs /bin/rm -rf
+find $1 -name "junk*" -print | xargs /bin/rm -rf
+find $1 -name "temp_*" -print | xargs /bin/rm -rf
+find $1 -name "ParaView_*" -print | xargs /bin/rm -rf
+find $1 -name "Report_*" -print | xargs /bin/rm -rf
+find $1 -name "*_FarField.csv" -print | xargs /bin/rm -rf
+

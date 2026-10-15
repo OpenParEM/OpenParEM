@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -24,12 +24,15 @@
 #ifndef PROJECT_H
 #define PROJECT_H
 
-#include "petscsys.h"
-#include <stddef.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <quadmath.h>
 #include "inputFrequency.h"
+#include "petscsys.h"
+#include "petscsystypes.h"
 
 char* removeNewLineChar (char *);
 char *removeComment (char *);
@@ -45,6 +48,13 @@ struct inputAntennaPattern {
    double theta,phi,latitude,rotation;
 };
 
+struct physicalGroupMaterial {
+    int lineNumber;        // line number in the project file
+    int dim;               // dimension of the physicalGroup in the Brep model
+    int tag;               // tag of the physicalGroup in the Brep model
+    char *materialName;    // material name for the physical group
+};
+
 struct projectData {
    char* version_name;       // set in init_project 
    char* version_value;      // set in init_project
@@ -55,11 +65,12 @@ struct projectData {
    int project_save_fields;
 
    char *mesh_file;
-   int mesh_order;
    int mesh_save_refined;
    double mesh_2D_refinement_fraction;
    double mesh_3D_refinement_fraction;
    double mesh_quality_limit;
+
+   int fem_order;
 
    char *port_definition_file;
 
@@ -98,8 +109,8 @@ struct projectData {
    int solution_check_homogeneous;
    int solution_accurate_residual;
    int solution_shift_invert;
-   int solution_use_initial_guess;
    double solution_shift_factor;
+   int solution_initial_guess_level;
 
    int inputAntennaPatternsCount;
    int inputAntennaPatternsAllocated;
@@ -142,6 +153,21 @@ struct projectData {
    double *field_points_y;
    double *field_points_z;
 
+   // GUI keywords - not required for standalone operation
+
+   char *gui_units;
+   int gui_slot_count;
+   int gui_oversubscribe;
+   double gui_grid_size;
+   double gui_mesh_scale;
+   double gui_mesh_minSize;
+   double gui_mesh_maxSize;
+
+   // keyword and format:
+   int physicalGroupMaterialCount;
+   int physicalGroupMaterialAllocated;
+   struct physicalGroupMaterial *physicalGroupMaterials;
+
    // not user settable
 
    char *project_name;
@@ -149,6 +175,8 @@ struct projectData {
    int version_major;
    int version_minor;
    int version_patch;
+
+   int modified;
 };
 
 #endif

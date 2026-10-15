@@ -27,7 +27,7 @@ Note: The regression tests are set up to exercise and to check setop options for
 
 4. To check errors in all projects, from the regression directory:
 
-   regression3D.sh >& regression.log
+   regression >& regression.log
 
 5. To check the files for issues, run:
 

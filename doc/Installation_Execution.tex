@@ -15,8 +15,8 @@
 \hyphenation{wave-guide}
 \renewcommand\_{\textunderscore\linebreak[1]}
 
-\title{OpenParEM Installation and Execution\\\large Version 2.0}
-\date{April 2025}
+\title{OpenParEM Installation and Execution\\\large Version 2.1}
+\date{October 2026}
 \author{Brian Young}
 
 \begin{document}
@@ -29,7 +29,7 @@
    \vskip1cm
    {\Large Version 2.1} \\
    \vskip1cm
-   {\Large April 2025} \\
+   {\Large October 2026} \\
    \vskip1cm
    {\Large Brian Young} \\
 
@@ -38,7 +38,7 @@
    \includegraphics[width=0.5\textwidth]{figures/logo-crop}
 
    \vspace*{\fill}
-   Copyright \copyright{} 2025 Brian Young. All Rights Reserved.
+   Copyright \copyright{} 2026 Brian Young. All Rights Reserved.
 \end{titlepage}
 
 %\newpage
@@ -47,15 +47,70 @@
 \newpage
 \section{Introduction}
 
-OpenParEM consists of the 3D simulator OpenParEM3D and the 2D simulator OpenParEM2D plus some helper tools.  All can be compiled from source or installed as pre-compiled bindaries for x86 architectures.
+OpenParEM consists of the 3D simulator OpenParEM3D, its graphical user interface (GUI) front-end OpenParEMg, and the 2D simulator OpenParEM2D plus some helper tools.  All can be compiled from source or installed as pre-compiled bindaries for x86 architectures.
 
-OpenParEM uses command-line tools for solving electromagnetic problems once provided with the necessary input files.  The primary required input files are a mesh describing the geometry, text files describing modes for OpenParEM2D and ports for OpenParEM3D, and a text project control file.  The user is responsible for pulling together the necessary tools to create the needed files.
+OpenParEMg provides a front-end for building 3D models, setting up 3D simulations, and executing simulations using OpenParEM3D and OpenParEM2D in the background.  OpenParEMg does 
+not support plotting or graphing, so external tools are required for these tasks.  For plotting S-parameters, any of the free S-parameter plotting tools can be used, or charts can be built in spreadsheet tools.  For plots of electromagnetic fields, output is provided for ParaView \cite{paraview}.  ParaView, spreadsheets, or other post-processing tools must be installed separately.
 
-Assembling a tool flow is a very significant task.  For the development of OpenParEM, a tool flow is developed around FreeCAD \cite{freecad}, gmsh \cite{gmsh}\cite{gmshweb}, and ParaView \cite{paraview}.  The user's manuals describe in detail how to use these tools to complete projects.  For FreeCAD and ParaView, provided Python scripts greatly simplify the effort to set up and review solutions.
+OpenParEMg is not required to run OpenParEM3D.  The necessary files to run OpenParEM3D (and OpenParEM2D) can be built from other tools, such as with FreeCAD \cite{freecad} for 3D modeling, gmsh \cite{gmsh}\cite{gmshweb} for meshing, scripts for modes and ports, and hand-edited project control files.  Examples of projects built using open-source tools other than OpenParEMg are provided in the tutorials and regression test cases.
+
+\section{Validated Operating Systems}
+
+OpenParEM is validated on a number of Linux flavors for the pre-compiled binary and for compiling from source. Validation in this context means that seven rigorous tests have been passed, and these tests are
+
+\begin{itemize}[nosep]
+   \item OpenParEM2D regression suite
+   \item OpenParEM3D regression suite
+   \item OpenParEMg regression suite.  This is the OpenParEM3D regression suite run from OpenParEMg.  Since the meshes between the OpenParEM3D regression suite setups are not identical to the meshes in the OpenParEMg setups, the results vary slightly.  For cases with larger differences, the OpenParEMg setup needs maintenance.
+   \item OpenParEMg stress test.  A large number of drawing operations are scripted and repeated 1000 times to help ensure that memory issues do not build during long sessions leading to crashes.
+   \item WR90 straight waveguide stress test.  The straight waveguide case is build via script and executed.  This is repeated 500 times to help ensure that memory isses do not build during long sessions leading to crashes.
+   \item builder regression suite.  For the builder tool.
+   \item hand-drawn complex test case
+\end{itemize}
+
+\noindent The validation results are summarized in Table~\ref{table:validatedLinux}, showing the results for each for the pre-compiled binary and for compiling from source.
+
+\begin{table}[H]
+\small
+\caption{Validated Linux Flavors for OpenParEM.}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+Linux & Version & Pre-compiled & Compiled From & Note \\
+      &         & Binary       & Source        &      \\
+\hline
+Ubuntu & 22.04.5 LTS & pass & pass & Source for the pre-compiled \\
+       &             &      &      & binary. See Note 1. \\
+Ubuntu & 24.04.5 LTS & pass & pass & \\
+Ubuntu & 26.04.1 LTS & pass & pass & \\
+Debian & 13 (trixie) & pass & pass & \\
+Fedora & 44 (Workstation Edition) & pass & FAIL & See Note 2. \\
+openSUSE & 16.0 (Leap) & pass & pass & \\
+Windows WSL2 & Ubuntu 26.04.1 LTS & pass & pass & See Notes 3 and 4.\\
+\hline
+\end{tabular}
+\end{center}
+\label{table:validatedLinux}
+\end{table}
+
+\noindent Notes:
+
+\noindent 1. Compiling for Ubuntu 22 requires additional setup for Python as documented in Sec.~\ref{sec:Ubuntu22}.
+
+\noindent 2. For Fedora, compiling from source succeeds and passes most tests. However, the antenna regression tests with thin plates immediately crash OpenParEMg on opening the project.  Compiled under Fedora, OCCT does not retain sufficient precision to resolve thin plates.  Compiler settings would resolve this issue, but to date, the required settings have not been found after multiple attempts.
+
+\noindent 3. For Windows WSL2, when using the pre-compiled binary, the library libgfortran is required.  For WSL2 running Ubuntu, the following can be used to install the needed library.
+\begin{Verbatim}[fontsize=\small]
+   $ sudo apt update
+   $ sudo apt install gfortran
+\end{Verbatim}
+
+\noindent 4. For Windows WSL2, the window location cannot be set in the .OpenParEMg file.
+
 
 \section{Installing Pre-compiled Binaries}
 
-Pre-compiled binaries are available for x86 Linux and do not require administrator priviledges.
+Pre-compiled binaries are available for x86 Linux and do not require administrator priviledges to install. See Table~\ref{table:validatedLinux} for Linux flavors for which the pre-compiled binaries have been validated.
 The basic steps for installing binaries are listed below.  See the INSTALL file for more details and installation options.
 \begin{itemize}[nosep]
    \item Download the installation package OpenParEM-\textit{version}-bin.tar.gz
@@ -69,11 +124,11 @@ $ ln -s OpenParEM-version OpenParEM
 $ cd OpenParEM
 $ more INSTALL
          \end{Verbatim}
-   \item Set the PATH environment variable.  See the INSTALL file for details.
+   \item Set the PATH, FONTCONFIG\_PATH, OPAL\_PREFIX, and PMIX\_PREFIX environment variables.  See the INSTALL file for details.
    \item Install Python scripts for FreeCAD and ParaView:
          \begin{Verbatim}
 $ cd scripts
-$ OpenParEM_build --without-all
+$ OpenParEM\_build --without-all
          \end{Verbatim}
          The \texttt{--without-all} option installs the scripts while skipping all compilation.
    \item Test:
@@ -83,10 +138,39 @@ $ OpenParEM_test
    \item Installation is complete if both tests report \texttt{pass}.
 \end{itemize}
 
+\noindent The pre-compiled binaries are compiled with OpenMPI.
+
 \section{Compiling from Source}
 
-OpenParEM can be compiled for Linux-based operating systems and does not require administrator priviledges if the needed build tools make, g++, gfortran, and perl are already installed.
-The basic steps for compilation are listed below.  See the INSTALL file for more details and options.
+OpenParEM can be compiled for Linux-based operating systems and does not require administrator priviledges if the needed build tools installed such as g++ and make are installed on the system.  See Table~\ref{table:validatedLinux} for Linux flavors for which compiling has been validated.  The OpenParEM\_build script checks for the needed building tools and reports any missing tools.  After installing any missing tools, the build script can be re-run, and if all tools are found, then compilation proceeds.
+Note that when installing libtool, two packages are required to be installed: libtool and libtool-bin.
+
+When compiling, OpenMPI is the default, but MPICH can be used instead with a command-line switch.  Note that OpenParEM development, testing, and validation is done with OpenMPI.  Should issues occur when using MPICH, please contact the developers.
+
+\subsection{Downloaded Packages}
+
+OpenParEM requires many packages, such as OCCT and Qt, to compile.  These are downloaded and checked by the build script OpenParEM\_build.  Once downloaded, they are not re-downloaded on additional compilation runs, but they are re-checked.
+
+If a download error occurs, then the check will fail, and the build process will stop.  On subsequent runs of OpenParEM\_build, the process will stop at the faulty download.  To clear the faulty download, note the *.gz file on which OpenParEM\_build stops, then switch to the \texttt{external\_packages} directory and delete the gz file and any signature file (sig or asc) file with the matching file name.  Then re-run the build script.  Barring any download errors, OpenParEM\_build should always make it through the download step.
+
+\subsection{Ubuntu 22}
+\label{sec:Ubuntu22}
+
+The library \texttt{xkeyboard-config} requires Python 3.11, but due to its age, Ubuntu 22 uses Python 3.10.  To compile OpenParEM in Ubuntu 22 requires using Python 3.11 for compiling \texttt{xkeyboard-confg}.  Python 3.11 must be installed on the system, but it must not be installed for general system use to keep from breaking other applications.  The OpenParEM\_build script uses the installed Python 3.11 version in a virtual environment to avoid installing it for general use.
+
+To install Python 3.11, issue the following commands (requires root priviledge):
+\begin{verbatim}
+   $ sudo apt install software-properties-common
+   $ sudo add-apt-repository ppa:deadsnakes/ppa
+   $ sudo apt update
+   $ sudo apt install python3.11 python3.11-dev python3.11-venv
+\end{verbatim}
+
+During execution, \texttt{OpenParEM\_build} checks for the presence of Python 3.10, and if it finds it, it checks for the availability of python3.11.  If it finds it, processing continues, otherwise an error is printed.  Note that this simple check is not intended to cover any of the many possible corner cases: it is just here to get Ubuntu 22 to compile.
+
+\subsection{Using a Downloaded Package}
+
+For installing using a downloaded installation package, the basic steps for installation are listed below.  See the INSTALL file for more details and options.
 \begin{itemize}[nosep]
    \item Download the installation package OpenParEM-\textit{version}.tar.gz
    \item Unpack the package:
@@ -99,24 +183,60 @@ $ ln -s OpenParEM-version OpenParEM
 $ cd OpenParEM
 $ more INSTALL
          \end{Verbatim}
-   \item Install make, g++, gfortran, and/or perl as needed.
    \item Change into the scripts directory and compile:
          \begin{Verbatim}
 $ cd scripts
-$ ./OpenParEM_build --jobs=4 --with-all
+$ ./OpenParEM_build --jobs=4 
          \end{Verbatim}
-   \item On successful compilation, OpenParEM2D and OpenParEM3D are tested.  If both tests report \texttt{pass}, then compilation is complete.
+   \item Install any build tools that are reported as missing, such as make, g++, etc., then re-run.
+   \item On successful compilation, OpenParEM2D and OpenParEM3D are tested.  If both tests report \texttt{pass}, then compilation is complete. [Scroll back up the output to see the \texttt{pass/FAIL} output.]
    \item Set the PATH environment variable.  See the INSTALL file for details.
    \item Verify that PATH has been properly set by re-running the tests:
          \begin{Verbatim}
 $ OpenParEM_test
          \end{Verbatim}
-   \item If the two tests report \texttt{pass}, then installation is complete.
+   \item If the two tests report \texttt{pass}, then the installation is verified.
 \end{itemize}
+
+\subsection{Cloning from GitHub}
+
+For installing using using a cloned package from GitHub, the basic steps for installation are listed below.  See the INSTALL file for more details and options.
+\begin{itemize}[nosep]
+   \item Clone the project from GitHub.  This step requires that git is installed on the system.
+         \begin{Verbatim}
+$ git clone https://github.com/OpenParEM/OpenParEM
+         \end{Verbatim}
+   \item Change into the base directory and view the installation instructions:
+         \begin{Verbatim}
+$ cd OpenParEM
+$ more INSTALL
+         \end{Verbatim}
+   \item Change into the scripts directory and compile:
+         \begin{Verbatim}
+$ cd scripts
+$ ./OpenParEM_build --jobs=4
+         \end{Verbatim}
+   \item Install any build tools that are reported as missing, such as make, g++, etc., then re-run.
+   \item On successful compilation, OpenParEM2D and OpenParEM3D are tested.  If both tests report \texttt{pass}, then compilation is complete. [Scroll back up the output to see the \texttt{pass/FAIL} output.]
+   \item Set the PATH environment variable.  See the INSTALL file for details.
+   \item Verify that PATH has been properly set by re-running the tests:
+         \begin{Verbatim}
+$ OpenParEM_test
+         \end{Verbatim}
+   \item If the two tests report \texttt{pass}, then the installation is verified.
+\end{itemize}
+
+\section{Uninstalling}
+
+See the INSTALL file for uninstallation instructions.
+
+\section{OpenParEMg}
+
+OpenParEMg is a front-end GUI for OpenParEM3D, supporting 3D geometry creation, meshing, simulation setup, and simulation execution.  It does not support graphing or plotting since very capable options for these functions already exist as free open-source software.  User's will typically install ParaView (see below) for field plots and either a spreadsheet or S-parameter plotting tool for making S-parameter plots.
 
 \section{Flow Tools}
 
-OpenParEM is a command-line tool for running electromagnetic simulations only.  Pre- and post-processing must be handled by other tools.
+OpenParEM3D and OpenParEM2D are command-line tools for running electromagnetic simulations only.  Pre- and post-processing must be handled by other tools.  For pre-processing, OpenParEMg provides a complete front-end.  If not using OpenParEMg, then FreeCAD and gmsh along with handy scripts can implement a usable front-end, and their use is described in the tutorials. Many other tools exist that can be used to build a front-end process.  For post-processing, ParaView is supported for plotting fields.
 
 \subsection{FreeCAD}
 \label{sec:freecad}
@@ -133,19 +253,19 @@ Alternatively, to install FreeCAD from packages, execute
    $ sudo apt-get build-dep freecad
    $ sudo apt-get install freecad
 \end{verbatim}
-Installing from packages is fairly slow and also requires administrator priviledges..
+Installing from packages is fairly slow and also requires administrator priviledges.  For Linux flavors not using apt, then substitute the necessary package manager.
 
-The \texttt{OpenParEM\_build} installation script installs Python scripts to greatly simplify the use of FreeCAD in building OpenParEM projects.  The installed location is \texttt{\$HOME/.FreeCAD/Macro}.  Depending on the version of FreeCAD being used, it may be necessary to set the location for the python scripts using the "User macros location:" box in the "Execute macro window".
+The \texttt{OpenParEM\_build} installation script installs Python scripts to greatly simplify the use of FreeCAD in building OpenParEM projects.  The installed location is \texttt{\$HOME/.FreeCAD/Macro}.  Depending on the version of FreeCAD being used, it may be necessary to set the location for the python scripts using the "User macros location:" box in the "Execute macro window" within FreeCAD.
 
 To run FreeCAD, execute
 \begin{verbatim}
    $ freecad &
 \end{verbatim}
-On the first use of FreeCAD, set \texttt{View}$\rightarrow$\texttt{Panels}$\rightarrow$\texttt{Report View} to see messages and errors from the OpenParEM macros.
+On the first use of FreeCAD, set \texttt{View}$\rightarrow$\texttt{Panels}$\rightarrow$\texttt{Report View} to see messages and errors from the OpenParEM macros during their use.
 
 \subsection{gmsh}
 
-Since OpenParEM uses the finite element method, a mesh of the geometry to be solved is required. An effective free and open-source mesher is gmsh. Output from FreeCAD can be imported into gmsh and meshed, then the mesh can be saved for use by OpenParEM.  Gmsh is scriptable and callable from source, but to date, no automation with gmsh for OpenParEM2D or OpenParEM3D has been implemented.
+Since OpenParEM uses the finite element method, a mesh of the geometry to be solved is required. An effective free and open-source mesher is gmsh. Output from FreeCAD can be imported into gmsh and meshed, then the mesh can be saved for use by OpenParEM.
 
 To install gmsh, download the latest version of gmsh from \verb+https://gmsh.info/)+ to a suitable installation directory \textit{gmsh-install-dir},  then execute
 \begin{verbatim}
@@ -162,12 +282,12 @@ To run gmsh, execute
    $ gmsh -format msh22 &
 \end{verbatim}
 
-\noindent Note that OpenParEM only works with the msh22 format of gmsh due to library limitations.
+\noindent Note that OpenParEM has only been verified with the msh22 format of gmsh due to library limitations of older versions of MFEM.
 
 \subsection{ParaView}
 \label{sec:paraview}
 
-Both OpenParEM2D and OpenParEM3D can optionally produce outputs to enable viewing of 3D vector fields using ParaView \cite{paraview}, for which there is a free version. It is highly recommended to review the field plots at least initially on any new project.  While OpenParEM can use arbitrarily high order finite elements, ParaView is currently limited to finite element orders of 6 and lower.  As discussed in Sec.~\ref{sec:2Dplots}, a ParaView script is available to automate the building of plots for 2D solutions.
+Both OpenParEM2D and OpenParEM3D can optionally produce outputs to enable viewing of 3D vector fields using ParaView \cite{paraview}, for which there is a free version. It is highly recommended to review the field plots at least initially on any new project.  While OpenParEM can use arbitrarily high order finite elements, ParaView is currently limited to finite element orders of 6 and lower.
 
 To install ParaView, execute
 \begin{verbatim}
@@ -177,7 +297,7 @@ To install ParaView, execute
 \end{verbatim}
 \noindent This installation process requires administrator priviledges.
 
-The \texttt{OpenParEM\_build} installation script installs a Python script to greatly simplify the viewing of fields from OpenParEM2D simulations.  The installed location is \texttt{\$HOME/.config/ParaView/Macros}.
+The \texttt{OpenParEM\_build} installation script installs a Python scripts to greatly simplify the viewing of fields.  The installed location is \texttt{\$HOME/.config/ParaView/Macros}.
 
 To run ParaView, execute
 \begin{verbatim}
@@ -188,9 +308,15 @@ To run ParaView, execute
 
 A number of tools and scripts have been developed to help with setting up projects, project management, code management, and validation.
 
-\subsection{checkError}
+\subsection{change\_slot\_count.sh}
 
-This code development script scans the source code and checks error message numbers for missing or duplicate numbers.  It is separately run in the OpenParEMCommon, OpenParEM2D, and OpenParEM3D src directories.  Note that the error number convention is 1XXX for OpenParEMCommon, 2XXX for OpenParEM2D, and 3XXX for OpenParEM3D.  There is no convention for the error number orderings, and they may change from revision to revision.
+When running a project in OpenParEMg, the number of slots used for execution is given by the keyword/value pair \texttt{gui.slot.count N}, where $N$ is the number of slots to use.  When running a large number of projects on a new machine that supports a different $N$, change\_slot\_count.sh enables $N$ to be changed recursively.  For example, to change all of the projects' slot count for use with OpenParEMg from 12 to 6, execute
+\begin{verbatim}
+   $ cd install_path/OpenParEM/regression
+   $ change_slot_count.sh . 12 6
+\end{verbatim}
+
+\noindent Projects that are changed are listed.
 
 \subsection{proj\_search}
 
@@ -203,17 +329,21 @@ This is a useful script for finding keywords used in setup files.  The format is
 When executed, the script recursively searches all files ending with ".proj" that either has the search term or does not.  For example, to list the finite element order used in all projects in the directory tree, execute
 
 \begin{verbatim}
-   $ proj_search has mesh.order
+   $ proj_search has fem.order
 \end{verbatim}
 
 \noindent The output can be further processed using grep.  To continue the example, to find all projects that use a mesh order of 6, then execute
 \begin{verbatim}
-   $ proj_search has mesh.order | grep 6
+   $ proj_search has fem.order | grep 6
 \end{verbatim}
 
 \subsection{builder}
 
 Builder automates the construction of some common transmission line and waveguide types to help with impedance and material studies.  Outputs for use with OpenParEM2D or OpenParEM3D are selectable.  For more information, see the document "builder\_User\_Manual.pdf".
+
+\subsection{checkError}
+
+This code-development script scans the source code and checks error message numbers for missing or duplicate numbers.  It is separately run in the OpenParEMCommon, OpenParEM2D, and OpenParEM3D src directories.  Note that the error number convention is 1XXX for OpenParEMCommon, 2XXX for OpenParEM2D, and 3XXX for OpenParEM3D.  There is no convention for the error number orderings, and they may change from revision to revision.
 
 \subsection{waveguide}
 
@@ -263,6 +393,16 @@ The program tline3 is a custom solver for the cascade of three transmission line
 
 \section{Execution}
 
+OpenParEMg is simply started at the command line as
+\begin{verbatim}
+   $ OpenParEMg
+\end{verbatim}
+Some information is scrolled to the starting terminal, particularly from gmsh, and this can be captured into a log file, if desired, with
+\begin{verbatim}
+   $ OpenParEMg >& OpenParEMg.log
+\end{verbatim}
+\noindent Execution of OpenParEM3D and OpenParEM2D are completely managed by OpenParEMg.  Even when a project is set up in OpenParEMg, it is always possible to run OpenParEM3D manually as described next.
+
 OpenParEM2D and OpenParEM3D are command-line tools executed with the following commands when parallel processing
 \begin{verbatim}
    $ mpirun -q --oversubscribe -np N OpenParEM2D my_project.proj 
@@ -275,11 +415,15 @@ and
 \end{verbatim}
 when running in serial on a single core.  Running on a single core is sometimes convenient when getting a new project up-and-running.
 
-When parallel processing, the \verb+-np+ option specifies the number of cores to use for the simulation, given by \verb+N+.  The \verb+-q+ option suppresses messages from the MPI infrastructure, which are rarely needed.  The \verb+--oversubscribe+ is required with OpenParEM3D when \verb+N+ is more than half the number of available cores.  
+When parallel processing, the \verb+-np+ option specifies the number of cores to use for the simulation, given by \verb+N+.  The \verb+-q+ option suppresses messages from the MPI infrastructure, which are rarely needed.  The \verb+--oversubscribe+ is required when using OpenMPI and when \verb+N+ is more than half the number of available cores.
 
-The number of cores to specify, \verb+N+, requires some consideration.  If the simulations are being spread across multiple computers, it is assumed that the user knows about MPI processing considerations and no further comments are provided.  For simulations on a single computer, \verb+N+ should always be set to equal to or less than the number of physical cores.  For high-performance computing, there is not sufficient left-over capacity for threads to be utilized.  Depending on the computer, setting \verb+N+ to the number of physical cores can (and probably will) run slower than if \verb+N+ is set to a lower number.  The reason is that the available bandwidth on the CPU itself and to/from memory becomes saturated, so adding more cores causes MPI messages to be delayed due to limited bandwidth, slowing overall performance.  Experimenting with the value of \verb+N+ can identify the value that produces the fastest run times for a given computer.  Different computers have different optimal values of \verb+N+.  See Sec.~\ref{sec:computer} for additional discussion.
+\section{Specifying Core Counts}
 
-When running OpenParEM2D with \verb+N+ cores, \verb+N+ copies of OpenParEM2D are run in parallel with one instance per core.  When running OpenParEM3D with \verb+N+ cores, \verb+N+ copies of OpenParEM3D are run with one instance per core, \textit{plus} \verb+N+ copies of OpenParEM2D are run with one instance per core while ports are being solved.  For some times during the simulation, 2*\verb+N+ cores are being utilized, and if 2\verb+N+~\textgreater~the number of physical cores, then MPI issues an error and exits.  Specifying \verb+--oversubscribe+ allows processing to continue without errors.  OpenParEM3D sleeps while OpenParEM2D runs, so the actual load on the computer is only slightly more than \verb+N+.
+OpenParEM3D and OpenParEM2D can be run using parallel processing to reduce run times, and the user control for this is the number of cores specified for the simulation.  The number of cores is set in OpenParEMg in the \texttt{Simulation Setup/Options ...} window, and when running at the command line, by the \verb+-np+ command line option to \texttt{mpirun}. 
+
+The number of cores to specify requires some consideration.  For simulations on a single computer, \verb+N+ should always be set to equal to or less than the number of physical cores.  For high-performance computing, there is not sufficient left-over capacity for threads to be utilized.  Depending on the computer, setting \verb+N+ to the number of physical cores can (and probably will) run slower than if \verb+N+ is set to a lower number.  The reason is that the available bandwidth on the CPU itself and to/from memory becomes saturated, so adding more cores causes MPI messages to be delayed due to limited bandwidth, slowing overall performance.  Experimenting with the value of \verb+N+ can identify the value that produces the fastest run times for a given computer.  Different computers have different optimal values of \verb+N+.  See Sec.~\ref{sec:computer} for additional discussion.
+
+When running OpenParEM2D with \verb+N+ cores, \verb+N+ copies of OpenParEM2D are run in parallel with one instance per core.  When running OpenParEM3D with \verb+N+ cores, \verb+N+ copies of OpenParEM3D are run with one instance per core, \textit{plus} \verb+N+ copies of OpenParEM2D are run with one instance per core while ports are being solved.  For some times during the simulation, 2*\verb+N+ cores are being utilized.  If running MPI with OpenMPI and if 2\verb+N+~\textgreater~the number of physical cores, then OpenMPI issues an error and exits.  Specifying \verb+--oversubscribe+ allows processing to continue without errors.  OpenParEM3D sleeps while OpenParEM2D runs, so the actual load on the computer is only slightly more than \verb+N+.
 
 \section{Computer Considerations for MPI}
 \label{sec:computer}
@@ -293,35 +437,6 @@ If specifying a computer for high-performance computing with MPI, target compute
 Maximum clock rate does play a role, and higher clock speeds do lead to faster run times for a given memory bandwidth.  High-end desktop PCs tend to have higher clock frequencies than workstations, and for simulations using low numbers of cores, the high-end PC may produce faster run times than a high-end workstation.  However, the PC saturates its bandwidth more quickly with increasing core count than the workstation due to memory bandwidth saturation, and at some number of cores, the workstation begins to produce faster run times, then it can continue driving run times down with increasing core counts until its memory bandwidth saturates.  For a workstation, more memory channels trumps higher clock rates.
 
 To recap, populate all memory channels with memory sticks to maximize bandwidth. If specifying a computer, prioritize memory channel counts over clock rates.  If budget allows, go for maximum memory channels \textit{and} maximum clock rate.
-
-\section{Change Log}
-
-\tabcolsep=0.1cm
-\small
-\begin{longtable}[c]{|p{1.5cm}p{3cm}p{11cm}|}
-    \hline
-    \textbf{Version} & \textbf{Date} & Description \\
-    \hline
-    \endfirsthead
-    \hline
-    \textbf{Project} & \textbf{Description} \\
-    \hline
-    \endhead
-   1.0.1 & Sept. 18, 2024 & Initial release \\
-   1.0.2 & Sept. 25, 2024 & - Fixed small memory leak in OpenParEM3D \\
-         &                & - Updated installation documentation for Ubuntu 22.04.5 LTS \\
-         &                & - Added change log to the installation documentation \\
-   1.0.3 & Oct. 5, 2024   & - Fixed a memory cleanup error \\
-         &                & - Ubuntu 24 now supported \\
-         &                & - Updated installation documentation for Ubuntu 24.04.1 LTS \\
-   2.0.0 & Mar. 4, 2025   & - Added detail for clarification \\
-         &                & - Rev'ed the release to 2.0.0 to align with OpenParEM3D \\
-   2.1.0 & April 29, 2025   & - Revamped for the merging of the OpenParEMCommon, OpenParEM2D, and OpenParEM3D into a single project \\
-         &                & - Updated for new build script \\
-   2.1.1 & May 20, 2024   & - Updated system calls for improved timing calculations, especially when using Windows WSL2 \\
-         &                & - Documentation update to include support for Windows WSL2 \\
-    \hline
-\end{longtable}
 
 \begin{thebibliography}{unsrt}
 

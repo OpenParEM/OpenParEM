@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -19,13 +19,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "jobrelated.hpp"
+#include "slepcsys.h"
 
-void exit_job_on_error (chrono::steady_clock::time_point job_start_time, const char *lockfile, bool removeLock)
+// tool: 2 for OpenParEM2D, 3 for OpenParEM3D
+void exit_job_base (chrono::steady_clock::time_point job_start_time, const char *lockfile, bool removeLock, int tool, int return_code)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job Complete\n");
+   MPI_Comm parent;
+   MPI_Comm_get_parent (&parent);
+
+   bool show_messages=true;
+   if (tool == 2 && parent != MPI_COMM_NULL) show_messages=false;
+   if (show_messages) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job Complete\n");}
 
    // remove the lock - not 100% safe
    if (rank == 0 && removeLock) {
@@ -36,21 +43,34 @@ void exit_job_on_error (chrono::steady_clock::time_point job_start_time, const c
 
    chrono::steady_clock::time_point job_end_time=chrono::steady_clock::now();
    chrono::duration<double> elapsed = job_end_time - job_start_time;
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",elapsed.count());
+   if (show_messages) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",elapsed.count());}
 
-   // notifiy the barrier and send the exit code in case OpenParEM2D was spawned by OpenParEM3D
-   MPI_Comm parent;
-   MPI_Comm_get_parent (&parent);
+   // send tags to complete requests
    if (parent != MPI_COMM_NULL) {
-      MPI_Barrier(parent);
-      int retval[1]={1};
-      MPI_Send(retval,1,MPI_INT,0,0,parent);
+      //std::cout << "OpenParEMCommon disconnect parent for tool=" << tool << std::endl; std::cout.flush();
+      MPI_Comm_disconnect(&parent);
    }
+   //std::cout << "OpenParEMCommon MPI_Barrier for PETSC_COMM_WORLD for tool=" << tool << std::endl; std::cout.flush();
 
+   MPI_Barrier(PETSC_COMM_WORLD);
+
+   //std::cout << "OpenParEMCommon PetscFinalize for tool=" << tool << std::endl; std::cout.flush();
    PetscFinalize();
 
-   exit(1);
+   //std::cout << "OpenParEMCommon exit for tool=" << tool << std::endl; std::cout.flush();
+   exit(0);  // ignore the return_code from the command line to avoid MPI shutting down for OpenMPI
 }
+
+void exit_job_on_error (chrono::steady_clock::time_point job_start_time, const char *lockfile, bool removeLock, int tool)
+{
+   exit_job_base(job_start_time,lockfile,removeLock,tool,1);
+}
+
+void exit_job (chrono::steady_clock::time_point job_start_time, const char *lockfile, bool removeLock, int tool)
+{
+   exit_job_base(job_start_time,lockfile,removeLock,tool,0);
+}
+
 
 // this method is not guaranteed
 char* create_lock_file (const char *baseName)
@@ -85,10 +105,26 @@ char* create_lock_file (const char *baseName)
       lock.open(lockfile,ofstream::out);
       if (lock.is_open()) {
          lock << "locked" << endl;
+         lock.flush();
          lock.close();
          is_locked=1;
       } else {
          prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1016: Cannot open \"%s\" for writing.\n",lockfile);
+      }
+
+      // wait for the lock file to appear
+      chrono::duration<double> elapsed;
+      chrono::steady_clock::time_point start;
+      chrono::steady_clock::time_point current;
+      start=chrono::steady_clock::now();
+      current=chrono::steady_clock::now();
+      elapsed=current-start;
+      while (!std::filesystem::exists(lockfile)) {
+         current=chrono::steady_clock::now();
+         elapsed=current-start;
+         if (elapsed.count() > 60) { // wait up to 60 seconds before proceeding anyway
+            break;
+         }
       }
    }
 
@@ -102,18 +138,33 @@ char* create_lock_file (const char *baseName)
 }
 
 // not 100% safe
-void remove_lock_file (const char *lockfile)
+extern "C" void remove_lock_file (const char *lockfile)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
    if (rank == 0) {
       if (std::filesystem::exists(lockfile)) {
         std::filesystem::remove(lockfile);
       }
    }
-   MPI_Barrier(PETSC_COMM_WORLD);
 }
+
+bool exists_file (const char *baseName, string pre, string post)
+{
+   PetscMPIInt rank;
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+   if (rank == 0) {
+      stringstream ss;
+      ss << pre << baseName << post;
+      if (std::filesystem::exists(ss.str().c_str())) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
 
 void delete_file (const char *baseName, string pre, string post)
 {

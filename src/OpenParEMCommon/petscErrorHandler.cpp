@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -20,8 +20,9 @@
 
 #include "petscErrorHandler.hpp"
 
-void exit_job_on_error (chrono::steady_clock::time_point, const char *, bool);
+void exit_job_on_error (chrono::steady_clock::time_point, const char *, bool, int);
 
+// tool: 2 for OpenParEM2D, 3 for OpenParEM3D
 PetscErrorCode errorHandler (MPI_Comm comm, int line, const char *fun, const char *file, PetscErrorCode n, PetscErrorType p, const char *mess, void *ctx)
 {
    PetscMPIInt rank;
@@ -42,7 +43,7 @@ PetscErrorCode errorHandler (MPI_Comm comm, int line, const char *fun, const cha
       else                                    cout << ((struct applicationContext *)ctx)->prefix_text << "ERROR1126: " << mess << endl;
    }
 
-   exit_job_on_error (((struct applicationContext *)ctx)->job_start_time,((struct applicationContext *)ctx)->lockfile,true);
+   exit_job_on_error (((struct applicationContext *)ctx)->job_start_time,((struct applicationContext *)ctx)->lockfile,true, ((struct applicationContext *)ctx)->tool);
 
    return ierr;
 }

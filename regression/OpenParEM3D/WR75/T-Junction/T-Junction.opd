@@ -1,0 +1,38 @@
+#OpenParEMgDrawing 1.0
+
+Extrude
+   name=Extrude1
+   material=air
+   length=0.06
+   Rectangle
+      name=Rectangle1
+      origin=(0,0,0)
+      width=0.01905
+      height=0.00476
+      isSquare=0
+      tempWidth=0.00281692152855558
+      tempHeight=-0.000501990343024354
+      u=(1,0,0)
+      v=(0,1,0)
+      normal=(0,0,1)
+      reverse=false
+   EndRectangle
+EndExtrude
+Extrude
+   name=Extrude2
+   material=air
+   length=0.03
+   Rectangle
+      name=Rectangle2
+      origin=(0,0.03476,0.03476)
+      width=0.00952
+      height=0.01905
+      isSquare=0
+      tempWidth=-0.00386351542848081
+      tempHeight=-0.0194481607282629
+      u=(0,-0,-1)
+      v=(1,0,0)
+      normal=(0,-1,0)
+      reverse=false
+   EndRectangle
+EndExtrude

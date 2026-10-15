@@ -1,0 +1,66 @@
+#OpenParEMports 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D/regression/WR90/straight-rotated-xyz/straight-rotated.FCStd
+EndFile
+
+Path
+   name=port1
+   point=(-0.028137347127417,-0.048826510127069,-0.085804462615299)
+   point=(-0.0345268191025276,-0.06560161036561879,-0.07164994885233691)
+   point=(-0.043579445388281415,-0.06114623549596157,-0.07045613475403434)
+   point=(-0.03718997341317082,-0.04437113525741178,-0.08461064851699643)
+   closed=true
+EndPath
+
+Path
+   name=v1
+   point=(-0.03133208311497,-0.057214060246341,-0.078727205733813)
+   point=(-0.0403847094007233,-0.0527586853766825,-0.0775333916355115)
+   closed=false
+EndPath
+
+Path
+   name=port2
+   point=(0.007637592455589,0.003058845455723,-0.00816385742781)
+   point=(0.0012481204804784063,-0.013716254782826785,0.005990656335152089)
+   point=(-0.007804505805275411,-0.009260879913169567,0.007184470433454663)
+   point=(-0.0014150338301648175,0.007514220325380216,-0.006970043329507425)
+   closed=true
+EndPath
+
+Path
+   name=v2
+   point=(0.004442856468033,-0.005328704663552,-0.001086600546329)
+   point=(-0.0046097698177208,-0.0008733297938948,0.0001072135519736)
+   closed=false
+EndPath
+
+Port
+   name=1
+   path=+port1
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=1
+      IntegrationPath
+         type=voltage
+         path=+v1
+      EndIntegrationPath
+   EndLine
+EndPort
+
+Port
+   name=2
+   path=+port2
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=2
+      IntegrationPath
+         type=voltage
+         path=+v2
+      EndIntegrationPath
+   EndLine
+EndPort
+

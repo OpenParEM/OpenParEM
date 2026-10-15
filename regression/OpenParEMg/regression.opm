@@ -1,0 +1,223 @@
+#OpenParEMgMacro 1.0
+
+# Align cases with those in regression/OpenParEM3D/regression_case_list.txt
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight straight.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-lossy straight.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-flipped straight-flipped.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-rotated-x straight-rotated.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-rotated-y straight-rotated.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-rotated-xyz straight-rotated.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/shorted shorted.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/opened opened.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-loaded straight-loaded.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-loaded-lossy straight-loaded.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-loaded-adaptive straight-loaded.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-loaded-adaptive straight-loaded_field.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-asymmetric straight-asymmetric.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/permeability/rectangular_waveguide straight.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/partially_filled_rect_waveguide/partially_filled_rect_waveguide_lossless part.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/partially_filled_rect_waveguide/partially_filled_rect_waveguide_lossy part.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/permeability/partially_filled_rect_waveguide part.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/antenna/dipole dipole.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/antenna/patch patch.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/antenna/square_monopole square-planar_12GHz.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR75/dielectric-loading dielectric-loading.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR75/T-Junction T-Junction.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/slotline/step step2.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/slotline/step step2_field.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/microstrip/bridge bridge_3p78.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/tee tee.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-adaptive straight.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-adaptive-reuse straight.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/shorted-adaptive shorted.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/shorted-adaptive shorted_field.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/stripline/Simonovich_stripline Simonovich_stripline.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-steps/small straight-steps.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-steps/small-renorm straight-steps.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/microstrip/filter filter.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/microstrip/single_line_short_PI single.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/microstrip/single_line_short_PV single.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/stripline/differential_pair_modal diffPair.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/stripline/differential_pair_line_mixed diffPair.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/stripline/differential_pair_line diffPair.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/stripline/differential_pair_via_modal diffPair.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/stripline/differential_pair_via_line_mixed diffPair.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/stripline/differential_pair_via_line diffPair.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+openProject /home/briany/OpenParEM/regression/OpenParEM3D/stripline/differential_pair_via_rot1_line_mixed diffPair.proj
+runSimulation
+runScript check_results.sh
+closeProject
+
+
+
+
+

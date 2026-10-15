@@ -1,0 +1,9 @@
+# ResultDatabase::save_as_test
+filter_1_0_result,3000000000,magS(dB),1,1,equal,-19.3042380805914,1e-06
+filter_1_1_result,3000000000,argS(deg),1,1,equal,63.2266168698431,1e-06
+filter_1_2_result,3000000000,magS(dB),2,1,equal,-0.912735952957392,1e-06
+filter_1_3_result,3000000000,argS(deg),2,1,equal,158.165100607741,1e-06
+filter_1_4_result,3000000000,magS(dB),1,2,equal,-0.912735952957392,1e-06
+filter_1_5_result,3000000000,argS(deg),1,2,equal,158.165100607741,1e-06
+filter_1_6_result,3000000000,magS(dB),2,2,equal,-19.1826942229834,1e-06
+filter_1_7_result,3000000000,argS(deg),2,2,equal,70.9472206941438,1e-06

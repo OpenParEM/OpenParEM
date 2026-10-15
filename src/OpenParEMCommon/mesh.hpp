@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -35,27 +35,30 @@
 #include "misc.hpp"
 #include "prefix.h"
 
-using namespace std;
+#include <iomanip>
+
 using namespace mfem;
+
 
 extern "C" void prefix ();
 
-bool is_comment (string);
-void split_on_space (vector<string> *, string);
-bool check_field_points (const char *, Mesh *, ParMesh *, int, int, int, double *, double *, double *);
-bool write_attributes (const char *, ParMesh *);
+bool is_comment (std::string);
+void split_on_space (std::vector<std::string> *, std::string);
+bool check_field_points (const char *, mfem::Mesh *, mfem::ParMesh *, int, int, int, double *, double *, double *);
+bool write_attributes (const char *, mfem::ParMesh *);
 
 class MeshMaterialList {
     private:
-       string GMSH_version_number="2.2";
-       string regionsFile_version_number="1.0";
+       std::string GMSH_version_number="2.2";
+       std::string regionsFile_version_number="1.0";
        int file_type;
        int data_size;
-       vector<int> index;       // mesh attribute (-1)
-       vector<string> list;     // material name
-       vector<bool> active;
+       std::vector<int> index;       // mesh attribute (-1)
+       std::vector<std::string> list;     // material name
+       std::vector<bool> active;
     public:
-       void set_active (vector<int> *);
+       void clear ();
+       void set_active (std::vector<int> *);
        bool load (const char *, int);
        void replace_index (int, int);
        int loadGMSH (const char *, int);
@@ -64,10 +67,12 @@ class MeshMaterialList {
        void print ();
        int size ();
        long unsigned int get_index (int);
-       string get_name (long unsigned int);
+       int get_index (long unsigned int);
+       std::string get_name (long unsigned int);
+       std::vector<std::string> getMaterialNames () {return list;}
 };
 
-void reset_attributes (Mesh *, ParMesh *, MeshMaterialList *);
+void reset_attributes (mfem::Mesh *, mfem::ParMesh *, MeshMaterialList *);
 
 class Vertex3D {
    private:
@@ -81,7 +86,7 @@ class Vertex3D {
 
 class Vertex3Ddatabase {
    private:
-      vector<Vertex3D *> vertex3DList;
+      std::vector<Vertex3D *> vertex3DList;
       double tol=1e-12;
    public:
       ~Vertex3Ddatabase ();
@@ -90,6 +95,10 @@ class Vertex3Ddatabase {
       long unsigned int find (Vertex3D *);
       long unsigned int push (Vertex3D *a) {vertex3DList.push_back(a); return vertex3DList.size()-1;}
 };
+
+bool WriteGmsh22(const mfem::Mesh &mesh,
+                 const std::string &filename,
+                 const std::vector<std::string> &materialNames);
 
 #endif
 

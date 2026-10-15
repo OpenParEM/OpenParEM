@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -477,14 +477,15 @@ void init_project (struct projectData *data) {
    data->project_save_fields=0;
 
    data->mesh_file=strdup("");
-   data->mesh_order=1;
    data->mesh_uniform_refinement_count=0;
    data->mesh_refinement_fraction=0.025;
    data->mesh_enable_refine=1;
 
+   data->fem_order=1;
+
    data->mode_definition_file=strdup("");
 
-   data->refinement_frequency=strdup("highlow");
+   data->refinement_frequency=strdup("high");
    data->refinement_variable=strdup("|gamma|");
    data->refinement_iteration_min=1;
    data->refinement_iteration_max=10;
@@ -512,10 +513,10 @@ void init_project (struct projectData *data) {
    data->solution_check_closed_loop=1;
    data->solution_accurate_residual=0;
    data->solution_shift_invert=1;
-   data->solution_use_initial_guess=1;
    data->solution_shift_factor=1;
    data->solution_initial_alpha=0;
    data->solution_initial_beta=0;
+   data->solution_initial_guess_level=2;
 
    data->output_show_refining_mesh=0;
    data->output_show_postprocessing=0;
@@ -587,9 +588,6 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0; if (defaultData && strcmp(data->mesh_file,defaultData->mesh_file) == 0) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.file %s\n",indent,comment[matched],data->mesh_file);
 
-   matched=0; if (defaultData && data->mesh_order == defaultData->mesh_order) matched=1;
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.order %d\n",indent,comment[matched],data->mesh_order);
-
    matched=0; if (defaultData && data->mesh_uniform_refinement_count == defaultData->mesh_uniform_refinement_count) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.uniform_refinement.count %d\n",indent,comment[matched],data->mesh_uniform_refinement_count);
 
@@ -598,6 +596,9 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
 
    matched=0;  if (defaultData && data->mesh_enable_refine == defaultData->mesh_enable_refine) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.enable.refine %s\n",indent,comment[matched],logic[data->mesh_enable_refine]);
+
+   matched=0; if (defaultData && data->fem_order == defaultData->fem_order) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sfem.order %d\n",indent,comment[matched],data->fem_order);
 
    matched=0; if (defaultData && strcmp(data->mode_definition_file,defaultData->mode_definition_file) == 0) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smode.definition.file %s\n",indent,comment[matched],data->mode_definition_file);
@@ -694,9 +695,6 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0;  if (defaultData && data->solution_shift_invert == defaultData->solution_shift_invert) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.shift.invert %s\n",indent,comment[matched],logic[data->solution_shift_invert]);
 
-   matched=0;  if (defaultData && data->solution_use_initial_guess == defaultData->solution_use_initial_guess) matched=1;
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.use.initial.guess %s\n",indent,comment[matched],logic[data->solution_use_initial_guess]);
-
    matched=0; if (defaultData && double_compare(data->solution_shift_factor,defaultData->solution_shift_factor,1e-14)) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.shift.factor %.15g\n",indent,comment[matched],data->solution_shift_factor);
 
@@ -705,6 +703,9 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
 
    matched=0; if (defaultData && double_compare(data->solution_initial_beta,defaultData->solution_initial_beta,1e-14)) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.initial.beta %.15g\n",indent,comment[matched],data->solution_initial_beta);
+
+   matched=0; if (defaultData && data->solution_initial_guess_level == defaultData->solution_initial_guess_level) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.initial.guess.level %d\n",indent,comment[matched],data->solution_initial_guess_level);
 
    matched=0;  if (defaultData && data->output_show_refining_mesh == defaultData->output_show_refining_mesh) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%soutput.show.refining.mesh %s\n",indent,comment[matched],logic[data->output_show_refining_mesh]);
@@ -947,17 +948,18 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                else if (strcmp(keyword,"mesh.order") == 0) {
                   value=strtok(NULL," ");
                   if (is_int(value)) {
-                     data->mesh_order=atoi(value);
+                     data->fem_order=atoi(value);
                      value=strtok(NULL," ");
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
-                     if (data->mesh_order < 1) {
+                     if (data->fem_order < 1) {
                         ierr=1;
                         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2233: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
                      }
-                     if (data->mesh_order > 20) {
+                     if (data->fem_order > 20) {
                         ierr=1;
                         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2234: Value must be <= 20 at line %d.\n",indent,indent,lineCount);
                      }
+                     prefix(); PetscPrintf (PETSC_COMM_WORLD,"%s%sINFO: Keyword \"mesh.order\" is deprecated for \"fem.order\" at line %d.\n",indent,indent,lineCount);
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
@@ -997,6 +999,23 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      data->mesh_enable_refine=get_bool(value);
                      value=strtok(NULL," ");
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                  } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"fem.order") == 0) {
+                  value=strtok(NULL," ");
+                  if (is_int(value)) {
+                     data->fem_order=atoi(value);
+                     value=strtok(NULL," ");
+                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                     if (data->fem_order < 1) {
+                        ierr=1;
+                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2236: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                     }
+                     if (data->fem_order > 20) {
+                        ierr=1;
+                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2278: Value must be <= 20 at line %d.\n",indent,indent,lineCount);
+                     }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
@@ -1319,7 +1338,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      free(data->solution_impedance_calculation);
                      data->solution_impedance_calculation=strdup("modal");
                      ierr=1;
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2252: Value must be \"modal (default)\" or \"line\" at line %d.\n",indent,indent,lineCount);
+                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2281: Value must be \"modal (default)\" or \"line\" at line %d.\n",indent,indent,lineCount);
                   }
                   if (! is_impedance_calculation(data->solution_impedance_calculation)) {
                      ierr=1;
@@ -1349,15 +1368,6 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                   value=strtok(NULL," ");
                   if (is_bool(value)) {
                      data->solution_shift_invert=get_bool(value);
-                     value=strtok(NULL," ");
-                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
-                  } else print_invalid_entry (&ierr,lineCount,indent);
-               }
-
-               else if (strcmp(keyword,"solution.use.initial.guess") == 0) {
-                  value=strtok(NULL," ");
-                  if (is_bool(value)) {
-                     data->solution_use_initial_guess=get_bool(value);
                      value=strtok(NULL," ");
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                   } else print_invalid_entry (&ierr,lineCount,indent);
@@ -1398,6 +1408,19 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (data->solution_initial_beta < 0) {
                         ierr=1;
                         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2256: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
+                     }
+                  } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"solution.initial.guess.level") == 0) {
+                  value=strtok(NULL," ");
+                  if (is_int(value)) {
+                     data->solution_initial_guess_level=atoi(value);
+                     value=strtok(NULL," ");
+                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                     if (data->solution_initial_guess_level < 0 || data->solution_initial_guess_level > 3) {
+                        ierr=1;
+                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR2279: Value must be 0, 1, 2, or 3 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1707,7 +1730,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send (&length,1,MPI_INT,i,1000002,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->mesh_file,length,MPI_CHAR,i,1000003,PETSC_COMM_WORLD);
 
-         ierr=MPI_Send(&(data->mesh_order),1,MPI_INT,i,1000004,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->fem_order),1,MPI_INT,i,1000004,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_uniform_refinement_count),1,MPI_INT,i,1000005,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_refinement_fraction),1,MPI_DOUBLE,i,1000007,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_enable_refine),1,MPI_INT,i,1000008,PETSC_COMM_WORLD);
@@ -1750,7 +1773,8 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send (&length,1,MPI_INT,i,1000027,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->refinement_tolerance,length,MPI_CHAR,i,1000028,PETSC_COMM_WORLD);
 
-         ierr=MPI_Send(&(data->inputFrequencyPlansCount),1,MPI_UNSIGNED_LONG,i,1000029,PETSC_COMM_WORLD);
+         planCount=data->inputFrequencyPlansCount;
+         ierr=MPI_Send(&planCount,1,MPI_INT,i,1000029,PETSC_COMM_WORLD);
 
          j=0;
          while (j < data->inputFrequencyPlansCount) {
@@ -1782,10 +1806,10 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send(&(data->solution_check_closed_loop),1,MPI_INT,i,1000047,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_accurate_residual),1,MPI_INT,i,1000048,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_shift_invert),1,MPI_INT,i,1000049,PETSC_COMM_WORLD);
-         ierr=MPI_Send(&(data->solution_use_initial_guess),1,MPI_INT,i,1000050,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_shift_factor),1,MPI_DOUBLE,i,1000051,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_initial_alpha),1,MPI_DOUBLE,i,1000074,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_initial_beta),1,MPI_DOUBLE,i,1000075,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->solution_initial_guess_level),1,MPI_INT,i,1000076,PETSC_COMM_WORLD);
 
          ierr=MPI_Send(&(data->output_show_refining_mesh),1,MPI_INT,i,1000052,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->output_show_postprocessing),1,MPI_INT,i,1000053,PETSC_COMM_WORLD);
@@ -1828,7 +1852,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(data->mesh_file,length,MPI_CHAR,0,1000003,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       data->mesh_file[length]='\0';
 
-      ierr=MPI_Recv(&(data->mesh_order),1,MPI_INT,0,1000004,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->fem_order),1,MPI_INT,0,1000004,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_uniform_refinement_count),1,MPI_INT,0,1000005,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_refinement_fraction),1,MPI_DOUBLE,0,1000007,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_enable_refine),1,MPI_INT,0,1000008,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
@@ -1887,7 +1911,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(data->refinement_tolerance,length,MPI_CHAR,0,1000028,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       data->refinement_tolerance[length]='\0';
 
-      ierr=MPI_Recv(&planCount,1,MPI_UNSIGNED_LONG,0,1000029,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&planCount,1,MPI_INT,0,1000029,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
       j=0;
       while (j < planCount) {
@@ -1926,10 +1950,10 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(&(data->solution_check_closed_loop),1,MPI_INT,0,1000047,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_accurate_residual),1,MPI_INT,0,1000048,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_shift_invert),1,MPI_INT,0,1000049,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-      ierr=MPI_Recv(&(data->solution_use_initial_guess),1,MPI_INT,0,1000050,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_shift_factor),1,MPI_DOUBLE,0,1000051,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_initial_alpha),1,MPI_DOUBLE,0,1000074,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_initial_beta),1,MPI_DOUBLE,0,1000075,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->solution_initial_guess_level),1,MPI_INT,0,1000076,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
       ierr=MPI_Recv(&(data->output_show_refining_mesh),1,MPI_INT,0,1000052,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->output_show_postprocessing),1,MPI_INT,0,1000053,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);

@@ -1,65 +1,73 @@
 #OpenParEMports 1.0
 
 File
-   name=/home/briany/Desktop/OpenParEM3D/regression/microstrip/filter_study/filter.FCStd
+   name=generated_by_OpenParEMg
 EndFile
 
 Path
-   name=V1
-   point=(-0.0005174999999999,-0.0097100000000001,-0.0)
-   point=(-0.0005174999999999,-0.0097100000000001,-0.000813)
-   closed=false
-EndPath
-
-Path
-   name=V2
-   point=(-0.0005174999999999,0.0097100000000001,0.0)
-   point=(-0.0005174999999999,0.0097100000000001,-0.000813)
-   closed=false
-EndPath
-
-Path
-   name=port1
-   point=(-0.0054025,-0.00971,0.005)
-   point=(0.004367499999999999,-0.00971,0.005)
-   point=(0.004367499999999999,-0.009709999999999998,-0.0008129999999999995)
-   point=(-0.0054025,-0.009709999999999998,-0.0008129999999999995)
+   name=path1
+   point=(0.00843852663202215,0.000783185638252273,-0.000813)
+   point=(0.00843852663202215,0.000783185638252273,0.005)
+   point=(-0.00133147336797785,0.000783185638252274,0.005)
+   point=(-0.00133147336797785,0.000783185638252273,-0.000813)
    closed=true
+   normal=(0,1,0)
 EndPath
 
 Path
-   name=port2
-   point=(-0.0054025,0.00971,0.005)
-   point=(0.004367499999999999,0.00971,0.005)
-   point=(0.004367499999999999,0.009710000000000002,-0.0008129999999999995)
-   point=(-0.0054025,0.009710000000000002,-0.0008129999999999995)
+   name=path2
+   point=(0.00843852663202215,0.0198031856382523,-0.000813)
+   point=(0.00843852663202215,0.0198031856382523,0.005)
+   point=(-0.00133147336797785,0.0198031856382523,0.005)
+   point=(-0.00133147336797785,0.0198031856382523,-0.000813)
    closed=true
+   normal=(0,1,0)
+EndPath
+
+Path
+   name=v1
+   point=(0.00355352663202215,0.000783185638252273,-0.000813)
+   point=(0.00355352663202215,0.000783185638252273,0)
+   closed=false
+   normal=(0,1,0)
+EndPath
+
+Path
+   name=v2
+   point=(0.00355352663202215,0.0198031856382523,-0.000813)
+   point=(0.00355352663202215,0.0198031856382523,0)
+   closed=false
+   normal=(0,1,0)
 EndPath
 
 Port
-   name=1
-   path=+port1
+   name=port1
+   path=path1
    impedance_definition=PV
    impedance_calculation=line
    Line
+      net=net1
       Sport=1
       IntegrationPath
          type=voltage
-         path=+V1
+         scale=1
+         path=+v1
       EndIntegrationPath
    EndLine
 EndPort
 
 Port
-   name=2
-   path=+port2
+   name=port2
+   path=path2
    impedance_definition=PV
    impedance_calculation=line
    Line
+      net=net2
       Sport=2
       IntegrationPath
          type=voltage
-         path=+V2
+         scale=1
+         path=+v2
       EndIntegrationPath
    EndLine
 EndPort

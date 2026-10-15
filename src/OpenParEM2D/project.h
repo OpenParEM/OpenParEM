@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -57,10 +57,11 @@ struct projectData {
    int project_save_fields;
 
    char *mesh_file;
-   int mesh_order;
    int mesh_uniform_refinement_count;
    double mesh_refinement_fraction;
    int mesh_enable_refine;
+
+   int fem_order;
 
    char *mode_definition_file;
 
@@ -91,10 +92,10 @@ struct projectData {
    int solution_check_closed_loop;
    int solution_accurate_residual;
    int solution_shift_invert;
-   int solution_use_initial_guess;
    double solution_initial_alpha;
    double solution_initial_beta;
    double solution_shift_factor;
+   int solution_initial_guess_level;
 
    int output_show_refining_mesh;
    int output_show_postprocessing;

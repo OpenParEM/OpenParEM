@@ -1,6 +1,12 @@
 # ResultDatabase::save_as_test
-square-planar_12GHz_1_0_result,2400000000,magS(dB),1,1,equal,-18.8197634526339,1e-02
-square-planar_12GHz_1_1_result,2400000000,argS(deg),1,1,equal,-166.636824687183,1e-02
-square-planar_12GHz_2_2_result,12000000000,magS(dB),1,1,equal,-4.66161528913804,1e-02
-square-planar_12GHz_2_3_result,12000000000,argS(deg),1,1,equal,-16.0811543333691,1e-02
-
+square-planar_12GHz_1_0_result,2600000000,magS(dB),1,1,equal,-15.6455666190767,1e-02
+square-planar_12GHz_1_1_result,2600000000,argS(deg),1,1,equal,159.698263229901,1e-02
+square-planar_12GHz_2_2_result,12000000000,magS(dB),1,1,equal,-3.63891536493047,1e-02
+square-planar_12GHz_2_3_result,12000000000,argS(deg),1,1,equal,-9.4458772735017,1e-02
+# PatternDatabase::save_as_test
+square-planar_12GHz_1_4_farfield,2600000000,gain,1,equal,4.49838127068515,1e-02
+square-planar_12GHz_1_5_farfield,2600000000,directivity,1,equal,4.60417446293906,1e-02
+square-planar_12GHz_1_6_farfield,2600000000,radiationEfficiency,1,equal,0.97593452218728,1e-02
+square-planar_12GHz_2_7_farfield,12000000000,gain,1,equal,6.34236994680559,1e-02
+square-planar_12GHz_2_8_farfield,12000000000,directivity,1,equal,8.11270669153829,1e-02
+square-planar_12GHz_2_9_farfield,12000000000,radiationEfficiency,1,equal,0.665221574025277,1e-02

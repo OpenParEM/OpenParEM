@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -36,6 +36,18 @@ char* allocCopyString (char *a) {
    strcpy(b,a);
 
    return b;
+}
+
+char* allocCopyConstString (const char *a) {
+    char *b=NULL;
+
+    if (a == NULL) return NULL;
+
+    b=(char *)malloc((strlen(a)+1)*sizeof(char));
+    if (b == NULL) return NULL;
+    strcpy(b,a);
+
+    return b;
 }
 
 char* trimSpace (char *a) {
@@ -130,6 +142,33 @@ int removeSpace (char *a) {
 void removeSpaces (char *a) {
    while (removeSpace(a));
 }
+
+int removeQuote (char *a) {
+    int i,j,len;
+
+    if (a == NULL) return 0;
+
+    len=strlen(a);
+    i=0;
+    while (i < len) {
+        if (a[i] == '"') {
+            j=i;
+            while (j < len) {
+                a[j]=a[j+1];
+                j++;
+            }
+            return 1;
+        }
+        i++;
+    }
+
+    return 0;
+}
+
+void removeQuotes (char *a) {
+    while (removeQuote(a));
+}
+
 
 int is_blank (char *a) {
    int i=0;
@@ -434,10 +473,20 @@ int is_valid_plane (char *a)
 void add_antennaPattern (struct projectData *data, int lineNumber, int dim, char *quantity1, char *quantity2,
                          char *plane, double theta, double phi, double latitude, double rotation)
 {
+   int i;
+
    // allocate more patterns, if needed
    if (data->inputAntennaPatternsCount == data->inputAntennaPatternsAllocated) {
       data->inputAntennaPatternsAllocated+=5;
       data->inputAntennaPatterns=(struct inputAntennaPattern *) realloc (data->inputAntennaPatterns,data->inputAntennaPatternsAllocated*sizeof(struct inputAntennaPattern));
+
+      long unsigned int i=data->inputAntennaPatternsCount;
+      while (i < data->inputAntennaPatternsAllocated) {
+          data->inputAntennaPatterns[i].quantity1=NULL;
+          data->inputAntennaPatterns[i].quantity2=NULL;
+          data->inputAntennaPatterns[i].plane=NULL;
+          i++;
+      }
    }
 
    // assign
@@ -540,6 +589,69 @@ int check_antennaPatterns (struct projectData *projData, const char* indent)
    return fail;
 }
 
+void clear_physicalGroupMaterials (struct projectData *data)
+{
+    //printf ("clear_physicalGroupMaterials\n");
+
+    int i=0;
+    while (i < data->physicalGroupMaterialCount) {
+        if (data->physicalGroupMaterials[i].materialName) {
+            free(data->physicalGroupMaterials[i].materialName);
+            data->physicalGroupMaterials[i].materialName=NULL;
+        }
+        i++;
+    }
+    data->physicalGroupMaterialCount=0;
+}
+
+void add_physicalGroupMaterial (struct projectData *data, int lineNumber, int dim, int tag, char *materialName)
+{
+    //printf ("add_physicalGroupMaterials\n");
+
+    int i;
+
+    // see if this is a renaming of an existing group
+    i=0;
+    while (i < data->physicalGroupMaterialCount) {
+       if (data->physicalGroupMaterials[i].dim == dim &&
+           data->physicalGroupMaterials[i].tag == tag) {
+
+          if (data->physicalGroupMaterials[i].materialName) {
+             free(data->physicalGroupMaterials[i].materialName);
+             data->physicalGroupMaterials[i].materialName=NULL;
+          }
+          data->physicalGroupMaterials[i].materialName=allocCopyString(materialName);
+
+          data->modified=1;
+          return;
+       }
+       i++;
+    }
+
+    // allocate more groups, if needed
+    if (data->physicalGroupMaterialCount == data->physicalGroupMaterialAllocated) {
+        data->physicalGroupMaterialAllocated+=5;
+        data->physicalGroupMaterials=(struct physicalGroupMaterial *)
+            realloc (data->physicalGroupMaterials,data->physicalGroupMaterialAllocated*sizeof(struct physicalGroupMaterial));
+
+        i=data->physicalGroupMaterialCount;
+        while (i < data->physicalGroupMaterialAllocated) {
+            data->physicalGroupMaterials[i].materialName=NULL;
+            i++;
+        }
+    }
+
+    // assign
+    data->physicalGroupMaterials[data->physicalGroupMaterialCount].lineNumber=lineNumber;
+    data->physicalGroupMaterials[data->physicalGroupMaterialCount].dim=dim;
+    data->physicalGroupMaterials[data->physicalGroupMaterialCount].tag=tag;
+    data->physicalGroupMaterials[data->physicalGroupMaterialCount].materialName=allocCopyString(materialName);
+
+    data->physicalGroupMaterialCount++;
+
+    data->modified=1;
+}
+
 void init_project (struct projectData *data) {
 
    data->version_name=allocCopyString("#OpenParEM3Dproject");
@@ -550,15 +662,16 @@ void init_project (struct projectData *data) {
    data->project_save_fields=0;
 
    data->mesh_file=allocCopyString("");
-   data->mesh_order=1;
    data->mesh_save_refined=0;
    data->mesh_2D_refinement_fraction=0.025;
    data->mesh_3D_refinement_fraction=0.005;
    data->mesh_quality_limit=20;
 
+   data->fem_order=1;
+
    data->port_definition_file=allocCopyString("");
 
-   data->refinement_frequency=allocCopyString("highlow");
+   data->refinement_frequency=allocCopyString("high");
    data->refinement_iteration_min=1;
    data->refinement_iteration_max=10;
    data->refinement_required_passes=1;
@@ -566,10 +679,10 @@ void init_project (struct projectData *data) {
    data->refinement_absolute_tolerance=1e-6;
    data->refinement_variable=allocCopyString("SandH");  
 
-   data->materials_global_path=allocCopyString("../");
-   data->materials_global_name=allocCopyString("global_materials");
+   data->materials_global_path=allocCopyString("./");
+   data->materials_global_name=allocCopyString("");
    data->materials_local_path=allocCopyString("./");
-   data->materials_local_name=allocCopyString("local_materials");
+   data->materials_local_name=allocCopyString("");
    data->materials_default_boundary=allocCopyString("PEC");
    data->materials_check_limits=1;
 
@@ -593,12 +706,20 @@ void init_project (struct projectData *data) {
    data->solution_check_homogeneous=1;
    data->solution_accurate_residual=0;
    data->solution_shift_invert=1;
-   data->solution_use_initial_guess=1;
    data->solution_shift_factor=1;
+   data->solution_initial_guess_level=2;
 
    data->inputAntennaPatternsAllocated=5;
    data->inputAntennaPatternsCount=0;
    data->inputAntennaPatterns=(struct inputAntennaPattern *)malloc(data->inputAntennaPatternsAllocated*sizeof(struct inputAntennaPattern));
+   long unsigned int i=0;
+   while (i < data->inputAntennaPatternsAllocated) {
+      data->inputAntennaPatterns[i].quantity1=NULL;
+      data->inputAntennaPatterns[i].quantity2=NULL;
+      data->inputAntennaPatterns[i].plane=NULL;
+      i++;
+   }
+
    data->antenna_plot_current_resolution=0.1;
    data->antenna_plot_2D_range=40;
    data->antenna_plot_2D_interval=10;
@@ -630,37 +751,87 @@ void init_project (struct projectData *data) {
    data->debug_tempfiles_keep=0;
    data->debug_refine_preconditioner=1;
 
+   data->gui_units=allocCopyString("mm");
+   data->gui_grid_size=10;
+   data->gui_slot_count=5;
+   data->gui_oversubscribe=1;
+
+   data->gui_mesh_scale=1;
+   data->gui_mesh_minSize=0;
+   data->gui_mesh_maxSize=1e19;
+
+   data->physicalGroupMaterialAllocated=5;
+   data->physicalGroupMaterialCount=0;
+   data->physicalGroupMaterials=(struct physicalGroupMaterial *)malloc(data->physicalGroupMaterialAllocated*sizeof(struct physicalGroupMaterial));
+   i=0;
+   while (i < data->physicalGroupMaterialAllocated) {
+       data->physicalGroupMaterials[i].materialName=NULL;
+       i++;
+   }
+
    data->field_points_count=0;
    data->field_points_allocated=0;
    data->field_points_x=NULL;
    data->field_points_y=NULL;
    data->field_points_z=NULL;
+
+   data->modified=0;
 }
 
-//ToDo: Bring this up to date
 void free_project (struct projectData *data) {
    if (data == NULL) return;
 
-   if (data->version_name) free (data->version_name);
-   if (data->version_value) free (data->version_value);
-   if (data->project_name) free (data->project_name);
-   if (data->mesh_file) free (data->mesh_file);
-   if (data->port_definition_file) free (data->port_definition_file);
-   if (data->materials_global_path) free (data->materials_global_path);
-   if (data->materials_global_name) free (data->materials_global_name);
-   if (data->materials_local_path) free (data->materials_local_path);
-   if (data->materials_local_name) free (data->materials_local_name);
-   if (data->materials_default_boundary) free (data->materials_default_boundary);
-   if (data->refinement_variable) free (data->refinement_variable);
-   if (data->touchstone_frequency_unit) free (data->touchstone_frequency_unit);
-   if (data->touchstone_format) free (data->touchstone_format);
-   if (data->solution_impedance_definition) free (data->solution_impedance_definition);
-   if (data->solution_impedance_calculation) free (data->solution_impedance_calculation);
-   if (data->inputFrequencyPlans) free(data->inputFrequencyPlans);
-   if (data->inputAntennaPatterns) free(data->inputAntennaPatterns);
-   if (data->field_points_x) free(data->field_points_x);
-   if (data->field_points_y) free(data->field_points_y);
-   if (data->field_points_z) free(data->field_points_z);
+   if (data->version_name) {free (data->version_name); data->version_name=NULL;}
+   if (data->version_value) {free (data->version_value); data->version_value=NULL;}
+   if (data->mesh_file) {free (data->mesh_file); data->mesh_file=NULL;}
+   if (data->port_definition_file) {free (data->port_definition_file); data->port_definition_file=NULL;}
+   if (data->materials_global_path) {free (data->materials_global_path); data->materials_global_path=NULL;}
+   if (data->materials_global_name) {free (data->materials_global_name); data->materials_global_name=NULL;}
+   if (data->materials_local_path) {free (data->materials_local_path); data->materials_local_path=NULL;}
+   if (data->materials_local_name) {free (data->materials_local_name); data->materials_local_name=NULL;}
+   if (data->materials_default_boundary) {free (data->materials_default_boundary); data->materials_default_boundary=NULL;}
+   if (data->refinement_frequency) {free (data->refinement_frequency); data->refinement_frequency=NULL;}
+   if (data->refinement_variable) {free (data->refinement_variable); data->refinement_variable=NULL;}
+   if (data->touchstone_frequency_unit) {free (data->touchstone_frequency_unit); data->touchstone_frequency_unit=NULL;}
+   if (data->touchstone_format) {free (data->touchstone_format); data->touchstone_format=NULL;}
+   if (data->solution_impedance_definition) {free (data->solution_impedance_definition); data->solution_impedance_definition=NULL;}
+   if (data->solution_impedance_calculation) {free (data->solution_impedance_calculation); data->solution_impedance_calculation=NULL;}
+
+   if (data->inputFrequencyPlans) {free(data->inputFrequencyPlans); data->inputFrequencyPlans=NULL;}
+   data->inputFrequencyPlansAllocated=0;
+   data->inputFrequencyPlansCount=0;
+
+   if (data->inputAntennaPatterns) {
+      long unsigned int i=0;
+      while (i < data->inputAntennaPatternsAllocated) {
+          if (data->inputAntennaPatterns[i].quantity1) {free(data->inputAntennaPatterns[i].quantity1); data->inputAntennaPatterns[i].quantity1=NULL;}
+          if (data->inputAntennaPatterns[i].quantity2) {free(data->inputAntennaPatterns[i].quantity2); data->inputAntennaPatterns[i].quantity2=NULL;}
+          if (data->inputAntennaPatterns[i].plane) {free(data->inputAntennaPatterns[i].plane); data->inputAntennaPatterns[i].plane=NULL;}
+         i++;
+      }
+      free(data->inputAntennaPatterns); data->inputAntennaPatterns=NULL;
+   }
+   data->inputAntennaPatternsCount=0;
+   data->inputAntennaPatternsAllocated=0;
+
+   if (data->gui_units) {free (data->gui_units); data->gui_units=NULL;}
+
+   if (data->physicalGroupMaterials) {
+       long unsigned int i=0;
+       while (i < data->physicalGroupMaterialAllocated) {
+           if (data->physicalGroupMaterials[i].materialName) {free(data->physicalGroupMaterials[i].materialName); data->physicalGroupMaterials[i].materialName=NULL;}
+           i++;
+       }
+       free(data->physicalGroupMaterials); data->physicalGroupMaterials=NULL;
+   }
+   data->physicalGroupMaterialCount=0;
+   data->physicalGroupMaterialAllocated=0;
+
+   if (data->field_points_x) {free(data->field_points_x); data->field_points_x=NULL;}
+   if (data->field_points_y) {free(data->field_points_y); data->field_points_y=NULL;}
+   if (data->field_points_z) {free(data->field_points_z); data->field_points_z=NULL;}
+
+   if (data->project_name) {free (data->project_name); data->project_name=NULL;}
 }
 
 void print_project (struct projectData *data, struct projectData *defaultData, const char *indent) {
@@ -689,9 +860,6 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0; if (defaultData && strcmp(data->mesh_file,defaultData->mesh_file) == 0) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.file %s\n",indent,comment[matched],data->mesh_file);
 
-   matched=0; if (defaultData && data->mesh_order == defaultData->mesh_order) matched=1;
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.order %d\n",indent,comment[matched],data->mesh_order);
-
    matched=0;  if (defaultData && data->mesh_save_refined == defaultData->mesh_save_refined) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.save.refined %s\n",indent,comment[matched],logic[data->mesh_save_refined]);
 
@@ -700,6 +868,9 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
 
    matched=0; if (defaultData && double_compare(data->mesh_quality_limit,defaultData->mesh_quality_limit,1e-14)) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%smesh.quality.limit %.15g\n",indent,comment[matched],data->mesh_quality_limit);
+
+   matched=0; if (defaultData && data->fem_order == defaultData->fem_order) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sfem.order %d\n",indent,comment[matched],data->fem_order);
 
    matched=0; if (defaultData && strcmp(data->port_definition_file,defaultData->port_definition_file) == 0) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sport.definition.file %s\n",indent,comment[matched],data->port_definition_file);
@@ -808,29 +979,40 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0;  if (defaultData && data->solution_shift_invert == defaultData->solution_shift_invert) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.shift.invert %s\n",indent,comment[matched],logic[data->solution_shift_invert]);
 
-   matched=0;  if (defaultData && data->solution_use_initial_guess == defaultData->solution_use_initial_guess) matched=1;
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.use.initial.guess %s\n",indent,comment[matched],logic[data->solution_use_initial_guess]);
-
    matched=0; if (defaultData && double_compare(data->solution_shift_factor,defaultData->solution_shift_factor,1e-14)) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.shift.factor %.15g\n",indent,comment[matched],data->solution_shift_factor);
+
+   matched=0; if (defaultData && data->solution_initial_guess_level == defaultData->solution_initial_guess_level) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%ssolution.initial.guess.level %d\n",indent,comment[matched],data->solution_initial_guess_level);
 
    // no default antenna patterns, so print all
    i=0;
    while (i < data->inputAntennaPatternsCount) {
       if (data->inputAntennaPatterns[i].dim == 2) {
          prefix();
-         if (data->inputAntennaPatterns[i].quantity1 == NULL) PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.2D.pattern NULL",indent);
-         else PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.2D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
-         if (data->inputAntennaPatterns[i].quantity2 != NULL) PetscPrintf(PETSC_COMM_WORLD,",%s",data->inputAntennaPatterns[i].quantity2);
-         if (data->inputAntennaPatterns[i].plane != NULL) PetscPrintf(PETSC_COMM_WORLD,",%s",data->inputAntennaPatterns[i].plane);
-         else {PetscPrintf(PETSC_COMM_WORLD,",%.15g,%.15g",data->inputAntennaPatterns[i].theta,data->inputAntennaPatterns[i].phi);}
+         if (data->inputAntennaPatterns[i].quantity1 == NULL) {
+            PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.2D.pattern NULL",indent);
+         } else {
+            PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.2D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
+         }
+         if (data->inputAntennaPatterns[i].quantity2 != NULL) {
+            PetscPrintf(PETSC_COMM_WORLD,",%s",data->inputAntennaPatterns[i].quantity2);
+         }
+         if (data->inputAntennaPatterns[i].plane != NULL) {
+            PetscPrintf(PETSC_COMM_WORLD,",%s",data->inputAntennaPatterns[i].plane);
+         } else {
+            PetscPrintf(PETSC_COMM_WORLD,",%.15g,%.15g",data->inputAntennaPatterns[i].theta,data->inputAntennaPatterns[i].phi);
+         }
          PetscPrintf(PETSC_COMM_WORLD,",%.15g",data->inputAntennaPatterns[i].latitude);
          PetscPrintf(PETSC_COMM_WORLD,",%.15g",data->inputAntennaPatterns[i].rotation);
          PetscPrintf(PETSC_COMM_WORLD,"\n");
       } else {
          prefix();
-         if (data->inputAntennaPatterns[i].quantity1 == NULL) PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.3D.pattern NULL",indent);
-         else PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.3D.pattern %s",indent,data->inputAntennaPatterns[i].quantity1);
+         if (data->inputAntennaPatterns[i].quantity1 == NULL) {
+            PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.3D.pattern NULL",indent);
+         } else {
+            PetscPrintf(PETSC_COMM_WORLD,"%santenna.plot.3D.pattern q=%s",indent,data->inputAntennaPatterns[i].quantity1);
+         }
          PetscPrintf(PETSC_COMM_WORLD,"\n");
       }
       i++;
@@ -917,6 +1099,27 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    matched=0; if (defaultData && double_compare(data->debug_refine_preconditioner,defaultData->debug_refine_preconditioner,1e-14)) matched=1;
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sdebug.refine.preconditioner %d\n",indent,comment[matched],data->debug_refine_preconditioner);
 
+   matched=0; if (defaultData && strcmp(data->gui_units,defaultData->gui_units) == 0) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.units %s\n",indent,comment[matched],data->gui_units);
+
+   matched=0; if (defaultData && double_compare(data->gui_grid_size,defaultData->gui_grid_size,1e-14)) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.grid.size %.15g\n",indent,comment[matched],data->gui_grid_size);
+
+   matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
+
+   matched=0;  if (defaultData && data->gui_oversubscribe == defaultData->gui_oversubscribe) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.oversubscribe %s\n",indent,comment[matched],logic[data->gui_oversubscribe]);
+
+   matched=0; if (defaultData && double_compare(data->gui_mesh_scale,defaultData->gui_mesh_scale,1e-14)) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.mesh.scale %.15g\n",indent,comment[matched],data->gui_mesh_scale);
+
+   matched=0; if (defaultData && double_compare(data->gui_mesh_minSize,defaultData->gui_mesh_minSize,1e-14)) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.mesh.minSize %.15g\n",indent,comment[matched],data->gui_mesh_minSize);
+
+   matched=0; if (defaultData && double_compare(data->gui_mesh_maxSize,defaultData->gui_mesh_maxSize,1e-14)) matched=1;
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sgui.mesh.maxSize %.15g\n",indent,comment[matched],data->gui_mesh_maxSize);
+
    // no default field points, so print all
    i=0;
    while (i < data->field_points_count) {
@@ -928,6 +1131,320 @@ void print_project (struct projectData *data, struct projectData *defaultData, c
    free(logic[1]);
    free(comment[0]);
    free(comment[1]);
+}
+
+int save_project (const char *filename, struct projectData *data, struct projectData *defaultData, const char *indent)
+{
+    PetscMPIInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+    if (rank != 0) return 0;
+
+    FILE *fptr;
+    fptr=fopen(filename,"w");
+    if (fptr == NULL) return 1;
+
+    int i;
+    int matched=0;
+    char* logic[2];
+    char* comment[2];
+
+    if (data == NULL) {
+        fclose(fptr);
+        return 0;
+    }
+
+    logic[0]=allocCopyString("false");
+    logic[1]=allocCopyString("true");
+
+    comment[0]=allocCopyString("");
+    comment[1]=allocCopyString("//");
+
+    fprintf(fptr,"%s%s %s\n",indent,data->version_name,data->version_value);
+    fprintf(fptr,"%s//Commented lines show either unspecified inputs that utilize the default values or specified inputs that match the default values.\n",indent);
+
+    matched=0;  if (defaultData && data->project_calculate_poynting == defaultData->project_calculate_poynting) matched=1;
+    fprintf(fptr,"%s%sproject.calculate.poynting %s\n",indent,comment[matched],logic[data->project_calculate_poynting]);
+
+    matched=0;  if (defaultData && data->project_save_fields == defaultData->project_save_fields) matched=1;
+    fprintf(fptr,"%s%sproject.save.fields %s\n",indent,comment[matched],logic[data->project_save_fields]);
+
+    matched=0; if (defaultData && strcmp(data->mesh_file,defaultData->mesh_file) == 0) matched=1;
+    fprintf(fptr,"%s%smesh.file %s\n",indent,comment[matched],data->mesh_file);
+
+    matched=0;  if (defaultData && data->mesh_save_refined == defaultData->mesh_save_refined) matched=1;
+    fprintf(fptr,"%s%smesh.save.refined %s\n",indent,comment[matched],logic[data->mesh_save_refined]);
+
+    matched=0; if (defaultData && double_compare(data->mesh_3D_refinement_fraction,defaultData->mesh_3D_refinement_fraction,1e-14)) matched=1;
+    fprintf(fptr,"%s%smesh.refinement.fraction %.15g\n",indent,comment[matched],data->mesh_3D_refinement_fraction);
+
+    matched=0; if (defaultData && double_compare(data->mesh_quality_limit,defaultData->mesh_quality_limit,1e-14)) matched=1;
+    fprintf(fptr,"%s%smesh.quality.limit %.15g\n",indent,comment[matched],data->mesh_quality_limit);
+
+    matched=0; if (defaultData && data->fem_order == defaultData->fem_order) matched=1;
+    fprintf(fptr,"%s%sfem.order %d\n",indent,comment[matched],data->fem_order);
+
+    matched=0; if (defaultData && strcmp(data->port_definition_file,defaultData->port_definition_file) == 0) matched=1;
+    fprintf(fptr,"%s%sport.definition.file %s\n",indent,comment[matched],data->port_definition_file);
+
+    matched=0; if (defaultData && strcmp(data->refinement_frequency,defaultData->refinement_frequency) == 0) matched=1;
+    fprintf(fptr,"%s%srefinement.frequency %s\n",indent,comment[matched],data->refinement_frequency);
+
+    matched=0; if (defaultData && data->refinement_iteration_min == defaultData->refinement_iteration_min) matched=1;
+    fprintf(fptr,"%s%srefinement.iteration.min %d\n",indent,comment[matched],data->refinement_iteration_min);
+
+    matched=0; if (defaultData && data->refinement_iteration_max == defaultData->refinement_iteration_max) matched=1;
+    fprintf(fptr,"%s%srefinement.iteration.max %d\n",indent,comment[matched],data->refinement_iteration_max);
+
+    matched=0; if (defaultData && data->refinement_required_passes == defaultData->refinement_required_passes) matched=1;
+    fprintf(fptr,"%s%srefinement.required.passes %d\n",indent,comment[matched],data->refinement_required_passes);
+
+    matched=0; if (defaultData && double_compare(data->refinement_relative_tolerance,defaultData->refinement_relative_tolerance,1e-14)) matched=1;
+    fprintf(fptr,"%s%srefinement.relative.tolerance %.15g\n",indent,comment[matched],data->refinement_relative_tolerance);
+
+    matched=0; if (defaultData && double_compare(data->refinement_absolute_tolerance,defaultData->refinement_absolute_tolerance,1e-14)) matched=1;
+    fprintf(fptr,"%s%srefinement.absolute.tolerance %.15g\n",indent,comment[matched],data->refinement_absolute_tolerance);
+
+    matched=0; if (defaultData && strcmp(data->refinement_variable,defaultData->refinement_variable) == 0) matched=1;
+    fprintf(fptr,"%s%srefinement.variable %s\n",indent,comment[matched],data->refinement_variable);
+
+    matched=0; if (defaultData && strcmp(data->materials_global_path,defaultData->materials_global_path) == 0) matched=1;
+    fprintf(fptr,"%smaterials.global.path %s\n",indent,data->materials_global_path);
+
+    matched=0; if (defaultData && strcmp(data->materials_global_name,defaultData->materials_global_name) == 0) matched=1;
+    fprintf(fptr,"%smaterials.global.name %s\n",indent,data->materials_global_name);
+
+    matched=0; if (defaultData && strcmp(data->materials_local_path,defaultData->materials_local_path) == 0) matched=1;
+    fprintf(fptr,"%smaterials.local.path %s\n",indent,data->materials_local_path);
+
+    matched=0; if (defaultData && strcmp(data->materials_local_name,defaultData->materials_local_name) == 0) matched=1;
+    fprintf(fptr,"%smaterials.local.name %s\n",indent,data->materials_local_name);
+
+    matched=0; if (defaultData && strcmp(data->materials_default_boundary,defaultData->materials_default_boundary) == 0) matched=1;
+    fprintf(fptr,"%smaterials.default.boundary %s\n",indent,data->materials_default_boundary);
+
+    matched=0;  if (defaultData && data->materials_check_limits == defaultData->materials_check_limits) matched=1;
+    fprintf(fptr,"%s%smaterials.check.limits %s\n",indent,comment[matched],logic[data->materials_check_limits]);
+
+    // no default frequency plans, so print all
+    i=0;
+    while (i < data->inputFrequencyPlansCount) {
+        if (data->inputFrequencyPlans[i].type == 0) {
+            if (data->inputFrequencyPlans[i].refine == 0) {
+                fprintf(fptr,"%sfrequency.plan.linear %.15g,%.15g,%.15g\n",indent,
+                            data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].step);
+            } else {
+                fprintf(fptr,"%sfrequency.plan.linear.refine %.15g,%.15g,%.15g\n",indent,
+                            data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].step);
+            }
+        } else if (data->inputFrequencyPlans[i].type == 1) {
+            if (data->inputFrequencyPlans[i].refine == 0) {
+                fprintf(fptr,"%sfrequency.plan.log %.15g,%.15g,%d\n",indent,
+                            data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].pointsPerDecade);
+            } else {
+                fprintf(fptr,"%sfrequency.plan.log.refine %.15g,%.15g,%d\n",indent,
+                            data->inputFrequencyPlans[i].start,data->inputFrequencyPlans[i].stop,data->inputFrequencyPlans[i].pointsPerDecade);
+            }
+        } else if (data->inputFrequencyPlans[i].type == 2) {
+            if (data->inputFrequencyPlans[i].refine == 0) {
+                fprintf(fptr,"%sfrequency.plan.point %.15g\n",indent,data->inputFrequencyPlans[i].frequency);
+            } else {
+                fprintf(fptr,"%sfrequency.plan.point.refine %.15g\n",indent,data->inputFrequencyPlans[i].frequency);
+            }
+        }
+        i++;
+    }
+
+    matched=0; if (defaultData && double_compare(data->reference_impedance,defaultData->reference_impedance,1e-14)) matched=1;
+    fprintf(fptr,"%s%sreference.impedance %.15g\n",indent,comment[matched],data->reference_impedance);
+
+    matched=0; if (defaultData && strcmp(data->touchstone_frequency_unit,defaultData->touchstone_frequency_unit) == 0) matched=1;
+    fprintf(fptr,"%s%stouchstone.frequency.unit %s\n",indent,comment[matched],data->touchstone_frequency_unit);
+
+    matched=0; if (defaultData && strcmp(data->touchstone_format,defaultData->touchstone_format) == 0) matched=1;
+    fprintf(fptr,"%s%stouchstone.format %s\n",indent,comment[matched],data->touchstone_format);
+
+    matched=0; if (defaultData && double_compare(data->solution_temperature,defaultData->solution_temperature,1e-14)) matched=1;
+    fprintf(fptr,"%s%ssolution.temperature %.15g\n",indent,comment[matched],data->solution_temperature);
+
+    matched=0; if (defaultData && double_compare(data->solution_2D_tolerance,defaultData->solution_2D_tolerance,1e-14)) matched=1;
+    fprintf(fptr,"%s%ssolution.2D.tolerance %.15g\n",indent,comment[matched],data->solution_2D_tolerance);
+
+    matched=0; if (defaultData && double_compare(data->solution_3D_tolerance,defaultData->solution_3D_tolerance,1e-14)) matched=1;
+    fprintf(fptr,"%s%ssolution.3D.tolerance %.15g\n",indent,comment[matched],data->solution_3D_tolerance);
+
+    matched=0; if (defaultData && data->solution_iteration_limit == defaultData->solution_iteration_limit) matched=1;
+    fprintf(fptr,"%s%ssolution.iteration.limit %d\n",indent,comment[matched],data->solution_iteration_limit);
+
+    matched=0; if (defaultData && data->solution_modes_buffer == defaultData->solution_modes_buffer) matched=1;
+    fprintf(fptr,"%s%ssolution.modes.buffer %d\n",indent,comment[matched],data->solution_modes_buffer);
+
+    matched=0;  if (defaultData && data->solution_check_closed_loop == defaultData->solution_check_closed_loop) matched=1;
+    fprintf(fptr,"%s%ssolution.check.closed.loop %s\n",indent,comment[matched],logic[data->solution_check_closed_loop]);
+
+    matched=0;  if (defaultData && data->solution_check_homogeneous == defaultData->solution_check_homogeneous) matched=1;
+    fprintf(fptr,"%s%ssolution.check.homogeneous %s\n",indent,comment[matched],logic[data->solution_check_homogeneous]);
+
+    matched=0;  if (defaultData && data->solution_accurate_residual == defaultData->solution_accurate_residual) matched=1;
+    fprintf(fptr,"%s%ssolution.accurate.residual %s\n",indent,comment[matched],logic[data->solution_accurate_residual]);
+
+    matched=0;  if (defaultData && data->solution_shift_invert == defaultData->solution_shift_invert) matched=1;
+    fprintf(fptr,"%s%ssolution.shift.invert %s\n",indent,comment[matched],logic[data->solution_shift_invert]);
+
+    matched=0; if (defaultData && double_compare(data->solution_shift_factor,defaultData->solution_shift_factor,1e-14)) matched=1;
+    fprintf(fptr,"%s%ssolution.shift.factor %.15g\n",indent,comment[matched],data->solution_shift_factor);
+
+    matched=0; if (defaultData && data->solution_initial_guess_level == defaultData->solution_initial_guess_level) matched=1;
+    fprintf(fptr,"%s%ssolution.initial.guess.level %d\n",indent,comment[matched],data->solution_initial_guess_level);
+
+    // no default antenna patterns, so print all
+    i=0;
+    while (i < data->inputAntennaPatternsCount) {
+        if (data->inputAntennaPatterns[i].dim == 2) {
+            prefix();
+            if (data->inputAntennaPatterns[i].quantity1 == NULL) {
+                fprintf(fptr,"%santenna.plot.2D.pattern q1=NULL",indent);
+            } else {
+                fprintf(fptr,"%santenna.plot.2D.pattern q1=%s",indent,data->inputAntennaPatterns[i].quantity1);
+            }
+            if (data->inputAntennaPatterns[i].quantity2 != NULL) {
+                fprintf(fptr,", q2=%s",data->inputAntennaPatterns[i].quantity2);
+            }
+            if (data->inputAntennaPatterns[i].plane != NULL) {
+                fprintf(fptr,", plane=%s",data->inputAntennaPatterns[i].plane);
+            } else {
+                fprintf(fptr,", theta=%.15g, phi=%.15g",data->inputAntennaPatterns[i].theta,data->inputAntennaPatterns[i].phi);
+            }
+            fprintf(fptr,", latitude=%.15g",data->inputAntennaPatterns[i].latitude);
+            fprintf(fptr,", rotation=%.15g",data->inputAntennaPatterns[i].rotation);
+            fprintf(fptr,"\n");
+        } else {
+            prefix();
+            if (data->inputAntennaPatterns[i].quantity1 == NULL) {
+                fprintf(fptr,"%santenna.plot.3D.pattern NULL",indent);
+            } else {
+                fprintf(fptr,"%santenna.plot.3D.pattern q=%s",indent,data->inputAntennaPatterns[i].quantity1);
+            }
+            fprintf(fptr,"\n");
+        }
+        i++;
+    }
+
+    matched=0; if (defaultData && double_compare(data->antenna_plot_current_resolution,defaultData->antenna_plot_current_resolution,1e-14)) matched=1;
+    fprintf(fptr,"%s%santenna.plot.current.resolution %.15g\n",indent,comment[matched],data->antenna_plot_current_resolution);
+
+    matched=0; if (defaultData && double_compare(data->antenna_plot_2D_range,defaultData->antenna_plot_2D_range,1e-14)) matched=1;
+    fprintf(fptr,"%s%santenna.plot.2D.range %.15g\n",indent,comment[matched],data->antenna_plot_2D_range);
+
+    matched=0; if (defaultData && double_compare(data->antenna_plot_2D_resolution,defaultData->antenna_plot_2D_resolution,1e-14)) matched=1;
+    fprintf(fptr,"%s%santenna.plot.2D.resolution %.15g\n",indent,comment[matched],data->antenna_plot_2D_resolution);
+
+    matched=0;  if (defaultData && data->antenna_plot_2D_annotations == defaultData->antenna_plot_2D_annotations) matched=1;
+    fprintf(fptr,"%s%santenna.plot.2D.annotations %s\n",indent,comment[matched],logic[data->antenna_plot_2D_annotations]);
+
+    matched=0;  if (defaultData && data->antenna_plot_2D_save == defaultData->antenna_plot_2D_save) matched=1;
+    fprintf(fptr,"%s%santenna.plot.2D.save %s\n",indent,comment[matched],logic[data->antenna_plot_2D_save]);
+
+    matched=0; if (defaultData && double_compare(data->antenna_plot_3D_refinement,defaultData->antenna_plot_3D_refinement,1e-14)) matched=1;
+    fprintf(fptr,"%s%santenna.plot.3D.refinement %d\n",indent,comment[matched],data->antenna_plot_3D_refinement);
+
+    matched=0; if (defaultData && double_compare(data->antenna_plot_2D_interval,defaultData->antenna_plot_2D_interval,1e-14)) matched=1;
+    fprintf(fptr,"%s%santenna.plot.2D.interval %.15g\n",indent,comment[matched],data->antenna_plot_2D_interval);
+
+    matched=0;  if (defaultData && data->antenna_plot_3D_sphere == defaultData->antenna_plot_3D_sphere) matched=1;
+    fprintf(fptr,"%s%santenna.plot.3D.sphere %s\n",indent,comment[matched],logic[data->antenna_plot_3D_sphere]);
+
+    matched=0;  if (defaultData && data->antenna_plot_3D_save == defaultData->antenna_plot_3D_save) matched=1;
+    fprintf(fptr,"%s%santenna.plot.3D.save %s\n",indent,comment[matched],logic[data->antenna_plot_3D_save]);
+
+    matched=0;  if (defaultData && data->antenna_plot_raw_save == defaultData->antenna_plot_raw_save) matched=1;
+    fprintf(fptr,"%s%santenna.plot.raw.save %s\n",indent,comment[matched],logic[data->antenna_plot_raw_save]);
+
+    matched=0;  if (defaultData && data->output_show_refining_mesh == defaultData->output_show_refining_mesh) matched=1;
+    fprintf(fptr,"%s%soutput.show.refining.mesh %s\n",indent,comment[matched],logic[data->output_show_refining_mesh]);
+
+    matched=0;  if (defaultData && data->output_show_postprocessing == defaultData->output_show_postprocessing) matched=1;
+    fprintf(fptr,"%s%soutput.show.postprocessing %s\n",indent,comment[matched],logic[data->output_show_postprocessing]);
+
+    matched=0;  if (defaultData && data->output_show_iterations == defaultData->output_show_iterations) matched=1;
+    fprintf(fptr,"%s%soutput.show.iterations %s\n",indent,comment[matched],logic[data->output_show_iterations]);
+
+    matched=0;  if (defaultData && data->output_show_license == defaultData->output_show_license) matched=1;
+    fprintf(fptr,"%s%soutput.show.license %s\n",indent,comment[matched],logic[data->output_show_license]);
+
+    matched=0;  if (defaultData && data->test_create_cases == defaultData->test_create_cases) matched=1;
+    fprintf(fptr,"%s%stest.create.cases %s\n",indent,comment[matched],logic[data->test_create_cases]);
+
+    matched=0;  if (defaultData && data->test_show_detailed_cases == defaultData->test_show_detailed_cases) matched=1;
+    fprintf(fptr,"%s%stest.show.detailed.cases %s\n",indent,comment[matched],logic[data->test_show_detailed_cases]);
+
+    matched=0;  if (defaultData && data->debug_show_memory == defaultData->debug_show_memory) matched=1;
+    fprintf(fptr,"%s%sdebug.show.memory %s\n",indent,comment[matched],logic[data->debug_show_memory]);
+
+    matched=0;  if (defaultData && data->debug_show_project == defaultData->debug_show_project) matched=1;
+    fprintf(fptr,"%s%sdebug.show.project %s\n",indent,comment[matched],logic[data->debug_show_project]);
+
+    matched=0;  if (defaultData && data->debug_show_frequency_plan == defaultData->debug_show_frequency_plan) matched=1;
+    fprintf(fptr,"%s%sdebug.show.frequency.plan %s\n",indent,comment[matched],logic[data->debug_show_frequency_plan]);
+
+    matched=0;  if (defaultData && data->debug_show_materials == defaultData->debug_show_materials) matched=1;
+    fprintf(fptr,"%s%sdebug.show.materials %s\n",indent,comment[matched],logic[data->debug_show_materials]);
+
+    matched=0;  if (defaultData && data->debug_show_port_definitions == defaultData->debug_show_port_definitions) matched=1;
+    fprintf(fptr,"%s%sdebug.show.port.definitions %s\n",indent,comment[matched],logic[data->debug_show_port_definitions]);
+
+    matched=0;  if (defaultData && data->debug_show_impedance_details == defaultData->debug_show_impedance_details) matched=1;
+    fprintf(fptr,"%s%sdebug.show.impedance.details %s\n",indent,comment[matched],logic[data->debug_show_impedance_details]);
+
+    matched=0;  if (defaultData && data->debug_save_port_fields == defaultData->debug_save_port_fields) matched=1;
+    fprintf(fptr,"%s%sdebug.save.port.fields %s\n",indent,comment[matched],logic[data->debug_save_port_fields]);
+
+    matched=0;  if (defaultData && data->debug_skip_mixed_conversion == defaultData->debug_skip_mixed_conversion) matched=1;
+    fprintf(fptr,"%s%sdebug.skip.mixed.conversion %s\n",indent,comment[matched],logic[data->debug_skip_mixed_conversion]);
+
+    matched=0;  if (defaultData && data->debug_skip_forced_reciprocity == defaultData->debug_skip_forced_reciprocity) matched=1;
+    fprintf(fptr,"%s%sdebug.skip.forced.reciprocity %s\n",indent,comment[matched],logic[data->debug_skip_forced_reciprocity]);
+
+    matched=0;  if (defaultData && data->debug_tempfiles_keep == defaultData->debug_tempfiles_keep) matched=1;
+    fprintf(fptr,"%s%sdebug.tempfiles.keep %s\n",indent,comment[matched],logic[data->debug_tempfiles_keep]);
+
+    matched=0; if (defaultData && double_compare(data->debug_refine_preconditioner,defaultData->debug_refine_preconditioner,1e-14)) matched=1;
+    fprintf(fptr,"%s%sdebug.refine.preconditioner %d\n",indent,comment[matched],data->debug_refine_preconditioner);
+
+    matched=0; if (defaultData && strcmp(data->gui_units,defaultData->gui_units) == 0) matched=1;
+    fprintf(fptr,"%s%sgui.units %s\n",indent,comment[matched],data->gui_units);
+
+    matched=0; if (defaultData && double_compare(data->gui_grid_size,defaultData->gui_grid_size,1e-14)) matched=1;
+    fprintf(fptr,"%s%sgui.grid.size %.15g\n",indent,comment[matched],data->gui_grid_size);
+
+    matched=0; if (defaultData && data->gui_slot_count == defaultData->gui_slot_count) matched=1;
+    fprintf(fptr,"%s%sgui.slot.count %d\n",indent,comment[matched],data->gui_slot_count);
+
+    matched=0;  if (defaultData && data->gui_oversubscribe == defaultData->gui_oversubscribe) matched=1;
+    fprintf(fptr,"%s%sgui.oversubscribe %s\n",indent,comment[matched],logic[data->gui_oversubscribe]);
+
+    matched=0; if (defaultData && double_compare(data->gui_mesh_scale,defaultData->gui_mesh_scale,1e-14)) matched=1;
+    fprintf(fptr,"%s%sgui.mesh.scale %.15g\n",indent,comment[matched],data->gui_mesh_scale);
+
+    matched=0; if (defaultData && double_compare(data->gui_mesh_minSize,defaultData->gui_mesh_minSize,1e-14)) matched=1;
+    fprintf(fptr,"%s%sgui.mesh.minSize %.15g\n",indent,comment[matched],data->gui_mesh_minSize);
+
+    matched=0; if (defaultData && double_compare(data->gui_mesh_maxSize,defaultData->gui_mesh_maxSize,1e-14)) matched=1;
+    fprintf(fptr,"%s%sgui.mesh.maxSize %.15g\n",indent,comment[matched],data->gui_mesh_maxSize);
+
+    // no default field points, so print all
+    i=0;
+    while (i < data->field_points_count) {
+        fprintf(fptr,"%s%sfield.point %.15g,%.15g,%.15g\n",indent,indent,data->field_points_x[i],data->field_points_y[i],data->field_points_z[i]);
+        i++;
+    }
+
+    free(logic[0]);
+    free(logic[1]);
+    free(comment[0]);
+    free(comment[1]);
+
+    fclose(fptr);
+    return 0;
 }
 
 int get_bool (char *a) {
@@ -963,6 +1480,14 @@ char* get_project_name (const char *filename) {
    return b;
 }
 
+void set_project_name (struct projectData *data, const char *filename) {
+    if (data->project_name) free(data->project_name);
+    data->project_name=(char *)malloc((strlen(filename)+1)*sizeof(char));
+    if (data->project_name) {
+        strcpy(data->project_name,filename);
+    }
+}
+
 int has_refinementFrequencyPlan (struct projectData *data) {
    int i;
 
@@ -978,6 +1503,7 @@ int has_refinementFrequencyPlan (struct projectData *data) {
 
 void print_antenna_patterns (struct projectData *data, PetscMPIInt rank_)
 {
+
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
    int i;
@@ -1148,6 +1674,9 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
    int lineNumber;
    int dim;
    int match;
+   int physicalGroupMaterialCount;
+   int tag;
+   char *materialName=NULL;
 
    if (filename == NULL) return 1;
 
@@ -1272,17 +1801,18 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                else if (strcmp(keyword,"mesh.order") == 0) {
                   value=strtok(NULL," ");
                   if (is_int(value)) {
-                     data->mesh_order=atoi(value);
+                     data->fem_order=atoi(value);
                      value=strtok(NULL," ");
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
-                     if (data->mesh_order < 1) {
+                     if (data->fem_order < 1) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3136: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3136: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
                      }
-                     if (data->mesh_order > 20) {
+                     if (data->fem_order > 20) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3137: Value must be <= 20 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3137: Value must be <= 20 at line %d.\n",indent,indent,lineCount);
                      }
+                     prefix(); printf("%s%sINFO: Keyword \"mesh.order\" is deprecated for \"fem.order\" at line %d.\n",indent,indent,lineCount);
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
@@ -1303,11 +1833,11 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->mesh_3D_refinement_fraction <= 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3143: Value must be > 0 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3143: Value must be > 0 at line %d.\n",indent,indent,lineCount);
                      }
                      if (data->mesh_3D_refinement_fraction > 1) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3144: Value must be <= 1 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3144: Value must be <= 1 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1320,10 +1850,27 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->mesh_quality_limit <= 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3145: Value must be > 0 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3145: Value must be > 0 at line %d.\n",indent,indent,lineCount);
                      }
                      if (data->mesh_quality_limit > 1) {
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sWarning: Value at line %d is large.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sWarning: Value at line %d is large.\n",indent,indent,lineCount);
+                     }
+                  } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"fem.order") == 0) {
+                  value=strtok(NULL," ");
+                  if (is_int(value)) {
+                     data->fem_order=atoi(value);
+                     value=strtok(NULL," ");
+                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                     if (data->fem_order < 1) {
+                        ierr=1;
+                        prefix(); printf("%s%sERROR3249: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                     }
+                     if (data->fem_order > 20) {
+                        ierr=1;
+                        prefix(); printf("%s%sERROR3250: Value must be <= 20 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1350,12 +1897,12 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      free(data->refinement_frequency);
                      data->refinement_frequency=allocCopyString("highlow");
                      ierr=1;
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3146: Value must be \"all\", \"none\", \"high\", \"low\", \"highlow (default)\", \"lowhigh\", or \"plan\" at line %d.\n",
+                     prefix(); printf("%s%sERROR3146: Value must be \"all\", \"none\", \"high\", \"low\", \"highlow (default)\", \"lowhigh\", or \"plan\" at line %d.\n",
                                                             indent,indent,lineCount);
                   }
                   if (! is_refinement_frequency(data->refinement_frequency)) {
                      ierr=1;
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3147: Value must be \"all\", \"none\", \"high\", \"low\", \"highlow (default)\", \"lowhigh\", or \"plan\" at line %d.\n",
+                     prefix(); printf("%s%sERROR3147: Value must be \"all\", \"none\", \"high\", \"low\", \"highlow (default)\", \"lowhigh\", or \"plan\" at line %d.\n",
                                                             indent,indent,lineCount);
                   }
                }
@@ -1368,7 +1915,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->refinement_required_passes < 1) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3148: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3148: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1381,11 +1928,11 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->refinement_relative_tolerance <= 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3149: Value must be > 0 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3149: Value must be > 0 at line %d.\n",indent,indent,lineCount);
                      }
                      if (data->refinement_relative_tolerance > 1) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3150: Value must be <= 1 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3150: Value must be <= 1 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1398,11 +1945,11 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->refinement_absolute_tolerance <= 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3056: Value must be > 0 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3056: Value must be > 0 at line %d.\n",indent,indent,lineCount);
                      }
                      if (data->refinement_absolute_tolerance > 10) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3139: Value must be <= 10 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3139: Value must be <= 10 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1419,12 +1966,12 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      free(data->refinement_variable);
                      data->refinement_variable=allocCopyString("E");
                      ierr=1;
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3176: Value must be \"S\", \"SorH\", or \"SandH\" at line %d.\n",
+                     prefix(); printf("%s%sERROR3176: Value must be \"S\", \"SorH\", or \"SandH\" at line %d.\n",
                                                             indent,indent,lineCount);
                   }
                   if (! is_refinement_variable(data->refinement_variable)) {
                      ierr=1;
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3177: Value must be \"S\", \"SorH\", or \"SandH\" at line %d.\n",
+                     prefix(); printf("%s%sERROR3177: Value must be \"S\", \"SorH\", or \"SandH\" at line %d.\n",
                                                             indent,indent,lineCount);
                   }
                }
@@ -1435,7 +1982,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      data->refinement_iteration_min=atoi(value);
                      if (data->refinement_iteration_min < 1) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3151: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3151: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
                      }
                      value=strtok(NULL," ");
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
@@ -1592,7 +2139,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->reference_impedance < 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3153: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3153: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1609,7 +2156,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                          !(strcmp(data->touchstone_frequency_unit,"MHz") == 0) &&
                          !(strcmp(data->touchstone_frequency_unit,"GHz") == 0)) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3155: Value must be \"Hz\", \"kHz\", \"MHz\", or \"GHz\" at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3256: Value must be \"Hz\", \"kHz\", \"MHz\", or \"GHz\" at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1625,7 +2172,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                          !(strcmp(data->touchstone_format,"MA") == 0) &&
                          !(strcmp(data->touchstone_format,"RI") == 0)) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3156: Value must be \"DB\", \"MA\", or \"RI\" at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3156: Value must be \"DB\", \"MA\", or \"RI\" at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1638,11 +2185,11 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->solution_temperature < -273.15) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3157: Value must be >= -273.15 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3157: Value must be >= -273.15 at line %d.\n",indent,indent,lineCount);
                      } 
                      if (data->solution_temperature > 1e5) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3158: Value must be < 1e5 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3158: Value must be < 1e5 at line %d.\n",indent,indent,lineCount);
                      } 
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1656,7 +2203,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->solution_2D_tolerance <= 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3159: Value must be > 0 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3159: Value must be > 0 at line %d.\n",indent,indent,lineCount);
                      } 
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1670,7 +2217,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->solution_3D_tolerance <= 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3160: Value must be > 0 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3160: Value must be > 0 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1683,7 +2230,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->solution_iteration_limit < 1) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3161: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3161: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
                      } 
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1696,7 +2243,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->solution_modes_buffer < 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3162: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3162: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1737,15 +2284,6 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
-               else if (strcmp(keyword,"solution.use.initial.guess") == 0) {
-                  value=strtok(NULL," ");
-                  if (is_bool(value)) {
-                     data->solution_use_initial_guess=get_bool(value);
-                     value=strtok(NULL," ");
-                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
-                  } else print_invalid_entry (&ierr,lineCount,indent);
-               }
-
                else if (strcmp(keyword,"solution.shift.factor") == 0) {
                   value=strtok(NULL," ");
                   if (is_double(value)) {
@@ -1754,7 +2292,20 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->solution_shift_factor < 1) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3163: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3163: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                     }
+                  } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"solution.initial.guess.level") == 0) {
+                  value=strtok(NULL," ");
+                  if (is_int(value)) {
+                     data->solution_initial_guess_level=atoi(value);
+                     value=strtok(NULL," ");
+                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                     if (data->solution_initial_guess_level < 0 || data->solution_initial_guess_level > 3) {
+                        ierr=1;
+                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3243: Value must be 0, 1, 2, or 3 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -1781,7 +2332,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                         if (quantity1) {
                            free(tvalue);
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3207: Duplicated \"q1\" value at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3207: Duplicated \"q1\" value at line %d.\n",indent,indent,lineCount);
                         } else {quantity1=tvalue; matched_keyword=1;}
                      }
 
@@ -1790,7 +2341,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                         if (quantity2) {
                            free(tvalue);
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3208: Duplicated \"q2\" value at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3208: Duplicated \"q2\" value at line %d.\n",indent,indent,lineCount);
                         } else {quantity2=tvalue; matched_keyword=1;}
                      }
 
@@ -1799,7 +2350,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                         if (plane) {
                            free(tvalue);
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3209: Duplicated \"plane\" value at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3209: Duplicated \"plane\" value at line %d.\n",indent,indent,lineCount);
                         } else {plane=tvalue; matched_keyword=1;}
                      }
 
@@ -1808,7 +2359,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                         if (ttheta) {
                            free(tvalue);
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3210: Duplicated \"theta\" value at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3210: Duplicated \"theta\" value at line %d.\n",indent,indent,lineCount);
                         } else {ttheta=tvalue; matched_keyword=1;}
                      }
 
@@ -1817,7 +2368,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                         if (tphi) {
                            free(tvalue);
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3211: Duplicated \"phi\" value at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3211: Duplicated \"phi\" value at line %d.\n",indent,indent,lineCount);
                         } else {tphi=tvalue; matched_keyword=1;}
                      }
 
@@ -1826,7 +2377,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                         if (tlatitude) {
                            free(tvalue);
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3212: Duplicated \"latitude\" value at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3212: Duplicated \"latitude\" value at line %d.\n",indent,indent,lineCount);
                         } else {tlatitude=tvalue; matched_keyword=1;}
                      }
 
@@ -1835,13 +2386,13 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                         if (trotation) {
                            free(tvalue);
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3213: Duplicated \"rotation\" value at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3213: Duplicated \"rotation\" value at line %d.\n",indent,indent,lineCount);
                         } else {trotation=tvalue; matched_keyword=1;}
                      }
 
                      if (!matched_keyword) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3214: Unrecognized keyword/value pair \"%s\" at line %d.\n",indent,indent,value,lineCount);
+                        prefix(); printf("%s%sERROR3214: Unrecognized keyword/value pair \"%s\" at line %d.\n",indent,indent,value,lineCount);
                      }
 
                      if (value) {free(value); value=NULL;}
@@ -1850,138 +2401,138 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
 
                   if (!is_valid_quantity1(quantity1)) {
                      ierr=1;
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3215: Invalid plot quantity \"q1\" at line %d.\n",indent,indent,lineCount);
+                     prefix(); printf("%s%sERROR3215: Invalid plot quantity \"q1\" at line %d.\n",indent,indent,lineCount);
                   }
 
                   if (quantity2 && !is_valid_quantity2(quantity2)) {
                      ierr=1;
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3216: Invalid plot quantity \"q2\" at line %d.\n",indent,indent,lineCount);
+                     prefix(); printf("%s%sERROR3216: Invalid plot quantity \"q2\" at line %d.\n",indent,indent,lineCount);
                   }
 
                   if (plane) {
                      if (is_valid_plane(plane)) loaded_plane=1;
                      else {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3217: Invalid plane at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3217: Invalid plane at line %d.\n",indent,indent,lineCount);
                      }
                   }
 
                   if (ttheta) {
                      if (is_double(ttheta)) {
                         theta=atof(ttheta);
-                        if (abs(theta) > 180*(1+1e-12)) {
+                        if (fabs(theta) > 180*(1+1e-12)) {
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3218: theta outside of valid [-180,180] range at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3218: theta outside of valid [-180,180] range at line %d.\n",indent,indent,lineCount);
                         } else loaded_theta=1;
                      } else {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3219: Invalid theta at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3219: Invalid theta at line %d.\n",indent,indent,lineCount);
                      }
                   }
 
                   if (tphi) { 
                      if (is_double(tphi)) {
                         phi=atof(tphi); 
-                        if (abs(phi) > 180*(1+1e-12)) {
+                        if (fabs(phi) > 180*(1+1e-12)) {
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3220: phi outside of valid [-180,180] range at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3220: phi outside of valid [-180,180] range at line %d.\n",indent,indent,lineCount);
                         } else loaded_phi=1;
                      } else {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3221: Invalid phi at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3221: Invalid phi at line %d.\n",indent,indent,lineCount);
                      }
                   }
 
                   if (tlatitude) {  
                      if (is_double(tlatitude)) {
                         latitude=atof(tlatitude);    
-                        if (abs(latitude) > 90*(1+1e-12)) {
+                        if (fabs(latitude) > 90*(1+1e-12)) {
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3222: latitude outside of valid [-90,90] range at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3222: latitude outside of valid [-90,90] range at line %d.\n",indent,indent,lineCount);
                         }
                      } else {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3223: Invalid latitude at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3223: Invalid latitude at line %d.\n",indent,indent,lineCount);
                      }
                   }
 
                   if (trotation) {
                      if (is_double(trotation)) {
                         rotation=atof(trotation);
-                        if (abs(rotation) > 360*(1+1e-12)) {
+                        if (fabs(rotation) > 360*(1+1e-12)) {
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3224: rotation outside of valid [-360,360] range at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3224: rotation outside of valid [-360,360] range at line %d.\n",indent,indent,lineCount);
                         }
                      } else {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3225: Invalid rotation at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3225: Invalid rotation at line %d.\n",indent,indent,lineCount);
                      }
                   }
 
                   if (!ierr && quantity1 == NULL) {
                      ierr=1;
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3226: Missing \'q1\' at line %d.\n",indent,indent,lineCount);
+                     prefix(); printf("%s%sERROR3226: Missing \'q1\' at line %d.\n",indent,indent,lineCount);
                   }
 
                   if (!ierr && quantity1 && quantity2) {
                      if (strcmp(quantity1,quantity2) == 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3227: Duplicated quantities at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3227: Duplicated quantities at line %d.\n",indent,indent,lineCount);
                      }
 
                      if (strcmp(quantity1,"Ephi") == 0 && strcmp(quantity2,"Hphi") == 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3228: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3228: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
                      }
                      if (strcmp(quantity1,"Ephi") == 0 && strcmp(quantity2,"Htheta") == 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3229: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3229: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
                      }
                      if (strcmp(quantity1,"Etheta") == 0 && strcmp(quantity2,"Hphi") == 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3230: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3230: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
                      }
                      if (strcmp(quantity1,"Etheta") == 0 && strcmp(quantity2,"Htheta") == 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3231: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3231: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
                      }
 
                      if (strcmp(quantity1,"Hphi") == 0 && strcmp(quantity2,"Ephi") == 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3232: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3232: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
                      }
                      if (strcmp(quantity1,"Hphi") == 0 && strcmp(quantity2,"Etheta") == 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3233: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3233: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
                      }
                      if (strcmp(quantity1,"Htheta") == 0 && strcmp(quantity2,"Ephi") == 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3234: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3234: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
                      }
                      if (strcmp(quantity1,"Htheta") == 0 && strcmp(quantity2,"Etheta") == 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3235: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3235: Mismatched field quantities at line %d.\n",indent,indent,lineCount);
                      }
 
                      if (strcmp(quantity1,"G") == 0 && quantity2) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3236: Quantity \"G\" cannot plot with a second quantity at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3236: Quantity \"G\" cannot plot with a second quantity at line %d.\n",indent,indent,lineCount);
                      }
                      if (strcmp(quantity1,"D") == 0 && quantity2) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3237: Quantity \"D\" cannot plot with a second quantity at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3237: Quantity \"D\" cannot plot with a second quantity at line %d.\n",indent,indent,lineCount);
                      }
                   }
 
                   if (!ierr) {
                      if (!loaded_plane && !loaded_theta) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3238: Missing value for theta at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3238: Missing value for theta at line %d.\n",indent,indent,lineCount);
                      }
 
                      if (!loaded_plane && !loaded_phi) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3239: Missing value for phi at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3239: Missing value for phi at line %d.\n",indent,indent,lineCount);
                      }
                   }
 
@@ -2016,13 +2567,13 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                         if (quantity1) {
                            free(tvalue);
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3240: Duplicated \"q\" value at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3240: Duplicated \"q\" value at line %d.\n",indent,indent,lineCount);
                         } else {quantity1=tvalue; matched_keyword=1;}
                      }
 
                      if (!matched_keyword) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3241: Unrecognized keyword/value pair \"%s\" at line %d.\n",indent,indent,value,lineCount);
+                        prefix(); printf("%s%sERROR3241: Unrecognized keyword/value pair \"%s\" at line %d.\n",indent,indent,value,lineCount);
                      }
 
                      if (value) {free(value); value=NULL;}
@@ -2031,12 +2582,12 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
 
                   if (!is_valid_quantity1(quantity1)) {
                      ierr=1;
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3242: Invalid plot quantity \"q\" at line %d.\n",indent,indent,lineCount);
+                     prefix(); printf("%s%sERROR3242: Invalid plot quantity \"q\" at line %d.\n",indent,indent,lineCount);
                   }
 
                   if (!ierr && quantity1 == NULL) {
                      ierr=1;
-                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3003: Missing \'q1\' at line %d.\n",indent,indent,lineCount);
+                     prefix(); printf("%s%sERROR3003: Missing \'q1\' at line %d.\n",indent,indent,lineCount);
                   }
 
                   add_antennaPattern(data,lineCount,3,quantity1,NULL,NULL,0,0,0,0);
@@ -2051,11 +2602,11 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->antenna_plot_current_resolution <= 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3199: Value must be > 0 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3199: Value must be > 0 at line %d.\n",indent,indent,lineCount);
                      }
                      if (data->antenna_plot_current_resolution > 0.15) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3200: Value must be <= 0.15 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3200: Value must be <= 0.15 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -2068,7 +2619,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->antenna_plot_2D_range <= 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3201: Value must be > 0 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3201: Value must be > 0 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -2081,11 +2632,11 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->antenna_plot_2D_resolution <= 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3202: Value must be > 0 deg at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3202: Value must be > 0 deg at line %d.\n",indent,indent,lineCount);
                      }
                      if (data->antenna_plot_2D_resolution > 16*(1+1e-12)) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3203: Value must be <= 16 deg at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3203: Value must be <= 16 deg at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -2128,10 +2679,10 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                         if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                         if (data->antenna_plot_3D_refinement < 2) {
                            ierr=1;
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3206: Value must be >= 2 at line %d.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sERROR3206: Value must be >= 2 at line %d.\n",indent,indent,lineCount);
                         }
                         if (data->antenna_plot_3D_refinement > 5) {
-                           prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sWarning: Value line %d is large.\n",indent,indent,lineCount);
+                           prefix(); printf("%s%sWarning: Value line %d is large.\n",indent,indent,lineCount);
                         }
                      } else print_invalid_entry (&ierr,lineCount,indent);
                   }
@@ -2145,7 +2696,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->antenna_plot_2D_interval <= 0) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3204: Value must be > 0 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3204: Value must be > 0 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
@@ -2329,9 +2880,111 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                      if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
                      if (data->debug_refine_preconditioner != 0 && data->debug_refine_preconditioner != 1) {
                         ierr=1;
-                        prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3205: Value must be 0 or 1 at line %d.\n",indent,indent,lineCount);
+                        prefix(); printf("%s%sERROR3205: Value must be 0 or 1 at line %d.\n",indent,indent,lineCount);
                      }
                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"gui.units") == 0) {
+                   value=strtok(NULL," ");
+                   if (is_text(value)) {
+                       free(data->gui_units);
+                       data->gui_units=allocCopyString(value);
+                       value=strtok(NULL," ");
+                       if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                       if (!(strcmp(data->gui_units,"m") == 0) &&
+                           !(strcmp(data->gui_units,"mm") == 0) &&
+                           !(strcmp(data->gui_units,"cm") == 0) &&
+                           !(strcmp(data->gui_units,"um") == 0) &&
+                           !(strcmp(data->gui_units,"ft") == 0) &&
+                           !(strcmp(data->gui_units,"in") == 0) &&
+                           !(strcmp(data->gui_units,"mil") == 0)) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3155: Value must be \"m\", \"mm\", \"cm\", \"um\", \"ft\", \"in\", or \"mil\" at line %d.\n",indent,indent,lineCount);
+                       }
+                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"gui.grid.size") == 0) {
+                   value=strtok(NULL," ");
+                   if (is_double(value)) {
+                       data->gui_grid_size=atof(value);
+                       value=strtok(NULL," ");
+                       if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                       if (data->gui_grid_size < 0.001) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3258: Value must be >= 0.001 at line %d.\n",indent,indent,lineCount);
+                       }
+                       if (data->gui_grid_size > 1000) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3260: Value must be < 1000 at line %d.\n",indent,indent,lineCount);
+                       }
+                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"gui.slot.count") == 0) {
+                  value=strtok(NULL," ");
+                  if (is_int(value)) {
+                     data->gui_slot_count=atoi(value);
+                     value=strtok(NULL," ");
+                     if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                     if (data->gui_slot_count < 1) {
+                        ierr=1;
+                        prefix(); printf("%s%sERROR3246: Value must be >= 1 at line %d.\n",indent,indent,lineCount);
+                     }
+                  } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"gui.oversubscribe") == 0) {
+                   value=strtok(NULL," ");
+                   if (is_bool(value)) {
+                       data->gui_oversubscribe=get_bool(value);
+                       value=strtok(NULL," ");
+                       if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"gui.mesh.scale") == 0) {
+                   value=strtok(NULL," ");
+                   if (is_double(value)) {
+                       data->gui_mesh_scale=atof(value);
+                       value=strtok(NULL," ");
+                       if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                       if (data->gui_mesh_scale < 0.01) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3259: Value must be >= 0.01 at line %d.\n",indent,indent,lineCount);
+                       }
+                       if (data->gui_mesh_scale > 100) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3257: Value must be < 100 at line %d.\n",indent,indent,lineCount);
+                       }
+                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"gui.mesh.minSize") == 0) {
+                   value=strtok(NULL," ");
+                   if (is_double(value)) {
+                       data->gui_mesh_minSize=atof(value);
+                       value=strtok(NULL," ");
+                       if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                       if (data->gui_mesh_minSize < 0) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3261: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
+                       }
+                   } else print_invalid_entry (&ierr,lineCount,indent);
+               }
+
+               else if (strcmp(keyword,"gui.mesh.maxSize") == 0) {
+                   value=strtok(NULL," ");
+                   if (is_double(value)) {
+                       data->gui_mesh_maxSize=atof(value);
+                       value=strtok(NULL," ");
+                       if (is_text(value)) print_invalid_entry (&ierr,lineCount,indent);
+                       if (data->gui_mesh_maxSize < 0) {
+                           ierr=1;
+                           prefix(); printf("%s%sERROR3262: Value must be >= 0 at line %d.\n",indent,indent,lineCount);
+                       }
+                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
                else if (strcmp(keyword,"field.point") == 0) {
@@ -2367,7 +3020,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
                   } else print_invalid_entry (&ierr,lineCount,indent);
                }
 
-               else {ierr=1; prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3164: Invalid entry at line %d.\n",indent,indent,lineCount);}
+               else {ierr=1; prefix(); printf("%s%sERROR3164: Invalid entry at line %d.\n",indent,indent,lineCount);}
             }
          } 
 
@@ -2394,35 +3047,35 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
 
       if (data->inputFrequencyPlansCount == 0) {
          ierr=1;
-         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3166: At least one frequency plan is required.\n",indent,indent);
+         prefix(); printf("%s%sERROR3166: At least one frequency plan is required.\n",indent,indent);
       } else {
          i=0;
          while (i < data->inputFrequencyPlansCount) {
             if (data->inputFrequencyPlans[i].type == 0 || data->inputFrequencyPlans[i].type == 1) {
                if (data->inputFrequencyPlans[i].stop < data->inputFrequencyPlans[i].start) {
                   ierr=1;
-                  prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3167: The stopping frequency must be >= to the starting frequency at line %d.\n",indent,indent,data->inputFrequencyPlans[i].lineNumber);
+                  prefix(); printf("%s%sERROR3167: The stopping frequency must be >= to the starting frequency at line %d.\n",indent,indent,data->inputFrequencyPlans[i].lineNumber);
                }
             }
             if (data->inputFrequencyPlans[i].type == 0 && data->inputFrequencyPlans[i].step <= 0) {
                ierr=1;
-               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3168: The frequency step must be positive at line %d.\n",indent,indent,data->inputFrequencyPlans[i].lineNumber);
+               prefix(); printf("%s%sERROR3168: The frequency step must be positive at line %d.\n",indent,indent,data->inputFrequencyPlans[i].lineNumber);
             }
             if (data->inputFrequencyPlans[i].type == 1 && data->inputFrequencyPlans[i].pointsPerDecade < 1) {
                ierr=1;
-               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3169: The number of points per decade must be >= 1 at line %d.\n",indent,indent,data->inputFrequencyPlans[i].lineNumber);
+               prefix(); printf("%s%sERROR3169: The number of points per decade must be >= 1 at line %d.\n",indent,indent,data->inputFrequencyPlans[i].lineNumber);
             }
             i++;
          }
 
          if (strcmp(data->refinement_frequency,"plan") == 0 && ! has_refinementFrequencyPlan(data)) {
             ierr=1;
-            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3170: A refinement plan is called for at line %d but no plan is provided.\n",indent,indent,lineRefinementFrequency);
+            prefix(); printf("%s%sERROR3170: A refinement plan is called for at line %d but no plan is provided.\n",indent,indent,lineRefinementFrequency);
          }
 
          if (strcmp(data->refinement_frequency,"plan") != 0 && has_refinementFrequencyPlan(data)) {
             ierr=1;
-            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3171: A refinement plan is not called for at line %d but a refinement plan or plans is provided.\n",indent,indent,lineRefinementFrequency);
+            prefix(); printf("%s%sERROR3171: A refinement plan is not called for at line %d but a refinement plan or plans is provided.\n",indent,indent,lineRefinementFrequency);
          }
 
       }
@@ -2430,11 +3083,18 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       if (check_antennaPatterns (data,indent)) ierr=1;
 
       if (data->refinement_iteration_max < data->refinement_iteration_min) {
-         ierr=1;//
-         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3172: The maximum iteration limit of %d must be >= to the minimum iteration limit of %d",
+         ierr=1;
+         prefix(); printf("%s%sERROR3172: The maximum iteration limit of %d must be >= to the minimum iteration limit of %d",
                                                  indent,indent,data->refinement_iteration_max,data->refinement_iteration_min);
-         if (lineIterationMax >= 0) {prefix(); PetscPrintf(PETSC_COMM_WORLD," at line %d.\n",lineIterationMax);}
-         else {prefix(); PetscPrintf(PETSC_COMM_WORLD,".\n");}
+         if (lineIterationMax >= 0) {prefix(); printf(" at line %d.\n",lineIterationMax);}
+         else {prefix(); printf(".\n");}
+      }
+
+      // avoid using invalid field dofs as initial guesses when using order ramping
+      if (!data->solution_shift_invert && data->solution_initial_guess_level > 1 && data->fem_order > 1) {
+         prefix(); printf("%s%sERROR3244: Invalid combination of keyword values for solution.shift.invert and solution.initial.guess.level",
+                                                 indent,indent);
+         ierr=1;
       }
    }
 
@@ -2460,7 +3120,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send (&length,1,MPI_INT,i,1000003,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->mesh_file,length,MPI_CHAR,i,1000004,PETSC_COMM_WORLD);
 
-         ierr=MPI_Send(&(data->mesh_order),1,MPI_INT,i,1000005,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->fem_order),1,MPI_INT,i,1000005,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_save_refined),1,MPI_INT,i,1000083,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_2D_refinement_fraction),1,MPI_DOUBLE,i,1000008,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->mesh_3D_refinement_fraction),1,MPI_DOUBLE,i,1000009,PETSC_COMM_WORLD);
@@ -2506,7 +3166,8 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send(&(data->refinement_relative_tolerance),1,MPI_DOUBLE,i,1000031,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->refinement_absolute_tolerance),1,MPI_DOUBLE,i,1000084,PETSC_COMM_WORLD);
 
-         ierr=MPI_Send(&(data->inputFrequencyPlansCount),1,MPI_UNSIGNED_LONG,i,1000032,PETSC_COMM_WORLD);
+         planCount=data->inputFrequencyPlansCount;
+         ierr=MPI_Send(&planCount,1,MPI_INT,i,1000032,PETSC_COMM_WORLD);
          j=0;
          while (j < data->inputFrequencyPlansCount) {
             ierr=MPI_Send(&(data->inputFrequencyPlans[j].type),1,MPI_INT,i,1000033,PETSC_COMM_WORLD);
@@ -2549,8 +3210,8 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send(&(data->solution_check_homogeneous),1,MPI_INT,i,1000087,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_accurate_residual),1,MPI_INT,i,1000059,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_shift_invert),1,MPI_INT,i,1000060,PETSC_COMM_WORLD);
-         ierr=MPI_Send(&(data->solution_use_initial_guess),1,MPI_INT,i,1000061,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->solution_shift_factor),1,MPI_DOUBLE,i,1000062,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->solution_initial_guess_level),1,MPI_INT,i,1000061,PETSC_COMM_WORLD);
 
          ierr=MPI_Send(&(data->inputAntennaPatternsCount),1,MPI_INT,i,1000099,PETSC_COMM_WORLD);
          j=0;
@@ -2613,6 +3274,34 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
          ierr=MPI_Send(&(data->debug_tempfiles_keep),1,MPI_INT,i,1000076,PETSC_COMM_WORLD);
          ierr=MPI_Send(&(data->debug_refine_preconditioner),1,MPI_INT,i,1000110,PETSC_COMM_WORLD);
 
+         length=strlen(data->gui_units);
+         ierr=MPI_Send (&length,1,MPI_INT,i,1000089,PETSC_COMM_WORLD);
+         ierr=MPI_Send(data->gui_units,length,MPI_CHAR,i,1000090,PETSC_COMM_WORLD);
+
+         ierr=MPI_Send(&(data->gui_grid_size),1,MPI_DOUBLE,i,1000122,PETSC_COMM_WORLD);
+
+         ierr=MPI_Send(&(data->gui_slot_count),1,MPI_INT,i,1000121,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->gui_oversubscribe),1,MPI_INT,i,1000126,PETSC_COMM_WORLD);
+
+         ierr=MPI_Send(&(data->gui_mesh_scale),1,MPI_DOUBLE,i,1000123,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->gui_mesh_minSize),1,MPI_DOUBLE,i,1000124,PETSC_COMM_WORLD);
+         ierr=MPI_Send(&(data->gui_mesh_maxSize),1,MPI_DOUBLE,i,1000125,PETSC_COMM_WORLD);
+
+         ierr=MPI_Send(&(data->physicalGroupMaterialCount),1,MPI_INT,i,1000115,PETSC_COMM_WORLD);
+         j=0;
+         while (j < data->physicalGroupMaterialCount) {
+             ierr=MPI_Send(&(data->physicalGroupMaterials[j].lineNumber),1,MPI_INT,i,1000116,PETSC_COMM_WORLD);
+             ierr=MPI_Send(&(data->physicalGroupMaterials[j].dim),1,MPI_INT,i,1000117,PETSC_COMM_WORLD);
+             ierr=MPI_Send(&(data->physicalGroupMaterials[j].tag),1,MPI_INT,i,1000118,PETSC_COMM_WORLD);
+
+             length=0;
+             if (data->physicalGroupMaterials[j].materialName != NULL) length=strlen(data->physicalGroupMaterials[j].materialName);
+             ierr=MPI_Send (&length,1,MPI_INT,i,1000119,PETSC_COMM_WORLD);
+             if (length > 0) ierr=MPI_Send(data->physicalGroupMaterials[j].materialName,length,MPI_CHAR,i,1000120,PETSC_COMM_WORLD);
+
+             j++;
+         }
+
          ierr=MPI_Send(&(data->field_points_count),1,MPI_INT,i,1000077,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->field_points_x,data->field_points_count,MPI_DOUBLE,i,1000078,PETSC_COMM_WORLD);
          ierr=MPI_Send(data->field_points_y,data->field_points_count,MPI_DOUBLE,i,1000079,PETSC_COMM_WORLD);
@@ -2636,7 +3325,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(data->mesh_file,length,MPI_CHAR,0,1000004,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       data->mesh_file[length]='\0';
 
-      ierr=MPI_Recv(&(data->mesh_order),1,MPI_INT,0,1000005,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->fem_order),1,MPI_INT,0,1000005,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_save_refined),1,MPI_INT,0,1000083,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_2D_refinement_fraction),1,MPI_DOUBLE,0,1000008,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->mesh_3D_refinement_fraction),1,MPI_DOUBLE,0,1000009,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
@@ -2698,7 +3387,7 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(&(data->refinement_relative_tolerance),1,MPI_DOUBLE,0,1000031,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->refinement_absolute_tolerance),1,MPI_DOUBLE,0,1000084,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
-      ierr=MPI_Recv(&planCount,1,MPI_UNSIGNED_LONG,0,1000032,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&planCount,1,MPI_INT,0,1000032,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       j=0;
       while (j < planCount) {
          ierr=MPI_Recv(&planType,1,MPI_INT,0,1000033,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
@@ -2752,8 +3441,8 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(&(data->solution_check_homogeneous),1,MPI_INT,0,1000087,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_accurate_residual),1,MPI_INT,0,1000059,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_shift_invert),1,MPI_INT,0,1000060,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
-      ierr=MPI_Recv(&(data->solution_use_initial_guess),1,MPI_INT,0,1000061,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->solution_shift_factor),1,MPI_DOUBLE,0,1000062,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->solution_initial_guess_level),1,MPI_INT,0,1000061,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
 
       ierr=MPI_Recv(&patternCount,1,MPI_INT,0,1000099,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       j=0;
@@ -2792,6 +3481,10 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
 
          add_antennaPattern(data,lineNumber,dim,quantity1,quantity2,plane,theta,phi,latitude,rotation);
 
+         if (quantity1) {free(quantity1); quantity1=NULL;}
+         if (quantity2) {free(quantity2); quantity2=NULL;}
+         if (plane) {free(plane); plane=NULL;}
+
          j++;
       }
 
@@ -2826,6 +3519,43 @@ PetscErrorCode load_project_file (const char *filename, struct projectData *data
       ierr=MPI_Recv(&(data->debug_skip_forced_reciprocity),1,MPI_INT,0,1000086,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->debug_tempfiles_keep),1,MPI_INT,0,1000076,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       ierr=MPI_Recv(&(data->debug_refine_preconditioner),1,MPI_INT,0,1000110,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+      ierr=MPI_Recv(&length,1,MPI_INT,0,1000089,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      if (data->gui_units) free(data->gui_units);
+      data->gui_units=(char *) malloc((length+1)*sizeof(char));
+      ierr=MPI_Recv(data->gui_units,length,MPI_CHAR,0,1000090,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      data->gui_units[length]='\0';
+
+      ierr=MPI_Recv(&(data->gui_grid_size),1,MPI_DOUBLE,0,1000122,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+      ierr=MPI_Recv(&(data->gui_slot_count),1,MPI_INT,0,1000121,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->gui_oversubscribe),1,MPI_INT,0,1000126,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+      ierr=MPI_Recv(&(data->gui_mesh_scale),1,MPI_DOUBLE,0,1000123,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->gui_mesh_minSize),1,MPI_DOUBLE,0,1000124,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      ierr=MPI_Recv(&(data->gui_mesh_maxSize),1,MPI_DOUBLE,0,1000125,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+      ierr=MPI_Recv(&physicalGroupMaterialCount,1,MPI_INT,0,1000115,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+      j=0;
+      while (j < physicalGroupMaterialCount) {
+          ierr=MPI_Recv(&lineNumber,1,MPI_INT,0,1000116,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+          ierr=MPI_Recv(&dim,1,MPI_INT,0,1000117,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+          ierr=MPI_Recv(&tag,1,MPI_INT,0,1000118,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+          materialName=NULL;
+          ierr=MPI_Recv(&length,1,MPI_INT,0,1000119,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+          if (length > 0) {
+              materialName=(char *) malloc((length+1)*sizeof(char));
+              ierr=MPI_Recv(materialName,length,MPI_CHAR,0,1000120,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+              materialName[length]='\0';
+          }
+
+          add_physicalGroupMaterial(data,lineNumber,dim,tag,materialName);
+
+          if (materialName) {free(materialName); materialName=NULL;}
+
+          j++;
+      }
 
       ierr=MPI_Recv(&(data->field_points_count),1,MPI_INT,0,1000077,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
       data->field_points_allocated=data->field_points_count;

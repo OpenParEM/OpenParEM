@@ -1,0 +1,66 @@
+#OpenParEMports 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D/regression/slotline/step/step2.FCStd
+EndFile
+
+Path
+   name=1
+   point=(0.0,0.0,-0.003429)
+   point=(0.002,0.0,-0.003429)
+   point=(0.002,1.5791812302268227e-18,0.003683)
+   point=(0.0,1.5791812302268227e-18,0.003683)
+   closed=true
+EndPath
+
+Path
+   name=V1
+   point=(0.001875,0.0,0.000254)
+   point=(0.002,0.0,0.000254)
+   closed=false
+EndPath
+
+Path
+   name=2
+   point=(0.002,0.001778,-0.003429)
+   point=(0.0,0.001778,-0.003429)
+   point=(0.0,0.0017780000000000016,0.003683)
+   point=(0.002,0.0017780000000000016,0.003683)
+   closed=true
+EndPath
+
+Path
+   name=V2
+   point=(0.001575,0.001778,0.000254)
+   point=(0.002,0.001778,0.000254)
+   closed=false
+EndPath
+
+Port
+   name=1
+   path=+1
+   impedance_definition=PV
+   impedance_calculation=modal
+   Mode
+      Sport=1
+      IntegrationPath
+         type=voltage
+         path=+V1
+      EndIntegrationPath
+   EndMode
+EndPort
+
+Port
+   name=2
+   path=+2
+   impedance_definition=PV
+   impedance_calculation=modal
+   Mode
+      Sport=2
+      IntegrationPath
+         type=voltage
+         path=+V2
+      EndIntegrationPath
+   EndMode
+EndPort
+

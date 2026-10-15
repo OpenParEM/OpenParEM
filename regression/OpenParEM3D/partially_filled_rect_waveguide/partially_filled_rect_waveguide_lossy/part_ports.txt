@@ -1,0 +1,142 @@
+#OpenParEMports 1.0
+
+File
+   name=generated_by_OpenParEMg
+EndFile
+
+Path
+   name=path1
+   point=(0,0,0)
+   point=(0.02,0,0)
+   point=(0.02,0.009,0)
+   point=(0,0.009,0)
+   closed=true
+   normal=(0,0,1)
+EndPath
+
+Path
+   name=v1
+   point=(0.01,0.009,0)
+   point=(0.01,0,0)
+   closed=false
+   normal=(0,0,1)
+EndPath
+
+Path
+   name=path2
+   point=(0,0.009,0.1)
+   point=(0.02,0.009,0.1)
+   point=(0.02,0,0.1)
+   point=(0,0,0.1)
+   closed=true
+   normal=(0,0,1)
+EndPath
+
+Path
+   name=v2
+   point=(0.01,0.009,0.1)
+   point=(0.01,0,0.1)
+   closed=false
+   normal=(0,0,1)
+EndPath
+
+Path
+   name=path3
+   point=(0,0,0.099)
+   point=(0,0,0.001)
+   point=(0.02,0,0.001)
+   point=(0.02,0,0.099)
+   closed=true
+   normal=(0,-1,0)
+EndPath
+
+Path
+   name=path4
+   point=(0,0.009,0.099)
+   point=(0,0.009,0.001)
+   point=(0,0,0.001)
+   point=(0,0,0.099)
+   closed=true
+   normal=(-1,0,0)
+EndPath
+
+Path
+   name=path5
+   point=(0.02,0.009,0.099)
+   point=(0.02,0.009,0.001)
+   point=(0,0.009,0.001)
+   point=(0,0.009,0.099)
+   closed=true
+   normal=(0,1,-0)
+EndPath
+
+Path
+   name=path6
+   point=(0.02,0,0.099)
+   point=(0.02,0,0.001)
+   point=(0.02,0.009,0.001)
+   point=(0.02,0.009,0.099)
+   closed=true
+   normal=(1,0,0)
+EndPath
+
+Boundary
+   name=boundary1
+   type=surface_impedance
+   material=copper
+   path=path3
+EndBoundary
+
+Boundary
+   name=boundary2
+   type=surface_impedance
+   material=copper
+   path=path4
+EndBoundary
+
+Boundary
+   name=boundary3
+   type=surface_impedance
+   material=copper
+   path=path5
+EndBoundary
+
+Boundary
+   name=boundary4
+   type=surface_impedance
+   material=copper
+   path=path6
+EndBoundary
+
+Port
+   name=port1
+   path=path1
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      net=net1
+      Sport=1
+      IntegrationPath
+         type=voltage
+         scale=1
+         path=+v1
+      EndIntegrationPath
+   EndLine
+EndPort
+
+Port
+   name=port2
+   path=path2
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      net=net2
+      Sport=2
+      IntegrationPath
+         type=voltage
+         scale=1
+         path=+v2
+      EndIntegrationPath
+   EndLine
+EndPort
+

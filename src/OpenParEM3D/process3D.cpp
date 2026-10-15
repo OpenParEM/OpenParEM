@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 //                                                                               //
 //    process3D - processor for automation of regression testing of OpenParEM3D  //
-//    Copyright (C) 2025 Brian Young                                             //
+//    Copyright (C) 2026 Brian Young                                             //
 //                                                                               //
 //    This program is free software: you can redistribute it and/or modify       //
 //    it under the terms of the GNU General Public License as published by       //
@@ -351,6 +351,7 @@ bool TestCaseDatabase::load (const char *filename)
             }
          }
       }
+      inFile.close();
    } else {
       cout << "|ERROR3122: Unable to open file \"" << filename << "\" for reading." << endl;
       return true;

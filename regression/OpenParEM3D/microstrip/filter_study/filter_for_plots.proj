@@ -6,7 +6,7 @@ mesh.file                      filter.msh
 mesh.quality.limit             1e6
 //mesh.refinement.fraction       0.0015
 
-mesh.order                     3
+fem.order                      3
 
 port.definition.file           filter_ports.txt
 
@@ -38,7 +38,6 @@ solution.iteration.limit       30000
 solution.modes.buffer          0
 solution.accurate.residual     false
 solution.shift.invert          true
-solution.use.initial.guess     true
 
 output.show.refining.mesh      false
 output.show.postprocessing     false

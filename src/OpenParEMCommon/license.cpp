@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -22,7 +22,7 @@
 
 void print_copyright_notice (string program_name, int major, int minor, int patch)
 {
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s %d.%d.%d Copyright (C) 2025 Brian Young\n",program_name.c_str(),major,minor,patch);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s %d.%d.%d Copyright (C) 2026 Brian Young\n",program_name.c_str(),major,minor,patch);
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"This program comes with ABSOLUTELY NO WARRANTY.  This is free software,\n");
    prefix(); PetscPrintf(PETSC_COMM_WORLD,"and you are welcome to distribute it under certain conditions. To see\n");
@@ -34,7 +34,11 @@ void print_copyright_notice (string program_name, int major, int minor, int patc
 
 void print_license()
 {
-   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Printing license text ...\n\n");
+   PetscMPIInt rank;
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   #include "formatted_license.txt"
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Printing license text ...\n\n");
+   if (rank == 0) {
+      #include "formatted_license.txt"
+   }
 }

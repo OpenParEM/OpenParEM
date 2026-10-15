@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM2D - A fullwave 2D electromagnetic simulator.                  //
-//    Copyright (C) 2025 Brian Young                                          //
+//    Copyright (C) 2026 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -26,8 +26,6 @@
 #include "project.h"
 #include "triplet.h"
 
-//int Hsetup (struct projectData *, Mat *, Mat *, Mat *, Mat *, Mat *, PetscMPIInt);
-//int Hsolve (struct projectData *, Mat *, Mat *, Mat *, Mat *, Mat *, PetscInt, PetscInt, Vec *, PetscScalar *, Vec *, PetscMPIInt);
 PetscErrorCode printMatInfo (const char *, Mat *);
 void convergence (struct projectData *, KSPConvergedReason);
 int loadDataFileStats (const char *, char *, char *, PetscInt *, PetscInt *, PetscInt *);

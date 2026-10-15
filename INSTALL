@@ -2,24 +2,21 @@
 Installing OpenParEM using the package with pre-compiled binaries
 ----------------------------------------------------------------------------------
 
-The pre-compiled binary allows OpenParEM to be run on x86 Linux platforms without
+The pre-compiled binaries allow OpenParEM to be run on x86 Linux platforms without
 installing any additional packages. The installation process is to download and 
-unpack the binary distribution, set the PATH environment variable, then run the 
-test script to ensure successful operation.
+unpack the binary distribution, set the environment variables, then run the 
+test script to verify successful operation.
 
-Execution with the pre-compiled binary is verified for the following operating
+Execution with the pre-compiled binary is validated for the following operating
 systems:
 
-Ubuntu 22.04 LTS
-Ubuntu 24.04 LTS
-Redhat RHEL 9.5 [the binary is compiled on RHEL 9.5]
-Debian 12
-Suse SLES 15-SP6
-Amazon 2023 AMI
-Windows 11 using WSL2 and Ubuntu 24.04 LTS
-
-The binary fails to run on the following systems:
-Suse SLES 12-SP5 - The GLIBC binary in the Suse system is too old.
+Ubuntu 22.04.5 LTS
+Ubuntu 24.04.5 LTS
+Ubuntu 26.04.1 LTS
+Debian 13 (trixie)
+Fedora 44 (Workstation Edition)
+openSUSE 16.0 (Leap)
+Windows WSL2 running Ubuntu 26.04.1 LTS
 
 Detailed instructions:
 
@@ -31,7 +28,7 @@ Detailed instructions:
    $ ln -s OpenParEM-version OpenParEM
 
    Setting the link enables new revisions to be installed without having to
-   modifiy the PATH environment variable in the shell configuration file.
+   modifiy the environment variables in the shell configuration file.
 
 4. In directory $HOME, edit the configuration file for the shell used for
    command line processing.
@@ -44,25 +41,22 @@ Detailed instructions:
       c. for bash, the configuration file is .bashrc
       d. edit .bashrc with any text editor
 
-5. Add the following paths to the shell configuration file:
+5. Set the following environment variables in the shell configuration file.
 
-   install_dir/OpenParEM/bin
-   install_dir/OpenParEM/scripts
+   export PATH=install_dir/OpenParEM/bin:install_dir/OpenParEM/scripts:$PATH
+   export FONTCONFIG_PATH=install_dir/OpenParEM/etc/fonts
+   export OPAL_PREFIX=install_dir/OpenParEM
+   export PMIX_PREFIX=install_dir/OpenParEM
 
-   example using the bash shell for install_dir:
-      export PATH=install_dir/OpenParEM/bin:$install_dir/OpenParEM/scripts:$PATH
-
-   example when install_dir is the user's home directory:
-      export PATH=$HOME/OpenParEM/bin:$HOME/OpenParEM/scripts:$PATH
+   After editing and saving the configuration file, either source the modified
+   version or exit and start a new terminal to pick up the changes.
 
 6. Copy the FreeCAD and ParaView Python scripts to the default locations.
 
    $ cd install_dir/OpenParEM/scripts
    $ OpenParEM_build --without-all
 
-7. Save the configuration file, exit the text editor, and close the terminal.
-8. Open a new terminal to pick up the new settings.
-9. Test the installation:
+7. Test the installation:
 
    $ cd install_dir/OpenParEM/scripts
    $ OpenParEM_test
@@ -70,107 +64,74 @@ Detailed instructions:
    If the two tests pass, then the installation is complete.
 
 ----------------------------------------------------------------------------------
-Installing OpenParEM using the package with source code and compilation
+Installing OpenParEM by Compiling from Source
 ----------------------------------------------------------------------------------
 
 OpenParEM can be compiled from source, which is the preferred method for using
 OpenParEM if the necessary build tools are installed or can be installed on the
-system.  To simplify the build process, a build script is provided that includes
-all dependencies so that a single command builds and tests the compiled binary.
+system.
 
-The installation process is to download and unpack the binary distribution,
-install any missing compilation tools, run the compilation script, update the PATH
-environment variable, then run the test script to ensure successful operation.
+The installation process is to download and unpack the source distribution or
+clone the project from GitHub, run the compilation script, install any missing
+compilation tools, re-run if needed, then update the PATH envinroment variable.
 
-Compilation is verified for the following x86 Linux operating systems:
+Compilation is validated for the following x86 Linux operating systems:
 
 Ubuntu 22.04.5 LTS
-Ubuntu 24.04.2 LTS
-Redhat RHEL 9.5 
-Debian 12
-Amazon 2023 AMI
-Windows 11 using WSL2 and Ubuntu 24.04 LTS
+Ubuntu 24.04.5 LTS
+Ubuntu 26.04.1 LTS
+Debian 13 (trixie)
+openSUSE 16.0 (Leap)
+Windows WSL2 running Ubuntu 26.04.1 LTS
 
-Compililation fails for the following operating systems:
-
-Suse SLES 15-SP6 - fails during compilation of the MFEM library with a
-                   segmentation fault reported by mpicxx
-Suse SLES 12-SP5 - fails during configuration of Petsc for fortran bindings
-
+Compililation completes but fails validation for the following operating systems:
+Fedora 44 (Workstation Edition)
 
 --------------------------
 Required Compilation Tools
 --------------------------
 
-The compilation tools make, g++, gfortran, and perl must be installed on the 
-system to complete the installation.  The "which" command can be used to determine
-if a tool is installed.  For example, if the command
+A number of tools must be installed on the system for compilation to complete,
+such as make, g++, gfortran, etc.  The build script OpenParEM_build checks for
+the presence of the needed tools and reports any missing.  If all tools are found,
+then compilation proceeds.
 
-   $ which make
-
-returns a path, then make is installed.  If nothing is returned, then it is not
-installed.
-
-Missing tools can be installed using the system's package manager.  For Linux 
-versions using the Debian package manager APT (used on Debian, Ubuntu, Linux Mint,
-and others), the commands are
-
-   $ sudo apt update
-   $ sudo apt-get install make
-   $ sudo apt-get install g++
-   $ sudo apt-get install gfortran
-   $ sudo apt-get install perl
-
-For Redhat RHEL and Amazon AMI, the yum package manager is used with the commands:
-
-   $ sudo yum update
-   $ sudo yum install make
-   $ sudo yum install g++
-   $ sudo yum install gfortran
-   $ sudo yum install perl
-
-For Suse SLES, the zypper package manager is used with the commands:
-
-   $ sudo zypper update
-   $ sudo zypper install make
-   $ sudo zypper install gcc-c++
-   $ sudo zypper install gcc-fortran
-   $ sudo zypper install perl
-
-Note that installing packages requires system-level installation priviledges.
+Install any needed tools with the package installation manager on the Linux
+system.  Note that this requires sudo administrator priviledges.
 
 ----------------------------
 Compilation and Installation 
----------------------------
+----------------------------
 
-1. Download the installation package OpenParEM-version.tar.gz.
-2. Copy the installation package to a src directory "src_dir"
-3. cd to src_dir and unpack the src tree using the commands:
+1. Install source code by either installing the installation package or cloning
+   from GitHub.
 
-   $ tar -xf OpenParEM-version.tar.gz
-   $ ln -s OpenParEM-version OpenParEM
+   1.1. Installing using the installation package
+      1.1.1. Download the installation package OpenParEM-version.tar.gz.
+      1.1.2. Copy the installation package to a src directory "src_dir"
+      1.1.3. cd to src_dir and unpack the src tree using the commands:
 
-   Setting the link enables new revisions to be installed without having to
-   modifiy the PATH environment variable in the shell configuration file.
+             $ tar -xf OpenParEM-version.tar.gz
+             $ ln -s OpenParEM-version OpenParEM
+
+             Setting the link enables new revisions to be installed without having to
+             modifiy the PATH environment variable in the shell configuration file.
+
+   1.2. Installing by cloning from GitHub
+      1.2.1. Install git on the system if not already installed.
+      1.2.2. Clone from GitHub using the following command:
+
+             $ git clone https://github.com/OpenParEM/OpenParEM 
 
 4. cd to OpenParEM/scripts.
 5. Compile and install in the src tree by running the script "OpenParEM_build".
 
    example:
-      $ ./OpenParEM_build --jobs=4 --with-all
+      $ ./OpenParEM_build --jobs=4
 
       The installation directory install_dir=src_dir/OpenParEM and the
-      compilers use 4 processors for faster compilation. All libraries are
-      compiled for maximum compatibility, and testing of OpenParEM primarily uses
-      the --with-all option.  Generally, set the number of jobs equal to the
-      number of high-performance cores on the computer.
-
-   example:
-      $ ./OpenParEM_build --jobs=4 
-
-      cmake, flex, bison, and Open MPI are not compiled and installed if they are
-      found on the system.  For Open MPI, the development package must be
-      installed in addition to the executable package.
+      compilers use 4 processors for faster compilation.  Generally, set jobs to
+      the number of high-performance cores on the system.
 
    Compilation does not require administrator priviledges unless the --prefix
    option below is specified with a location in an area where the user does not
@@ -187,7 +148,7 @@ Compilation and Installation
    by providing the location to the build script with the --prefix option.
 
    example installing in the directory $HOME/local:
-      $ ./OpenParEM_build --jobs=4 --prefix=$HOME/local --with-all
+      $ OpenParEM_build --jobs=4 --prefix=$HOME/local
 
       In this case, install_dir=$HOME/local.  The directory "local" must
       exist before running the script.
@@ -203,27 +164,85 @@ Compilation and Installation
       a. cd $HOME
       b. check which shell is being used
          $ echo $SHELL
-           /bin/bash
+         /bin/bash
       c. for bash, the configuration file is .bashrc
       d. edit .bashrc with any text editor
 
-9. Add the following paths to the shell configuration file:
+9. Set the following environment variables in the shell configuration file.
 
-   install_dir/bin
-   src_dir/OpenParEM/scripts
+   export PATH=install_dir/OpenParEM/bin:install_dir/OpenParEM/scripts:$PATH
 
-   example using the bash shell for an in-place installation with src_dir=$HOME
-      export PATH=$HOME/OpenParEM/bin:$HOME/OpenParEM/scripts:$PATH
+   After editing and saving the configuration file, either source the modified
+   version or exit and start a new terminal to pick up the changes.
 
-   example when src_dir=$HOME and install_dir=$HOME/local 
-      export PATH=$HOME/local/bin:$HOME/OpenParEM/scripts:$PATH
-
-10. Save the configuration file, exit the text editor, and close the terminal.
-11. Open a new terminal to pick up the new settings.
-13. Test the installation with these commands:
+10. In the output of the build script, look for the tests of OpenParEM2D and
+    OpenParEM3D.  For a successful compilation, the two should be reported with
+    "pass".  Scroll back up the output to find the messages.
+11. To check that the various paths have been set properly, the execution tests
+    can be re-run. Test the installation with these commands:
 
    $ cd src_dir/OpenParEM/scripts
-   $ OpenParEM_test
+   $ ./OpenParEM_test
 
-   If the two tests pass, then the installation is complete.
+   If the two tests pass, then the installation is verified.
+
+------------
+Compile Time
+------------
+
+1. Compile time depends on the system and the number of jobs.  For a typical
+   desktop PC or workstation with jobs set to the number of physical cores,
+   expect approximately 1 hour for compiling.
+2. Almost all of the compile time is spent on libraries such as OpenMPI, OCCT,
+   and Qt.  The OpenParEM code itself only requires a few minutes.
+3. By compiling all required libraries except basic OS libraries like libc and
+   libm, library compatibility and version issues are avoided, plus the pre-
+   compiled library requires no packages to be installed, so the user does not
+   require root priviliges to run sudo [or having to get a sys admin to install
+   packages].
+
+----------------------------------------------------------------------------------
+OpenMPI and MPICH
+----------------------------------------------------------------------------------
+
+OpenMPI is used in the pre-compiled binaries and is the default in the build
+script.  MPICH can used instead of OpenMPI by setting the command line switch
+--with-mpich to the build script to compile with MPICH.
+
+   example:
+      $ OpenParEM_build --jobs=4 --with-mpich
+
+Note that all development, testing, and validation is done with OpenMPI.  Should
+problems occur when running with MPICH, please contact the developers.
+
+----------------------------------------------------------------------------------
+Startup Warnings
+----------------------------------------------------------------------------------
+
+A harmless warning can appear on some systems:
+
+qt.qpa.services: Failed to register with host portal 
+QDBusError("org.freedesktop.DBus.Error.ServiceUnknown", 
+"The name org.freedesktop.portal.Desktop was not provided by any .service files")
+
+If desired, this warning can be eliminated by installing package 
+"xdg-desktop-portal".  For example, on Ubuntu the command is
+   $ sudo apt-get install xdg-desktop-portal
+
+----------------------------------------------------------------------------------
+Uninstalling OpenParEM
+----------------------------------------------------------------------------------
+
+1. Remove scripts and helper files:
+   $ cd install_dir/OpenParEM/scripts
+   $ OpenParEM_build --remove-helper-scripts
+2. Remove OpenParEM:
+   $ cd install_dir
+   $ rm -Rf OpenParEM
+3. Remove the configuration file for OpenParEMg:
+   $ cd $HOME
+   $ rm -f .OpenParEMg
+4. In directory $HOME, edit the configuration file for the shell used for
+   command line processing and remove all previous entries made referring to
+   OpenParEM.
 
