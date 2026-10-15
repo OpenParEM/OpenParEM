@@ -3267,7 +3267,7 @@ if [ "$create_binary_distribution" = "1" ]; then
    rm -f dependencies.txt
    echo ""
 
-   echo "Done. Created ../OpenParEM-2.2.0.tar.gz"
+   echo "Done. Created ../OpenParEM-2.2.0-bin.tar.gz"
    echo ""
 fi
 
