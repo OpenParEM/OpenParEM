@@ -68,17 +68,19 @@ OpenParEM is validated on a number of Linux flavors for the pre-compiled binary 
    \item hand-drawn complex test case
 \end{itemize}
 
-The validation results are summarized in Table~\ref{table:validatedLinux}, showing the results for each for the pre-compiled binary and for compiling from source.
+\noindent The validation results are summarized in Table~\ref{table:validatedLinux}, showing the results for each for the pre-compiled binary and for compiling from source.
 
-\begin{table}
+\begin{table}[H]
 \small
 \caption{Validated Linux Flavors for OpenParEM.}
 \begin{center}
 \begin{tabular}{|c|c|c|c|c|}
 \hline
-Linux & Version & Pre-compiled Binary & Compiled From Source & Note \\
+Linux & Version & Pre-compiled & Compiled From & Note \\
+      &         & Binary       & Source        &      \\
 \hline
-Ubuntu & 22.04.5 LTS & pass & pass & Source for the pre-compiled binary. See Note 1.\\
+Ubuntu & 22.04.5 LTS & pass & pass & Source for the pre-compiled \\
+       &             &      &      & binary. See Note 1. \\
 Ubuntu & 24.04.5 LTS & pass & pass & \\
 Ubuntu & 26.04.1 LTS & pass & pass & \\
 Debian & 13 (trixie) & pass & pass & \\
@@ -93,7 +95,7 @@ Windows WSL2 & Ubuntu 26.04.1 LTS & pass & pass & See Notes 3 and 4.\\
 
 \noindent Notes:
 
-\noindent 1. Compiling for Ubuntu 22 requires additional setup for Python as documented in Sec.~\ref{Ubuntu22}.
+\noindent 1. Compiling for Ubuntu 22 requires additional setup for Python as documented in Sec.~\ref{sec:Ubuntu22}.
 
 \noindent 2. For Fedora, compiling from source succeeds and passes most tests. However, the antenna regression tests with thin plates immediately crash OpenParEMg on opening the project.  Compiled under Fedora, OCCT does not retain sufficient precision to resolve thin plates.  Compiler settings would resolve this issue, but to date, the required settings have not been found after multiple attempts.
 
@@ -122,11 +124,11 @@ $ ln -s OpenParEM-version OpenParEM
 $ cd OpenParEM
 $ more INSTALL
          \end{Verbatim}
-   \item Set the PATH, FONTCONFIG_PATH, OPAL_PREFIX, and PMIX_PREFIX environment variables.  See the INSTALL file for details.
+   \item Set the PATH, FONTCONFIG\_PATH, OPAL\_PREFIX, and PMIX\_PREFIX environment variables.  See the INSTALL file for details.
    \item Install Python scripts for FreeCAD and ParaView:
          \begin{Verbatim}
 $ cd scripts
-$ OpenParEM_build --without-all
+$ OpenParEM\_build --without-all
          \end{Verbatim}
          The \texttt{--without-all} option installs the scripts while skipping all compilation.
    \item Test:
@@ -140,31 +142,31 @@ $ OpenParEM_test
 
 \section{Compiling from Source}
 
-OpenParEM can be compiled for Linux-based operating systems and does not require administrator priviledges if the needed build tools installed such as g++ and make are installed on the system.  See Table~\ref{table:validatedLinux} for Linux flavors for which compiling has been validated.  The OpenParEM_build script checks for the needed building tools and reports any missing tools.  After installing any missing tools, the build script can be re-run, and if all tools are found, then compilation proceeds.
+OpenParEM can be compiled for Linux-based operating systems and does not require administrator priviledges if the needed build tools installed such as g++ and make are installed on the system.  See Table~\ref{table:validatedLinux} for Linux flavors for which compiling has been validated.  The OpenParEM\_build script checks for the needed building tools and reports any missing tools.  After installing any missing tools, the build script can be re-run, and if all tools are found, then compilation proceeds.
 Note that when installing libtool, two packages are required to be installed: libtool and libtool-bin.
 
 When compiling, OpenMPI is the default, but MPICH can be used instead with a command-line switch.  Note that OpenParEM development, testing, and validation is done with OpenMPI.  Should issues occur when using MPICH, please contact the developers.
 
 \subsection{Downloaded Packages}
 
-OpenParEM requires many packages, such as OCCT and Qt, to compile.  These are downloaded and checked by the build script OpenParEM_build.  Once downloaded, they are not re-downloaded on additional compilation runs, but they are re-checked.
+OpenParEM requires many packages, such as OCCT and Qt, to compile.  These are downloaded and checked by the build script OpenParEM\_build.  Once downloaded, they are not re-downloaded on additional compilation runs, but they are re-checked.
 
-If a download error occurs, then the check will fail, and the build process will stop.  On subsequent runs of OpenParEM_build, the process will stop at the faulty download.  To clear the faulty download, note the *.gz file on which OpenParEM_build stops, then switch to the \texttt{external_packages} directory and delete the gz file and any signature file (sig or asc) file with the matching file name.  Then re-run the build script.  Barring any download errors, OpenParEM_build should always make it through the download step.
+If a download error occurs, then the check will fail, and the build process will stop.  On subsequent runs of OpenParEM\_build, the process will stop at the faulty download.  To clear the faulty download, note the *.gz file on which OpenParEM\_build stops, then switch to the \texttt{external\_packages} directory and delete the gz file and any signature file (sig or asc) file with the matching file name.  Then re-run the build script.  Barring any download errors, OpenParEM\_build should always make it through the download step.
 
 \subsection{Ubuntu 22}
 \label{sec:Ubuntu22}
 
-The library \texttt{xkeyboard-config} requires Python 3.11, but due to its age, Ubuntu 22 uses Python 3.10.  To compile OpenParEM in Ubuntu 22 requires using Python 3.11 for compiling \texttt{xkeyboard-confg}.  Python 3.11 must be installed on the system, but it must not be installed for general system use to keep from breaking other applications.  The OpenParEM_build script uses the installed Python 3.11 version in a virtual environment to avoid installing it for general use.
+The library \texttt{xkeyboard-config} requires Python 3.11, but due to its age, Ubuntu 22 uses Python 3.10.  To compile OpenParEM in Ubuntu 22 requires using Python 3.11 for compiling \texttt{xkeyboard-confg}.  Python 3.11 must be installed on the system, but it must not be installed for general system use to keep from breaking other applications.  The OpenParEM\_build script uses the installed Python 3.11 version in a virtual environment to avoid installing it for general use.
 
 To install Python 3.11, issue the following commands (requires root priviledge):
-\begin{itemize}[nosep]
-   \item $ sudo apt install software-properties-common
-   \item $ sudo add-apt-repository ppa:deadsnakes/ppa
-   \item $ sudo apt update
-   \item $ sudo apt install python3.11 python3.11-dev python3.11-venv
-\end{itemize}
+\begin{verbatim}
+   $ sudo apt install software-properties-common
+   $ sudo add-apt-repository ppa:deadsnakes/ppa
+   $ sudo apt update
+   $ sudo apt install python3.11 python3.11-dev python3.11-venv
+\end{verbatim}
 
-During execution, \texttt{OpenParEM_build} checks for the presence of Python 3.10, and if it finds it, it checks for the availability of python3.11.  If it finds it, processing continues, otherwise an error is printed.  Note that this simple check is not intended to cover any of the many possible corner cases: it is just here to get Ubuntu 22 to compile.
+During execution, \texttt{OpenParEM\_build} checks for the presence of Python 3.10, and if it finds it, it checks for the availability of python3.11.  If it finds it, processing continues, otherwise an error is printed.  Note that this simple check is not intended to cover any of the many possible corner cases: it is just here to get Ubuntu 22 to compile.
 
 \subsection{Using a Downloaded Package}
 
@@ -224,7 +226,7 @@ $ OpenParEM_test
    \item If the two tests report \texttt{pass}, then the installation is verified.
 \end{itemize}
 
-\section{Uninstallation}
+\section{Uninstalling}
 
 See the INSTALL file for uninstallation instructions.
 
@@ -308,10 +310,10 @@ A number of tools and scripts have been developed to help with setting up projec
 
 \subsection{change\_slot\_count.sh}
 
-When running a project in OpenParEMg, the number of slots used for execution is given by the keyword/value pair \texttt{gui.slot.count N}, where $N$ is the number of slots to use.  When running a large number of projects on a new machine that supports a different $N$, change\_slot\_count.sh enables $N$ to be changed recursively.  For example, to change all of the projects slot count for use with OpenParEMg from 12 to 6, execute
+When running a project in OpenParEMg, the number of slots used for execution is given by the keyword/value pair \texttt{gui.slot.count N}, where $N$ is the number of slots to use.  When running a large number of projects on a new machine that supports a different $N$, change\_slot\_count.sh enables $N$ to be changed recursively.  For example, to change all of the projects' slot count for use with OpenParEMg from 12 to 6, execute
 \begin{verbatim}
    $ cd install_path/OpenParEM/regression
-   $ change\_slot\_count.sh . 12 6
+   $ change_slot_count.sh . 12 6
 \end{verbatim}
 
 \noindent Projects that are changed are listed.
