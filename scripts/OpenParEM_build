@@ -217,6 +217,34 @@ download_package_and_verify_sha256 ()
     echo ""
 }
 
+download_package_and_verify_sha256_spoof ()
+{
+    PACKAGE="$1"
+    URL="$2"
+    EXPECTED_SHA256="$3"
+
+    FILE="$DOWNLOAD_DIR/$PACKAGE"
+
+    if [ ! -f "$FILE" ]; then
+        echo "Downloading package file $PACKAGE ..."
+        wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -O "$FILE" "$URL" || return 1
+    fi
+
+    echo "Verifying SHA-256 for $PACKAGE ..."
+   
+    ACTUAL_SHA256=$(sha256sum "$FILE" | awk '{print $1}')
+
+    if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+        echo "ERROR: SHA-256 mismatch for $PACKAGE"
+        echo "Expected: $EXPECTED_SHA256"
+        echo "Actual:   $ACTUAL_SHA256"
+        return 1
+    fi
+
+    echo "SHA-256 OK: $PACKAGE"
+    echo "" 
+}
+
 download_package_and_verify_sig ()
 {
     PACKAGE="$1"
@@ -241,6 +269,39 @@ download_package_and_verify_sig ()
     if [ ! -f "$SIG" ]; then
         echo "Downloading sig file $PACKAGE.$SIG_SUFFIX ..."
         wget -O "$SIG" "${URL}.$SIG_SUFFIX$SITE_SUFFIX" || return 1
+    fi
+
+    echo "Verifying $PACKAGE ..."
+    gpgv --keyring "$KEYRING" "$SIG" "$FILE" || return 1
+
+    echo "Signature OK: $PACKAGE"
+    echo ""
+}
+
+download_package_and_verify_sig_spoof ()
+{     
+    PACKAGE="$1"
+    URL="$2"
+    SIG_SUFFIX="${3:-sig}"
+    KEYRING="$4"
+    SITE_SUFFIX="$5"
+
+    FILE="$DOWNLOAD_DIR/$PACKAGE"
+    SIG="$FILE.$SIG_SUFFIX"
+
+    if [ ! -f "$FILE" ]; then
+        echo "Downloading package file $PACKAGE ..."
+        wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -O "$FILE" "${URL}$SITE_SUFFIX" || return 1
+    fi
+   
+    #echo "List of keys for $KEYRING:"
+    #gpg --no-default-keyring \
+    #    --keyring "$KEYRING" \
+    #    --list-keys
+   
+    if [ ! -f "$SIG" ]; then
+        echo "Downloading sig file $PACKAGE.$SIG_SUFFIX ..."
+        wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -O "$SIG" "${URL}.$SIG_SUFFIX$SITE_SUFFIX" || return 1
     fi
 
     echo "Verifying $PACKAGE ..."
@@ -1208,10 +1269,10 @@ if [ -f "$mfem_root" ]; then
 fi
 
 libXau="libXau-1.0.12.tar.gz"
-download_package_and_verify_sig "$libXau" "https://xorg.freedesktop.org/archive/individual/lib/$libXau" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$libXau" "https://xorg.freedesktop.org/archive/individual/lib/$libXau" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
 libXdmcp="libXdmcp-1.1.5.tar.gz"
-download_package_and_verify_sig "$libXdmcp" "https://xorg.freedesktop.org/archive/individual/lib/$libXdmcp" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$libXdmcp" "https://xorg.freedesktop.org/archive/individual/lib/$libXdmcp" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
 ninja_root="1.13.2.tar.gz"
 ninja="ninja-$ninja_root"
@@ -1235,19 +1296,19 @@ tcl_sha256="91cb8fa61771c63c262efb553059b7c7ad6757afa5857af6265e4b0bdc2a14a5"
 download_package_and_verify_sha256 "$tcl" "http://prdownloads.sourceforge.net/tcl/$tcl" "$tcl_sha256" || exit 1
 
 xorgproto="xorgproto-2025.1.tar.gz"
-download_package_and_verify_sig "$xorgproto" "https://xorg.freedesktop.org/archive/individual/proto/$xorgproto" "sig" "$OFOURDAN_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xorgproto" "https://xorg.freedesktop.org/archive/individual/proto/$xorgproto" "sig" "$OFOURDAN_KEYRING" "" || exit 1
 
 xcb_proto="xcb-proto-1.17.0.tar.gz"
-download_package_and_verify_sig "$xcb_proto" "https://xorg.freedesktop.org/archive/individual/proto/$xcb_proto" "sig" "$MTURNER_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xcb_proto" "https://xorg.freedesktop.org/archive/individual/proto/$xcb_proto" "sig" "$MTURNER_KEYRING" "" || exit 1
 
 libxcb="libxcb-1.17.0.tar.gz"
-download_package_and_verify_sig "$libxcb" "https://xorg.freedesktop.org/archive/individual/lib/$libxcb" "sig" "$MTURNER_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$libxcb" "https://xorg.freedesktop.org/archive/individual/lib/$libxcb" "sig" "$MTURNER_KEYRING" "" || exit 1
 
 xtrans="xtrans-1.6.0.tar.gz"
-download_package_and_verify_sig "$xtrans" "https://xorg.freedesktop.org/archive/individual/lib/$xtrans" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xtrans" "https://xorg.freedesktop.org/archive/individual/lib/$xtrans" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
    
 libX11="libX11-1.8.tar.gz"
-download_package_and_verify_sig "$libX11" "https://xorg.freedesktop.org/archive/individual/lib/$libX11" "sig" "$AJACKSON_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$libX11" "https://xorg.freedesktop.org/archive/individual/lib/$libX11" "sig" "$AJACKSON_KEYRING" "" || exit 1
 
 tk="tk8.6.18-src.tar.gz"
 # self-generated from 9-13-2026 download
@@ -1259,7 +1320,7 @@ fontconfig_sha256="6a33dc555cc9ba8b10caf7695878ef134eeb36d0af366041f639b1da9b6ed
 download_package_and_verify_sha256 "$fontconfig" "https://www.freedesktop.org/software/fontconfig/release/$fontconfig" "$fontconfig_sha256" || exit 1
 
 xext="libXext-1.3.7.tar.gz"
-download_package_and_verify_sig "$xext" "https://xorg.freedesktop.org/archive/individual/lib/$xext" "sig" "$ACOOPERSMITH2_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xext" "https://xorg.freedesktop.org/archive/individual/lib/$xext" "sig" "$ACOOPERSMITH2_KEYRING" "" || exit 1
 
 glvnd="libglvnd-1.7.0.tar.gz"
 # self-generated from 8-19-2026 download
@@ -1281,7 +1342,7 @@ gmsh_sha256="be3f66f225d27ba9fa014f07e83169285da8a051b0e8ab7103d88066b39bdd3e"
 download_package_and_verify_sha256 "$gmsh" "https://gmsh.info/src/$gmsh" "$gmsh_sha256" || exit 1
 
 dbus1="dbus-1.16.2.tar.xz"
-download_package_and_verify_sig "$dbus1" "https://dbus.freedesktop.org/releases/dbus/$dbus1" "asc" "$SMCVITTIE_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$dbus1" "https://dbus.freedesktop.org/releases/dbus/$dbus1" "asc" "$SMCVITTIE_KEYRING" "" || exit 1
 
 icu4c="icu4c-78.3-sources.tgz"
 download_package_and_verify_sig "$icu4c" "https://github.com/unicode-org/icu/releases/download/release-78.3/$icu4c" "asc" "$ICUROBOT_KEYRING" "" || exit 1
@@ -1297,25 +1358,25 @@ icu4c="icu.tar.gz"
 cd ../scripts
 
 xcb_util="xcb-util-0.4.1.tar.gz"
-download_package_and_verify_sig "$xcb_util" "https://xcb.freedesktop.org/dist/$xcb_util" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xcb_util" "https://xcb.freedesktop.org/dist/$xcb_util" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
 xcb_util_image=xcb-util-image-0.4.1.tar.gz
-download_package_and_verify_sig "$xcb_util_image" "https://xcb.freedesktop.org/dist/$xcb_util_image" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xcb_util_image" "https://xcb.freedesktop.org/dist/$xcb_util_image" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
 xcb_util_keysyms="xcb-util-keysyms-0.4.1.tar.gz"
-download_package_and_verify_sig "$xcb_util_keysyms" "https://xcb.freedesktop.org/dist/$xcb_util_keysyms" "sig" "$ACOOPERSMITH3_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xcb_util_keysyms" "https://xcb.freedesktop.org/dist/$xcb_util_keysyms" "sig" "$ACOOPERSMITH3_KEYRING" "" || exit 1
 
 xcb_util_renderutil="xcb-util-renderutil-0.3.10.tar.gz"
-download_package_and_verify_sig "$xcb_util_renderutil" "https://xcb.freedesktop.org/dist/$xcb_util_renderutil" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xcb_util_renderutil" "https://xcb.freedesktop.org/dist/$xcb_util_renderutil" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
 xcb_util_wm="xcb-util-wm-0.4.2.tar.gz"
-download_package_and_verify_sig "$xcb_util_wm" "https://xcb.freedesktop.org/dist/$xcb_util_wm" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xcb_util_wm" "https://xcb.freedesktop.org/dist/$xcb_util_wm" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
 xcb_util_cursor="xcb-util-cursor-0.1.6.tar.gz"
-download_package_and_verify_sig "$xcb_util_cursor" "https://xcb.freedesktop.org/dist/$xcb_util_cursor" "sig" "$ACOOPERSMITH2_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xcb_util_cursor" "https://xcb.freedesktop.org/dist/$xcb_util_cursor" "sig" "$ACOOPERSMITH2_KEYRING" "" || exit 1
 
 xcb_util_errors="xcb-util-errors-1.0.1.tar.gz"
-download_package_and_verify_sig "$xcb_util_errors" "https://xcb.freedesktop.org/dist/$xcb_util_errors" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xcb_util_errors" "https://xcb.freedesktop.org/dist/$xcb_util_errors" "sig" "$ACOOPERSMITH_KEYRING" "" || exit 1
 
 libxml2="libxml2-v2.15.3.tar.gz"
 # self-generated from 8-20-2026 download
@@ -1323,7 +1384,7 @@ libxml2_sha256="0da50c1415f4ec0364569d2119b1436ba837b31df44af28569d234272c23cf1f
 download_package_and_verify_sha256 "$libxml2" "https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.15.3/$libxml2" "$libxml2_sha256" || exit 1
 
 xkbd_config="xkeyboard-config-2.48.tar.xz"
-download_package_and_verify_sig "$xkbd_config" "https://xorg.freedesktop.org/archive/individual/data/xkeyboard-config/$xkbd_config" "sig" "$SUDALTSOV_KEYRING" "" || exit 1
+download_package_and_verify_sig_spoof "$xkbd_config" "https://xorg.freedesktop.org/archive/individual/data/xkeyboard-config/$xkbd_config" "sig" "$SUDALTSOV_KEYRING" "" || exit 1
 
 xkbcommon="xkbcommon-1.13.2.tar.gz"
 # self-generated from 8-20-2026 download
