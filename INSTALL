@@ -4,8 +4,8 @@ Installing OpenParEM using the package with pre-compiled binaries
 
 The pre-compiled binaries allow OpenParEM to be run on x86 Linux platforms without
 installing any additional packages. The installation process is to download and 
-unpack the binary distribution, set the PATH environment variable, then run the 
-test script to ensure successful operation.
+unpack the binary distribution, set the environment variables, then run the 
+test script to verify successful operation.
 
 Execution with the pre-compiled binary is validated for the following operating
 systems:
@@ -28,7 +28,7 @@ Detailed instructions:
    $ ln -s OpenParEM-version OpenParEM
 
    Setting the link enables new revisions to be installed without having to
-   modifiy the PATH environment variable in the shell configuration file.
+   modifiy the environment variables in the shell configuration file.
 
 4. In directory $HOME, edit the configuration file for the shell used for
    command line processing.
@@ -127,7 +127,7 @@ Compilation and Installation
 5. Compile and install in the src tree by running the script "OpenParEM_build".
 
    example:
-      $ OpenParEM_build --jobs=4
+      $ ./OpenParEM_build --jobs=4
 
       The installation directory install_dir=src_dir/OpenParEM and the
       compilers use 4 processors for faster compilation.  Generally, set jobs to
@@ -182,9 +182,24 @@ Compilation and Installation
     can be re-run. Test the installation with these commands:
 
    $ cd src_dir/OpenParEM/scripts
-   $ OpenParEM_test
+   $ ./OpenParEM_test
 
    If the two tests pass, then the installation is verified.
+
+------------
+Compile Time
+------------
+
+1. Compile time depends on the system and the number of jobs.  For a typical
+   desktop PC or workstation with jobs set to the number of physical cores,
+   expect approximately 1 hour for compiling.
+2. Almost all of the compile time is spent on libraries such as OpenMPI, OCCT,
+   and Qt.  The OpenParEM code itself only requires a few minutes.
+3. By compiling all required libraries except basic OS libraries like libc and
+   libm, library compatibility and version issues are avoided, plus the pre-
+   compiled library requires no packages to be installed, so the user does not
+   require root priviliges to run sudo [or having to get a sys admin to install
+   packages].
 
 ----------------------------------------------------------------------------------
 OpenMPI and MPICH
