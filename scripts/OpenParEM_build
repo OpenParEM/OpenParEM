@@ -538,64 +538,6 @@ remove_base_directory() {
    fi
 }
 
-wrap_executable() {
-
-   echo "wrapping $1"
-
-   PROG=$1
-   BINPROG=$PROG.bin
-
-   HAS_COMPILED_OPENMPI=$2
-
-   cd "$install_path/bin"
-
-      if [ $? -ne 0 ]; then
-         echo "ERROR: failed to change to the bin directory"
-         exit 1
-      fi
-
-      mv $PROG $BINPROG
-      if [ $? -ne 0 ]; then
-         echo "ERROR: failed to move $PROG to $BINPROG"
-         exit 1
-      fi
-
-      echo '#!/bin/sh' > $PROG
-      if [ $? -ne 0 ]; then
-         echo "ERROR: failed to create $PROG"
-         exit 1
-      fi
-
-      echo '' >> $PROG
-      echo "BINPROG=$BINPROG" >> $PROG
-      echo 'BINPATH=$(which $BINPROG)' >> $PROG
-      echo 'if [ "$BINPATH" = "" ]; then' >> $PROG
-      echo '   echo "ERROR: Failed to locate $BINPROG."' >> $PROG
-      echo '   exit 1' >> $PROG
-      echo 'fi' >> $PROG
-
-      echo 'OPEM=${BINPATH%/bin/$BINPROG}' >> $PROG
-
-      echo '' >> $PROG
-      echo 'export LD_LIBRARY_PATH=$OPEM/lib:$OPEM/lib64:$LD_LIBRARY_PATH' >> $PROG
-      if [ "$HAS_COMPILED_OPENMPI" = "1" ]; then
-         echo 'export OPAL_PREFIX=$OPEM' >> $PROG
-         echo 'export PMIX_PREFIX=$OPEM' >> $PROG
-      fi
-      echo 'export OMP_NUM_THREADS=1' >> $PROG
-
-      echo '' >> $PROG
-      echo '$BINPROG "$@"' >> $PROG
-
-      chmod u+x $PROG
-      if [ $? -ne 0 ]; then
-         echo "ERROR: failed make $PROG executable"
-         exit 1
-      fi
-
-   cd "$scripts_dir"
-}
-
 #----------------------------------------------------
 # variables
 #----------------------------------------------------
@@ -3208,8 +3150,8 @@ if [ "$with_OpenParEMg" = "1" ]; then
 
    cd src/OpenParEMg
 
-# see if a compiled version of Open MPI exists
-cd "$install_path/bin"
+   rm -Rf build2
+   mkdir build2
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: OpenParEMg failed to create a build directory"
       exit 1
@@ -3223,7 +3165,13 @@ cd "$install_path/bin"
       MPI_IMPL="MPICH"
    fi
 
-cd "$scripts_dir"
+   cmake -S "$APP_SOURCE" \
+         -B "$APP_BUILD" \
+         -DCMAKE_BUILD_TYPE=Release \
+         -DCMAKE_INSTALL_PREFIX="$install_path" \
+         -DCMAKE_PREFIX_PATH="$install_path" \
+         -DMPI_IMPLEMENTATION="${MPI_IMPL}" \
+         || exit 1
 
    cmake --build "$APP_BUILD" --verbose -j"$NPROC" || exit 1
 
@@ -3240,11 +3188,9 @@ if [ "$(pwd)" = "$install_path/scripts" ]; then
    echo "# skipping copying scripts"
    echo "#------------------------------------------------------------------------------------"
 else
-   cd "$install_path/bin"
-   if [ $? -ne 0 ]; then
-      echo "OpenParEM_ERROR: failed to change to bin directory."
-      exit 1
-   fi
+   echo "#------------------------------------------------------------------------------------"
+   echo "# overwriting scripts"
+   echo "#------------------------------------------------------------------------------------"
 
    rm -Rf "$install_path/scripts"
    cp -R ../scripts "$install_path"
@@ -3321,7 +3267,8 @@ if [ "$create_binary_distribution" = "1" ]; then
    rm -f dependencies.txt
    echo ""
 
-   cd "$scripts_dir"
+   echo "Done. Created ../OpenParEM-2.2.0-bin.tar.gz"
+   echo ""
 fi
 
 # finish up with elapsed time
