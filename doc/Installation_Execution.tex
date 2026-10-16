@@ -153,6 +153,18 @@ OpenParEM requires many packages, such as OCCT and Qt, to compile.  These are do
 
 If a download error occurs, then the check will fail, and the build process will stop.  On subsequent runs of OpenParEM\_build, the process will stop at the faulty download.  To clear the faulty download, note the *.gz file on which OpenParEM\_build stops, then switch to the \texttt{external\_packages} directory and delete the gz file and any signature file (sig or asc) file with the matching file name.  Then re-run the build script.  Barring any download errors, OpenParEM\_build should always make it through the download step.
 
+When compiling, PETSc\cite{PETSc} downloads and compiles several packages, one of which is PT-Scotch\cite{PTSCOTCH}.  The download for PT-Scotch can sometimes fail, which causes the PETSc compile to fail, which then causes OpenParEM\_build to fail.  The remedy is to re-run OpenParEM\_build to try again, and there are two options.  The first is to re-run with the original command, but that will re-start the build from the very beginning.  The command would be similar to
+\begin{verbatim}
+   $ ./OpenParEM_build --jobs=20
+\end{verbatim}
+\noindent  The second is to run OpenParEM\_build with the \texttt{--without-all} option then list the remaining builds to complete, and while faster, this is a more complex option.  The command for this options would be similar to
+\begin{verbatim}
+   $ ./OpenParEM_build --without-all --with-petsc --with-mfem --with-occt --with-gmsh \
+                                     --with-qt --with-OpenParEM --with-OpenParEMg \
+                                     --jobs=20
+\end{verbatim}
+\noindent to restart the build at PETSc and then run to completion if no steps fail.
+
 \subsection{Ubuntu 22}
 \label{sec:Ubuntu22}
 
@@ -445,6 +457,10 @@ To recap, populate all memory channels with memory sticks to maximize bandwidth.
 \bibitem{gmsh} C. Geuzaine and J.-F. Remacle, "Gmsh: a three-dimensional finite element mesh generator with built-in pre- and post-processing facilities," \textit{International Journal for Numerical Methods in Engineering}, 79(11), pp. 1309-1331, 2009.
 
 \bibitem{gmshweb} \verb+https://gmsh.info+ version 4.13
+
+\bibitem{PETSc} \verb+https://petsc.org+
+
+\bibitem{PTSCOTCH} \verb+https://www.labri.fr/perso/pelegrin/scotch+
 
 \bibitem{paraview} \verb+https://www.paraview.org+
 
