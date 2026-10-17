@@ -1581,7 +1581,7 @@ if [ "$with_bison" = "1" ]; then
 
    unpack_and_enter "$bison"
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: bison failed to configure"
       exit 1
@@ -1603,7 +1603,6 @@ if [ "$with_bison" = "1" ]; then
    remove_base_directory
    cd ..
 fi
-
 
 # meson and ninja
 if [ "$with_meson" = "1" ]; then
@@ -1645,7 +1644,6 @@ if [ "$with_meson" = "1" ]; then
    cd ..
 fi
 
-
 # freetype
 if [ "$with_freetype" = "1" ]; then
 
@@ -1657,7 +1655,7 @@ if [ "$with_freetype" = "1" ]; then
 
    unpack_and_enter "$freetype"
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: freetype failed to configure"
       exit 1
@@ -1693,7 +1691,7 @@ if [ "$with_tcl" = "1" ]; then
  
    cd unix
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: tcl failed to configure"
       exit 1
@@ -1746,7 +1744,6 @@ if [ "$with_tcl" = "1" ]; then
    cd $current_dir
 fi
 
-
 # tk
 if [ "$with_tk" = "1" ]; then 
 
@@ -1759,7 +1756,7 @@ if [ "$with_tk" = "1" ]; then
    unpack_and_enter $xorgproto
    package_name=xorgproto
 
-   meson setup build --prefix="$install_path"
+   meson setup build --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -1790,7 +1787,7 @@ if [ "$with_tk" = "1" ]; then
    unpack_and_enter $xcb_proto
    package_name=xcb_proto
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -1821,7 +1818,7 @@ if [ "$with_tk" = "1" ]; then
    unpack_and_enter $libXau
    package_name=libXau
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -1843,7 +1840,6 @@ if [ "$with_tk" = "1" ]; then
    remove_base_directory
    cd ..
 
-
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: libxcb"
    echo "#------------------------------------------------------------------------------------"
@@ -1853,7 +1849,7 @@ if [ "$with_tk" = "1" ]; then
    unpack_and_enter $libxcb
    package_name=libxcb
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -1884,7 +1880,7 @@ if [ "$with_tk" = "1" ]; then
    unpack_and_enter $xtrans
    package_name=xtrans
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -1905,7 +1901,6 @@ if [ "$with_tk" = "1" ]; then
    cd ..
    remove_base_directory
    cd ..
-
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: libX11"
@@ -1916,7 +1911,7 @@ if [ "$with_tk" = "1" ]; then
    unpack_and_enter $libX11
    package_name=libX11
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
 
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
@@ -1938,7 +1933,6 @@ if [ "$with_tk" = "1" ]; then
    cd ..
    remove_base_directory
    cd ..
-
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: tk"
@@ -1950,7 +1944,7 @@ if [ "$with_tk" = "1" ]; then
 
    cd unix
 
-   CPPFLAGS="-I$install_path/include" ./configure --prefix="$install_path" --with-tcl=$install_path/lib
+   CPPFLAGS="-I$install_path/include" ./configure --prefix="$install_path" --libdir="$install_path/lib" --with-tcl=$install_path/lib
    if [ $? -ne 0 ]; then 
       echo "OpenParEM_ERROR: tk failed to configure"
       exit 1  
@@ -2015,13 +2009,13 @@ if [ "$with_zlib" = "1" ]; then
    unpack_and_enter "$zlib"
 
    if [ "$enable_static" = "yes" ]; then 
-      ./configure --static --prefix="$install_path"
+      ./configure --static --prefix="$install_path" --libdir="$install_path/lib"
       if [ $? -ne 0 ]; then
          echo "OpenParEM_ERROR: zlib failed to configure"
          exit 1
       fi
    else
-      ./configure --prefix="$install_path"
+      ./configure --prefix="$install_path" --libdir="$install_path/lib"
       if [ $? -ne 0 ]; then
          echo "OpenParEM_ERROR: zlib failed to configure"
          exit 1
@@ -2056,7 +2050,7 @@ if [ "$with_flex" = "1" ]; then
 
    unpack_and_enter "$flex"
 
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib" --enable-static="$enable_static" --enable-shared="$enable_shared"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: flex failed to configure"
       exit 1
@@ -2090,7 +2084,7 @@ if [ "$with_hwloc" = "1" ]; then
 
    unpack_and_enter "$hwloc"
 
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib" --enable-static="$enable_static" --enable-shared="$enable_shared"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: hwloc failed to configure"
       exit 1
@@ -2124,7 +2118,7 @@ if [ "$with_libevent" = "1" ]; then
 
    unpack_and_enter "$libevent"
 
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --disable-openssl
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --disable-openssl --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: libevent failed to configure"
       exit 1
@@ -2159,7 +2153,7 @@ if [ "$with_pmix" = "1" ]; then
    unpack_and_enter "$pmix"
 
    ./configure CFLAGS=-fPIC --prefix="$install_path" --enable-mca-no-build=gds-shmem2 --enable-static="$enable_static" \
-                            --enable-shared="$enable_shared" --with-libevent="$install_path"
+                            --enable-shared="$enable_shared" --with-libevent="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: pmix failed to configure"
       exit 1
@@ -2194,7 +2188,7 @@ if [ "$with_prrte" = "1" ]; then
    unpack_and_enter "$prrte"
 
    ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" \
-               --with-pmix="$install_path" --with-libevent="$install_path" --with-hwloc="$install_path"
+               --with-pmix="$install_path" --with-libevent="$install_path" --with-hwloc="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: prrte failed to configure"
       exit 1
@@ -2230,7 +2224,7 @@ if [ "$with_openmpi" = "1" ]; then
 
    ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" \
                --with-libevent="$install_path" --with-hwloc="$install_path" --with-pmix="$install_path" \
-               --disable-wrapper-rpath --disable-wrapper-runpath --enable-mpirun-prefix-by-default
+               --disable-wrapper-rpath --disable-wrapper-runpath --enable-mpirun-prefix-by-default --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: openmpi failed to configure"
       exit 1
@@ -2251,7 +2245,6 @@ if [ "$with_openmpi" = "1" ]; then
    cd ..
    remove_base_directory
    cd ..
-
 fi
 
 # mpich
@@ -2270,25 +2263,25 @@ if [ "$with_mpich" = "1" ]; then
    # configure selects the device
    # extremely slow in eigenvalue solve when excessive slots are specified
    # <10% slower than with ch3:nemesis on normal run
-   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" 
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --libdir="$install_path/lib"
 
    # good on the eigenvalue solve when excessive slots are speccified
    # but 50% slower on small cases
-   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:sock
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:sock --libdir="$install_path/lib"
 
    # extremely slow in eigenvalue solve when excessive slots are specified
-   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:nemesis
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch3:nemesis --libdir="$install_path/lib"
 
    # not supported
-   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:nemsis
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:nemsis --libdir="$install_path/lib"
 
    # extremely slow in eigenvalue solve when excessive slots are specified
    # faster than OpenMPI for a small case
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ucx
+   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ucx --libdir="$install_path/lib"
 
    # extremely slow in eigenvalue solve when excessive slots are specified
    # <10% slower than OpenMPI for a small case
-   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ofi
+   #./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" --with-device=ch4:ofi --libdir="$install_path/lib"
 
 
    if [ $? -ne 0 ]; then
@@ -2311,7 +2304,6 @@ if [ "$with_mpich" = "1" ]; then
    cd ..
    remove_base_directory
    cd ..
-
 fi
 
 # hypre
@@ -2327,7 +2319,7 @@ if [ "$with_hypre" = "1" ]; then
 
    cd src
 
-   ./configure --prefix="$install_path" --enable-shared="$enable_shared"
+   ./configure --prefix="$install_path" --enable-shared="$enable_shared" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: hypre failed to configure"
       exit 1
@@ -2400,7 +2392,7 @@ if [ "$with_petsc" = "1" ]; then
 
    export CMAKE_POLICY_VERSION_MINIMUM=3.5
 
-   ./configure --prefix="$install_path" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices --download-cmake=no --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" --with-fortran-bindings=1 --COPTFLAGS="-O3 -std=gnu89 -fcommon -D_DEFAULT_SOURCE" --CXXOPTFLAGS="-O3 -std=c++11" --FOPTFLAGS="-O3 -fallow-argument-mismatch"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib" PETSC_ARCH=linux_complex --with-clean --with-shared-libraries="$enable_shared" --with-debugging=0 --with-single-library=0 --with-scalar-type=complex --with-precision=double --with-64-bit-indices --download-cmake=no --download-zlib=no --download-openmpi=no --download-bison=no --download-hypre=no --download-metis="$metis" --download-slepc=yes --download-mfem=no --download-mumps="$mumps" --download-scalapack="$scalapack" --download-ptscotch="$scotch" --download-fblaslapack="$fblaslapack" --with-fortran-bindings=1 --COPTFLAGS="-O3 -std=gnu89 -fcommon -D_DEFAULT_SOURCE" --CXXOPTFLAGS="-O3 -std=c++11" --FOPTFLAGS="-O3 -fallow-argument-mismatch"
 
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: petsc failed to configure"
@@ -2513,7 +2505,6 @@ if [ "$with_occt" = "1" ]; then
       -Dtests=disabled \
       -Ddoc=disabled
 
-
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to setup build"
       exit 1
@@ -2544,7 +2535,7 @@ if [ "$with_occt" = "1" ]; then
    unpack_and_enter "$xext"
    package_name=xext
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -2566,7 +2557,6 @@ if [ "$with_occt" = "1" ]; then
    remove_base_directory
    cd ..
 
-
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: glvnd"
    echo "#------------------------------------------------------------------------------------"
@@ -2582,7 +2572,7 @@ if [ "$with_occt" = "1" ]; then
       exit 1
    fi
 
-   CPPFLAGS="-I$install_path/include" ./configure --prefix="$install_path"
+   CPPFLAGS="-I$install_path/include" ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -2603,7 +2593,6 @@ if [ "$with_occt" = "1" ]; then
    cd ..
    remove_base_directory
    cd ..
-
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: occt"
@@ -2710,7 +2699,7 @@ if [ "$with_qt" = "1" ]; then
    unpack_and_enter $xcb_util
    package_name=xcb_util
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -2741,7 +2730,7 @@ if [ "$with_qt" = "1" ]; then
    unpack_and_enter $xcb_util_image
    package_name=xcb_util_image
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -2772,7 +2761,7 @@ if [ "$with_qt" = "1" ]; then
    unpack_and_enter $xcb_util_keysyms
    package_name=xcb_util_keysyms
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -2803,7 +2792,7 @@ if [ "$with_qt" = "1" ]; then
    unpack_and_enter $xcb_util_renderutil
    package_name=xcb_util_renderutil
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -2834,7 +2823,7 @@ if [ "$with_qt" = "1" ]; then
    unpack_and_enter $xcb_util_wm
    package_name=xcb_util_wm
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -2856,6 +2845,8 @@ if [ "$with_qt" = "1" ]; then
    remove_base_directory
    cd ..
 
+
+
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: xcb_util_cursor"
    echo "#------------------------------------------------------------------------------------"
@@ -2865,7 +2856,7 @@ if [ "$with_qt" = "1" ]; then
    unpack_and_enter $xcb_util_cursor
    package_name=xcb_util_cursor
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -2896,7 +2887,7 @@ if [ "$with_qt" = "1" ]; then
    unpack_and_enter $xcb_util_errors
    package_name=xcb_util_errors
 
-   ./configure --prefix="$install_path"
+   ./configure --prefix="$install_path" --libdir="$install_path/lib"
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: $package_name failed to configure"
       exit 1
@@ -2959,7 +2950,7 @@ if [ "$with_qt" = "1" ]; then
       python -m pip install meson
    fi
 
-   meson setup build --prefix="$install_path" --libdir="$install_path/lib"
+   meson setup build --prefix="$install_path" --libdir=lib
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: xkeyboard_config failed to setup build"
       exit 1
@@ -2994,7 +2985,7 @@ if [ "$with_qt" = "1" ]; then
 
    unpack_and_enter $xkbcommon
 
-   meson setup build --prefix="$install_path" --libdir="$install_path/lib" -Denable-wayland=false -Denable-bash-completion=false
+   meson setup build --prefix="$install_path" --libdir=lib -Denable-wayland=false -Denable-bash-completion=false
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: xkbcommon failed to setup build"
       exit 1
@@ -3022,7 +3013,7 @@ if [ "$with_qt" = "1" ]; then
 
    unpack_and_enter $dbus1
 
-   meson setup build --prefix="$install_path" --libdir="$install_path/lib"
+   meson setup build --prefix="$install_path" --libdir=lib
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: dbus-1 failed to setup build"
       exit 1
@@ -3080,7 +3071,7 @@ PY
    cd source
    chmod +x runConfigureICU configure install-sh
 
-   ./runConfigureICU Linux --prefix="$install_path" --enable-rpath
+   ./runConfigureICU Linux --prefix="$install_path" --libdir="$install_path/lib" --enable-rpath
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: icu4c failed to configure build"
       exit 1
@@ -3101,7 +3092,6 @@ PY
    cd ../..
    remove_base_directory
    cd ..
-
 
    echo "#------------------------------------------------------------------------------------"
    echo "# OpenParEM_build: qt"
@@ -3230,6 +3220,7 @@ if [ "$with_OpenParEMg" = "1" ]; then
          -DCMAKE_BUILD_TYPE=Release \
          -DCMAKE_INSTALL_PREFIX="$install_path" \
          -DCMAKE_PREFIX_PATH="$install_path" \
+	 -DCMAKE_INSTALL_LIBDIR=lib \
          -DMPI_IMPLEMENTATION="${MPI_IMPL}" \
          || exit 1
 
