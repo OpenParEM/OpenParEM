@@ -2153,7 +2153,7 @@ if [ "$with_pmix" = "1" ]; then
    unpack_and_enter "$pmix"
 
    ./configure CFLAGS=-fPIC --prefix="$install_path" --enable-mca-no-build=gds-shmem2 --enable-static="$enable_static" \
-                            --enable-shared="$enable_shared" --with-libevent="$install_path" --libdir="$install_path/lib"
+                            --enable-shared="$enable_shared" --with-libevent="$install_path" --libdir='${exec_prefix}/lib'
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: pmix failed to configure"
       exit 1
@@ -2224,7 +2224,7 @@ if [ "$with_openmpi" = "1" ]; then
 
    ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" \
                --with-libevent="$install_path" --with-hwloc="$install_path" --with-pmix="$install_path" \
-               --disable-wrapper-rpath --disable-wrapper-runpath --enable-mpirun-prefix-by-default --libdir="$install_path/lib"
+               --disable-wrapper-rpath --disable-wrapper-runpath --enable-mpirun-prefix-by-default --libdir='${exec_prefix}/lib'
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: openmpi failed to configure"
       exit 1
@@ -3299,6 +3299,7 @@ if [ "$create_binary_distribution" = "1" ]; then
    echo "bin/mpirun" >> dependencies.txt
    echo "LICENSE" >> dependencies.txt
    echo "README.md" >> dependencies.txt
+   echo "INSTALL" >> dependencies.txt
 
    echo "Creating tar file ..."
    tar -czf build.tar.gz -T dependencies.txt scripts share lib plugins etc var regression tutorials doc/*.pdf
