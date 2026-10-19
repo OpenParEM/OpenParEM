@@ -2152,8 +2152,12 @@ if [ "$with_pmix" = "1" ]; then
 
    unpack_and_enter "$pmix"
 
-   ./configure CFLAGS=-fPIC --prefix="$install_path" --enable-mca-no-build=gds-shmem2 --enable-static="$enable_static" \
-                            --enable-shared="$enable_shared" --with-libevent="$install_path" --libdir='${exec_prefix}/lib'
+   CONFIG_SITE=/dev/null ./configure CFLAGS=-fPIC --prefix="$install_path" \
+                                                  --enable-mca-no-build=gds-shmem2 \
+	                                          --enable-static="$enable_static" \
+                                                  --enable-shared="$enable_shared" \
+	                                          --with-libevent="$install_path" \
+                                                  --libdir='${exec_prefix}/lib' 
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: pmix failed to configure"
       exit 1
@@ -2222,9 +2226,16 @@ if [ "$with_openmpi" = "1" ]; then
 
    unpack_and_enter "$openmpi"
 
-   ./configure --prefix="$install_path" --enable-static="$enable_static" --enable-shared="$enable_shared" \
-               --with-libevent="$install_path" --with-hwloc="$install_path" --with-pmix="$install_path" \
-               --disable-wrapper-rpath --disable-wrapper-runpath --enable-mpirun-prefix-by-default --libdir='${exec_prefix}/lib'
+   CONFIG_SITE=/dev/null ./configure --prefix="$install_path" \
+                                     --enable-static="$enable_static" \
+                                     --enable-shared="$enable_shared" \
+                                     --with-libevent="$install_path" \
+                                     --with-hwloc="$install_path" \
+                                     --with-pmix="$install_path" \
+                                     --disable-wrapper-rpath \
+                                     --disable-wrapper-runpath \
+                                     --enable-mpirun-prefix-by-default \
+                                     --libdir='${exec_prefix}/lib'
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: openmpi failed to configure"
       exit 1
