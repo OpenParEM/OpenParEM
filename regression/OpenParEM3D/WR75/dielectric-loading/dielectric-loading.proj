@@ -4,7 +4,7 @@
 //project.save.fields false
 mesh.file dielectric-loading.msh
 //mesh.save.refined false
-//mesh.refinement.fraction 0.005
+mesh.refinement.fraction 0.002
 mesh.quality.limit 100
 fem.order 2
 port.definition.file dielectric-loading_ports.txt
@@ -14,7 +14,7 @@ refinement.iteration.max 30
 //refinement.required.passes 1
 refinement.relative.tolerance 0.001
 refinement.absolute.tolerance 5e-08
-//refinement.variable SandH
+refinement.variable S
 materials.global.path ../../../OpenParEM2D
 materials.global.name global_materials.txt
 materials.local.path ./freecad_build
@@ -67,8 +67,8 @@ reference.impedance 0
 //debug.refine.preconditioner 1
 //gui.units mm
 //gui.grid.size 10
-//gui.slot.count 12
+gui.slot.count 12
 //gui.oversubscribe true
-//gui.mesh.scale 1
+gui.mesh.scale 0.5
 //gui.mesh.minSize 0
 //gui.mesh.maxSize 1e+19
