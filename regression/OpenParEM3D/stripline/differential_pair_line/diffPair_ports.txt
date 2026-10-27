@@ -106,10 +106,12 @@ Port
       Sport=1
       IntegrationPath
          type=voltage
+         scale=1
          path=+v11
       EndIntegrationPath
       IntegrationPath
          type=current
+         scale=1
          path=+i11
       EndIntegrationPath
    EndLine
@@ -118,10 +120,12 @@ Port
       Sport=2
       IntegrationPath
          type=voltage
+         scale=1
          path=+v12
       EndIntegrationPath
       IntegrationPath
          type=current
+         scale=1
          path=+i12
       EndIntegrationPath
    EndLine
@@ -137,10 +141,12 @@ Port
       Sport=3
       IntegrationPath
          type=voltage
+         scale=1
          path=+v21
       EndIntegrationPath
       IntegrationPath
          type=current
+         scale=1
          path=+i21
       EndIntegrationPath
    EndLine
@@ -149,10 +155,12 @@ Port
       Sport=4
       IntegrationPath
          type=voltage
+         scale=1
          path=+v22
       EndIntegrationPath
       IntegrationPath
          type=current
+         scale=1
          path=+i22
       EndIntegrationPath
    EndLine

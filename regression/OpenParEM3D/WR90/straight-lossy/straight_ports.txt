@@ -118,6 +118,7 @@ Port
       Sport=1
       IntegrationPath
          type=voltage
+         scale=1
          path=+v1
       EndIntegrationPath
    EndLine
@@ -133,6 +134,7 @@ Port
       Sport=2
       IntegrationPath
          type=voltage
+         scale=1
          path=+v2
       EndIntegrationPath
    EndLine

@@ -10,8 +10,8 @@ Extrude
       width=0.018
       height=0.000635
       isSquare=0
-      tempWidth=0.00516643807039326
-      tempHeight=0.000520724601753156
+      tempWidth=0
+      tempHeight=0
       u=(1,0,0)
       v=(0,1,0)
       normal=(0,0,1)
@@ -21,40 +21,40 @@ EndExtrude
 Subtract
    name=air
    material=air
-      Extrude
-         name=Extrude3
-         length=0.003
+   Extrude
+      name=Extrude3
+      length=0.003
       Rectangle
          name=Rectangle2
          origin=(0,0.000635,0)
          width=0.018
          height=0.006
          isSquare=0
-         tempWidth=0.018
+         tempWidth=0
          tempHeight=0
          u=(1,0,0)
          v=(0,1,0)
          normal=(0,0,1)
          reverse=false
       EndRectangle
-      EndExtrude
-      Extrude
-         name=Extrude2
-         length=0.003
+   EndExtrude
+   Extrude
+      name=Extrude2
+      length=0.003
       Rectangle
          name=Rectangle3
          origin=(0.0085,0.000635,0)
          width=0.001
          height=0.0003
          isSquare=0
-         tempWidth=0.00371267738382332
-         tempHeight=0.00135522647258855
+         tempWidth=0
+         tempHeight=0
          u=(1,0,0)
          v=(0,1,0)
          normal=(0,0,1)
          reverse=false
       EndRectangle
-      EndExtrude
+   EndExtrude
 EndSubtract
 Rectangle
    name=dummy1
@@ -62,8 +62,8 @@ Rectangle
    width=0.00137048765566724
    height=0.000656438890635438
    isSquare=0
-   tempWidth=0.00137048765566724
-   tempHeight=0.000656438890635438
+   tempWidth=0
+   tempHeight=0
    u=(1,0,-0)
    v=(-0,1,0)
    normal=(0,0,1)
@@ -75,8 +75,8 @@ Rectangle
    width=0.00137048765566724
    height=0.000656438890635438
    isSquare=0
-   tempWidth=0.00137048765566724
-   tempHeight=0.000656438890635438
+   tempWidth=0
+   tempHeight=0
    u=(1,0,-0)
    v=(-0,1,0)
    normal=(0,0,1)
