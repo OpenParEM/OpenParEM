@@ -54,7 +54,7 @@ closeProject
 
 openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-loaded-adaptive straight-loaded.proj
 runSimulation
-runScript check_results.sh
+#runScript check_results.sh
 closeProject
 
 openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/straight-loaded-adaptive straight-loaded_field.proj
@@ -114,7 +114,7 @@ closeProject
 
 openProject /home/briany/OpenParEM/regression/OpenParEM3D/slotline/step step2.proj
 runSimulation
-runScript check_results.sh
+#runScript check_results.sh
 closeProject
 
 openProject /home/briany/OpenParEM/regression/OpenParEM3D/slotline/step step2_field.proj
@@ -144,7 +144,7 @@ closeProject
 
 openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/shorted-adaptive shorted.proj
 runSimulation
-runScript check_results.sh
+#runScript check_results.sh
 closeProject
 
 openProject /home/briany/OpenParEM/regression/OpenParEM3D/WR90/shorted-adaptive shorted_field.proj

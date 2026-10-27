@@ -4,7 +4,7 @@
 //project.save.fields false
 mesh.file single.msh
 //mesh.save.refined false
-//mesh.refinement.fraction 0.005
+mesh.refinement.fraction 0.002
 mesh.quality.limit 100000
 fem.order 2
 port.definition.file single_ports.txt
@@ -12,7 +12,7 @@ port.definition.file single_ports.txt
 //refinement.iteration.min 1
 refinement.iteration.max 50
 //refinement.required.passes 1
-refinement.relative.tolerance 0.01
+refinement.relative.tolerance 0.001
 refinement.absolute.tolerance 1e-07
 //refinement.variable SandH
 materials.global.path ../../../OpenParEM2D
@@ -67,6 +67,6 @@ solution.temperature 20
 //gui.grid.size 10
 gui.slot.count 12
 //gui.oversubscribe true
-//gui.mesh.scale 1
+gui.mesh.scale 1.5
 //gui.mesh.minSize 0
 //gui.mesh.maxSize 1e+19

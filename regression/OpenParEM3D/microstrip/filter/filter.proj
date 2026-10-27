@@ -4,7 +4,7 @@
 //project.save.fields false
 mesh.file filter.msh
 //mesh.save.refined false
-//mesh.refinement.fraction 0.005
+mesh.refinement.fraction 0.004
 mesh.quality.limit 100000
 fem.order 3
 port.definition.file filter_ports.txt
