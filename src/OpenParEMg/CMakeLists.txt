@@ -7,8 +7,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD 11)
 
 # for leak detection
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g")
-#set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer ")
+#add_compile_options(-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer)
+#add_link_options(-fsanitize=address -fsanitize=undefined)
 
 
 add_compile_options (-DHAS_GUI -DHAS_MPI)

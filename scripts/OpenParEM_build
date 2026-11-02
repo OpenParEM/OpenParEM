@@ -3176,6 +3176,14 @@ if [ "$with_OpenParEM" = "1" ]; then
    fi
 
    ./configure --prefix="$install_path"
+  
+   # To avoid leak reports from OpenParEM2D to stopping OpenParEM3D, set 
+   # export OMPI_MCA_orte_enable_recovery=true
+   #./configure --prefix="$install_path" \
+   #   CFLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g -O1" \
+   #   CXXFLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g -O1" \
+   #   LDFLAGS="-fsanitize=address -fsanitize=undefined"
+
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: OpenParEM failed to configure"
       exit 1
@@ -3211,15 +3219,15 @@ if [ "$with_OpenParEMg" = "1" ]; then
 
    cd src/OpenParEMg
 
-   rm -Rf build2
-   mkdir build2
+   rm -Rf build
+   mkdir build
    if [ $? -ne 0 ]; then
       echo "OpenParEM_ERROR: OpenParEMg failed to create a build directory"
       exit 1
    fi
 
    APP_SOURCE="$SCRIPT_DIR/../src/OpenParEMg"
-   APP_BUILD="$SCRIPT_DIR/../src/OpenParEMg/build2"
+   APP_BUILD="$SCRIPT_DIR/../src/OpenParEMg/build"
 
    MPI_IMPL="OpenMPI"
    if [ "$with_mpich" = "1" ]; then

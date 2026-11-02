@@ -493,7 +493,7 @@ It is straightforward to generalize (\ref{eq:2by2rearrange}) for $N$ S-ports. In
 
 The formulation in Sec.~\ref{sec:solvingS} is general and enables options for setting up the 3D simulations for solving S-parameters.  To calculate S-parameters, one or more S-ports are driven, 2D ABCs are applied, then the outputs from all ports are simulated and used to calculate $\overline{\overline{S}}$.  For a given setup, the collection of driven S-ports are called a \texttt{driving set}.
 
-At this time, just one driving set is enabled, the "single" driving set described below.  A second driving set called "multiple" is implemented but not fully checked out and may or may not provide valid results.  To investigate the "multiple" driving set, it must be selected in \texttt{BoundaryDatabase::createDrivingSets} followed by recompilation of OpenParEM3D.  A third driving set called "single-ended" is discussed, but it is not coded.
+At this time, just one driving set is enabled, the "single" driving set described below.  A second driving set called "multiple" is partially implemented will not provide valid results.  To investigate the "multiple" driving set, it must be selected in \texttt{BoundaryDatabase::createDrivingSets} followed by recompilation of OpenParEM3D.  A third driving set called "single-ended" is discussed, but it is not coded.
 
 \subsubsection{Driving set \texttt{single}}
 

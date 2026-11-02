@@ -3975,12 +3975,16 @@ void Mode::calculateSplits (ParFiniteElementSpace *fes2D_L2,
 // ToDo: generalize for other driving sets
 complex<double> Mode::calculatePowerIn (int Sport_)
 {
-   return Cm[Sport_-1]*conj(Cm[Sport_-1])*get_Pz();
+   if (Cm.size() == 0) return 0;
+   //return Cm[Sport_-1]*conj(Cm[Sport_-1])*get_Pz();
+   return Cm[0]*conj(Cm[0])*get_Pz();
 }
 
 complex<double> Mode::calculatePowerOut (int Sport_)
 {
-   return Cp[Sport_-1]*conj(Cp[Sport_-1])*get_Pz();
+   if (Cp.size() == 0) return 0;
+   //return Cp[Sport_-1]*conj(Cp[Sport_-1])*get_Pz();
+   return Cp[0]*conj(Cp[0])*get_Pz();
 }
 
 void Mode::transfer_2Dsolution_2Dgrids_to_3Dgrids ()
