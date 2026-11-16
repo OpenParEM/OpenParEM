@@ -489,7 +489,7 @@ void SimOptions::on_simulateOptionOk_clicked ()
 
     // debug_skip_forced_reciprocity
     if (projData->debug_skip_forced_reciprocity != skipForcedReciprocity) {
-        projData->debug_skip_mixed_conversion=skipMixedModeConversion;
+        projData->debug_skip_forced_reciprocity=skipForcedReciprocity;
         projData->modified=1;
     }
 
