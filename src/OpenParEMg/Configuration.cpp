@@ -37,7 +37,7 @@ Configuration::Configuration()
     mainWindowOriginX=-1;  // application chooses
     mainWindowOriginY=-1;  // application chooses
     defaultCoreCount=5;
-    selectionTolerance=3;
+    selectionTolerance=30;
     selectionDrawRadius=3;
 }
 

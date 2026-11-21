@@ -549,9 +549,6 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
 {
     if (view.IsNull()) return;
 
-    // set the pixel tolerance to a loose setting so that mousing around can find the needed edge
-    viewerContext->SetPixelTolerance(10);
-
     // scale the position
     const qreal dpr = devicePixelRatioF();
     QPointF p = event->position();
@@ -634,9 +631,6 @@ void CustomOpenGLWidget::mouseMoveEvent (QMouseEvent* event)
     // pass the mouse position from OCCT to Qt
     if (UpdateMousePosition(position,OcctQtTools::qtMouseButtons2VKeys(event->buttons()),
                                      OcctQtTools::qtMouseModifiers2VKeys(event->modifiers()),false)) updateViewer();
-
-    // put the tolerance back to the default
-    viewerContext->SetPixelTolerance(2);
 }
 
 void CustomOpenGLWidget::set_gridPlane (TopoDS_Face &face)
