@@ -112,7 +112,6 @@ qt_add_executable(OpenParEMg
     MeasureDistanceForm.h MeasureDistanceForm.cpp MeasureDistanceForm.ui
     Macro.h Macro.cpp
     Configuration.h Configuration.cpp
-
 )
 
 add_library(Qt6OpenGLWidgets SHARED IMPORTED)
@@ -165,6 +164,10 @@ endif()
 message(STATUS "MPI implementation: ${MPI_IMPLEMENTATION}")
 message(STATUS "MPI libraries: ${MPI_LIBS}")
 
+target_include_directories(OpenParEMg PRIVATE
+    "../include"
+)
+
 target_link_libraries(OpenParEMg
     PRIVATE
         Qt::Core
@@ -187,6 +190,7 @@ target_link_libraries(OpenParEMg
         petscdm
         petscksp
         gmsh
+        libX11.so
 )
 
 include(GNUInstallDirs)

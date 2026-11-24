@@ -24,7 +24,9 @@
 #include <QDebug>
 #include <QFile>
 #include <QIcon>
-#include <QPixmap>
+#include <QtGui/qguiapplication_platform.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 int main(int argc, char *argv[])
 {
@@ -32,9 +34,21 @@ int main(int argc, char *argv[])
     qputenv("QT_QPA_PLATFORMTHEME","generic");
 
     QApplication a(argc, argv);
+
     OpenParEMg w;
     w.setWindowIcon(QIcon(":/images/images/logo2.svg"));
     a.setDesktopFileName("OpenParEMg");
+
+    // use X11 functions to change the color from black to white
+    WId id=w.winId();
+    Display *display=qApp->nativeInterface<QNativeInterface::QX11Application>()->display();
+    XSetWindowBackground(display,id,WhitePixel(display,DefaultScreen(display)));
+    XFlush(display);
+
     w.show();
+
+    // finish initialization
+    QTimer::singleShot(0, &w, &OpenParEMg::initialize);
     return a.exec();
 }
+

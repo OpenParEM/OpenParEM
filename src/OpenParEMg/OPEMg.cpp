@@ -193,307 +193,13 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     // start
     ui->setupUi(this);
 
+    // hide the drawing window to enable a simpler startup sequence
+    // by avoiding OCCT initialization until after the main window displays
+    ui->drawingWindow->hide();
+
     if (ui->drawingWindow) {
         ui->drawingWindow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     }
-
-    MPI_PORT_COMM=nullptr;
-    request=nullptr;
-
-    projectFileLoaded=false;
-    projectChanged=false;
-    drawingPlaneShown=false;
-    simulationRunning=false;
-    simulationStopping=false;
-    simulationAborting=false;
-    meshingRunning=false;
-
-    /////////////////////////////////////////////////////////////////////////////
-    // main window setup
-    /////////////////////////////////////////////////////////////////////////////
-
-    absolutePath=QDir::currentPath();
-    materialDatabase=new MaterialDatabase();
-
-    projectFile="";
-    init_project (&defaultData);
-    init_project (&projData);
-
-    ui->actionShape->setCheckable(true);
-    ui->actionShape->setChecked(true);
-
-    on_actionShape_triggered();
-
-    ui->actionWireframe->setChecked(true);
-
-    /////////////////////////////////////////////////////////////////////////////
-    // macro
-    /////////////////////////////////////////////////////////////////////////////
-
-    macro=new Macro(this);
-
-    /////////////////////////////////////////////////////////////////////////////
-    // relay for receiving signals from controls
-    /////////////////////////////////////////////////////////////////////////////
-
-    relay=new Relay();
-    connect(relay,&Relay::finishOperation,this,&OpenParEMg::finishOperation);
-    connect(relay,&Relay::getCurrentMousePosition,this,&OpenParEMg::getCurrentMousePosition);
-    connect(relay,&Relay::getPickedVertex,this,&OpenParEMg::getPickedVertex);
-    connect(relay,&Relay::setMenus,this,&OpenParEMg::setMenus);
-    connect(relay,&Relay::clearTreeSelection,this,&OpenParEMg::clearTreeSelection);
-    connect(relay,&Relay::updateViewer,this,&OpenParEMg::updateViewer);
-    connect(relay,&Relay::convertPathToFace,this,&OpenParEMg::convertPathToFace);
-    connect(relay,&Relay::setShaded,this,&OpenParEMg::setShaded);
-    connect(relay,&Relay::clearTreeSelection,this,&OpenParEMg::clearTreeSelection);
-    connect(relay,&Relay::startPlaneSetToFace,this,&OpenParEMg::startPlaneSetToFace);
-
-    /////////////////////////////////////////////////////////////////////////////
-    // drawing window
-    /////////////////////////////////////////////////////////////////////////////
-
-    ui->drawingWindow->set_drawingItemTree(drawing);
-    ui->drawingWindow->set_portItemTree(port);
-    ui->drawingWindow->set_boundaryItemTree(boundary);
-    ui->drawingWindow->set_meshItemTree(mesh);
-    ui->drawingWindow->set_pathItemTree(path);
-    ui->drawingWindow->set_relay(relay);
-
-    QActionList.push_back(showAction);
-    QActionList.push_back(hideAction);
-    QActionList.push_back(selectAllAction);
-    QActionList.push_back(unselectAction);
-    QActionList.push_back(copyAction);
-    QActionList.push_back(deleteAction);
-    QActionList.push_back(deletePlusAction);
-    QActionList.push_back(deletePointAction);
-    QActionList.push_back(insertPointAction);
-    QActionList.push_back(closePolylineAction);
-    QActionList.push_back(openPolylineAction);
-    QActionList.push_back(convertToPolylineAction);
-    QActionList.push_back(convertToPathAction);
-    QActionList.push_back(convertToPortAction);
-    QActionList.push_back(convertToBoundaryAction);
-    QActionList.push_back(removeAction);
-    QActionList.push_back(assignAction);
-    QActionList.push_back(insertAction);
-    QActionList.push_back(renameAction);
-    QActionList.push_back(expandAllAction);
-    QActionList.push_back(collapseAllAction);
-    QActionList.push_back(setPlaneAction);
-    QActionList.push_back(setPlaneAxisAction);
-    QActionList.push_back(createPathAction);
-    QActionList.push_back(createPortAction);
-    QActionList.push_back(createBoundaryAction);
-    QActionList.push_back(drawPathAction);
-    QActionList.push_back(drawPolylineAction);
-    QActionList.push_back(editAction);
-    QActionList.push_back(moveAction);
-    QActionList.push_back(stretchAction);
-    QActionList.push_back(rotateAction);
-    QActionList.push_back(doneAction);
-    QActionList.push_back(cancelAction);
-    QActionList.push_back(deleteLastPointAction);
-    QActionList.push_back(extrudeAction);
-    QActionList.push_back(mergeAction);
-    QActionList.push_back(subtractAction);
-    QActionList.push_back(assignMaterialAction);
-    QActionList.push_back(createDiffpairAction);
-    initQActionList();
-
-    // signals to show the drawing tab when drawing actions are clicked
-    connect(ui->menuView, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
-    connect(ui->menuSelect, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
-    connect(ui->menuDraw, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
-    connect(ui->menuMesh, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
-
-    /////////////////////////////////////////////////////////////////////////////
-    // item selection tree
-    /////////////////////////////////////////////////////////////////////////////
-
-    drawing=new RootDrawingItem(this);
-    path=new RootPathItem(this);
-    port=new RootPortItem(this);
-    boundary=new RootBoundaryItem(this);
-    mesh=new RootMeshItem(this);
-
-    resetLockouts();
-
-    ui->drawingItemTree->setHeaderHidden(true);
-    ui->drawingItemTree->setColumnCount(2);
-    ui->drawingItemTree->header()->setStretchLastSection(false);
-    ui->drawingItemTree->header()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
-    ui->drawingItemTree->header()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
-
-    // five base list items: drawing, path, port, boundary, and mesh
-
-    drawing->setText(0,"Drawing");
-    ui->drawingItemTree->addTopLevelItem(drawing);
-
-    path->setText(0,"Path");
-    ui->drawingItemTree->addTopLevelItem(path);
-
-    port->setText(0,"Port");
-    ui->drawingItemTree->addTopLevelItem(port);
-
-    boundary->setText(0,"Boundary");
-    ui->drawingItemTree->addTopLevelItem(boundary);
-
-    mesh->setText(0,"Initial Mesh");
-    ui->drawingItemTree->addTopLevelItem(mesh);
-
-    // context menu
-    ui->drawingItemTree->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(ui->drawingItemTree,&QTreeView::customContextMenuRequested,this,&OpenParEMg::itemTreeContextMenu_triggered);
-
-    ui->drawingItemTree->viewport()->installEventFilter(this);
-
-    // enable multi-selection with CTRL and SHIFT modifiers
-    ui->drawingItemTree->setSelectionMode(QAbstractItemView::MultiSelection);
-    CTRLpressed=false;
-    SHIFTpressed=false;
-    clickedItem=nullptr;
-    previousClickedItem=nullptr;
-    workingItem=nullptr;
-
-    ui->menuRun->setToolTipsVisible(true);
-
-    // drawing is always a COMPOUND
-    //xxx
-    // BRep_Builder builder;
-    // TopoDS_Compound compound;
-    // builder.MakeCompound(compound);
-    // Handle(AIS_Shape) newShape=new AIS_Shape(compound);
-    // ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
-    // newShapeData->setCreate();
-    // newShapeData->setShape(newShape);
-    // drawing->addShapeData(newShapeData);
-
-    ui->drawingItemTree->setCurrentItem(nullptr);
-
-    /////////////////////////////////////////////////////////////////////////////
-    // logging tabs
-    /////////////////////////////////////////////////////////////////////////////
-
-    ui->tabs->setTabToolTip(0,"Drawing space for creating 3D structures for simulation.");
-    ui->tabs->setTabToolTip(1,"Output from OpenParEM3D.");
-    ui->tabs->setTabToolTip(2,"Summary statistics on the simulation run.");
-    ui->tabs->setTabToolTip(3,"S-parameter results summary.  Check the project directory for a Touchstone(TM) file, if generated.");
-    ui->tabs->setTabToolTip(4,"Antenna parameter results summary.  Check the project directory for reports, if generated.");
-
-    ui->logText->setReadOnly(true);
-    ui->iterationsText->setReadOnly(true);
-    ui->dataText->setReadOnly(true);
-    ui->antennaText->setReadOnly(true);
-
-    logFilter=new LogViewerFilter(this);
-    logFilter->setTextEdit(ui->logText);
-    ui->logText->viewport()->installEventFilter(logFilter);
-    ui->logText->verticalScrollBar()->installEventFilter(logFilter);
-
-    iterationsFilter=new LogViewerFilter(this);
-    iterationsFilter->setTextEdit(ui->iterationsText);
-    ui->iterationsText->viewport()->installEventFilter(iterationsFilter);
-    ui->iterationsText->verticalScrollBar()->installEventFilter(iterationsFilter);
-
-    dataFilter=new LogViewerFilter(this);
-    dataFilter->setTextEdit(ui->dataText);
-    ui->dataText->viewport()->installEventFilter(dataFilter);
-    ui->dataText->verticalScrollBar()->installEventFilter(dataFilter);
-
-    antennaFilter=new LogViewerFilter(this);
-    antennaFilter->setTextEdit(ui->antennaText);
-    ui->antennaText->viewport()->installEventFilter(antennaFilter);
-    ui->antennaText->verticalScrollBar()->installEventFilter(antennaFilter);
-
-    logLastPos=0;
-    iterationLastPos=0;
-    dataLastPos=0;
-    antennaLastPos=0;
-
-    logLastChar='\0';
-    iterationsLastChar='\0';
-    dataLastChar='\0';
-    antennaLastChar='\0';
-
-    /////////////////////////////////////////////////////////////////////////////
-    // context menu for drawingWindow
-    /////////////////////////////////////////////////////////////////////////////
-
-    ui->drawingWindow->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(ui->drawingWindow,&QOpenGLWidget::customContextMenuRequested,this,&OpenParEMg::drawingWindowContextMenu_triggered);
-
-    /////////////////////////////////////////////////////////////////////////////
-    // gmsh
-    /////////////////////////////////////////////////////////////////////////////
-
-    gmsh::initialize();
-    gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
-
-    /////////////////////////////////////////////////////////////////////////////
-    // timer or checking when OpenParEM3D finishes and updating tabs with run data
-    /////////////////////////////////////////////////////////////////////////////
-
-    bool defaultForce=false;
-    timer=new QTimer(this);
-    connect(timer,&QTimer::timeout,this,&OpenParEMg::checkFinish);
-    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateLogTab(defaultForce);});
-    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateIterationsTab(defaultForce);});
-    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateDataTab(defaultForce);});
-    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateAntennaTab(defaultForce);});
-
-    /////////////////////////////////////////////////////////////////////////////
-    // misc
-    /////////////////////////////////////////////////////////////////////////////
-
-    renameItem=nullptr;
-    isDisabledSelection=false;
-
-    /////////////////////////////////////////////////////////////////////////////
-    // drawing
-    /////////////////////////////////////////////////////////////////////////////
-
-    isIntegrationPath=false;
-    activePolywire=nullptr;
-
-    lengthInputForm=nullptr;
-    vectorInputForm=nullptr;
-    lengthEditForm=nullptr;
-    lineEditForm=nullptr;
-    rectangleEditForm=nullptr;
-    polycircleEditForm=nullptr;
-    rotateInputForm=nullptr;
-    measureDistanceForm=nullptr;
-
-    // form defaults
-    uLocalAxis.SetCoord(1,0,0);  // rectangles
-    length=1;                    // extrusion
-    angle=90;                    // rotation
-    startPoint.SetCoord(0,0,0);  // rotation and vector input
-    endPoint.SetCoord(0,0,1);    // rotation and vector input
-
-    restrictToDrawingPlane=false;
-    activeAction=false;
-
-    lineEdit=nullptr;
-    rectangleEdit=nullptr;
-    polycircleEdit=nullptr;
-
-    currentDrawingItem=nullptr;
-    renameEdit=nullptr;
-    renameItem=nullptr;
-
-    /////////////////////////////////////////////////////////////////////////////
-    // change flags
-    /////////////////////////////////////////////////////////////////////////////
-
-    projectChanged=false;
-    meshObsolete=false;
-
-    /////////////////////////////////////////////////////////////////////////////
-
-    ui->drawingItemTree->show();
-    ui->drawingWindow->show();
 
     // set the starting window size
 
@@ -561,6 +267,302 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->dataText->document()->setDefaultFont(monoFont);
     ui->antennaText->setFont(monoFont);
     ui->antennaText->document()->setDefaultFont(monoFont);
+}
+
+void OpenParEMg::initialize ()
+{
+    MPI_PORT_COMM=nullptr;
+    request=nullptr;
+   
+    projectFileLoaded=false;
+    projectChanged=false;
+    drawingPlaneShown=false;
+    simulationRunning=false;
+    simulationStopping=false;
+    simulationAborting=false;
+    meshingRunning=false;
+
+    /////////////////////////////////////////////////////////////////////////////
+    // main window setup
+    /////////////////////////////////////////////////////////////////////////////
+
+    absolutePath=QDir::currentPath();
+    materialDatabase=new MaterialDatabase();
+
+    projectFile="";
+    init_project (&defaultData);
+    init_project (&projData);
+
+    ui->actionShape->setCheckable(true);
+    ui->actionShape->setChecked(true);
+
+    on_actionShape_triggered();
+
+    ui->actionWireframe->setChecked(true);
+
+    /////////////////////////////////////////////////////////////////////////////
+    // macro
+    /////////////////////////////////////////////////////////////////////////////
+
+    macro=new Macro(this);
+    
+    /////////////////////////////////////////////////////////////////////////////
+    // relay for receiving signals from controls
+    /////////////////////////////////////////////////////////////////////////////
+    
+    relay=new Relay();
+    connect(relay,&Relay::finishOperation,this,&OpenParEMg::finishOperation);
+    connect(relay,&Relay::getCurrentMousePosition,this,&OpenParEMg::getCurrentMousePosition);
+    connect(relay,&Relay::getPickedVertex,this,&OpenParEMg::getPickedVertex);
+    connect(relay,&Relay::setMenus,this,&OpenParEMg::setMenus);
+    connect(relay,&Relay::clearTreeSelection,this,&OpenParEMg::clearTreeSelection);
+    connect(relay,&Relay::updateViewer,this,&OpenParEMg::updateViewer);
+    connect(relay,&Relay::convertPathToFace,this,&OpenParEMg::convertPathToFace);
+    connect(relay,&Relay::setShaded,this,&OpenParEMg::setShaded);
+    connect(relay,&Relay::clearTreeSelection,this,&OpenParEMg::clearTreeSelection);
+    connect(relay,&Relay::startPlaneSetToFace,this,&OpenParEMg::startPlaneSetToFace);
+
+    /////////////////////////////////////////////////////////////////////////////
+    // drawing window
+    /////////////////////////////////////////////////////////////////////////////
+    
+    ui->drawingWindow->set_drawingItemTree(drawing);
+    ui->drawingWindow->set_portItemTree(port);
+    ui->drawingWindow->set_boundaryItemTree(boundary);
+    ui->drawingWindow->set_meshItemTree(mesh);
+    ui->drawingWindow->set_pathItemTree(path);
+    ui->drawingWindow->set_relay(relay);
+    
+    QActionList.push_back(showAction);
+    QActionList.push_back(hideAction);
+    QActionList.push_back(selectAllAction);
+    QActionList.push_back(unselectAction);
+    QActionList.push_back(copyAction);
+    QActionList.push_back(deleteAction);
+    QActionList.push_back(deletePlusAction);
+    QActionList.push_back(deletePointAction);
+    QActionList.push_back(insertPointAction);
+    QActionList.push_back(closePolylineAction);
+    QActionList.push_back(openPolylineAction);
+    QActionList.push_back(convertToPolylineAction);
+    QActionList.push_back(convertToPathAction);
+    QActionList.push_back(convertToPortAction);
+    QActionList.push_back(convertToBoundaryAction);
+    QActionList.push_back(removeAction);
+    QActionList.push_back(assignAction);
+    QActionList.push_back(insertAction);
+    QActionList.push_back(renameAction);
+    QActionList.push_back(expandAllAction);
+    QActionList.push_back(collapseAllAction);
+    QActionList.push_back(setPlaneAction);
+    QActionList.push_back(setPlaneAxisAction);
+    QActionList.push_back(createPathAction);
+    QActionList.push_back(createPortAction);
+    QActionList.push_back(createBoundaryAction);
+    QActionList.push_back(drawPathAction);
+    QActionList.push_back(drawPolylineAction);
+    QActionList.push_back(editAction);
+    QActionList.push_back(moveAction);
+    QActionList.push_back(stretchAction);
+    QActionList.push_back(rotateAction);
+    QActionList.push_back(doneAction);
+    QActionList.push_back(cancelAction);
+    QActionList.push_back(deleteLastPointAction);
+    QActionList.push_back(extrudeAction);
+    QActionList.push_back(mergeAction);
+    QActionList.push_back(subtractAction);
+    QActionList.push_back(assignMaterialAction);
+    QActionList.push_back(createDiffpairAction);
+    initQActionList();
+    
+    // signals to show the drawing tab when drawing actions are clicked
+    connect(ui->menuView, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
+    connect(ui->menuSelect, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
+    connect(ui->menuDraw, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
+    connect(ui->menuMesh, &QMenu::aboutToShow, this, &OpenParEMg::onMenuAboutToShow);
+
+    /////////////////////////////////////////////////////////////////////////////
+    // item selection tree
+    /////////////////////////////////////////////////////////////////////////////
+    
+    drawing=new RootDrawingItem(this); 
+    path=new RootPathItem(this);
+    port=new RootPortItem(this);
+    boundary=new RootBoundaryItem(this);
+    mesh=new RootMeshItem(this);
+    
+    resetLockouts();
+    
+    ui->drawingItemTree->setHeaderHidden(true);
+    ui->drawingItemTree->setColumnCount(2);
+    ui->drawingItemTree->header()->setStretchLastSection(false);
+    ui->drawingItemTree->header()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+    ui->drawingItemTree->header()->setSectionResizeMode(1,QHeaderView::ResizeToContents);
+    
+    // five base list items: drawing, path, port, boundary, and mesh
+    
+    drawing->setText(0,"Drawing");
+    ui->drawingItemTree->addTopLevelItem(drawing);
+    
+    path->setText(0,"Path");
+    ui->drawingItemTree->addTopLevelItem(path);
+    
+    port->setText(0,"Port");
+    ui->drawingItemTree->addTopLevelItem(port);
+    
+    boundary->setText(0,"Boundary");
+    ui->drawingItemTree->addTopLevelItem(boundary);
+    
+    mesh->setText(0,"Initial Mesh");
+    ui->drawingItemTree->addTopLevelItem(mesh);
+    
+    // context menu
+    ui->drawingItemTree->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->drawingItemTree,&QTreeView::customContextMenuRequested,this,&OpenParEMg::itemTreeContextMenu_triggered);
+    
+    ui->drawingItemTree->viewport()->installEventFilter(this);
+    
+    // enable multi-selection with CTRL and SHIFT modifiers
+    ui->drawingItemTree->setSelectionMode(QAbstractItemView::MultiSelection);
+    CTRLpressed=false;
+    SHIFTpressed=false;
+    clickedItem=nullptr;
+    previousClickedItem=nullptr;
+    workingItem=nullptr;
+
+    ui->menuRun->setToolTipsVisible(true);
+
+    // drawing is always a COMPOUND
+    //xxx
+    // BRep_Builder builder;
+    // TopoDS_Compound compound;
+    // builder.MakeCompound(compound);
+    // Handle(AIS_Shape) newShape=new AIS_Shape(compound);
+    // ShapeData *newShapeData=drawing->getShapeData()->copyCreate();
+    // newShapeData->setCreate();
+    // newShapeData->setShape(newShape);
+    // drawing->addShapeData(newShapeData);
+
+    ui->drawingItemTree->setCurrentItem(nullptr);
+
+    /////////////////////////////////////////////////////////////////////////////
+    // logging tabs
+    /////////////////////////////////////////////////////////////////////////////
+ 
+    ui->tabs->setTabToolTip(0,"Drawing space for creating 3D structures for simulation.");
+    ui->tabs->setTabToolTip(1,"Output from OpenParEM3D.");
+    ui->tabs->setTabToolTip(2,"Summary statistics on the simulation run.");
+    ui->tabs->setTabToolTip(3,"S-parameter results summary.  Check the project directory for a Touchstone(TM) file, if generated.");
+    ui->tabs->setTabToolTip(4,"Antenna parameter results summary.  Check the project directory for reports, if generated.");
+
+    ui->logText->setReadOnly(true);
+    ui->iterationsText->setReadOnly(true);
+    ui->dataText->setReadOnly(true);
+    ui->antennaText->setReadOnly(true);
+    
+    logFilter=new LogViewerFilter(this);
+    logFilter->setTextEdit(ui->logText);
+    ui->logText->viewport()->installEventFilter(logFilter);
+    ui->logText->verticalScrollBar()->installEventFilter(logFilter);
+    
+    iterationsFilter=new LogViewerFilter(this);
+    iterationsFilter->setTextEdit(ui->iterationsText);
+    ui->iterationsText->viewport()->installEventFilter(iterationsFilter);
+    ui->iterationsText->verticalScrollBar()->installEventFilter(iterationsFilter);
+    
+    dataFilter=new LogViewerFilter(this);
+    dataFilter->setTextEdit(ui->dataText);
+    ui->dataText->viewport()->installEventFilter(dataFilter);
+    ui->dataText->verticalScrollBar()->installEventFilter(dataFilter);
+    
+    antennaFilter=new LogViewerFilter(this); 
+    antennaFilter->setTextEdit(ui->antennaText); 
+    ui->antennaText->viewport()->installEventFilter(antennaFilter);
+    ui->antennaText->verticalScrollBar()->installEventFilter(antennaFilter);
+    
+    logLastPos=0;
+    iterationLastPos=0;
+    dataLastPos=0;
+    antennaLastPos=0;
+
+    logLastChar='\0';
+    iterationsLastChar='\0';
+    dataLastChar='\0';
+    antennaLastChar='\0';
+
+    /////////////////////////////////////////////////////////////////////////////
+    // context menu for drawingWindow
+    /////////////////////////////////////////////////////////////////////////////
+
+    ui->drawingWindow->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->drawingWindow,&QOpenGLWidget::customContextMenuRequested,this,&OpenParEMg::drawingWindowContextMenu_triggered);
+
+    /////////////////////////////////////////////////////////////////////////////
+    // gmsh
+    /////////////////////////////////////////////////////////////////////////////
+
+    gmsh::initialize();
+    gmsh::option::setNumber("Mesh.MshFileVersion",2.2);
+
+    /////////////////////////////////////////////////////////////////////////////
+    // timer or checking when OpenParEM3D finishes and updating tabs with run data
+    /////////////////////////////////////////////////////////////////////////////
+    
+    bool defaultForce=false;
+    timer=new QTimer(this);
+    connect(timer,&QTimer::timeout,this,&OpenParEMg::checkFinish);
+    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateLogTab(defaultForce);});
+    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateIterationsTab(defaultForce);});
+    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateDataTab(defaultForce);});
+    connect(timer,&QTimer::timeout,this,[this, defaultForce]() {updateAntennaTab(defaultForce);});
+    
+    /////////////////////////////////////////////////////////////////////////////
+    // misc
+    /////////////////////////////////////////////////////////////////////////////
+    
+    renameItem=nullptr;
+    isDisabledSelection=false;
+
+    /////////////////////////////////////////////////////////////////////////////
+    // drawing
+    /////////////////////////////////////////////////////////////////////////////
+    
+    isIntegrationPath=false;
+    activePolywire=nullptr;
+    
+    lengthInputForm=nullptr;
+    vectorInputForm=nullptr;
+    lengthEditForm=nullptr;
+    lineEditForm=nullptr;
+    rectangleEditForm=nullptr;
+    polycircleEditForm=nullptr;
+    rotateInputForm=nullptr;
+    measureDistanceForm=nullptr;
+    
+    // form defaults
+    uLocalAxis.SetCoord(1,0,0);  // rectangles
+    length=1;                    // extrusion
+    angle=90;                    // rotation
+    startPoint.SetCoord(0,0,0);  // rotation and vector input
+    endPoint.SetCoord(0,0,1);    // rotation and vector input
+    
+    restrictToDrawingPlane=false;
+    activeAction=false;
+
+    lineEdit=nullptr;
+    rectangleEdit=nullptr;
+    polycircleEdit=nullptr;
+
+    currentDrawingItem=nullptr;
+    renameEdit=nullptr;
+    renameItem=nullptr;
+
+    /////////////////////////////////////////////////////////////////////////////
+    // change flags
+    /////////////////////////////////////////////////////////////////////////////
+
+    projectChanged=false;
+    meshObsolete=false;
 
     // overrides to project data
     defaultData.gui_slot_count=configuration.getDefaultCoreCount();
@@ -576,6 +578,12 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     setMenus();
 
     close_event=nullptr;
+
+    // show the drawing window as the very last step to get OCCT going
+    // The sleep allows background processes to finish so the showing the drawing window does
+    // show a flash display of a black window.
+    usleep(10000);
+    ui->drawingWindow->show();
 
     PetscInitializeNoArguments();
 }

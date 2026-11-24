@@ -363,6 +363,7 @@ public:
     OpenParEMg (QWidget *parent = nullptr);
     ~OpenParEMg ();
 
+    void initialize ();
     bool isModified ();
     void setUnmodified ();
     bool hasResults ();

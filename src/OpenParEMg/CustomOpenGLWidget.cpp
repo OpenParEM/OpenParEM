@@ -197,17 +197,8 @@ void CustomOpenGLWidget::paintGL()
 
     // 5. Update overlays and execute the final redraw
     viewerContext->Display(viewCube, 0, 0, false);
+    view->Redraw();
 
-    // BY: add a delay on startup to prevent the occasional appearance of a black box
-    // If a black box does appear, rescaling the window eliminates it.
-    static int paintCount=0;
-    if (paintCount < 3) {
-       paintCount++;
-       usleep(10000); 
-    } else {
-       view->Redraw();
-    }
-    
     // Process view events (pan, zoom, rotate interaction states) cleanly
     FlushViewEvents(viewerContext, view, true);
 }
