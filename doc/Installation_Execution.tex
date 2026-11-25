@@ -16,7 +16,7 @@
 \renewcommand\_{\textunderscore\linebreak[1]}
 
 \title{OpenParEM Installation and Execution\\\large Version 2.1}
-\date{October 2026}
+\date{November 2026}
 \author{Brian Young}
 
 \begin{document}
@@ -65,7 +65,7 @@ OpenParEM is validated on a number of Linux flavors for the pre-compiled binary 
    \item OpenParEMg stress test.  A large number of drawing operations are scripted and repeated 1000 times to help ensure that memory issues do not build during long sessions leading to crashes.
    \item WR90 straight waveguide stress test.  The straight waveguide case is build via script and executed.  This is repeated 500 times to help ensure that memory isses do not build during long sessions leading to crashes.
    \item builder regression suite.  For the builder tool.
-   \item hand-drawn complex test case
+   \item hand-drawn complex geometry
 \end{itemize}
 
 \noindent The validation results are summarized in Table~\ref{table:validatedLinux}, showing the results for each for the pre-compiled binary and for compiling from source.
@@ -84,7 +84,7 @@ Ubuntu & 22.04.5 LTS & pass & pass & Source for the pre-compiled \\
 Ubuntu & 24.04.5 LTS & pass & pass & \\
 Ubuntu & 26.04.1 LTS & pass & pass & \\
 Debian & 13 (trixie) & pass & pass & \\
-Fedora & 44 (Workstation Edition) & pass & FAIL & See Note 2. \\
+Fedora & 44 (Workstation Edition) & pass & pass & See Note 2. \\
 openSUSE & 16.0 (Leap) & pass & pass & \\
 Windows WSL2 & Ubuntu 26.04.1 LTS & pass & pass & See Notes 3 and 4.\\
 \hline
@@ -97,7 +97,7 @@ Windows WSL2 & Ubuntu 26.04.1 LTS & pass & pass & See Notes 3 and 4.\\
 
 \noindent 1. Compiling for Ubuntu 22 requires additional setup for Python as documented in Sec.~\ref{sec:Ubuntu22}.
 
-\noindent 2. For Fedora, compiling from source succeeds and passes most tests. However, the antenna regression tests with thin plates immediately crash OpenParEMg on opening the project.  Compiled under Fedora, OCCT does not retain sufficient precision to resolve thin plates.  Compiler settings would resolve this issue, but to date, the required settings have not been found after multiple attempts.
+\noindent 2. When OpenParEMg is compiled on older versions of Fedora 44, thin plates can cause it to crash.  Only compile with the latest verson of Fedora, where testing is successful for the version "Linux fedora 6.19.10-300" reported by the Linux command line command "uname -a". 
 
 \noindent 3. For Windows WSL2, when using the pre-compiled binary, the library libgfortran is required.  For WSL2 running Ubuntu, the following can be used to install the needed library.
 \begin{Verbatim}[fontsize=\small]
