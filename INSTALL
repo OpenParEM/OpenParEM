@@ -81,11 +81,12 @@ Ubuntu 22.04.5 LTS
 Ubuntu 24.04.5 LTS
 Ubuntu 26.04.1 LTS
 Debian 13 (trixie)
+Fedora 44 (Workstation Edition)
 openSUSE 16.0 (Leap)
 Windows WSL2 running Ubuntu 26.04.1 LTS
 
-Compililation completes but fails validation for the following operating systems:
-Fedora 44 (Workstation Edition)
+Fedora 44 should be fully updated before compiling because early versions of
+it can result in OpenParEMg failing for thin plates.
 
 --------------------------
 Required Compilation Tools

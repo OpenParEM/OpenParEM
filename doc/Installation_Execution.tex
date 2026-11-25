@@ -97,7 +97,7 @@ Windows WSL2 & Ubuntu 26.04.1 LTS & pass & pass & See Notes 3 and 4.\\
 
 \noindent 1. Compiling for Ubuntu 22 requires additional setup for Python as documented in Sec.~\ref{sec:Ubuntu22}.
 
-\noindent 2. When OpenParEMg is compiled on older versions of Fedora 44, thin plates can cause it to crash.  Only compile with the latest verson of Fedora, where testing is successful for the version "Linux fedora 6.19.10-300" reported by the Linux command line command "uname -a". 
+\noindent 2. Fedora 44 should be fully updated before compiling because early versions of it can result in OpenParEMg failing for thin plates.
 
 \noindent 3. For Windows WSL2, when using the pre-compiled binary, the library libgfortran is required.  For WSL2 running Ubuntu, the following can be used to install the needed library.
 \begin{Verbatim}[fontsize=\small]
