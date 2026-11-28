@@ -40,6 +40,7 @@ int main ()
 
       }
 
+      inFile.close();
    } else {
       cout << "ERROR1116: Failed to open file \"LICENSE\" for reading." << endl;
       return 1;
