@@ -74,6 +74,7 @@ qt_add_executable(OpenParEMg
     ../OpenParEMCommon/keywordPair.cpp ../OpenParEMCommon/keywordPair.hpp
     ../OpenParEMCommon/fem.cpp ../OpenParEMCommon/fem.hpp
     ../OpenParEMCommon/jobrelated.cpp ../OpenParEMCommon/jobrelated.hpp
+    ../OpenParEMCommon/commandLine.cpp ../OpenParEMCommon/commandLine.hpp
     CustomOpenGLWidget.h CustomOpenGLWidget.cpp
     ../OpenParEMCommon/path.cpp ../OpenParEMCommon/path.hpp
     ../OpenParEM3D/port.cpp ../OpenParEM3D/port.hpp

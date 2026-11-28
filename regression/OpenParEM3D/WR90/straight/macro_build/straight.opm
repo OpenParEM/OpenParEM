@@ -2,7 +2,7 @@
 
 # loop 500 times for stress testing
 # comment out the For and EndFor statements to just run it once
-For i = 1 To 500 Step 1
+For i = 1 To 300 Step 1
 
 newProject ./ straight.proj
 
@@ -50,3 +50,5 @@ runScript check_results.sh
 closeProject
 
 EndFor
+
+exit

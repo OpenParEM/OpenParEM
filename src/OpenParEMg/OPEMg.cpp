@@ -267,6 +267,10 @@ OpenParEMg::OpenParEMg (QWidget *parent)
     ui->dataText->document()->setDefaultFont(monoFont);
     ui->antennaText->setFont(monoFont);
     ui->antennaText->document()->setDefaultFont(monoFont);
+
+    // for command line project/macro file loading on startup
+    has_project_file=false;
+    has_macro_file=false;
 }
 
 void OpenParEMg::initialize ()
@@ -820,7 +824,6 @@ void OpenParEMg::clearSelection ()
 
 void OpenParEMg::debugPrintStats (int i)
 {
-    std::cout << "Debug place " << i << std::endl; std::cout.flush();
     ui->drawingWindow->printTrackerStats();
     ui->drawingWindow->printDrawingSelectedCount();
 }
@@ -4361,7 +4364,6 @@ void OpenParEMg::openProject (QString fullpath)
 
     // load the file
     if (QFile::exists(projectFile)) {
-
         int retVal=0;
 
         // ignore errors so that users can save incomplete project for safety and later work
@@ -8005,15 +8007,8 @@ void OpenParEMg::on_actionMeasure_triggered ()
     measureDistanceForm->show();
 }
 
-void OpenParEMg::on_actionMacroLoad_triggered ()
+void OpenParEMg::openMacro (QString macroFile)
 {
-    QString macroFile=QFileDialog::getOpenFileName(this,tr("Open Macro"),absolutePath,tr("Macro Files (*.opm);;All Files (*)"),
-                                                         nullptr,QFileDialog::DontUseNativeDialog);
-
-    // return if user cancels
-    if (macroFile.isNull()) return;
-
-    // load the file
     if (QFile::exists(macroFile)) {
 
         QFile file(macroFile);
@@ -8051,6 +8046,18 @@ void OpenParEMg::on_actionMacroLoad_triggered ()
     setMenusI(1);
 }
 
+void OpenParEMg::on_actionMacroLoad_triggered ()
+{
+    QString macroFile=QFileDialog::getOpenFileName(this,tr("Open Macro"),absolutePath,tr("Macro Files (*.opm);;All Files (*)"),
+                                                         nullptr,QFileDialog::DontUseNativeDialog);
+
+    // return if user cancels
+    if (macroFile.isNull()) return;
+
+    // load the file
+    openMacro(macroFile);
+}
+
 void OpenParEMg::on_actionMacroRun_triggered ()
 {
     macro->setRunning(true);
@@ -8066,10 +8073,24 @@ void OpenParEMg::on_actionMacroStop_triggered ()
     setMenusI(1);
 }
 
-void OpenParEMg::on_actionMacroClose_triggered()
+void OpenParEMg::on_actionMacroClose_triggered ()
 {
     macro->reset();
     setMenusI(1);
+}
+
+void OpenParEMg::execute ()
+{
+    QDir dir(QString::fromStdString(directory));
+
+    if (has_project_file) {
+       openProject(QString::fromStdString(project_file));
+    }
+
+    if (has_macro_file) {
+       openMacro(QString::fromStdString(macro_file));
+       on_actionMacroRun_triggered();
+    }
 }
 
 // end of file

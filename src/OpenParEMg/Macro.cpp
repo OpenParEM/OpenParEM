@@ -216,6 +216,18 @@ int Macro::forceCloseProject (std::vector<std::string> &tokens)
     return 0;
 }
 
+int Macro::exitOpenParEMg (std::vector<std::string> &tokens)
+{
+    if (tokens.size() == 1 && tokens[0].compare("exit") == 0) {
+        //log.append("exit\n");
+        std::cout << "exit" << std::endl;
+        QTimer::singleShot(0, mw, &QApplication::quit);
+
+        return 1;
+    }
+    return 0;
+}
+
 int Macro::setDrawingPlane (std::vector<std::string> &tokens)
 {
     if (tokens.size() == 10 && tokens[0].compare("setDrawingPlane") == 0) {
@@ -1309,6 +1321,12 @@ void Macro::run ()
                     if (retVal == 2) return;
                     i++; continue;
                 }
+
+                retVal=exitOpenParEMg(tokens);
+                if (retVal > 0) {
+                    if (retVal == 2) return;
+                    i++; continue;
+                } 
 
                 retVal=setDrawingPlane(tokens);
                 if (retVal > 0) {

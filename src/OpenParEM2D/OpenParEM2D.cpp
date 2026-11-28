@@ -50,13 +50,14 @@
 #include "frequencyPlan.hpp"
 #include "petscErrorHandler.hpp"
 #include "license.hpp"
+#include "commandLine.hpp"
 
 using namespace std;
 using namespace mfem;
 
 int version_major=2;
 int version_minor=2;
-int version_patch=0;
+int version_patch=2;
 
 extern "C" int eigensolve (struct projectData *, int, double, int, int, PetscInt *, int, PetscInt *, double **, double **, int *);
 extern "C" void init_project (struct projectData *);
@@ -77,8 +78,8 @@ std::filesystem::path currentPath;
 MPI_Request request;    // to align with how things are done in OpenParEM3D
 
 void help () {
-   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM2D [-h] filename [logfile]\n");
-   PetscPrintf(PETSC_COMM_WORLD,"       -h          : Print this help text\n");
+   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM2D [--help] filename [logfile]\n");
+   PetscPrintf(PETSC_COMM_WORLD,"       --help      : Print this help text; can also use -h, --h, and -help\n");
    PetscPrintf(PETSC_COMM_WORLD,"       filename    : Filename of an OpenParEM setup file.\n");
    PetscPrintf(PETSC_COMM_WORLD,"       logfile     : Output is redirected to the given file.  Note that the file is appended.\n");
    PetscPrintf(PETSC_COMM_WORLD,"\nOpenParEM2D is a full-wave 2D electromagnetic solver.\n");
@@ -400,9 +401,21 @@ int main(int argc, char *argv[])
    MeshMaterialList meshMaterials;
    MaterialDatabase localMaterialDatabase;
    MaterialDatabase materialDatabase;
+   CommandLine commandLine;
 
+   // command line
+   std::vector<std::string> arguments;
+   int i=0;
+   while (i < argc) {
+      arguments.push_back(std::string(argv[i]));
+      i++;
+   }
+   commandLine.set_arguments(&arguments);
+
+   // timing
    chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
 
+   // current path
    currentPath=std::filesystem::current_path();
 
    // Initialize Petsc and MPI
@@ -456,24 +469,37 @@ int main(int argc, char *argv[])
    mfem::ErrorAction(mfem::MFEM_ERROR_THROW);
 
    // parse inputs
+   if (commandLine.parse()) {
+      if (rank == 0) {
+         std::cout << "ERROR2000: Command line is incorrectly formatted." << std::endl;
+         help();
+         PetscFinalize();
+         exit(1);
+      }
+   }
+   //commandLine.print();
 
    // help
-   int retVal=1;
-   int printHelp=0;
-   if (argc <= 1) printHelp=1;
-   else {
-      if (strcmp(argv[1],"-h") == 0) {printHelp=1; retVal=0;}
-      else projFile=argv[1];
+   if (commandLine.help()) {
+      help();
+      SlepcFinalize();
+      exit(0);
    }
-   if (printHelp) {help(); SlepcFinalize();; exit(retVal);}
+
+   // valid input file
+   if (!commandLine.is_OpenParEM2D_project()) {
+      std::cout << "ERROR2001: The supplied project file is not the correct format." << std::endl;
+      PetscFinalize();
+      exit(1);
+   }
 
    // log file - redirect stdout if a log name is provided
-   if (argc == 3) {
+   if (commandLine.has_logFilename()) {
       std::ios_base::sync_with_stdio(true);
-      std::FILE* stream=std::freopen(argv[2],"a",stdout);  // append
+      std::FILE* stream=std::freopen(commandLine.get_logFilename().c_str(),"a",stdout);  // append
       if (stream == nullptr) {
          if (rank == 0) {
-            std::cout << "ERROR2000: Failed to redirect stdout to log file \"" << argv[2] << "\"." << std::endl;
+            std::cout << "ERROR2000: Failed to redirect stdout to log file \"" << commandLine.get_logFilename() << "\"." << std::endl;
          }
          PetscFinalize();
          exit(1);
@@ -482,6 +508,18 @@ int main(int argc, char *argv[])
 
    // project kickoff
 
+   if (!commandLine.get_directory().empty()) {
+      std::error_code ec;
+      std::filesystem::current_path(commandLine.get_directory(),ec);
+      if (ec) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2211: Failed to switch to the project directory.\n");
+         signalFinished(1);
+         exit_job_on_error (job_start_time,lockfile,true,2); 
+      }
+   }
+
+   std::string projFileString=commandLine.get_filename();
+   projFile=projFileString.c_str();
    char *baseName=get_project_name(projFile);
    print_copyright_notice ("OpenParEM2D",version_major,version_minor,version_patch);
    lockfile=create_lock_file(baseName);

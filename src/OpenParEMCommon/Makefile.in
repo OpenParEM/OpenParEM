@@ -110,7 +110,7 @@ am__v_AR_1 =
 libOpenParEMCommon_a_AR = $(AR) $(ARFLAGS)
 libOpenParEMCommon_a_RANLIB = $(RANLIB)
 libOpenParEMCommon_a_LIBADD =
-am_libOpenParEMCommon_a_OBJECTS = fem.$(OBJEXT) \
+am_libOpenParEMCommon_a_OBJECTS = commandLine.$(OBJEXT) fem.$(OBJEXT) \
 	frequencyPlan.$(OBJEXT) jobrelated.$(OBJEXT) \
 	keywordPair.$(OBJEXT) license.$(OBJEXT) mesh.$(OBJEXT) \
 	misc.$(OBJEXT) OpenParEMmaterials.$(OBJEXT) path.$(OBJEXT) \
@@ -133,12 +133,13 @@ DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/OpenParEMmaterials.Po \
-	./$(DEPDIR)/Zsolve.Po ./$(DEPDIR)/fem.Po \
-	./$(DEPDIR)/frequencyPlan.Po ./$(DEPDIR)/jobrelated.Po \
-	./$(DEPDIR)/keywordPair.Po ./$(DEPDIR)/license.Po \
-	./$(DEPDIR)/mesh.Po ./$(DEPDIR)/misc.Po ./$(DEPDIR)/path.Po \
-	./$(DEPDIR)/petscErrorHandler.Po ./$(DEPDIR)/prefix.Po \
-	./$(DEPDIR)/sourcefile.Po ./$(DEPDIR)/triplet.Po
+	./$(DEPDIR)/Zsolve.Po ./$(DEPDIR)/commandLine.Po \
+	./$(DEPDIR)/fem.Po ./$(DEPDIR)/frequencyPlan.Po \
+	./$(DEPDIR)/jobrelated.Po ./$(DEPDIR)/keywordPair.Po \
+	./$(DEPDIR)/license.Po ./$(DEPDIR)/mesh.Po ./$(DEPDIR)/misc.Po \
+	./$(DEPDIR)/path.Po ./$(DEPDIR)/petscErrorHandler.Po \
+	./$(DEPDIR)/prefix.Po ./$(DEPDIR)/sourcefile.Po \
+	./$(DEPDIR)/triplet.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -301,7 +302,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libOpenParEMCommon.a
-libOpenParEMCommon_a_SOURCES = fem.cpp frequencyPlan.cpp jobrelated.cpp keywordPair.cpp license.cpp mesh.cpp misc.cpp OpenParEMmaterials.cpp path.cpp petscErrorHandler.cpp sourcefile.cpp prefix.c triplet.c Zsolve.c fem.hpp frequencyPlan.hpp jobrelated.hpp keywordPair.hpp license.hpp mesh.hpp misc.hpp OpenParEMmaterials.hpp path.hpp petscErrorHandler.hpp sourcefile.hpp prefix.h triplet.h Zsolve.h inputFrequency.h formatted_license.txt
+libOpenParEMCommon_a_SOURCES = commandLine.cpp fem.cpp frequencyPlan.cpp jobrelated.cpp keywordPair.cpp license.cpp mesh.cpp misc.cpp OpenParEMmaterials.cpp path.cpp petscErrorHandler.cpp sourcefile.cpp prefix.c triplet.c Zsolve.c commandLine.hpp fem.hpp frequencyPlan.hpp jobrelated.hpp keywordPair.hpp license.hpp mesh.hpp misc.hpp OpenParEMmaterials.hpp path.hpp petscErrorHandler.hpp sourcefile.hpp prefix.h triplet.h Zsolve.h inputFrequency.h formatted_license.txt
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -368,6 +369,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OpenParEMmaterials.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Zsolve.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commandLine.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fem.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/frequencyPlan.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jobrelated.Po@am__quote@ # am--include-marker
@@ -541,6 +543,7 @@ clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
 distclean: distclean-am
 	-rm -f ./$(DEPDIR)/OpenParEMmaterials.Po
 	-rm -f ./$(DEPDIR)/Zsolve.Po
+	-rm -f ./$(DEPDIR)/commandLine.Po
 	-rm -f ./$(DEPDIR)/fem.Po
 	-rm -f ./$(DEPDIR)/frequencyPlan.Po
 	-rm -f ./$(DEPDIR)/jobrelated.Po
@@ -600,6 +603,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/OpenParEMmaterials.Po
 	-rm -f ./$(DEPDIR)/Zsolve.Po
+	-rm -f ./$(DEPDIR)/commandLine.Po
 	-rm -f ./$(DEPDIR)/fem.Po
 	-rm -f ./$(DEPDIR)/frequencyPlan.Po
 	-rm -f ./$(DEPDIR)/jobrelated.Po

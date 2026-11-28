@@ -432,6 +432,7 @@ bool inputFile::load(const char *filename)
             }
          }
       }
+      materialFile.close();
    } else {
       prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR1005: File \"%s\" could not be opened for reading.\n",filename);
       return true;

@@ -49,7 +49,6 @@
 #include "ObjectCounts.h"
 #include "Macro.h"
 
-
 extern "C" void init_project (struct projectData *);
 extern "C" void free_project (struct projectData *);
 extern "C" PetscErrorCode load_project_file (const char *, struct projectData *, const char *);
@@ -368,6 +367,12 @@ public:
     void setUnmodified ();
     bool hasResults ();
 
+    void set_project_file (std::string project_file_) {has_project_file=true; project_file=project_file_;}
+    void set_macro_file (std::string macro_file_) {has_macro_file=true; macro_file=macro_file_;}
+    void set_directory (std::string directory_) {directory=directory_;}
+    void execute ();
+
+
     void enablePortBoundarySelections (BaseItem *, bool);
 
     void closeEvent (QCloseEvent *event) override {
@@ -382,6 +387,7 @@ public:
     void forceSave ();
     void saveProject ();
     void openProject (QString);
+    void openMacro (QString);
     //void insertToMapActivateItem (BaseItem *);
     QString getAISshapeName (Handle(AIS_Shape));
     bool loadBrepFile (QString, bool);
@@ -740,6 +746,18 @@ signals:
     void sendPnt (gp_Pnt);
 
 private:
+
+    // for command line processing
+
+    bool has_project_file; 
+    std::string project_file;
+
+    bool has_macro_file;
+    std::string macro_file;
+
+    std::string directory;
+
+    // lockouts
     void resetLockouts ();
     void printLockouts ();
     void resetDrawing ();

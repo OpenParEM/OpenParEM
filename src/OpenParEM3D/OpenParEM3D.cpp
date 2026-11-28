@@ -41,13 +41,14 @@
 #include "mesh.hpp"
 #include "petscErrorHandler.hpp"
 #include "fileCleanup.hpp"
+#include "commandLine.hpp"
 
 using namespace std;
 using namespace mfem;
 
 int version_major=2;
 int version_minor=2;
-int version_patch=0;
+int version_patch=2;
 
 extern "C" void init_project (struct projectData *);
 extern "C" int load_project_file(const char*, projectData*, const char*);
@@ -117,8 +118,8 @@ void get_edgeLengthsPerWavelength (ParMesh *pmesh, double frequency, Vector er, 
 }
 
 void help () {
-   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM3D [-h] filename [logfile]\n");
-   PetscPrintf(PETSC_COMM_WORLD,"       -h          : Print this help text\n");
+   PetscPrintf(PETSC_COMM_WORLD,"usage: OpenParEM3D [--help] filename [logfile]\n");
+   PetscPrintf(PETSC_COMM_WORLD,"       --help      : Print this help text; can also use -h, --h, and -help\n");
    PetscPrintf(PETSC_COMM_WORLD,"       filename    : Filename of an OpenParEM setup file.\n");
    PetscPrintf(PETSC_COMM_WORLD,"       logfile     : Output is redirected to the given file.  Note that the file is over-written.\n");
    PetscPrintf(PETSC_COMM_WORLD,"\nOpenParEM3D is a full-wave 3D electromagnetic solver.\n");
@@ -279,8 +280,21 @@ int main(int argc, char *argv[])
    vector<DifferentialPair *> aggregateList;
    bool hasLogFile;
    int gracefulExit=0;
+   CommandLine commandLine;
 
+   // command line
+   std::vector<std::string> arguments;
+   int i=0;
+   while (i < argc) {
+      arguments.push_back(std::string(argv[i]));
+      i++;
+   }
+   commandLine.set_arguments(&arguments);
+
+   // timing
    chrono::steady_clock::time_point job_start_time=chrono::steady_clock::now();
+
+   // current path
    currentPath=std::filesystem::current_path();
 
    // Initialize Petsc and MPI
@@ -339,25 +353,38 @@ int main(int argc, char *argv[])
    mfem::ErrorAction(mfem::MFEM_ERROR_THROW);
 
    // parse inputs
-
+   if (commandLine.parse()) {
+      if (rank == 0) {
+         std::cout << "ERROR2000: Command line is incorrectly formatted." << std::endl;
+         help();
+         PetscFinalize();
+         exit(1);
+      }
+   }  
+   //commandLine.print();
+   
    // help
-   int retVal=1;
-   int printHelp=0;
-   if (argc <= 1) printHelp=1;
-   else {
-      if (strcmp(argv[1],"-h") == 0) {printHelp=1; retVal=0;}
-      else projFile=argv[1];
+   if (commandLine.help()) {
+      help();
+      PetscFinalize();
+      exit(0);
    }
-   if (printHelp) {help(); PetscFinalize(); exit(retVal);}
- 
+
+   // valid input file 
+   if (!commandLine.is_OpenParEM3D_project()) {
+      std::cout << "ERROR3001: The supplied project file is not the correct format." << std::endl;
+      PetscFinalize();
+      exit(1);
+   }
+
    // log file - redirect stdout if a log name is provided
    hasLogFile=false;
-   if (argc == 3) {
+   if (commandLine.has_logFilename()) {
       hasLogFile=true;
       std::ios_base::sync_with_stdio(true);
 
       std::ofstream clearLog(argv[2],std::ios::trunc);
-      std::FILE* stream=std::freopen(argv[2],"a",stdout);  // append
+      std::FILE* stream=std::freopen(commandLine.get_logFilename().c_str(),"a",stdout);  // append
       if (stream == nullptr) {
          if (rank == 0) {
             std::cout << "ERROR3043: Failed to redirect stdout to log file \"" << argv[2] << "\"." << std::endl;
@@ -368,9 +395,21 @@ int main(int argc, char *argv[])
    }
 
    // project kickoff
- 
-   print_copyright_notice ("OpenParEM3D",version_major,version_minor,version_patch);
+
+   if (!commandLine.get_directory().empty()) {
+      std::error_code ec;
+      std::filesystem::current_path(commandLine.get_directory(),ec);
+      if (ec) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR2211: Failed to switch to the project directory.\n");
+         signalFinished(1);
+         exit_job_on_error (job_start_time,lockfile,true,2);
+      }
+   }
+
+   std::string projFileString=commandLine.get_filename();
+   projFile=projFileString.c_str();
    char *baseName=get_project_name(projFile);
+   print_copyright_notice ("OpenParEM3D",version_major,version_minor,version_patch);
    lockfile=create_lock_file(baseName);
    isOpenParEM2Dreachable();
 
